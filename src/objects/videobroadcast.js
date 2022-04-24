@@ -203,6 +203,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                hbbtv.bridge.broadcast.setPresentationSuspended(false);
                hbbtv.holePuncher.setBroadcastVideoObject(this);
 
+               let wasPlayStateStopped = false;
                if (p.playState === this.PLAY_STATE_UNREALIZED) {
                   /* DAE vol5 Table 8 state transition #7 */
                   p.playState = this.PLAY_STATE_PRESENTING;
@@ -210,10 +211,11 @@ hbbtv.objects.VideoBroadcast = (function() {
                   /* PLAY_STATE_STOPPED */
                   /* DAE vol5 Table 8 state transition #17 with HbbTV 2.0.3 modification */
                   p.playState = this.PLAY_STATE_CONNECTING;
+                  wasPlayStateStopped = true;
                }
                addBridgeEventListeners.call(this);
                dispatchPlayStateChangeEvent.call(this, p.playState);
-               if (p.playState === this.PLAY_STATE_CONNECTING) {
+               if (wasPlayStateStopped) {
                   /* For PLAY_STATE_STOPPED: extra step to go into Presenting State */
                   /* DAE vol5 Table 8 state transition #17 with HbbTV 2.0.3 modification. */
                   p.playState = this.PLAY_STATE_PRESENTING;
@@ -346,7 +348,7 @@ hbbtv.objects.VideoBroadcast = (function() {
          return;
       }
 
-      if (p.isBroadcastRelated) {
+      if (p.isBroadcastRelated && (quiet !== 2)) {
          try {
             p.currentChannelData = hbbtv.objects.createChannel(hbbtv.bridge.broadcast.getCurrentChannel());
             if (p.channelConfig === null) {
@@ -363,6 +365,7 @@ hbbtv.objects.VideoBroadcast = (function() {
       /* DAE vol5 Table 8 state transition #1 */
       unregisterAllStreamEventListeners(p);
       p.playState = this.PLAY_STATE_CONNECTING;
+      p.waitingPlayStateConnectingConfirm = true;
       dispatchPlayStateChangeEvent.call(this, p.playState);
    };
 
@@ -410,7 +413,7 @@ hbbtv.objects.VideoBroadcast = (function() {
             console.log("Received ChannelStatusChanged (" +
                event.onetId + "," +
                event.transId + "," +
-               event.servId + "), status: " + event.statusCode);
+               event.servId + "), status: " + event.statusCode + " playState: " + p.playState);
             if (p.playState == this.PLAY_STATE_CONNECTING) {
                switch (event.statusCode) {
                   case this.CHANNEL_STATUS_PRESENTING:
@@ -422,24 +425,28 @@ hbbtv.objects.VideoBroadcast = (function() {
                      break;
 
                   case this.CHANNEL_STATUS_CONNECTING:
-                     /* DAE vol5 Table 8 state transition #10, or possibly, a user initiated channel change */
-                     /* Terminal connected to the broadcast or IP multicast stream but presentation blocked */
-                     if (p.currentChannelData == null ||
-                        event.servId != p.currentChannelData.sid ||
-                        event.onetId != p.currentChannelData.onid ||
-                        event.transId != p.currentChannelData.tsid) {
-                        try {
-                           p.currentChannelData = hbbtv.objects.createChannel(hbbtv.bridge.broadcast.getCurrentChannelForEvent());
-                        } catch (e) {
-                           if (e.name === 'SecurityError') {
-                              console.log('Unexpected condition: app appears broadcast-independent.');
+                     if (p.waitingPlayStateConnectingConfirm) {
+                        console.log("waitingPlayStateConnectingConfirm TRUE. Ignore event");
+                     } else {
+                        /* DAE vol5 Table 8 state transition #10, or possibly, a user initiated channel change */
+                        /* Terminal connected to the broadcast or IP multicast stream but presentation blocked */
+                        if (p.currentChannelData == null ||
+                           event.servId != p.currentChannelData.sid ||
+                           event.onetId != p.currentChannelData.onid ||
+                           event.transId != p.currentChannelData.tsid) {
+                           try {
+                              p.currentChannelData = hbbtv.objects.createChannel(hbbtv.bridge.broadcast.getCurrentChannelForEvent());
+                           } catch (e) {
+                              if (e.name === 'SecurityError') {
+                                 console.log('Unexpected condition: app appears broadcast-independent.');
+                              }
+                              throw(e);
                            }
-                           throw (e);
                         }
+                        p.playState = this.PLAY_STATE_CONNECTING;
+                        dispatchChannelChangeSucceededEvent.call(this, p.currentChannelData);
+                        dispatchPlayStateChangeEvent.call(this, p.playState);
                      }
-                     p.playState = this.PLAY_STATE_CONNECTING;
-                     dispatchChannelChangeSucceededEvent.call(this, p.currentChannelData);
-                     dispatchPlayStateChangeEvent.call(this, p.playState);
                      break;
 
                   case this.CHANNEL_STATUS_CONNECTING_RECOVERY:
@@ -458,6 +465,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                      } /* else DAE vol5 Table 8 state transition #2 */
                      dispatchChannelChangeErrorEvent.call(this, p.currentChannelData, event.statusCode);
                }
+               p.waitingPlayStateConnectingConfirm = false;
             } else if (p.playState == this.PLAY_STATE_PRESENTING) {
                if (event.permanentError) {
                   /* DAE vol5 Table 8 state transition #16A */
@@ -1335,6 +1343,7 @@ hbbtv.objects.VideoBroadcast = (function() {
       /* Associates internal ID with registered listeners */
       p.streamEventListenerMap = new Map();
       p.playState = this.PLAY_STATE_UNREALIZED;
+      p.waitingPlayStateConnectingConfirm = false;
       p.fullScreen = false;
       p.x = 0;
       p.y = 0;
