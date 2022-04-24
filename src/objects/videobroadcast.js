@@ -193,7 +193,7 @@ hbbtv.objects.VideoBroadcast = (function() {
             tmpChannelData = hbbtv.objects.createChannel(hbbtv.bridge.broadcast.getCurrentChannel());
          } catch (e) {
             if (e.name === 'SecurityError') {
-               console.log('Unexpected condition: app appears broadcast-independent.');
+               console.log('bindToCurrentChannel, unexpected condition: app appears broadcast-independent.');
             }
             throw (e);
          }
@@ -356,7 +356,7 @@ hbbtv.objects.VideoBroadcast = (function() {
             }
          } catch (e) {
             if (e.name === 'SecurityError') {
-               console.log('Unexpected condition: app appears broadcast-independent.');
+               console.log('setChannel, unexpected condition: app appears broadcast-independent.');
             }
             throw (e);
          }
@@ -425,24 +425,24 @@ hbbtv.objects.VideoBroadcast = (function() {
                      break;
 
                   case this.CHANNEL_STATUS_CONNECTING:
+                     if (p.currentChannelData == null ||
+                        event.servId != p.currentChannelData.sid ||
+                        event.onetId != p.currentChannelData.onid ||
+                        event.transId != p.currentChannelData.tsid) {
+                        try {
+                           p.currentChannelData = hbbtv.objects.createChannel(hbbtv.bridge.broadcast.getCurrentChannelForEvent());
+                        } catch (e) {
+                           if (e.name === 'SecurityError') {
+                              console.log('Unexpected condition: app appears broadcast-independent.');
+                           }
+                           throw(e);
+                        }
+                     }
                      if (p.waitingPlayStateConnectingConfirm) {
                         console.log("waitingPlayStateConnectingConfirm TRUE. Ignore event");
                      } else {
                         /* DAE vol5 Table 8 state transition #10, or possibly, a user initiated channel change */
                         /* Terminal connected to the broadcast or IP multicast stream but presentation blocked */
-                        if (p.currentChannelData == null ||
-                           event.servId != p.currentChannelData.sid ||
-                           event.onetId != p.currentChannelData.onid ||
-                           event.transId != p.currentChannelData.tsid) {
-                           try {
-                              p.currentChannelData = hbbtv.objects.createChannel(hbbtv.bridge.broadcast.getCurrentChannelForEvent());
-                           } catch (e) {
-                              if (e.name === 'SecurityError') {
-                                 console.log('Unexpected condition: app appears broadcast-independent.');
-                              }
-                              throw(e);
-                           }
-                        }
                         p.playState = this.PLAY_STATE_CONNECTING;
                         dispatchChannelChangeSucceededEvent.call(this, p.currentChannelData);
                         dispatchPlayStateChangeEvent.call(this, p.playState);
@@ -483,7 +483,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                         p.currentChannelData = hbbtv.objects.createChannel(hbbtv.bridge.broadcast.getCurrentChannelForEvent());
                      } catch (e) {
                         if (e.name === 'SecurityError') {
-                           console.log('Unexpected condition: app appears broadcast-independent.');
+                           console.log('onChannelStatusChanged, unexpected condition: app appears broadcast-independent.');
                         }
                         throw (e);
                      }
@@ -547,7 +547,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                dispatchSelectedComponentChanged.call(this, event.componentType);
             } catch (e) {
                if (e.name === 'SecurityError') {
-                  console.log('Unexpected condition: app appears broadcast-independent.');
+                  console.log('onSelectedComponentChanged, unexpected condition: app appears broadcast-independent.');
                }
                throw (e);
             }
@@ -565,7 +565,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                dispatchComponentChanged.call(this, event.componentType);
             } catch (e) {
                if (e.name === 'SecurityError') {
-                  console.log('Unexpected condition: app appears broadcast-independent.');
+                  console.log('onComponentChanged, unexpected condition: app appears broadcast-independent.');
                }
                throw (e);
             }
@@ -597,7 +597,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                   }
                } catch (e) {
                   if (e.name === 'SecurityError') {
-                     console.log('Unexpected condition: app appears broadcast-independent.');
+                     console.log('onTransitionedToBroadcastRelated, unexpected condition: app appears broadcast-independent.');
                   }
                   throw (e);
                }
