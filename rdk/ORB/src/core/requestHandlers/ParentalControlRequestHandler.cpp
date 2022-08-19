@@ -53,29 +53,36 @@ bool ParentalControlRequestHandler::Handle(
   if (method == PARENTAL_CONTROL_GET_RATING_SCHEMES) {
     typedef std::map<std::string, std::vector<ParentalRating>> RatingSchemes;
     RatingSchemes ratingSchemes = GetRatingSchemes();
+    ArrayType<JsonValue> resultsArray;
+    JsonValue resultsValue;
     for(RatingSchemes::const_iterator it = ratingSchemes.begin(); it != ratingSchemes.end(); ++it) {
+      ArrayType<JsonValue> array;
+      JsonValue jsonRatings;
+      JsonObject schemeObject;
       std::string scheme = it->first;
       std::vector<ParentalRating> ratings = it->second;
-      ArrayType<JsonValue> array;
       for (auto rating : ratings) {
         array.Add(rating.ToJsonObject());
       }
-      JsonValue jsonRatings;
       jsonRatings.Array(array);
-      response.Set(scheme.c_str(), jsonRatings);
+      schemeObject.Set("name", scheme);
+      schemeObject.Set("ratings", jsonRatings);
+      resultsArray.Add(schemeObject);
     }
+    resultsValue.Array(resultsArray);
+    response.Set("result", resultsValue);
   }
 
   // ParentalControl.getThreshold
   else if (method == PARENTAL_CONTROL_GET_THRESHOLD) {
     std::shared_ptr<ParentalRating> threshold = GetThreshold(params);
-    response = threshold->ToJsonObject();
+    response.Set("result", threshold->ToJsonObject());
   }
 
   // ParentalControl.isRatingBlocked
   else if (method == PARENTAL_CONTROL_IS_RATING_BLOCKED) {
     bool blocked = IsRatingBlocked(params);
-    response["value"] = blocked;
+    response["result"] = blocked;
   }
 
   // UnknownMethod

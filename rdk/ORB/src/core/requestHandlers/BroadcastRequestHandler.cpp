@@ -17,10 +17,12 @@ using namespace WPEFramework::Plugin;
 #define BROADCAST_GET_CURRENT_CHANNEL "getCurrentChannel"
 #define BROADCAST_GET_CURRENT_CHANNEL_FOR_EVENT "getCurrentChannelForEvent"
 #define BROADCAST_GET_CHANNEL_LIST "getChannelList"
-#define BROADCAST_SET_CHANNEL "setChannel"
+#define BROADCAST_SET_CHANNEL_TO_CCID "setChannelToCcid"
+#define BROADCAST_SET_CHANNEL_TO_NULL "setChannelToNull"
+#define BROADCAST_SET_CHANNEL_TO_TRIPLET "setChannelToTriplet"
+#define BROADCAST_SET_CHANNEL_TO_DSD "setChannelToDsd"
 #define BROADCAST_GET_PROGRAMMES "getProgrammes"
 #define BROADCAST_GET_COMPONENTS "getComponents"
-#define BROADCAST_GET_COMPONENTS_FOR_EVENT "getComponentsForEvent"
 #define BROADCAST_SELECT_COMPONENT "selectComponent"
 #define BROADCAST_UNSELECT_COMPONENT "unselectComponent"
 #define BROADCAST_START_SEARCH "startSearch"
@@ -84,7 +86,7 @@ bool BroadcastRequestHandler::Handle(
       response = MakeErrorResponse("Current channel unknown");
       return ret;
     }
-    response = currentChannel->ToJsonObject();
+    response.Set("result", currentChannel->ToJsonObject());
   }
 
   // Broadcast.getCurrentChannelForEvent
@@ -94,7 +96,7 @@ bool BroadcastRequestHandler::Handle(
       return ret;
     }
     std::shared_ptr<Channel> currentChannel = ORB::instance(nullptr)->GetORBPlatform()->Broadcast_GetCurrentChannel();
-    response = currentChannel->ToJsonObject();
+    response.Set("result", currentChannel->ToJsonObject());
   }
 
   // Broadcast.getChannelList
@@ -110,31 +112,101 @@ bool BroadcastRequestHandler::Handle(
     }
     JsonValue jsonChannelList;
     jsonChannelList.Array(array);
-    response.Set("channelList", jsonChannelList);
+    response.Set("result", jsonChannelList);
   }
 
-  // Broadcast.setChannel
-  else if (method == BROADCAST_SET_CHANNEL) {
+  // Broadcast.setChannelToCcid
+  else if (method == BROADCAST_SET_CHANNEL_TO_CCID) {
     if (!IsRequestAllowed(token, ApplicationManager::MethodRequirement::FOR_BROADCAST_APP_ONLY)) {
       response = MakeErrorResponse("NotRunning");
       return ret;
     }
-    std::string jsonChannelAsString = params["channel"].String();
-    std::shared_ptr<Channel> channel;
-    
-    if (jsonChannelAsString != "{}") {
-      channel = Channel::FromJsonString(jsonChannelAsString);
-    }
-    
+
+    std::string ccid = params["ccid"].String();
     bool trickPlay = params["trickplay"].Boolean();
     std::string contentAccessDescriptorURL = params["contentAccessDescriptorURL"].String();
     bool quiet = params["quiet"].Boolean();
     int channelChangeError = -1;
-    bool success = ORB::instance(nullptr)->GetORBPlatform()->Broadcast_SetChannel(channel, trickPlay, contentAccessDescriptorURL, quiet, &channelChangeError);
+
+    bool success = ORB::instance(nullptr)->GetORBPlatform()->Broadcast_SetChannelToCcid(ccid, trickPlay, contentAccessDescriptorURL, quiet, &channelChangeError);
     response["success"] = success;
     if (!success) {
       response["errorState"] = channelChangeError;
     }
+
+    return ret;
+  }
+
+  // Broadcast.setChannelToNull
+  else if (method == BROADCAST_SET_CHANNEL_TO_NULL) {
+    if (!IsRequestAllowed(token, ApplicationManager::MethodRequirement::FOR_BROADCAST_APP_ONLY)) {
+      response = MakeErrorResponse("NotRunning");
+      return ret;
+    }
+
+    bool trickPlay = params["trickplay"].Boolean();
+    std::string contentAccessDescriptorURL = params["contentAccessDescriptorURL"].String();
+    bool quiet = params["quiet"].Boolean();
+    int channelChangeError = -1;
+
+    bool success = ORB::instance(nullptr)->GetORBPlatform()->Broadcast_SetChannelToNull(trickPlay, contentAccessDescriptorURL, quiet, &channelChangeError);
+    response["success"] = success;
+    if (!success) {
+      response["errorState"] = channelChangeError;
+    }
+
+    return ret;
+  }
+
+  // Broadcast.setChannelToTriplet
+  else if (method == BROADCAST_SET_CHANNEL_TO_TRIPLET) {
+    if (!IsRequestAllowed(token, ApplicationManager::MethodRequirement::FOR_BROADCAST_APP_ONLY)) {
+      response = MakeErrorResponse("NotRunning");
+      return ret;
+    }
+
+    int idType = params["idType"].Number();
+    int onid = params["onid"].Number();
+    int tsid = params["tsid"].Number();
+    int sid = params["sid"].Number();
+    int sourceID = params["sourceID"].Number();
+    std::string ipBroadcastID = params["ipBroadcastID"].String();
+    bool trickPlay = params["trickplay"].Boolean();
+    std::string contentAccessDescriptorURL = params["contentAccessDescriptorURL"].String();
+    bool quiet = params["quiet"].Boolean();
+    int channelChangeError = -1;
+
+    bool success = ORB::instance(nullptr)->GetORBPlatform()->Broadcast_SetChannelToTriplet(idType, onid, tsid, sid, sourceID, ipBroadcastID, 
+                                                                          trickPlay, contentAccessDescriptorURL, quiet, &channelChangeError);
+    response["success"] = success;
+    if (!success) {
+      response["errorState"] = channelChangeError;
+    }
+
+    return ret;
+  }
+
+  // Broadcast.setChannelToDsd
+  else if (method == BROADCAST_SET_CHANNEL_TO_DSD) {
+    if (!IsRequestAllowed(token, ApplicationManager::MethodRequirement::FOR_BROADCAST_APP_ONLY)) {
+      response = MakeErrorResponse("NotRunning");
+      return ret;
+    }
+
+    std::string dsd = params["dsd"].String();
+    int sid = params["sid"].Number();
+    bool trickPlay = params["trickplay"].Boolean();
+    std::string contentAccessDescriptorURL = params["contentAccessDescriptorURL"].String();
+    bool quiet = params["quiet"].Boolean();
+    int channelChangeError = -1;
+
+    bool success = ORB::instance(nullptr)->GetORBPlatform()->Broadcast_SetChannelToDsd(dsd, sid, trickPlay, contentAccessDescriptorURL, quiet, &channelChangeError);
+    response["success"] = success;
+    if (!success) {
+      response["errorState"] = channelChangeError;
+    }
+
+    return ret;
   }
 
   // Broadcast.getProgrammes
@@ -151,7 +223,7 @@ bool BroadcastRequestHandler::Handle(
     }
     JsonValue jsonProgrammeList;
     jsonProgrammeList.Array(array);
-    response.Set("programmeList", jsonProgrammeList);
+    response.Set("result", jsonProgrammeList);
   }
 
   // Broadcast.getComponents
@@ -179,25 +251,7 @@ bool BroadcastRequestHandler::Handle(
     }
     JsonValue jsonComponentList;
     jsonComponentList.Array(array);
-    response.Set("componentList", jsonComponentList);
-  }
-
-  // Broadcast.getComponentsForEvent
-  else if (method == BROADCAST_GET_COMPONENTS_FOR_EVENT) {
-    if (!IsRequestAllowed(token, ApplicationManager::MethodRequirement::FOR_BROADCAST_OR_TRANSITIONING_APP_ONLY)) {
-      response = MakeErrorResponse("SecurityError");
-      return ret;
-    }
-    std::string ccid = params["ccid"].String();
-    int componentType = params["typeCode"].Number();
-    std::vector<Component> components = ORB::instance(nullptr)->GetORBPlatform()->Broadcast_GetComponents(ccid, componentType);
-    ArrayType<JsonValue> array;
-    for (auto component : components) {
-      array.Add(component.ToJsonObject());
-    }
-    JsonValue jsonComponentList;
-    jsonComponentList.Array(array);
-    response.Set("componentList", jsonComponentList);
+    response.Set("result", jsonComponentList);
   }
 
   // Broadcast.selectComponent
