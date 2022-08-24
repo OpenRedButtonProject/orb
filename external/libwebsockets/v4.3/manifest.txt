@@ -1,0 +1,3 @@
+version: v4.3
+branch: https://android.googlesource.com/platform/external/libwebsockets/+/refs/heads/android-t-preview-1
+commit: https://android.googlesource.com/platform/external/libwebsockets/+/ba7e6c39895f4a9468a93b26b5e3c730f1d43629

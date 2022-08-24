@@ -1,0 +1,179 @@
+[
+  {
+    "#name": "AIT",
+    "#nodes": [
+      {
+        "#name": "metadata",
+        "pid": 470
+      },
+      {
+        "#name": "application",
+        "#nodes": [
+          {
+            "#name": "application_identifier",
+            "application_id": 11,
+            "organization_id": 19
+          },
+          {
+            "#name": "transport_protocol_descriptor",
+            "#nodes": [
+              {
+                "#name": "http",
+                "#nodes": [
+                  {
+                    "#name": "url",
+                    "base": "http://www.arte.tv/"
+                  }
+                ]
+              }
+            ],
+            "transport_protocol_label": 1
+          },
+          {
+            "#name": "application_descriptor",
+            "#nodes": [
+              {
+                "#name": "profile",
+                "application_profile": 0,
+                "version": "1.1.1"
+              },
+              {
+                "#name": "transport_protocol",
+                "label": 1
+              }
+            ],
+            "application_priority": 5,
+            "service_bound": false,
+            "visibility": 3
+          },
+          {
+            "#name": "application_name_descriptor",
+            "#nodes": [
+              {
+                "#name": "language",
+                "application_name": "arte +7",
+                "code": "deu"
+              }
+            ]
+          },
+          {
+            "#name": "simple_application_location_descriptor",
+            "initial_path": "hbbtvv2/index.html?lang=de_DE&page=PLUS7"
+          },
+          {
+            "#name": "simple_application_boundary_descriptor",
+            "#nodes": [
+              {
+                "#name": "prefix",
+                "boundary_extension": "http://static-cdn.arte.tv"
+              },
+              {
+                "#name": "prefix",
+                "boundary_extension": "http://geoloc.arte.tv"
+              },
+              {
+                "#name": "prefix",
+                "boundary_extension": "http://logc136.xiti.com"
+              },
+              {
+                "#name": "prefix",
+                "boundary_extension": "https://www.arte.tv"
+              },
+              {
+                "#name": "prefix",
+                "boundary_extension": "http://mesure.streaming.estat.com"
+              },
+              {
+                "#name": "prefix",
+                "boundary_extension": "http://arteptweb.gl-systemhaus.de"
+              },
+              {
+                "#name": "prefix",
+                "boundary_extension": "http://st.arte.tv/"
+              }
+            ]
+          }
+        ],
+        "control_code": 2
+      },
+      {
+        "#name": "application",
+        "#nodes": [
+          {
+            "#name": "application_identifier",
+            "application_id": 19,
+            "organization_id": 19
+          },
+          {
+            "#name": "transport_protocol_descriptor",
+            "#nodes": [
+              {
+                "#name": "http",
+                "#nodes": [
+                  {
+                    "#name": "url",
+                    "base": "http://static-cdn.arte.tv/"
+                  }
+                ]
+              }
+            ],
+            "transport_protocol_label": 0
+          },
+          {
+            "#name": "application_descriptor",
+            "#nodes": [
+              {
+                "#name": "profile",
+                "application_profile": 0,
+                "version": "1.1.1"
+              },
+              {
+                "#name": "transport_protocol",
+                "label": 0
+              }
+            ],
+            "application_priority": 5,
+            "service_bound": false,
+            "visibility": 3
+          },
+          {
+            "#name": "application_name_descriptor",
+            "#nodes": [
+              {
+                "#name": "language",
+                "application_name": "Arte Startapplikation",
+                "code": "deu"
+              }
+            ]
+          },
+          {
+            "#name": "simple_application_location_descriptor",
+            "initial_path": "redbutton/index.html"
+          },
+          {
+            "#name": "simple_application_boundary_descriptor",
+            "#nodes": [
+              {
+                "#name": "prefix",
+                "boundary_extension": "http://concert.arte.tv"
+              },
+              {
+                "#name": "prefix",
+                "boundary_extension": "http://www.arte.tv"
+              },
+              {
+                "#name": "prefix",
+                "boundary_extension": "http://artestras.vo.llnwxd.net"
+              }
+            ]
+          }
+        ],
+        "control_code": 1
+      }
+    ],
+    "application_type": 16,
+    "current": true,
+    "test_application_flag": false,
+    "version": 0
+  }
+]

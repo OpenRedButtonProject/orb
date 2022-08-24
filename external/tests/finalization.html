@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//HbbTV//1.1.1//EN" "http://www.hbbtv.org/dtd/HbbTV-1.1.1.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>Open Red Button Project - Unit Tests</title>
+<meta http-equiv="content-type" content="Content-Type: application/vnd.hbbtv.xhtml+xml; charset=UTF-8" />
+<link rel="stylesheet" type="text/css" href="./orbunit/style.css" />
+<script type="text/javascript" src="./orbunit/orbunit.js"></script>
+</head>
+<body>
+<object id="test1-object" type="application/oipfapplicationmanager"></object>
+<object id="test2-object" type="application/oipfapplicationmanager"></object>
+<object id="test3-object" type="application/oipfapplicationmanager"></object>
+<object id="test4-object" type="application/oipfapplicationmanager"></object>
+<script>
+//<![CDATA[
+
+window.onload = () => {
+   // Init
+   orbunit.init({
+      showApp: true,
+      keyset: orbunit.KEYSET_NAVIGATION,
+      title: "Finalization tests",
+      description: ""
+   });
+
+   window.onkeydown = (e) => {
+      if (e.keyCode == window.KeyEvent.VK_BACK) {
+         document.location.href = "./";   
+      }
+   };
+
+   orbunit.oncompleted = () => {
+      orbunit.banner({
+         title: "Finalization tests done! Press BACK to return to index."
+      });
+   }
+
+   // Tests
+   orbunit.add({
+      title: "application/oipfapplicationmanager no events, remove from document",
+      description: "Expected result: finalized",
+      test: (result) => {
+         const obj = document.getElementById("test1-object");
+         monitorObject(obj, result, false);
+         obj.remove(); 
+      }
+   });
+
+   orbunit.add({
+      title: "application/oipfapplicationmanager events, remove from document",
+      description: "Expected result: timeout",
+      test: (result) => {
+         const obj = document.getElementById("test2-object");
+         obj.onLowMemory = function() {
+            console.log("Test 2: On low memory!");
+         };
+         monitorObject(obj, result, true);
+         obj.remove();
+      }
+   });
+   
+   orbunit.add({
+      title: "application/oipfapplicationmanager, events added and removed, remove from document",
+      description: "Expected result: finalized",
+      test: (result) => {
+         const obj = document.getElementById("test3-object");
+         obj.onLowMemory = function() {
+            console.log("Test 3: On low memory!");
+         };
+         obj.onLowMemory = null;
+         monitorObject(obj, result, false);
+         obj.remove(); 
+      }
+   });
+
+   orbunit.add({
+      title: "application/oipfapplicationmanager, simulated low memory event",
+      description: "Expected result: received event",
+      test: (result) => {
+         const obj = document.getElementById("test4-object");
+         const timeout = createTimeout(result, false);
+         obj.onLowMemory = function() {
+            clearTimeout(timeout);
+            result.pass("received event");
+         };
+         obj.remove(); 
+         document.dispatchBridgeEvent("LowMemory");
+      }
+   });
+
+   orbunit.add({
+      title: "application/oipfapplicationmanager unreachable",
+      description: "Expected result: finalized",
+      test: (result) => {
+         (function() {
+            const newObj = document.createElement("object");
+            newObj.type = "application/oipfapplicationmanager";
+            monitorObject(newObj, result, false);
+         })();
+      }
+   });
+
+   orbunit.add({
+      title: "video/broadcast unreachable",
+      description: "Expected result: finalized",
+      test: (result) => {
+         (function() {
+            const newObj = document.createElement("object");
+            newObj.type = "video/broadcas";
+            monitorObject(newObj, result, false);
+         })();
+      }
+   });
+
+   orbunit.add({
+      title: "video/mp4 unreachable",
+      description: "Expected result: finalized",
+      test: (result) => {
+         (function() {
+            const newObj = document.createElement("object");
+            newObj.type = "video/mp4";
+            monitorObject(newObj, result, false);
+         })();
+      }
+   });
+
+   orbunit.add({
+      title: "application/oipfcapabilities unreachable",
+      description: "Expected result: finalized",
+      test: (result) => {
+         (function() {
+            const newObj = document.createElement("object");
+            newObj.type = "application/oipfcapabilities";
+            monitorObject(newObj, result, false);
+         })();
+      }
+   });
+   
+   orbunit.add({
+      title: "application/oipfconfiguration unreachable",
+      description: "Expected result: finalized",
+      test: (result) => {
+         (function() {
+            const newObj = document.createElement("object");
+            newObj.type = "application/oipfconfiguration";
+            monitorObject(newObj, result, false);
+         })();
+      }
+   });
+   
+   orbunit.add({
+      title: "application/oipfparentalcontrolmanager unreachable",
+      description: "Expected result: finalized",
+      test: (result) => {
+         (function() {
+            const newObj = document.createElement("object");
+            newObj.type = "application/oipfparentalcontrolmanager";
+            monitorObject(newObj, result, false);
+         })();
+      }
+   });
+
+   orbunit.add({
+      title: "application/oipfsearchmanager unreachable",
+      description: "Expected result: finalized",
+      test: (result) => {
+         (function() {
+            const newObj = document.createElement("object");
+            newObj.type = "application/oipfsearchmanager";
+            monitorObject(newObj, result, false);
+         })();
+      }
+   });
+
+   // Run!
+   orbunit.run({parallelize: true});
+}
+
+// Utilities for finalization monitoring
+const registry = new FinalizationRegistry(({ result, timeoutID, shouldTimeout }) => {
+   if (shouldTimeout) {
+      result.fail("finalized");
+   } else {
+      result.pass("finalized");
+   }
+   clearTimeout(timeoutID);
+});
+function createTimeout(result, shouldTimeout) {
+   return setTimeout(() => {
+      if (shouldTimeout) {
+         result.pass("timeout");
+      } else {
+         result.fail("timeout");
+      }
+   }, 30000);
+}
+function monitorObject(object, result, shouldTimeout) {
+   const timeoutID = createTimeout(result, shouldTimeout);
+   registry.register(object, { result, timeoutID, shouldTimeout });
+}
+
+//]]>
+</script>
+</body>
+</html>

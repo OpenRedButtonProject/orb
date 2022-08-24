@@ -1,0 +1,1128 @@
+/**
+ * ORB Software. Copyright (c) 2022 Ocean Blue Software Limited
+ *
+ * Licensed under the ORB License that can be found in the LICENSE file at
+ * the top level of this repository.
+ */
+
+package org.orbtv.tvbrowsershell;
+
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+
+import android.media.MediaPlayer;
+import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+import android.util.SparseArray;
+import android.view.KeyEvent;
+import android.widget.FrameLayout;
+import android.widget.VideoView;
+
+import org.orbtv.tvbrowser.TvBrowser;
+import org.orbtv.tvbrowser.TvBrowserCallback;
+import org.json.JSONObject;
+import org.orbtv.tvbrowser.TvBrowserTypes;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+
+public class MockTvBrowserCallback implements TvBrowserCallback {
+   private static final String TAG = "MockTvBrowserCallback";
+   private static final boolean DEBUG_VIDEO_ENABLED = false;
+
+   private final MainActivity mMainActivity;
+   private final Database mDatabase;
+
+   private String mMockConfig;
+   private String mMockLaunchUrl;
+   private byte[] mMockLaunchAit;
+   private byte[] mMockOtherAit;
+   private boolean mMockIsOtherAit;
+   private String mMockLaunchXmlAit;
+   private ArrayList<TvBrowserTypes.Channel> mMockChannels;
+   private String mMockCurrentChannelCcid;
+   private ArrayList<TvBrowserTypes.Programme> mMockProgrammes;
+   private ArrayList<TvBrowserTypes.Component> mMockComponents;
+
+   private TvBrowser.Session mSession;
+   private HashMap<Integer, Handler> mActiveSearchList;
+
+   static SparseArray<Integer> mKeyMap;
+
+   MockTvBrowserCallback(MainActivity mainActivity, String mockConfig) {
+      mMainActivity = mainActivity;
+      Context context = mainActivity.getApplicationContext();
+      mDatabase = new Database(context, 1);
+
+      // Configure mock environment
+      mMockConfig = mockConfig;
+      mMockLaunchUrl = null;
+      mMockLaunchAit = null;
+      mMockOtherAit = null;
+      mMockIsOtherAit = false;
+      mMockLaunchXmlAit = null;
+      mMockChannels = createMockChannels();
+      mMockCurrentChannelCcid = mMockChannels.get(0).ccid;
+      mMockProgrammes = createMockProgrammes();
+      mMockComponents = createMockComponents();
+
+      // Whichever of mMockLaunchUrl, mMockLaunchAit or mMockLaunchXmlAit is set will be used once
+      // onSessionReady is called.
+      switch (mMockConfig) {
+         case "default": {
+            mMockLaunchUrl = "http://ec2-54-78-79-81.eu-west-1.compute.amazonaws.com/mitxp-testsuite/";
+            break;
+         }
+         case "mitxperts_ait": {
+            mMockLaunchAit = getAssetBytes(context, "unitTestData/section_dvbt_506");
+            mMockOtherAit = getAssetBytes(context, "unitTestData/section_001_470");
+            break;
+         }
+         case "mitxperts_xml_ait": {
+            mMockLaunchXmlAit = getAssetString(context, "unitTestData/test.aitx");
+            break;
+         }
+         default: {
+            Log.e(TAG, "Unrecognised mock config.");
+         }
+      }
+
+      mSession = null;
+      mActiveSearchList = new HashMap<>();
+
+      //mDatabase.deleteAllDistinctiveIdentifiers();
+   }
+
+   public void toggleChannel() {
+      if (mMockOtherAit == null) {
+         return;
+      }
+      if (mMockIsOtherAit) {
+         Log.d(TAG, "Toggle to launch AIT");
+         mSession.onChannelStatusChanged(1, 65283, 28186,TvBrowserTypes.CHANNEL_STATUS_CONNECTING, false);
+         mSession.onChannelStatusChanged(1, 65283, 28186,TvBrowserTypes.CHANNEL_STATUS_PRESENTING, false);
+         mSession.processAitSection(506, 28186, mMockLaunchAit);
+         mMockIsOtherAit = false;
+      } else {
+         Log.d(TAG, "Toggle to other AIT");
+         mSession.onChannelStatusChanged(1,1,2,TvBrowserTypes.CHANNEL_STATUS_CONNECTING, false);
+         mSession.onChannelStatusChanged(1,1,2,TvBrowserTypes.CHANNEL_STATUS_PRESENTING, false);
+         byte[] garbage = new byte[1];
+         mSession.processAitSection(999, 2, garbage);
+         mSession.processAitSection(470, 2, mMockOtherAit);
+         mMockIsOtherAit = true;
+      }
+   }
+
+   /**
+    * This method is called once the session is ready to be called by the client and present HbbTV
+    * applications.
+    *
+    * @param session The session (for convenience)
+    */
+   @Override
+   public void onSessionReady(TvBrowser.Session session) {
+      mSession = session;
+      if (mMockLaunchUrl != null) {
+         mSession.launchApplication(mMockLaunchUrl);
+      } else if (mMockLaunchAit != null) {
+         mSession.onChannelStatusChanged(1, 65283, 28186,TvBrowserTypes.CHANNEL_STATUS_CONNECTING, false);
+         mSession.onChannelStatusChanged(1, 65283, 28186,TvBrowserTypes.CHANNEL_STATUS_PRESENTING, false);
+         mSession.processAitSection(506, 28186, mMockLaunchAit);
+      } else if (mMockLaunchXmlAit != null) {
+         mSession.processXmlAit(mMockLaunchXmlAit);
+      }
+   }
+
+   /**
+    * Get immutable system information.
+    *
+    * @return Valid SystemInformation on success, otherwise invalid SystemInformation
+    */
+   @Override
+   public TvBrowserTypes.SystemInformation getSystemInformation() {
+      return new TvBrowserTypes.SystemInformation(
+         true,
+         "OBS",
+         "Mock",
+         BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ")",
+         "0.0.0"
+      );
+   }
+
+   /**
+    * Gets a string containing languages to be used for audio playback, in order of preference.
+    *
+    * @return Comma separated string of languages (ISO 639-2 codes)
+    */
+   @Override
+   public String getPreferredAudioLanguage() {
+      return "eng,spa,gre";
+   }
+
+   /**
+    * Gets a string containing languages to be used for subtitles, in order of preference.
+    *
+    * @return Comma separated string of languages (ISO 639-2 codes)
+    */
+   @Override
+   public String getPreferredSubtitleLanguage() {
+      return "en,eng,spa,gre";
+   }
+
+   /**
+    * Gets a string containing languages to be used for the UI, in order of preference.
+    *
+    * @return Comma separated string of languages (ISO 639-2 codes)
+    */
+   @Override
+   public String getPreferredUILanguage() {
+      return "eng,spa,gre";
+   }
+
+   /**
+    * Gets a string containing the three character country code identifying the country in which the
+    * receiver is deployed.
+    *
+    * @return Country code (ISO 3166 alpha-3) string
+    */
+   @Override
+   public String getCountryId() {
+      return "GBR";
+   }
+
+   /**
+    * Gets whether subtitles are enabled in the TV context. So HbbTV knows to start subtitle
+    * components on channel change, for example.
+    *
+    * @return true if enabled, false otherwise
+    */
+   @Override
+   public boolean getSubtitlesEnabled() {
+      return true;
+   }
+
+   /**
+    * Gets whether audio description is enabled in the TV context.
+    *
+    * @return true if enabled, false otherwise
+    */
+   @Override
+   public boolean getAudioDescriptionEnabled() {
+      return false;
+   }
+
+   /**
+    * Get DTT network IDs.
+    *
+    * @return Array of DTT network IDs.
+    */
+   @Override
+   public int[] getDttNetworkIds() {
+      ArrayList<Integer> dttNetworkIds = new ArrayList<>();
+      int[] result;
+
+      for (TvBrowserTypes.Channel mockChannel : mMockChannels) {
+         if (((mockChannel.idType == 12) || (mockChannel.idType == 16)) && // TODO(library) Replace magic numbers
+                 !dttNetworkIds.contains(mockChannel.nid)) {
+            dttNetworkIds.add(mockChannel.nid);
+         }
+      }
+      Collections.sort(dttNetworkIds);
+      result = new int[dttNetworkIds.size()];
+      for (int i = 0; i < dttNetworkIds.size(); i++) {
+         result[i] = dttNetworkIds.get(i);
+      }
+      return result;
+   }
+
+   /**
+    * Retrieves an array containing the supported Broadcast Delivery Systems (DVB_S, DVB_C, DVB_T,
+    * DVB_C2, DVB_T2 or DVB_S2) as defined in Section 9.2, Table 15, under "UI Profile Name
+    * Fragment".
+    *
+    * @return Array of delivery systems
+    */
+   @Override
+   public String[] getSupportedDeliverySystems() {
+      return new String[0];
+   }
+
+   /**
+    * Instructs the controlling application to present the audio specified by its PID.
+    *
+    * @param pid
+    * @param lang
+    * @return true on success, false otherwise
+    */
+   @Override
+   public boolean presentDvbAudio(int pid, String lang) {
+      scheduleMockComponentEvent(1, pid, false);
+      return true;
+   }
+
+   /**
+    * Instructs the controlling application to stop the audio presentation
+    *
+    * @return true on success, false otherwise
+    */
+   @Override
+   public boolean stopDvbAudio() {
+      scheduleMockComponentEvent(1, -1, true);
+      return true;
+   }
+
+   /**
+    * Instructs the controlling application to present the video specified by its PID.
+    *
+    * @param pid
+    * @return true on success, false otherwise
+    */
+   @Override
+   public boolean presentDvbVideo(int pid) {
+      scheduleMockComponentEvent(0, pid, false);
+      return true;
+   }
+
+   /**
+    * Instructs the controlling application to stop the video presentation
+    *
+    * @return true on success, false otherwise
+    */
+   @Override
+   public boolean stopDvbVideo() {
+      scheduleMockComponentEvent(0, -1, true);
+      return true;
+   }
+
+   /**
+    * Instructs the controlling application to present the subtitles specified by its PID.
+    *
+    * @param pid
+    * @return true on success, false otherwise
+    */
+   @Override
+   public boolean presentDvbSubtitles(int pid) {
+      scheduleMockComponentEvent(2, pid, false);
+      return true;
+   }
+
+   /**
+    * Instructs the controlling application to stop the subtitle presentation
+    *
+    * @return true on success, false otherwise
+    */
+   @Override
+   public boolean stopDvbSubtitles() {
+      scheduleMockComponentEvent(2, -1, true);
+      return true;
+   }
+
+   /**
+    * Sets the presentation window of the DVB video. Values are in HbbTV 1280x720 coordinates.
+    *
+    * @param x      Rectangle definition
+    * @param y      Rectangle definition
+    * @param width  Rectangle definition
+    * @param height Rectangle definition
+    */
+   @Override
+   public void setDvbVideoRectangle(final int x, final int y, final int width, final int height, final boolean fullScreen) {
+      Log.v(TAG, "HbbTVClient.setDvbVideoRectangle(" + x + ", " + y +  ", " + width +  ", " + height + ", " + fullScreen + ")");
+      if (DEBUG_VIDEO_ENABLED) {
+         mMainActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+//               VideoView videoView = mMainActivity.findViewById(R.id.videoView);
+//               FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(width, height);
+//               layoutParams.setMargins(x, y, 0, 0);
+//               videoView.setLayoutParams(layoutParams);
+//               String path = "android.resource://" + mMainActivity.getPackageName() + "/" + R.raw.broadcast;
+//               videoView.setVideoURI(Uri.parse(path));
+//               videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+//                  @Override
+//                  public void onPrepared(MediaPlayer mediaPlayer) {
+//                     mediaPlayer.setLooping(true);
+//                  }
+//               });
+//               videoView.start();
+            }
+         });
+      }
+   }
+
+   /**
+    * Get the list of channels available.
+    *
+    * @return List of channels available
+    */
+   @Override
+   public List<TvBrowserTypes.Channel> getChannelList() {
+      return mMockChannels;
+   }
+
+   /**
+    * Returns the CCID of the current channel
+    *
+    * @return A CCID on success, an empty string otherwise
+    */
+   @Override
+   public String getCurrentCcid() {
+      return mMockCurrentChannelCcid;
+   }
+
+   /**
+    * Find the channel with the given LCN and return its CCID.
+    *
+    * @param lcn LCN to find
+    * @return A CCID on success, an empty string otherwise
+    */
+   /*@Override
+   public String findCcidWithLcn(String lcn) {
+      return null;
+   }*/
+
+   /**
+    * Get the channel with the given CCID.
+    *
+    * @param ccid CCID for the required channel
+    * @return Channel on success
+    */
+   @Override
+   public TvBrowserTypes.Channel getChannel(String ccid) {
+      // Naive implementation for mock
+      for (TvBrowserTypes.Channel mockChannel : mMockChannels) {
+         if (mockChannel.ccid.equals(ccid)) {
+            return mockChannel;
+         }
+      }
+      return new TvBrowserTypes.Channel();
+   }
+
+   /**
+    * Tune to specified channel. The implementation relies on the 'idType' parameter to
+    * determine the valid fields that describe the channel. Possible idTypes are:
+    *    ID_IPTV_SDS/ID_IPTV_URI - where 'ipBroadcastID' and 'sourceId' fields are valid
+    *    other ID_.. values - where 'onid', 'tsid' and 'sid' fields are valid
+    *    ID_DVB_SI_DIRECT - is supposed to be handled by setChannelByDsd()
+    *
+    * @param idType The type of channel
+    * @param onid The original network ID for the required channel.
+    * @param tsid The transport stream ID for the required channel.
+    * @param sid The service ID for the required channel.
+    * @param sourceID The ATSC source_ID of the channel.
+    * @param ipBroadcastID The DVB textual service identifier of the IP broadcast service.
+    * @param trickplay Ignore unless PVR functionality is supported (does not affect return)
+    * @param contentAccessDescriptorURL May be required by DRM-protected IPTV broadcasts
+    * @param quiet Channel change operation
+    *              0 - normal tune
+    *              1 - normal tune and no UI displayed
+    *              2 - quiet tune (user does not know)
+    *
+    * @return negative value (e.g. TvBrowserTypes.CHANNEL_STATUS_CONNECTING) on success, or
+    *         zero/positive value (see TvBrowserTypes.CHANNEL_STATUS_.. error values) on failure
+    */
+   @Override
+   public int setChannelByTriplet(int idType, int onid, int tsid, int sid, int sourceID,
+                                  String ipBroadcastID, boolean trickplay,
+                                  String contentAccessDescriptorURL, int quiet) {
+      if ((onid == -1) && (tsid == -1) && (sid == -1)) {
+         return TvBrowserTypes.CHANNEL_STATUS_UNREALIZED;
+      }
+      if (idType == TvBrowserTypes.Channel.ID_IPTV_SDS ||
+          idType == TvBrowserTypes.Channel.ID_IPTV_SDS ||
+          idType == TvBrowserTypes.Channel.ID_DVB_SI_DIRECT)
+      {
+         // DSD and IPTV channels are not supported in mock implementation
+         return TvBrowserTypes.CHANNEL_STATUS_NOT_SUPPORTED;
+      }
+
+      for (TvBrowserTypes.Channel mock : mMockChannels) {
+         if (mock.onid == onid && mock.tsid == tsid && mock.sid == sid) {
+            mMockCurrentChannelCcid = mock.ccid;
+         }
+      }
+
+      new android.os.Handler(Looper.getMainLooper()).postDelayed(
+         new Runnable() {
+         public void run() {
+            int statusCode = TvBrowserTypes.CHANNEL_STATUS_PRESENTING;
+            mSession.onChannelStatusChanged(onid, tsid, sid, statusCode, false);
+            Log.i(TAG, "sendChannelStatusChanged(" + onid + ", " + tsid + ", " + sid + ", " + statusCode + ")");
+         }
+         },
+         2000);
+      return TvBrowserTypes.CHANNEL_STATUS_CONNECTING;
+   }
+
+   /**
+    * Tune to specified channel using DSD.
+    *
+    * @param dsd DSD for the required channel.
+    * @param sid SID for the required channel.
+    * @param trickplay Ignore unless PVR functionality is supported (does not affect return)
+    * @param contentAccessDescriptorURL May be required by DRM-protected IPTV broadcasts
+    * @param quiet Channel change operation
+    *              0 - normal tune
+    *              1 - normal tune and no UI displayed
+    *              2 - quiet tune (user does not know)
+    *
+    * @return negative value (e.g. TvBrowserTypes.CHANNEL_STATUS_CONNECTING) on success, or
+    * zero/positive value (see TvBrowserTypes.CHANNEL_STATUS_.. error values) on failure
+    */
+   @Override
+   public int setChannelByDsd(String dsd, int sid, boolean trickplay,
+                              String contentAccessDescriptorURL, int quiet) {
+      if ((dsd == null)) {
+         return TvBrowserTypes.CHANNEL_STATUS_UNREALIZED;
+      }
+
+      int onid = 1;
+      int tsid = 65283;
+      int finalSid = 28186;
+
+      for (TvBrowserTypes.Channel mock : mMockChannels) {
+         if (mock.onid == onid && mock.tsid == tsid && mock.sid == sid) {
+            mMockCurrentChannelCcid = mock.ccid;
+         }
+      }
+
+      new android.os.Handler(Looper.getMainLooper()).postDelayed(
+         new Runnable() {
+         public void run() {
+            int statusCode = TvBrowserTypes.CHANNEL_STATUS_PRESENTING;
+            mSession.onChannelStatusChanged(onid, tsid, finalSid, statusCode, false);
+            Log.i(TAG, "sendChannelStatusChanged(" + onid + ", " + tsid + ", " + finalSid + ", " + statusCode + ")");
+         }
+         },
+         2000);
+      return TvBrowserTypes.CHANNEL_STATUS_CONNECTING;
+   }
+
+   /**
+    * Get the list of programmes available for a channel.
+    *
+    * @param ccid CCID for the required channel
+    * @return List of programmes available for the channel
+    */
+   @Override
+   public List<TvBrowserTypes.Programme> getProgrammeList(String ccid) {
+      long time = System.currentTimeMillis() / 1000L - 1;
+      for (TvBrowserTypes.Programme mockProgramme : mMockProgrammes) {
+         mockProgramme.channelId = ccid;
+         mockProgramme.startTime = time;
+         time += 3600;
+      }
+
+      return mMockProgrammes;
+   }
+
+   /**
+    * Get information about the present and following programmes on a channel.
+    *
+    * @param ccid CCID for the required channel
+    * @return List of containing the present and following programmes, in that order
+    */
+   @Override
+   public List<TvBrowserTypes.Programme> getPresentFollowingProgrammes(String ccid) {
+      return null;
+   }
+
+   /**
+    * Get the list of components available for a channel.
+    *
+    * @param ccid     CCID for the required channel
+    * @param typeCode Required component type as defined by IHbbTVTypes.COMPONENT_TYPE_*
+    * @return List of components available for the channel
+    */
+   @Override
+   public List<TvBrowserTypes.Component> getComponentList(String ccid, int typeCode) {
+      return mMockComponents;
+   }
+
+   /**
+    * Experimental: Do we actually need this data (as in 1.5) or can we use a different interface?
+    * <p>
+    * Retrieves raw SI descriptor data with the defined descriptor tag id, and optionally the
+    * extended descriptor tag id, for an event on a service.
+    *
+    * @param ccid          CCID for the required channel
+    * @param eventId       Event ID for the required programme
+    * @param tagId         Descriptor tag ID of data to be returned
+    * @param extendedTagId Optional extended descriptor tag ID of data to be returned, or -1
+    * @return The buffer containing the data. If there are multiple descriptors with the same
+    * tag id then they will all be returned.
+    */
+   @Override
+   public List<String> getSiDescriptorData(String ccid, String eventId, int tagId, int extendedTagId,
+                                     int privateDataSpecifier) {
+      ArrayList<String> siDescriptors = new ArrayList<>();
+      byte[] b = { 0x5f, 4, 0, 0, 0, 5 };
+      siDescriptors.add(new String(b));
+      Log.v(TAG, "getSiDescriptorData " + ccid + " " + eventId + " " + tagId + " " + extendedTagId + " " + privateDataSpecifier);
+
+      //Code to start generating all the possible events after getSiDescriptorData() is called.
+      /*Log.v(TAG, "Starting periodic events");
+      android.os.Handler handler = new android.os.Handler(Looper.getMainLooper());
+      handler.postDelayed(
+              new Runnable() {
+                 int eventNum = 0;
+
+                 public void run() {
+                    Log.v(TAG, "HbbTVCLient.java Sending EVENT " + eventNum);
+                    try {
+                       switch (eventNum) {
+                          case 0://ChannelStatusChanged
+                             //public void sendChannelStatusChanged(int onetId, int transId, int servId, int statusCode, boolean permanentError) throws android.os.RemoteException;
+                             mSession.sendChannelStatusChanged(0,1,2,3, true);
+                             break;
+                          case 1://ProgrammesChanged
+                             mSession.sendProgrammesChanged();
+                             break;
+                          case 2://ParentalRatingChange
+                             mSession.sendParentalRatingChange(true);
+                             break;
+                          case 3://ParentalRatingError
+                             mSession.sendParentalRatingError();
+                             break;
+                          case 4://notifySelectedComponentChanged
+                             mSession.sendSelectedComponentChanged(0);
+                             break;
+                          case 5://notifyComponentChanged
+                             mSession.sendComponentChanged(0);
+                             break;
+                       }
+                    } catch (RemoteException e) {
+                       e.printStackTrace();
+                    }
+                    eventNum = (eventNum + 1) % 6;
+
+
+                    handler.postDelayed(this, 2000);
+                 }
+              },
+              2000);*/
+
+      return siDescriptors;
+   }
+
+   /**
+    * Retrieves the locked status of the specified channel. The correct implementation of this
+    * function is not mandatory for HbbTV 1.2.1. It is used to implement the channel's locked
+    * property as defined in OIPF vol. 5, section 7.13.11.2.
+    *
+    * @param ccid CCID of the required channel
+    * @return true if parental control prevents the channel being viewed, e.g. when a PIN needs to
+    * be entered by the user, false otherwise
+    */
+   @Override
+   public boolean getChannelLocked(String ccid) {
+      return false;
+   }
+
+ /**
+    * Returns the current age set for parental control. 0 will be returned if parental control is
+    * disabled or no age is set.
+    * @return age in the range 4-18, or 0
+    */
+   @Override
+   public int getParentalControlAge() {
+      return 15;
+   }
+
+   /**
+    * Returns the region set for parental control.
+    * @return country using the 3-character code as specified in ISO 3166
+    */
+   @Override
+   public String getParentalControlRegion() {
+      return "GB";
+   }
+
+   /**
+    * Called when the application at origin requests access to the distinctive identifier. The
+    * client application should display a dialog for the user to allow or deny this and:
+    *
+    * 1. TvBrowser.notifyAccessToDistinctiveIdentifier should be called with the user choice.
+    * 2. TvBrowserSessionCallback.getDistinctiveIdentifier should honour the user choice.
+    *
+    * The client application should allow the user to reset access from a settings menu. This shall
+    * result in a new distinctive identifier being generated for an origin next time access is
+    * allowed.
+    *
+    * The helper method TvBrowser.generateDistinctiveIdentifier may be used.
+    *
+    * Integrators should check 12.1.5 for requirements about distinctive identifiers.
+    *
+    * @param origin The origin of the application
+    * @return true if access already granted, false otherwise
+    */
+   @Override
+   public boolean requestAccessToDistinctiveIdentifier(final String origin) {
+      // Early out if access already granted for this origin
+      if (mDatabase.hasDistinctiveIdentifier(origin)) {
+         return true;
+      }
+      mMainActivity.runOnUiThread(new Runnable() {
+         @Override
+         public void run() {
+            // Actual implementations may want to support other languages
+            AlertDialog.Builder builder = new AlertDialog.Builder(mMainActivity)
+               .setMessage("Allow the application at \"" + origin + "\" access to a distinctive identifier?")
+               .setCancelable(false)
+               .setPositiveButton("ALLOW", new DialogInterface.OnClickListener() {
+                  public void onClick(DialogInterface dialog, int id) {
+                     String identifier = TvBrowser.createDistinctiveIdentifier("00001",
+                        "secret", origin);
+                     mDatabase.setDistinctiveIdentifier(origin, identifier);
+                     mSession.onAccessToDistinctiveIdentifierDecided(origin, true);
+                     dialog.cancel();
+                  }
+               })
+               .setNegativeButton("DENY", new DialogInterface.OnClickListener() {
+                  public void onClick(DialogInterface dialog, int id) {
+                     mDatabase.deleteDistinctiveIdentifier(origin);
+                     mSession.onAccessToDistinctiveIdentifierDecided(origin, false);
+                     dialog.cancel();
+                  }
+               });
+            builder.show();
+         }
+      });
+      return false;
+   }
+
+   /**
+    * The distinctive identifier for origin or a distinctive identifier status string (for statuses
+    * see TvBrowserTypes.DISTINCTIVE_IDENTIFIER_STATUS_*).
+    *
+    * Integrators should check 12.1.5 for requirements about distinctive identifiers.
+    *
+    * @param origin The origin of the requesting application
+    * @return The distinctive identifier for origin or a distinctive identifier status string.
+    */
+   @Override
+   public String getDistinctiveIdentifier(String origin) {
+      if (mDatabase.hasDistinctiveIdentifier(origin)) {
+         return mDatabase.getDistinctiveIdentifier(origin);
+      }
+      return TvBrowserTypes.DISTINCTIVE_IDENTIFIER_STATUS_REQUEST_REQUIRED;
+   }
+
+   /**
+    * Enables the application developer to query information about the current memory available
+    * to the application. This is used to help during application development to find application
+    * memory leaks and possibly allow an application to make decisions related to its caching
+    * strategy (e.g. for images).
+    *
+    *  @return  The available memory to the application (in MBs) or -1 if the information is not available.
+    */
+   @Override
+   public long getFreeMemory() {
+      //TODO https://web.dev/monitor-total-page-memory-usage/
+      return -1;
+   }
+
+   @Override
+   public boolean startSearch(final TvBrowserTypes.Query q, int offset, int count, List<String> channelConstraints) {
+      /* Keep a list with the active searches */
+      Handler handler = new android.os.Handler(Looper.getMainLooper());
+      handler.postDelayed(new Runnable() {
+         public void run() {
+            Handler handler = mActiveSearchList.get(q.getQueryId());
+            if (handler != null) {
+               mSession.onMetadataSearchCompleted(q.getQueryId(), 0, mMockProgrammes, offset, count);
+               Log.i(TAG, "sendMetadataSearchEvent(" + q.getQueryId() + ", 0)");
+               mActiveSearchList.remove(q.getQueryId());
+            }
+         }
+         },
+              2000);
+      mActiveSearchList.put(q.getQueryId(), handler);
+      return true;
+   }
+
+   @Override
+   public boolean abortSearch(int queryId)  {
+      Handler handler = mActiveSearchList.get(queryId);
+      if (handler != null) {
+         mActiveSearchList.remove(queryId);
+         handler.removeCallbacksAndMessages(null);
+      }
+      return true;
+   }
+
+   /**
+    * Convert the Android key code to a TV Browser (TvBrowserTypes.VK_*) key code.
+    *
+    * @param androidKeyCode The Android key code (KeyEvent.KEYCODE_*)
+    * @return The TV Browser (TvBrowserTypes.VK_*) key code.
+    */
+   @Override
+   public int getTvBrowserKeyCode(int androidKeyCode) {
+      return mKeyMap.get(androidKeyCode, TvBrowserTypes.VK_INVALID);
+   }
+
+   /**
+    * Start TEMI timeline monitoring.
+    *
+    * @param componentTag The component tag of the temi timeline to monitor.
+    * @param timelineId The timeline id of the temi timeline to monitor.
+    *
+    * @return The associated filter id upon success, -1 otherwise
+    */
+   @Override
+   public int startTEMITimelineMonitoring(int componentTag, int timelineId) {
+      return -1;
+   }
+
+   /**
+    * Set whether presentation of any broadcast components must be suspended.
+    *
+    * @param presentationSuspended true if must be suspended, false otherwise
+    */
+   @Override
+   public void setPresentationSuspended(boolean presentationSuspended) { }
+
+   private void scheduleMockComponentEvent(final int componentType, final int pid, final boolean stop) {
+      new android.os.Handler(Looper.getMainLooper()).postDelayed(
+         new Runnable() {
+            public void run() {
+               for (TvBrowserTypes.Component c : mMockComponents){
+                  //update mock status
+                  if (stop) {
+                     if ((c.componentType == componentType) && (c.active)) {
+                        c.active = false;
+                        break;
+                     }
+                  } else {
+                     if (c.componentType == componentType) {
+                        if (c.pid == pid) {
+                           c.active = true;
+                        } else {
+                           //Mark others as not active anymore
+                           c.active = false;
+                        }
+                     }
+                  }
+               }
+               mSession.onComponentChanged(componentType);
+               mSession.onSelectedComponentChanged(componentType);
+               Log.i(TAG, "sendComponentChanged(" + componentType + ") and " +
+                  "sendSelectedComponentChanged(" + componentType + ")");
+            }
+         },
+         500);
+   }
+
+   /**
+    * TODO: comment
+    */
+   @Override
+   public boolean stopTEMITimelineMonitoring(int timelineId) {
+      return true;
+   }
+
+   /**
+    * Finalises TEMI timeline monitoring
+    *
+    * @return true on success, false otherwise
+    */
+   @Override
+   public boolean finaliseTEMITimelineMonitoring() {
+      return false;
+   }
+
+   /**
+    * Get current TEMI time.
+    *
+    * @param filterId
+    *
+    * @return current TEMI time, -1 if not available
+    */
+   @Override
+   public long getCurrentTemiTime(int filterId) {
+      return -1;
+   }
+
+   /**
+    * Get current PTS time.
+    *
+    * @return current PTS time, -1 if not available
+    */
+   @Override
+   public long getCurrentPtsTime() {
+      return -1;
+   }
+
+   /**
+    * Get the IP address that should be used for network services.
+    *
+    * @return An IP address.
+    */
+   @Override
+   public String getHostAddress() {
+      return mMainActivity.getHostAddress();
+   }
+
+   /**
+    * Helper that makes a DVB URI CCID
+    *
+    * @param onid Original network ID
+    * @param tsid Transport stream ID
+    * @param sid  Service ID
+    * @return DVB URI
+    */
+   private static String createCcid(int onid, int tsid, int sid) {
+      return String.format("dvb://%04x.%04x.%04x", onid, tsid, sid);
+   }
+
+   private static ArrayList<TvBrowserTypes.Channel> createMockChannels() {
+      ArrayList<TvBrowserTypes.Channel> channels = new ArrayList<>();
+      channels.add(new TvBrowserTypes.Channel(
+         true,
+         createCcid(1, 65283, 28186),
+         "HbbTV-Testsuite1",
+         null,
+         0,
+         16,
+         1,
+         1,
+         1,
+         1,
+         65283,
+         28186,
+         false,
+         -1,
+         null
+      ));
+      channels.add(new TvBrowserTypes.Channel(
+         true,
+         createCcid(1, 65283, 28187),
+         "HbbTV-Testsuite2",
+         null,
+         0,
+         16,
+         2,
+         2,
+         1,
+         1,
+         65283,
+         28187,
+         false,
+         -1,
+         null
+      ));
+      return channels;
+   }
+
+   private static ArrayList<TvBrowserTypes.ParentalRating> createMockParentalRatings() {
+      ArrayList<TvBrowserTypes.ParentalRating> ratings = new ArrayList<>();
+      ratings.add(new TvBrowserTypes.ParentalRating(
+         "0x0a",
+         "dvb-si",
+         0,
+         128,
+         "GB"
+      ));
+      ratings.add(new TvBrowserTypes.ParentalRating(
+         "0x0b",
+         "dvb-si",
+         0,
+         128,
+         "GB"
+      ));
+      return ratings;
+   }
+
+   private static ArrayList<TvBrowserTypes.Programme> createMockProgrammes() {
+      ArrayList<TvBrowserTypes.Programme> programmes = new ArrayList<>();
+      programmes.add(new TvBrowserTypes.Programme(
+         "Event 1, umlaut ä",
+         "programmeID 1",
+         1,
+         "description 1",
+         "longDescription 1",
+         0,
+         3600,
+         "",
+         createMockParentalRatings()
+      ));
+      programmes.add(new TvBrowserTypes.Programme(
+         "Event 2, umlaut ö",
+         "programmeID 2",
+         1,
+         "description 2",
+         "longDescription 2",
+         0,
+         3600,
+         "",
+         createMockParentalRatings()
+      ));
+      programmes.add(new TvBrowserTypes.Programme(
+         "Event 3, filler",
+         "programmeID 3",
+         1,
+         "description 3",
+         "longDescription 3",
+         0,
+         3600,
+         "",
+         createMockParentalRatings()
+      ));
+      return programmes;
+   }
+
+   private static ArrayList<TvBrowserTypes.Component> createMockComponents() {
+      ArrayList<TvBrowserTypes.Component> components = new ArrayList<>();
+      components.add(TvBrowserTypes.Component.createVideoComponent(
+         1,
+         1,
+         "encoding1",
+         false,
+         TvBrowserTypes.ASPECT_RATIO_16_9,
+         true,
+         true
+      ));
+      components.add(TvBrowserTypes.Component.createAudioComponent(
+         3,
+         3,
+         "encoding3",
+         false,
+         "deu",
+         false,
+         2,
+         true,
+         true
+      ));
+      components.add(TvBrowserTypes.Component.createAudioComponent(
+         4,
+         4,
+         "encoding4",
+         false,
+         "fra",
+         false,
+         1,
+         false,
+         false
+      ));
+      components.add(TvBrowserTypes.Component.createSubtitleComponent(
+         5,
+         5,
+         "encoding5",
+         false,
+         "deu",
+         false,
+         "label",
+         true,
+         true
+      ));
+      TvBrowserTypes.Component hiddenComponent = TvBrowserTypes.Component.createAudioComponent(
+         6,
+         6,
+         "encoding6",
+         false,
+         "deu",
+         true,
+         1,
+         false,
+         false
+      );
+      hiddenComponent.hidden = true;
+      components.add(hiddenComponent);
+      return components;
+   }
+
+   private static byte[] getAssetBytes(Context context, String asset) {
+      byte[] buffer;
+      try{
+         InputStream inputStream = context.getAssets().open(asset);
+         int fileSize = inputStream.available();
+         buffer = new byte[fileSize];
+         inputStream.read(buffer);
+         inputStream.close();
+      } catch (IOException ex) {
+         buffer = null;
+      }
+      return buffer;
+   }
+
+   private static String getAssetString(Context context, String asset) {
+      String string;
+      try{
+         InputStream inputStream = context.getAssets().open(asset);
+         StringBuilder stringBuilder = new StringBuilder();
+         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream,
+            StandardCharsets.UTF_8));
+         String line;
+         while ((line = bufferedReader.readLine()) != null) {
+            stringBuilder.append(line);
+         }
+         string = stringBuilder.toString();
+         bufferedReader.close();
+         inputStream.close();
+      } catch (IOException ex) {
+         string = null;
+      }
+      return string;
+   }
+
+   static {
+      mKeyMap = new SparseArray<Integer>();
+      mKeyMap.put(KeyEvent.KEYCODE_PROG_RED, TvBrowserTypes.VK_RED);
+      mKeyMap.put(KeyEvent.KEYCODE_PROG_GREEN, TvBrowserTypes.VK_GREEN);
+      mKeyMap.put(KeyEvent.KEYCODE_PROG_YELLOW, TvBrowserTypes.VK_YELLOW);
+      mKeyMap.put(KeyEvent.KEYCODE_PROG_BLUE, TvBrowserTypes.VK_BLUE);
+      mKeyMap.put(KeyEvent.KEYCODE_DPAD_UP, TvBrowserTypes.VK_UP);
+      mKeyMap.put(KeyEvent.KEYCODE_DPAD_DOWN, TvBrowserTypes.VK_DOWN);
+      mKeyMap.put(KeyEvent.KEYCODE_DPAD_LEFT, TvBrowserTypes.VK_LEFT);
+      mKeyMap.put(KeyEvent.KEYCODE_DPAD_RIGHT, TvBrowserTypes.VK_RIGHT);
+      mKeyMap.put(KeyEvent.KEYCODE_ENTER, TvBrowserTypes.VK_ENTER);
+      mKeyMap.put(KeyEvent.KEYCODE_DPAD_CENTER, TvBrowserTypes.VK_ENTER);
+      mKeyMap.put(KeyEvent.KEYCODE_DEL, TvBrowserTypes.VK_BACK);
+      mKeyMap.put(KeyEvent.KEYCODE_0, TvBrowserTypes.VK_0);
+      mKeyMap.put(KeyEvent.KEYCODE_1, TvBrowserTypes.VK_1);
+      mKeyMap.put(KeyEvent.KEYCODE_2, TvBrowserTypes.VK_2);
+      mKeyMap.put(KeyEvent.KEYCODE_3, TvBrowserTypes.VK_3);
+      mKeyMap.put(KeyEvent.KEYCODE_4, TvBrowserTypes.VK_4);
+      mKeyMap.put(KeyEvent.KEYCODE_5, TvBrowserTypes.VK_5);
+      mKeyMap.put(KeyEvent.KEYCODE_6, TvBrowserTypes.VK_6);
+      mKeyMap.put(KeyEvent.KEYCODE_7, TvBrowserTypes.VK_7);
+      mKeyMap.put(KeyEvent.KEYCODE_8, TvBrowserTypes.VK_8);
+      mKeyMap.put(KeyEvent.KEYCODE_9, TvBrowserTypes.VK_9);
+      mKeyMap.put(KeyEvent.KEYCODE_MEDIA_STOP, TvBrowserTypes.VK_STOP);
+      mKeyMap.put(KeyEvent.KEYCODE_MEDIA_PLAY, TvBrowserTypes.VK_PLAY);
+      mKeyMap.put(KeyEvent.KEYCODE_MEDIA_PAUSE, TvBrowserTypes.VK_PAUSE);
+      mKeyMap.put(KeyEvent.KEYCODE_MEDIA_FAST_FORWARD, TvBrowserTypes.VK_FAST_FWD);
+      mKeyMap.put(KeyEvent.KEYCODE_MEDIA_REWIND, TvBrowserTypes.VK_REWIND);
+      mKeyMap.put(KeyEvent.KEYCODE_TV_TELETEXT, TvBrowserTypes.VK_TELETEXT);
+
+      // Standard keyboard aliases for development
+      mKeyMap.put(KeyEvent.KEYCODE_R, TvBrowserTypes.VK_RED);
+      mKeyMap.put(KeyEvent.KEYCODE_G, TvBrowserTypes.VK_GREEN);
+      mKeyMap.put(KeyEvent.KEYCODE_Y, TvBrowserTypes.VK_YELLOW);
+      mKeyMap.put(KeyEvent.KEYCODE_B, TvBrowserTypes.VK_BLUE);
+      mKeyMap.put(KeyEvent.KEYCODE_S, TvBrowserTypes.VK_STOP);
+      mKeyMap.put(KeyEvent.KEYCODE_P, TvBrowserTypes.VK_PLAY);
+      mKeyMap.put(KeyEvent.KEYCODE_Z, TvBrowserTypes.VK_PAUSE);
+      mKeyMap.put(KeyEvent.KEYCODE_F, TvBrowserTypes.VK_FAST_FWD);
+      mKeyMap.put(KeyEvent.KEYCODE_X, TvBrowserTypes.VK_REWIND);
+      mKeyMap.put(KeyEvent.KEYCODE_T, TvBrowserTypes.VK_TELETEXT);
+   }
+}

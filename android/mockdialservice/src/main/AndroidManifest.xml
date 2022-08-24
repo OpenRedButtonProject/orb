@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="org.orbtv.mockdialservice">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application
+        android:label="mockdialservice"
+        android:usesCleartextTraffic="true">
+        <service android:name=".MockDialService" android:exported="true">
+            <intent-filter>
+                <action android:name="org.orbtv.mockdialservice.IMockDialService" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>

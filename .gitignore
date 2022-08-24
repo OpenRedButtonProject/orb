@@ -1,0 +1,8 @@
+/out
+/package-lock.json
+/node_modules
+/doc
+oe-logs
+oe-workdir
+.vscode
+

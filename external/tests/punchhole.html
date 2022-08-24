@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//HbbTV//1.1.1//EN" "http://www.hbbtv.org/dtd/HbbTV-1.1.1.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>Open Red Button Project - Unit Tests</title>
+<meta http-equiv="content-type" content="Content-Type: application/vnd.hbbtv.xhtml+xml; charset=UTF-8" />
+<link rel="stylesheet" type="text/css" href="./orbunit/style.css" />
+<script type="text/javascript" src="./orbunit/orbunit.js"></script>
+</head>
+<body>
+<script>
+//<![CDATA[
+
+window.onload = () => {
+   // Init
+   orbunit.init({
+      showApp: true,
+      keyset: orbunit.KEYSET_RED | orbunit.KEYSET_GREEN | orbunit.KEYSET_NAVIGATION,
+      title: "Punch hole tests",
+      description: "Press GREEN to start."
+   });
+
+   let started = false;
+   let gresult = null;
+   window.onkeydown = (e) => {
+      if (e.keyCode == window.KeyEvent.VK_BACK) {
+         document.location.href = "./";
+         return;
+      }
+
+      if (!started) {
+         if (e.keyCode == window.KeyEvent.VK_GREEN) {
+            started = true;
+            orbunit.run({parallelize: false});
+         }
+         return;
+      }
+      
+      if (gresult) {
+         if (e.keyCode == window.KeyEvent.VK_GREEN) {
+            console.log("pressed green, sending pass to " + gresult);
+            gresult.pass("expected result observed");
+         }
+         else if (e.keyCode == window.KeyEvent.VK_RED) {
+            gresult.fail("expected result not observed");
+         }
+      }
+   };
+
+   orbunit.oncompleted = () => {
+      gresult = null;
+      orbunit.banner({
+         title: "Punch hole tests done!",
+         description: "Press BACK to return to index."
+      });
+   }
+
+   // Tests
+   let vbo = null;
+   let green = null;
+
+   orbunit.add({
+      title: "Create vbo and bind to current channel.",
+      description: "Press GREEN if: video disappears. Otherwise press RED.",
+      test: (result) => {
+         vbo = document.createElement("object");
+         vbo.type = "video/broadcast";
+         vbo.bindToCurrentChannel();
+         
+         gresult = result;
+      }
+   });
+
+   orbunit.add({
+      title: "Add vbo to document and position.",
+      description: "Press GREEN if: video displayed bottom-right quarter. Otherwise press RED.",
+      test: (result) => {
+         document.body.appendChild(vbo);
+         vbo.style.position = "fixed";
+         vbo.style.left = "640px";
+         vbo.style.top = "360px";
+         vbo.style.width = "640px";
+         vbo.style.height = "360px";
+
+         gresult = result;
+      }
+   });
+
+   orbunit.add({
+      title: "Reposition vbo.",
+      description: "Press GREEN if: video displayed center of bottom half with 16:9 " +
+         "aspect ratio. Otherwise press RED.",
+      test: (result) => {
+         vbo.style.position = "fixed";
+         vbo.style.left = "0px";
+         vbo.style.top = "360px";
+         vbo.style.width = "1280px";
+         vbo.style.height = "360px";
+
+         gresult = result;
+      }
+   });
+
+   orbunit.add({
+      title: "Respoition vbo.",
+      description: "Press GREEN if: video displayed bottom-left quarter. Otherwise press RED.",
+      test: (result) => {
+         vbo.style.position = "fixed";
+         vbo.style.left = "0px";
+         vbo.style.top = "360px";
+         vbo.style.width = "640px";
+         vbo.style.height = "360px";
+
+         gresult = result;
+      }
+   });
+
+   orbunit.add({
+      title: "Reposition vbo.",
+      description: "Press GREEN if: video displayed bottom-left eigth. Otherwise press RED.",
+      test: (result) => {
+         vbo.style.left = "0px";
+         vbo.style.top = "540px";
+         vbo.style.width = "320px";
+         vbo.style.height = "180px";
+
+         gresult = result;
+      }
+   });
+
+   orbunit.add({
+      title: "Remove vbo from document.",
+      description: "Press GREEN if: no video. Otherwise press RED.",
+      test: (result) => {
+         vbo.remove(); 
+
+         gresult = result;
+      }
+   });
+
+   orbunit.add({
+      title: "Append vbo to document and reposition.",
+      description: "Press GREEN if: video displayed full-screen. Otherwise press RED.",
+      test: (result) => {
+         document.body.appendChild(vbo);
+         vbo.style.position = "fixed";
+         vbo.style.zIndex = -1;
+         vbo.style.left = "0px";
+         vbo.style.top = "0px";
+         vbo.style.width = "1280px";
+         vbo.style.height = "720px";
+
+         gresult = result;
+      }
+   });
+
+   orbunit.add({
+      title: "Add green rect with z-index 0.",
+      description: "Press GREEN if: you see a 0.5 opacity green rect in the middle. Otherwise press RED.",
+      test: (result) => {
+         green = document.createElement("div");
+         green.style.backgroundColor = "green";
+         green.style.position = "fixed";
+         green.style.zIndex = 0;
+         green.style.left = "320px";
+         green.style.top = "180px";
+         green.style.width = "640px";
+         green.style.height = "360px";
+         green.style.opacity = 0.5;
+         document.body.appendChild(green);
+
+         gresult = result;
+      }
+   });
+
+   orbunit.add({
+      title: "Set green rect z-index to -2.",
+      description: "Press GREEN if: the green rect disappears behind the vbo. Otherwise press RED.",
+      test: (result) => {
+         green.style.zIndex = -2;
+
+         gresult = result;
+      }
+   });
+
+   orbunit.add({
+      title: "Reposition.",
+      description: "Press GREEN if: video displayed bottom-right quarter. Otherwise press RED.",
+      test: (result) => {
+         vbo.style.position = "fixed";
+         vbo.style.left = "640px";
+         vbo.style.top = "360px";
+         vbo.style.width = "640px";
+         vbo.style.height = "360px";
+
+         gresult = result;
+      }
+   });
+
+   orbunit.add({
+      title: "Reposition.",
+      description: "Press GREEN if: video displayed full-screen. Otherwise press RED.",
+      test: (result) => {
+         vbo.style.position = "fixed";
+         vbo.style.left = "0px";
+         vbo.style.top = "0px";
+         vbo.style.width = "1280px";
+         vbo.style.height = "720px";
+
+         gresult = result;
+      }
+   });
+
+   orbunit.add({
+      title: "Reposition.",
+      description: "Press GREEN if: video displayed bottom-right quarter, above green rect. Otherwise press RED.",
+      test: (result) => {
+         vbo.style.position = "fixed";
+         vbo.style.left = "640px";
+         vbo.style.top = "360px";
+         vbo.style.width = "640px";
+         vbo.style.height = "360px";
+
+         gresult = result;
+      }
+   });
+
+   orbunit.add({
+      title: "Change green rect z-index to 0.",
+      description: "Press GREEN if: video displayed bottom-right quarter, under green rect. Otherwise press RED.",
+      test: (result) => {
+         green.style.zIndex = 0;
+
+         gresult = result;
+      }
+   });
+
+   orbunit.add({
+      title: "Remove green rect from document.",
+      description: "Press GREEN if: video displayed bottom-right quarter, no green rect. Otherwise press RED.",
+      test: (result) => {
+         green.remove();
+
+         gresult = result;
+      }
+   });
+
+   orbunit.add({
+      title: "Remove vbo from document.",
+      description: "Press GREEN if: video disappears. Otherwise press RED.",
+      test: (result) => {
+         vbo.remove(); 
+
+         gresult = result;
+      }
+   });
+
+   orbunit.add({
+      title: "Release vbo.",
+      description: "Press GREEN if: the video should return to full-screen. Otherwise press RED.",
+      test: (result) => {
+         vbo.release();
+         vbo = null;
+
+         gresult = result;
+      }
+   });
+};
+
+//]]>
+</script>
+</body>
+</html>
