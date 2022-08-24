@@ -1,0 +1,599 @@
+[
+  {
+    "#name": "AIT",
+    "#nodes": [
+      {
+        "#name": "metadata",
+        "pid": 1470
+      },
+      {
+        "#name": "application",
+        "#nodes": [
+          {
+            "#name": "application_identifier",
+            "application_id": 1,
+            "organization_id": 19
+          },
+          {
+            "#name": "transport_protocol_descriptor",
+            "#nodes": [
+              {
+                "#name": "http",
+                "#nodes": [
+                  {
+                    "#name": "url",
+                    "base": "http://itv.ard.de/ardstart/"
+                  }
+                ]
+              }
+            ],
+            "transport_protocol_label": 0
+          },
+          {
+            "#name": "transport_protocol_descriptor",
+            "#nodes": [
+              {
+                "#name": "object_carousel",
+                "component_tag": 20
+              }
+            ],
+            "transport_protocol_label": 1
+          },
+          {
+            "#name": "application_descriptor",
+            "#nodes": [
+              {
+                "#name": "profile",
+                "application_profile": 0,
+                "version": "1.1.1"
+              },
+              {
+                "#name": "transport_protocol",
+                "label": 0
+              },
+              {
+                "#name": "transport_protocol",
+                "label": 1
+              }
+            ],
+            "application_priority": 2,
+            "service_bound": false,
+            "visibility": 3
+          },
+          {
+            "#name": "application_name_descriptor",
+            "#nodes": [
+              {
+                "#name": "language",
+                "application_name": "HBBTV-Start-DSMCC+Web",
+                "code": "deu"
+              }
+            ]
+          },
+          {
+            "#name": "simple_application_location_descriptor",
+            "initial_path": "index.html"
+          }
+        ],
+        "control_code": 1
+      },
+      {
+        "#name": "application",
+        "#nodes": [
+          {
+            "#name": "application_identifier",
+            "application_id": 2,
+            "organization_id": 19
+          },
+          {
+            "#name": "transport_protocol_descriptor",
+            "#nodes": [
+              {
+                "#name": "http",
+                "#nodes": [
+                  {
+                    "#name": "url",
+                    "base": "http://itv.ard.de/ardepg/"
+                  }
+                ]
+              }
+            ],
+            "transport_protocol_label": 2
+          },
+          {
+            "#name": "application_descriptor",
+            "#nodes": [
+              {
+                "#name": "profile",
+                "application_profile": 0,
+                "version": "1.1.1"
+              },
+              {
+                "#name": "transport_protocol",
+                "label": 2
+              }
+            ],
+            "application_priority": 5,
+            "service_bound": false,
+            "visibility": 3
+          },
+          {
+            "#name": "application_name_descriptor",
+            "#nodes": [
+              {
+                "#name": "language",
+                "application_name": "EPG",
+                "code": "deu"
+              }
+            ]
+          },
+          {
+            "#name": "simple_application_location_descriptor",
+            "initial_path": "index.php"
+          }
+        ],
+        "control_code": 2
+      },
+      {
+        "#name": "application",
+        "#nodes": [
+          {
+            "#name": "application_identifier",
+            "application_id": 3,
+            "organization_id": 19
+          },
+          {
+            "#name": "transport_protocol_descriptor",
+            "#nodes": [
+              {
+                "#name": "http",
+                "#nodes": [
+                  {
+                    "#name": "url",
+                    "base": "http://tv.ardmediathek.de/"
+                  }
+                ]
+              }
+            ],
+            "transport_protocol_label": 8
+          },
+          {
+            "#name": "application_descriptor",
+            "#nodes": [
+              {
+                "#name": "profile",
+                "application_profile": 0,
+                "version": "1.1.1"
+              },
+              {
+                "#name": "transport_protocol",
+                "label": 8
+              }
+            ],
+            "application_priority": 5,
+            "service_bound": true,
+            "visibility": 3
+          },
+          {
+            "#name": "application_name_descriptor",
+            "#nodes": [
+              {
+                "#name": "language",
+                "application_name": "HBBTV ARD-Mediathek",
+                "code": "deu"
+              }
+            ]
+          },
+          {
+            "#name": "simple_application_location_descriptor",
+            "initial_path": "index.html"
+          }
+        ],
+        "control_code": 2
+      },
+      {
+        "#name": "application",
+        "#nodes": [
+          {
+            "#name": "application_identifier",
+            "application_id": 6,
+            "organization_id": 19
+          },
+          {
+            "#name": "transport_protocol_descriptor",
+            "#nodes": [
+              {
+                "#name": "http",
+                "#nodes": [
+                  {
+                    "#name": "url",
+                    "base": "http://hbbtv.br.de/"
+                  }
+                ]
+              }
+            ],
+            "transport_protocol_label": 5
+          },
+          {
+            "#name": "application_descriptor",
+            "#nodes": [
+              {
+                "#name": "profile",
+                "application_profile": 0,
+                "version": "1.1.1"
+              },
+              {
+                "#name": "transport_protocol",
+                "label": 5
+              }
+            ],
+            "application_priority": 5,
+            "service_bound": false,
+            "visibility": 3
+          },
+          {
+            "#name": "application_name_descriptor",
+            "#nodes": [
+              {
+                "#name": "language",
+                "application_name": "HBBTV-ARD-alpha-TT",
+                "code": "deu"
+              }
+            ]
+          },
+          {
+            "#name": "simple_application_location_descriptor",
+            "initial_path": "br-text/index.php"
+          }
+        ],
+        "control_code": 2
+      },
+      {
+        "#name": "application",
+        "#nodes": [
+          {
+            "#name": "application_identifier",
+            "application_id": 17,
+            "organization_id": 19
+          },
+          {
+            "#name": "transport_protocol_descriptor",
+            "#nodes": [
+              {
+                "#name": "http",
+                "#nodes": [
+                  {
+                    "#name": "url",
+                    "base": "http://hbbtv.br.de/br-rundschau/"
+                  }
+                ]
+              }
+            ],
+            "transport_protocol_label": 6
+          },
+          {
+            "#name": "application_descriptor",
+            "#nodes": [
+              {
+                "#name": "profile",
+                "application_profile": 0,
+                "version": "1.1.1"
+              },
+              {
+                "#name": "transport_protocol",
+                "label": 6
+              }
+            ],
+            "application_priority": 5,
+            "service_bound": true,
+            "visibility": 3
+          },
+          {
+            "#name": "application_name_descriptor",
+            "#nodes": [
+              {
+                "#name": "language",
+                "application_name": "BR Rundschau",
+                "code": "deu"
+              }
+            ]
+          },
+          {
+            "#name": "simple_application_location_descriptor",
+            "initial_path": "index.php"
+          }
+        ],
+        "control_code": 2
+      },
+      {
+        "#name": "application",
+        "#nodes": [
+          {
+            "#name": "application_identifier",
+            "application_id": 20,
+            "organization_id": 19
+          },
+          {
+            "#name": "transport_protocol_descriptor",
+            "#nodes": [
+              {
+                "#name": "http",
+                "#nodes": [
+                  {
+                    "#name": "url",
+                    "base": "http://tv.ardmediathek.de/"
+                  }
+                ]
+              }
+            ],
+            "transport_protocol_label": 7
+          },
+          {
+            "#name": "application_descriptor",
+            "#nodes": [
+              {
+                "#name": "profile",
+                "application_profile": 0,
+                "version": "1.1.1"
+              },
+              {
+                "#name": "transport_protocol",
+                "label": 7
+              }
+            ],
+            "application_priority": 5,
+            "service_bound": true,
+            "visibility": 3
+          },
+          {
+            "#name": "application_name_descriptor",
+            "#nodes": [
+              {
+                "#name": "language",
+                "application_name": "Mediathek DasErste",
+                "code": "deu"
+              }
+            ]
+          },
+          {
+            "#name": "simple_application_location_descriptor",
+            "initial_path": "index.html?client=daserste"
+          }
+        ],
+        "control_code": 2
+      },
+      {
+        "#name": "application",
+        "#nodes": [
+          {
+            "#name": "application_identifier",
+            "application_id": 35,
+            "organization_id": 19
+          },
+          {
+            "#name": "transport_protocol_descriptor",
+            "#nodes": [
+              {
+                "#name": "http",
+                "#nodes": [
+                  {
+                    "#name": "url",
+                    "base": "http://hbbtv-mediathek.br.de/"
+                  }
+                ]
+              }
+            ],
+            "transport_protocol_label": 3
+          },
+          {
+            "#name": "application_descriptor",
+            "#nodes": [
+              {
+                "#name": "profile",
+                "application_profile": 0,
+                "version": "1.1.1"
+              },
+              {
+                "#name": "transport_protocol",
+                "label": 3
+              }
+            ],
+            "application_priority": 5,
+            "service_bound": true,
+            "visibility": 3
+          },
+          {
+            "#name": "application_name_descriptor",
+            "#nodes": [
+              {
+                "#name": "language",
+                "application_name": "BR-Mediathek",
+                "code": "deu"
+              }
+            ]
+          },
+          {
+            "#name": "simple_application_location_descriptor",
+            "initial_path": "index.html"
+          }
+        ],
+        "control_code": 2
+      },
+      {
+        "#name": "application",
+        "#nodes": [
+          {
+            "#name": "application_identifier",
+            "application_id": 51,
+            "organization_id": 19
+          },
+          {
+            "#name": "transport_protocol_descriptor",
+            "#nodes": [
+              {
+                "#name": "http",
+                "#nodes": [
+                  {
+                    "#name": "url",
+                    "base": "http://hbbtv-mediathek-ard-alpha.br.de/"
+                  }
+                ]
+              }
+            ],
+            "transport_protocol_label": 10
+          },
+          {
+            "#name": "application_descriptor",
+            "#nodes": [
+              {
+                "#name": "profile",
+                "application_profile": 0,
+                "version": "1.1.1"
+              },
+              {
+                "#name": "transport_protocol",
+                "label": 10
+              }
+            ],
+            "application_priority": 5,
+            "service_bound": false,
+            "visibility": 3
+          },
+          {
+            "#name": "application_name_descriptor",
+            "#nodes": [
+              {
+                "#name": "language",
+                "application_name": "BR Mediathek (ARD alpha)",
+                "code": "deu"
+              }
+            ]
+          },
+          {
+            "#name": "simple_application_location_descriptor",
+            "initial_path": "index.html"
+          }
+        ],
+        "control_code": 2
+      },
+      {
+        "#name": "application",
+        "#nodes": [
+          {
+            "#name": "application_identifier",
+            "application_id": 56,
+            "organization_id": 19
+          },
+          {
+            "#name": "transport_protocol_descriptor",
+            "#nodes": [
+              {
+                "#name": "http",
+                "#nodes": [
+                  {
+                    "#name": "url",
+                    "base": "http://tv.ardmediathek.de/"
+                  }
+                ]
+              }
+            ],
+            "transport_protocol_label": 9
+          },
+          {
+            "#name": "application_descriptor",
+            "#nodes": [
+              {
+                "#name": "profile",
+                "application_profile": 0,
+                "version": "1.1.1"
+              },
+              {
+                "#name": "transport_protocol",
+                "label": 9
+              }
+            ],
+            "application_priority": 5,
+            "service_bound": true,
+            "visibility": 3
+          },
+          {
+            "#name": "application_name_descriptor",
+            "#nodes": [
+              {
+                "#name": "language",
+                "application_name": "HbbTV SR Mediathek",
+                "code": "deu"
+              }
+            ]
+          },
+          {
+            "#name": "simple_application_location_descriptor",
+            "initial_path": "index.html?client=sr"
+          }
+        ],
+        "control_code": 2
+      },
+      {
+        "#name": "application",
+        "#nodes": [
+          {
+            "#name": "application_identifier",
+            "application_id": 146,
+            "organization_id": 19
+          },
+          {
+            "#name": "transport_protocol_descriptor",
+            "#nodes": [
+              {
+                "#name": "http",
+                "#nodes": [
+                  {
+                    "#name": "url",
+                    "base": "http://hbbtv.feratel.co.at/"
+                  }
+                ]
+              }
+            ],
+            "transport_protocol_label": 4
+          },
+          {
+            "#name": "application_descriptor",
+            "#nodes": [
+              {
+                "#name": "profile",
+                "application_profile": 0,
+                "version": "1.1.1"
+              },
+              {
+                "#name": "transport_protocol",
+                "label": 4
+              }
+            ],
+            "application_priority": 5,
+            "service_bound": true,
+            "visibility": 3
+          },
+          {
+            "#name": "application_name_descriptor",
+            "#nodes": [
+              {
+                "#name": "language",
+                "application_name": "Panoramabilder (ARD-alpha)",
+                "code": "deu"
+              }
+            ]
+          },
+          {
+            "#name": "simple_application_location_descriptor",
+            "initial_path": "hbbtv/ardalpha/index.jsp"
+          }
+        ],
+        "control_code": 2
+      }
+    ],
+    "application_type": 16,
+    "current": true,
+    "test_application_flag": false,
+    "version": 0
+  }
+]

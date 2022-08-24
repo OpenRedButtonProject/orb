@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//HbbTV//1.1.1//EN" "http://www.hbbtv.org/dtd/HbbTV-1.1.1.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+
+<title>HbbTV Application Template </title>
+
+<meta http-equiv="content-type" content="application/vnd.hbbtv.xhtml+xml" charset="UTF-8" />
+<meta http-equiv="Pragma" content="no-cache" />
+
+<script type="text/javascript" src="./js/hbbtvlib.js"></script>
+<script type="text/javascript" src="./js/keycodes.js"></script>
+<script type="text/javascript">
+//<![CDATA[
+window.onload = function(){
+  hbbtvlib_red_initialize();
+
+  var appManager = document.getElementById("oipfAppMan").getOwnerApplication(document);
+  setTimeout(function(){ appManager.destroyApplication(); }, 3000);
+
+};
+//]]>
+</script>
+</head>
+
+<body>
+
+<!--
+The main page should have application manager, and should call show() at onload();
+-->
+<object id="oipfAppMan" type="application/oipfApplicationManager"></object>
+<object id="oipfcfg" type="application/oipfConfiguration"></object>
+
+<!-- the logical HbbTV Application graphic plane is 1280px horizontally by 720px vertically 
+So the every content should be draw in 1280 * 720 -->
+<div style="left: 0px; top: 0px; width: 1280px; height: 720px;  position:absolute; background-color: #c1cff8; border:1px solid rgb(51, 66, 204);  z-index:-1;"></div>
+
+<!-- Graphic safe area(Recommend), 1024 * 648 -->
+<div id="divGraphic" style="left: 128px; top: 36px; width: 1024px; height: 648px; position:absolute; z-index:1;">HbbTV Template
+	<img src="./img/redbutton.gif" style="right:40px;bottom:20px;position:absolute;width:200px"/>
+</div>
+
+</body>
+
+</html>

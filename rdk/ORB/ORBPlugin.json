@@ -1,0 +1,28 @@
+{
+  "$schema": "plugin.schema.json",
+  "document": {
+    "$ref": "docs_common.json"
+  },
+  "info": {
+    "title": "ORB Plugin",
+    "callsign": "ORB",
+    "locator": "libWPEFrameworkORB.so",
+    "status": "alpha",
+    "description": "The ORB plugin provides access to ORB functionality.",
+    "version": "1.0"
+  },
+  "configuration": {
+    "type": "object",
+    "properties": {
+      "configuration": {
+        "type": "object",
+        "required": [],
+        "properties": {
+        }
+      }
+    }
+  },
+  "interface": {
+    "$ref": "{interfacedir}/ORB.json#"
+  }
+}

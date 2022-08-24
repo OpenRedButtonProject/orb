@@ -1,0 +1,13 @@
+{
+ "locator":"libWPEFrameworkORB.so",
+ "classname":"ORB",
+ "precondition":[
+  "Platform"
+ ],
+ "autostart":false,
+ "configuration":{
+  "root":{
+   "outofprocess":true
+  }
+ }
+}

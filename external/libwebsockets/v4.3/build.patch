@@ -1,0 +1,12 @@
+--- external/libwebsockets/Android.bp	2022-05-18 15:24:20.804689301 +0100
++++ Androidbp2	2022-05-18 15:24:44.372927730 +0100
+@@ -223,3 +223,9 @@
+         },
+     },
+ }
++
++cc_library_headers {
++    name: "libwebsockets_headers",
++    export_include_dirs: ["include"],
++    host_supported: true,
++}

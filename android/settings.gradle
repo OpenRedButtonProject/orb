@@ -1,0 +1,4 @@
+rootProject.name = "tvbrowser"
+include ':tvbrowser'
+include ':tvbrowsershell'
+include ':mockdialservice'

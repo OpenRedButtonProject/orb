@@ -1,0 +1,50 @@
+If You or the organisation You work for has signed a licence with Ocean Blue Software Ltd for the ORB Software then the ORB licence below does not apply to your use of the ORB Software.
+
+In all other cases Your use of the ORB software is governed by the ORB Licence below
+
+ORB Licence
+
+This Licence applies to all software available as part of the Open Red Button Project (ORB) in its entirety or in part, which will be referred to as "ORB Software" in this document. ORB Software will be clearly identified in the copyright message in each file. The term "ORB Software" as used below means either the ORB software or any derivative work under copyright law; that is a work containing ORB Software or part of it, either Verbatim or with modifications and/or translated into another programming language. Hereafter, translation is included without limitation in the term "modification".
+
+"Source Code" means the preferred form of the ORB Software for making modifications to it including the complete source code for all modules in whatever programming language they are supplied, plus any associated interface definition files, data tables, scripts and documentation.
+
+Activities other than copying, distribution and modification are outside of the scope of this License. The act of running a program using ORB software is not restricted.
+
+Certain rights under this agreement are only available to a "Contributor" to or "Supporter" of ORB as defined on the ORB website (www.orb-tv.org). You are required to refer to www.orb-tv.org to establish whether any particular entity is a Contributor on the actual date of the first relevant transaction and quarterly thereafter. You should not accept any other form of evidence that an entity is a Contributor or Supporter on that date and should keep appropriate records. You will not be held liable for any inaccuracy of data provided directly by the ORB Project.
+
+Certain rights under this agreement such as compilation, linking to, distribution or copying are only valid when the ORB Software is used having been 'Targeted' at certain 'Platforms'. A Platform is a semiconductor product which includes the processor on which the ORB Software will run. Targeting includes but is not limited to building or compilation to run on a target Platform, linking to software provided with a target Platform or any such action which enables the ORB Software to run on a Platform. 
+
+Each licensee is referred to as "you" in this document.
+
+1. You may copy and distribute exact copies of ORB Software in Source Code form to any third party who is at the time of transfer a Contributor or Supporter of ORB provided that you also are a Contributor or Supporter of ORB; you keep intact all notices; copyright messages and disclaimer of warranty and you include a copy of this licence with the ORB Software.
+
+2. You may modify your copy or copies of the ORB Software or any portion of it, thus forming a work based on the ORB Software (which hereafter is included in the term ORB Software) and distribute as Source Code such modifications or work under the terms set forth in Section 1 above, provided that you keep intact all notices, copyright messages and disclaimer of warranty; you include a copy of this licence in the distribution and that you add a prominent notice stating that you changed the files, the nature of change and the date of the change. 
+
+You agree that the modified work is licenced at no charge. However, if substantial identifiable sections of that work are not derived from the ORB Software and can reasonably considered independent and separate works you are free to set whatever terms you see fit for those separate works. 
+
+3. If you are a Contributor, you may copy and distribute a Binary version (including any header files or scripts which are required only for the purposes of linking this binary version to other software) to a third party organisation or person so long as this is only as part of your product, you keep intact all notices, copyright messages and disclaimer of warranty in any human readable files and you include a copy of this licence agreements in the distribution. If you are a Supporter, you have no rights to distribute the ORB Software in any form apart from to another Contributor or Supporter, and any attempt to do so will automatically terminate your rights under this Licence Agreement.
+
+4. If you are a Contributor you are permitted to share the ORB Software with your contractors or companies performing software development on your behalf, provided that this is for no longer than is required, all copies are deleted immediately that the contractor is no longer working for you on the ORB Software and that the contractor only uses the ORB Software in relation to their work for you. You are responsible for ensuring that the contractor complies with this licence and your licence will automatically terminate in the event that your subcontractor violates the terms of this Licence, unless the ORB project decides to the contrary.
+
+5. If you receive the ORB Software in source code form and you are not a Contributor or Supporter you must either immediately become an ORB Supporter or Contributor or destroy the ORB Software you have received.
+
+6. If your rights under this licence are automatically terminated then your status (if any) as a Contributor or Supporter of ORB will terminated as well.
+
+7. You may target/compile the ORB Software to run on a PC only for the purposes of running or extending the ORB Test Suite, performing development, and providing demonstrations. You may not distribute this PC version for any reason other than specified here.
+
+8. You may not copy, modify, sublicense, link with or distribute the ORB Software except as expressly provided under this Licence Agreement. Any such attempt to copy, modify, sublicense, link with or distribute the ORB Software is void and will automatically terminate your rights under this Licence, unless the ORB project decides to the contrary. However, parties who have received copies or rights from you under this licence will not have their licences terminated so long as such parties remain in full compliance.
+
+9. If you fix bugs in the ORB Software you are required to offer these bugs fixes to the ORB Project, using the process defined on the ORB website. The ORB Project is not required to accept these fixes. Any fixes offered must be licenced using this licence and you must ensure that the fix does not infringe the rights of any third party. If you extend the functionality of the ORB Software you may offer these extensions to the ORB Project but you are not required to do so.
+
+10. You are not required to accept this licence agreement, since you have not signed it. However, nothing else grants you permission to modify, compile, link to, copy or distribute the ORB Software. These actions are prohibited by law if you do not accept this licence. Therefore, by modifying, compiling, linking to, copying, or distributing the ORB Software, you indicate your acceptance of this License to do so, and all its terms and conditions.
+
+11. Each time you redistribute the ORB Software as source code, the recipient automatically receives a licence from ORB subject to these terms and conditions. You may not impose any further restrictions on the recipient's exercise of the rights granted herein. You are not responsible for enforcing compliance by third parties with this Licence. 
+
+12. You may have received a copy of the ORB Software for evaluation purposes. If this is the case then the copy you received will include an evaluation.txt file, which will define person/organisation permitted to perform the evaluation and the term of that evaluation. For the term and provided you are the person/an employee of the organisation defined then you will be treated as a Supporter for purposes of this licence. At the end of the term you must either become a Contributor or a Supporter of the ORB Project. If you do not then all rights under this licence will terminate and all copies of the ORB Software must be immediately destroyed. In the absence of an evaluation.txt file or if you have received a copy of the ORB Software with an evaluation.txt file but are not the person/employee of the organisation defined then you have no additional rights under this licence. If you distribute the ORB Software under this licence then you must remove the evaluation.txt file before doing so. You may not modify the evaluation.txt file.
+
+13. If any portion of this licence is held invalid or unenforceable under any circumstance, the balance will apply, and the whole is intended to apply in other circumstances.
+
+14. Because the ORB Software is licenced free of charge there is no warranty for the ORB Software, to the extent permitted by applicable law. Except when otherwise stated in writing the copyright holders and/or other parties provide the ORB Software "as is" without warranty of any kind, either expressed or implied, including, but not limited to implied warranties of merchantability and fitness for a particular purpose. The entire risk as to the quality and performance of the ORB Software is with you. Should the ORB Software prove defective you assume the cost of all necessary servicing repair or correction.
+
+15. In no event unless required by applicable law or agreed to in writing will any copyright holder or any other party who may modify, copy or distribute the ORB Software as permitted above be liable to you for damages, including any general, special, incidental or consequential damages arising out of the use or inability to use the ORB Software (including but not limited to loss of data or data being rendered inaccurate or losses sustained by you or third parties or a failure of the ORB Software to operate with any other software), even if such holder or other party has been advised of the possibility of such damages.
+

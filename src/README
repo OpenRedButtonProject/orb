@@ -1,0 +1,1 @@
+js-beautify --indent-size=3 --indent-char=" " `find -name "*.js"`

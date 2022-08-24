@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//HbbTV//1.1.1//EN" "http://www.hbbtv.org/dtd/HbbTV-1.1.1.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>Open Red Button Project - Unit Tests</title>
+<meta http-equiv="content-type" content="Content-Type: application/vnd.hbbtv.xhtml+xml; charset=UTF-8" />
+<link rel="stylesheet" type="text/css" href="./orbunit/style.css" />
+<script type="text/javascript" src="./orbunit/orbunit.js"></script>
+</head>
+<body>
+<object id="test1-object" type="video/broadcast"></object>
+<span id="test3-span"></span>
+<span id="test4-span"></span>
+<span id="test5-span"></span>
+<script>
+//<![CDATA[
+
+window.onload = () => {
+   // Init
+   orbunit.init({
+      showApp: true,
+      keyset: orbunit.KEYSET_NAVIGATION,
+      title: "Creation tests",
+      description: ""
+   });
+
+   window.onkeydown = (e) => {
+      if (e.keyCode == window.KeyEvent.VK_BACK) {
+         document.location.href = "./";   
+      }
+   };
+
+   orbunit.oncompleted = () => {
+      orbunit.banner({
+         title: "Creation tests done! Press BACK to return to index."
+      });
+   }
+
+   // Tests
+   let vbo = null;
+   let green = null;
+   orbunit.add({
+      title: "On page",
+      description: "",
+      test: (result) => {
+         checkIsVbo(document.getElementById("test1-object"), result);
+      }
+   });
+
+   orbunit.add({
+      title: "document.createElement",
+      description: "",
+      test: (result) => {
+         var newObj = document.createElement("object");
+         newObj.type = "video/broadcast";
+         checkIsVbo(newObj, result);
+      }
+   });
+
+   orbunit.add({
+      title: "innerHTML",
+      description: "",
+      test: (result) => {
+         document.getElementById("test3-span").innerHTML =
+            "<object id='test3-object' type='video/broadcast'></object>";
+         checkIsVbo(document.getElementById("test3-object"), result);
+      }
+   });
+
+   orbunit.add({
+      title: "outerHTML",
+      description: "",
+      test: (result) => {
+         document.getElementById("test4-span").outerHTML =
+            "<object id='test4-object' type='video/broadcast'></object>";
+         checkIsVbo(document.getElementById("test4-object"), result);
+      }
+   });
+
+   orbunit.add({
+      title: "insertAdjacentHTML",
+      description: "",
+      test: (result) => {
+         document.getElementById("test5-span").insertAdjacentHTML("afterbegin",
+            "<object id='test5-object' type='video/broadcast'></object>");
+         checkIsVbo(document.getElementById("test5-object"), result);
+      }
+   });
+
+   orbunit.add({
+      title: "window.oipfObjectFactory",
+      description: "",
+      test: (result) => {
+         var newObj2 = window.oipfObjectFactory.createVideoBroadcastObject();
+         checkIsVbo(newObj2, result);
+      }
+   });
+
+   orbunit.add({
+      title: "document.createElement with setAttribute",
+      description: "",
+      test: (result) => {
+         var newObj3 = document.createElement("object");
+         newObj3.setAttribute("type", "video/broadcast");
+         checkIsVbo(newObj3, result);
+      }
+   });
+
+   // Run!
+   orbunit.run({parallelize: true});
+}
+
+// Utility for checking vbo is valid
+function checkIsVbo(object, result) {
+   if (typeof object.currentChannel.name !== "undefined") {
+      result.pass(object.currentChannel.name);
+   } else {
+      result.fail("unexpected property type");
+   }
+}
+
+//]]>
+</script>
+</body>
+</html>
