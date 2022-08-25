@@ -77,5 +77,5 @@ public:
   virtual std::vector<std::string> Programme_GetSiDescriptors(std::string ccid, std::string programmeId, int descriptorTag, int descriptorTagExtension, int privateDataSpecifier) override;
 
 private:
-  std::string toLower(const std::string& data);
+  std::string ToLower(const std::string& data);
 };

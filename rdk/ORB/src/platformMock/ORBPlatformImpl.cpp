@@ -728,11 +728,11 @@ bool ORBPlatformImpl::ParentalControl_IsRatingBlocked(std::string scheme, std::s
 {
   bool blocked = true;
 
-  std::string thresholdRegion = toLower(ParentalControl_GetRegion());
+  std::string thresholdRegion = ToLower(ParentalControl_GetRegion());
   int thresholdAge = ParentalControl_GetAge();
 
   if (scheme == "dvb-si") {
-    if (thresholdRegion == toLower(region) && thresholdAge > value + 3) {
+    if (thresholdRegion == ToLower(region) && thresholdAge > value + 3) {
       blocked = false;
     }
   }
@@ -782,7 +782,7 @@ std::vector<std::string> ORBPlatformImpl::Programme_GetSiDescriptors(
  *
  * @return  The lowercase version of the provided string
  */
-std::string ORBPlatformImpl::toLower(const std::string &data)
+std::string ORBPlatformImpl::ToLower(const std::string &data)
 {
   std::string tmp = data;
   std::transform(tmp.begin(), tmp.end(), tmp.begin(),
