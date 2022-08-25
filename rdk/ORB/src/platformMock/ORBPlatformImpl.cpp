@@ -13,6 +13,8 @@
 #include <string.h>
 #include <string>
 #include <vector>
+#include <cctype>
+#include <algorithm>
 
 using namespace orb;
 
@@ -719,12 +721,12 @@ bool ORBPlatformImpl::ParentalControl_IsRatingBlocked(std::string scheme, std::s
 {
     bool blocked = true;
 
-    std::string thresholdRegion = std::tolower(ParentalControl_GetRegion());
+    std::string thresholdRegion = ToLower(ParentalControl_GetRegion());
     int thresholdAge = ParentalControl_GetAge();
 
     if (scheme == "dvb-si")
     {
-        if (thresholdRegion == std::tolower(region) && thresholdAge > value + 3)
+        if (thresholdRegion == ToLower(region) && thresholdAge > value + 3)
         {
             blocked = false;
         }
@@ -766,6 +768,25 @@ std::vector<std::string> ORBPlatformImpl::Programme_GetSiDescriptors(
         privateDataSpecifier);
     std::vector<std::string> siDescriptors;
     return siDescriptors;
+}
+
+/**
+ * @brief Convert the provided string to lowercase
+ *
+ * @param[in] data  string to convert to lowercase
+ *
+ * @return  The lowercase version of the provided string
+ */
+std::string ORBPlatformImpl::ToLower(const std::string &data)
+{
+    std::string tmp = data;
+    std::transform(tmp.begin(), tmp.end(), tmp.begin(),
+        [](unsigned char c)
+    {
+        return std::tolower(c);
+    });
+
+    return tmp;
 }
 
 extern "C"
