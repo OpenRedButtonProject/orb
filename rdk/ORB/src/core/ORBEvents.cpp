@@ -31,6 +31,10 @@ void Event_OnBroadcastStopped()
 void Event_OnAitSectionReceived(unsigned short aitPid, unsigned short serviceId, unsigned char *aitSectionData, unsigned int aitSectionDataSize)
 {
    fprintf(stderr, "Event_OnAitSectionReceived aitPid=0x%x serviceId=%hu aitSectionDataSize=%u\n", aitPid, serviceId, aitSectionDataSize);
+   
+   bool isConnectedToInternet = ORB::instance(nullptr)->GetORBPlatform()->Network_IsConnectedToInternet();
+   ORB::instance(nullptr)->GetApplicationManager()->OnNetworkAvailabilityChanged(isConnectedToInternet);
+   
    ORB::instance(nullptr)->GetApplicationManager()->ProcessAitSection(aitPid, serviceId, aitSectionData, aitSectionDataSize);
 }
 
