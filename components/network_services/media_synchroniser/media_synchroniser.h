@@ -73,7 +73,8 @@ public:
     int nrOfSlaves();
     bool setContentTimeAndSpeed(std::string timelineSelector, const uint64_t &contentTime, const
         double &speed);
-    void updateCssCiiProperties(const Json::Value &properties);
+    void updateCssCiiProperties(const std::string &contentId, const std::string &presentationStatus,
+        const std::string &contentIdStatus, const std::string &mrsUrl);
     u_int64_t getContentTime(const std::string &timelineSelector, bool &success);
     bool setTimelineAvailability(const std::string &timelineSelector, const bool &isAvailable, const
         u_int64_t currentTime = 0, const double speed = 0);

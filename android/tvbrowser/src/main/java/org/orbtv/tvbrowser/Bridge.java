@@ -951,9 +951,8 @@ class Bridge extends AbstractBridge {
      * @param properties
      */
     @Override
-    protected void MediaSynchroniser_updateCssCiiProperties(Token token, int id,
-                                                            JSONObject properties) {
-        mMediaSyncManager.updateCssCiiProperties(properties); // TODO We shouldn't be using a JSONObject here!
+    protected void MediaSynchroniser_updateCssCiiProperties(Token token, int id, String contentId, String presentationStatus, String contentIdStatus, String mrsUrl) {
+        mMediaSyncManager.updateCssCiiProperties(contentId, presentationStatus, contentIdStatus, mrsUrl);
     }
 
     /**

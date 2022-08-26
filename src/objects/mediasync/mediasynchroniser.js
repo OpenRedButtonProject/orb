@@ -123,14 +123,15 @@ hbbtv.objects.MediaSynchroniser = (function() {
             } else {
                 p.mediaObserver = hbbtv.objects.createMediaElementObserver(mediaObject);
                 refreshContentId();
-                hbbtv.bridge.mediaSync.updateCssCiiProperties(p.id, {
-                    contentId: p.contentId,
-                    presentationStatus: mediaObject.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA ?
-                        'okay' :
-                        'transitioning',
-                    contentIdStatus: 'final',
-                    mrsUrl: extractMrsUrl(mediaObject),
-                });
+                hbbtv.bridge.mediaSync.updateCssCiiProperties(
+                    p.id,
+                    p.contentId,
+                    mediaObject.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA ?
+                    'okay' :
+                    'transitioning',
+                    'final',
+                    extractMrsUrl(mediaObject)
+                );
             }
 
             dispatchEvent.call(this, 'SynchroniserInitialised');
@@ -223,14 +224,15 @@ hbbtv.objects.MediaSynchroniser = (function() {
                     }
 
                     refreshContentId();
-                    hbbtv.bridge.mediaSync.updateCssCiiProperties(p.id, {
-                        contentId: p.contentId,
-                        presentationStatus: p.masterMediaObject.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA ?
-                            'okay' :
-                            'transitioning',
-                        contentIdStatus: 'final',
-                        mrsUrl: extractMrsUrl(p.masterMediaObject),
-                    });
+                    hbbtv.bridge.mediaSync.updateCssCiiProperties(
+                        p.id,
+                        p.contentId,
+                        p.masterMediaObject.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA ?
+                        'okay' :
+                        'transitioning',
+                        'final',
+                        extractMrsUrl(p.masterMediaObject)
+                    );
                 };
 
                 hbbtv.bridge.addWeakEventListener(
@@ -479,14 +481,15 @@ hbbtv.objects.MediaSynchroniser = (function() {
     function mediaUpdatedHandler(e) {
         const p = privates.get(lastMediaSync);
         if (p.masterMediaObject.getAttribute('__mimeType') !== 'video/broadcast') {
-            hbbtv.bridge.mediaSync.updateCssCiiProperties(p.id, {
-                contentId: p.contentId,
-                presentationStatus: p.masterMediaObject.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA ?
-                    'okay' :
-                    'transitioning',
-                contentIdStatus: 'final',
-                mrsUrl: extractMrsUrl(p.masterMediaObject),
-            });
+            hbbtv.bridge.mediaSync.updateCssCiiProperties(
+                p.id,
+                p.contentId,
+                p.masterMediaObject.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA ?
+                'okay' :
+                'transitioning',
+                'final',
+                extractMrsUrl(p.masterMediaObject)
+            );
             if (p.mediaObserver.timeline.timelineSelector) {
                 hbbtv.bridge.mediaSync.setContentTimeAndSpeed(
                     p.id,
@@ -501,12 +504,13 @@ hbbtv.objects.MediaSynchroniser = (function() {
     function errorHandler() {
         const p = privates.get(lastMediaSync);
         if (p.masterMediaObject.getAttribute('__mimeType') !== 'video/broadcast') {
-            hbbtv.bridge.mediaSync.updateCssCiiProperties(p.id, {
-                contentId: p.contentId,
-                presentationStatus: 'fault',
-                contentIdStatus: 'final',
-                mrsUrl: extractMrsUrl(p.masterMediaObject),
-            });
+            hbbtv.bridge.mediaSync.updateCssCiiProperties(
+                p.id,
+                p.contentId,
+                'fault',
+                'final',
+                extractMrsUrl(p.masterMediaObject)
+            );
         }
         if (setToPermanentErrorState.call(lastMediaSync)) {
             if (p.masterMediaObject.getAttribute('__mimeType') !== 'video/broadcast') {
@@ -534,7 +538,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
         if (mrsUrl) {
             return mrsUrl.toString();
         }
-        return undefined;
+        return '';
     }
 
     function onAudioTrackChanged() {

@@ -928,7 +928,7 @@ public abstract class AbstractBridge {
      * @param properties
      */
     protected abstract void MediaSynchroniser_updateCssCiiProperties(Token token, int id,
-                                                                     JSONObject properties);
+                                                                     String contentId, String presentationStatus, String contentIdStatus, String mrsUrl);
 
     /**
      * @param token The token associated with this request.
@@ -1527,7 +1527,10 @@ public abstract class AbstractBridge {
                 MediaSynchroniser_updateCssCiiProperties(
                         token,
                         params.getInt("id"),
-                        params.getJSONObject("properties") // TODO Don't pass objects as params
+                        params.getString("contentId"),
+                        params.getString("presentationStatus"),
+                        params.getString("contentIdStatus"),
+                        params.getString("mrsUrl")
                 );
                 break;
             }

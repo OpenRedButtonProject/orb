@@ -211,37 +211,50 @@ void MediaSynchroniser::updateBroadcastContentStatus(std::string dvbUri, bool pe
     }
     if (m_isMasterBroadcast)
     {
-        Json::Value properties;
-        properties["contentId"] = dvbUri;
+        std::string contentId = dvbUri;
+        std::string mrsUrl = "";
+        std::string presentationStatus;
+        std::string contentIdStatus;
+
         if (permanentError)
         {
-            properties["presentationStatus"] = "fault";
+            presentationStatus = "fault";
         }
         else if (presenting)
         {
-            properties["presentationStatus"] = "okay";
+            presentationStatus = "okay";
         }
         else
         {
-            properties["presentationStatus"] = "transitioning";
+            presentationStatus = "transitioning";
         }
 
         if (presenting)
         {
-            properties["contentIdStatus"] = "final";
+            contentIdStatus = "final";
         }
         else
         {
-            properties["contentIdStatus"] = "partial";
+            contentIdStatus = "partial";
         }
 
-        updateCssCiiProperties(properties);
+        updateCssCiiProperties(contentId, presentationStatus, contentIdStatus, mrsUrl);
     }
 }
 
-void MediaSynchroniser::updateCssCiiProperties(const Json::Value &properties)
+void MediaSynchroniser::updateCssCiiProperties(const std::string &contentId, const
+    std::string &presentationStatus, const std::string &contentIdStatus, const std::string &mrsUrl)
 {
     std::lock_guard<std::recursive_mutex> lockGuard(m_mutex);
+    Json::Value properties;
+    properties["contentId"] = contentId;
+    properties["presentationStatus"] = presentationStatus;
+    properties["contentIdStatus"] = contentIdStatus;
+    if (!mrsUrl.empty())
+    {
+        properties["mrsUrl"] = mrsUrl;
+    }
+
     for (Json::Value::const_iterator it = properties.begin(); it != properties.end(); ++it)
     {
         if (it.key().asString() == "contentId")
