@@ -40,9 +40,9 @@ using namespace orb;
 /*---local function prototypes for this file---------------------------------*/
 /*   (internal functions declared static to make them local) */
 static int ReadTextFileIntoStringBuffer(const char *absoluteFilePath, char **buffer, long *bufferSize);
-static char *InsertAt(const char *destination, const char *chunk, int index);
+static char* InsertAt(const char *destination, const char *chunk, int index);
 static int FindInjectionIndex(const char *htmlSource);
-static const char *PreparePayload();
+static const char* PreparePayload();
 
 
 /*---global function definitions---------------------------------------------*/
@@ -56,30 +56,31 @@ static const char *PreparePayload();
  *
  * @return The htmlSource after the injection, or NULL
  */
-const char *InjectInto(const char *htmlSource, int *injected)
+const char* InjectInto(const char *htmlSource, int *injected)
 {
-  const char *payload;
-  const char *result = NULL;
+   const char *payload;
+   const char *result = NULL;
 
-  int injectionIndex = FindInjectionIndex(htmlSource);
-  if (-1 == injectionIndex)
-  {
-    goto fail;
-  }
+   int injectionIndex = FindInjectionIndex(htmlSource);
+   if (-1 == injectionIndex)
+   {
+      goto fail;
+   }
 
-  payload = PreparePayload();
-  if (NULL == payload) {
-    goto fail;
-  }
+   payload = PreparePayload();
+   if (NULL == payload)
+   {
+      goto fail;
+   }
 
-  result = InsertAt(htmlSource, payload, injectionIndex);
-  *injected = 1;
+   result = InsertAt(htmlSource, payload, injectionIndex);
+   *injected = 1;
 
-  return result;
+   return result;
 
 fail:
-  *injected = 0;
-  return NULL;
+   *injected = 0;
+   return NULL;
 }
 
 /**
@@ -92,19 +93,18 @@ fail:
  */
 void LoadDvbUrl(const char *url, void *caller, OnDvbUrlLoaded callback)
 {
-  static int requestId = 0;
-  requestId++;
+   static int requestId = 0;
+   requestId++;
 
-  fprintf(stderr, "[Utils::LoadDvbUrl] url=%s requestId=%d\n", url, requestId);
-  
-  // This is the first time the ORBClient signleton is called from the WPE network process.
-  // The ORBClient instance needs to only subscribe with the 'dvburlloaded' event of the ORB Thunder plugin.
-  ORBClient::GetSharedInstance().SubscribeWithDvbUrlLoadedEvent();
-  ORBClient::GetSharedInstance().AddDsmccCaller(requestId, caller);
-  ORBClient::GetSharedInstance().AddDsmccCallback(requestId, callback);
-  ORBClient::GetSharedInstance().LoadDvbUrl(url, requestId);
+   fprintf(stderr, "[Utils::LoadDvbUrl] url=%s requestId=%d\n", url, requestId);
+
+   // This is the first time the ORBClient signleton is called from the WPE network process.
+   // The ORBClient instance needs to only subscribe with the 'dvburlloaded' event of the ORB Thunder plugin.
+   ORBClient::GetSharedInstance().SubscribeWithDvbUrlLoadedEvent();
+   ORBClient::GetSharedInstance().AddDsmccCaller(requestId, caller);
+   ORBClient::GetSharedInstance().AddDsmccCallback(requestId, callback);
+   ORBClient::GetSharedInstance().LoadDvbUrl(url, requestId);
 }
-
 
 /*---local function definitions----------------------------------------------*/
 
@@ -119,39 +119,39 @@ void LoadDvbUrl(const char *url, void *caller, OnDvbUrlLoaded callback)
  */
 static int ReadTextFileIntoStringBuffer(const char *absoluteFilePath, char **buffer, long *bufferSize)
 {
-  char *buf = 0;
-  long fileSize;
-  FILE *fp = NULL;
+   char *buf = 0;
+   long fileSize;
+   FILE *fp = NULL;
 
-  /* open file */
-  fp = fopen(absoluteFilePath, "rb");
-  if (NULL == fp)
-  {
-    return UTILS_FAILURE;
-  }
+   /* open file */
+   fp = fopen(absoluteFilePath, "rb");
+   if (NULL == fp)
+   {
+      return UTILS_FAILURE;
+   }
 
-  /* resolve file size */
-  fseek(fp, 0, SEEK_END);
-  fileSize = ftell(fp);
-  fseek(fp, 0, SEEK_SET);
+   /* resolve file size */
+   fseek(fp, 0, SEEK_END);
+   fileSize = ftell(fp);
+   fseek(fp, 0, SEEK_SET);
 
-  /* allocate buffer memory and read file into buffer */
-  buf = (char *)malloc(fileSize + 1);
-  if (NULL == buf)
-  {
-    return UTILS_FAILURE;
-  }
-  fread(buf, 1, fileSize, fp);
-  buf[fileSize] = '\0';
+   /* allocate buffer memory and read file into buffer */
+   buf = (char *)malloc(fileSize + 1);
+   if (NULL == buf)
+   {
+      return UTILS_FAILURE;
+   }
+   fread(buf, 1, fileSize, fp);
+   buf[fileSize] = '\0';
 
-  /* close file */
-  fclose(fp);
+   /* close file */
+   fclose(fp);
 
-  /* prepare output parameters */
-  *buffer = buf;
-  *bufferSize = fileSize;
+   /* prepare output parameters */
+   *buffer = buf;
+   *bufferSize = fileSize;
 
-  return UTILS_SUCCESS;
+   return UTILS_SUCCESS;
 }
 
 /**
@@ -164,134 +164,134 @@ static int ReadTextFileIntoStringBuffer(const char *absoluteFilePath, char **buf
  *
  * @return The insertion result
  */
-static char *InsertAt(const char *destination, const char *chunk, int index)
+static char* InsertAt(const char *destination, const char *chunk, int index)
 {
-  int length = strlen(destination) + strlen(chunk) + 1;
-  char *result = (char *)malloc(length);
-  strncpy(result, destination, index);
-  result[index] = '\0';
-  strcat(result, chunk);
-  strcat(result, destination + index);
-  return result;
+   int length = strlen(destination) + strlen(chunk) + 1;
+   char *result = (char *)malloc(length);
+   strncpy(result, destination, index);
+   result[index] = '\0';
+   strcat(result, chunk);
+   strcat(result, destination + index);
+   return result;
 }
 
 static int FindInjectionIndex(const char *htmlSource)
 {
-  int i;
-  int index = -1;
-  int maxIndex = strlen(htmlSource);
-  char quote = '\0';
-  char ch;
-  for (i = 0; i < maxIndex; i++)
-  {
-    if (htmlSource[i] == '<')
-    {
-      if ((i + 1) < maxIndex && htmlSource[i + 1] == 'h')
+   int i;
+   int index = -1;
+   int maxIndex = strlen(htmlSource);
+   char quote = '\0';
+   char ch;
+   for (i = 0; i < maxIndex; i++)
+   {
+      if (htmlSource[i] == '<')
       {
-        if ((i + 2) < maxIndex && htmlSource[i + 2] == 't')
-        {
-          if ((i + 3) < maxIndex && htmlSource[i + 3] == 'm')
-          {
-            if ((i + 4) < maxIndex && htmlSource[i + 4] == 'l')
+         if ((i + 1) < maxIndex && htmlSource[i + 1] == 'h')
+         {
+            if ((i + 2) < maxIndex && htmlSource[i + 2] == 't')
             {
-              if ((i + 5) < maxIndex)
-              {
-                index = i + 5;
-                break;
-              }
+               if ((i + 3) < maxIndex && htmlSource[i + 3] == 'm')
+               {
+                  if ((i + 4) < maxIndex && htmlSource[i + 4] == 'l')
+                  {
+                     if ((i + 5) < maxIndex)
+                     {
+                        index = i + 5;
+                        break;
+                     }
+                  }
+               }
             }
-          }
-        }
+         }
       }
-    }
-  }
-  if (index > -1)
-  {
-    while (index < maxIndex)
-    {
-      ch = htmlSource[index];
-      if (quote == ch)
+   }
+   if (index > -1)
+   {
+      while (index < maxIndex)
       {
-        quote = '\0';
+         ch = htmlSource[index];
+         if (quote == ch)
+         {
+            quote = '\0';
+         }
+         else if (ch == '"' || ch == '\'')
+         {
+            quote = ch;
+         }
+         index++;
+         if (quote == '\0' && ch == '>')
+         {
+            return index;
+         }
       }
-      else if (ch == '"' || ch == '\'')
-      {
-        quote = ch;
-      }
-      index++;
-      if (quote == '\0' && ch == '>')
-      {
-        return index;
-      }
-    }
-  }
-  return -1;
+   }
+   return -1;
 }
 
-static const char *PreparePayload()
+static const char* PreparePayload()
 {
-  const char *emptyScriptElementStart = "<script type=\"text/javascript\">\n//<![CDATA[\n";
-  const char *emptyScriptElementEnd = "\n//]]>\n</script>\n";
-  char *fullScriptElement = NULL;
-  char *javaScriptPayload;
-  long javaScriptPayloadLength;
-  long emptyScriptElementStartLength = strlen(emptyScriptElementStart);
-  long emptyScriptElementEndLength = strlen(emptyScriptElementEnd);
-  long fullScriptElementLength = 0;
-  int result;
+   const char *emptyScriptElementStart = "<script type=\"text/javascript\">\n//<![CDATA[\n";
+   const char *emptyScriptElementEnd = "\n//]]>\n</script>\n";
+   char *fullScriptElement = NULL;
+   char *javaScriptPayload;
+   long javaScriptPayloadLength;
+   long emptyScriptElementStartLength = strlen(emptyScriptElementStart);
+   long emptyScriptElementEndLength = strlen(emptyScriptElementEnd);
+   long fullScriptElementLength = 0;
+   int result;
 
-  char fullpathFilename[strlen(JAVASCRIPT_PAYLOAD_PATH) + 256 + 1];
-  DIR *d;
-  struct dirent *dir;
-  d = opendir(JAVASCRIPT_PAYLOAD_PATH);
-  if (NULL == d)
-  {
-    return NULL;
-  }
-
-  while ((dir = readdir(d)) != NULL)
-  {
-    if (NULL == strstr(dir->d_name, ".js"))
-    {
-      continue;
-    }
-
-    memset(fullpathFilename, 0, sizeof(fullpathFilename));
-    snprintf(fullpathFilename, sizeof(fullpathFilename), "%s/%s", JAVASCRIPT_PAYLOAD_PATH, dir->d_name);
-
-    result = ReadTextFileIntoStringBuffer(fullpathFilename, &javaScriptPayload, &javaScriptPayloadLength);
-    if (UTILS_FAILURE == result)
-    {
+   char fullpathFilename[strlen(JAVASCRIPT_PAYLOAD_PATH) + 256 + 1];
+   DIR *d;
+   struct dirent *dir;
+   d = opendir(JAVASCRIPT_PAYLOAD_PATH);
+   if (NULL == d)
+   {
       return NULL;
-    }
+   }
 
-    fullScriptElementLength += (emptyScriptElementStartLength + javaScriptPayloadLength + emptyScriptElementEndLength);
-    if (NULL == fullScriptElement)
-    {
-      fullScriptElement = (char *)malloc(fullScriptElementLength * sizeof(char) + 1);
-      memset(fullScriptElement, 0, fullScriptElementLength * sizeof(char) + 1);
+   while ((dir = readdir(d)) != NULL)
+   {
+      if (NULL == strstr(dir->d_name, ".js"))
+      {
+         continue;
+      }
+
+      memset(fullpathFilename, 0, sizeof(fullpathFilename));
+      snprintf(fullpathFilename, sizeof(fullpathFilename), "%s/%s", JAVASCRIPT_PAYLOAD_PATH, dir->d_name);
+
+      result = ReadTextFileIntoStringBuffer(fullpathFilename, &javaScriptPayload, &javaScriptPayloadLength);
+      if (UTILS_FAILURE == result)
+      {
+         return NULL;
+      }
+
+      fullScriptElementLength += (emptyScriptElementStartLength + javaScriptPayloadLength + emptyScriptElementEndLength);
       if (NULL == fullScriptElement)
       {
-        return NULL;
+         fullScriptElement = (char *)malloc(fullScriptElementLength * sizeof(char) + 1);
+         memset(fullScriptElement, 0, fullScriptElementLength * sizeof(char) + 1);
+         if (NULL == fullScriptElement)
+         {
+            return NULL;
+         }
+         memset(fullScriptElement, 0, fullScriptElementLength * sizeof(char));
       }
-      memset(fullScriptElement, 0, fullScriptElementLength * sizeof(char));
-    }
-    else
-    {
-      fullScriptElement = (char *)realloc(fullScriptElement, fullScriptElementLength * sizeof(char) + 1);
-      if (NULL == fullScriptElement)
+      else
       {
-        return NULL;
+         fullScriptElement = (char *)realloc(fullScriptElement, fullScriptElementLength * sizeof(char) + 1);
+         if (NULL == fullScriptElement)
+         {
+            return NULL;
+         }
       }
-    }
 
-    strcat(fullScriptElement, emptyScriptElementStart);
-    strcat(fullScriptElement, javaScriptPayload);
-    strcat(fullScriptElement, emptyScriptElementEnd);
+      strcat(fullScriptElement, emptyScriptElementStart);
+      strcat(fullScriptElement, javaScriptPayload);
+      strcat(fullScriptElement, emptyScriptElementEnd);
 
-    free(javaScriptPayload);
-  }
-  closedir(d);
+      free(javaScriptPayload);
+   }
+   closedir(d);
 
-  return fullScriptElement;
+   return fullScriptElement;
 }

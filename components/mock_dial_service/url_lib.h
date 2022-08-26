@@ -42,7 +42,7 @@
  * @return a pointer to the end of the written string (the location of the
  *         terminating NULL).
  */
-char* smartstrncpy(char* dest, char* src, size_t max_chars);
+char* smartstrncpy(char *dest, char *src, size_t max_chars);
 
 /**
  * URL-unescape the source string into the destination string, up to the
@@ -80,7 +80,7 @@ void xmlencode(char *dst, const char *src, size_t max_size);
  * @return the parameter value or NULL if out-of-memory. The caller must free
  *         the returned memory.
  */
-char *parse_param(char *query_string, char *param_name);
+char* parse_param(char *query_string, char *param_name);
 
 /**
  * Parse the application name out of the full URI, for example
@@ -97,7 +97,7 @@ char *parse_param(char *query_string, char *param_name);
  *         or the application name is zero-length, or NULL if out-of-memory.
  *         The caller must free the returned memory.
  */
-char *parse_app_name(const char *uri);
+char* parse_app_name(const char *uri);
 
 /**
  * Return a linked list of DIAL data constructed from the name/value parameter
@@ -110,7 +110,7 @@ char *parse_app_name(const char *uri);
  * @return the DIAL data or NULL if there is none (e.g. parse error) or out-of-
  *         memory. The caller must free the returned memory.
  */
-DIALData *parse_params(char * query_string);
+DIALData* parse_params(char *query_string);
 
 /**
  * Return the URL-escaped version of the provided string, which may be as
@@ -119,6 +119,6 @@ DIALData *parse_params(char * query_string);
  * @return the URL-escaped version of the provided string. The caller must
  *         free the returned string.
  */
-char *url_encode(const char *str);
+char* url_encode(const char *str);
 
 #endif  // URLLIB_H_

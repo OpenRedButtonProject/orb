@@ -16,82 +16,86 @@ using namespace WPEFramework::Plugin;
 #define PARENTAL_CONTROL_IS_RATING_BLOCKED "isRatingBlocked"
 
 namespace orb {
-
 /**
  * Constructor.
  */
 ParentalControlRequestHandler::ParentalControlRequestHandler()
-{}
+{
+}
 
 /**
  * Destructor.
  */
 ParentalControlRequestHandler::~ParentalControlRequestHandler()
-{}
+{
+}
 
 /**
  * @brief ParentalControlRequestHandler::Handle
- * 
+ *
  * Handles the given Programme request.
- * 
+ *
  * @param token    (in)  The request token
  * @param method   (in)  The requested method
  * @param params   (in)  A JSON object containing the input parameters (if any)
  * @param response (out) A JSON object containing the response
- * 
+ *
  * @return true in success, otherwise false
  */
 bool ParentalControlRequestHandler::Handle(
-  JsonObject token, 
-  std::string method, 
-  JsonObject params, 
-  JsonObject& response)
+   JsonObject token,
+   std::string method,
+   JsonObject params,
+   JsonObject& response)
 {
-  bool ret = true;
+   bool ret = true;
 
-  // ParentalControl.getRatingSchemes
-  if (method == PARENTAL_CONTROL_GET_RATING_SCHEMES) {
-    typedef std::map<std::string, std::vector<ParentalRating>> RatingSchemes;
-    RatingSchemes ratingSchemes = GetRatingSchemes();
-    ArrayType<JsonValue> resultsArray;
-    JsonValue resultsValue;
-    for(RatingSchemes::const_iterator it = ratingSchemes.begin(); it != ratingSchemes.end(); ++it) {
-      ArrayType<JsonValue> array;
-      JsonValue jsonRatings;
-      JsonObject schemeObject;
-      std::string scheme = it->first;
-      std::vector<ParentalRating> ratings = it->second;
-      for (auto rating : ratings) {
-        array.Add(rating.ToJsonObject());
+   // ParentalControl.getRatingSchemes
+   if (method == PARENTAL_CONTROL_GET_RATING_SCHEMES)
+   {
+      typedef std::map<std::string, std::vector<ParentalRating> > RatingSchemes;
+      RatingSchemes ratingSchemes = GetRatingSchemes();
+      ArrayType<JsonValue> resultsArray;
+      JsonValue resultsValue;
+      for (RatingSchemes::const_iterator it = ratingSchemes.begin(); it != ratingSchemes.end(); ++it)
+      {
+         ArrayType<JsonValue> array;
+         JsonValue jsonRatings;
+         JsonObject schemeObject;
+         std::string scheme = it->first;
+         std::vector<ParentalRating> ratings = it->second;
+         for (auto rating : ratings)
+         {
+            array.Add(rating.ToJsonObject());
+         }
+         jsonRatings.Array(array);
+         schemeObject.Set("name", scheme);
+         schemeObject.Set("ratings", jsonRatings);
+         resultsArray.Add(schemeObject);
       }
-      jsonRatings.Array(array);
-      schemeObject.Set("name", scheme);
-      schemeObject.Set("ratings", jsonRatings);
-      resultsArray.Add(schemeObject);
-    }
-    resultsValue.Array(resultsArray);
-    response.Set("result", resultsValue);
-  }
+      resultsValue.Array(resultsArray);
+      response.Set("result", resultsValue);
+   }
+   // ParentalControl.getThreshold
+   else if (method == PARENTAL_CONTROL_GET_THRESHOLD)
+   {
+      std::shared_ptr<ParentalRating> threshold = GetThreshold(params);
+      response.Set("result", threshold->ToJsonObject());
+   }
+   // ParentalControl.isRatingBlocked
+   else if (method == PARENTAL_CONTROL_IS_RATING_BLOCKED)
+   {
+      bool blocked = IsRatingBlocked(params);
+      response["result"] = blocked;
+   }
+   // UnknownMethod
+   else
+   {
+      response = RequestHandler::MakeErrorResponse("UnknownMethod");
+      ret = false;
+   }
 
-  // ParentalControl.getThreshold
-  else if (method == PARENTAL_CONTROL_GET_THRESHOLD) {
-    std::shared_ptr<ParentalRating> threshold = GetThreshold(params);
-    response.Set("result", threshold->ToJsonObject());
-  }
-
-  // ParentalControl.isRatingBlocked
-  else if (method == PARENTAL_CONTROL_IS_RATING_BLOCKED) {
-    bool blocked = IsRatingBlocked(params);
-    response["result"] = blocked;
-  }
-
-  // UnknownMethod
-  else {
-    response = RequestHandler::MakeErrorResponse("UnknownMethod");
-    ret = false;
-  }
-
-  return ret;
+   return ret;
 }
 
 /**
@@ -99,11 +103,11 @@ bool ParentalControlRequestHandler::Handle(
  *
  * @return The rating schemes supported by the system
  */
-std::map<std::string, std::vector<ParentalRating>> ParentalControlRequestHandler::GetRatingSchemes()
+std::map<std::string, std::vector<ParentalRating> > ParentalControlRequestHandler::GetRatingSchemes()
 {
-  std::map<std::string, std::vector<ParentalRating>> schemes = 
-    ORB::instance(nullptr)->GetORBPlatform()->ParentalControl_GetRatingSchemes();
-  return schemes;
+   std::map<std::string, std::vector<ParentalRating> > schemes =
+      ORB::instance(nullptr)->GetORBPlatform()->ParentalControl_GetRatingSchemes();
+   return schemes;
 }
 
 /**
@@ -115,10 +119,10 @@ std::map<std::string, std::vector<ParentalRating>> ParentalControlRequestHandler
  */
 std::shared_ptr<ParentalRating> ParentalControlRequestHandler::GetThreshold(JsonObject params)
 {
-  std::shared_ptr<ParentalRating> threshold = ORB::instance(nullptr)->GetORBPlatform()->ParentalControl_GetThreshold(
-    params["scheme"].String()
-  );
-  return threshold;
+   std::shared_ptr<ParentalRating> threshold = ORB::instance(nullptr)->GetORBPlatform()->ParentalControl_GetThreshold(
+      params["scheme"].String()
+      );
+   return threshold;
 }
 
 /**
@@ -130,12 +134,11 @@ std::shared_ptr<ParentalRating> ParentalControlRequestHandler::GetThreshold(Json
  */
 bool ParentalControlRequestHandler::IsRatingBlocked(JsonObject params)
 {
-  bool blocked = ORB::instance(nullptr)->GetORBPlatform()->ParentalControl_IsRatingBlocked(
-    params["scheme"].String(),
-    params["region"].String(),
-    params["value"].Number()
-  );
-  return blocked;
+   bool blocked = ORB::instance(nullptr)->GetORBPlatform()->ParentalControl_IsRatingBlocked(
+      params["scheme"].String(),
+      params["region"].String(),
+      params["value"].Number()
+      );
+   return blocked;
 }
-
 } // namespace orb

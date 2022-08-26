@@ -17,7 +17,6 @@ using namespace WPEFramework;
 extern WKBundleRef g_Bundle;
 
 namespace orb {
-
 // event handlers
 void JavaScriptEventDispatchRequested(const JavaScriptEventDispatchRequestedParamsData& params);
 void DvbUrlLoaded(const DvbUrlLoadedParamsData& params);
@@ -26,13 +25,13 @@ void DvbUrlLoaded(const DvbUrlLoadedParamsData& params);
  * Private constructor.
  */
 ORBClient::ORBClient()
-  : m_remoteObject("ORB.1", "client.events.88")
+   : m_remoteObject("ORB.1", "client.events.88")
 {
-  fprintf(stderr, "[ORBClient::ORBClient]\n");
-  WPEFramework::Core::SystemInfo::SetEnvironment(_T("THUNDER_ACCESS"), (_T("127.0.0.1:9998")));
+   fprintf(stderr, "[ORBClient::ORBClient]\n");
+   WPEFramework::Core::SystemInfo::SetEnvironment(_T("THUNDER_ACCESS"), (_T("127.0.0.1:9998")));
 
-  m_subscribedEvents["JavaScriptEventDispatchRequestedEvent"] = false;
-  m_subscribedEvents["DvbUrlLoaded"] = false;
+   m_subscribedEvents["JavaScriptEventDispatchRequestedEvent"] = false;
+   m_subscribedEvents["DvbUrlLoaded"] = false;
 }
 
 /**
@@ -40,13 +39,13 @@ ORBClient::ORBClient()
  */
 ORBClient::~ORBClient()
 {
-  m_dsmccCallers.clear();
-  m_dsmccCallbacks.clear();
-  m_subscribedEvents.clear();
-  
-  // Unsubscribe from events
-  m_remoteObject.Unsubscribe(TIMEOUT_FOR_ONEWAY_METHODS, _T("javaScriptEventDispatchRequested"));
-  m_remoteObject.Unsubscribe(TIMEOUT_FOR_ONEWAY_METHODS, _T("dvbUrlLoaded"));
+   m_dsmccCallers.clear();
+   m_dsmccCallbacks.clear();
+   m_subscribedEvents.clear();
+
+   // Unsubscribe from events
+   m_remoteObject.Unsubscribe(TIMEOUT_FOR_ONEWAY_METHODS, _T("javaScriptEventDispatchRequested"));
+   m_remoteObject.Unsubscribe(TIMEOUT_FOR_ONEWAY_METHODS, _T("dvbUrlLoaded"));
 }
 
 /**
@@ -54,20 +53,22 @@ ORBClient::~ORBClient()
  */
 void ORBClient::SubscribeWithJavaScriptEventDispatchRequestedEvent()
 {
-  uint32_t error_code = WPEFramework::Core::ERROR_NONE;
+   uint32_t error_code = WPEFramework::Core::ERROR_NONE;
 
-  // subscribe to javaScriptEventDispatchRequested event
-  if (m_subscribedEvents["JavaScriptEventDispatchRequestedEvent"] == false) {
-    error_code = m_remoteObject.Subscribe<JavaScriptEventDispatchRequestedParamsData>(
-      TIMEOUT_FOR_ONEWAY_METHODS, _T("javaScriptEventDispatchRequested"), &JavaScriptEventDispatchRequested);
+   // subscribe to javaScriptEventDispatchRequested event
+   if (m_subscribedEvents["JavaScriptEventDispatchRequestedEvent"] == false)
+   {
+      error_code = m_remoteObject.Subscribe<JavaScriptEventDispatchRequestedParamsData>(
+         TIMEOUT_FOR_ONEWAY_METHODS, _T("javaScriptEventDispatchRequested"), &JavaScriptEventDispatchRequested);
 
-    fprintf(stderr, "[ORBClient::ORBClient] Subscribe to event 'javaScriptEventDispatchRequested': %s\n",
-      error_code == WPEFramework::Core::ERROR_NONE ? "success" : "failure");
-  }
+      fprintf(stderr, "[ORBClient::ORBClient] Subscribe to event 'javaScriptEventDispatchRequested': %s\n",
+         error_code == WPEFramework::Core::ERROR_NONE ? "success" : "failure");
+   }
 
-  if (error_code == WPEFramework::Core::ERROR_NONE) {
-    m_subscribedEvents["JavaScriptEventDispatchRequestedEvent"] = true;
-  }
+   if (error_code == WPEFramework::Core::ERROR_NONE)
+   {
+      m_subscribedEvents["JavaScriptEventDispatchRequestedEvent"] = true;
+   }
 }
 
 /**
@@ -75,20 +76,22 @@ void ORBClient::SubscribeWithJavaScriptEventDispatchRequestedEvent()
  */
 void ORBClient::SubscribeWithDvbUrlLoadedEvent()
 {
-  uint32_t error_code = WPEFramework::Core::ERROR_NONE;
+   uint32_t error_code = WPEFramework::Core::ERROR_NONE;
 
-  // subscribe to dvbUrlLoaded event
-  if (m_subscribedEvents["DvbUrlLoaded"] == false) {
-    error_code = m_remoteObject.Subscribe<DvbUrlLoadedParamsData>(
-      TIMEOUT_FOR_ONEWAY_METHODS, _T("dvbUrlLoaded"), &DvbUrlLoaded);
-    
-    fprintf(stderr, "[ORBClient::ORBClient] Subscribe to event 'dvbUrlLoaded': %s\n",
-      error_code == WPEFramework::Core::ERROR_NONE ? "success" : "failure");
-  }
-  
-  if (error_code == WPEFramework::Core::ERROR_NONE) {
-    m_subscribedEvents["DvbUrlLoaded"] = true;
-  }
+   // subscribe to dvbUrlLoaded event
+   if (m_subscribedEvents["DvbUrlLoaded"] == false)
+   {
+      error_code = m_remoteObject.Subscribe<DvbUrlLoadedParamsData>(
+         TIMEOUT_FOR_ONEWAY_METHODS, _T("dvbUrlLoaded"), &DvbUrlLoaded);
+
+      fprintf(stderr, "[ORBClient::ORBClient] Subscribe to event 'dvbUrlLoaded': %s\n",
+         error_code == WPEFramework::Core::ERROR_NONE ? "success" : "failure");
+   }
+
+   if (error_code == WPEFramework::Core::ERROR_NONE)
+   {
+      m_subscribedEvents["DvbUrlLoaded"] = true;
+   }
 }
 
 /**
@@ -97,45 +100,46 @@ void ORBClient::SubscribeWithDvbUrlLoadedEvent()
  * Create a new JSON token for the current application and the given uri.
  *
  * @param uri The given URI
- * 
+ *
  * @return The resulting JSON token
  */
 JsonObject ORBClient::CreateToken(std::string uri)
 {
-  fprintf(stderr, "[ORBClient::CreateToken] uri=%s\n", uri.c_str());
+   fprintf(stderr, "[ORBClient::CreateToken] uri=%s\n", uri.c_str());
 
-  Core::JSON::String params;
-  JsonObject result;
+   Core::JSON::String params;
+   JsonObject result;
 
-  params.FromString(uri);
+   params.FromString(uri);
 
-  uint32_t error_code = m_remoteObject.Invoke<Core::JSON::String, JsonObject>(
-    TIMEOUT_FOR_TWOWAY_METHODS, _T("CreateToken"), params, result);
-  
-  std::string resultAsString;
-  result.ToString(resultAsString);
-  fprintf(stderr, "[ORBClient::CreateToken] error_code=%u result=%s\n", error_code, resultAsString.c_str());
+   uint32_t error_code = m_remoteObject.Invoke<Core::JSON::String, JsonObject>(
+      TIMEOUT_FOR_TWOWAY_METHODS, _T("CreateToken"), params, result);
 
-  if (error_code == 0) {
-    return result;
-  }
+   std::string resultAsString;
+   result.ToString(resultAsString);
+   fprintf(stderr, "[ORBClient::CreateToken] error_code=%u result=%s\n", error_code, resultAsString.c_str());
 
-  result.FromString("{}");
-  return result;
+   if (error_code == 0)
+   {
+      return result;
+   }
+
+   result.FromString("{}");
+   return result;
 }
 
 /**
  * @brief ORBClient::ExecuteWpeBridgeRequest
- * 
+ *
  * Execute the given WPE bridge request.
  * The reuqest is a stringified JSON object of the following form:
- * 
+ *
  * {
  *    "token": <token>
  *    "method": <method>
  *    "params": <params>
  * }
- * 
+ *
  * The response is also a stringified JSON object containing the results, if any.
  *
  * @param request A stringified JSON object representing the WPE bridge request
@@ -144,30 +148,31 @@ JsonObject ORBClient::CreateToken(std::string uri)
  */
 std::string ORBClient::ExecuteWpeBridgeRequest(std::string request)
 {
-  fprintf(stderr, "[ORBClient::ExecuteWpeBridgeRequest] request=%s\n", request.c_str());
+   fprintf(stderr, "[ORBClient::ExecuteWpeBridgeRequest] request=%s\n", request.c_str());
 
-  JsonObject params;
-  JsonObject result;
+   JsonObject params;
+   JsonObject result;
 
-  params.FromString(request);
+   params.FromString(request);
 
-  uint32_t error_code = m_remoteObject.Invoke<JsonObject, JsonObject>(
-    TIMEOUT_FOR_TWOWAY_METHODS, _T("ExecuteWpeBridgeRequest"), params, result);
+   uint32_t error_code = m_remoteObject.Invoke<JsonObject, JsonObject>(
+      TIMEOUT_FOR_TWOWAY_METHODS, _T("ExecuteWpeBridgeRequest"), params, result);
 
-  std::string resultAsString;
-  result.ToString(resultAsString);
-  fprintf(stderr, "[ORBClient::ExecuteWpeBridgeRequest] error_code=%u result=%s\n", error_code, resultAsString.c_str());
+   std::string resultAsString;
+   result.ToString(resultAsString);
+   fprintf(stderr, "[ORBClient::ExecuteWpeBridgeRequest] error_code=%u result=%s\n", error_code, resultAsString.c_str());
 
-  if (error_code == 0) {
-    return resultAsString;
-  }
+   if (error_code == 0)
+   {
+      return resultAsString;
+   }
 
-  return _T("{}");
+   return _T("{}");
 }
 
 /**
  * @brief ORBClient::LoadDvbUrl
- * 
+ *
  * Load the specified DVB URL through the DSM-CC implementation.
  *
  * @param url       The DVB URL
@@ -175,18 +180,18 @@ std::string ORBClient::ExecuteWpeBridgeRequest(std::string request)
  */
 void ORBClient::LoadDvbUrl(std::string url, int requestId)
 {
-  fprintf(stderr, "[ORBClient::LoadDvbUrl] url=%s requestId=%d\n", url.c_str(), requestId);
+   fprintf(stderr, "[ORBClient::LoadDvbUrl] url=%s requestId=%d\n", url.c_str(), requestId);
 
-  LoadDvbUrlParamsData params;
-  params.Url = url;
-  params.RequestId = requestId;
+   LoadDvbUrlParamsData params;
+   params.Url = url;
+   params.RequestId = requestId;
 
-  uint32_t error_code = m_remoteObject.Invoke<LoadDvbUrlParamsData, void>(
-    TIMEOUT_FOR_ONEWAY_METHODS, _T("LoadDvbUrl"), params);
+   uint32_t error_code = m_remoteObject.Invoke<LoadDvbUrlParamsData, void>(
+      TIMEOUT_FOR_ONEWAY_METHODS, _T("LoadDvbUrl"), params);
 
-  fprintf(stderr, "[ORBClient::LoadDvbUrl] error_code=%u\n", error_code);
+   fprintf(stderr, "[ORBClient::LoadDvbUrl] error_code=%u\n", error_code);
 
-  return;
+   return;
 }
 
 /**
@@ -200,18 +205,18 @@ void ORBClient::LoadDvbUrl(std::string url, int requestId)
  */
 void ORBClient::ApplicationLoadFailed(std::string url, std::string errorDescription)
 {
-  fprintf(stderr, "[ORBClient::ApplicationLoadFailed] url=%s errorDescription=%s\n", url.c_str(), errorDescription.c_str());
+   fprintf(stderr, "[ORBClient::ApplicationLoadFailed] url=%s errorDescription=%s\n", url.c_str(), errorDescription.c_str());
 
-  JsonObject params;
-  params["url"] = url;
-  params["errorDescription"] = errorDescription;
+   JsonObject params;
+   params["url"] = url;
+   params["errorDescription"] = errorDescription;
 
-  uint32_t error_code = m_remoteObject.Invoke<JsonObject, void>(
-    TIMEOUT_FOR_ONEWAY_METHODS, _T("ApplicationLoadFailed"), params);
-  
-  fprintf(stderr, "[ORBClient::ApplicationLoadFailed] error_code=%u\n", error_code);
+   uint32_t error_code = m_remoteObject.Invoke<JsonObject, void>(
+      TIMEOUT_FOR_ONEWAY_METHODS, _T("ApplicationLoadFailed"), params);
 
-  return;
+   fprintf(stderr, "[ORBClient::ApplicationLoadFailed] error_code=%u\n", error_code);
+
+   return;
 }
 
 /**
@@ -224,19 +229,18 @@ void ORBClient::ApplicationLoadFailed(std::string url, std::string errorDescript
  */
 void ORBClient::ApplicationPageChanged(std::string url)
 {
-  fprintf(stderr, "[ORBClient::ApplicationPageChanged] url=%s \n", url.c_str());
+   fprintf(stderr, "[ORBClient::ApplicationPageChanged] url=%s \n", url.c_str());
 
-  Core::JSON::String params;
-  params.FromString(url);
+   Core::JSON::String params;
+   params.FromString(url);
 
-  uint32_t error_code = m_remoteObject.Invoke<Core::JSON::String, void>(
-    TIMEOUT_FOR_ONEWAY_METHODS, _T("ApplicationPageChanged"), params);
-  
-  fprintf(stderr, "[ORBClient::ApplicationPageChanged] error_code=%u\n", error_code);
+   uint32_t error_code = m_remoteObject.Invoke<Core::JSON::String, void>(
+      TIMEOUT_FOR_ONEWAY_METHODS, _T("ApplicationPageChanged"), params);
 
-  return;
+   fprintf(stderr, "[ORBClient::ApplicationPageChanged] error_code=%u\n", error_code);
+
+   return;
 }
-
 
 /**
  * Dispatch the specified event to the current JavaScript context.
@@ -248,13 +252,13 @@ void ORBClient::ApplicationPageChanged(std::string url)
  */
 void ORBClient::DispatchEvent(std::string type, JsonObject properties, bool broadcastRelated, std::string targetOrigin)
 {
-  std::string propertiesAsString;
-  properties.ToString(propertiesAsString);
-  std::string kScript = "document.dispatchBridgeEvent('" + type + "', " + propertiesAsString + ")";
-  JSStringRef scriptStr = JSStringCreateWithUTF8CString(kScript.c_str());
-  JSValueRef exception = nullptr;
-  JSEvaluateScript(m_javaScriptContext, scriptStr, nullptr, nullptr, 0, &exception);
-  JSStringRelease(scriptStr);
+   std::string propertiesAsString;
+   properties.ToString(propertiesAsString);
+   std::string kScript = "document.dispatchBridgeEvent('" + type + "', " + propertiesAsString + ")";
+   JSStringRef scriptStr = JSStringCreateWithUTF8CString(kScript.c_str());
+   JSValueRef exception = nullptr;
+   JSEvaluateScript(m_javaScriptContext, scriptStr, nullptr, nullptr, 0, &exception);
+   JSStringRelease(scriptStr);
 }
 
 /**
@@ -264,7 +268,7 @@ void ORBClient::DispatchEvent(std::string type, JsonObject properties, bool broa
  */
 void ORBClient::SetJavaScriptContext(JSContextRef jsContextRef)
 {
-  m_javaScriptContext = jsContextRef;
+   m_javaScriptContext = jsContextRef;
 }
 
 /**
@@ -275,7 +279,7 @@ void ORBClient::SetJavaScriptContext(JSContextRef jsContextRef)
  */
 void ORBClient::AddDsmccCaller(int requestId, void *caller)
 {
-  m_dsmccCallers[requestId] = caller;
+   m_dsmccCallers[requestId] = caller;
 }
 
 /**
@@ -286,7 +290,7 @@ void ORBClient::AddDsmccCaller(int requestId, void *caller)
  */
 void ORBClient::AddDsmccCallback(int requestId, OnDvbUrlLoaded callback)
 {
-  m_dsmccCallbacks[requestId] = callback;
+   m_dsmccCallbacks[requestId] = callback;
 }
 
 /**
@@ -296,9 +300,9 @@ void ORBClient::AddDsmccCallback(int requestId, OnDvbUrlLoaded callback)
  *
  * @return Pointer to the DSM-CC caller object
  */
-void *ORBClient::GetDsmccCaller(int requestId)
+void * ORBClient::GetDsmccCaller(int requestId)
 {
-  return m_dsmccCallers[requestId];
+   return m_dsmccCallers[requestId];
 }
 
 /**
@@ -310,7 +314,7 @@ void *ORBClient::GetDsmccCaller(int requestId)
  */
 OnDvbUrlLoaded ORBClient::GetDsmccCallback(int requestId)
 {
-  return m_dsmccCallbacks[requestId];
+   return m_dsmccCallbacks[requestId];
 }
 
 /**
@@ -320,7 +324,7 @@ OnDvbUrlLoaded ORBClient::GetDsmccCallback(int requestId)
  */
 void ORBClient::RemoveDsmccCaller(int requestId)
 {
-  m_dsmccCallers.erase(requestId);
+   m_dsmccCallers.erase(requestId);
 }
 
 /**
@@ -330,9 +334,8 @@ void ORBClient::RemoveDsmccCaller(int requestId)
  */
 void ORBClient::RemoveDsmccCallback(int requestId)
 {
-  m_dsmccCallbacks.erase(requestId);
+   m_dsmccCallbacks.erase(requestId);
 }
-
 
 /*****************************************************************************
  * Event handlers
@@ -341,27 +344,27 @@ void ORBClient::RemoveDsmccCallback(int requestId)
 
 void JavaScriptEventDispatchRequested(const JavaScriptEventDispatchRequestedParamsData& params)
 {
-  fprintf(stderr, "[ORBClient::JavaScriptEventDispatchRequested] type=%s properties=%s\n",
-    params.EventName.Value().c_str(),
-    params.EventProperties.Value().c_str()
-  );
+   fprintf(stderr, "[ORBClient::JavaScriptEventDispatchRequested] type=%s properties=%s\n",
+      params.EventName.Value().c_str(),
+      params.EventProperties.Value().c_str()
+      );
 
-  // Prepare input
-  JsonObject input;
-  input["type"] = params.EventName.Value();
-  input["properties"] = params.EventProperties.Value();
+   // Prepare input
+   JsonObject input;
+   input["type"] = params.EventName.Value();
+   input["properties"] = params.EventProperties.Value();
 
-  std::string inputAsString;
-  input.ToString(inputAsString);
+   std::string inputAsString;
+   input.ToString(inputAsString);
 
-  // Send synchronous message to the injected bundle's main thread
-  WKStringRef messageName = WKStringCreateWithUTF8CString(Tags::DispatchEvent);
-  WKStringRef messageBody = WKStringCreateWithUTF8CString(inputAsString.c_str());
-  WKBundlePostSynchronousMessage(g_Bundle, messageName, messageBody, nullptr);
+   // Send synchronous message to the injected bundle's main thread
+   WKStringRef messageName = WKStringCreateWithUTF8CString(Tags::DispatchEvent);
+   WKStringRef messageBody = WKStringCreateWithUTF8CString(inputAsString.c_str());
+   WKBundlePostSynchronousMessage(g_Bundle, messageName, messageBody, nullptr);
 
-  // Release resources
-  WKRelease(messageBody);
-  WKRelease(messageName);
+   // Release resources
+   WKRelease(messageBody);
+   WKRelease(messageName);
 }
 
 /**
@@ -371,18 +374,17 @@ void JavaScriptEventDispatchRequested(const JavaScriptEventDispatchRequestedPara
  */
 void DvbUrlLoaded(const DvbUrlLoadedParamsData& params)
 {
-  int requestId = params.RequestId.Value();
-  unsigned int fileContentLength = params.FileContentLength;
+   int requestId = params.RequestId.Value();
+   unsigned int fileContentLength = params.FileContentLength;
 
-  fprintf(stderr, "[ORBBClient::DvbUrlLoaded] requestId=%d\n", requestId);
+   fprintf(stderr, "[ORBBClient::DvbUrlLoaded] requestId=%d\n", requestId);
 
-  OnDvbUrlLoaded callback = ORBClient::GetSharedInstance().GetDsmccCallback(requestId);
-  void *caller = ORBClient::GetSharedInstance().GetDsmccCaller(requestId);
+   OnDvbUrlLoaded callback = ORBClient::GetSharedInstance().GetDsmccCallback(requestId);
+   void *caller = ORBClient::GetSharedInstance().GetDsmccCaller(requestId);
 
-  callback(requestId, fileContentLength, caller);
+   callback(requestId, fileContentLength, caller);
 
-  ORBClient::GetSharedInstance().RemoveDsmccCallback(requestId);
-  ORBClient::GetSharedInstance().RemoveDsmccCaller(requestId);
+   ORBClient::GetSharedInstance().RemoveDsmccCallback(requestId);
+   ORBClient::GetSharedInstance().RemoveDsmccCaller(requestId);
 }
-
 } // namespace orb

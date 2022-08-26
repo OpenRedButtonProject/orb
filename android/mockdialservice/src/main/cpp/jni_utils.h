@@ -18,14 +18,14 @@ namespace JniUtils {
  * @param jvm The Java virtual machine.
  * @param version The JNI version.
  */
-   void Init(JavaVM *jvm, jint version);
+void Init(JavaVM *jvm, jint version);
 
 /**
  * Attach the current thread if needed and get the env. If this method attaches the thread, it
  * is automatically detached when the thread is destroyed.
  * @return A JNI env.
  */
-   JNIEnv* GetEnv();
+JNIEnv* GetEnv();
 
 /**
  * Make a STD string copy of a JNI UTF string.
@@ -33,7 +33,7 @@ namespace JniUtils {
  * @param jni_utf_str JNI UTF string.
  * @return A STD string.
  */
-   std::string MakeStdString(JNIEnv *env, jstring jni_utf_str);
+std::string MakeStdString(JNIEnv *env, jstring jni_utf_str);
 }
 
 #endif //HBBTVBROWSER_JNI_UTILS_H

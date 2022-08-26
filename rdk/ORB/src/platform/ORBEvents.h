@@ -17,13 +17,13 @@
 void Event_OnBroadcastStopped();
 
 /**
-  * Notify the application manager that an AIT section was received.
-  *
-  * @param aitPid             The AID PID        
-  * @param serviceId          The corresponding service id
-  * @param aitSectionData     The AIT section data
-  * @param aitSectionDataSize The AIT section data size in number of bytes
-  */
+ * Notify the application manager that an AIT section was received.
+ *
+ * @param aitPid             The AID PID
+ * @param serviceId          The corresponding service id
+ * @param aitSectionData     The AIT section data
+ * @param aitSectionDataSize The AIT section data size in number of bytes
+ */
 void Event_OnAitSectionReceived(unsigned short aitPid, unsigned short serviceId, unsigned char *aitSectionData, unsigned int aitSectionDataSize);
 
 /**

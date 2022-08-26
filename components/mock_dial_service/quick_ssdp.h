@@ -26,7 +26,7 @@
 #ifndef QUICK_SSDP_H_
 #define QUICK_SSDP_H_
 
-void run_ssdp(int port, const char *pFriendlyName, const char * pModelName, const char *pUuid, const char *pIpAddress, const char *pMacAddress);
+void run_ssdp(int port, const char *pFriendlyName, const char *pModelName, const char *pUuid, const char *pIpAddress, const char *pMacAddress);
 
 void stop_ssdp();
 

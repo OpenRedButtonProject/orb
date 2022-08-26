@@ -41,29 +41,32 @@ struct mg_connection;  // Handle for the individual connection
 
 
 // This structure contains information about the HTTP request.
-struct mg_request_info {
-  void *user_data;       // User-defined pointer passed to mg_start()
-  char *request_method;  // "GET", "POST", etc
-  char *uri;             // URL-decoded URI
-  char *http_version;    // E.g. "1.0", "1.1"
-  char *query_string;    // \0 - terminated
-  char *request_body;    // \0 - terminated
-  char *log_message;     // Mongoose error log message
-  struct sockaddr_in local_addr; // Our server's address for this connection
-  struct sockaddr_in remote_addr; // The remote address for this connection
-  int status_code;       // HTTP reply status code
-  int num_headers;       // Number of headers
-  struct mg_header {
-    char *name;          // HTTP header name
-    char *value;         // HTTP header value
-  } http_headers[16];    // Maximum 16 headers
+struct mg_request_info
+{
+   void *user_data;      // User-defined pointer passed to mg_start()
+   char *request_method; // "GET", "POST", etc
+   char *uri;            // URL-decoded URI
+   char *http_version;   // E.g. "1.0", "1.1"
+   char *query_string;   // \0 - terminated
+   char *request_body;   // \0 - terminated
+   char *log_message;    // Mongoose error log message
+   struct sockaddr_in local_addr; // Our server's address for this connection
+   struct sockaddr_in remote_addr; // The remote address for this connection
+   int status_code;      // HTTP reply status code
+   int num_headers;      // Number of headers
+   struct mg_header
+   {
+      char *name;        // HTTP header name
+      char *value;       // HTTP header value
+   } http_headers[16];   // Maximum 16 headers
 };
 
 // Various events on which user-defined function is called by Mongoose.
-enum mg_event {
-  MG_NEW_REQUEST,   // New HTTP request has arrived from the client
-  MG_HTTP_ERROR,    // HTTP error must be returned to the client
-  MG_EVENT_LOG,     // Mongoose logs an event, request_info.log_message
+enum mg_event
+{
+   MG_NEW_REQUEST,  // New HTTP request has arrived from the client
+   MG_HTTP_ERROR,   // HTTP error must be returned to the client
+   MG_EVENT_LOG,    // Mongoose logs an event, request_info.log_message
 };
 
 // Prototype for the user-defined function. Mongoose calls this function
@@ -83,8 +86,8 @@ enum mg_event {
 //   the request. Handler must not send any data to the client in this case.
 //   Mongoose proceeds with request handling as if nothing happened.
 typedef void * (*mg_callback_t)(enum mg_event event,
-                                struct mg_connection *conn,
-                                const struct mg_request_info *request_info);
+   struct mg_connection *conn,
+   const struct mg_request_info *request_info);
 
 
 // Start web server.
@@ -100,7 +103,7 @@ typedef void * (*mg_callback_t)(enum mg_event event,
 //
 // Return:
 //   web server context, or NULL on error.
-struct mg_context *mg_start(mg_callback_t callback, void *user_data, int port);
+struct mg_context* mg_start(mg_callback_t callback, void *user_data, int port);
 
 
 // Stop the web server.
@@ -133,11 +136,11 @@ int mg_read(struct mg_connection *, void *buf, size_t len);
 // This is a helper function. It traverses request_info->http_headers array,
 // and if the header is present in the array, returns its value. If it is
 // not present, NULL is returned.
-const char *mg_get_header(const struct mg_connection *, const char *name);
+const char* mg_get_header(const struct mg_connection *, const char *name);
 
 
 // Return Mongoose version.
-const char *mg_version(void);
+const char* mg_version(void);
 
 
 // MD5 hash given strings.
@@ -149,9 +152,9 @@ const char *mg_version(void);
 void mg_md5(char *buf, ...);
 
 void mg_send_http_error(struct mg_connection *conn, int status,
-                        const char *reason, const char *fmt, ...);
+   const char *reason, const char *fmt, ...);
 int mg_get_listen_addr(struct mg_context *ctx, struct sockaddr *addr,
-                       socklen_t *addrlen);
+   socklen_t *addrlen);
 
 #ifdef __cplusplus
 }

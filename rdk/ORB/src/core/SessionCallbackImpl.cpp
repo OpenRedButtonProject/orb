@@ -14,18 +14,19 @@
 using namespace WPEFramework::Plugin;
 
 namespace orb {
-
 /**
  * Constructor.
  */
 SessionCallbackImpl::SessionCallbackImpl()
-{}
+{
+}
 
 /**
  * Destructor.
  */
 SessionCallbackImpl::~SessionCallbackImpl()
-{}
+{
+}
 
 /**
  * @brief SessionCallbackImpl::LoadApplication
@@ -38,9 +39,9 @@ SessionCallbackImpl::~SessionCallbackImpl()
  */
 void SessionCallbackImpl::LoadApplication(uint16_t app_id, const char *url)
 {
-  fprintf(stderr, "[SessionCallbackImpl::LoadApplication] app_id=%hu url=%s\n", app_id, url);
-  ORB::instance(nullptr)->SetCurrentAppId(app_id);
-  ORB::instance(nullptr)->GetORBPlatform()->Application_Load(url);
+   fprintf(stderr, "[SessionCallbackImpl::LoadApplication] app_id=%hu url=%s\n", app_id, url);
+   ORB::instance(nullptr)->SetCurrentAppId(app_id);
+   ORB::instance(nullptr)->GetORBPlatform()->Application_Load(url);
 }
 
 /**
@@ -50,8 +51,8 @@ void SessionCallbackImpl::LoadApplication(uint16_t app_id, const char *url)
  */
 void SessionCallbackImpl::ShowApplication()
 {
-  fprintf(stderr, "[SessionCallbackImpl::ShowApplication]\n");
-  ORB::instance(nullptr)->GetORBPlatform()->Application_SetVisible(true);
+   fprintf(stderr, "[SessionCallbackImpl::ShowApplication]\n");
+   ORB::instance(nullptr)->GetORBPlatform()->Application_SetVisible(true);
 }
 
 /**
@@ -61,8 +62,8 @@ void SessionCallbackImpl::ShowApplication()
  */
 void SessionCallbackImpl::HideApplication()
 {
-  fprintf(stderr, "[SessionCallbackImpl::HideApplication]\n");
-  ORB::instance(nullptr)->GetORBPlatform()->Application_SetVisible(false);
+   fprintf(stderr, "[SessionCallbackImpl::HideApplication]\n");
+   ORB::instance(nullptr)->GetORBPlatform()->Application_SetVisible(false);
 }
 
 /**
@@ -76,15 +77,17 @@ void SessionCallbackImpl::HideApplication()
  */
 std::string SessionCallbackImpl::GetXmlAitContents(const std::string &url)
 {
-  fprintf(stderr, "[SessionCallbackImpl::GetXmlAitContents] url=%s\n", url.c_str());
-  std::unique_ptr<HttpDownloader> httpDownloader = std::make_unique<HttpDownloader>();
-  std::shared_ptr<HttpDownloader::DownloadedObject> downloadedObject = httpDownloader->Download(url);
-  if (downloadedObject != nullptr) {
-    if (downloadedObject->GetContentType().rfind("application/vnd.dvb.ait+xml;", 0) == 0) {
-      return downloadedObject->GetContent();
-    }
-  }
-  return "";
+   fprintf(stderr, "[SessionCallbackImpl::GetXmlAitContents] url=%s\n", url.c_str());
+   std::unique_ptr<HttpDownloader> httpDownloader = std::make_unique<HttpDownloader>();
+   std::shared_ptr<HttpDownloader::DownloadedObject> downloadedObject = httpDownloader->Download(url);
+   if (downloadedObject != nullptr)
+   {
+      if (downloadedObject->GetContentType().rfind("application/vnd.dvb.ait+xml;", 0) == 0)
+      {
+         return downloadedObject->GetContent();
+      }
+   }
+   return "";
 }
 
 /**
@@ -95,8 +98,8 @@ std::string SessionCallbackImpl::GetXmlAitContents(const std::string &url)
  */
 void SessionCallbackImpl::StopBroadcast()
 {
-  fprintf(stderr, "[SessionCallbackImpl::StopBroadcast]\n");
-  ORB::instance(nullptr)->GetORBPlatform()->Broadcast_Stop();
+   fprintf(stderr, "[SessionCallbackImpl::StopBroadcast]\n");
+   ORB::instance(nullptr)->GetORBPlatform()->Broadcast_Stop();
 }
 
 /**
@@ -106,8 +109,8 @@ void SessionCallbackImpl::StopBroadcast()
  */
 void SessionCallbackImpl::DispatchTransitionedToBroadcastRelatedEvent()
 {
-  fprintf(stderr, "[SessionCallbackImpl::DispatchTransitionedToBroadcastRelatedEvent]\n");
-  Event_OnAppTransitionedToBroadcastRelated();
+   fprintf(stderr, "[SessionCallbackImpl::DispatchTransitionedToBroadcastRelatedEvent]\n");
+   Event_OnAppTransitionedToBroadcastRelated();
 }
 
 /**
@@ -118,14 +121,14 @@ void SessionCallbackImpl::DispatchTransitionedToBroadcastRelatedEvent()
  */
 void SessionCallbackImpl::ResetBroadcastPresentation()
 {
-  fprintf(stderr, "[SessionCallbackImpl::ResetBroadcastPresentation]\n");
-  ORB::instance(nullptr)->GetORBPlatform()->Broadcast_Reset();
+   fprintf(stderr, "[SessionCallbackImpl::ResetBroadcastPresentation]\n");
+   ORB::instance(nullptr)->GetORBPlatform()->Broadcast_Reset();
 }
 
 void SessionCallbackImpl::DispatchApplicationLoadErrorEvent()
 {
-  fprintf(stderr, "TODO DispatchApplicationLoadErrorEvent !!!!!!!!!!!!!!!\n");
-  return;
+   fprintf(stderr, "TODO DispatchApplicationLoadErrorEvent !!!!!!!!!!!!!!!\n");
+   return;
 }
 
 /**
@@ -135,7 +138,7 @@ void SessionCallbackImpl::DispatchApplicationLoadErrorEvent()
  */
 int SessionCallbackImpl::GetParentalControlAge()
 {
-  return ORB::instance(nullptr)->GetORBPlatform()->ParentalControl_GetAge();
+   return ORB::instance(nullptr)->GetORBPlatform()->ParentalControl_GetAge();
 }
 
 /**
@@ -145,7 +148,7 @@ int SessionCallbackImpl::GetParentalControlAge()
  */
 std::string SessionCallbackImpl::GetParentalControlRegion()
 {
-  return ORB::instance(nullptr)->GetORBPlatform()->ParentalControl_GetRegion();
+   return ORB::instance(nullptr)->GetORBPlatform()->ParentalControl_GetRegion();
 }
 
 /**
@@ -155,7 +158,6 @@ std::string SessionCallbackImpl::GetParentalControlRegion()
  */
 std::string SessionCallbackImpl::GetParentalControlRegion3()
 {
-  return ORB::instance(nullptr)->GetORBPlatform()->ParentalControl_GetRegion3();
+   return ORB::instance(nullptr)->GetORBPlatform()->ParentalControl_GetRegion3();
 }
-
 } // namespace orb

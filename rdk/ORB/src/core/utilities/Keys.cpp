@@ -41,7 +41,6 @@
 #define VK_Z          90
 
 namespace orb {
-
 /**
  * @brief Keys::ResolveKeyEvent
  *
@@ -53,51 +52,56 @@ namespace orb {
  */
 uint16_t Keys::ResolveKeyEvent(uint16_t keyCode)
 {
-  uint16_t keyEventCode = 0;
+   uint16_t keyEventCode = 0;
 
-  if (keyCode >= VK_LEFT && keyCode <= VK_DOWN) {
-    keyEventCode = HBBTV_CODE_NAVIGATION;
-  }
-  else if (keyCode >= VK_PAGE_UP && keyCode <= VK_PAGE_DOWN) {
-    keyEventCode = HBBTV_CODE_SCROLL;
-  }
-  else if (keyCode >= VK_ZERO && keyCode <= VK_NINE) {
-    keyEventCode = HBBTV_CODE_NUMERIC;
-  }
-  else if (keyCode >= VK_A && keyCode <= VK_Z) {
-    keyEventCode = HBBTV_CODE_ALPHA;
-  }
-  else {
-    switch (keyCode) {
-      case VK_STOP:
-      case VK_FAST_FWD:
-      case VK_REWIND:
-      case VK_PLAY_PAUSE:
-        keyEventCode = HBBTV_CODE_VCR;
-        break;
-      case VK_ENTER:
-      case VK_BACK:
-        keyEventCode = HBBTV_CODE_NAVIGATION;
-        break;
-      case VK_RED:
-        keyEventCode = HBBTV_CODE_RED;
-        break;
-      case VK_GREEN:
-        keyEventCode = HBBTV_CODE_GREEN;
-        break;
-      case VK_YELLOW:
-        keyEventCode = HBBTV_CODE_YELLOW;
-        break;
-      case VK_BLUE:
-        keyEventCode = HBBTV_CODE_BLUE;
-        break;
-      default:
-        keyEventCode = HBBTV_CODE_OTHER;
-        break;
-    }
-  }
+   if (keyCode >= VK_LEFT && keyCode <= VK_DOWN)
+   {
+      keyEventCode = HBBTV_CODE_NAVIGATION;
+   }
+   else if (keyCode >= VK_PAGE_UP && keyCode <= VK_PAGE_DOWN)
+   {
+      keyEventCode = HBBTV_CODE_SCROLL;
+   }
+   else if (keyCode >= VK_ZERO && keyCode <= VK_NINE)
+   {
+      keyEventCode = HBBTV_CODE_NUMERIC;
+   }
+   else if (keyCode >= VK_A && keyCode <= VK_Z)
+   {
+      keyEventCode = HBBTV_CODE_ALPHA;
+   }
+   else
+   {
+      switch (keyCode)
+      {
+         case VK_STOP:
+         case VK_FAST_FWD:
+         case VK_REWIND:
+         case VK_PLAY_PAUSE:
+            keyEventCode = HBBTV_CODE_VCR;
+            break;
+         case VK_ENTER:
+         case VK_BACK:
+            keyEventCode = HBBTV_CODE_NAVIGATION;
+            break;
+         case VK_RED:
+            keyEventCode = HBBTV_CODE_RED;
+            break;
+         case VK_GREEN:
+            keyEventCode = HBBTV_CODE_GREEN;
+            break;
+         case VK_YELLOW:
+            keyEventCode = HBBTV_CODE_YELLOW;
+            break;
+         case VK_BLUE:
+            keyEventCode = HBBTV_CODE_BLUE;
+            break;
+         default:
+            keyEventCode = HBBTV_CODE_OTHER;
+            break;
+      }
+   }
 
-  return keyEventCode;
+   return keyEventCode;
 }
-
 } // namespace orb

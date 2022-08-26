@@ -11,48 +11,44 @@
 #include <string>
 
 namespace orb {
-
 /**
  * @brief orb::HttpDownloader
  *
  * CURL-based implementation of a simple HTTP downloader.
  */
 class HttpDownloader {
-
 public:
 
-  /**
-   * Representation of downloaded objects.
-   */
-  class DownloadedObject {
-    public:
+   /**
+    * Representation of downloaded objects.
+    */
+   class DownloadedObject {
+public:
       DownloadedObject(std::string content, std::string contentType);
       ~DownloadedObject();
       std::string GetContent() const;
       std::string GetContentType() const;
-    private:
+private:
       std::string m_content;
       std::string m_contentType;
-  }; // class DownloadedObject
+   }; // class DownloadedObject
 
-  HttpDownloader();
-  ~HttpDownloader();
+   HttpDownloader();
+   ~HttpDownloader();
 
-  /**
-   * @brief HttpDownloader::Download
-   *
-   * Download the content of the specified URL.
-   *
-   * @param url The URL to download the content from
-   *
-   * @return The downloaded object
-   */
-  std::shared_ptr<DownloadedObject> Download(const std::string& url);
+   /**
+    * @brief HttpDownloader::Download
+    *
+    * Download the content of the specified URL.
+    *
+    * @param url The URL to download the content from
+    *
+    * @return The downloaded object
+    */
+   std::shared_ptr<DownloadedObject> Download(const std::string& url);
 
 private:
 
-  void *m_curl;
-
+   void *m_curl;
 }; // class HttpDownloader
-
 } // namespace orb

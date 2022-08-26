@@ -10,24 +10,19 @@
 #include "RequestHandler.h"
 
 namespace orb {
-
 /**
  * @brief orb::ConfigurationRequestHandler
  *
  * RequestHandler implementation for handling Configuration-related requests issued by the WPE bridge.
  */
 class ConfigurationRequestHandler : public RequestHandler {
-
 public:
 
-  ConfigurationRequestHandler();
-  ~ConfigurationRequestHandler();
+   ConfigurationRequestHandler();
+   ~ConfigurationRequestHandler();
 
-  virtual bool Handle(JsonObject token, std::string method, JsonObject params, JsonObject& response) override;
+   virtual bool Handle(JsonObject token, std::string method, JsonObject params, JsonObject& response) override;
 
 private:
-
-
 }; // class ConfigurationRequestHandler
-
 } // namespace orb

@@ -34,96 +34,92 @@ using namespace WPEFramework::Core::JSON;
 #define CHANNEL_STATUS_UNKNOWN_ERROR 100
 
 namespace orb {
-
 /**
  * @brief orb::Channel
  *
  * HbbTV channel representation.
  */
 class Channel {
-
 public:
 
-  static std::shared_ptr<Channel> FromJsonObject(JsonObject jsonChannel);
-  static std::shared_ptr<Channel> FromJsonString(std::string jsonChannelAsString);
+   static std::shared_ptr<Channel> FromJsonObject(JsonObject jsonChannel);
+   static std::shared_ptr<Channel> FromJsonString(std::string jsonChannelAsString);
 
-  Channel(
-    bool valid,
-    std::string ccid,
-    std::string name,
-    std::string dsd,
-    std::string ipBroadcastId,
-    int channelType,
-    int idType,
-    int majorChannel,
-    int terminalChannel,
-    int nid,
-    int onid,
-    int tsid,
-    int sid,
-    bool hidden,
-    int sourceId
-  );
+   Channel(
+      bool valid,
+      std::string ccid,
+      std::string name,
+      std::string dsd,
+      std::string ipBroadcastId,
+      int channelType,
+      int idType,
+      int majorChannel,
+      int terminalChannel,
+      int nid,
+      int onid,
+      int tsid,
+      int sid,
+      bool hidden,
+      int sourceId
+      );
 
-  Channel(JsonObject jsonChannel);
+   Channel(JsonObject jsonChannel);
 
-  Channel();
-  ~Channel();
+   Channel();
+   ~Channel();
 
-  void SetFromJsonObject(JsonObject jsonChannel);
+   void SetFromJsonObject(JsonObject jsonChannel);
 
-  void SetValid(bool valid);
-  void SetCcid(std::string ccid);
-  void SetName(std::string name);
-  void SetDsd(std::string dsd);
-  void SetIpBroadcastId(std::string ipBroadcastId);
-  void SetChannelType(int channelType);
-  void SetIdType(int idType);
-  void SetMajorChannel(int majorChannel);
-  void SetTerminalChannel(int terminalChannel);
-  void SetNid(int nid);
-  void SetOnid(int onid);
-  void SetTsId(int tsid);
-  void SetSid(int sid);
-  void SetHidden(bool hidden);
-  void SetSourceId(int sourceId);
+   void SetValid(bool valid);
+   void SetCcid(std::string ccid);
+   void SetName(std::string name);
+   void SetDsd(std::string dsd);
+   void SetIpBroadcastId(std::string ipBroadcastId);
+   void SetChannelType(int channelType);
+   void SetIdType(int idType);
+   void SetMajorChannel(int majorChannel);
+   void SetTerminalChannel(int terminalChannel);
+   void SetNid(int nid);
+   void SetOnid(int onid);
+   void SetTsId(int tsid);
+   void SetSid(int sid);
+   void SetHidden(bool hidden);
+   void SetSourceId(int sourceId);
 
-  bool IsValid() const;
-  std::string GetCcid() const;
-  std::string GetName() const;
-  std::string GetDsd() const;
-  std::string GetIpBroadcastId() const;
-  int GetChannelType() const;
-  int GetIdType() const;
-  int GetMajorChannel() const;
-  int GetTerminalChannel() const;
-  int GetNid() const;
-  int GetOnid() const;
-  int GetTsid() const;
-  int GetSid() const;
-  bool IsHidden() const;
-  int GetSourceId() const;
+   bool IsValid() const;
+   std::string GetCcid() const;
+   std::string GetName() const;
+   std::string GetDsd() const;
+   std::string GetIpBroadcastId() const;
+   int GetChannelType() const;
+   int GetIdType() const;
+   int GetMajorChannel() const;
+   int GetTerminalChannel() const;
+   int GetNid() const;
+   int GetOnid() const;
+   int GetTsid() const;
+   int GetSid() const;
+   bool IsHidden() const;
+   int GetSourceId() const;
 
-  JsonObject ToJsonObject() const;
+   JsonObject ToJsonObject() const;
 
 private:
 
-  bool m_valid;
-  std::string m_ccid;
-  std::string m_name;
-  std::string m_dsd;
-  std::string m_ipBroadcastId;
-  int m_channelType;
-  int m_idType;
-  int m_majorChannel;
-  int m_terminalChannel;
-  int m_nid;
-  int m_onid;
-  int m_tsid;
-  int m_sid;
-  bool m_hidden;
-  int m_sourceId;  
-
+   bool m_valid;
+   std::string m_ccid;
+   std::string m_name;
+   std::string m_dsd;
+   std::string m_ipBroadcastId;
+   int m_channelType;
+   int m_idType;
+   int m_majorChannel;
+   int m_terminalChannel;
+   int m_nid;
+   int m_onid;
+   int m_tsid;
+   int m_sid;
+   bool m_hidden;
+   int m_sourceId;
 }; // class Channel
-
 } // namespace orb

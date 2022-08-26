@@ -12,42 +12,38 @@
 using namespace WPEFramework::Core::JSON;
 
 namespace orb {
-
 /**
  * @brief orb::LocalSystem
  *
  * Representation of the local system.
  */
 class LocalSystem {
-
 public:
 
-  LocalSystem(
-    bool valid,
-    std::string vendorName,
-    std::string modelName,
-    std::string softwareVersion,
-    std::string hardwareVersion
-  );
+   LocalSystem(
+      bool valid,
+      std::string vendorName,
+      std::string modelName,
+      std::string softwareVersion,
+      std::string hardwareVersion
+      );
 
-  ~LocalSystem();
+   ~LocalSystem();
 
-  bool IsValid() const;
-  std::string GetVendorName() const;
-  std::string GetModelName() const;
-  std::string GetSoftwareVersion() const;
-  std::string GetHardwareVersion() const;
+   bool IsValid() const;
+   std::string GetVendorName() const;
+   std::string GetModelName() const;
+   std::string GetSoftwareVersion() const;
+   std::string GetHardwareVersion() const;
 
-  JsonObject ToJsonObject() const;
+   JsonObject ToJsonObject() const;
 
 private:
 
-  bool m_valid;
-  std::string m_vendorName;
-  std::string m_modelName;
-  std::string m_softwareVersion;
-  std::string m_hardwareVersion;  
-
+   bool m_valid;
+   std::string m_vendorName;
+   std::string m_modelName;
+   std::string m_softwareVersion;
+   std::string m_hardwareVersion;
 }; // class LocalSystem
-
 } // namespace orb

@@ -91,14 +91,15 @@ private:
       MediaSynchroniser *mMediaSync;
    };
 
-   struct TimelineWrapper {
+   struct TimelineWrapper
+   {
       int numWatchers;
       int pendingWatchers;
       int temiFilterId;
       int temiComponentTag;
       int temiTimelineId;
       Json::Value timeline;
-      
+
       TimelineWrapper() :
          numWatchers(0),
          pendingWatchers(0),

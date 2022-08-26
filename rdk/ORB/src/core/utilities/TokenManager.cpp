@@ -23,13 +23,13 @@ using namespace orb;
 static
 std::string GenerateUUID(void)
 {
-  char *generated = (char *) malloc(37*sizeof(char));
-  uuid_t uuid;
-  uuid_generate_random(uuid);
-  uuid_unparse(uuid, generated);
-  std::string result(generated);
-  free(generated);
-  return result;
+   char *generated = (char *) malloc(37 * sizeof(char));
+   uuid_t uuid;
+   uuid_generate_random(uuid);
+   uuid_unparse(uuid, generated);
+   std::string result(generated);
+   free(generated);
+   return result;
 }
 
 /**
@@ -45,8 +45,8 @@ std::string GenerateUUID(void)
 static
 std::string GetHash(std::string key, std::string message)
 {
-  std::string encryptedMessage = SHA256::Encrypt(message+key);
-  return Base64::Encode(encryptedMessage);
+   std::string encryptedMessage = SHA256::Encrypt(message + key);
+   return Base64::Encode(encryptedMessage);
 }
 
 /**
@@ -56,23 +56,24 @@ std::string GetHash(std::string key, std::string message)
  *
  * @param key     The key to be used for creating the JSON token
  * @param payload The payload to be included in the JSON token
- * 
+ *
  * @return The resulting JSON token
  */
-static 
+static
 JsonObject CreateTokenFromPayload(std::string key, JsonObject payload)
 {
-  JsonObject token;
-  std::string json;
-  std::string signature;
-  payload.ToString(json);
-  signature = GetHash(key, json);
-  if (signature.empty()) {
-    return token;
-  }
-  token["payload"] = payload;
-  token["signature"] = signature;
-  return token;
+   JsonObject token;
+   std::string json;
+   std::string signature;
+   payload.ToString(json);
+   signature = GetHash(key, json);
+   if (signature.empty())
+   {
+      return token;
+   }
+   token["payload"] = payload;
+   token["signature"] = signature;
+   return token;
 }
 
 /**
@@ -88,18 +89,19 @@ JsonObject CreateTokenFromPayload(std::string key, JsonObject payload)
 static
 JsonObject GetPayloadFromToken(std::string key, JsonObject token)
 {
-  JsonObject payload;
-  std::string json;
-  std::string claimedSignature;
-  std::string signature;
-  payload = token["payload"].Object();
-  payload.ToString(json);
-  claimedSignature = token["signature"].String();
-  signature = GetHash(key, json);
-  if (!signature.empty() && signature == claimedSignature) {
-    payload.FromString(json);
-  }
-  return payload;
+   JsonObject payload;
+   std::string json;
+   std::string claimedSignature;
+   std::string signature;
+   payload = token["payload"].Object();
+   payload.ToString(json);
+   claimedSignature = token["signature"].String();
+   signature = GetHash(key, json);
+   if (!signature.empty() && signature == claimedSignature)
+   {
+      payload.FromString(json);
+   }
+   return payload;
 }
 
 /**
@@ -114,31 +116,32 @@ JsonObject GetPayloadFromToken(std::string key, JsonObject token)
 static
 std::string GetOrigin(std::string uri)
 {
-  std::shared_ptr<URI> theUri = URI::Parse(uri);
-  std::string protocol = theUri->GetProtocol();
-  if (!(protocol == "http") && !(protocol == "https") && !(protocol == "dvb")) {
-    return "uuid-" + GenerateUUID();
-  }
-  std::string port = theUri->GetPort();
-  return protocol + "://" + theUri->GetHost() + ((port == "-1" || port.empty()) ? "" : ":" + port);
+   std::shared_ptr<URI> theUri = URI::Parse(uri);
+   std::string protocol = theUri->GetProtocol();
+   if (!(protocol == "http") && !(protocol == "https") && !(protocol == "dvb"))
+   {
+      return "uuid-" + GenerateUUID();
+   }
+   std::string port = theUri->GetPort();
+   return protocol + "://" + theUri->GetHost() + ((port == "-1" || port.empty()) ? "" : ":" + port);
 }
 
 namespace orb {
-
 /**
  * Constructor.
  */
 TokenManager::TokenManager()
 {
-  fprintf(stderr, "[TokenManager::TokenManager]\n");
-  m_tokenSecretKey = GenerateUUID();
+   fprintf(stderr, "[TokenManager::TokenManager]\n");
+   m_tokenSecretKey = GenerateUUID();
 }
 
 /**
  * Destructor.
  */
 TokenManager::~TokenManager()
-{}
+{
+}
 
 /**
  * @brief TokenManager::CreateToken
@@ -152,11 +155,11 @@ TokenManager::~TokenManager()
  */
 JsonObject TokenManager::CreateToken(int appId, std::string uri)
 {
-  JsonObject payload;
-  payload["appId"] = appId;
-  payload["uri"] = uri;
-  payload["origin"] = GetOrigin(uri);
-  return CreateTokenFromPayload(m_tokenSecretKey, payload);
+   JsonObject payload;
+   payload["appId"] = appId;
+   payload["uri"] = uri;
+   payload["origin"] = GetOrigin(uri);
+   return CreateTokenFromPayload(m_tokenSecretKey, payload);
 }
 
 /**
@@ -170,8 +173,7 @@ JsonObject TokenManager::CreateToken(int appId, std::string uri)
  */
 JsonObject TokenManager::GetTokenPayload(JsonObject token)
 {
-  JsonObject payload = GetPayloadFromToken(m_tokenSecretKey, token);
-  return payload;
+   JsonObject payload = GetPayloadFromToken(m_tokenSecretKey, token);
+   return payload;
 }
-
 } // namespace orb

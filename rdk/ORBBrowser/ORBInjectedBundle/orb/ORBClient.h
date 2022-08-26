@@ -14,55 +14,51 @@
 #include "OrbUtils.h"
 
 namespace orb {
-
 class ORBClient {
-
 public:
 
-  static ORBClient& GetSharedInstance()
-  {
-    static ORBClient s_ORBClient;
-    return s_ORBClient;
-  }
+   static ORBClient& GetSharedInstance()
+   {
+      static ORBClient s_ORBClient;
+      return s_ORBClient;
+   }
 
-  ~ORBClient();
+   ~ORBClient();
 
-  void SubscribeWithJavaScriptEventDispatchRequestedEvent();
-  void SubscribeWithDvbUrlLoadedEvent();
+   void SubscribeWithJavaScriptEventDispatchRequestedEvent();
+   void SubscribeWithDvbUrlLoadedEvent();
 
-  // ORB api
-  JsonObject CreateToken(std::string uri);
-  std::string ExecuteWpeBridgeRequest(std::string request);
-  void LoadDvbUrl(std::string url, int requestId);
-  void ApplicationLoadFailed(std::string url, std::string errorDescription);
-  void ApplicationPageChanged(std::string url);
-  
-  void DispatchEvent(std::string type, JsonObject properties, bool broadcastRelated, std::string targetOrigin);
-  void SetJavaScriptContext(JSContextRef jsContextRef);
+   // ORB api
+   JsonObject CreateToken(std::string uri);
+   std::string ExecuteWpeBridgeRequest(std::string request);
+   void LoadDvbUrl(std::string url, int requestId);
+   void ApplicationLoadFailed(std::string url, std::string errorDescription);
+   void ApplicationPageChanged(std::string url);
 
-  void AddDsmccCaller(int requestId, void *caller);
-  void AddDsmccCallback(int requestId, OnDvbUrlLoaded callback);
+   void DispatchEvent(std::string type, JsonObject properties, bool broadcastRelated, std::string targetOrigin);
+   void SetJavaScriptContext(JSContextRef jsContextRef);
 
-  void *GetDsmccCaller(int requestId);
-  OnDvbUrlLoaded GetDsmccCallback(int requestId);
+   void AddDsmccCaller(int requestId, void *caller);
+   void AddDsmccCallback(int requestId, OnDvbUrlLoaded callback);
 
-  void RemoveDsmccCaller(int requestId);
-  void RemoveDsmccCallback(int requestId);
+   void* GetDsmccCaller(int requestId);
+   OnDvbUrlLoaded GetDsmccCallback(int requestId);
+
+   void RemoveDsmccCaller(int requestId);
+   void RemoveDsmccCallback(int requestId);
 
 private:
 
-  ORBClient();
-  ORBClient(ORBClient const&) = delete;
-  void operator=(ORBClient const&) = delete;
+   ORBClient();
+   ORBClient(ORBClient const&) = delete;
+   void operator=(ORBClient const&) = delete;
 
-  // member variables
-  WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> m_remoteObject;
-  JSContextRef m_javaScriptContext;
-  std::map<int, void *> m_dsmccCallers;
-  std::map<int, OnDvbUrlLoaded> m_dsmccCallbacks;
+   // member variables
+   WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> m_remoteObject;
+   JSContextRef m_javaScriptContext;
+   std::map<int, void *> m_dsmccCallers;
+   std::map<int, OnDvbUrlLoaded> m_dsmccCallbacks;
 
-  std::map<std::string, bool> m_subscribedEvents;
-
+   std::map<std::string, bool> m_subscribedEvents;
 }; // class ORBClient
-
 } // namespace orb
