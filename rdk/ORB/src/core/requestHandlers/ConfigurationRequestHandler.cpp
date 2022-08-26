@@ -63,49 +63,49 @@ bool ConfigurationRequestHandler::Handle(
     {
         std::shared_ptr<LocalSystem> localSystem = ORB::instance(
             nullptr)->GetORBPlatform()->Configuration_GetLocalSystem();
-        response = localSystem->ToJsonObject();
+        response.Set("result", localSystem->ToJsonObject());
     }
     // Configuration.getPreferredAudioLanguage
     else if (method == CONFIGURATION_GET_PREFERRED_AUDIO_LANGUAGE)
     {
         std::string preferredAudioLanguage = ORB::instance(
             nullptr)->GetORBPlatform()->Configuration_GetPreferredAudioLanguage();
-        response["preferredAudioLanguage"] = preferredAudioLanguage;
+        response["result"] = preferredAudioLanguage;
     }
     // Configuration.getPreferredSubtitleLanguage
     else if (method == CONFIGURATION_GET_PREFERRED_SUBTITLE_LANGUAGE)
     {
         std::string preferredSubtitleLanguage = ORB::instance(
             nullptr)->GetORBPlatform()->Configuration_GetPreferredSubtitleLanguage();
-        response["preferredSubtitleLanguage"] = preferredSubtitleLanguage;
+        response["result"] = preferredSubtitleLanguage;
     }
     // Configuration.getPreferredUILanguage
     else if (method == CONFIGURATION_GET_PREFERRED_UI_LANGUAGE)
     {
         std::string preferredUILanguage = ORB::instance(
             nullptr)->GetORBPlatform()->Configuration_GetPreferredUILanguage();
-        response["preferredUILanguage"] = preferredUILanguage;
+        response["result"] = preferredUILanguage;
     }
     // Configuration.getCountryId
     else if (method == CONFIGURATION_GET_COUNTRY_ID)
     {
         std::string countryId = ORB::instance(
             nullptr)->GetORBPlatform()->Configuration_GetCountryId();
-        response["countryId"] = countryId;
+        response["result"] = countryId;
     }
     // Configuration.getSubtitlesEnabled
     else if (method == CONFIGURATION_GET_SUBTITLES_ENABLED)
     {
         bool subtitlesEnabled = ORB::instance(
             nullptr)->GetORBPlatform()->Configuration_GetSubtitlesEnabled();
-        response["subtitlesEnabled"] = subtitlesEnabled;
+        response["result"] = subtitlesEnabled;
     }
     // Configuration.getAudioDescriptionEnabled
     else if (method == CONFIGURATION_GET_AUDIO_DESCRIPTION_ENABLED)
     {
         bool audioDescriptionEnabled = ORB::instance(
             nullptr)->GetORBPlatform()->Configuration_GetAudioDescriptionEnabled();
-        response["audioDescriptionEnabled"] = audioDescriptionEnabled;
+        response["result"] = audioDescriptionEnabled;
     }
     // Configuration.getDttNetworkIds
     else if (method == CONFIGURATION_GET_DTT_NETWORK_IDS)
@@ -119,14 +119,14 @@ bool ConfigurationRequestHandler::Handle(
             array.Add(nid);
         }
         jsonDttNetworkIds.Array(array);
-        response["dttNetworkIds"] = jsonDttNetworkIds;
+        response["result"] = jsonDttNetworkIds;
     }
     // Configuration.getDeviceId
     else if (method == CONFIGIRATION_GET_DEVICE_ID)
     {
         std::string deviceId = ORB::instance(
             nullptr)->GetORBPlatform()->Configuration_GetDeviceId();
-        response["deviceId"] = deviceId;
+        response["result"] = deviceId;
     }
     // Configuration.requestAccessToDistinctiveIdentifier
     else if (method == CONFIGURATION_REQUEST_ACCESS_TO_DISTINCTIVE_IDENTIFIER)

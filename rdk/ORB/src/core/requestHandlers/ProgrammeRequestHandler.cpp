@@ -55,7 +55,7 @@ bool ProgrammeRequestHandler::Handle(
         std::shared_ptr<ParentalRating> parentalRating = GetParentalRating();
         if (parentalRating != nullptr)
         {
-            response = parentalRating->ToJsonObject();
+            response.Set("result", parentalRating->ToJsonObject());
         }
     }
     // Programme.getSIDescriptors
@@ -76,7 +76,7 @@ bool ProgrammeRequestHandler::Handle(
         }
         JsonValue jsonSiDescriptors;
         jsonSiDescriptors.Array(array);
-        response.Set("siDescriptors", jsonSiDescriptors);
+        response.Set("result", jsonSiDescriptors);
     }
     // UnknownMethod
     else

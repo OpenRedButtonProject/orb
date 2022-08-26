@@ -137,6 +137,96 @@ public:
         ) = 0;
 
 /**
+ * Tune to the specified broadcast channel using ccid.
+ *
+ * @param ccid                       The ccid of the channel
+ * @param trickplay                  <currently not supported>
+ * @param contentAccessDescriptorURL <currently not supported>
+ * @param quiet                      <currently not supported>
+ * @param channelChangeError         Channel change error code, set only in case of failure
+ *                                   (See OIPF DAE spec section 7.13.1.2 onChannelChangeError table)
+ *
+ * @return true in success, otherwise false
+ */
+    virtual bool Broadcast_SetChannelToCcid(
+        std::string ccid,
+        bool trickplay,
+        std::string contentAccessDescriptorURL,
+        bool quiet,
+        int *channelChangeError
+        ) = 0;
+
+/**
+ * Tune off channel.
+ *
+ * @param trickplay                  <currently not supported>
+ * @param contentAccessDescriptorURL <currently not supported>
+ * @param quiet                      <currently not supported>
+ * @param channelChangeError         Channel change error code, set only in case of failure
+ *                                   (See OIPF DAE spec section 7.13.1.2 onChannelChangeError table)
+ *
+ * @return true in success, otherwise false
+ */
+    virtual bool Broadcast_SetChannelToNull(
+        bool trickplay,
+        std::string contentAccessDescriptorURL,
+        bool quiet,
+        int *channelChangeError
+        ) = 0;
+
+/**
+ * Tune to the specified broadcast channel using dvb triplet.
+ *
+ * @param idType                     The channel type
+ * @param onid                       Channel onid
+ * @param tsid                       Channel tsid
+ * @param sid                        Channel sid
+ * @param sourceID                   Channel source id
+ * @param ipBroadcastID              Channel ip broadcast id
+ * @param trickplay                  <currently not supported>
+ * @param contentAccessDescriptorURL <currently not supported>
+ * @param quiet                      <currently not supported>
+ * @param channelChangeError         Channel change error code, set only in case of failure
+ *                                   (See OIPF DAE spec section 7.13.1.2 onChannelChangeError table)
+ *
+ * @return true in success, otherwise false
+ */
+    virtual bool Broadcast_SetChannelToTriplet(
+        int idType,
+        int onid,
+        int tsid,
+        int sid,
+        int sourceID,
+        std::string ipBroadcastID,
+        bool trickplay,
+        std::string contentAccessDescriptorURL,
+        bool quiet,
+        int *channelChangeError
+        ) = 0;
+
+    /**
+     * Tune to the specified broadcast channel using delivery system descriptor.
+     *
+     * @param dsd                        The channel delivery system descriptor
+     * @param sid                        Channel sid
+     * @param trickplay                  <currently not supported>
+     * @param contentAccessDescriptorURL <currently not supported>
+     * @param quiet                      <currently not supported>
+     * @param channelChangeError         Channel change error code, set only in case of failure
+     *                                   (See OIPF DAE spec section 7.13.1.2 onChannelChangeError table)
+     *
+     * @return true in success, otherwise false
+     */
+    virtual bool Broadcast_SetChannelToDsd(
+        std::string dsd,
+        int sid,
+        bool trickplay,
+        std::string contentAccessDescriptorURL,
+        bool quiet,
+        int *channelChangeError
+        ) = 0;
+
+/**
  * Get the programmes of the channel identified by the given ccid.
  *
  * @param ccid The channel ccid
