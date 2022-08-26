@@ -10,6 +10,8 @@ message(STATUS "${CMAKE_MODULE_PATH}")
 message(STATUS "${NAMESPACE}")
 message(STATUS "==========================================================")
 
+set(PLUGIN_ORB_AUTOSTART "true" CACHE STRING "Automatically start ORB plugin")
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 find_package(${NAMESPACE}Plugins REQUIRED)
