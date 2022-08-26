@@ -200,37 +200,49 @@ void MediaSynchroniser::updateBroadcastContentStatus(std::string dvbUri, bool pe
    }
    if (m_isMasterBroadcast)
    {
-      Json::Value properties;
-      properties["contentId"] = dvbUri;
+      std::string contentId = dvbUri;
+      std::string mrsUrl = "";
+      std::string presentationStatus;
+      std::string contentIdStatus;
+
       if (permanentError)
       {
-         properties["presentationStatus"] = "fault";
+         presentationStatus = "fault";
       }
       else if (presenting)
       {
-         properties["presentationStatus"] = "okay";
+         presentationStatus = "okay";
       }
       else
       {
-         properties["presentationStatus"] = "transitioning";
+         presentationStatus = "transitioning";
       }
 
       if (presenting)
       {
-         properties["contentIdStatus"] = "final";
+         contentIdStatus = "final";
       }
       else
       {
-         properties["contentIdStatus"] = "partial";
+         contentIdStatus = "partial";
       }
 
-      updateCssCiiProperties(properties);
+      updateCssCiiProperties(contentId, presentationStatus, contentIdStatus, mrsUrl);
    }
 }
 
-void MediaSynchroniser::updateCssCiiProperties(const Json::Value &properties)
+void MediaSynchroniser::updateCssCiiProperties(const std::string &contentId, const std::string &presentationStatus, const std::string &contentIdStatus, const std::string &mrsUrl)
 {
    std::lock_guard<std::recursive_mutex> lockGuard(m_mutex);
+   Json::Value properties;
+   properties["contentId"] = contentId;
+   properties["presentationStatus"] = presentationStatus;
+   properties["contentIdStatus"] = contentIdStatus;
+   if (!mrsUrl.empty())
+   {
+      properties["mrsUrl"] = mrsUrl;
+   }
+
    for (Json::Value::const_iterator it = properties.begin(); it != properties.end(); ++it)
    {
       if (it.key().asString() == "contentId")
@@ -256,19 +268,19 @@ bool MediaSynchroniser::enableInterDeviceSync(const std::string &ipAddr)
       m_ciiProps.setProperty("wcUrl", "udp://" + ipAddr + ":" + std::to_string(m_wcPort));
       m_ciiProps.setProperty("tsUrl", "ws://" + ipAddr + ":" + std::to_string(m_tsPort));
       m_wcService = mngr.StartWallClockService(
-         std::make_unique<MediaSyncServiceCallback>(this),
-         m_wcPort,
-         &m_sysClock);
+            std::make_unique<MediaSyncServiceCallback>(this),
+            m_wcPort,
+            &m_sysClock);
       m_ciiService = mngr.StartContentIdentificationService(
-         std::make_unique<MediaSyncServiceCallback>(this),
-         m_ciiPort,
-         &m_ciiProps);
+            std::make_unique<MediaSyncServiceCallback>(this),
+            m_ciiPort,
+            &m_ciiProps);
       m_tsService = mngr.StartTimelineSyncService(
-         std::make_unique<MediaSyncServiceCallback>(this),
-         m_tsPort,
-         &m_sysClock,
-         this,
-         m_ciiService);
+            std::make_unique<MediaSyncServiceCallback>(this),
+            m_tsPort,
+            &m_sysClock,
+            this,
+            m_ciiService);
       if (m_ciiService > -1 && m_wcService > -1 && m_tsService > -1)
       {
          m_syncing = true;
@@ -382,7 +394,8 @@ u_int64_t MediaSynchroniser::getContentTime(const std::string &timelineSelector,
          ticks = clock->getTicks();
       }
    }
-   else {
+   else
+   {
       if (timelineSelector.find(":temi:") != std::string::npos)
       {
          ticks = m_mediaSyncCallback->getCurrentTemiTime(m_timelines[timelineSelector].temiFilterId);
@@ -457,7 +470,7 @@ bool MediaSynchroniser::setTEMITimelineAvailability(const int &filterId, const b
    bool result = false;
 
    auto it = std::find_if(m_timelines.begin(), m_timelines.end(),
-      [&](auto& p) {
+         [&](auto& p) {
       return p.second.temiFilterId == filterId;
    });
 
@@ -620,10 +633,10 @@ void MediaSynchroniser::addTimeline(const std::string &timelineSelector)
                   }
                }
                tls = SimpleClockTimelineSourceFactory::Make(
-                  timeline["timelineSelector"].asString(),
-                  clockBase,
-                  timeline["timelineProperties"]["unitsPerSecond"].asUInt64() /
-                  timeline["timelineProperties"]["unitsPerTick"].asDouble());
+                     timeline["timelineSelector"].asString(),
+                     clockBase,
+                     timeline["timelineProperties"]["unitsPerSecond"].asUInt64() /
+                     timeline["timelineProperties"]["unitsPerTick"].asDouble());
 
                if (m_masterTimeline == timelineSelector)
                {
@@ -676,7 +689,8 @@ void MediaSynchroniser::addTimeline(const std::string &timelineSelector)
       }
       LOG(LOG_DEBUG, "id=%d. Incremented reference counter for timelineSelector '%s'. Current count is now %d.\n", m_id, timelineSelector.c_str(), timelineWrapper.numWatchers);
    }
-   else {
+   else
+   {
       LOG(LOG_ERROR, "Timeline is null!!!.\n");
       m_timelines.erase(timelineSelector);
    }

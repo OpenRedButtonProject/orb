@@ -303,21 +303,43 @@ JNIEXPORT void JNICALL Java_org_orbtv_tvbrowser_MediaSynchroniserManager_jniUpda
 extern "C"
 JNIEXPORT void JNICALL Java_org_orbtv_tvbrowser_MediaSynchroniserManager_jniUpdateCssCiiProperties(JNIEnv *env,
    jobject thiz,
-   jstring json)
+   jstring contentId,
+   jstring presentationStatus,
+   jstring contentIdStatus,
+   jstring mrsUrl)
 {
    NetworkServices::MediaSynchroniser *ms = GetActiveMediaSyncHandle(env, thiz);
    if (ms != nullptr)
    {
-      jboolean isCopy;
-      const char *nativeString = env->GetStringUTFChars(json, &isCopy);
-      Json::Value properties;
-      if (NetworkServices::CSSUtilities::unpack(nativeString, properties))
+      jboolean isCopyContentId;
+      jboolean isCopyPresentationStatus;
+      jboolean isCopyContentIdStatus;
+      jboolean isCopyMrsUrl;
+      const char *nativeStringContentId = env->GetStringUTFChars(contentId, &isCopyContentId);
+      const char *nativeStringPresentationStatus = env->GetStringUTFChars(presentationStatus, &isCopyPresentationStatus);
+      const char *nativeStringContentIdStatus = env->GetStringUTFChars(contentIdStatus, &isCopyContentIdStatus);
+      const char *nativeStringCopyMrsUrl = env->GetStringUTFChars(mrsUrl, &isCopyMrsUrl);
+
+      ms->updateCssCiiProperties(nativeStringContentId, nativeStringPresentationStatus, nativeStringContentIdStatus, nativeStringCopyMrsUrl);
+
+      if (isCopyContentId == JNI_TRUE)
       {
-         ms->updateCssCiiProperties(properties);
+         env->ReleaseStringUTFChars(contentId, nativeStringContentId);
       }
-      if (isCopy == JNI_TRUE)
+
+      if (isCopyPresentationStatus == JNI_TRUE)
       {
-         env->ReleaseStringUTFChars(json, nativeString);
+         env->ReleaseStringUTFChars(presentationStatus, nativeStringPresentationStatus);
+      }
+
+      if (isCopyContentIdStatus == JNI_TRUE)
+      {
+         env->ReleaseStringUTFChars(contentIdStatus, nativeStringContentIdStatus);
+      }
+
+      if (isCopyMrsUrl == JNI_TRUE)
+      {
+         env->ReleaseStringUTFChars(mrsUrl, nativeStringCopyMrsUrl);
       }
    }
 }
