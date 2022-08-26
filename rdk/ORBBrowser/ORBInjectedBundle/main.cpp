@@ -97,6 +97,10 @@ public:
    {
       // We have something to report back, do so...
       uint32_t result = _comClient->Open(RPC::CommunicationTimeOut);
+      
+      // initialise the orbclient
+      orb::ORBClient::GetSharedInstance();
+
       if (result != Core::ERROR_NONE)
       {
          TRACE(Trace::Error, (_T("Could not open connection to node %s. Error: %s"), _comClient->Source().RemoteId(), Core::NumberType<uint32_t>(result).Text()));
