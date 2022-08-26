@@ -71,7 +71,7 @@ bool ManagerRequestHandler::Handle(
     int appId = GetAppIdFromToken(token);
     CheckInternetConnectivity();
     bool canCreate = ORB::instance(nullptr)->GetApplicationManager()->CreateApplication(appId, url);
-    response["canCreate"] = canCreate;
+    response["result"] = canCreate;
   }
 
   // Manager.destroyApplication
@@ -103,14 +103,14 @@ bool ManagerRequestHandler::Handle(
 
   // Manager.getFreeMem
   else if (method == MANAGER_GET_FREE_MEM) {
-    response["freeMem"] = -1;
+    response["result"] = -1;
   }
 
   // Manager.getKeyIcon
   else if (method == MANAGER_GET_KEY_ICON) {
     int code = params["code"].Number();
     std::string keyUri = ORB::instance(nullptr)->GetORBPlatform()->Manager_GetKeyIcon(code);
-    response["keyUri"] = keyUri;
+    response["result"] = keyUri;
   }
 
   // Manager.setKeyValue
@@ -118,7 +118,7 @@ bool ManagerRequestHandler::Handle(
     int value = params["value"].Number();
     int callingAppId = GetAppIdFromToken(token);
     ORB::instance(nullptr)->GetApplicationManager()->SetKeySetMask(callingAppId, value);
-    response["keyMask"] = value;
+    response["result"] = value;
   }
 
   // Manager.getKeyMaximumValue
@@ -131,14 +131,14 @@ bool ManagerRequestHandler::Handle(
       KEY_SET_NAVIGATION |
       KEY_SET_VCR |
       KEY_SET_NUMERIC;
-    response["maximumValue"] = maximumValue;
+    response["result"] = maximumValue;
   }
 
   // Manager.getKeyValues
   else if (method == MANAGER_GET_KEY_VALUES) {
     int callingAppId = GetAppIdFromToken(token);
     int value = ORB::instance(nullptr)->GetApplicationManager()->GetKeySetMask(callingAppId); 
-    response["value"] = value;
+    response["result"] = value;
   }
 
   // UnknownMethod
