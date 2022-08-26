@@ -23,11 +23,11 @@ static void on_thread_destroyed(void *unused);
  */
 void JniUtils::Init(JavaVM *jvm, jint version)
 {
-    g_jvm = jvm;
-    g_version = version;
+   g_jvm = jvm;
+   g_version = version;
 
-    // JNIEnv cannot be shared amongst threads. Attach each thread and detach when destroyed
-    pthread_key_create(&g_thread_key, on_thread_destroyed);
+   // JNIEnv cannot be shared amongst threads. Attach each thread and detach when destroyed
+   pthread_key_create(&g_thread_key, on_thread_destroyed);
 }
 
 /**
@@ -37,13 +37,13 @@ void JniUtils::Init(JavaVM *jvm, jint version)
  */
 JNIEnv * JniUtils::GetEnv()
 {
-    JNIEnv *env = nullptr;
-    if (g_jvm->GetEnv(reinterpret_cast<void **>(&env), g_version) == JNI_EDETACHED)
-    {
-        g_jvm->AttachCurrentThread(&env, nullptr);
-        pthread_setspecific(g_thread_key, env);
-    }
-    return env;
+   JNIEnv *env = nullptr;
+   if (g_jvm->GetEnv(reinterpret_cast<void **>(&env), g_version) == JNI_EDETACHED)
+   {
+      g_jvm->AttachCurrentThread(&env, nullptr);
+      pthread_setspecific(g_thread_key, env);
+   }
+   return env;
 }
 
 /**
@@ -54,24 +54,24 @@ JNIEnv * JniUtils::GetEnv()
  */
 std::string JniUtils::MakeStdString(JNIEnv *env, jstring jni_utf_str)
 {
-    std::string str;
-    if (jni_utf_str != nullptr)
-    {
-        const char *utf_str = env->GetStringUTFChars(jni_utf_str, nullptr);
-        if (utf_str != nullptr)
-        {
-            str = utf_str;
-            env->ReleaseStringUTFChars(jni_utf_str, utf_str);
-        }
-    }
-    return str;
+   std::string str;
+   if (jni_utf_str != nullptr)
+   {
+      const char *utf_str = env->GetStringUTFChars(jni_utf_str, nullptr);
+      if (utf_str != nullptr)
+      {
+         str = utf_str;
+         env->ReleaseStringUTFChars(jni_utf_str, utf_str);
+      }
+   }
+   return str;
 }
 
 static void on_thread_destroyed(void *unused)
 {
-    JNIEnv *env = nullptr;
-    if (g_jvm->GetEnv(reinterpret_cast<void **>(&env), g_version) != JNI_EDETACHED)
-    {
-        g_jvm->DetachCurrentThread();
-    }
+   JNIEnv *env = nullptr;
+   if (g_jvm->GetEnv(reinterpret_cast<void **>(&env), g_version) != JNI_EDETACHED)
+   {
+      g_jvm->DetachCurrentThread();
+   }
 }

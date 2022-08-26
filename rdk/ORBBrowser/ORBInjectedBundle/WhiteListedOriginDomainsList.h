@@ -4,7 +4,7 @@
  * Licensed under the ORB License that can be found in the LICENSE file at
  * the top level of this repository.
  */
- 
+
 #ifndef __WHITELISTEDORIGINDOMAINSLIST_H
 #define __WHITELISTEDORIGINDOMAINSLIST_H
 
@@ -12,7 +12,7 @@
 
 #ifdef WEBKIT_GLIB_API
 #include <wpe/webkit-web-extension.h>
-typedef WebKitWebExtension* WKBundleRef;
+typedef WebKitWebExtension *WKBundleRef;
 #else
 #include <WPE/WebKit.h>
 #endif
@@ -21,33 +21,32 @@ typedef WebKitWebExtension* WKBundleRef;
 
 namespace WPEFramework {
 namespace WebKit {
+class WhiteListedOriginDomainsList {
+private:
+   WhiteListedOriginDomainsList(const WhiteListedOriginDomainsList&) = delete;
+   WhiteListedOriginDomainsList& operator=(const WhiteListedOriginDomainsList&) = delete;
 
-    class WhiteListedOriginDomainsList {
-    private:
-        WhiteListedOriginDomainsList(const WhiteListedOriginDomainsList&) = delete;
-        WhiteListedOriginDomainsList& operator=(const WhiteListedOriginDomainsList&) = delete;
+public:
+   typedef std::pair<bool, string> Domain;
+   typedef std::vector<Domain> Domains;
+   typedef std::map<string, Domains> WhiteMap;
 
-    public:
-        typedef std::pair<bool, string> Domain;
-        typedef std::vector<Domain> Domains;
-        typedef std::map<string, Domains> WhiteMap;
+public:
+   static std::unique_ptr<WhiteListedOriginDomainsList> RequestFromWPEFramework(const char *whitelist = nullptr);
+   ~WhiteListedOriginDomainsList()
+   {
+   }
 
-    public:
-        static std::unique_ptr<WhiteListedOriginDomainsList> RequestFromWPEFramework(const char* whitelist = nullptr);
-        ~WhiteListedOriginDomainsList()
-        {
-        }
+public:
+   void AddWhiteListToWebKit(WKBundleRef bundle);
 
-    public:
-        void AddWhiteListToWebKit(WKBundleRef bundle);
+private:
+   WhiteListedOriginDomainsList()
+   {
+   }
 
-    private:
-        WhiteListedOriginDomainsList()
-        {
-        }
-
-        WhiteMap _whiteMap;
-    };
+   WhiteMap _whiteMap;
+};
 }
 }
 

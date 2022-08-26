@@ -28,21 +28,22 @@ extern "C" {
 #define CB_GET_APP_STATUS 3
 #define CB_NUMBER_OF_ITEMS 4
 
-static void * SsdpLooper(void *instance);
+static void* SsdpLooper(void *instance);
 static DIALStatus OnStartApp(DIALServer *ds, const char *app_name, const char *payload,
    const char *query_string, const char *additional_data_url, DIAL_run_t *run_id, void *callback_data);
 static DIALStatus OnHideApp(DIALServer *ds, const char *app_name, DIAL_run_t *run_id, void *callback_data);
 static void OnStopApp(DIALServer *ds, const char *app_name, DIAL_run_t run_id, void *callback_data);
 static DIALStatus OnGetAppStatus(DIALServer *ds, const char *app_name, DIAL_run_t run_id, int *can_stop,
    void *callback_data);
-static DIALData * CreateDialData(const std::string &key_value);
+static DIALData* CreateDialData(const std::string &key_value);
 
 static jclass g_cb_class;
 static jmethodID g_cb_method[CB_NUMBER_OF_ITEMS];
 static DIALServer *g_dial_server = nullptr;
 static pthread_t g_ssdp_looper;
 
-static struct {
+static struct
+{
    std::string uuid;
    std::string friendly_name;
    std::string model_name;
@@ -77,8 +78,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *)
 }
 
 extern "C"
-JNIEXPORT jboolean JNICALL
-Java_org_orbtv_mockdialservice_MockDialService_jniStartServer(JNIEnv *env, jclass clazz,
+JNIEXPORT jboolean JNICALL Java_org_orbtv_mockdialservice_MockDialService_jniStartServer(JNIEnv *env, jclass clazz,
    jstring uuid, jstring friendly_name, jstring model_name, jstring ip_addr, jstring mac_addr)
 {
    if (g_dial_server == nullptr)
@@ -108,8 +108,7 @@ Java_org_orbtv_mockdialservice_MockDialService_jniStartServer(JNIEnv *env, jclas
 }
 
 extern "C"
-JNIEXPORT void JNICALL
-Java_org_orbtv_mockdialservice_MockDialService_jniStopServer(JNIEnv *env, jclass clazz)
+JNIEXPORT void JNICALL Java_org_orbtv_mockdialservice_MockDialService_jniStopServer(JNIEnv *env, jclass clazz)
 {
    if (g_dial_server != nullptr)
    {
@@ -121,8 +120,7 @@ Java_org_orbtv_mockdialservice_MockDialService_jniStopServer(JNIEnv *env, jclass
 }
 
 extern "C"
-JNIEXPORT jboolean JNICALL
-Java_org_orbtv_mockdialservice_MockDialService_jniRegisterApp(JNIEnv *env, jclass clazz,
+JNIEXPORT jboolean JNICALL Java_org_orbtv_mockdialservice_MockDialService_jniRegisterApp(JNIEnv *env, jclass clazz,
    jstring j_name, jstring j_data_1, jstring j_data_2)
 {
    jboolean success = false;
@@ -141,8 +139,7 @@ Java_org_orbtv_mockdialservice_MockDialService_jniRegisterApp(JNIEnv *env, jclas
 }
 
 extern "C"
-JNIEXPORT void JNICALL
-Java_org_orbtv_mockdialservice_MockDialService_jniUnregisterApp(JNIEnv *env, jclass clazz,
+JNIEXPORT void JNICALL Java_org_orbtv_mockdialservice_MockDialService_jniUnregisterApp(JNIEnv *env, jclass clazz,
    jstring j_name)
 {
    if (g_dial_server != nullptr)
@@ -152,7 +149,7 @@ Java_org_orbtv_mockdialservice_MockDialService_jniUnregisterApp(JNIEnv *env, jcl
    }
 }
 
-static void * SsdpLooper(void *)
+static void* SsdpLooper(void *)
 {
    LOG(LOG_DEBUG, "Starting SSDP server");
    run_ssdp(g_config.port, g_config.friendly_name.c_str(), g_config.model_name.c_str(),
@@ -188,7 +185,6 @@ static DIALStatus OnHideApp(DIALServer *ds, const char *app_name, DIAL_run_t *ru
    return static_cast<DIALStatus>(status);
 }
 
-
 static void OnStopApp(DIALServer *ds, const char *app_name, DIAL_run_t run_id, void *callback_data)
 {
    JNIEnv *env = JniUtils::GetEnv();
@@ -208,7 +204,7 @@ static DIALStatus OnGetAppStatus(DIALServer *ds, const char *app_name, DIAL_run_
    return static_cast<DIALStatus>(status);
 }
 
-static DIALData * CreateDialData(const std::string &key_value)
+static DIALData* CreateDialData(const std::string &key_value)
 {
    size_t delimiter = key_value.find('=');
    if (delimiter == std::string::npos)

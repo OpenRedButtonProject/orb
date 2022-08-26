@@ -11,47 +11,43 @@
 #include "ORBPlatform.h"
 
 namespace orb {
-
 /**
  * @brief orb::ORBPlatformLoader
  *
- * The ORB platform loader dynamically loads the ORB platform implementation 
+ * The ORB platform loader dynamically loads the ORB platform implementation
  * shared library.
  */
 class ORBPlatformLoader {
-
 public:
 
-  /**
-   * Constructor.
-   */
-  ORBPlatformLoader();
+   /**
+    * Constructor.
+    */
+   ORBPlatformLoader();
 
-  /**
-   * Destructor.
-   */
-  ~ORBPlatformLoader();
+   /**
+    * Destructor.
+    */
+   ~ORBPlatformLoader();
 
-  /**
-   * Load the ORB implementation library.
-   *
-   * @return A pointer to the resulting ORBPlatform object
-   */
-  ORBPlatform *Load();
-  
-  /**
-   * Unload the ORB platform implementation library.
-   *
-   * @param orbPlatform Pointer to the ORB platform object
-   *
-   * @return true in success, false otherwise
-   */
-  bool Unload(ORBPlatform *orbPlatform);
+   /**
+    * Load the ORB implementation library.
+    *
+    * @return A pointer to the resulting ORBPlatform object
+    */
+   ORBPlatform* Load();
+
+   /**
+    * Unload the ORB platform implementation library.
+    *
+    * @param orbPlatform Pointer to the ORB platform object
+    *
+    * @return true in success, false otherwise
+    */
+   bool Unload(ORBPlatform *orbPlatform);
 
 private:
 
-  void *m_lib;
-
+   void *m_lib;
 }; // class ORBPlatformLoader
-
 } // namespace orb

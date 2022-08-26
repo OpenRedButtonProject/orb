@@ -26,39 +26,35 @@
 #include <string>
 
 namespace orb {
-
 /**
  * @brief orb::Base64
  *
  * Implementation of base64 encoding/decoding.
  */
 class Base64 {
-
 public:
 
-  /**
-   * Base64::Encode
-   *
-   * Encode the specified data using the base64 encoding algorithm.
-   *
-   * @param data The specified data
-   * 
-   * @return The encoded data
-   */
-  static std::string Encode(const std::string data);
-  
-  /**
-   * Base64::Decode
-   *
-   * Decode the specified data using the base64 decoding algorithm.
-   *
-   * @param input (in)  The base64-encoded data
-   * @param out   (out) The decoded data
-   * 
-   * @return An empty string in success, or else an error message
-   */
-  static std::string Decode(const std::string& input, std::string& out);
+   /**
+    * Base64::Encode
+    *
+    * Encode the specified data using the base64 encoding algorithm.
+    *
+    * @param data The specified data
+    *
+    * @return The encoded data
+    */
+   static std::string Encode(const std::string data);
 
+   /**
+    * Base64::Decode
+    *
+    * Decode the specified data using the base64 decoding algorithm.
+    *
+    * @param input (in)  The base64-encoded data
+    * @param out   (out) The decoded data
+    *
+    * @return An empty string in success, or else an error message
+    */
+   static std::string Decode(const std::string& input, std::string& out);
 }; // class Base64
-
 } // namespace orb

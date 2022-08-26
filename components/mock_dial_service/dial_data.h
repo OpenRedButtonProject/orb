@@ -53,10 +53,11 @@
  *
  * THE STRINGS key AND value POINT TO MUST BE DYNAMICALLY ALLOCATED
  */
-struct DIALData_ {
-    struct DIALData_ *next;
-    char *key;
-    char *value;
+struct DIALData_
+{
+   struct DIALData_ *next;
+   char *key;
+   char *value;
 };
 
 typedef struct DIALData_ DIALData;
@@ -85,7 +86,7 @@ void store_dial_data(char *app_name, DIALData *data);
  *         there is no valid data or if the data output file cannot be accessed
  *         due to out-of-memory or I/O errors.
  */
-DIALData *retrieve_dial_data(char *app_name);
+DIALData* retrieve_dial_data(char *app_name);
 
 /**
  * Set the DIAL data directory.

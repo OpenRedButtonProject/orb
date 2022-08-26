@@ -11,27 +11,23 @@
 #include "application_manager.h"
 
 namespace orb {
-
 /**
  * @brief orb::BroadcastRequestHandler
  *
  * RequestHandler implementation for handling Broadcast-related requests issued by the WPE bridge.
  */
 class BroadcastRequestHandler : public RequestHandler {
-
 public:
 
-  BroadcastRequestHandler();
-  ~BroadcastRequestHandler();
+   BroadcastRequestHandler();
+   ~BroadcastRequestHandler();
 
-  virtual bool Handle(JsonObject token, std::string method, JsonObject params, JsonObject& response) override;
+   virtual bool Handle(JsonObject token, std::string method, JsonObject params, JsonObject& response) override;
 
 private:
 
-  int AddStreamEventListener(std::string targetUrl, std::string eventName, int componentTag, int streamEventId);
-  void RemoveStreamEventListener(int id);
-  bool IsRequestAllowed(JsonObject token, ApplicationManager::MethodRequirement methodType);
-
+   int AddStreamEventListener(std::string targetUrl, std::string eventName, int componentTag, int streamEventId);
+   void RemoveStreamEventListener(int id);
+   bool IsRequestAllowed(JsonObject token, ApplicationManager::MethodRequirement methodType);
 }; // class BroadcastRequestHandler
-
 } // namespace orb

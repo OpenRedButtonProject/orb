@@ -382,7 +382,8 @@ u_int64_t MediaSynchroniser::getContentTime(const std::string &timelineSelector,
          ticks = clock->getTicks();
       }
    }
-   else {
+   else
+   {
       if (timelineSelector.find(":temi:") != std::string::npos)
       {
          ticks = m_mediaSyncCallback->getCurrentTemiTime(m_timelines[timelineSelector].temiFilterId);
@@ -676,7 +677,8 @@ void MediaSynchroniser::addTimeline(const std::string &timelineSelector)
       }
       LOG(LOG_DEBUG, "id=%d. Incremented reference counter for timelineSelector '%s'. Current count is now %d.\n", m_id, timelineSelector.c_str(), timelineWrapper.numWatchers);
    }
-   else {
+   else
+   {
       LOG(LOG_ERROR, "Timeline is null!!!.\n");
       m_timelines.erase(timelineSelector);
    }

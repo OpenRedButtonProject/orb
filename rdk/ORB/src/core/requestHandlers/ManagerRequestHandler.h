@@ -10,27 +10,23 @@
 #include "RequestHandler.h"
 
 namespace orb {
-
 /**
  * @brief orb::ManagerRequestHandler
  *
  * RequestHandler implementation for handling Manager-related requests issued by the WPE bridge.
  */
 class ManagerRequestHandler : public RequestHandler {
-
 public:
 
-  ManagerRequestHandler();
-  ~ManagerRequestHandler();
+   ManagerRequestHandler();
+   ~ManagerRequestHandler();
 
-  virtual bool Handle(JsonObject token, std::string method, JsonObject params, JsonObject& response) override;
+   virtual bool Handle(JsonObject token, std::string method, JsonObject params, JsonObject& response) override;
 
 private:
 
-  void CheckInternetConnectivity();
+   void CheckInternetConnectivity();
 
-  int GetAppIdFromToken(JsonObject token);
-
+   int GetAppIdFromToken(JsonObject token);
 }; // class ManagerRequestHandler
-
 } // namespace orb

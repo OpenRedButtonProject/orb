@@ -11,12 +11,11 @@
 #define ORB_PLATFORM_IMPL_LIBRARY_NAME "/usr/lib/libORBPlatformImpl.so"
 
 namespace orb {
-
 /**
  * Constructor.
  */
 ORBPlatformLoader::ORBPlatformLoader()
-  : m_lib(nullptr)
+   : m_lib(nullptr)
 {
 }
 
@@ -32,39 +31,42 @@ ORBPlatformLoader::~ORBPlatformLoader()
  *
  * @return A pointer to the resulting ORBPlatform object
  */
-ORBPlatform *ORBPlatformLoader::Load()
+ORBPlatform * ORBPlatformLoader::Load()
 {
-  fprintf(stderr, "[ORBPlatformLoader::Load]\n");
+   fprintf(stderr, "[ORBPlatformLoader::Load]\n");
 
-  char *errorMsg = nullptr;
+   char *errorMsg = nullptr;
 
-  dlerror();
-  m_lib = dlopen(ORB_PLATFORM_IMPL_LIBRARY_NAME, RTLD_LAZY);
-  if (NULL == m_lib) {
-    errorMsg = dlerror();
-    if (errorMsg) {
+   dlerror();
+   m_lib = dlopen(ORB_PLATFORM_IMPL_LIBRARY_NAME, RTLD_LAZY);
+   if (NULL == m_lib)
+   {
+      errorMsg = dlerror();
+      if (errorMsg)
+      {
+         fprintf(stderr, "[ORBPlatformLoader::Load] ERROR: %s\n", errorMsg);
+         return nullptr;
+      }
+   }
+
+   fprintf(stderr, "[ORBPlatformLoader::Load] dlopen success\n");
+
+   dlerror();
+   CreatePlatformInstance_t *Create = reinterpret_cast<CreatePlatformInstance_t *>(dlsym(m_lib, "Create"));
+   errorMsg = dlerror();
+   if (errorMsg)
+   {
       fprintf(stderr, "[ORBPlatformLoader::Load] ERROR: %s\n", errorMsg);
       return nullptr;
-    }
-  }
+   }
 
-  fprintf(stderr, "[ORBPlatformLoader::Load] dlopen success\n");
+   fprintf(stderr, "[ORBPlatformLoader::Load] dlsym success\n");
 
-  dlerror();
-  CreatePlatformInstance_t *Create = reinterpret_cast<CreatePlatformInstance_t *>(dlsym(m_lib, "Create"));
-  errorMsg = dlerror();
-  if (errorMsg) {
-    fprintf(stderr, "[ORBPlatformLoader::Load] ERROR: %s\n", errorMsg);
-    return nullptr;
-  }
+   ORBPlatform *platform = Create();
 
-  fprintf(stderr, "[ORBPlatformLoader::Load] dlsym success\n");
+   fprintf(stderr, "[ORBPlatformLoader::Load] Create ORBPlatform success\n");
 
-  ORBPlatform *platform = Create();
-
-  fprintf(stderr, "[ORBPlatformLoader::Load] Create ORBPlatform success\n");
-
-  return platform;
+   return platform;
 }
 
 /**
@@ -76,34 +78,35 @@ ORBPlatform *ORBPlatformLoader::Load()
  */
 bool ORBPlatformLoader::Unload(ORBPlatform *orbPlatform)
 {
-  char *errorMsg = nullptr;
+   char *errorMsg = nullptr;
 
-  fprintf(stderr, "[ORBPlatformLoader::Unload]\n");
+   fprintf(stderr, "[ORBPlatformLoader::Unload]\n");
 
-  dlerror();
-  DestroyPlatformInstance_t *Destroy = reinterpret_cast<DestroyPlatformInstance_t *>(dlsym(m_lib, "Destroy"));
-  errorMsg = dlerror();
-  if (errorMsg) {
-    fprintf(stderr, "[ORBPlatformLoader::Unload] ERROR: %s\n", errorMsg);
-    return false;
-  }
+   dlerror();
+   DestroyPlatformInstance_t *Destroy = reinterpret_cast<DestroyPlatformInstance_t *>(dlsym(m_lib, "Destroy"));
+   errorMsg = dlerror();
+   if (errorMsg)
+   {
+      fprintf(stderr, "[ORBPlatformLoader::Unload] ERROR: %s\n", errorMsg);
+      return false;
+   }
 
-  fprintf(stderr, "[ORBPlatformLoader::Unload] dlsym success\n");
+   fprintf(stderr, "[ORBPlatformLoader::Unload] dlsym success\n");
 
-  Destroy(orbPlatform);
+   Destroy(orbPlatform);
 
-  fprintf(stderr, "[ORBPlatformLoader::Unload] Destroy ORBPlatform success\n");
+   fprintf(stderr, "[ORBPlatformLoader::Unload] Destroy ORBPlatform success\n");
 
-  dlerror();
-  dlclose(m_lib);
-  errorMsg = dlerror();
-  if (errorMsg) {
-    fprintf(stderr, "[ORBPlatformLoader::Unload] ERROR: %s\n", errorMsg);
-    return false;
-  }
+   dlerror();
+   dlclose(m_lib);
+   errorMsg = dlerror();
+   if (errorMsg)
+   {
+      fprintf(stderr, "[ORBPlatformLoader::Unload] ERROR: %s\n", errorMsg);
+      return false;
+   }
 
-  fprintf(stderr, "[ORBPlatformLoader::Unload] Success\n");
-  return true;
+   fprintf(stderr, "[ORBPlatformLoader::Unload] Success\n");
+   return true;
 }
-
 } // namespace orb

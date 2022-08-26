@@ -32,26 +32,28 @@ static int gApp2AppServiceId = -1;
 static NetworkServices::MediaSynchroniserManager* GetMediaSyncManagerHandle(JNIEnv *env, jobject object)
 {
    return reinterpret_cast<NetworkServices::MediaSynchroniserManager *>(env->GetLongField(object,
-                                                                                   gJavaManagerPointerField));
+      gJavaManagerPointerField));
 }
 
-static NetworkServices::MediaSynchroniser* GetActiveMediaSyncHandle(JNIEnv *env, jobject object) {
+static NetworkServices::MediaSynchroniser* GetActiveMediaSyncHandle(JNIEnv *env, jobject object)
+{
    NetworkServices::MediaSynchroniserManager *ms = GetMediaSyncManagerHandle(env, object);
-   if (ms != nullptr) {
+   if (ms != nullptr)
+   {
       return ms->getActiveMediaSynchroniser();
    }
    return nullptr;
 }
 
-static NetworkServices::MediaSynchroniser* GetMediaSyncHandleById(JNIEnv *env, jobject object, jint id) {
+static NetworkServices::MediaSynchroniser* GetMediaSyncHandleById(JNIEnv *env, jobject object, jint id)
+{
    NetworkServices::MediaSynchroniserManager *ms = GetMediaSyncManagerHandle(env, object);
-   if (ms != nullptr) {
+   if (ms != nullptr)
+   {
       return ms->getMediaSynchroniser(id);
    }
    return nullptr;
 }
-
-
 
 class App2AppServiceCallback : public NetworkServices::ServiceManager::ServiceCallback {
 public:
@@ -141,21 +143,21 @@ extern "C" JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *)
 
    // Add new callback methods here
    gCb[CB_DISPATCH_TIMELINE_AVAILABLE_EVENT] = env->GetMethodID(managerClass,
-                                                        "jniCbDispatchTimelineAvailableEvent", "(Ljava/lang/String;J)V");
+      "jniCbDispatchTimelineAvailableEvent", "(Ljava/lang/String;J)V");
    gCb[CB_DISPATCH_TIMELINE_UNAVAILABLE_EVENT] = env->GetMethodID(managerClass,
-                                                            "jniCbDispatchTimelineUnavailableEvent", "(Ljava/lang/String;)V");
+      "jniCbDispatchTimelineUnavailableEvent", "(Ljava/lang/String;)V");
    gCb[CB_START_TIMELINE_MONITORING] = env->GetMethodID(managerClass,
-                                                        "jniCbStartTEMITimelineMonitoring", "(II)I");
+      "jniCbStartTEMITimelineMonitoring", "(II)I");
    gCb[CB_STOP_TIMELINE_MONITORING] = env->GetMethodID(managerClass,
-                                                            "jniCbStopTEMITimelineMonitoring", "(I)Z");
+      "jniCbStopTEMITimelineMonitoring", "(I)Z");
    gCb[CB_GET_CURRENT_PTS_TIME] = env->GetMethodID(managerClass,
-                                                        "jniCbGetCurrentPtsTime", "()J");
+      "jniCbGetCurrentPtsTime", "()J");
    gCb[CB_GET_CURRENT_TEMI_TIME] = env->GetMethodID(managerClass,
-                                                        "jniCbGetCurrentTemiTime", "(I)J");
+      "jniCbGetCurrentTemiTime", "(I)J");
    gCb[CB_DISPATCH_INTER_DEVICE_SYNC_ENABLED] = env->GetMethodID(managerClass,
-                                                   "jniCbDispatchInterDeviceSyncEnabled", "(I)V");
+      "jniCbDispatchInterDeviceSyncEnabled", "(I)V");
    gCb[CB_DISPATCH_INTER_DEVICE_SYNC_DISABLED] = env->GetMethodID(managerClass,
-                                                                 "jniCbDispatchInterDeviceSyncDisabled", "(I)V");
+      "jniCbDispatchInterDeviceSyncDisabled", "(I)V");
    return JNI_VERSION_1_6;
 }
 
@@ -204,7 +206,8 @@ JNIEXPORT void JNICALL Java_org_orbtv_tvbrowser_MediaSynchroniserManager_jniDisa
    jobject thiz)
 {
    NetworkServices::MediaSynchroniser *ms = GetActiveMediaSyncHandle(env, thiz);
-   if (ms != nullptr) {
+   if (ms != nullptr)
+   {
       ms->disableInterDeviceSync();
    }
 }
@@ -323,10 +326,9 @@ JNIEXPORT void JNICALL Java_org_orbtv_tvbrowser_MediaSynchroniserManager_jniUpda
 }
 
 extern "C"
-JNIEXPORT jboolean JNICALL
-Java_org_orbtv_tvbrowser_MediaSynchroniserManager_jniStartTimelineMonitoring(JNIEnv *env, jobject thiz,
-                                                             jstring timelineSelector,
-                                                             jboolean isMaster)
+JNIEXPORT jboolean JNICALL Java_org_orbtv_tvbrowser_MediaSynchroniserManager_jniStartTimelineMonitoring(JNIEnv *env, jobject thiz,
+   jstring timelineSelector,
+   jboolean isMaster)
 {
    jboolean result = false;
    NetworkServices::MediaSynchroniser *ms = GetActiveMediaSyncHandle(env, thiz);
@@ -344,10 +346,9 @@ Java_org_orbtv_tvbrowser_MediaSynchroniserManager_jniStartTimelineMonitoring(JNI
 }
 
 extern "C"
-JNIEXPORT void JNICALL
-Java_org_orbtv_tvbrowser_MediaSynchroniserManager_jniStopTimelineMonitoring(JNIEnv *env, jobject thiz,
-                                                                jstring timeline_selector,
-                                                                jboolean forceStop)
+JNIEXPORT void JNICALL Java_org_orbtv_tvbrowser_MediaSynchroniserManager_jniStopTimelineMonitoring(JNIEnv *env, jobject thiz,
+   jstring timeline_selector,
+   jboolean forceStop)
 {
    NetworkServices::MediaSynchroniser *ms = GetActiveMediaSyncHandle(env, thiz);
    if (ms != nullptr)
@@ -400,7 +401,8 @@ JNIEXPORT jlong JNICALL Java_org_orbtv_tvbrowser_MediaSynchroniserManager_jniGet
       {
          env->ReleaseStringUTFChars(timelineSelector, valueString);
       }
-      if (success) {
+      if (success)
+      {
          return ticks;
       }
    }
@@ -408,13 +410,12 @@ JNIEXPORT jlong JNICALL Java_org_orbtv_tvbrowser_MediaSynchroniserManager_jniGet
 }
 
 extern "C"
-JNIEXPORT jboolean JNICALL
-Java_org_orbtv_tvbrowser_MediaSynchroniserManager_jniSetTEMITimelineAvailability(JNIEnv *env, jobject thiz,
-                                                             jint filterId,
-                                                             jboolean isAvailable,
-                                                             jlong currentTime,
-                                                             jlong timescale, 
-                                                             jdouble speed)
+JNIEXPORT jboolean JNICALL Java_org_orbtv_tvbrowser_MediaSynchroniserManager_jniSetTEMITimelineAvailability(JNIEnv *env, jobject thiz,
+   jint filterId,
+   jboolean isAvailable,
+   jlong currentTime,
+   jlong timescale,
+   jdouble speed)
 {
    NetworkServices::MediaSynchroniser *ms = GetActiveMediaSyncHandle(env, thiz);
    jboolean result = false;
@@ -426,19 +427,17 @@ Java_org_orbtv_tvbrowser_MediaSynchroniserManager_jniSetTEMITimelineAvailability
 }
 
 extern "C"
-JNIEXPORT jboolean JNICALL
-Java_org_orbtv_tvbrowser_MediaSynchroniserManager_jniSetTimelineAvailability(JNIEnv *env, jobject thiz,
-                                                                                 jint id,
-                                                                                 jstring timelineSelector,
-                                                                                 jboolean isAvailable,
-                                                                                 jlong ticks,
-                                                                                 jdouble speed)
+JNIEXPORT jboolean JNICALL Java_org_orbtv_tvbrowser_MediaSynchroniserManager_jniSetTimelineAvailability(JNIEnv *env, jobject thiz,
+   jint id,
+   jstring timelineSelector,
+   jboolean isAvailable,
+   jlong ticks,
+   jdouble speed)
 {
    NetworkServices::MediaSynchroniser *ms = GetActiveMediaSyncHandle(env, thiz);
    jboolean result = false;
    if (ms != nullptr)
    {
-
       jboolean valueIsCopy;
       const char *valueString = env->GetStringUTFChars(timelineSelector, &valueIsCopy);
       result = ms->setTimelineAvailability(valueString, isAvailable, ticks, speed);
@@ -451,8 +450,7 @@ Java_org_orbtv_tvbrowser_MediaSynchroniserManager_jniSetTimelineAvailability(JNI
 }
 
 extern "C"
-JNIEXPORT void JNICALL
-Java_org_orbtv_tvbrowser_MediaSynchroniserManager_jniReleaseResources(JNIEnv *env, jobject thiz)
+JNIEXPORT void JNICALL Java_org_orbtv_tvbrowser_MediaSynchroniserManager_jniReleaseResources(JNIEnv *env, jobject thiz)
 {
    NetworkServices::MediaSynchroniserManager *ms = GetMediaSyncManagerHandle(env, thiz);
    if (ms != nullptr)
@@ -463,7 +461,7 @@ Java_org_orbtv_tvbrowser_MediaSynchroniserManager_jniReleaseResources(JNIEnv *en
 
 extern "C"
 JNIEXPORT jboolean JNICALL Java_org_orbtv_tvbrowser_App2AppService_jniStart(JNIEnv *env,
-                                                                            jobject thiz,
+   jobject thiz,
    jint local_app2app_port,
    jint remote_app2app_port)
 {

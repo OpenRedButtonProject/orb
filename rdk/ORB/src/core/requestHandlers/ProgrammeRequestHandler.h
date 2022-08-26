@@ -11,25 +11,21 @@
 #include "ParentalRating.h"
 
 namespace orb {
-
 /**
  * @brief orb::ProgrammeRequestHandler
  *
  * RequestHandler implementation for handling Programme-related requests issued by the WPE bridge.
  */
 class ProgrammeRequestHandler : public RequestHandler {
-
 public:
 
-  ProgrammeRequestHandler();
-  ~ProgrammeRequestHandler();
+   ProgrammeRequestHandler();
+   ~ProgrammeRequestHandler();
 
-  virtual bool Handle(JsonObject token, std::string method, JsonObject params, JsonObject& response) override;
+   virtual bool Handle(JsonObject token, std::string method, JsonObject params, JsonObject& response) override;
 
 private:
 
-  std::shared_ptr<ParentalRating> GetParentalRating();
-
+   std::shared_ptr<ParentalRating> GetParentalRating();
 }; // class ProgrammeRequestHandler
-
 } // namespace orb

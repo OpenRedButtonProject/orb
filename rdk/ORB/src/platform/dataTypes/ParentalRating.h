@@ -12,42 +12,38 @@
 using namespace WPEFramework::Core::JSON;
 
 namespace orb {
-
 /**
  * @brief orb::ParentalRating
  *
  * Representation of the parental rating.
  */
 class ParentalRating {
-
 public:
 
-  ParentalRating(
-    std::string name,
-    std::string scheme,
-    std::string region,
-    int value,
-    int labels
-  );
+   ParentalRating(
+      std::string name,
+      std::string scheme,
+      std::string region,
+      int value,
+      int labels
+      );
 
-  ~ParentalRating();
+   ~ParentalRating();
 
-  std::string GetName() const;
-  std::string GetScheme() const;
-  std::string GetRegion() const;
-  int GetValue() const;
-  int GetLabels() const;
+   std::string GetName() const;
+   std::string GetScheme() const;
+   std::string GetRegion() const;
+   int GetValue() const;
+   int GetLabels() const;
 
-  JsonObject ToJsonObject() const;
+   JsonObject ToJsonObject() const;
 
 private:
 
-  std::string m_name;
-  std::string m_scheme;
-  std::string m_region;
-  int m_value;
-  int m_labels;
-
+   std::string m_name;
+   std::string m_scheme;
+   std::string m_region;
+   int m_value;
+   int m_labels;
 }; // class ParentalRating
-
 } // namespace orb

@@ -14,27 +14,23 @@
 #include <vector>
 
 namespace orb {
-
 /**
  * @brief orb::ParentalControlRequestHandler
  *
  * RequestHandler implementation for handling ParentalControl-related requests issued by the WPE bridge.
  */
 class ParentalControlRequestHandler : public RequestHandler {
-
 public:
 
-  ParentalControlRequestHandler();
-  ~ParentalControlRequestHandler();
+   ParentalControlRequestHandler();
+   ~ParentalControlRequestHandler();
 
-  virtual bool Handle(JsonObject token, std::string method, JsonObject params, JsonObject& response) override;
+   virtual bool Handle(JsonObject token, std::string method, JsonObject params, JsonObject& response) override;
 
 private:
 
-  std::map<std::string, std::vector<ParentalRating>> GetRatingSchemes();
-  std::shared_ptr<ParentalRating> GetThreshold(JsonObject params);
-  bool IsRatingBlocked(JsonObject params);
-
+   std::map<std::string, std::vector<ParentalRating> > GetRatingSchemes();
+   std::shared_ptr<ParentalRating> GetThreshold(JsonObject params);
+   bool IsRatingBlocked(JsonObject params);
 }; // class ParentalControlRequestHandler
-
 } // namespace orb

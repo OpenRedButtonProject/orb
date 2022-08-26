@@ -11,11 +11,9 @@
 namespace WPEFramework {
 namespace JavaScript {
 namespace WPEBridge {
-
 void Initialise();
 void InjectJS(WKBundleFrameRef frame);
 bool HandleMessageToPage(WKBundlePageRef page, WKStringRef messageName, WKTypeRef messageBody);
-
 } // WPEBridge
 } // JavaScript
 } // WPEFramework

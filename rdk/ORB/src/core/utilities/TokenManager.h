@@ -11,7 +11,6 @@
 #include <string>
 
 namespace orb {
-
 /**
  * @brief orb::TokenManager
  *
@@ -20,46 +19,43 @@ namespace orb {
  * requests to the ORB plugin.
  */
 class TokenManager {
-
 public:
 
-  /**
-   * Constructor.
-   */
-  TokenManager();
+   /**
+    * Constructor.
+    */
+   TokenManager();
 
-  /**
-   * Destructor.
-   */
-  ~TokenManager();
+   /**
+    * Destructor.
+    */
+   ~TokenManager();
 
-  /**
-   * @brief TokenManager::CreateToken
-   *
-   * Create a JSON token containing the given application ID and URI.
-   *
-   * @param appId The application ID to be included in the JSON token
-   * @param uri   The application URI to be included in the JSON token
-   *
-   * @return The JSON token
-   */
-  JsonObject CreateToken(int appId, std::string uri);
+   /**
+    * @brief TokenManager::CreateToken
+    *
+    * Create a JSON token containing the given application ID and URI.
+    *
+    * @param appId The application ID to be included in the JSON token
+    * @param uri   The application URI to be included in the JSON token
+    *
+    * @return The JSON token
+    */
+   JsonObject CreateToken(int appId, std::string uri);
 
-  /**
-   * @brief TokenManager::GetTokenPayload
-   *
-   * Get the payload from the specified JSON token.
-   *
-   * @param token The JSON token
-   *
-   * @return A JSON object containing the payload
-   */
-  JsonObject GetTokenPayload(JsonObject token);
+   /**
+    * @brief TokenManager::GetTokenPayload
+    *
+    * Get the payload from the specified JSON token.
+    *
+    * @param token The JSON token
+    *
+    * @return A JSON object containing the payload
+    */
+   JsonObject GetTokenPayload(JsonObject token);
 
 private:
 
-  std::string m_tokenSecretKey;
-
+   std::string m_tokenSecretKey;
 }; // class TokenManager
-
 } // namespace orb

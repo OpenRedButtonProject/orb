@@ -26,13 +26,13 @@ typedef void (*OnDvbUrlLoaded)(int requestId, unsigned int bufferLength, void *c
 
 /**
  * Attempts to perform the JavaScript injection into the specified HTML source.
- * 
+ *
  * @param htmlSource The HTML source
  * @param injected Output parameter holding the injection result (0 or !)
- * 
+ *
  * @return The htmlSource after the injection, or NULL
  */
-const char *InjectInto(const char *htmlSource, int *injected);
+const char* InjectInto(const char *htmlSource, int *injected);
 
 /**
  * Attempts to load the specified DVB URL.

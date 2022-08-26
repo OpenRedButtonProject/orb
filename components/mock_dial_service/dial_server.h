@@ -38,14 +38,15 @@
 /*
  * Dial application states
  */
-typedef enum {
-    kDIALStatusStopped,
-    kDIALStatusHide,
-    kDIALStatusRunning,
-    kDIALStatusErrorNotImplemented,
-    kDIALStatusErrorForbidden,
-    kDIALStatusErrorUnauth,
-    kDIALStatusError
+typedef enum
+{
+   kDIALStatusStopped,
+   kDIALStatusHide,
+   kDIALStatusRunning,
+   kDIALStatusErrorNotImplemented,
+   kDIALStatusErrorForbidden,
+   kDIALStatusErrorUnauth,
+   kDIALStatusError
 } DIALStatus;
 
 /*
@@ -75,48 +76,49 @@ typedef struct DIALServer_ DIALServer;
 /*
  * Opaque run id that can be system specific
  */
-typedef void * DIAL_run_t;
+typedef void *DIAL_run_t;
 
 /*
  * DIAL start callback
  */
 typedef DIALStatus (*DIAL_app_start_cb)(DIALServer *ds, const char *app_name,
-                                        const char *payload, const char *query_string,
-                                        const char *additionalDataUrl,
-                                        DIAL_run_t *run_id, void *callback_data);
+   const char *payload, const char *query_string,
+   const char *additionalDataUrl,
+   DIAL_run_t *run_id, void *callback_data);
 
 /*
  * DIAL hide callback
  */
 typedef DIALStatus (*DIAL_app_hide_cb)(DIALServer *ds, const char *app_name,
-                                        DIAL_run_t *run_id, void *callback_data);
+   DIAL_run_t *run_id, void *callback_data);
 
 /*
  * DIAL stop callback
  */
 typedef void (*DIAL_app_stop_cb)(DIALServer *ds, const char *app_name,
-                                 DIAL_run_t run_id, void *callback_data);
+   DIAL_run_t run_id, void *callback_data);
 /*
  * DIAL status callback
  */
 typedef DIALStatus (*DIAL_app_status_cb)(DIALServer *ds, const char *app_name,
-                                         DIAL_run_t run_id, int* pCanStop,
-                                         void *callback_data);
+   DIAL_run_t run_id, int *pCanStop,
+   void *callback_data);
 
 /*
  * DIAL callbacks
  */
-struct DIALAppCallbacks {
-    DIAL_app_start_cb start_cb;
-    DIAL_app_hide_cb hide_cb;
-    DIAL_app_stop_cb stop_cb;
-    DIAL_app_status_cb status_cb;
+struct DIALAppCallbacks
+{
+   DIAL_app_start_cb start_cb;
+   DIAL_app_hide_cb hide_cb;
+   DIAL_app_stop_cb stop_cb;
+   DIAL_app_status_cb status_cb;
 };
 
 /*
  * Creates the DIAL server.  Returns a handle to the DIAL server.
  */
-DIALServer *DIAL_create();
+DIALServer* DIAL_create();
 
 /*
  * Starts the DIAL server.
@@ -148,10 +150,10 @@ void DIAL_stop(DIALServer *ds);
  * @return 1 if successful, 0 if already registered, -1 on error.
  */
 int DIAL_register_app(DIALServer *ds, const char *app_name,
-                      struct DIALAppCallbacks *callbacks,
-                      void *callback_data, int useAdditionalData,
-                      const char* corsAllowedOrigin,
-                      struct DIALData_ *dialData);
+   struct DIALAppCallbacks *callbacks,
+   void *callback_data, int useAdditionalData,
+   const char *corsAllowedOrigin,
+   struct DIALData_ *dialData);
 
 /*
  * Unregsiter an application
@@ -179,6 +181,6 @@ in_port_t DIAL_get_port(DIALServer *ds);
  *
  * @return Pointer to a NULL terminated string.
  */
-const char * DIAL_get_payload(DIALServer *ds, const char *app_name);
+const char* DIAL_get_payload(DIALServer *ds, const char *app_name);
 
 #endif  // DIAL_SERVER_H_

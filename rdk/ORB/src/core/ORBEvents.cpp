@@ -16,22 +16,22 @@ using namespace WPEFramework::Plugin;
  */
 void Event_OnBroadcastStopped()
 {
-  fprintf(stderr, "Event_OnBroadcastStopped\n");
-  ORB::instance(nullptr)->GetApplicationManager()->OnBroadcastStopped();
+   fprintf(stderr, "Event_OnBroadcastStopped\n");
+   ORB::instance(nullptr)->GetApplicationManager()->OnBroadcastStopped();
 }
 
 /**
-  * Notify the application manager that an AIT section was received.
-  *
-  * @param aitPid             The AID PID        
-  * @param serviceId          The corresponding service id
-  * @param aitSectionData     The AIT section data
-  * @param aitSectionDataSize The AIT section data size in number of bytes
-  */
+ * Notify the application manager that an AIT section was received.
+ *
+ * @param aitPid             The AID PID
+ * @param serviceId          The corresponding service id
+ * @param aitSectionData     The AIT section data
+ * @param aitSectionDataSize The AIT section data size in number of bytes
+ */
 void Event_OnAitSectionReceived(unsigned short aitPid, unsigned short serviceId, unsigned char *aitSectionData, unsigned int aitSectionDataSize)
 {
-  fprintf(stderr, "Event_OnAitSectionReceived aitPid=0x%x serviceId=%hu aitSectionDataSize=%u\n", aitPid, serviceId, aitSectionDataSize);
-  ORB::instance(nullptr)->GetApplicationManager()->ProcessAitSection(aitPid, serviceId, aitSectionData, aitSectionDataSize);
+   fprintf(stderr, "Event_OnAitSectionReceived aitPid=0x%x serviceId=%hu aitSectionDataSize=%u\n", aitPid, serviceId, aitSectionDataSize);
+   ORB::instance(nullptr)->GetApplicationManager()->ProcessAitSection(aitPid, serviceId, aitSectionData, aitSectionDataSize);
 }
 
 /**
@@ -46,25 +46,27 @@ void Event_OnAitSectionReceived(unsigned short aitPid, unsigned short serviceId,
  */
 void Event_OnChannelStatusChanged(int onetId, int transId, int servId, int statusCode, bool permanentError)
 {
-  fprintf(stderr, "Event_OnChannelStatusChanged onetId=%d transId=%d servId=%d statusCode=%d permanentError=%s\n",
-    onetId, transId, servId, statusCode, permanentError ? "yes" : "no");
+   fprintf(stderr, "Event_OnChannelStatusChanged onetId=%d transId=%d servId=%d statusCode=%d permanentError=%s\n",
+      onetId, transId, servId, statusCode, permanentError ? "yes" : "no");
 
-  // notify the application manager iff channel status is 'connecting'
-  if (statusCode == CHANNEL_STATUS_CONNECTING) {
-    ORB::instance(nullptr)->GetApplicationManager()->OnChannelChanged(onetId, transId, servId);
-  }
+   // notify the application manager iff channel status is 'connecting'
+   if (statusCode == CHANNEL_STATUS_CONNECTING)
+   {
+      ORB::instance(nullptr)->GetApplicationManager()->OnChannelChanged(onetId, transId, servId);
+   }
 
-  // prepare event properties and request event dispatching
-  JsonObject properties;
-  properties.Set("onetId", onetId);
-  properties.Set("transId", transId);
-  properties.Set("servId", servId);
-  properties.Set("statusCode", statusCode);
-  if (statusCode >= CHANNEL_STATUS_NOT_SUPPORTED) {
-    properties.Set("permanentError", permanentError);
-  }
+   // prepare event properties and request event dispatching
+   JsonObject properties;
+   properties.Set("onetId", onetId);
+   properties.Set("transId", transId);
+   properties.Set("servId", servId);
+   properties.Set("statusCode", statusCode);
+   if (statusCode >= CHANNEL_STATUS_NOT_SUPPORTED)
+   {
+      properties.Set("permanentError", permanentError);
+   }
 
-  ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested("ChannelStatusChanged", properties, true, "");
+   ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested("ChannelStatusChanged", properties, true, "");
 }
 
 /**
@@ -72,8 +74,8 @@ void Event_OnChannelStatusChanged(int onetId, int transId, int servId, int statu
  */
 void Event_OnServiceListChanged()
 {
-  fprintf(stderr, "Event_OnServiceListChanged\n");
-  // TODO Implement me
+   fprintf(stderr, "Event_OnServiceListChanged\n");
+   // TODO Implement me
 }
 
 /**
@@ -83,13 +85,13 @@ void Event_OnServiceListChanged()
  */
 void Event_OnParentalRatingChanged(bool blocked)
 {
-  fprintf(stderr, "Event_OnParentalRatingChanged blocked=%s\n", blocked ? "yes" : "no");
+   fprintf(stderr, "Event_OnParentalRatingChanged blocked=%s\n", blocked ? "yes" : "no");
 
-  // prepare event properties and request event dispatching
-  JsonObject properties;
-  properties["blocked"] = blocked;
+   // prepare event properties and request event dispatching
+   JsonObject properties;
+   properties["blocked"] = blocked;
 
-  ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested("ParentalRatingChange", properties, true, "");
+   ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested("ParentalRatingChange", properties, true, "");
 }
 
 /**
@@ -97,13 +99,13 @@ void Event_OnParentalRatingChanged(bool blocked)
  */
 void Event_OnParentalRatingError()
 {
-  fprintf(stderr, "Event_OnParentalRatingError\n");
-  
-  // prepare event properties and request event dispatching
-  JsonObject properties;
-  properties.FromString("{}");
+   fprintf(stderr, "Event_OnParentalRatingError\n");
 
-  ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested("ParentalRatingError", properties, true, "");
+   // prepare event properties and request event dispatching
+   JsonObject properties;
+   properties.FromString("{}");
+
+   ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested("ParentalRatingError", properties, true, "");
 }
 
 /**
@@ -113,13 +115,13 @@ void Event_OnParentalRatingError()
  */
 void Event_OnSelectedComponentChanged(int componentType)
 {
-  fprintf(stderr, "Event_OnSelectedComponentChanged componentType=%d\n", componentType);
+   fprintf(stderr, "Event_OnSelectedComponentChanged componentType=%d\n", componentType);
 
-  // prepare event properties and request event dispatching
-  JsonObject properties;
-  properties["componentType"] = componentType;
+   // prepare event properties and request event dispatching
+   JsonObject properties;
+   properties["componentType"] = componentType;
 
-  ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested("SelectedComponentChanged", properties, true, "");
+   ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested("SelectedComponentChanged", properties, true, "");
 }
 
 /**
@@ -129,13 +131,13 @@ void Event_OnSelectedComponentChanged(int componentType)
  */
 void Event_OnComponentChanged(int componentType)
 {
-  fprintf(stderr, "Event_OnComponentChanged componentType=%d\n", componentType);
+   fprintf(stderr, "Event_OnComponentChanged componentType=%d\n", componentType);
 
-  // prepare event properties and request event dispatching
-  JsonObject properties;
-  properties["componentType"] = componentType;
+   // prepare event properties and request event dispatching
+   JsonObject properties;
+   properties["componentType"] = componentType;
 
-  ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested("ComponentChanged", properties, true, "");
+   ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested("ComponentChanged", properties, true, "");
 }
 
 /**
@@ -143,13 +145,13 @@ void Event_OnComponentChanged(int componentType)
  */
 void Event_OnProgrammesChanged()
 {
-  fprintf(stderr, "Event_OnProgrammesChanged\n");
+   fprintf(stderr, "Event_OnProgrammesChanged\n");
 
-  // prepare event properties and request event dispatching
-  JsonObject properties;
-  properties.FromString("{}");
+   // prepare event properties and request event dispatching
+   JsonObject properties;
+   properties.FromString("{}");
 
-  ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested("ProgrammesChanged", properties, true, "");
+   ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested("ProgrammesChanged", properties, true, "");
 }
 
 /**
@@ -157,13 +159,13 @@ void Event_OnProgrammesChanged()
  */
 void Event_OnLowMemory()
 {
-  fprintf(stderr, "Event_OnLowMemoryEvent\n");
+   fprintf(stderr, "Event_OnLowMemoryEvent\n");
 
-  // prepare event properties and request event dispatching
-  JsonObject properties;
-  properties.FromString("{}");
+   // prepare event properties and request event dispatching
+   JsonObject properties;
+   properties.FromString("{}");
 
-  ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested("LowMemory", properties, false, "");
+   ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested("LowMemory", properties, false, "");
 }
 
 /**
@@ -174,15 +176,15 @@ void Event_OnLowMemory()
  */
 void Event_OnAccessToDistinctiveIdentifierDecided(std::string origin, bool accessAllowed)
 {
-  fprintf(stderr, "Event_OnAccessToDistinctiveIdentifierDecided origin=%s accessAllowed=%s\n",
-    origin.c_str(),
-    accessAllowed ? "yes" : "no"
-  );
+   fprintf(stderr, "Event_OnAccessToDistinctiveIdentifierDecided origin=%s accessAllowed=%s\n",
+      origin.c_str(),
+      accessAllowed ? "yes" : "no"
+      );
 
-  JsonObject properties;
-  properties["allowAccess"] = accessAllowed;
+   JsonObject properties;
+   properties["allowAccess"] = accessAllowed;
 
-  ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested("accesstodistinctiveidentifier", properties, false, origin);
+   ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested("accesstodistinctiveidentifier", properties, false, origin);
 }
 
 /**
@@ -190,13 +192,13 @@ void Event_OnAccessToDistinctiveIdentifierDecided(std::string origin, bool acces
  */
 void Event_OnAppTransitionedToBroadcastRelated()
 {
-  fprintf(stderr, "OnAppTransitionedToBroadcastRelated\n");
+   fprintf(stderr, "OnAppTransitionedToBroadcastRelated\n");
 
-  // prepare event properties and request event dispatching
-  JsonObject properties;
-  properties.FromString("{}");
+   // prepare event properties and request event dispatching
+   JsonObject properties;
+   properties.FromString("{}");
 
-  ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested("TransitionedToBroadcastRelated", properties, false, "");
+   ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested("TransitionedToBroadcastRelated", properties, false, "");
 }
 
 /**
@@ -210,19 +212,19 @@ void Event_OnAppTransitionedToBroadcastRelated()
  */
 void Event_OnStreamEvent(int id, std::string name, std::string data, std::string text, std::string status)
 {
-  fprintf(stderr, "Event_OnStreamEvent id=%d name=%s data=%s text=%s status=%s\n",
-    id, name.c_str(), data.c_str(), text.c_str(), status.c_str()
-  );
+   fprintf(stderr, "Event_OnStreamEvent id=%d name=%s data=%s text=%s status=%s\n",
+      id, name.c_str(), data.c_str(), text.c_str(), status.c_str()
+      );
 
-  // prepare event properties and request event dispatching
-  JsonObject properties;
-  properties["id"] = id;
-  properties["name"] = name;
-  properties["data"] = data;
-  properties["text"] = text;
-  properties["status"] = status;
+   // prepare event properties and request event dispatching
+   JsonObject properties;
+   properties["id"] = id;
+   properties["name"] = name;
+   properties["data"] = data;
+   properties["text"] = text;
+   properties["status"] = status;
 
-  ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested("StreamEvent", properties, true, "");
+   ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested("StreamEvent", properties, true, "");
 }
 
 /**
@@ -233,6 +235,6 @@ void Event_OnStreamEvent(int id, std::string name, std::string data, std::string
  */
 void Event_OnDvbUrlLoaded(int requestId, unsigned int fileContentLength)
 {
-  fprintf(stderr, "Event_OnDvbUrlLoaded requestId=%d fileContentLength=%u\n", requestId, fileContentLength);
-  ORB::instance(nullptr)->NotifyDvbUrlLoaded(requestId, fileContentLength);
+   fprintf(stderr, "Event_OnDvbUrlLoaded requestId=%d fileContentLength=%u\n", requestId, fileContentLength);
+   ORB::instance(nullptr)->NotifyDvbUrlLoaded(requestId, fileContentLength);
 }

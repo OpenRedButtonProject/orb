@@ -12,10 +12,8 @@
 
 namespace WPEFramework {
 namespace WebKit {
-
 void SetRequestHeaders(WKBundlePageRef, WKTypeRef);
 void RemoveRequestHeaders(WKBundlePageRef);
 void ApplyRequestHeaders(WKBundlePageRef, WKURLRequestRef);
-
 }  // WebKit
 }  // WPEFramework
