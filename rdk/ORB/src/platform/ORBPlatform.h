@@ -22,6 +22,9 @@ using namespace orb;
 
 class ORBPlatform {
 public:
+    virtual ~ORBPlatform()
+    {
+    }
 
 /**
  * Perform any platform-specific initialisation tasks.
