@@ -21,6 +21,7 @@ link_libraries(
   CompileSettingsDebug::CompileSettingsDebug
   ${NAMESPACE}Plugins::${NAMESPACE}Plugins
   ${NAMESPACE}Definitions::${NAMESPACE}Definitions
+  xml2
 )
 
 add_library(applicationmanager SHARED
