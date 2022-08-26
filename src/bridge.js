@@ -858,10 +858,13 @@ hbbtv.bridge.mediaSync = (function() {
     * @param {number} id
     * @param {Object} properties
     */
-   exported.updateCssCiiProperties = function(id, properties) {
+   exported.updateCssCiiProperties = function(id, contentId, presentationStatus, contentIdStatus, mrsUrl) {
       hbbtv.native.request("MediaSynchroniser.updateCssCiiProperties", {
          id: id,
-         properties: properties
+         contentId: contentId,
+         presentationStatus: presentationStatus,
+         contentIdStatus: contentIdStatus,
+         mrsUrl: mrsUrl
       });
    }
 

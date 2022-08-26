@@ -192,8 +192,8 @@ public class MediaSynchroniserManager {
       return jniGetContentTime(timelineSelector);
    }
    
-   public void updateCssCiiProperties(JSONObject properties) {
-      jniUpdateCssCiiProperties(properties.toString());
+   public void updateCssCiiProperties(String contentId, String presentationStatus, String contentIdStatus, String mrsUrl) {
+      jniUpdateCssCiiProperties(contentId, presentationStatus, contentIdStatus, mrsUrl);
    }
 
    public void setTEMITimelineAvailability(int filterId, boolean isAvailable, long currentTime, long timescale, double speed) {
@@ -301,7 +301,7 @@ public class MediaSynchroniserManager {
    private native void jniSetContentIdOverride(int id, String cid);
    private native boolean jniStartTimelineMonitoring(String timeline, boolean isMaster);
    private native void jniStopTimelineMonitoring(String timelineSelector, boolean forceStop);
-   private native void jniUpdateCssCiiProperties(String jsonString);
+   private native void jniUpdateCssCiiProperties(String contentId, String presentationStatus, String contentIdStatus, String mrsUrl);
    private native boolean jniSetContentTimeAndSpeed(String timelineSelector, long contentTime, double speed);
    private native long jniGetContentTime(String timelineSelector);
    private native boolean jniSetTEMITimelineAvailability(int filterId, boolean isAvailable, long currentTime, long timescale, double speed);

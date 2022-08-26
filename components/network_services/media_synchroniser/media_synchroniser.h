@@ -71,7 +71,7 @@ public:
    void setContentIdOverride(const std::string &cid, const bool forceUpdate = false);
    int nrOfSlaves();
    bool setContentTimeAndSpeed(std::string timelineSelector, const uint64_t &contentTime, const double &speed);
-   void updateCssCiiProperties(const Json::Value &properties);
+   void updateCssCiiProperties(const std::string &contentId, const std::string &presentationStatus, const std::string &contentIdStatus, const std::string &mrsUrl);
    u_int64_t getContentTime(const std::string &timelineSelector, bool &success);
    bool setTimelineAvailability(const std::string &timelineSelector, const bool &isAvailable, const u_int64_t currentTime = 0, const double speed = 0);
    bool setTEMITimelineAvailability(const int &filterId, const bool &isAvailable, const u_int64_t &currentTime, const u_int64_t &timescale, const double &speed);
