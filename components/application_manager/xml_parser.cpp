@@ -893,10 +893,15 @@ std::unique_ptr<Ait::S_AIT_TABLE> XmlParser::ParseAit(const char *content, uint3
    xmlNodePtr node;
    uint32_t num_apps;
    Ait::S_AIT_APP_DESC *app_ptr;
+   int options = 0;
+
+#ifdef RDK
+   options = XML_PARSE_RECOVER;
+#endif
 
 
    LOG(LOG_DEBUG, "data=%p len=%d", content, length);
-   doc = xmlReadMemory(content, length, "noname.xml", nullptr, 0);
+   doc = xmlReadMemory(content, length, "noname.xml", nullptr, options);
    if (doc == nullptr)
    {
       LOG(LOG_ERROR, "Failed to parse document!!");

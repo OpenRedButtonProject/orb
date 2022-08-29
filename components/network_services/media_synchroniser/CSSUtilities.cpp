@@ -61,10 +61,10 @@ bool isWallclockTimeValid(const std::string &wct)
 std::string getDvbUrlIdFromInt(int value)
 {
    std::stringstream stream;
-   stream << std::setfill('0')
-          << std::setw(4)
-          << std::hex
-          << value;
+   stream << std::setfill('0') <<
+      std::setw(4) <<
+      std::hex <<
+      value;
    return stream.str();
 }
 }

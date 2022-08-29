@@ -12,7 +12,7 @@
 #include <dirent.h>
 
 #include "OrbUtils.h"
-#include "ORBClient.h"
+#include "ORBBridge.h"
 
 using namespace orb;
 
@@ -98,12 +98,12 @@ void LoadDvbUrl(const char *url, void *caller, OnDvbUrlLoaded callback)
 
    fprintf(stderr, "[Utils::LoadDvbUrl] url=%s requestId=%d\n", url, requestId);
 
-   // This is the first time the ORBClient signleton is called from the WPE network process.
+   // This is the first time the ORBBridge signleton is called from the WPE network process.
    // The ORBClient instance needs to only subscribe with the 'dvburlloaded' event of the ORB Thunder plugin.
-   ORBClient::GetSharedInstance().SubscribeWithDvbUrlLoadedEvent();
-   ORBClient::GetSharedInstance().AddDsmccCaller(requestId, caller);
-   ORBClient::GetSharedInstance().AddDsmccCallback(requestId, callback);
-   ORBClient::GetSharedInstance().LoadDvbUrl(url, requestId);
+   ORBBridge::GetSharedInstance().GetORBClient()->SubscribeToDvbUrlLoadedEvent();
+   ORBBridge::GetSharedInstance().AddDsmccCaller(requestId, caller);
+   ORBBridge::GetSharedInstance().AddDsmccCallback(requestId, callback);
+   ORBBridge::GetSharedInstance().GetORBClient()->LoadDvbUrl(url, requestId);
 }
 
 /*---local function definitions----------------------------------------------*/
