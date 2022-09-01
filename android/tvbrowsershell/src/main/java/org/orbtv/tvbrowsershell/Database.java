@@ -66,7 +66,10 @@ public class Database extends SQLiteOpenHelper {
       String value = null;
       if (cursor.getCount() > 0) {
          cursor.moveToFirst();
-         value = cursor.getString(cursor.getColumnIndex(DistinctiveIdentifierEntry.COLUMN_NAME_VALUE));
+         int column = cursor.getColumnIndex(DistinctiveIdentifierEntry.COLUMN_NAME_VALUE);
+         if (column >= 0) {
+            value = cursor.getString(column);
+         }
       }
       cursor.close();
       return value;
