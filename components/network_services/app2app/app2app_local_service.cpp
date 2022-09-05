@@ -225,7 +225,7 @@ void App2AppLocalService::OnRemoteServiceStopped()
    if (!service_stopped_)
    {
       service_stopped_ = true;
-      Stop();
+      WebSocketService::Stop();
    }
    else
    {
