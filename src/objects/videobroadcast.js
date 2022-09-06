@@ -301,7 +301,7 @@ hbbtv.objects.VideoBroadcast = (function() {
       p.isTransitioningToBroadcastRelated = true;
       let errorState = 0;
       if (channel.idType == 13) { // ID_DVB_SI_DIRECT
-         if ('dsd' in channel && 'sid' in channel) {
+         if (channel.dsd !== undefined && channel.sid !== undefined) {
             errorState = hbbtv.bridge.broadcast.setChannelToDsd(
                hbbtv.utils.base64Encode(channel.dsd),
                channel.sid,
@@ -310,14 +310,15 @@ hbbtv.objects.VideoBroadcast = (function() {
                quiet);
          }
       } else {
-         if ('ccid' in channel) {
+         if (channel.ccid !== undefined) {
             errorState = hbbtv.bridge.broadcast.setChannelToCcid(
                channel.ccid,
                trickplay,
                contentAccessDescriptorURL,
                quiet);
          } else {
-            if ('onid' in channel && 'tsid' in channel && 'sid' in channel) {
+            if (channel.onid !== undefined && channel.tsid !== undefined
+                  && channel.sid !== undefined) {
                errorState = hbbtv.bridge.broadcast.setChannelToTriplet(
                   channel.idType,
                   channel.onid,
@@ -1402,7 +1403,7 @@ hbbtv.objects.VideoBroadcast = (function() {
          Object.defineProperty(item, "hidden", {
             enumerable: false
          });
-         if ("aspectRatio" in item) {
+         if (item.aspectRatio !== undefined) {
             if (item.aspectRatio === 0) {
                item.aspectRatio = 1.33; // 4:3
             } else {
