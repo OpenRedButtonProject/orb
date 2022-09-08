@@ -249,7 +249,7 @@ hbbtv.objects.DashProxy = (function() {
          p.player.off('error', p.onError);
          p.player.off('manifestLoaded', p.onManifestLoaded);
          p.player.off('periodSwitchCompleted', p.onPeriodChanged);
-         p.player.off('streamUpdated', p.onPeriodChanged);
+         p.player.off('streamUpdated', p.onStreamUpdated);
 
          for (const scheme of PARENTAL_CONTROL_EVENT_SCHEMES) {
             p.player.off(scheme, p.onParentalRatingChange);
@@ -591,12 +591,14 @@ hbbtv.objects.DashProxy = (function() {
       p.ciAncillaryData = e.data.ciAncillaryData;
    }
 
-   function onPeriodChanged(e) {
-      let evt = new Event("__obs_onperiodchanged__");
-      Object.assign(evt, {
-         data: (e.streamInfo ? e.streamInfo : e.toStreamInfo)
-      });
-      this.dispatchEvent(evt);
+   function makeStreamInfoCallback(context, eventName) {
+      return function (e) {
+         let evt = new Event(eventName);
+         Object.assign(evt, {
+            data: (e.streamInfo ? e.streamInfo : e.toStreamInfo)
+         });
+         context.dispatchEvent(evt);
+      }
    }
 
    function initialise(src) {
@@ -612,7 +614,8 @@ hbbtv.objects.DashProxy = (function() {
             p.onLoadedData = onLoadedData.bind(this);
             p.onManifestLoaded = onManifestLoaded.bind(this);
             p.onTextTrackChange = onTextTrackChange.bind(this);
-            p.onPeriodChanged = onPeriodChanged.bind(this);
+            p.onPeriodChanged = makeStreamInfoCallback(this, "__obs_onperiodchanged__");
+            p.onStreamUpdated = makeStreamInfoCallback(this, "__obs_onstreamupdated__");
 
             p.onError = onError.bind(this);
             p.onParentalRatingChange = onParentalRatingChange.bind(this);
@@ -642,7 +645,7 @@ hbbtv.objects.DashProxy = (function() {
             p.player.on('error', p.onError);
             p.player.on('manifestLoaded', p.onManifestLoaded);
             p.player.on('periodSwitchCompleted', p.onPeriodChanged);
-            p.player.on('streamUpdated', p.onPeriodChanged);
+            p.player.on('streamUpdated', p.onStreamUpdated);
 
             for (const scheme of PARENTAL_CONTROL_EVENT_SCHEMES) {
                p.player.on(scheme, p.onParentalRatingChange);

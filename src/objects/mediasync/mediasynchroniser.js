@@ -138,6 +138,30 @@ hbbtv.objects.MediaSynchroniser = (function() {
             let curPeriod = undefined;
             let timelines = {};
 
+            p.onPeriodChangedHandler = (e) => {
+               if (curPeriod && e.data.id !== curPeriod) {
+                  //make available timeline based on e.data.id
+                  let currentTimelineSelector = timelineSelector.replace(curPeriod, e.data.id);
+                  relIndex = currentTimelineSelector.indexOf(":rel:");
+                  
+                  if (relIndex >= 0) {
+                     console.warn("MediaSynchroniser: DASH period id changed from " + curPeriod + " to " + e.data.id + ". Stopping timeline monitoring.");
+
+                     hbbtv.bridge.mediaSync.setTimelineAvailability(p.id, timelines[curPeriod], false, 0, 0);
+                     curPeriod = currentTimelineSelector.substring(relIndex + 5).split(":")[1];
+                     if (curPeriod) {
+                        if (timelines[curPeriod] !== currentTimelineSelector) {
+                           timelines[curPeriod] = currentTimelineSelector;
+                           hbbtv.bridge.mediaSync.startTimelineMonitoring(p.id, currentTimelineSelector, true);
+                        }
+                        hbbtv.bridge.mediaSync.setTimelineAvailability(p.id, currentTimelineSelector, true, p.mediaObserver.contentTicks, p.mediaObserver.timelineSpeedMultiplier);
+                     }
+                  }
+                  refreshContentId();
+                  hbbtv.bridge.mediaSync.updateCssCiiProperties(p.id, p.contentId, p.masterMediaObject.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA ? "okay" : "transitioning", "final", extractMrsUrl(p.masterMediaObject));
+               }
+            }
+
             p.onStreamUpdatedHandler = (e) => {
                const periods = mediaObject.orb_getPeriods();
                if (periods) {
@@ -155,29 +179,6 @@ hbbtv.objects.MediaSynchroniser = (function() {
                      delete timelines[pid];
                   }
                }
-
-               if (curPeriod && e.data.id !== curPeriod) {
-                  //make available timeline based on e.data.id
-                  let currentTimelineSelector = timelineSelector.replace(curPeriod, e.data.id);
-                  relIndex = currentTimelineSelector.indexOf(":rel:");
-                  
-                  if (relIndex >= 0) {
-                     console.warn("MediaSynchroniser: DASH period id changed from " + curPeriod + " to " + e.data.id + ". Stopping timeline monitoring.");
-
-                     hbbtv.bridge.mediaSync.setTimelineAvailability(p.id, timelines[curPeriod], false);
-                     curPeriod = currentTimelineSelector.substring(relIndex + 5).split(":")[1];
-                     if (curPeriod) {
-                        if (timelines[curPeriod] !== currentTimelineSelector) {
-                           timelines[curPeriod] = currentTimelineSelector;
-                           hbbtv.bridge.mediaSync.startTimelineMonitoring(p.id, currentTimelineSelector, true);
-                        }
-                        hbbtv.bridge.mediaSync.setTimelineAvailability(p.id, currentTimelineSelector, true, p.mediaObserver.contentTicks, p.mediaObserver.timelineSpeedMultiplier);
-                     }
-                  }
-               }
-
-               refreshContentId();
-               hbbtv.bridge.mediaSync.updateCssCiiProperties(p.id, p.contentId, p.masterMediaObject.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA ? "okay" : "transitioning", "final", extractMrsUrl(p.masterMediaObject));
             }
 
             hbbtv.bridge.addWeakEventListener("TimelineUnavailable", p.timelineUnavailableHandler);
@@ -194,11 +195,11 @@ hbbtv.objects.MediaSynchroniser = (function() {
                   } else {
                      timelines[curPeriod] = timelineSelector;
                      hbbtv.bridge.mediaSync.setTimelineAvailability(p.id, timelineSelector, true, p.mediaObserver.contentTicks, p.mediaObserver.timelineSpeedMultiplier);
-                     mediaObject.addEventListener("__obs_onperiodchanged__", p.onStreamUpdatedHandler);
+                     mediaObject.addEventListener("__obs_onstreamupdated__", p.onStreamUpdatedHandler);
+                     mediaObject.addEventListener("__obs_onperiodchanged__", p.onPeriodChangedHandler);
                   }
                }
-            }
-            else if (!timelineSelector.includes(":temi:")) {
+            } else if (!timelineSelector.includes(":temi:")) {
                hbbtv.bridge.mediaSync.setTimelineAvailability(p.id, timelineSelector, true, p.mediaObserver.contentTicks, p.mediaObserver.timelineSpeedMultiplier);
             }
 
@@ -375,7 +376,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
       const p = privates.get(lastMediaSync);
       if (p.masterMediaObject.getAttribute("__mimeType") !== "video/broadcast") {
          hbbtv.bridge.mediaSync.updateCssCiiProperties(p.id, p.contentId, p.masterMediaObject.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA ? "okay" : "transitioning", "final", extractMrsUrl(p.masterMediaObject));
-         if (p.mediaObserver.timeline.timelineSelector) {
+         if (p.mediaObserver.timeline && p.mediaObserver.timeline.timelineSelector) {
             hbbtv.bridge.mediaSync.setContentTimeAndSpeed(p.id, p.mediaObserver.timeline.timelineSelector, p.mediaObserver.contentTicks, p.mediaObserver.timelineSpeedMultiplier);
          }
       }
@@ -430,7 +431,8 @@ hbbtv.objects.MediaSynchroniser = (function() {
             p.mediaObserver = undefined;
          }
          if (p.masterMediaObject) {
-            p.masterMediaObject.removeEventListener("__obs_onperiodchanged__", p.onStreamUpdatedHandler);
+            p.masterMediaObject.removeEventListener("__obs_onstreamupdated__", p.onStreamUpdatedHandler);
+            p.masterMediaObject.removeEventListener("__obs_onperiodchanged__", p.onPeriodChangedHandler);
          }
          for (const mediaObject of p.mediaObjects) {
             const priv = privates.get(mediaObject);
