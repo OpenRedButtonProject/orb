@@ -187,6 +187,8 @@ hbbtv.objects.MediaSynchroniser = (function() {
             p.mediaObserver.addEventListener("Error", errorHandler);
 
             if (relIndex >= 0) {
+               mediaObject.addEventListener("__obs_onstreamupdated__", p.onStreamUpdatedHandler);
+               mediaObject.addEventListener("__obs_onperiodchanged__", p.onPeriodChangedHandler);
                curPeriod = timelineSelector.substring(relIndex + 5).split(":")[1];
                if (curPeriod) {
                   if (mediaObject.orb_getCurrentPeriod().id !== curPeriod) {
@@ -195,9 +197,9 @@ hbbtv.objects.MediaSynchroniser = (function() {
                   } else {
                      timelines[curPeriod] = timelineSelector;
                      hbbtv.bridge.mediaSync.setTimelineAvailability(p.id, timelineSelector, true, p.mediaObserver.contentTicks, p.mediaObserver.timelineSpeedMultiplier);
-                     mediaObject.addEventListener("__obs_onstreamupdated__", p.onStreamUpdatedHandler);
-                     mediaObject.addEventListener("__obs_onperiodchanged__", p.onPeriodChangedHandler);
                   }
+               } else {
+                  hbbtv.bridge.mediaSync.setTimelineAvailability(p.id, timelineSelector, true, p.mediaObserver.contentTicks, p.mediaObserver.timelineSpeedMultiplier);
                }
             } else if (!timelineSelector.includes(":temi:")) {
                hbbtv.bridge.mediaSync.setTimelineAvailability(p.id, timelineSelector, true, p.mediaObserver.contentTicks, p.mediaObserver.timelineSpeedMultiplier);
