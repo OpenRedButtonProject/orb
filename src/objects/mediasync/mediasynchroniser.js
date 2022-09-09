@@ -70,7 +70,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
          dispatchErrorEvent.call(this, 13, null); // in permanent error state (transient)
       } else if (lastMediaSync === this) {
          dispatchErrorEvent.call(this, 17, null); // already initialised (transient)
-      } else if (!isBroadcast && mediaObject.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+      } else if (!isBroadcast && (mediaObject.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || mediaObject.ended)) {
          setToPermanentErrorState.call(this);
          dispatchErrorEvent.call(this, 16, mediaObject); // mediaobject not in suitable state (permanent)
       } else if (!hbbtv.bridge.mediaSync.initialise(p.id, isBroadcast)) {
