@@ -267,7 +267,6 @@ hbbtv.objects.MediaSynchroniser = (function() {
             }
          };
          hbbtv.bridge.addWeakEventListener("TimelineUnavailable", priv.timelineUnavailableHandler);
-         hbbtv.bridge.addWeakEventListener("TimelineAvailable", priv.timelineAvailableHandler);
          dispatchEvent.call(this, "MediaObjectAdded", {
             mediaObject: mediaObject
          });
@@ -290,7 +289,6 @@ hbbtv.objects.MediaSynchroniser = (function() {
          const priv = privates.get(mediaObject);
          mediaObject.audioTracks.removeEventListener("change", priv.onAudioTrackChanged);
          hbbtv.bridge.removeWeakEventListener("TimelineUnavailable", priv.timelineUnavailableHandler);
-         hbbtv.bridge.removeWeakEventListener("TimelineAvailable", priv.timelineAvailableHandler);
          hbbtv.bridge.mediaSync.stopTimelineMonitoring(p.id, priv.timelineSelector, false);
          priv.tsClient.destroy();
          p.mediaObjects.delete(mediaObject);
@@ -441,7 +439,6 @@ hbbtv.objects.MediaSynchroniser = (function() {
             priv.tsClient.destroy();
             mediaObject.audioTracks.removeEventListener("change", priv.onAudioTrackChanged);
             hbbtv.bridge.removeWeakEventListener("TimelineUnavailable", priv.timelineUnavailableHandler);
-            hbbtv.bridge.removeWeakEventListener("TimelineAvailable", priv.timelineAvailableHandler);
             privates.delete(mediaObject);
          }
          p.mediaObjects.clear();
@@ -497,7 +494,9 @@ hbbtv.objects.MediaSynchroniser = (function() {
          eventTarget: document.createDocumentFragment(),
          mediaObjects: new Set(),
          inPermanentErrorState: false,
-         id: hbbtv.bridge.mediaSync.instantiate()
+         id: hbbtv.bridge.mediaSync.instantiate(),
+         lastError: null,
+         lastErrorSource: null
       });
       mediaSyncs[privates.get(this).id] = this;
    }
