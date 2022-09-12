@@ -112,7 +112,11 @@ bool ContentIdentificationProperties::setProperty(const std::string &key,
             }
             else
             {
-                if (key == "private" || (key == "timelines" && value.isArray()))
+                if (key == "private" || (key == "timelines" && value.isArray()) || ((key ==
+                                                                                     "mrsUrl" ||
+                                                                                     key ==
+                                                                                     "teUrl") &&
+                                                                                    value.isNull()))
                 {
                     m_currentMessage[key] = std::move(value);
                     result = true;

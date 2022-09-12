@@ -65,17 +65,18 @@ hbbtv.objects.MediaSynchroniser = (function() {
 
     prototype.initMediaSynchroniser = function(mediaObject, timelineSelector) {
         const p = privates.get(this);
-
+        const isBroadcast = mediaObject.getAttribute('__mimeType') === 'video/broadcast';
         if (p.inPermanentErrorState) {
             dispatchErrorEvent.call(this, 13, null); // in permanent error state (transient)
         } else if (lastMediaSync === this) {
             dispatchErrorEvent.call(this, 17, null); // already initialised (transient)
         } else if (
-            !hbbtv.bridge.mediaSync.initialise(
-                p.id,
-                mediaObject.getAttribute('__mimeType') === 'video/broadcast'
-            )
+            !isBroadcast &&
+            (mediaObject.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || mediaObject.ended)
         ) {
+            setToPermanentErrorState.call(this);
+            dispatchErrorEvent.call(this, 16, mediaObject); // mediaobject not in suitable state (permanent)
+        } else if (!hbbtv.bridge.mediaSync.initialise(p.id, isBroadcast)) {
             console.warn('MediaSynchroniser: Failed to initialise Media Sync object.'); // this should never happen
             setToPermanentErrorState.call(this);
             dispatchErrorEvent.call(this, 13, null); // in permanent error state (transient)
@@ -114,7 +115,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
 
             lastMediaSync = this;
 
-            if (mediaObject.getAttribute('__mimeType') === 'video/broadcast') {
+            if (isBroadcast) {
                 if (mediaObject.playState === mediaObject.PLAY_STATE_UNREALIZED) {
                     errorHandler();
                     return;
@@ -247,9 +248,18 @@ hbbtv.objects.MediaSynchroniser = (function() {
                 p.mediaObserver.addEventListener('Error', errorHandler);
 
                 if (relIndex >= 0) {
+                    mediaObject.addEventListener(
+                        '__obs_onstreamupdated__',
+                        p.onStreamUpdatedHandler
+                    );
+                    mediaObject.addEventListener(
+                        '__obs_onperiodchanged__',
+                        p.onPeriodChangedHandler
+                    );
                     curPeriod = timelineSelector.substring(relIndex + 5).split(':')[1];
                     if (curPeriod) {
-                        if (mediaObject.orb_getCurrentPeriod().id !== curPeriod) {
+                        const curPeriodInfo = mediaObject.orb_getCurrentPeriod();
+                        if (curPeriodInfo && curPeriodInfo.id !== curPeriod) {
                             // while starting mediasync, dash is streaming with a different timelineselector
                             hbbtv.bridge.mediaSync.stopTimelineMonitoring(
                                 p.id,
@@ -265,15 +275,15 @@ hbbtv.objects.MediaSynchroniser = (function() {
                                 p.mediaObserver.contentTicks,
                                 p.mediaObserver.timelineSpeedMultiplier
                             );
-                            mediaObject.addEventListener(
-                                '__obs_onstreamupdated__',
-                                p.onStreamUpdatedHandler
-                            );
-                            mediaObject.addEventListener(
-                                '__obs_onperiodchanged__',
-                                p.onPeriodChangedHandler
-                            );
                         }
+                    } else {
+                        hbbtv.bridge.mediaSync.setTimelineAvailability(
+                            p.id,
+                            timelineSelector,
+                            true,
+                            p.mediaObserver.contentTicks,
+                            p.mediaObserver.timelineSpeedMultiplier
+                        );
                     }
                 } else if (!timelineSelector.includes(':temi:')) {
                     hbbtv.bridge.mediaSync.setTimelineAvailability(
@@ -325,7 +335,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
             dispatchErrorEvent.call(this, 5, mediaObject); // invalid correlation timestamp (transient)
         } else if (mediaObject.error) {
             dispatchErrorEvent.call(this, 2, mediaObject); // failure in presentation of the media object (transient)
-        } else if (mediaObject.readyState < 2) {
+        } else if (mediaObject.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
             dispatchErrorEvent.call(this, 9, mediaObject); // not in suitable state for sync (transient)
         } else {
             hbbtv.bridge.mediaSync.startTimelineMonitoring(p.id, timelineSelector, false);
@@ -368,7 +378,6 @@ hbbtv.objects.MediaSynchroniser = (function() {
                 'TimelineUnavailable',
                 priv.timelineUnavailableHandler
             );
-            hbbtv.bridge.addWeakEventListener('TimelineAvailable', priv.timelineAvailableHandler);
             dispatchEvent.call(this, 'MediaObjectAdded', {
                 mediaObject: mediaObject,
             });
@@ -393,10 +402,6 @@ hbbtv.objects.MediaSynchroniser = (function() {
             hbbtv.bridge.removeWeakEventListener(
                 'TimelineUnavailable',
                 priv.timelineUnavailableHandler
-            );
-            hbbtv.bridge.removeWeakEventListener(
-                'TimelineAvailable',
-                priv.timelineAvailableHandler
             );
             hbbtv.bridge.mediaSync.stopTimelineMonitoring(p.id, priv.timelineSelector, false);
             priv.tsClient.destroy();
@@ -587,10 +592,6 @@ hbbtv.objects.MediaSynchroniser = (function() {
                     'TimelineUnavailable',
                     priv.timelineUnavailableHandler
                 );
-                hbbtv.bridge.removeWeakEventListener(
-                    'TimelineAvailable',
-                    priv.timelineAvailableHandler
-                );
                 privates.delete(mediaObject);
             }
             p.mediaObjects.clear();
@@ -653,6 +654,8 @@ hbbtv.objects.MediaSynchroniser = (function() {
             mediaObjects: new Set(),
             inPermanentErrorState: false,
             id: hbbtv.bridge.mediaSync.instantiate(),
+            lastError: null,
+            lastErrorSource: null,
         });
         mediaSyncs[privates.get(this).id] = this;
     }

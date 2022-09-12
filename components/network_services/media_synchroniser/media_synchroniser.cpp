@@ -129,6 +129,8 @@ MediaSynchroniser::MediaSynchroniser(const int &id,
     m_sysClock(1000000000, 45)
 {
     LOG(LOG_INFO, "MediaSynchroniser ctor. id=%d\n", id);
+    m_ciiProps.setProperty("teUrl", Json::Value::null);
+    m_ciiProps.setProperty("mrsUrl", Json::Value::null);
 }
 
 MediaSynchroniser::~MediaSynchroniser()
@@ -245,6 +247,8 @@ void MediaSynchroniser::updateBroadcastContentStatus(std::string dvbUri, bool pe
 void MediaSynchroniser::updateCssCiiProperties(const std::string &contentId, const
     std::string &presentationStatus, const std::string &contentIdStatus, const std::string &mrsUrl)
 {
+    LOG(LOG_INFO, "MediaSynchroniser::updateCssCiiProperties(%s, %s, %s, %s)\n", contentId.c_str(),
+        presentationStatus.c_str(), contentIdStatus.c_str(), mrsUrl.c_str());
     std::lock_guard<std::recursive_mutex> lockGuard(m_mutex);
     Json::Value properties;
     properties["contentId"] = contentId;
