@@ -148,13 +148,11 @@ public abstract class WebResourceClient {
 
     private WebResourceResponse shouldInterceptDsmccRequest(WebResourceRequest request, int appId) {
         WebResourceResponse response = null;
-        if (request.isForMainFrame()) {
-            response = handleDsmccRequest(request, appId);
-            if (response.getStatusCode() == 404) {
-                onRequestFailed(request, appId);
-            } else {
-                onRequestSucceeded(request, appId);
-            }
+        response = handleDsmccRequest(request, appId);
+        if (response.getStatusCode() == 404) {
+            onRequestFailed(request, appId);
+        } else {
+            onRequestSucceeded(request, appId);
         }
         return response;
     }
