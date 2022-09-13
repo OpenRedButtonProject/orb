@@ -6,6 +6,13 @@
          "dsmccData": "",
          "action": "simulate_successful_tune",
          "timeout": 0
+      },
+      {
+         "name": "object_creation",
+         "scenario": "integration/object_creation/scenario.json",
+         "dsmccData": "",
+         "action": "simulate_successful_tune",
+         "timeout": 0
       }
    ]
 }
