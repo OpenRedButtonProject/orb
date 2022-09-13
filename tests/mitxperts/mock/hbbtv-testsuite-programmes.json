@@ -1,0 +1,35 @@
+[
+   {
+      "name": "Event 1, umlaut ä",
+      "programmeId": "programmeID 1",
+      "programmeIdType": 1,
+      "description": "description 1",
+      "longDescription": "long description 1",
+      "startTime": 0,
+      "duration": 3600,
+      "channelId": "",
+      "parentalRatings": "mitxperts/mock/hbbtv-testsuite-ratings.json"
+   },
+   {
+      "name": "Event 2, umlaut ö",
+      "programmeId": "programmeID 2",
+      "programmeIdType": 1,
+      "description": "description 2",
+      "longDescription": "long description 2",
+      "startTime": 0,
+      "duration": 3600,
+      "channelId": "",
+      "parentalRatings": "mitxperts/mock/hbbtv-testsuite-ratings.json"
+   },
+   {
+      "name": "Event 3, filler",
+      "programmeId": "programmeID 3",
+      "programmeIdType": 1,
+      "description": "description 3",
+      "longDescription": "long description 3",
+      "startTime": 0,
+      "duration": 3600,
+      "channelId": "",
+      "parentalRatings": "mitxperts/mock/hbbtv-testsuite-ratings.json"
+   }
+]

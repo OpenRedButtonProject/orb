@@ -1,0 +1,13 @@
+{
+   "name": "HbbTV-Testsuite2",
+   "channelType": 0,
+   "idType": 16,
+   "majorChannel": 2,
+   "terminalChannel": 2,
+   "nid": 1,
+   "onid": 1,
+   "tsid": 65283,
+   "sid": 28187,
+   "hidden": false
+}
+
