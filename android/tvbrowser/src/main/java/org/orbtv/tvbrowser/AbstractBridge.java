@@ -1582,9 +1582,6 @@ public abstract class AbstractBridge {
             }
 
             case "OrbDebug.publishTestReport": {
-                if (!BuildConfig.DEBUG) {
-                    break;
-                }
                 OrbDebug_publishTestReport(
                         token,
                         params.getString("testSuite"),
