@@ -26,6 +26,9 @@ import static android.view.KeyEvent.KEYCODE_TAB;
 import org.orbtv.mockdialservice.IMockDialService;
 import org.orbtv.mockdialservice.IMockDialServiceCallback;
 
+import java.io.IOException;
+import java.util.BitSet;
+
 public class MainActivity extends Activity {
    private static final String TAG = "MainActivity";
 
@@ -65,13 +68,15 @@ public class MainActivity extends Activity {
 
       setContentView(R.layout.activity_main);
       Bundle extras = getIntent().getExtras();
-      String mockConfig = "default";
-      if (extras != null) {
-         mockConfig = extras.getString("mockConfig", "default");
-      }
-
-      mMockCallback = new MockTvBrowserCallback(this, mockConfig);
       MockDsmcc mockDsmcc = new MockDsmcc(getApplicationContext());
+      try {
+         mMockCallback = new MockTvBrowserCallback(this, mockDsmcc, extras);
+      } catch (Exception e) {
+         e.printStackTrace();
+         Log.d("orb_automation_msg", "finished");
+         // Don't continue with invalid state
+         return;
+      }
       FrameLayout frameLayout = findViewById(R.id.frameLayout);
       mTvBrowserSession = TvBrowser.createSession(getApplicationContext(), mMockCallback, mockDsmcc,
          configuration);
@@ -84,14 +89,6 @@ public class MainActivity extends Activity {
    protected void onDestroy() {
       super.onDestroy();
       unbindDialService();
-   }
-
-   @Override
-   public boolean onKeyDown(int keyCode, KeyEvent event) {
-      if (keyCode == KEYCODE_TAB) {
-         mMockCallback.toggleChannel();
-      }
-      return super.onKeyDown(keyCode, event);
    }
 
    private final IMockDialServiceCallback.Stub mDialServiceCallback =

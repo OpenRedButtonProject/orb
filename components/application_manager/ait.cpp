@@ -72,7 +72,7 @@ bool Ait::ProcessSection(const uint8_t *data, uint32_t nbytes)
       ait_size = ((static_cast<uint32_t>(data[1]) << 8u | data[2]) & 0xFFFu) + 3;
       if (nbytes != ait_size)
       {
-         LOG(LOG_ERROR, "Ait::ProcessSection Data size mismatch.");
+         LOG(LOG_ERROR, "Ait::ProcessSection Data size mismatch %d/%d.", nbytes, ait_size);
 
          return updated;
       }

@@ -1,0 +1,30 @@
+{
+   "channels": [
+      {
+         "channel": "mitxperts/mock/hbbtv-testsuite1-channel.json",
+         "programmes": "mitxperts/mock/hbbtv-testsuite-programmes.json",
+         "components": "mitxperts/mock/hbbtv-testsuite-components.json",
+         "applications": [
+            {
+               "id": 1,
+               "name": "HbbTV-Testsuite",
+               "baseUrl": "http://ec2-54-78-79-81.eu-west-1.compute.amazonaws.com/mitxp-testsuite/",
+               "initialPath": "index.php"
+            }
+         ]
+      },
+      {
+         "channel": "mitxperts/mock/hbbtv-testsuite2-channel.json",
+         "programmes": "mitxperts/mock/hbbtv-testsuite-programmes.json",
+         "components": "mitxperts/mock/hbbtv-testsuite-components.json",
+         "applications": [
+            {
+               "id": 1,
+               "name": "HbbTV-Testsuite",
+               "baseUrl": "http://ec2-54-78-79-81.eu-west-1.compute.amazonaws.com/mitxp-testsuite/",
+               "initialPath": "index.php"
+            }
+         ]
+      }
+   ]
+}
