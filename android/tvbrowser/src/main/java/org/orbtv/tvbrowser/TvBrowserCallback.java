@@ -400,4 +400,12 @@ public interface TvBrowserCallback {
      * @return An IP address.
      */
     String getHostAddress();
+
+    /**
+     * Publish a test report (debug build only).
+     *
+     * @param testSuite A unique test suite name.
+     * @param xml The XML test report.
+     */
+    void publishTestReport(String testSuite, String xml);
 }

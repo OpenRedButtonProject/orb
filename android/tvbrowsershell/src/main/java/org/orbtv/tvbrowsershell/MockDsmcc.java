@@ -1,8 +1,8 @@
 /**
  * ORB Software. Copyright (c) 2022 Ocean Blue Software Limited
  * <p>
- * Licensed under the ORB License that can be found in the LICENSE file at
- * the top level of this repository.
+ * Licensed under the ORB License that can be found in the LICENSE file at the top level of this
+ * repository.
  */
 
 package org.orbtv.tvbrowsershell;
@@ -34,13 +34,28 @@ import java.util.zip.ZipInputStream;
 public class MockDsmcc implements IDsmccEngine {
     private static final String TAG = "MockDsmcc";
 
-    private final String mDsmPath;
+    private final Context mContext;
+    private String mBasePath;
+    private String mDsmPath = "";
     private IDsmccClient mDsmccClient;
     private final HashMap<Integer, Handler> mActiveSubscriptionList;
 
     MockDsmcc(Context context) {
-        mDsmPath = unpackMockDsmcc(context);
+        mContext = context;
+        mBasePath = context.getDataDir().getPath() + "/dsmcc/";
+        File base = new File(mBasePath);
+        if (base.exists()) {
+            Utils.recursiveDelete(base);
+        }
         mActiveSubscriptionList = new HashMap<>();
+    }
+
+    public void setDsmccData(String dsmccData) {
+        if (dsmccData.isEmpty()) {
+            return;
+        }
+        mDsmPath = unpackMockDsmcc(mContext, dsmccData);
+        Log.d(TAG, "Using path: " + mDsmPath);
     }
 
     /**
@@ -59,8 +74,12 @@ public class MockDsmcc implements IDsmccEngine {
      * @param requestId ID of request (returned to DsmccClient.onReceiveContent)
      */
     public boolean requestDvbContent(String url, int requestId) {
+        if (mDsmPath.isEmpty()) {
+            return false;
+        }
         Uri uri = Uri.parse(url);
         String path = mDsmPath + "/" + uri.getAuthority() + uri.getPath();
+        Log.d(TAG, "Get mock content: " + path);
         File file = new File(path);
         if (file.exists()) {
             if (file.isDirectory()) {
@@ -182,13 +201,13 @@ public class MockDsmcc implements IDsmccEngine {
         mActiveSubscriptionList.remove(listenId);
     }
 
-    private String unpackMockDsmcc(Context context) {
-        String path = context.getDataDir().getPath() + "/";
-        File dsmdir = new File(path + "dsm");
+    private String unpackMockDsmcc(Context context, String dsmccData) {
+        String path = mBasePath + dsmccData.replace("/", "_") + "/";
+        File dsmdir = new File(path);
         if (!dsmdir.exists()) {
             Log.i(TAG, "Unpacking Mock Dsmcc to: " + path);
             try {
-                InputStream is = context.getAssets().open("dsm.zip");
+                InputStream is = context.getAssets().open("tests/" + dsmccData);
                 ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
                 String filename;
                 ZipEntry ze;
@@ -216,10 +235,9 @@ public class MockDsmcc implements IDsmccEngine {
                 }
                 zis.close();
             } catch (IOException e) {
-                Log.e(TAG, "unpackMockDsmcc FAIL " + e.getMessage());
+                e.printStackTrace();
             }
         }
         return dsmdir.getPath();
     }
 }
-

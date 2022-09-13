@@ -11,123 +11,81 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 
-import android.media.MediaPlayer;
-import android.net.Uri;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.KeyEvent;
-import android.widget.FrameLayout;
-import android.widget.VideoView;
 
 import org.orbtv.tvbrowser.TvBrowser;
 import org.orbtv.tvbrowser.TvBrowserCallback;
-import org.json.JSONObject;
 import org.orbtv.tvbrowser.TvBrowserTypes;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Vector;
 
 public class MockTvBrowserCallback implements TvBrowserCallback {
     private static final String TAG = "MockTvBrowserCallback";
-    private static final boolean DEBUG_VIDEO_ENABLED = false;
 
     private final MainActivity mMainActivity;
+    private final MockDsmcc mMockDsmcc;
+    private final String mManifest;
+    Context mContext;
     private final Database mDatabase;
+    private final MockHttpServer mServer;
 
-    private String mMockConfig;
-    private String mMockLaunchUrl;
-    private byte[] mMockLaunchAit;
-    private byte[] mMockOtherAit;
-    private boolean mMockIsOtherAit;
-    private String mMockLaunchXmlAit;
-    private ArrayList<TvBrowserTypes.Channel> mMockChannels;
-    private String mMockCurrentChannelCcid;
-    private ArrayList<TvBrowserTypes.Programme> mMockProgrammes;
-    private ArrayList<TvBrowserTypes.Component> mMockComponents;
+    private TvBrowser.Session mSession = null;
+    private TestSuiteRunner mTestSuiteRunner = null;
+    private TestSuiteScenario mTestSuiteScenario;
 
-    private TvBrowser.Session mSession;
-    private HashMap<Integer, Handler> mActiveSearchList;
+    private final HashMap<Integer, Handler> mActiveSearchList = new HashMap<>();
 
     static SparseArray<Integer> mKeyMap;
 
-    MockTvBrowserCallback(MainActivity mainActivity, String mockConfig) {
+    MockTvBrowserCallback(MainActivity mainActivity, MockDsmcc mockDsmcc, Bundle extras)
+            throws Exception {
         mMainActivity = mainActivity;
-        Context context = mainActivity.getApplicationContext();
-        mDatabase = new Database(context, 1);
-
-        // Configure mock environment
-        mMockConfig = mockConfig;
-        mMockLaunchUrl = null;
-        mMockLaunchAit = null;
-        mMockOtherAit = null;
-        mMockIsOtherAit = false;
-        mMockLaunchXmlAit = null;
-        mMockChannels = createMockChannels();
-        mMockCurrentChannelCcid = mMockChannels.get(0).ccid;
-        mMockProgrammes = createMockProgrammes();
-        mMockComponents = createMockComponents();
-
-        // Whichever of mMockLaunchUrl, mMockLaunchAit or mMockLaunchXmlAit is set will be used once
-        // onSessionReady is called.
-        switch (mMockConfig) {
-            case "default": {
-                mMockLaunchUrl = "http://ec2-54-78-79-81.eu-west-1.compute.amazonaws.com/mitxp-testsuite/";
-                break;
-            }
-            case "mitxperts_ait": {
-                mMockLaunchAit = getAssetBytes(context, "unitTestData/section_dvbt_506");
-                mMockOtherAit = getAssetBytes(context, "unitTestData/section_001_470");
-                break;
-            }
-            case "mitxperts_xml_ait": {
-                mMockLaunchXmlAit = getAssetString(context, "unitTestData/test.aitx");
-                break;
-            }
-            default: {
-                Log.e(TAG, "Unrecognised mock config.");
-            }
-        }
-
-        mSession = null;
-        mActiveSearchList = new HashMap<>();
-
-        //mDatabase.deleteAllDistinctiveIdentifiers();
-    }
-
-    public void toggleChannel() {
-        if (mMockOtherAit == null) {
-            return;
-        }
-        if (mMockIsOtherAit) {
-            Log.d(TAG, "Toggle to launch AIT");
-            mSession.onChannelStatusChanged(1, 65283, 28186, TvBrowserTypes.CHANNEL_STATUS_CONNECTING, false);
-            mSession.onChannelStatusChanged(1, 65283, 28186, TvBrowserTypes.CHANNEL_STATUS_PRESENTING, false);
-            mSession.processAitSection(506, 28186, mMockLaunchAit);
-            mMockIsOtherAit = false;
+        mMockDsmcc = mockDsmcc;
+        if (extras != null) {
+            mManifest = extras.getString("testsuite_manifest", "");
         } else {
-            Log.d(TAG, "Toggle to other AIT");
-            mSession.onChannelStatusChanged(1, 1, 2, TvBrowserTypes.CHANNEL_STATUS_CONNECTING, false);
-            mSession.onChannelStatusChanged(1, 1, 2, TvBrowserTypes.CHANNEL_STATUS_PRESENTING, false);
-            byte[] garbage = new byte[1];
-            mSession.processAitSection(999, 2, garbage);
-            mSession.processAitSection(470, 2, mMockOtherAit);
-            mMockIsOtherAit = true;
+            mManifest = "";
         }
+        mContext = mainActivity.getApplicationContext();
+        mDatabase = new Database(mContext, 1);
+        mServer = new MockHttpServer(mContext);
+        mTestSuiteRunner = new TestSuiteRunner(mContext, mManifest, mServer.getLocalHost(),
+                new TestSuiteRunner.Callback() {
+                    @Override
+                    public void onTestSuiteStarted(String name, TestSuiteScenario scenario, String dsmccData, String action) {
+                        mTestSuiteScenario = scenario;
+                        mMockDsmcc.setDsmccData(dsmccData);
+                        if (action.equals("simulate_successful_tune")) {
+                            simulateSuccessfulTune();
+                        }
+                        Log.d("orb_automation_msg", "testsuite_started,name=" + name);
+                    }
+
+                    @Override
+                    public void onTestSuiteFinished(String name, String report) {
+                        Log.d("orb_automation_msg", "testsuite_finished,name=" + name + ",report=" + report);
+                    }
+
+                    @Override
+                    public void onFinished() {
+                        Log.d("orb_automation_msg", "finished");
+                        System.exit(0);
+                    }
+                });
     }
 
     /**
@@ -139,15 +97,7 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
     @Override
     public void onSessionReady(TvBrowser.Session session) {
         mSession = session;
-        if (mMockLaunchUrl != null) {
-            mSession.launchApplication(mMockLaunchUrl);
-        } else if (mMockLaunchAit != null) {
-            mSession.onChannelStatusChanged(1, 65283, 28186, TvBrowserTypes.CHANNEL_STATUS_CONNECTING, false);
-            mSession.onChannelStatusChanged(1, 65283, 28186, TvBrowserTypes.CHANNEL_STATUS_PRESENTING, false);
-            mSession.processAitSection(506, 28186, mMockLaunchAit);
-        } else if (mMockLaunchXmlAit != null) {
-            mSession.processXmlAit(mMockLaunchXmlAit);
-        }
+        mTestSuiteRunner.run();
     }
 
     /**
@@ -238,10 +188,13 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
         ArrayList<Integer> dttNetworkIds = new ArrayList<>();
         int[] result;
 
-        for (TvBrowserTypes.Channel mockChannel : mMockChannels) {
-            if (((mockChannel.idType == 12) || (mockChannel.idType == 16)) && // TODO(library) Replace magic numbers
-                    !dttNetworkIds.contains(mockChannel.nid)) {
-                dttNetworkIds.add(mockChannel.nid);
+        Vector<TvBrowserTypes.Channel> channels = mTestSuiteScenario.getMockChannels();
+        if (channels != null) {
+            for (TvBrowserTypes.Channel mockChannel : channels) {
+                if (((mockChannel.idType == 12) || (mockChannel.idType == 16)) && // TODO(library) Replace magic numbers
+                        !dttNetworkIds.contains(mockChannel.nid)) {
+                    dttNetworkIds.add(mockChannel.nid);
+                }
             }
         }
         Collections.sort(dttNetworkIds);
@@ -345,26 +298,6 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
     @Override
     public void setDvbVideoRectangle(final int x, final int y, final int width, final int height, final boolean fullScreen) {
         Log.v(TAG, "HbbTVClient.setDvbVideoRectangle(" + x + ", " + y + ", " + width + ", " + height + ", " + fullScreen + ")");
-        if (DEBUG_VIDEO_ENABLED) {
-            mMainActivity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-//               VideoView videoView = mMainActivity.findViewById(R.id.videoView);
-//               FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(width, height);
-//               layoutParams.setMargins(x, y, 0, 0);
-//               videoView.setLayoutParams(layoutParams);
-//               String path = "android.resource://" + mMainActivity.getPackageName() + "/" + R.raw.broadcast;
-//               videoView.setVideoURI(Uri.parse(path));
-//               videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-//                  @Override
-//                  public void onPrepared(MediaPlayer mediaPlayer) {
-//                     mediaPlayer.setLooping(true);
-//                  }
-//               });
-//               videoView.start();
-                }
-            });
-        }
     }
 
     /**
@@ -374,7 +307,7 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
      */
     @Override
     public List<TvBrowserTypes.Channel> getChannelList() {
-        return mMockChannels;
+        return mTestSuiteScenario.getMockChannels();
     }
 
     /**
@@ -384,7 +317,11 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
      */
     @Override
     public String getCurrentCcid() {
-        return mMockCurrentChannelCcid;
+        TvBrowserTypes.Channel currentChannel = mTestSuiteScenario.getCurrentChannel();
+        if (currentChannel == null) {
+            return "";
+        }
+        return currentChannel.ccid;
     }
 
     /**
@@ -407,9 +344,12 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
     @Override
     public TvBrowserTypes.Channel getChannel(String ccid) {
         // Naive implementation for mock
-        for (TvBrowserTypes.Channel mockChannel : mMockChannels) {
-            if (mockChannel.ccid.equals(ccid)) {
-                return mockChannel;
+        Vector<TvBrowserTypes.Channel> channels = mTestSuiteScenario.getMockChannels();
+        if (channels != null) {
+            for (TvBrowserTypes.Channel mockChannel : channels) {
+                if (mockChannel.ccid.equals(ccid)) {
+                    return mockChannel;
+                }
             }
         }
         return new TvBrowserTypes.Channel();
@@ -446,28 +386,20 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
             return TvBrowserTypes.CHANNEL_STATUS_UNREALIZED;
         }
         if (idType == TvBrowserTypes.Channel.ID_IPTV_SDS ||
-                idType == TvBrowserTypes.Channel.ID_IPTV_SDS ||
                 idType == TvBrowserTypes.Channel.ID_DVB_SI_DIRECT) {
             // DSD and IPTV channels are not supported in mock implementation
             return TvBrowserTypes.CHANNEL_STATUS_NOT_SUPPORTED;
         }
 
-        for (TvBrowserTypes.Channel mock : mMockChannels) {
-            if (mock.onid == onid && mock.tsid == tsid && mock.sid == sid) {
-                mMockCurrentChannelCcid = mock.ccid;
-            }
+        int status = TvBrowserTypes.CHANNEL_STATUS_UNKNOWN_CHANNEL;
+        if (mTestSuiteScenario.selectChannel(onid, tsid, sid)) {
+            status = TvBrowserTypes.CHANNEL_STATUS_CONNECTING;
+            simulateSuccessfulTune();
+        } else {
+            // TODO simulateUnsuccessfulTune();
         }
 
-        new android.os.Handler(Looper.getMainLooper()).postDelayed(
-                new Runnable() {
-                    public void run() {
-                        int statusCode = TvBrowserTypes.CHANNEL_STATUS_PRESENTING;
-                        mSession.onChannelStatusChanged(onid, tsid, sid, statusCode, false);
-                        Log.i(TAG, "sendChannelStatusChanged(" + onid + ", " + tsid + ", " + sid + ", " + statusCode + ")");
-                    }
-                },
-                2000);
-        return TvBrowserTypes.CHANNEL_STATUS_CONNECTING;
+        return status;
     }
 
     /**
@@ -492,26 +424,20 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
             return TvBrowserTypes.CHANNEL_STATUS_UNREALIZED;
         }
 
+        // TODO Parse DSD
         int onid = 1;
         int tsid = 65283;
         int finalSid = 28186;
 
-        for (TvBrowserTypes.Channel mock : mMockChannels) {
-            if (mock.onid == onid && mock.tsid == tsid && mock.sid == sid) {
-                mMockCurrentChannelCcid = mock.ccid;
-            }
+        int status = TvBrowserTypes.CHANNEL_STATUS_UNKNOWN_CHANNEL;
+        if (mTestSuiteScenario.selectChannel(onid, tsid, sid)) {
+            status = TvBrowserTypes.CHANNEL_STATUS_CONNECTING;
+            simulateSuccessfulTune();
+        } else {
+            // TODO simulateUnsuccessfulTune();
         }
 
-        new android.os.Handler(Looper.getMainLooper()).postDelayed(
-                new Runnable() {
-                    public void run() {
-                        int statusCode = TvBrowserTypes.CHANNEL_STATUS_PRESENTING;
-                        mSession.onChannelStatusChanged(onid, tsid, finalSid, statusCode, false);
-                        Log.i(TAG, "sendChannelStatusChanged(" + onid + ", " + tsid + ", " + finalSid + ", " + statusCode + ")");
-                    }
-                },
-                2000);
-        return TvBrowserTypes.CHANNEL_STATUS_CONNECTING;
+        return status;
     }
 
     /**
@@ -523,13 +449,15 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
     @Override
     public List<TvBrowserTypes.Programme> getProgrammeList(String ccid) {
         long time = System.currentTimeMillis() / 1000L - 1;
-        for (TvBrowserTypes.Programme mockProgramme : mMockProgrammes) {
-            mockProgramme.channelId = ccid;
-            mockProgramme.startTime = time;
-            time += 3600;
+        Vector<TvBrowserTypes.Programme> programmes = mTestSuiteScenario.getCurrentChannelProgrammes();
+        if (programmes != null) {
+            for (TvBrowserTypes.Programme mockProgramme : programmes) {
+                mockProgramme.channelId = ccid;
+                mockProgramme.startTime = time;
+                time += 3600;
+            }
         }
-
-        return mMockProgrammes;
+        return programmes;
     }
 
     /**
@@ -552,7 +480,7 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
      */
     @Override
     public List<TvBrowserTypes.Component> getComponentList(String ccid, int typeCode) {
-        return mMockComponents;
+        return mTestSuiteScenario.getCurrentChannelComponents();
     }
 
     /**
@@ -678,31 +606,28 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
         if (mDatabase.hasDistinctiveIdentifier(origin)) {
             return true;
         }
-        mMainActivity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                // Actual implementations may want to support other languages
-                AlertDialog.Builder builder = new AlertDialog.Builder(mMainActivity)
-                        .setMessage("Allow the application at \"" + origin + "\" access to a distinctive identifier?")
-                        .setCancelable(false)
-                        .setPositiveButton("ALLOW", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
-                                String identifier = TvBrowser.createDistinctiveIdentifier("00001",
-                                        "secret", origin);
-                                mDatabase.setDistinctiveIdentifier(origin, identifier);
-                                mSession.onAccessToDistinctiveIdentifierDecided(origin, true);
-                                dialog.cancel();
-                            }
-                        })
-                        .setNegativeButton("DENY", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
-                                mDatabase.deleteDistinctiveIdentifier(origin);
-                                mSession.onAccessToDistinctiveIdentifierDecided(origin, false);
-                                dialog.cancel();
-                            }
-                        });
-                builder.show();
-            }
+        mMainActivity.runOnUiThread(() -> {
+            // Actual implementations may want to support other languages
+            AlertDialog.Builder builder = new AlertDialog.Builder(mMainActivity)
+                    .setMessage("Allow the application at \"" + origin + "\" access to a distinctive identifier?")
+                    .setCancelable(false)
+                    .setPositiveButton("ALLOW", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            String identifier = TvBrowser.createDistinctiveIdentifier("00001",
+                                    "secret", origin);
+                            mDatabase.setDistinctiveIdentifier(origin, identifier);
+                            mSession.onAccessToDistinctiveIdentifierDecided(origin, true);
+                            dialog.cancel();
+                        }
+                    })
+                    .setNegativeButton("DENY", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            mDatabase.deleteDistinctiveIdentifier(origin);
+                            mSession.onAccessToDistinctiveIdentifierDecided(origin, false);
+                            dialog.cancel();
+                        }
+                    });
+            builder.show();
         });
         return false;
     }
@@ -746,7 +671,7 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
                                 public void run() {
                                     Handler handler = mActiveSearchList.get(q.getQueryId());
                                     if (handler != null) {
-                                        mSession.onMetadataSearchCompleted(q.getQueryId(), 0, mMockProgrammes, offset, count);
+                                        mSession.onMetadataSearchCompleted(q.getQueryId(), 0, mTestSuiteScenario.getCurrentChannelProgrammes(), offset, count);
                                         Log.i(TAG, "sendMetadataSearchEvent(" + q.getQueryId() + ", 0)");
                                         mActiveSearchList.remove(q.getQueryId());
                                     }
@@ -804,20 +729,23 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
         new android.os.Handler(Looper.getMainLooper()).postDelayed(
                 new Runnable() {
                     public void run() {
-                        for (TvBrowserTypes.Component c : mMockComponents) {
-                            //update mock status
-                            if (stop) {
-                                if ((c.componentType == componentType) && (c.active)) {
-                                    c.active = false;
-                                    break;
-                                }
-                            } else {
-                                if (c.componentType == componentType) {
-                                    if (c.pid == pid) {
-                                        c.active = true;
-                                    } else {
-                                        //Mark others as not active anymore
+                        Vector<TvBrowserTypes.Component> components = mTestSuiteScenario.getCurrentChannelComponents();
+                        if (components != null) {
+                            for (TvBrowserTypes.Component c : components) {
+                                //update mock status
+                                if (stop) {
+                                    if ((c.componentType == componentType) && (c.active)) {
                                         c.active = false;
+                                        break;
+                                    }
+                                } else {
+                                    if (c.componentType == componentType) {
+                                        if (c.pid == pid) {
+                                            c.active = true;
+                                        } else {
+                                            //Mark others as not active anymore
+                                            c.active = false;
+                                        }
                                     }
                                 }
                             }
@@ -882,171 +810,17 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
     }
 
     /**
-     * Helper that makes a DVB URI CCID
+     * Publish a test report (debug build only).
      *
-     * @param onid Original network ID
-     * @param tsid Transport stream ID
-     * @param sid  Service ID
-     * @return DVB URI
+     * @param testSuite A unique test suite name.
+     * @param xml The XML test report.
      */
-    private static String createCcid(int onid, int tsid, int sid) {
-        return String.format("dvb://%04x.%04x.%04x", onid, tsid, sid);
-    }
-
-    private static ArrayList<TvBrowserTypes.Channel> createMockChannels() {
-        ArrayList<TvBrowserTypes.Channel> channels = new ArrayList<>();
-        channels.add(new TvBrowserTypes.Channel(
-                true,
-                createCcid(1, 65283, 28186),
-                "HbbTV-Testsuite1",
-                null,
-                0,
-                16,
-                1,
-                1,
-                1,
-                1,
-                65283,
-                28186,
-                false,
-                -1,
-                null
-        ));
-        channels.add(new TvBrowserTypes.Channel(
-                true,
-                createCcid(1, 65283, 28187),
-                "HbbTV-Testsuite2",
-                null,
-                0,
-                16,
-                2,
-                2,
-                1,
-                1,
-                65283,
-                28187,
-                false,
-                -1,
-                null
-        ));
-        return channels;
-    }
-
-    private static ArrayList<TvBrowserTypes.ParentalRating> createMockParentalRatings() {
-        ArrayList<TvBrowserTypes.ParentalRating> ratings = new ArrayList<>();
-        ratings.add(new TvBrowserTypes.ParentalRating(
-                "0x0a",
-                "dvb-si",
-                0,
-                128,
-                "GB"
-        ));
-        ratings.add(new TvBrowserTypes.ParentalRating(
-                "0x0b",
-                "dvb-si",
-                0,
-                128,
-                "GB"
-        ));
-        return ratings;
-    }
-
-    private static ArrayList<TvBrowserTypes.Programme> createMockProgrammes() {
-        ArrayList<TvBrowserTypes.Programme> programmes = new ArrayList<>();
-        programmes.add(new TvBrowserTypes.Programme(
-                "Event 1, umlaut ä",
-                "programmeID 1",
-                1,
-                "description 1",
-                "longDescription 1",
-                0,
-                3600,
-                "",
-                createMockParentalRatings()
-        ));
-        programmes.add(new TvBrowserTypes.Programme(
-                "Event 2, umlaut ö",
-                "programmeID 2",
-                1,
-                "description 2",
-                "longDescription 2",
-                0,
-                3600,
-                "",
-                createMockParentalRatings()
-        ));
-        programmes.add(new TvBrowserTypes.Programme(
-                "Event 3, filler",
-                "programmeID 3",
-                1,
-                "description 3",
-                "longDescription 3",
-                0,
-                3600,
-                "",
-                createMockParentalRatings()
-        ));
-        return programmes;
-    }
-
-    private static ArrayList<TvBrowserTypes.Component> createMockComponents() {
-        ArrayList<TvBrowserTypes.Component> components = new ArrayList<>();
-        components.add(TvBrowserTypes.Component.createVideoComponent(
-                1,
-                1,
-                "encoding1",
-                false,
-                TvBrowserTypes.ASPECT_RATIO_16_9,
-                true,
-                true
-        ));
-        components.add(TvBrowserTypes.Component.createAudioComponent(
-                3,
-                3,
-                "encoding3",
-                false,
-                "deu",
-                false,
-                2,
-                true,
-                true
-        ));
-        components.add(TvBrowserTypes.Component.createAudioComponent(
-                4,
-                4,
-                "encoding4",
-                false,
-                "fra",
-                false,
-                1,
-                false,
-                false
-        ));
-        components.add(TvBrowserTypes.Component.createSubtitleComponent(
-                5,
-                5,
-                "encoding5",
-                false,
-                "deu",
-                false,
-                "label",
-                true,
-                true
-        ));
-        TvBrowserTypes.Component hiddenComponent = TvBrowserTypes.Component.createAudioComponent(
-                6,
-                6,
-                "encoding6",
-                false,
-                "deu",
-                true,
-                1,
-                false,
-                false
-        );
-        hiddenComponent.hidden = true;
-        components.add(hiddenComponent);
-        return components;
+    @Override
+    public void publishTestReport(String testSuite, String xml) {
+        if (!BuildConfig.DEBUG) {
+            return;
+        }
+        mTestSuiteRunner.onTestReportPublished(testSuite, xml);
     }
 
     private static byte[] getAssetBytes(Context context, String asset) {
@@ -1081,6 +855,21 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
             string = null;
         }
         return string;
+    }
+
+    private void simulateSuccessfulTune() {
+        TvBrowserTypes.Channel channel = mTestSuiteScenario.getCurrentChannel();
+        if (channel != null) {
+            mSession.onChannelStatusChanged(channel.onid, channel.tsid, channel.sid,
+                    TvBrowserTypes.CHANNEL_STATUS_CONNECTING, false);
+            new android.os.Handler(Looper.getMainLooper()).postDelayed(() -> {
+                mSession.onChannelStatusChanged(channel.onid, channel.tsid, channel.sid,
+                        TvBrowserTypes.CHANNEL_STATUS_PRESENTING, false);
+                mSession.processAitSection(506, channel.sid, mTestSuiteScenario.getCurrentChannelAit());
+            }, 50);
+        } else {
+            // TODO TUNED OFF
+        }
     }
 
     static {

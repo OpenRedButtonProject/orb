@@ -963,6 +963,15 @@ public abstract class AbstractBridge {
      */
     protected abstract String CSManager_getApp2AppRemoteBaseURL(Token token);
 
+    /**
+     * Publish a test report (debug build only).
+     *
+     * @param token The token associated with this request.
+     * @param testSuite A unique test suite name.
+     * @param xml The XML test report.
+     */
+    protected abstract void OrbDebug_publishTestReport(Token token, String testSuite, String xml);
+
     public JSONObject request(String method, Token token, JSONObject params) throws JSONException {
         JSONObject response = new JSONObject();
 
@@ -1569,6 +1578,18 @@ public abstract class AbstractBridge {
                         token
                 );
                 response.put("result", result);
+                break;
+            }
+
+            case "OrbDebug.publishTestReport": {
+                if (!BuildConfig.DEBUG) {
+                    break;
+                }
+                OrbDebug_publishTestReport(
+                        token,
+                        params.getString("testSuite"),
+                        params.getString("xml")
+                );
                 break;
             }
 

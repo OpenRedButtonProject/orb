@@ -933,3 +933,22 @@ hbbtv.bridge.csManager = (function() {
 
     return exported;
 })();
+
+hbbtv.bridge.orbDebug = (function() {
+    const exported = {};
+
+    /**
+     * Publish a test report (debug build only).
+     *
+     * @param {string} testSuite A unique test suite name.
+     * @param {string} xml The XML test report.
+     */
+    exported.publishTestReport = function(testSuite, xml) {
+        return hbbtv.native.request('OrbDebug.publishTestReport', {
+            testSuite: testSuite,
+            xml: xml,
+        });
+    };
+
+    return exported;
+})();

@@ -1004,4 +1004,16 @@ class Bridge extends AbstractBridge {
     protected String CSManager_getApp2AppRemoteBaseURL(Token token) {
         return mTvBrowserSession.getApp2AppRemoteBaseUrl();
     }
+
+    /**
+     * Publish a test report (debug build only).
+     *
+     * @param token The token associated with this request.
+     * @param testSuite A unique test suite name.
+     * @param xml The XML test report.
+     */
+    @Override
+    protected void OrbDebug_publishTestReport(Token token, String testSuite, String xml) {
+        mTvBrowserCallback.publishTestReport(testSuite, xml);
+    }
 }
