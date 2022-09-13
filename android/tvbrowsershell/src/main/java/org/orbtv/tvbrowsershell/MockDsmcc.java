@@ -1,8 +1,8 @@
 /**
  * ORB Software. Copyright (c) 2022 Ocean Blue Software Limited
  *
- * Licensed under the ORB License that can be found in the LICENSE file at
- * the top level of this repository.
+ * Licensed under the ORB License that can be found in the LICENSE file at the top level of this
+ * repository.
  */
 
 package org.orbtv.tvbrowsershell;
@@ -34,14 +34,28 @@ import java.util.zip.ZipInputStream;
 public class MockDsmcc implements IDsmccEngine {
    private static final String TAG = "MockDsmcc";
 
-   private final String mDsmPath;
+   private final Context mContext;
+   private String mBasePath;
+   private String mDsmPath = "";
    private IDsmccClient mDsmccClient;
    private final HashMap<Integer, Handler> mActiveSubscriptionList;
 
-   MockDsmcc(Context context)
-   {
-      mDsmPath = unpackMockDsmcc(context);
+   MockDsmcc(Context context) {
+      mContext = context;
+      mBasePath = context.getDataDir().getPath() + "/dsmcc/";
+      File base = new File(mBasePath);
+      if (base.exists()) {
+         Utils.recursiveDelete(base);
+      }
       mActiveSubscriptionList = new HashMap<>();
+   }
+
+   public void setDsmccData(String dsmccData) {
+      if (dsmccData.isEmpty()) {
+         return;
+      }
+      mDsmPath = unpackMockDsmcc(mContext, dsmccData);
+      Log.d(TAG, "Using path: " + mDsmPath);
    }
 
    /**
@@ -49,8 +63,7 @@ public class MockDsmcc implements IDsmccEngine {
     *
     * @param client Client to return DSMCC files and stream events
     */
-   public void setDsmccClient(IDsmccClient client)
-   {
+   public void setDsmccClient(IDsmccClient client) {
       mDsmccClient = client;
    }
 
@@ -60,10 +73,13 @@ public class MockDsmcc implements IDsmccEngine {
     * @param url DVB Url of requested file
     * @param requestId ID of request (returned to DsmccClient.onReceiveContent)
     */
-   public boolean requestDvbContent(String url, int requestId)
-   {
+   public boolean requestDvbContent(String url, int requestId) {
+      if (mDsmPath.isEmpty()) {
+         return false;
+      }
       Uri uri = Uri.parse(url);
       String path = mDsmPath + "/" + uri.getAuthority() + uri.getPath();
+      Log.d(TAG, "Get mock content: " + path);
       File file = new File(path);
       if (file.exists()) {
          if (file.isDirectory()) {
@@ -100,8 +116,7 @@ public class MockDsmcc implements IDsmccEngine {
     *
     * @param requestId ID of request
     */
-   public void closeDvbContent(int requestId)
-   {
+   public void closeDvbContent(int requestId) {
    }
 
    Handler sendStreamEvents(String url, String name, int listenId, int componentTag) {
@@ -153,8 +168,7 @@ public class MockDsmcc implements IDsmccEngine {
     * @param name Name of stream event
     * @param listenId ID of subscriber
     */
-   public boolean subscribeStreamEventName(String url, String name, int listenId)
-   {
+   public boolean subscribeStreamEventName(String url, String name, int listenId) {
       Handler handler = sendStreamEvents(url, name, listenId, -1);
       mActiveSubscriptionList.put(listenId, handler);
       return true;
@@ -168,8 +182,7 @@ public class MockDsmcc implements IDsmccEngine {
     * @param eventId Event Id of stream event
     * @param listenId ID of subscriber
     */
-   public boolean subscribeStreamEventId(String name, int componentTag, int eventId, int listenId)
-   {
+   public boolean subscribeStreamEventId(String name, int componentTag, int eventId, int listenId) {
       Handler handler = sendStreamEvents("url", name, listenId, componentTag);
       mActiveSubscriptionList.put(listenId, handler);
       return true;
@@ -180,8 +193,7 @@ public class MockDsmcc implements IDsmccEngine {
     *
     * @param listenId ID of subscriber
     */
-   public void unsubscribeStreamEvent(int listenId)
-   {
+   public void unsubscribeStreamEvent(int listenId) {
       Handler handler = mActiveSubscriptionList.get(listenId);
       if (handler != null) {
          handler.removeCallbacksAndMessages(null);
@@ -189,14 +201,13 @@ public class MockDsmcc implements IDsmccEngine {
       mActiveSubscriptionList.remove(listenId);
    }
 
-   private String unpackMockDsmcc(Context context)
-   {
-      String path = context.getDataDir().getPath() + "/";
-      File dsmdir = new File(path + "dsm");
+   private String unpackMockDsmcc(Context context, String dsmccData) {
+      String path = mBasePath + dsmccData.replace("/", "_") + "/";
+      File dsmdir = new File(path);
       if (!dsmdir.exists()) {
          Log.i(TAG, "Unpacking Mock Dsmcc to: " + path);
          try {
-            InputStream is = context.getAssets().open("dsm.zip");
+            InputStream is = context.getAssets().open("tests/" + dsmccData);
             ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
             String filename;
             ZipEntry ze;
@@ -204,8 +215,7 @@ public class MockDsmcc implements IDsmccEngine {
             int count;
             Log.i(TAG, "unpackMockDsmcc zip avail: " + zis.available());
 
-            while ((ze = zis.getNextEntry()) != null)
-            {
+            while ((ze = zis.getNextEntry()) != null) {
                filename = ze.getName();
                Log.i(TAG, "Dsmcc file: " + filename);
                if (ze.isDirectory()) {
@@ -214,11 +224,9 @@ public class MockDsmcc implements IDsmccEngine {
                      Log.e(TAG, "unpackMockDsmcc mkdirs FAILED: " + path + filename);
                      break;
                   }
-               }
-               else {
+               } else {
                   FileOutputStream fout = new FileOutputStream(path + filename);
-                  while ((count = zis.read(buffer)) != -1)
-                  {
+                  while ((count = zis.read(buffer)) != -1) {
                      fout.write(buffer, 0, count);
                   }
                   fout.close();
@@ -226,12 +234,10 @@ public class MockDsmcc implements IDsmccEngine {
                }
             }
             zis.close();
-         }
-         catch(IOException e) {
-            Log.e(TAG, "unpackMockDsmcc FAIL " + e.getMessage());
+         } catch (IOException e) {
+            e.printStackTrace();
          }
       }
       return dsmdir.getPath();
    }
 }
-
