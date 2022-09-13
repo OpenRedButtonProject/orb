@@ -8,7 +8,7 @@
       "startTime": 0,
       "duration": 3600,
       "channelId": "",
-      "parentalRatings": "integration/mock/basic-ratings.json"
+      "parentalRatings": "integration/mock/basic/ratings.json"
    },
    {
       "name": "Orb Basic Programme Two",
@@ -19,7 +19,7 @@
       "startTime": 0,
       "duration": 3600,
       "channelId": "",
-      "parentalRatings": "integration/mock/basic-ratings.json"
+      "parentalRatings": "integration/mock/basic/ratings.json"
    },
    {
       "name": "Orb Basic Programme Three",
@@ -30,6 +30,6 @@
       "startTime": 0,
       "duration": 3600,
       "channelId": "",
-      "parentalRatings": "integration/mock/basic-ratings.json"
+      "parentalRatings": "integration/mock/basic/ratings.json"
    }
 ]
