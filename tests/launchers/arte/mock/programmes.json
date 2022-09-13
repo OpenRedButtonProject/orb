@@ -1,0 +1,13 @@
+[
+   {
+      "name": "Name",
+      "programmeId": "id",
+      "programmeIdType": 1,
+      "description": "Description",
+      "longDescription": "Description",
+      "startTime": 0,
+      "duration": 3600,
+      "channelId": "",
+      "parentalRatings": "launchers/arte/mock/ratings.json"
+   }
+]

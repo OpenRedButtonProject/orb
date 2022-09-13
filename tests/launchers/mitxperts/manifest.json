@@ -1,0 +1,11 @@
+{
+   "testSuites": [
+      {
+         "name": "HbbTV-Testsuite1",
+         "scenario": "launchers/mitxperts/scenario.json",
+         "dsmccData": "",
+         "action": "simulate_successful_tune",
+         "timeout": 0
+      }
+   ]
+}
