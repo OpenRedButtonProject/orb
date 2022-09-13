@@ -8,3 +8,4 @@
 .externalNativeBuild
 .cxx
 /tvbrowser/src/main/assets/polyfill/
+/tvbrowsershell/src/main/assets/tests/

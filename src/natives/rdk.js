@@ -104,5 +104,8 @@ hbbtv.nativeManager.registerNative({
     },
     getCapabilities: function() {
         return Object.freeze(this.__capabilities);
+    },
+    isDebugBuild: function() {
+       return false;
     }
 });
