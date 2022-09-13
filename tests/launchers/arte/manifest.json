@@ -1,0 +1,11 @@
+{
+   "testSuites": [
+      {
+         "name": "Arte",
+         "scenario": "launchers/arte/scenario.json",
+         "dsmccData": "",
+         "action": "simulate_successful_tune",
+         "timeout": 0
+      }
+   ]
+}

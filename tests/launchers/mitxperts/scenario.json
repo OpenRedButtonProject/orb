@@ -1,0 +1,30 @@
+{
+   "channels": [
+      {
+         "channel": "launchers/mitxperts/mock/channel1.json",
+         "programmes": "launchers/mitxperts/mock/programmes.json",
+         "components": "launchers/mitxperts/mock/components.json",
+         "applications": [
+            {
+               "id": 1,
+               "name": "HbbTV-Testsuite",
+               "baseUrl": "http://itv.mit-xperts.com/hbbtvtest/",
+               "initialPath": "index.php"
+            }
+         ]
+      },
+      {
+         "channel": "launchers/mitxperts/mock/channel2.json",
+         "programmes": "launchers/mitxperts/mock/programmes.json",
+         "components": "launchers/mitxperts/mock/components.json",
+         "applications": [
+            {
+               "id": 1,
+               "name": "HbbTV-Testsuite",
+               "baseUrl": "http://itv.mit-xperts.com/hbbtvtest/",
+               "initialPath": "index.php"
+            }
+         ]
+      }
+   ]
+}
