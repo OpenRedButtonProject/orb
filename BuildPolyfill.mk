@@ -16,6 +16,7 @@ src/natives/rdk.js \
 src/polyfill/close.js \
 src/polyfill/debug.js \
 src/polyfill/keyevent.js \
+src/polyfill/orbdebug.js \
 src/objects/collection.js \
 src/objects/audiotracklist.js \
 src/objects/videotracklist.js \

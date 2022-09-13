@@ -1,0 +1,17 @@
+{
+   "channels": [
+      {
+         "channel": "integration/mock/basic/channel1.json",
+         "programmes": "integration/mock/basic/programmes.json",
+         "components": "integration/mock/basic/components.json",
+         "applications": [
+            {
+               "id": 1,
+               "name": "example",
+               "baseUrl": "$LOCALHOST/integration/example/",
+               "initialPath": "index.html"
+            }
+         ]
+      }
+   ]
+}

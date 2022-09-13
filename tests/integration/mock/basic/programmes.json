@@ -1,0 +1,35 @@
+[
+   {
+      "name": "Orb Basic Programme One",
+      "programmeId": "id1",
+      "programmeIdType": 1,
+      "description": "Orb basic description one.",
+      "longDescription": "Orb basic long description one.",
+      "startTime": 0,
+      "duration": 3600,
+      "channelId": "",
+      "parentalRatings": "integration/mock/basic-ratings.json"
+   },
+   {
+      "name": "Orb Basic Programme Two",
+      "programmeId": "id2",
+      "programmeIdType": 1,
+      "description": "Orb basic description two.",
+      "longDescription": "Orb basic long description two.",
+      "startTime": 0,
+      "duration": 3600,
+      "channelId": "",
+      "parentalRatings": "integration/mock/basic-ratings.json"
+   },
+   {
+      "name": "Orb Basic Programme Three",
+      "programmeId": "id3",
+      "programmeIdType": 1,
+      "description": "Orb basic description three.",
+      "longDescription": "Orb basic long description three.",
+      "startTime": 0,
+      "duration": 3600,
+      "channelId": "",
+      "parentalRatings": "integration/mock/basic-ratings.json"
+   }
+]
