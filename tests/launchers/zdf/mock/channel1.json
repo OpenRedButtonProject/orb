@@ -1,0 +1,13 @@
+{
+   "name": "zdf",
+   "channelType": 0,
+   "idType": 16,
+   "majorChannel": 1,
+   "terminalChannel": 1,
+   "nid": 1,
+   "onid": 1,
+   "tsid": 1079,
+   "sid": 28006,
+   "hidden": false
+}
+
