@@ -13,6 +13,13 @@
          "dsmccData": "",
          "action": "simulate_successful_tune",
          "timeout": 0
+      },
+      {
+         "name": "dsmcc",
+         "scenario": "integration/dsmcc/scenario.json",
+         "dsmccData": "integration/mock/dsmcc.zip",
+         "action": "simulate_successful_tune",
+         "timeout": 0
       }
    ]
 }
