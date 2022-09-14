@@ -35,7 +35,7 @@ using namespace WPEFramework;
 
 #if defined(ENABLE_ORB)
 #include "orb/WpeBridge.h"
-#include "orb/ORBClient.h"
+#include "orb/ORBBridge.h"
 #endif
 
 using namespace WPEFramework;
@@ -101,8 +101,10 @@ public:
         // We have something to report back, do so...
         uint32_t result = _comClient->Open(RPC::CommunicationTimeOut);
 
-        // initialise the orbclient
-        orb::ORBClient::GetSharedInstance();
+#if defined(ENABLE_ORB)
+        // initialise the ORB Bridge
+        orb::ORBBridge::GetSharedInstance();
+#endif
 
         if (result != Core::ERROR_NONE)
         {
@@ -307,7 +309,8 @@ static WKBundlePageLoaderClientV6 s_pageLoaderClient = {
 
         std::string sUrl(url);
         std::string sErrorDescription(errorDescription);
-        orb::ORBClient::GetSharedInstance().ApplicationLoadFailed(sUrl, sErrorDescription);
+        orb::ORBBridge::GetSharedInstance().GetORBClient()->NotifyApplicationLoadFailed(sUrl,
+            sErrorDescription);
 
         free(errorDescription);
         free(url);
@@ -349,7 +352,8 @@ static WKBundlePageLoaderClientV6 s_pageLoaderClient = {
 
         std::string sUrl(url);
         std::string sErrorDescription(errorDescription);
-        orb::ORBClient::GetSharedInstance().ApplicationLoadFailed(sUrl, sErrorDescription);
+        orb::ORBBridge::GetSharedInstance().GetORBClient()->NotifyApplicationLoadFailed(sUrl,
+            sErrorDescription);
 
         free(errorDescription);
         free(url);

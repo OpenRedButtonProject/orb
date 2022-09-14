@@ -5,7 +5,7 @@
  * the top level of this repository.
  */
 #include "WpeBridge.h"
-#include "ORBClient.h"
+#include "ORBBridge.h"
 #include <vector>
 #include "Tags.h"
 
@@ -86,7 +86,8 @@ static JSValueRef request(
     JSValueRef *)
 {
     std::string request = JSValueRefToStdString(context, arguments[0]);
-    std::string response = ORBClient::GetSharedInstance().ExecuteWpeBridgeRequest(request);
+    std::string response = ORBBridge::GetSharedInstance().GetORBClient()->ExecuteBridgeRequest(
+        request);
     return JSValueMakeString(context, JSStringCreateWithUTF8CString(response.c_str()));
 }
 
@@ -118,7 +119,7 @@ void InjectJS(WKBundleFrameRef frame)
     fprintf(stderr, "[WpeBridge::InjectJS] uri=%s\n", uri.c_str());
     WKRelease(frameUrl);
 
-    JsonObject jsonToken = ORBClient::GetSharedInstance().CreateToken(uri);
+    JsonObject jsonToken = ORBBridge::GetSharedInstance().GetORBClient()->CreateToken(uri);
     std::string token;
     jsonToken.ToString(token);
     fprintf(stderr, "[WpeBridge::InjectJS] token = %s\n", token.c_str());
@@ -153,19 +154,21 @@ void InjectJS(WKBundleFrameRef frame)
     JSStringRelease(requestStr);
 
     // Pass javascript context to native wpeBridge implementation
-    // This is the first time the ORBClient signleton is called from the WPE web process.
-    ORBClient::GetSharedInstance().SetJavaScriptContext(context);
-    ORBClient::GetSharedInstance().SubscribeWithJavaScriptEventDispatchRequestedEvent();
+    // This is the first time the ORBBridge signleton is called from the WPE web process.
+    ORBBridge::GetSharedInstance().SetJavaScriptContext(context);
+    ORBBridge::GetSharedInstance().GetORBClient()->SubscribeToJavaScriptEventDispatchRequestedEvent();
+    ORBBridge::GetSharedInstance().GetORBClient()->SubscribeToInputKeyGeneratedEvent();
 
     // Trigger the Manager::OnApplicationPageChanged event
-    ORBClient::GetSharedInstance().ApplicationPageChanged(ToStdString(frameUrlAsString));
+    ORBBridge::GetSharedInstance().GetORBClient()->NotifyApplicationPageChanged(ToStdString(
+        frameUrlAsString));
     WKRelease(frameUrlAsString);
 }
 
 /**
  * @brief Handles Message received from WebKitImplementation
  *
- * Used to call ORBClient::DispatchEvent method when async events are received.
+ * Used to call ORBBridge::DispatchEvent method when async events are received.
  * DispatchEvent needs to be called from the main thread and this can be achieved by
  * using g_main_context_invoke_full of WebKitImplementation.cpp
  *
@@ -194,9 +197,21 @@ bool HandleMessageToPage(WKBundlePageRef page, WKStringRef messageName, WKTypeRe
         std::string type = jo["type"].String();
         JsonObject properties = jo["properties"].Object();
 
-        ORBClient::GetSharedInstance().DispatchEvent(type, properties, true, "");
+        ORBBridge::GetSharedInstance().DispatchEvent(type, properties, true, "");
 
         return true;
+    }
+    else if (WKStringIsEqualToUTF8CString(messageName, Tags::Action))
+    {
+        JsonObject input;
+        input.FromString(info);
+        std::string actionName = input["actionName"].String();
+        if (actionName == "GenerateKey")
+        {
+            int keyCode = input["keyCode"].Number();
+            ORBBridge::GetSharedInstance().GenerateKey(keyCode);
+            return true;
+        }
     }
     return false;
 }
