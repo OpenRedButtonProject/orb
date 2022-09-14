@@ -48,7 +48,7 @@ if(PLUGIN_ORB)
         "orb"
     )
 
-    target_sources(${MODULE_NAME} PRIVATE orb/ORBClient.cpp)
+    target_sources(${MODULE_NAME} PRIVATE orb/ORBBridge.cpp)
     target_sources(${MODULE_NAME} PRIVATE orb/WpeBridge.cpp)
     target_sources(${MODULE_NAME} PRIVATE orb/OrbUtils.cpp)
     target_compile_definitions(${MODULE_NAME} PRIVATE ENABLE_ORB)
@@ -68,6 +68,7 @@ target_link_libraries(${MODULE_NAME}
         ${GLIB_LIBRARIES}
         ${WPE_WEBKIT_LIBRARIES}
         ${NAMESPACE}Definitions::${NAMESPACE}Definitions
+        ORBClient
         )
 
 target_include_directories(${MODULE_NAME} 
@@ -75,7 +76,9 @@ target_include_directories(${MODULE_NAME}
         ${WPE_WEBKIT_INCLUDE_DIRS}
         ${WPE_WEBKIT_INCLUDE_DIRS}/WPE
         ${LIBSOUP_INCLUDE_DIRS}
-        ${GLIB_INCLUDE_DIRS})
+        ${GLIB_INCLUDE_DIRS}
+        "../../ORB/library/src/core"
+        "../../ORB/library/src/core/api")
 
 if(WEBKIT_GLIB_API)
     target_compile_definitions(${MODULE_NAME} PRIVATE WEBKIT_GLIB_API=${WEBKIT_GLIB_API})

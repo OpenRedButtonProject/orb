@@ -256,8 +256,8 @@ private:
 class SimpleClockTimelineSource : public TimelineSource {
 public:
    SimpleClockTimelineSource(const std::string &timelineSelector, ClockBase *wallClock,
-                             ClockBase *clock, ClockBase *speedSource = nullptr,
-                             bool autoUpdateClients = false);
+      ClockBase *clock, ClockBase *speedSource = nullptr,
+      bool autoUpdateClients = false);
 
    virtual ~SimpleClockTimelineSource();
 

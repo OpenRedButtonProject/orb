@@ -271,19 +271,19 @@ bool MediaSynchroniser::enableInterDeviceSync(const std::string &ipAddr)
       m_ciiProps.setProperty("wcUrl", "udp://" + ipAddr + ":" + std::to_string(m_wcPort));
       m_ciiProps.setProperty("tsUrl", "ws://" + ipAddr + ":" + std::to_string(m_tsPort));
       m_wcService = mngr.StartWallClockService(
-            std::make_unique<MediaSyncServiceCallback>(this),
-            m_wcPort,
-            &m_sysClock);
+         std::make_unique<MediaSyncServiceCallback>(this),
+         m_wcPort,
+         &m_sysClock);
       m_ciiService = mngr.StartContentIdentificationService(
-            std::make_unique<MediaSyncServiceCallback>(this),
-            m_ciiPort,
-            &m_ciiProps);
+         std::make_unique<MediaSyncServiceCallback>(this),
+         m_ciiPort,
+         &m_ciiProps);
       m_tsService = mngr.StartTimelineSyncService(
-            std::make_unique<MediaSyncServiceCallback>(this),
-            m_tsPort,
-            &m_sysClock,
-            this,
-            m_ciiService);
+         std::make_unique<MediaSyncServiceCallback>(this),
+         m_tsPort,
+         &m_sysClock,
+         this,
+         m_ciiService);
       if (m_ciiService > -1 && m_wcService > -1 && m_tsService > -1)
       {
          m_syncing = true;
@@ -473,7 +473,7 @@ bool MediaSynchroniser::setTEMITimelineAvailability(const int &filterId, const b
    bool result = false;
 
    auto it = std::find_if(m_timelines.begin(), m_timelines.end(),
-         [&](auto& p) {
+      [&](auto& p) {
       return p.second.temiFilterId == filterId;
    });
 
@@ -636,10 +636,10 @@ void MediaSynchroniser::addTimeline(const std::string &timelineSelector)
                   }
                }
                tls = SimpleClockTimelineSourceFactory::Make(
-                     timeline["timelineSelector"].asString(),
-                     clockBase,
-                     timeline["timelineProperties"]["unitsPerSecond"].asUInt64() /
-                     timeline["timelineProperties"]["unitsPerTick"].asDouble());
+                  timeline["timelineSelector"].asString(),
+                  clockBase,
+                  timeline["timelineProperties"]["unitsPerSecond"].asUInt64() /
+                  timeline["timelineProperties"]["unitsPerTick"].asDouble());
 
                if (m_masterTimeline == timelineSelector)
                {
