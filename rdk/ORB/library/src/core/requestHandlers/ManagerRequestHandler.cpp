@@ -8,7 +8,7 @@
 #include "ManagerRequestHandler.h"
 #include "ORBPlatform.h"
 #include "ORBEngine.h"
-#include "Logging.h"
+#include "ORBLogging.h"
 #include <fstream>
 #include <sys/sysinfo.h>
 

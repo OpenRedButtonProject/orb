@@ -9,11 +9,11 @@
 #include "Channel.h"
 #include "ORBEngine.h"
 #include "JsonUtil.h"
-#include "Logging.h"
-#include <thread>
+#include "ORBLogging.h"
 
 namespace orb {
 std::thread s_thread;
+pthread_t s_nativeThreadHandle;
 
 static
 std::string ToLowerCase(std::string s)
@@ -66,25 +66,27 @@ void MetadataSearchTask::OnMetadataSearchCompleted(int search, int status, std::
    properties["search"] = search;
    properties["status"] = status;
 
-   json array;
+   // use emplace to set programmeList attribute as array
+   properties.emplace("programmeList", json::array());
    for (auto programme : searchResults)
    {
+      // since programmeList is initialised as array, just push
       json jsonProgramme = json::parse(programme);
-      array.push_back(jsonProgramme);
+      properties["programmeList"].push_back(jsonProgramme);
    }
 
-   properties["programmeList"] = array;
-
-   ORBEngine::GetSharedInstance().GetEventListener()->OnJavaScriptEventDispatchRequested("MetadataSearch", properties, "", true);
+   ORBEngine::GetSharedInstance().GetEventListener()->OnJavaScriptEventDispatchRequested("MetadataSearch", properties.dump(), "", true);
 }
 
 /**
  * @brief Run
  */
-void MetadataSearchTask::Run()
+void MetadataSearchTask::Start()
 {
    ORB_LOG_NO_ARGS();
    s_thread = std::thread(&MetadataSearchTask::Worker, this);
+   s_nativeThreadHandle = s_thread.native_handle();
+   s_thread.detach();
 }
 
 /**
@@ -93,7 +95,7 @@ void MetadataSearchTask::Run()
 void MetadataSearchTask::Stop()
 {
    ORB_LOG_NO_ARGS();
-   pthread_cancel(s_thread.native_handle());
+   pthread_cancel(s_nativeThreadHandle);
 }
 
 /**
@@ -103,17 +105,19 @@ void MetadataSearchTask::Stop()
  *
  * @return infinite
  */
-uint32_t MetadataSearchTask::Worker()
+void MetadataSearchTask::Worker()
 {
+   ORB_LOG_NO_ARGS();
    // Get pointer to platform implementation
    ORBPlatform *platform = ORBEngine::GetSharedInstance().GetORBPlatform();
    if (platform == nullptr)
    {
       ORB_LOG("ERROR: ORB platform implementation not available");
-      return 0;
+      return;
    }
 
    // Get channels
+   ORB_LOG("Getting channels for query");
    std::vector<Channel> channelList = platform->Broadcast_GetChannelList();
 
    // For each channel, if searchable, get programmes
@@ -125,7 +129,7 @@ uint32_t MetadataSearchTask::Worker()
       }
 
       // Filter out channel if channelConstraints (1) is not empty, and (2) does not include the channel's ccid
-      std::string constraint = "ccid:" + channel.GetCcid();
+      std::string constraint = channel.GetCcid();
       if (!m_channelConstraints.empty())
       {
          if (std::find(m_channelConstraints.begin(), m_channelConstraints.end(), constraint) == m_channelConstraints.end())
@@ -163,11 +167,8 @@ uint32_t MetadataSearchTask::Worker()
    // Trigger notification
    OnMetadataSearchCompleted(m_query->GetQueryId(), SEARCH_STATUS_COMPLETED, m_searchResults);
 
-   // Cleanup
-   // Stop();
+   // Remove search task
    ORBEngine::GetSharedInstance().RemoveMetadataSearchTask(m_query->GetQueryId());
-
-   return 0;
 }
 
 /**
@@ -211,7 +212,7 @@ bool MetadataSearchTask::Match(
          else if (field == "Programme.endTime")
          {
             result = CompareLongValues(query->GetComparison(),
-               (programme.GetStartTime() / 1000) + programme.GetDuration(),
+               programme.GetStartTime() + programme.GetDuration(),
                std::stol(query->GetValue()));
             break;
          }
@@ -327,6 +328,7 @@ bool MetadataSearchTask::CompareLongValues(Query::Comparison comparison,
          result = (programmeValue != queryValue);
          break;
       case Query::Comparison::CMP_MORE:
+         ORB_LOG("Checking %d > %d", programmeValue, queryValue);
          result = (programmeValue > queryValue);
          break;
       case Query::Comparison::CMP_MORE_EQL:

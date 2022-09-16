@@ -8,7 +8,7 @@
 #include "ORBPlatformEventHandlerImpl.h"
 #include "ORBPlatform.h"
 #include "ORBEngine.h"
-#include "Logging.h"
+#include "ORBLogging.h"
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
