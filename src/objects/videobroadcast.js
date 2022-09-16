@@ -943,10 +943,7 @@ hbbtv.objects.VideoBroadcast = (function() {
         }
         if (foundComponent) {
             // && foundComponent.active) {//Note: we can't rely on active to avoid repetition as it won't be updated until events with the result are received
-            hbbtv.bridge.broadcast.unselectComponent({
-                type: foundComponent.type,
-                pid: foundComponent.pid,
-            });
+            hbbtv.bridge.broadcast.unselectComponent(foundComponent.type, foundComponent.pid);
         }
     };
 
