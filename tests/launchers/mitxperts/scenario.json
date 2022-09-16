@@ -6,10 +6,18 @@
          "components": "launchers/mitxperts/mock/components.json",
          "applications": [
             {
-               "id": 1,
+               "id": 10,
+               "orgId": 19,
                "name": "HbbTV-Testsuite",
                "baseUrl": "http://itv.mit-xperts.com/hbbtvtest/",
                "initialPath": "index.php"
+            },
+            {
+               "id": 501,
+               "orgId": 19,
+               "name": "HbbTV-Testsuite",
+               "baseUrl": "http://itv.mit-xperts.com/hbbtvtest/appmanager/",
+               "initialPath": "otherapp.php?param1=value1"
             }
          ]
       },
@@ -19,10 +27,18 @@
          "components": "launchers/mitxperts/mock/components.json",
          "applications": [
             {
-               "id": 1,
+               "id": 10,
+               "orgId": 19,
                "name": "HbbTV-Testsuite",
                "baseUrl": "http://itv.mit-xperts.com/hbbtvtest/",
                "initialPath": "index.php"
+            },
+            {
+               "id": 501,
+               "orgId": 19,
+               "name": "HbbTV-Testsuite",
+               "baseUrl": "http://itv.mit-xperts.com/hbbtvtest/appmanager/",
+               "initialPath": "otherapp.php?param1=value1"
             }
          ]
       }
