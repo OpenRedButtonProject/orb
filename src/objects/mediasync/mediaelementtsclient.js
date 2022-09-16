@@ -39,20 +39,29 @@ hbbtv.objects.MediaElementTsClient = (function() {
       p.masterMediaObserver.removeEventListener("MediaUpdated", p.onMasterMediaUpdated);
       p.masterMediaObserver.removeEventListener("Error", p.onFailureToPresentMedia);
       p.mediaObject.removeEventListener("ended", p.onFailureToPresentMedia);
+      p.mediaObject.removeEventListener("paused", p.onMediaPaused);
       clearInterval(p.pollIntervalId);
       privates.delete(this);
    };
 
    function onMasterMediaUpdated(e) {
       const p = privates.get(this);
-      if (p.mediaObject.readyState < 3) {
-         if (p.canSyncWithMaster) {
+      if (!isNaN(e.data.contentTime)) {
+         const targetTime = e.data.contentTime + (p.correlationTimestamp.tlvOther - p.correlationTimestamp.tlvMaster);
+         let canSeek = false;
+         for (let i = 0; i < p.mediaObject.buffered.length; ++i) {
+            if (targetTime >= p.mediaObject.buffered.start(i) && targetTime <= p.mediaObject.buffered.end(i)) {
+               canSeek = true;
+               break;
+            }
+         }
+         if (canSeek) {
+            checkMediaSync.call(this, targetTime);
+         }
+         else if (p.canSyncWithMaster) {
             p.canSyncWithMaster = false;
             dispatchErrorEvent(p.eventTarget, 1); // insufficient buffer size (transient)
          }
-      } else if (!isNaN(e.data.contentTime)) {
-         const targetTime = e.data.contentTime + (p.correlationTimestamp.tlvOther - p.correlationTimestamp.tlvMaster);
-         checkMediaSync.call(this, targetTime);
       }
    }
 
@@ -69,17 +78,35 @@ hbbtv.objects.MediaElementTsClient = (function() {
          }
 
          if (p.masterMediaObserver.timelineSpeedMultiplier == 0) {
-            !p.mediaObject.paused && p.mediaObject.pause();
+            pauseMedia.call(this);
          } else {
             p.mediaObject.paused && p.mediaObject.play();
             p.mediaObject.playbackRate = p.masterMediaObserver.timelineSpeedMultiplier;
          }
       } else {
-         !p.mediaObject.paused && p.mediaObject.pause();
+         pauseMedia.call(this);
          if (p.canSyncWithMaster) {
             p.canSyncWithMaster = false;
             dispatchErrorEvent(p.eventTarget, 11); // failed to synchronise media (transient)
          }
+      }
+   }
+
+   function pauseMedia() {
+      const p = privates.get(this);
+      if (!p.mediaObject.paused) {
+         p.requestedPause = true;
+         p.mediaObject.pause();
+      }
+   }
+
+   function onMediaPaused() {
+      const p = privates.get(this);
+      if (p.requestedPause) {
+         p.requestedPause = false;
+      } else if (p.canSyncWithMaster) {
+         p.canSyncWithMaster = false;
+         dispatchErrorEvent(p.eventTarget, 9); // not in suitable state to synchronise media (transient)
       }
    }
 
@@ -108,6 +135,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
          eventTarget: document.createDocumentFragment(),
          onMasterMediaUpdated: onMasterMediaUpdated.bind(this),
          onFailureToPresentMedia: onFailureToPresentMedia.bind(this),
+         onMediaPaused: onMediaPaused.bind(this),
          pollIntervalId: setInterval(() => {
             checkMediaSync.call(this, masterMediaObserver.contentTime);
          }, 2000)
@@ -118,6 +146,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
       masterMediaObserver.addEventListener("MediaUpdated", p.onMasterMediaUpdated);
       masterMediaObserver.addEventListener("Error", p.onFailureToPresentMedia);
       mediaObject.addEventListener("ended", p.onFailureToPresentMedia);
+      mediaObject.addEventListener("paused", p.onMediaPaused);
    }
 
    return {
