@@ -7,6 +7,7 @@
          "applications": [
             {
                "id": 1,
+               "orgId": 1,
                "name": "Zdf",
                "baseUrl": "http://hbbtv.zdf.de/zdfstart/",
                "initialPath": "index.php"

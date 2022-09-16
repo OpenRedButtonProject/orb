@@ -62,7 +62,7 @@ public class TestSuiteScenario {
             return null;
         }
         mVersionNumber = (byte) ((mVersionNumber + 1) % 0b11111);
-        return new MockAit(ch.applications.get(0), mVersionNumber).toBytes();
+        return new MockAit(ch.applications, mVersionNumber).toBytes();
     }
 
     public Vector<TvBrowserTypes.Channel> getMockChannels() {
@@ -196,12 +196,19 @@ public class TestSuiteScenario {
     }
 
     private Vector<MockAit.Application> parseApplications(JSONArray applications)
-            throws JSONException {
+            throws Exception {
         Vector<MockAit.Application> parsed = new Vector<>();
         for (int i = 0; i < applications.length(); i++) {
             JSONObject info = applications.getJSONObject(i);
             MockAit.Application application = new MockAit.Application();
-            application.id = (short) info.getInt("id");
+            application.id = info.getInt("id");
+            if (application.id >= Math.pow(2, 16)) {
+                throw new Exception("Id out of bounds.");
+            }
+            application.orgId = info.getInt("orgId");
+            if (application.orgId >= Math.pow(2, 32)) {
+                throw new Exception("Organisation id out of bounds.");
+            }
             application.name = info.getString("name");
             application.baseUrl = info.getString("baseUrl").replace("$LOCALHOST",
                     mLocalHost);
