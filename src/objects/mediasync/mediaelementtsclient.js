@@ -39,7 +39,9 @@ hbbtv.objects.MediaElementTsClient = (function() {
       p.masterMediaObserver.removeEventListener("MediaUpdated", p.onMasterMediaUpdated);
       p.masterMediaObserver.removeEventListener("Error", p.onFailureToPresentMedia);
       p.mediaObject.removeEventListener("ended", p.onFailureToPresentMedia);
-      p.mediaObject.removeEventListener("paused", p.onMediaPaused);
+      for (let methodName in p.moMethods) {
+         p.mediaObject[methodName] = p.moMethods[methodName];
+      }
       clearInterval(p.pollIntervalId);
       privates.delete(this);
    };
@@ -68,45 +70,30 @@ hbbtv.objects.MediaElementTsClient = (function() {
    function checkMediaSync(contentTime) {
       const p = privates.get(this);
       if (contentTime >= 0 && !p.mediaObject.ended) {
+         if (p.masterMediaObserver.timelineSpeedMultiplier == 0) {
+            p.moMethodOverrides.pause.call(p.mediaObject);
+         } else {
+            console.log(contentTime, p.mediaObject.currentTime);
+            if (p.mediaObject.paused) {
+               p.mediaObject.play();
+            } 
+            p.mediaObject.playbackRate = p.masterMediaObserver.timelineSpeedMultiplier;
+         }
+
          if (Math.abs(contentTime - p.mediaObject.currentTime) > p.tolerance / 1000.0) {
             console.log("Synchronised tlvOther with tlvMaster");
-            p.mediaObject.currentTime = contentTime;
+            p.mediaObject.currentTime = contentTime + p.tolerance / 1000.0;
          }
          if (!p.canSyncWithMaster) {
             p.canSyncWithMaster = true;
             p.eventTarget.dispatchEvent(new Event("SyncNowAchievable"));
          }
-
-         if (p.masterMediaObserver.timelineSpeedMultiplier == 0) {
-            pauseMedia.call(this);
-         } else {
-            p.mediaObject.paused && p.mediaObject.play();
-            p.mediaObject.playbackRate = p.masterMediaObserver.timelineSpeedMultiplier;
-         }
       } else {
-         pauseMedia.call(this);
+         p.moMethodOverrides.pause.call(p.mediaObject);
          if (p.canSyncWithMaster) {
             p.canSyncWithMaster = false;
             dispatchErrorEvent(p.eventTarget, 11); // failed to synchronise media (transient)
          }
-      }
-   }
-
-   function pauseMedia() {
-      const p = privates.get(this);
-      if (!p.mediaObject.paused) {
-         p.requestedPause = true;
-         p.mediaObject.pause();
-      }
-   }
-
-   function onMediaPaused() {
-      const p = privates.get(this);
-      if (p.requestedPause) {
-         p.requestedPause = false;
-      } else if (p.canSyncWithMaster) {
-         p.canSyncWithMaster = false;
-         dispatchErrorEvent(p.eventTarget, 9); // not in suitable state to synchronise media (transient)
       }
    }
 
@@ -133,9 +120,11 @@ hbbtv.objects.MediaElementTsClient = (function() {
          canSyncWithMaster: true,
          correlationTimestamp: correlationTimestamp,
          eventTarget: document.createDocumentFragment(),
+         moMethods: {
+            pause: mediaObject.pause
+         },
          onMasterMediaUpdated: onMasterMediaUpdated.bind(this),
          onFailureToPresentMedia: onFailureToPresentMedia.bind(this),
-         onMediaPaused: onMediaPaused.bind(this),
          pollIntervalId: setInterval(() => {
             checkMediaSync.call(this, masterMediaObserver.contentTime);
          }, 2000)
@@ -143,10 +132,21 @@ hbbtv.objects.MediaElementTsClient = (function() {
 
       const p = privates.get(this);
 
+      p.moMethodOverrides = {
+         pause: () => {
+            if (p.canSyncWithMaster) {
+               p.canSyncWithMaster = false;
+               dispatchErrorEvent(p.eventTarget, 9); // not in suitable state to synchronise media (transient)
+            }
+         }
+      }
+      for (let methodName in p.moMethodOverrides) {
+         mediaObject[methodName] = p.moMethodOverrides[methodName];
+      }
+
       masterMediaObserver.addEventListener("MediaUpdated", p.onMasterMediaUpdated);
       masterMediaObserver.addEventListener("Error", p.onFailureToPresentMedia);
       mediaObject.addEventListener("ended", p.onFailureToPresentMedia);
-      mediaObject.addEventListener("paused", p.onMediaPaused);
    }
 
    return {
