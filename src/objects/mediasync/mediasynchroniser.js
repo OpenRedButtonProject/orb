@@ -77,6 +77,9 @@ hbbtv.objects.MediaSynchroniser = (function() {
          console.warn("MediaSynchroniser: Failed to initialise Media Sync object."); // this should never happen
          setToPermanentErrorState.call(this);
          dispatchErrorEvent.call(this, 13, null); // in permanent error state (transient)
+      } else if (!hbbtv.bridge.mediaSync.startTimelineMonitoring(p.id, timelineSelector, true)) {
+         setToPermanentErrorState.call(this);
+         dispatchErrorEvent.call(this, 15, null); // unavailable/unsupported timeline selector (permanent)
       } else {
          function refreshContentId() {
             p.contentId = mediaObject.orb_getSource();
@@ -97,8 +100,6 @@ hbbtv.objects.MediaSynchroniser = (function() {
                p.contentId += "#" + params.join("&");
             }
          }
-
-         hbbtv.bridge.mediaSync.startTimelineMonitoring(p.id, timelineSelector, true);
 
          if (lastMediaSync && !privates.get(lastMediaSync).inPermanentErrorState) {
             // invalidate previously initilised media synchroniser
@@ -208,7 +209,6 @@ hbbtv.objects.MediaSynchroniser = (function() {
             } else if (!timelineSelector.includes(":temi:")) {
                hbbtv.bridge.mediaSync.setTimelineAvailability(p.id, timelineSelector, true, p.mediaObserver.contentTicks, p.mediaObserver.timelineSpeedMultiplier);
             }
-
          } else {
             errorHandler();
          }
@@ -241,8 +241,9 @@ hbbtv.objects.MediaSynchroniser = (function() {
          dispatchErrorEvent.call(this, 2, mediaObject); // failure in presentation of the media object (transient)
       } else if (mediaObject.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
          dispatchErrorEvent.call(this, 9, mediaObject); // not in suitable state for sync (transient)
+      } else if (!hbbtv.bridge.mediaSync.startTimelineMonitoring(p.id, timelineSelector, false)) {
+         dispatchErrorEvent.call(this, 3, mediaObject); // unavailable/unsupported timeline selector (transient)
       } else {
-         hbbtv.bridge.mediaSync.startTimelineMonitoring(p.id, timelineSelector, false);
          p.mediaObjects.add(mediaObject);
 
          if (mediaObject.getAttribute("__mimeType") !== "video/broadcast") {
