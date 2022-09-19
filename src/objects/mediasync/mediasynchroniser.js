@@ -261,7 +261,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
             mediaObject: mediaObject
          }));
          priv.tsClient.addEventListener("Error", (e) => {
-            if (e.errorCode === 2) {
+            if (e.errorCode === 2 || e.errorCode === 9) {
                this.removeMediaObject(mediaObject);
             }
             dispatchErrorEvent.call(this, e.errorCode, mediaObject);
