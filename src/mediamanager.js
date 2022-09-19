@@ -27,17 +27,12 @@ hbbtv.mediaManager = (function() {
       }
 
       const __play = HTMLMediaElement.prototype.play;
-      let lastMediaElement = undefined;
 
       // we override play() for the DASH playback as we end up receiving
       // Uncaught (in promise) DOMException: The play() request was interrupted by a new load request.
       // when calling play() immediately after setting the src attribute
       HTMLMediaElement.prototype.play = function() {
          const thiz = this;
-         if (lastMediaElement && lastMediaElement !== this && !lastMediaElement.paused) {
-            lastMediaElement.pause();
-         }
-         lastMediaElement = this;
          return new Promise((resolve, reject) => {
             if (thiz.readyState < 2) {
                const playFcn = function() {
