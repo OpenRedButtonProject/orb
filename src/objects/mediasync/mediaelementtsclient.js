@@ -39,9 +39,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
       p.masterMediaObserver.removeEventListener("MediaUpdated", p.onMasterMediaUpdated);
       p.masterMediaObserver.removeEventListener("Error", p.onFailureToPresentMedia);
       p.mediaObject.removeEventListener("ended", p.onFailureToPresentMedia);
-      for (let methodName in p.moMethods) {
-         p.mediaObject[methodName] = p.moMethods[methodName];
-      }
+      Object.setPrototypeOf(p.mediaObject, p.moPrototype);
       clearInterval(p.pollIntervalId);
       privates.delete(this);
    };
@@ -71,7 +69,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
       const p = privates.get(this);
       if (contentTime >= 0 && !p.mediaObject.ended) {
          if (p.masterMediaObserver.timelineSpeedMultiplier == 0) {
-            p.moMethodOverrides.pause.call(p.mediaObject);
+            p.moPrototype.pause.call(p.mediaObject);
          } else {
             console.log(contentTime, p.mediaObject.currentTime);
             if (p.mediaObject.paused) {
@@ -81,15 +79,18 @@ hbbtv.objects.MediaElementTsClient = (function() {
          }
 
          if (Math.abs(contentTime - p.mediaObject.currentTime) > p.tolerance / 1000.0) {
-            console.log("Synchronised tlvOther with tlvMaster");
-            p.mediaObject.currentTime = contentTime + p.tolerance / 1000.0;
+            const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "currentTime");
+            if (ownProperty) {
+               ownProperty.set.call(p.mediaObject, contentTime + p.tolerance / 1000.0);
+               console.log("Synchronised tlvOther with tlvMaster");
+            }
          }
          if (!p.canSyncWithMaster) {
             p.canSyncWithMaster = true;
             p.eventTarget.dispatchEvent(new Event("SyncNowAchievable"));
          }
       } else {
-         p.moMethodOverrides.pause.call(p.mediaObject);
+         p.moPrototype.pause.call(p.mediaObject);
          if (p.canSyncWithMaster) {
             p.canSyncWithMaster = false;
             dispatchErrorEvent(p.eventTarget, 11); // failed to synchronise media (transient)
@@ -120,9 +121,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
          canSyncWithMaster: true,
          correlationTimestamp: correlationTimestamp,
          eventTarget: document.createDocumentFragment(),
-         moMethods: {
-            pause: mediaObject.pause
-         },
+         moPrototype: Object.getPrototypeOf(mediaObject),
          onMasterMediaUpdated: onMasterMediaUpdated.bind(this),
          onFailureToPresentMedia: onFailureToPresentMedia.bind(this),
          pollIntervalId: setInterval(() => {
@@ -130,19 +129,30 @@ hbbtv.objects.MediaElementTsClient = (function() {
          }, 2000)
       });
 
-      const p = privates.get(this);
-
-      p.moMethodOverrides = {
-         pause: () => {
-            if (p.canSyncWithMaster) {
-               p.canSyncWithMaster = false;
-               dispatchErrorEvent(p.eventTarget, 9); // not in suitable state to synchronise media (transient)
-            }
+      function dispatchErrorEvent9() {
+         if (p.canSyncWithMaster) {
+            p.canSyncWithMaster = false;
+            dispatchErrorEvent(p.eventTarget, 9); // not in suitable state to synchronise media (transient)
          }
       }
-      for (let methodName in p.moMethodOverrides) {
-         mediaObject[methodName] = p.moMethodOverrides[methodName];
-      }
+
+      const p = privates.get(this);
+
+      const moPrototypeOverride = Object.create(p.moPrototype);
+      moPrototypeOverride.pause = dispatchErrorEvent9;
+      hbbtv.utils.defineGetterSetterProperties(moPrototypeOverride, {
+         currentTime: {
+            get() {
+               const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "currentTime");
+               return ownProperty ? ownProperty.get.call(this) : undefined;
+            },
+            set(value) {
+               dispatchErrorEvent9();
+            }
+         }
+      });
+
+      Object.setPrototypeOf(mediaObject, moPrototypeOverride);
 
       masterMediaObserver.addEventListener("MediaUpdated", p.onMasterMediaUpdated);
       masterMediaObserver.addEventListener("Error", p.onFailureToPresentMedia);
