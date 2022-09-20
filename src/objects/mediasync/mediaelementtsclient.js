@@ -75,7 +75,10 @@ hbbtv.objects.MediaElementTsClient = (function() {
             if (p.mediaObject.paused) {
                p.mediaObject.play();
             } 
-            p.mediaObject.playbackRate = p.masterMediaObserver.timelineSpeedMultiplier;
+            const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
+            if (ownProperty) {
+               ownProperty.set.call(p.mediaObject, p.masterMediaObserver.timelineSpeedMultiplier);
+            }
          }
 
          if (Math.abs(contentTime - p.mediaObject.currentTime) > p.tolerance / 1000.0) {
@@ -140,15 +143,21 @@ hbbtv.objects.MediaElementTsClient = (function() {
 
       const moPrototypeOverride = Object.create(p.moPrototype);
       moPrototypeOverride.pause = dispatchErrorEvent9;
+
       hbbtv.utils.defineGetterSetterProperties(moPrototypeOverride, {
          currentTime: {
             get() {
                const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "currentTime");
                return ownProperty ? ownProperty.get.call(this) : undefined;
             },
-            set(value) {
-               dispatchErrorEvent9();
-            }
+            set: dispatchErrorEvent9
+         },
+         playbackRate: {
+            get() {
+               const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
+               return ownProperty ? ownProperty.get.call(this) : undefined;
+            },
+            set: dispatchErrorEvent9
          }
       });
 
