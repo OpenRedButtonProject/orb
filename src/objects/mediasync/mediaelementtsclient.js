@@ -73,7 +73,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
          } else {
             console.log(contentTime, p.mediaObject.currentTime);
             if (p.mediaObject.paused) {
-               p.mediaObject.play();
+               p.moPrototype.play.call(p.mediaObject);
             } 
             const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
             if (ownProperty) {
@@ -143,7 +143,10 @@ hbbtv.objects.MediaElementTsClient = (function() {
 
       const moPrototypeOverride = Object.create(p.moPrototype);
       moPrototypeOverride.pause = dispatchErrorEvent9;
-
+      moPrototypeOverride.play = () => {
+         dispatchErrorEvent9();
+         return Promise.reject("Illegal call to play() on media element that has been provided to MediaSynchroniser.addMediaObject().");
+      }
       hbbtv.utils.defineGetterSetterProperties(moPrototypeOverride, {
          currentTime: {
             get() {
