@@ -142,25 +142,40 @@ hbbtv.objects.MediaElementTsClient = (function() {
       const p = privates.get(this);
 
       const moPrototypeOverride = Object.create(p.moPrototype);
-      moPrototypeOverride.pause = dispatchErrorEvent9;
+      moPrototypeOverride.pause = () => {
+         dispatchErrorEvent9();
+         p.moPrototype.pause.call(this);
+      };
       moPrototypeOverride.play = () => {
          dispatchErrorEvent9();
-         return Promise.reject("Illegal call to play() on media element that has been provided to MediaSynchroniser.addMediaObject().");
-      }
+         return p.moPrototype.play.call(mediaObject);
+      };
       hbbtv.utils.defineGetterSetterProperties(moPrototypeOverride, {
          currentTime: {
             get() {
                const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "currentTime");
-               return ownProperty ? ownProperty.get.call(this) : undefined;
+               return ownProperty ? ownProperty.get.call(mediaObject) : undefined;
             },
-            set: dispatchErrorEvent9
+            set (value) {
+               dispatchErrorEvent9();
+               const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "currentTime");
+               if (ownProperty) {
+                  ownProperty.set.call(mediaObject, value);
+               }
+            }
          },
          playbackRate: {
             get() {
                const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
-               return ownProperty ? ownProperty.get.call(this) : undefined;
+               return ownProperty ? ownProperty.get.call(mediaObject) : undefined;
             },
-            set: dispatchErrorEvent9
+            set (value) {
+               dispatchErrorEvent9();
+               const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
+               if (ownProperty) {
+                  ownProperty.set.call(mediaObject, value);
+               }
+            }
          }
       });
 
