@@ -106,6 +106,12 @@ hbbtv.nativeManager.registerNative({
         return Object.freeze(this.__capabilities);
     },
     isDebugBuild: function() {
-       return false;
+       return true; // TODO Move up. Note: This needs to be enabled to disable dash-scheme
+    },
+    isFeatureEnabled(name) {
+      if (name === "dash-scheme") {
+         return false;
+      }
+      return false;
     }
 });

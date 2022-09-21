@@ -102,5 +102,11 @@ hbbtv.nativeManager.registerNative({
    },
    isDebugBuild: function() {
       return true; // TODO Move
+   },
+   isFeatureEnabled(name) {
+      if (name === "dash-scheme") {
+         return true;
+      }
+      return false;
    }
 });
