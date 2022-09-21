@@ -16,6 +16,9 @@ hbbtv.orbDebug = (function() {
         window.orbDebug.publishTestReport = function(testSuite, xml) {
             hbbtv.bridge.orbDebug.publishTestReport(testSuite, xml);
         };
+        window.orbDebug.isFeatureEnabled = function(name) {
+            return hbbtv.native.isFeatureEnabled(name);
+        };
     };
 
     return exported;
