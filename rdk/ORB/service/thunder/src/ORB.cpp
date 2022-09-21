@@ -35,18 +35,24 @@ const string ORB::Initialize(PluginHost::IShell *service)
 
    _service->Register(&_notification);
 
-   _orb = service->Root<Core::IUnknown>(_connectionId, 2000, _T("ORB"));
+   fprintf(stderr, "READY TO CALL\n");
+   _orb = service->Root<Exchange::IORB>(_connectionId, 2000, _T("ORBImplementation"));
 
    // Check if ORB plugin initialisation failed
-   if (_orb == nullptr)
+   if (_orb != nullptr)
+   {
+      _orb->Register(&_notification);
+      RegisterAll();
+   }
+   else
    {
       message = _T("ORB plugin could not be initialised");
       _service->Unregister(&_notification);
       _service = nullptr;
       return message;
    }
-
-   ORBEngine::GetSharedInstance().Start(_orbEventListener);
+   
+   //ORBEngine::GetSharedInstance().Start(_orbEventListener);
 
    // Reached successful initialisation
    SYSLOG(Logging::Startup, (_T("ORB Initialisation finished")));

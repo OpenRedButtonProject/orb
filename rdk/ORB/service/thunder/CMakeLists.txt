@@ -16,7 +16,7 @@ message(STATUS "${CMAKE_MODULE_PATH}")
 message(STATUS "${NAMESPACE}")
 message(STATUS "==========================================================")
 
-set(PLUGIN_ORB_AUTOSTART "true" CACHE STRING "Automatically start ORB plugin")
+set(PLUGIN_ORB_AUTOSTART "false" CACHE STRING "Automatically start ORB plugin")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -29,6 +29,7 @@ add_library(${MODULE_NAME} SHARED
   src/ORB.cpp
   src/ORBEventListenerImpl.cpp
   src/ORBJsonRpc.cpp
+  src/ORBImplementation.cpp
 )
 
 add_dependencies(${MODULE_NAME} ORBEngine)
