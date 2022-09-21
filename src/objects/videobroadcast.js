@@ -894,7 +894,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                 hbbtv.bridge.broadcast.selectComponent(
                     foundComponent.type,
                     foundComponent.pid,
-                    item.language
+                    foundComponent.language
                 );
             } else {
                 hbbtv.bridge.broadcast.selectComponent(foundComponent.type, foundComponent.pid, '');
