@@ -778,7 +778,7 @@ hbbtv.objects.VideoBroadcast = (function() {
          });
       }
       if (foundComponent) { // && (!foundComponent.active)) {//Note: we can't rely on active to avoid repetition as it won't be updated until events with the result are received
-         if (item.type == this.COMPONENT_TYPE_AUDIO) {
+         if (foundComponent.type == this.COMPONENT_TYPE_AUDIO) {
             hbbtv.bridge.broadcast.selectComponent(foundComponent.type, foundComponent.pid,
                foundComponent.language);
          } else {
