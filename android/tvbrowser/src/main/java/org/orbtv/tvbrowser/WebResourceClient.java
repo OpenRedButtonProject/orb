@@ -56,7 +56,6 @@ public abstract class WebResourceClient {
 
     public WebResourceResponse shouldInterceptRequest(WebResourceRequest request, int appId) {
         String scheme = request.getUrl().getScheme();
-        Log.d(TAG, "Get: " + request.getUrl());
         if (request.getMethod().equalsIgnoreCase("GET")) {
             if (scheme.equals("http") || scheme.equals("https")) {
                 return shouldInterceptHttpRequest(request, appId);
