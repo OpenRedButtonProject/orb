@@ -19,9 +19,11 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
+import java.net.InetAddress;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +33,8 @@ import java.util.Vector;
 import com.android.okhttp.*;
 
 public abstract class WebResourceClient {
+   private static final String TAG = WebResourceClient.class.getSimpleName();
+
    private static final boolean HTTP_COOKIES_ENABLED = true;
    private static final boolean HTTP_REDIRECTION_ENABLED = true;
    private static final List<String> HBBTV_MIME_TYPES = Arrays.asList(
@@ -42,19 +46,24 @@ public abstract class WebResourceClient {
 
    private final HtmlBuilder mHtmlBuilder;
    OkHttpClient mHttpClient;
+   OkHttpClient mHttpSandboxClient;
 
    WebResourceClient(HtmlBuilder htmlBuilder) {
       mHtmlBuilder = htmlBuilder;
       mHttpClient = new OkHttpClient();
+      mHttpSandboxClient = new OkHttpClient();
    }
 
    public WebResourceResponse shouldInterceptRequest(WebResourceRequest request, int appId) {
       String scheme = request.getUrl().getScheme();
+      Log.d(TAG, "Get: " + request.getUrl());
       if (request.getMethod().equalsIgnoreCase("GET")) {
          if (scheme.equals("http") || scheme.equals("https")) {
             return shouldInterceptHttpRequest(request, appId);
          } else if (scheme.equals("dvb")) {
             return shouldInterceptDsmccRequest(request, appId);
+         } else if (scheme.equals("dash") || scheme.equals("dashs")) {
+            return shouldInterceptDashRequest(request, appId);
          }
       }
       return null;
@@ -178,6 +187,83 @@ public abstract class WebResourceClient {
          response.setResponseHeaders(headerMap);
       }
       response.setStatusCodeAndReasonPhrase(body.getStatusCode(), body.reasonPhrase());
+
+      return response;
+   }
+
+   private WebResourceResponse shouldInterceptDashRequest(WebResourceRequest request, int appId) {
+      // IMPORTANT: Ordinarily <video> is backed by a player that executes outside of the page and
+      // is not affected by same-origin policy, other than the embedded content being inaccessible.
+      //
+      // To enable dash.js to access resources on different origins, requests purporting to be from
+      // dash.js are allowed and handled by a "sandbox HTTP client" that must:
+      //
+      // (1) Only handle requests with a GET method
+      // (2) Only handle requests with a publicly routable host or hbbtv[0-9].test for testing
+      // (3) Be isolated from the browser and not send any site data such as cookies
+
+      WebResourceResponse response = null;
+
+      try {
+         String url = "http" + request.getUrl().toString().substring(4); // Replace dash with http
+
+         // Must only handle requests with a GET method
+         if (!request.getMethod().equalsIgnoreCase("GET")) {
+            return null;
+         }
+
+         // Must only handle requests with a publicly routable host or hbbtv{n}.test for testing
+         String host = Uri.parse(url).getHost();
+         InetAddress addr = InetAddress.getByName(host);
+         if (addr.isSiteLocalAddress() || addr.isLoopbackAddress() || addr.isLinkLocalAddress()) {
+            // Is private (10/8, 172.16/12, 192.168/16), loopback (127/8) or link local (169.254/16)
+            if (!host.matches("^hbbtv[0-9].test$")) {
+               return null;
+            }
+         }
+
+         response = handleDashRequest(request, appId);
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
+      return response;
+   }
+
+   private WebResourceResponse handleDashRequest(WebResourceRequest request, int appId)
+      throws IOException {
+      Map<String, String> requestHeaders = request.getRequestHeaders();
+      String url = "http" + request.getUrl().toString().substring(4); // Replace dash with http
+
+      // Must be isolated from the browser and not send any site data such as cookies
+      Response httpResponse = mHttpSandboxClient.newCall(new Request.Builder()
+         .url(url)
+         .method(request.getMethod(), null)
+         .headers(Headers.of(requestHeaders))
+         .build()).execute();
+
+      // Response
+      if (!httpResponse.isSuccessful()) {
+         return null;
+      }
+      Charset charset = StandardCharsets.UTF_8;
+      String mimeType = getMimeType(httpResponse.header("Content-Type", "text/plain"));
+      Map<String, List<String>> httpResponseHeaders = httpResponse.headers().toMultimap();
+
+      String origin = request.getRequestHeaders().get("Origin");
+      if (origin != null) {
+         httpResponseHeaders.put("Access-Control-Allow-Origin", Collections.singletonList(origin));
+      }
+
+      ResponseBody body = httpResponse.body();
+      if (body == null) {
+         return null;
+      }
+
+      InputStream responseStream = createResponseStream(body.byteStream(), body);
+      WebResourceResponse response = new WebResourceResponse(mimeType, charset.name(), responseStream);
+      Map<String, String> responseHeaders = new HashMap<>();
+      httpResponseHeaders.forEach((k, v) -> responseHeaders.put(k, String.join(",", v)));
+      response.setResponseHeaders(responseHeaders);
 
       return response;
    }
