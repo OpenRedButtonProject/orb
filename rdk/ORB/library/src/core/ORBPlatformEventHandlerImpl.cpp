@@ -89,7 +89,7 @@ void ORBPlatformEventHandlerImpl::OnChannelStatusChanged(int onetId, int transId
    {
       properties.emplace("permanentError", permanentError);
    }
-
+   ORB_LOG("Ready to call ORBEngine OnJavaScriptEventDispatchRequested");
    ORBEngine::GetSharedInstance().GetEventListener()->OnJavaScriptEventDispatchRequested(
       "ChannelStatusChanged", properties.dump(), "", true);
 }
@@ -251,7 +251,7 @@ void ORBPlatformEventHandlerImpl::OnStreamEvent(int id, std::string name, std::s
  * @param fileContent       The file content
  * @param fileContentLength The file content length in number of bytes
  */
-void ORBPlatformEventHandlerImpl::OnDvbUrlLoaded(int requestId, unsigned short int *fileContent, unsigned int fileContentLength)
+void ORBPlatformEventHandlerImpl::OnDvbUrlLoaded(int requestId, unsigned char *fileContent, unsigned int fileContentLength)
 {
    ORB_LOG("requestId=%d fileContentLength=%u", requestId, fileContentLength);
    ORBEngine::GetSharedInstance().GetEventListener()->OnDvbUrlLoaded(requestId, fileContent, fileContentLength);

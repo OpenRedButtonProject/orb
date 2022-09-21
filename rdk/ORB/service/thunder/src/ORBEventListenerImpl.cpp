@@ -7,6 +7,7 @@
 
 #include "ORBEventListenerImpl.h"
 #include "ORB.h"
+#include "ORBImplementation.h"
 
 using namespace WPEFramework::Plugin;
 
@@ -35,12 +36,10 @@ void ORBEventListenerImpl::OnJavaScriptEventDispatchRequested(
    bool broadcastRelated
    )
 {
-   JsonObject properties;
-   properties.FromString(eventProperties);
-
-   ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested(
+   fprintf(stderr, "[ORBEventListenerImpl::OnJavaScriptEventDispatchRequested] Calling COMRPC JavaScriptEventDispatchRequest - PID: %d\n", getpid());
+   ORBImplementation::instance(nullptr)->JavaScriptEventDispatchRequest(
       eventName,
-      properties,
+      eventProperties,
       broadcastRelated,
       targetOrigin
       );
@@ -53,9 +52,10 @@ void ORBEventListenerImpl::OnJavaScriptEventDispatchRequested(
  * @param content       The retrieved content
  * @param contentLength The retrieved content length in number of bytes
  */
-void ORBEventListenerImpl::OnDvbUrlLoaded(int requestId, unsigned short int *content, unsigned int contentLength)
+void ORBEventListenerImpl::OnDvbUrlLoaded(int requestId, unsigned char *content, unsigned int contentLength)
 {
-   ORB::instance(nullptr)->NotifyDvbUrlLoaded(requestId, contentLength);
+   fprintf(stderr, "[ORBEventListenerImpl::OnDvbUrlLoaded] Calling COMRPC OnDvbUrlLoaded - PID: %d\n", getpid());
+   ORBImplementation::instance(nullptr)->DvbUrlLoaded(requestId, content, contentLength);
 }
 
 /**
@@ -65,6 +65,7 @@ void ORBEventListenerImpl::OnDvbUrlLoaded(int requestId, unsigned short int *con
  */
 void ORBEventListenerImpl::OnInputKeyGenerated(int keyCode)
 {
-   ORB::instance(nullptr)->NotifyInputKeyGenerated(keyCode);
+   fprintf(stderr, "[ORBEventListenerImpl::OnInputKeyGenerated] Calling COMRPC OnInputKeyGenerated - PID: %d\n", getpid());
+   ORBImplementation::instance(nullptr)->EventInputKeyGenerated(keyCode);
 }
 } // namespace orb
