@@ -8,7 +8,6 @@
 #pragma once
 
 #include "Module.h"
-#include "ORBEventListenerImpl.h"
 #include <interfaces/json/JsonData_ORB.h>
 #include "ORBImplementation.h"
 #include <memory>
@@ -86,7 +85,6 @@ public:
       , _skipURL(0)
       , _connectionId(0)
       , _notification(this)
-      , _orbEventListener(std::make_shared<ORBEventListenerImpl>())
    {
       ORB::instance(this);
       //RegisterAll();
@@ -191,7 +189,6 @@ private:
    Core::Sink<Notification> _notification;
    uint8_t _skipURL;
    uint32_t _connectionId;
-   std::shared_ptr<ORBEventListenerImpl> _orbEventListener;
 }; // class ORB
 } // namespace Plugin
 } // namespace WPEFramework

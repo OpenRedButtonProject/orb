@@ -49,10 +49,8 @@ const string ORB::Initialize(PluginHost::IShell *service)
       message = _T("ORB plugin could not be initialised");
       _service->Unregister(&_notification);
       _service = nullptr;
-      return message;
    }
    
-   //ORBEngine::GetSharedInstance().Start(_orbEventListener);
 
    // Reached successful initialisation
    SYSLOG(Logging::Startup, (_T("ORB Initialisation finished")));

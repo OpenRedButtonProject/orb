@@ -22,6 +22,8 @@
 #include "Module.h"
 #include <interfaces/IORB.h>
 #include "tracing/Logging.h"
+#include "ORBEngine.h"
+#include "ORBEventListenerImpl.h"
 
 namespace WPEFramework {
 namespace Plugin {
@@ -48,6 +50,7 @@ namespace Plugin {
         mutable Core::CriticalSection _adminLock;
         std::list<Exchange::IORB::INotification*> _notificationClients;
 
+        std::shared_ptr<ORBEventListenerImpl> _orbEventListener;
     public:
     
         ORBImplementation();

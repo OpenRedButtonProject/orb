@@ -21,6 +21,7 @@ namespace Plugin {
  */
 void ORB::RegisterAll()
 {
+   fprintf(stderr, "RegisterAll call %d\n", getpid());
    JSONRPC::Register<JsonObject, JsonObject>(_T("ExecuteWpeBridgeRequest"), &ORB::ExecuteWpeBridgeRequest, this);
    JSONRPC::Register<Core::JSON::String, JsonObject>(_T("CreateToken"), &ORB::CreateToken, this);
    JSONRPC::Register<ApplicationLoadFailedParamsData, void>(_T("ApplicationLoadFailed"), &ORB::ApplicationLoadFailed, this);

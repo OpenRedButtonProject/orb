@@ -13,6 +13,7 @@ SERVICE_REGISTRATION(ORBImplementation, ORB_MAJOR_VERSION, ORB_MINOR_VERSION);
 ORBImplementation::ORBImplementation() : _adminLock()
 {
    fprintf(stderr, "Orb implementation constructor\n");
+   _orbEventListener = std::make_shared<ORBEventListenerImpl>();
 }
 
 ORBImplementation::~ORBImplementation()
@@ -25,6 +26,7 @@ void ORBImplementation::Register(Exchange::IORB::INotification* sink)
 {
    _adminLock.Lock();
    fprintf(stderr, "Hello from Register ORB %d\n", getpid());
+   ORBEngine::GetSharedInstance().Start(_orbEventListener);
 
    // // Make sure a sink is not registered multiple times.
    // ASSERT(std::find(_notificationClients.begin(), _notificationClients.end(), sink) == _notificationClients.end());
