@@ -198,7 +198,7 @@ public abstract class WebResourceClient {
       // dash.js are allowed and handled by a "sandbox HTTP client" that must:
       //
       // (1) Only handle requests with a GET method
-      // (2) Only handle requests with a publicly routable host or hbbtv[0-9].test for testing
+      // (2) Only handle requests with a publicly routable host or (c.)hbbtvn.test for testing
       // (3) Be isolated from the browser and not send any site data such as cookies
 
       WebResourceResponse response = null;
@@ -216,7 +216,7 @@ public abstract class WebResourceClient {
          InetAddress addr = InetAddress.getByName(host);
          if (addr.isSiteLocalAddress() || addr.isLoopbackAddress() || addr.isLinkLocalAddress()) {
             // Is private (10/8, 172.16/12, 192.168/16), loopback (127/8) or link local (169.254/16)
-            if (!host.matches("^hbbtv[0-9].test$")) {
+            if (!host.matches("^([a-c]\\.)?hbbtv[1-3].test$")) {
                return null;
             }
          }
