@@ -241,10 +241,13 @@ public abstract class WebResourceClient {
          .build()).execute();
 
       // Response
-      if (!httpResponse.isSuccessful()) {
-         return null;
-      }
       Charset charset = StandardCharsets.UTF_8;
+      if (!httpResponse.isSuccessful()) {
+         WebResourceResponse unsuccessful = new WebResourceResponse("text/plain", "UTF-8", null);
+         unsuccessful.setStatusCodeAndReasonPhrase(httpResponse.code(), httpResponse.message());
+         return unsuccessful;
+      }
+
       String mimeType = getMimeType(httpResponse.header("Content-Type", "text/plain"));
       Map<String, List<String>> httpResponseHeaders = httpResponse.headers().toMultimap();
 
