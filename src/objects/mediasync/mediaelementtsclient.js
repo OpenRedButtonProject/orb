@@ -147,7 +147,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
          p.moPrototype.pause.call(this);
       };
       moPrototypeOverride.play = () => {
-         dispatchErrorEvent9();
+         setTimeout(dispatchErrorEvent9, 0); // defer the error until play() returns
          return p.moPrototype.play.call(mediaObject);
       };
       hbbtv.utils.defineGetterSetterProperties(moPrototypeOverride, {
@@ -184,6 +184,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
       masterMediaObserver.addEventListener("MediaUpdated", p.onMasterMediaUpdated);
       masterMediaObserver.addEventListener("Error", p.onFailureToPresentMedia);
       mediaObject.addEventListener("ended", p.onFailureToPresentMedia);
+      checkMediaSync.call(this, masterMediaObserver.contentTime);
    }
 
    return {

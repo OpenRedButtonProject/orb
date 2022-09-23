@@ -261,10 +261,10 @@ hbbtv.objects.MediaSynchroniser = (function() {
             mediaObject: mediaObject
          }));
          priv.tsClient.addEventListener("Error", (e) => {
+            dispatchErrorEvent.call(this, e.errorCode, mediaObject);
             if (e.errorCode === 2 || e.errorCode === 9) {
                this.removeMediaObject(mediaObject);
             }
-            dispatchErrorEvent.call(this, e.errorCode, mediaObject);
          });
          priv.timelineUnavailableHandler = (e) => {
             if (e.timelineSelector === timelineSelector) {
