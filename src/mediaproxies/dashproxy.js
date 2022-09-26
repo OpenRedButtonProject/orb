@@ -162,7 +162,7 @@ hbbtv.objects.DashProxy = (function() {
                   }
                }
             } catch (e) {
-               value = 1;
+               //value = 1;
                console.warn("DashProxy:", e);
             }
             let ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");

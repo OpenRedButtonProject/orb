@@ -60,6 +60,9 @@ hbbtv.objectManager = (function() {
    }
 
    function upgradeObject(object, mimeType) {
+      if (!mimeType) {
+         return;
+      }
       mimeType = mimeType.toLowerCase();
       if (object.hasAttribute("__mimeType") && object.getAttribute("__mimeType") === mimeType) {
          // Already done
