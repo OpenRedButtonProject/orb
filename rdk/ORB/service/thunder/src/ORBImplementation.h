@@ -39,8 +39,11 @@ namespace Plugin {
         ORBImplementation& operator=(const ORBImplementation&) = delete;
 
         // interface methods
-        virtual void Register(INotification* sink) override ;
-        virtual void Unregister(INotification* sink) override ;
+        virtual void Register(INotification* sink) override;
+        virtual void Unregister(INotification* sink) override;
+
+        virtual std::string ExecuteBridgeRequest(std::string request) override;
+        virtual std::string CreateToken(std::string uri) override;
 
         BEGIN_INTERFACE_MAP(ORBImplementation)
         INTERFACE_ENTRY(Exchange::IORB)

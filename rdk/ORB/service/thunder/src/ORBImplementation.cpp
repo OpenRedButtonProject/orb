@@ -1,4 +1,5 @@
 #include "ORBImplementation.h"
+#include "Logging.h"
 
 #define ORB_MAJOR_VERSION 1
 #define ORB_MINOR_VERSION 0
@@ -55,6 +56,18 @@ void ORBImplementation::Unregister(Exchange::IORB::INotification* sink)
    // }
 
    _adminLock.Unlock();
+}
+
+std::string ORBImplementation::ExecuteBridgeRequest(std::string request)
+{
+   ORB_LOG_NO_ARGS();
+   return ORBEngine::GetSharedInstance().ExecuteBridgeRequest(request);
+}
+
+std::string ORBImplementation::CreateToken(std::string uri)
+{
+   ORB_LOG_NO_ARGS();
+   return ORBEngine::GetSharedInstance().CreateToken(uri);
 }
 
 }

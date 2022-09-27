@@ -71,7 +71,7 @@ uint32_t ORB::ExecuteWpeBridgeRequest(JsonObject request, JsonObject& response)
 
    SYSLOG(Logging::Notification, (_T("[ORB::ExecuteWpeBridgeRequest] request=%s"), requestAsString.c_str()));
 
-   std::string responseAsString = ORBEngine::GetSharedInstance().ExecuteBridgeRequest(requestAsString);
+   std::string responseAsString = _orb->ExecuteBridgeRequest(requestAsString);
    response.FromString(responseAsString);
 
    SYSLOG(Logging::Notification, (_T("[ORB::ExecuteWpeBridgeRequest] response=%s"), responseAsString.c_str()));
@@ -93,8 +93,7 @@ uint32_t ORB::CreateToken(Core::JSON::String uri, JsonObject& token)
 {
    SYSLOG(Logging::Notification, (_T("[ORB::CreateToken] uri=%s"), uri.Value().c_str()));
 
-   std::string tokenAsString = ORBEngine::GetSharedInstance().CreateToken(uri.Value());
-   token.FromString(tokenAsString);
+   std::string tokenAsString = _orb->CreateToken(uri.Value());
 
    SYSLOG(Logging::Notification, (_T("[ORB::CreateToken] token=%s"), tokenAsString.c_str()));
 
