@@ -133,7 +133,7 @@ bool BroadcastRequestHandler::Handle(
    // Broadcast.setChannelToCcid
    else if (method == BROADCAST_SET_CHANNEL_TO_CCID)
    {
-      if (!IsRequestAllowed(token, ApplicationManager::MethodRequirement::FOR_BROADCAST_APP_ONLY))
+      if (!IsRequestAllowed(token, ApplicationManager::MethodRequirement::FOR_RUNNING_APP_ONLY))
       {
          response = MakeErrorResponse("NotRunning");
       }
@@ -159,7 +159,7 @@ bool BroadcastRequestHandler::Handle(
    // Broadcast.setChannelToNull
    else if (method == BROADCAST_SET_CHANNEL_TO_NULL)
    {
-      if (!IsRequestAllowed(token, ApplicationManager::MethodRequirement::FOR_BROADCAST_APP_ONLY))
+      if (!IsRequestAllowed(token, ApplicationManager::MethodRequirement::FOR_RUNNING_APP_ONLY))
       {
          response = MakeErrorResponse("NotRunning");
       }
@@ -167,7 +167,7 @@ bool BroadcastRequestHandler::Handle(
       {
          bool trickPlay = params.value("trickplay", false);
          std::string contentAccessDescriptorURL = params.value("contentAccessDescriptorURL", "");
-         bool quiet = params.value("quiet", false);
+         bool quiet = params.value("quiet", 0);
          Channel::ErrorState errorState = Channel::ErrorState::CHANNEL_ERROR_STATE_UNKNOWN_ERROR;
 
          bool success =
@@ -184,7 +184,7 @@ bool BroadcastRequestHandler::Handle(
    // Broadcast.setChannelToTriplet
    else if (method == BROADCAST_SET_CHANNEL_TO_TRIPLET)
    {
-      if (!IsRequestAllowed(token, ApplicationManager::MethodRequirement::FOR_BROADCAST_APP_ONLY))
+      if (!IsRequestAllowed(token, ApplicationManager::MethodRequirement::FOR_RUNNING_APP_ONLY))
       {
          response = MakeErrorResponse("NotRunning");
       }
@@ -198,7 +198,7 @@ bool BroadcastRequestHandler::Handle(
          std::string ipBroadcastID = params.value("ipBroadcastID", "");
          bool trickPlay = params.value("trickplay", false);
          std::string contentAccessDescriptorURL = params.value("contentAccessDescriptorURL", "");
-         bool quiet = params.value("quiet", false);
+         bool quiet = params.value("quiet", 0);
          Channel::ErrorState errorState = Channel::ErrorState::CHANNEL_ERROR_STATE_UNKNOWN_ERROR;
 
          bool success =
@@ -226,7 +226,7 @@ bool BroadcastRequestHandler::Handle(
    // Broadcast.setChannelToDsd
    else if (method == BROADCAST_SET_CHANNEL_TO_DSD)
    {
-      if (!IsRequestAllowed(token, ApplicationManager::MethodRequirement::FOR_BROADCAST_APP_ONLY))
+      if (!IsRequestAllowed(token, ApplicationManager::MethodRequirement::FOR_RUNNING_APP_ONLY))
       {
          response = MakeErrorResponse("NotRunning");
       }
@@ -236,7 +236,7 @@ bool BroadcastRequestHandler::Handle(
          int sid = params.value("sid", -1);
          bool trickPlay = params.value("trickplay", false);
          std::string contentAccessDescriptorURL = params.value("contentAccessDescriptorURL", "");
-         bool quiet = params.value("quiet", false);
+         bool quiet = params.value("quiet", 0);
          Channel::ErrorState errorState = Channel::ErrorState::CHANNEL_ERROR_STATE_UNKNOWN_ERROR;
 
          bool success = ORBEngine::GetSharedInstance().GetORBPlatform()->Broadcast_SetChannelToDsd(dsd, sid, trickPlay, contentAccessDescriptorURL, quiet, &errorState);
