@@ -190,7 +190,7 @@ public:
     virtual bool Broadcast_SetChannelToNull(
         bool trickplay,
         std::string contentAccessDescriptorURL,
-        bool quiet,
+        int quiet,
         Channel::ErrorState *errorState
         ) = 0;
 
@@ -219,7 +219,7 @@ public:
         std::string ipBroadcastID,
         bool trickplay,
         std::string contentAccessDescriptorURL,
-        bool quiet,
+        int quiet,
         Channel::ErrorState *errorState
         ) = 0;
 
@@ -240,7 +240,7 @@ public:
         int sid,
         bool trickplay,
         std::string contentAccessDescriptorURL,
-        bool quiet,
+        int quiet,
         Channel::ErrorState *errorState
         ) = 0;
 
