@@ -10,7 +10,7 @@
 #include "ORBEngine.h"
 #include "ORBPlatformEventHandler.h"
 #include "ORBPlatform.h"
-#include "Logging.h"
+#include "ORBLogging.h"
 
 namespace orb {
 /**

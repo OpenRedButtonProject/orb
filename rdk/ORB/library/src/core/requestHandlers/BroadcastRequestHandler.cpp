@@ -9,7 +9,7 @@
 #include "Channel.h"
 #include "ORBPlatform.h"
 #include "ORBEngine.h"
-#include "Logging.h"
+#include "ORBLogging.h"
 #include "JsonUtil.h"
 
 #define BROADCAST_SET_VIDEO_RECTANGLE "setVideoRectangle"
@@ -335,20 +335,26 @@ bool BroadcastRequestHandler::Handle(
         }
         else
         {
-            std::string queryAsString = params.value("query", "");
+            std::string queryAsString = "{}";
+            if (params.contains("query") && params["query"].is_object())
+            {
+                queryAsString = params["query"].dump();
+            }
             std::shared_ptr<Query> query = std::make_shared<Query>(queryAsString);
             int offset = params.value("offset", -1);
             int count = params.value("count", -1);
-            json array = params.value("channelConstraints", "");
+            json array = params["channelConstraints"];
             std::vector<std::string> channelConstraints;
             for (int i = 0; i < array.size(); i++)
             {
                 channelConstraints.push_back(array[i]);
             }
+            // cancel existing search task (if any) before starting a new one
+            CancelSearch(query->GetQueryId());
             std::shared_ptr<MetadataSearchTask> searchTask = std::make_shared<MetadataSearchTask>(
                 query, offset, count, channelConstraints);
             ORBEngine::GetSharedInstance().AddMetadataSearchTask(query->GetQueryId(), searchTask);
-            searchTask->Run();
+            searchTask->Start();
         }
     }
     // Broadcast.abortSearch
@@ -361,13 +367,7 @@ bool BroadcastRequestHandler::Handle(
         else
         {
             int queryId = params.value("queryId", 0);
-            std::shared_ptr<MetadataSearchTask> searchTask =
-                ORBEngine::GetSharedInstance().GetMetadataSearchTask(queryId);
-            if (searchTask)
-            {
-                searchTask->Stop();
-                ORBEngine::GetSharedInstance().RemoveMetadataSearchTask(queryId);
-            }
+            CancelSearch(queryId);
             std::vector<std::string> searchResults;
             MetadataSearchTask::OnMetadataSearchCompleted(queryId, SEARCH_STATUS_ABORTED,
                 searchResults);
@@ -498,5 +498,24 @@ bool BroadcastRequestHandler::IsRequestAllowed(json token, ApplicationManager::M
 
     return ORBEngine::GetSharedInstance().GetApplicationManager()->IsRequestAllowed(appId, uri,
         methodType);
+}
+
+/**
+ * @brief BroadcastRequestHandler::CancelSearch
+ *
+ * Cancel the metadata search task corresponding to the given query id, if such task exists
+ *
+ * @param queryId The query id
+ */
+void BroadcastRequestHandler::CancelSearch(int queryId)
+{
+    std::shared_ptr<MetadataSearchTask> searchTask =
+        ORBEngine::GetSharedInstance().GetMetadataSearchTask(queryId);
+    if (searchTask)
+    {
+        ORB_LOG("Aborting existing search task");
+        searchTask->Stop();
+        ORBEngine::GetSharedInstance().RemoveMetadataSearchTask(queryId);
+    }
 }
 } // namespace orb

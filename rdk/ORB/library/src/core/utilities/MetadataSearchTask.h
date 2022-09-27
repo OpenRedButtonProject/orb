@@ -12,6 +12,7 @@
 #include <vector>
 #include "Programme.h"
 #include "Query.h"
+#include <thread>
 
 // Supported search status values
 #define SEARCH_STATUS_COMPLETED   0
@@ -61,9 +62,12 @@ public:
      *
      * @return infinite
      */
-    uint32_t Worker();
+    void Worker();
 
-    void Run();
+    /**
+     * Start the search task thread.
+     */
+    void Start();
 
     /**
      * Stop the search task thread.

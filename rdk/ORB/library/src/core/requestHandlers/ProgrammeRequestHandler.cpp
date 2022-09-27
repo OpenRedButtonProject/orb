@@ -9,7 +9,7 @@
 #include "ORBPlatform.h"
 #include "ORBEngine.h"
 #include "JsonUtil.h"
-#include "Logging.h"
+#include "ORBLogging.h"
 
 #define PROGRAMME_GET_PARENTAL_RATING "getParentalRating"
 #define PROGRAMME_GET_SI_DESCRIPTORS "getSIDescriptors"

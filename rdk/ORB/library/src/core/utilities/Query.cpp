@@ -5,6 +5,7 @@
  * the top level of this repository.
  */
 
+#include "ORBLogging.h"
 #include "Query.h"
 
 namespace orb {
@@ -241,57 +242,61 @@ std::string Query::ToString()
 void Query::CommonQuery(json in)
 {
     m_comparison = Comparison::CMP_INVALID;
+    m_queryId = in.value("queryId", -1);
 
-    try
-    {
-        m_queryId = in.at("/queryId"_json_pointer);
-    }
-    catch (json::out_of_range& e)
-    {
-        m_queryId = -1;
-    }
-
-    try
-    {
-        std::string operation = in.at("/operation"_json_pointer);
-        if (operation == "IDENTITY")
-        {
-            m_operation = Operation::OP_ID;
-        }
-        else if (operation == "AND")
-        {
-            m_operation = Operation::OP_AND;
-        }
-        else if (operation == "OR")
-        {
-            m_operation = Operation::OP_OR;
-        }
-        else if (operation == "NOT")
-        {
-            m_operation = Operation::OP_NOT;
-        }
-        json arguments = in["arguments"];
-        if (arguments.size() > 0)
-        {
-            json arg1 = arguments[0];
-            m_operator1 = std::make_shared<Query>(arg1);
-            if (arguments.size() > 1)
-            {
-                json arg2 = arguments[1];
-                m_operator2 = std::make_shared<Query>(arg2);
-            }
-        }
-    }
-    catch (json::out_of_range& e)
+    std::string operation = in.value("operation", "");
+    if (operation == "IDENTITY")
     {
         m_operation = Operation::OP_ID;
+    }
+    else if (operation == "AND")
+    {
+        m_operation = Operation::OP_AND;
+    }
+    else if (operation == "OR")
+    {
+        m_operation = Operation::OP_OR;
+    }
+    else if (operation == "NOT")
+    {
+        m_operation = Operation::OP_NOT;
+    }
+    else
+    {
+        m_operation = Operation::OP_ID;
+    }
+
+    json arguments = {};
+    if (in.contains("arguments") && in["arguments"].is_object())
+    {
+        arguments = in["arguments"];
+    }
+
+    if (!arguments.empty())
+    {
+        json arg1 = arguments[0];
+        m_operator1 = std::make_shared<Query>(arg1);
+        if (arguments.size() > 1)
+        {
+            json arg2 = arguments[1];
+            m_operator2 = std::make_shared<Query>(arg2);
+        }
     }
 
     if (m_operation == Operation::OP_ID)
     {
         m_field = in["field"];
         m_comparison = static_cast<Comparison>(in["comparison"]);
-        m_value = in["value"];
+
+        if (in["value"].is_number())
+        {
+            int value = in["value"];
+            m_value = std::to_string(value);
+        }
+        else
+        {
+            m_value = in["value"];
+        }
     }
 }
 

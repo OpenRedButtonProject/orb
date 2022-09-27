@@ -6,7 +6,7 @@
  */
 
 #include "ORBPlatformLoader.h"
-#include "Logging.h"
+#include "ORBLogging.h"
 #include <dlfcn.h>
 
 #define ORB_PLATFORM_IMPL_LIBRARY_NAME "/usr/lib/libORBPlatformImpl.so"

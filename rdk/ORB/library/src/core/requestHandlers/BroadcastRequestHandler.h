@@ -30,5 +30,6 @@ private:
         streamEventId);
     void RemoveStreamEventListener(int id);
     bool IsRequestAllowed(json token, ApplicationManager::MethodRequirement methodType);
+    void CancelSearch(int queryId);
 }; // class BroadcastRequestHandler
 } // namespace orb
