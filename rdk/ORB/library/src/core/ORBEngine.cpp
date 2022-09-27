@@ -7,7 +7,7 @@
 #include "ORBEngine.h"
 #include "ORBPlatformLoader.h"
 #include "SessionCallbackImpl.h"
-#include "Logging.h"
+#include "ORBLogging.h"
 #include <cstdint>
 #include <nlohmann/json.hpp>
 

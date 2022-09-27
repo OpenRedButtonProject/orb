@@ -6,7 +6,7 @@
  */
 
 #include "HttpDownloader.h"
-#include "Logging.h"
+#include "ORBLogging.h"
 #include <curl/curl.h>
 #include <curl/easy.h>
 #include <sstream>

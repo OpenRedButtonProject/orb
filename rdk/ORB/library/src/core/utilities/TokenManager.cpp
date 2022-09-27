@@ -9,7 +9,7 @@
 #include "URI.h"
 #include "Base64.h"
 #include "SHA256.h"
-#include "Logging.h"
+#include "ORBLogging.h"
 #include <uuid/uuid.h>
 
 using namespace orb;
