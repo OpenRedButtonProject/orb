@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -55,6 +56,7 @@ public abstract class WebResourceClient {
    }
 
    public WebResourceResponse shouldInterceptRequest(WebResourceRequest request, int appId) {
+      Log.d(TAG, "Should intercept?: " + request.getUrl());
       String scheme = request.getUrl().getScheme();
       if (request.getMethod().equalsIgnoreCase("GET")) {
          if (scheme.equals("http") || scheme.equals("https")) {
@@ -201,35 +203,45 @@ public abstract class WebResourceClient {
       // (2) Only handle requests with a publicly routable host or (c.)hbbtvn.test for testing
       // (3) Be isolated from the browser and not send any site data such as cookies
 
-      WebResourceResponse response = null;
+      // Handle special dash://resolve.host/{hostname} requests
+      if (request.getUrl().getHost().equals("resolve.host")) {
+         String hostname = request.getUrl().getLastPathSegment();
+         Log.d(TAG, "Resolve hostname" + hostname);
+         InetAddress addr = resolvePublicHostname(hostname);
+         String text = "";
+         if (addr != null) {
+            text = addr.getHostAddress();
+         }
+         return createTextResponse(200, "", text,
+            request.getRequestHeaders().getOrDefault("Origin", null));
+      }
 
-      try {
-         String url = "http" + request.getUrl().toString().substring(4); // Replace dash with http
-
-         // Must only handle requests with a GET method
-         if (!request.getMethod().equalsIgnoreCase("GET")) {
+      // Handle other dash:// requests
+      String url = "http" + request.getUrl().toString().substring(4); // Replace dash with http
+      // Must only handle requests with a GET method
+      if (!request.getMethod().equalsIgnoreCase("GET")) {
+         return null;
+      }
+      // Must only handle requests with a publicly routable host or (c.)hbbtvn.test for testing
+      String hostname = Uri.parse(url).getHost();
+      if (resolvePublicHostname(hostname) == null) {
+         // Not public host or HbbTV test URL, fail unless NA URL:
+         if (!hostname.equals("server-na.hbbtv1.test")) {
             return null;
          }
-
-         // Must only handle requests with a publicly routable host or hbbtv{n}.test for testing
-         String host = Uri.parse(url).getHost();
-         InetAddress addr = InetAddress.getByName(host);
-         if (addr.isSiteLocalAddress() || addr.isLoopbackAddress() || addr.isLinkLocalAddress()) {
-            // Is private (10/8, 172.16/12, 192.168/16), loopback (127/8) or link local (169.254/16)
-            if (!host.matches("^([a-c]\\.)?hbbtv[1-3].test$")) {
-               return null;
-            }
-         }
-
+      }
+      WebResourceResponse response;
+      try {
          response = handleDashRequest(request, appId);
       } catch (IOException e) {
-         e.printStackTrace();
+         return createTextResponse(504, "Gateway Timeout", "",
+            request.getRequestHeaders().getOrDefault("Origin", null));
       }
       return response;
    }
 
    private WebResourceResponse handleDashRequest(WebResourceRequest request, int appId)
-      throws IOException {
+         throws IOException {
       Map<String, String> requestHeaders = request.getRequestHeaders();
       String url = "http" + request.getUrl().toString().substring(4); // Replace dash with http
 
@@ -240,33 +252,26 @@ public abstract class WebResourceClient {
          .headers(Headers.of(requestHeaders))
          .build()).execute();
 
-      // Response
       Charset charset = StandardCharsets.UTF_8;
       if (!httpResponse.isSuccessful()) {
-         WebResourceResponse unsuccessful = new WebResourceResponse("text/plain", "UTF-8", null);
-         unsuccessful.setStatusCodeAndReasonPhrase(httpResponse.code(), httpResponse.message());
-         return unsuccessful;
+         return createTextResponse(httpResponse.code(), httpResponse.message(), "",
+            request.getRequestHeaders().getOrDefault("Origin", null));
       }
-
       String mimeType = getMimeType(httpResponse.header("Content-Type", "text/plain"));
       Map<String, List<String>> httpResponseHeaders = httpResponse.headers().toMultimap();
-
       String origin = request.getRequestHeaders().get("Origin");
       if (origin != null) {
          httpResponseHeaders.put("Access-Control-Allow-Origin", Collections.singletonList(origin));
       }
-
       ResponseBody body = httpResponse.body();
       if (body == null) {
          return null;
       }
-
       InputStream responseStream = createResponseStream(body.byteStream(), body);
       WebResourceResponse response = new WebResourceResponse(mimeType, charset.name(), responseStream);
       Map<String, String> responseHeaders = new HashMap<>();
       httpResponseHeaders.forEach((k, v) -> responseHeaders.put(k, String.join(",", v)));
       response.setResponseHeaders(responseHeaders);
-
       return response;
    }
 
@@ -332,5 +337,40 @@ public abstract class WebResourceClient {
             }
          }
       };
+   }
+
+   WebResourceResponse createTextResponse(int statusCode, String reasonPhrase, String text,
+         String allowOrigin) {
+      Charset charset = StandardCharsets.UTF_8;
+      ByteArrayInputStream data = new ByteArrayInputStream(text.getBytes(charset));
+      WebResourceResponse response = new WebResourceResponse("text/plain",
+         charset.toString(), data);
+      if (allowOrigin != null) {
+         Map<String, String> headers = new HashMap<>();
+         headers.put("Access-Control-Allow-Origin", allowOrigin);
+         response.setResponseHeaders(headers);
+      }
+      if (statusCode != 200) {
+         response.setStatusCodeAndReasonPhrase(statusCode, reasonPhrase);
+      }
+      return response;
+   }
+
+   private InetAddress resolvePublicHostname(String hostname) {
+      // Must only handle requests with a publicly routable host or HbbTV test URL
+      InetAddress addr;
+      try {
+         addr = InetAddress.getByName(hostname);
+         if (addr.isSiteLocalAddress() || addr.isLoopbackAddress() || addr.isLinkLocalAddress()) {
+            // Is private (10/8, 172.16/12, 192.168/16), loopback (127/8) or link local (169.254/16)
+            if (!hostname.matches("^([a-c]\\.)?hbbtv[1-3].test$")) {
+               throw new UnknownHostException();
+            }
+         }
+      } catch (UnknownHostException e) {
+         Log.d(TAG, "Unknown hostname: " + hostname);
+         return null;
+      }
+      return addr;
    }
 }
