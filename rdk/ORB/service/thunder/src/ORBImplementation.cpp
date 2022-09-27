@@ -1,5 +1,5 @@
 #include "ORBImplementation.h"
-#include "Logging.h"
+#include "ORBLogging.h"
 
 #define ORB_MAJOR_VERSION 1
 #define ORB_MINOR_VERSION 0
