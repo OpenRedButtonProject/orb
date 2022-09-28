@@ -66,15 +66,18 @@ void ORB::UnregisterAll()
  */
 uint32_t ORB::ExecuteWpeBridgeRequest(JsonObject request, JsonObject& response)
 {
-   std::string requestAsString;
-   request.ToString(requestAsString);
+   uint32_t error = Core::ERROR_NONE;
 
-   SYSLOG(Logging::Notification, (_T("[ORB::ExecuteWpeBridgeRequest] request=%s"), requestAsString.c_str()));
+   if (request.IsSet())
+   {
+      std::string requestAsString;
+      request.ToString(requestAsString);
+      SYSLOG(Logging::Notification, (_T("[ORB::ExecuteWpeBridgeRequest] request=%s"), requestAsString.c_str()));
 
-   std::string responseAsString = _orb->ExecuteBridgeRequest(requestAsString);
-   response.FromString(responseAsString);
-
-   SYSLOG(Logging::Notification, (_T("[ORB::ExecuteWpeBridgeRequest] response=%s"), responseAsString.c_str()));
+      std::string responseAsString = _orb->ExecuteBridgeRequest(requestAsString);
+      response.FromString(responseAsString);
+      SYSLOG(Logging::Notification, (_T("[ORB::ExecuteWpeBridgeRequest] response=%s"), responseAsString.c_str()));
+   }
 
    return(Core::ERROR_NONE);
 }
@@ -91,13 +94,21 @@ uint32_t ORB::ExecuteWpeBridgeRequest(JsonObject request, JsonObject& response)
  */
 uint32_t ORB::CreateToken(Core::JSON::String uri, JsonObject& token)
 {
+   uint32_t error = Core::ERROR_NONE;
    SYSLOG(Logging::Notification, (_T("[ORB::CreateToken] uri=%s"), uri.Value().c_str()));
 
-   std::string tokenAsString = _orb->CreateToken(uri.Value());
+   if (uri.IsSet())
+   {
+      std::string tokenAsString = _orb->CreateToken(uri.Value());
+      token.FromString(tokenAsString);
+      SYSLOG(Logging::Notification, (_T("[ORB::CreateToken] token=%s"), tokenAsString.c_str()));
+   }
+   else
+   {
+      error = Core::ERROR_BAD_REQUEST;
+   }
 
-   SYSLOG(Logging::Notification, (_T("[ORB::CreateToken] token=%s"), tokenAsString.c_str()));
-
-   return(Core::ERROR_NONE);
+   return error;
 }
 
 /**
@@ -112,14 +123,21 @@ uint32_t ORB::CreateToken(Core::JSON::String uri, JsonObject& token)
  */
 uint32_t ORB::ApplicationLoadFailed(const ApplicationLoadFailedParamsData& params)
 {
+   uint32_t error = Core::ERROR_NONE;
    SYSLOG(Logging::Notification, (_T("[ORB::ApplicationLoadFailed] url=%s error=%s"),
                                   params.Url.Value().c_str(),
                                   params.ErrorDescription.Value().c_str()
                                   ));
+   if (params.Url.IsSet() && params.ErrorDescription.IsSet())
+   {
+      _orb->NotifyApplicationLoadFailed(params.Url.Value(), params.ErrorDescription.Value());
+   }
+   else
+   {
+      error = Core::ERROR_BAD_REQUEST;
+   }
 
-   ORBEngine::GetSharedInstance().NotifyApplicationLoadFailed(params.Url.Value(), params.ErrorDescription.Value());
-
-   return(Core::ERROR_NONE);
+   return error;
 }
 
 /**
@@ -134,11 +152,19 @@ uint32_t ORB::ApplicationLoadFailed(const ApplicationLoadFailedParamsData& param
  */
 uint32_t ORB::ApplicationPageChanged(Core::JSON::String url)
 {
+   uint32_t error = Core::ERROR_NONE;
    SYSLOG(Logging::Notification, (_T("[ORB::ApplicationPageChanged] url=%s"), url.Value().c_str()));
 
-   ORBEngine::GetSharedInstance().NotifyApplicationPageChanged(url.Value());
+   if (url.IsSet())
+   {
+      _orb->NotifyApplicationPageChanged(url.Value());
+   }
+   else
+   {
+      error = Core::ERROR_BAD_REQUEST;
+   }
 
-   return(Core::ERROR_NONE);
+   return error;
 }
 
 /**
@@ -152,12 +178,20 @@ uint32_t ORB::ApplicationPageChanged(Core::JSON::String url)
  */
 uint32_t ORB::LoadDvbUrl(const LoadDvbUrlParamsData& params)
 {
-   SYSLOG(Logging::Notification, (_T("[ORB::LoadDvbUrl] url=%s requestId=%d"),
+   uint32_t error = Core::ERROR_NONE;
+   
+   if (params.Url.IsSet() && params.RequestId.IsSet())
+   {
+      SYSLOG(Logging::Notification, (_T("[ORB::LoadDvbUrl] url=%s requestId=%d"),
                                   params.Url.Value().c_str(), params.RequestId.Value()));
-
-   ORBEngine::GetSharedInstance().LoadDvbUrl(params.Url.Value(), params.RequestId.Value());
-
-   return(Core::ERROR_NONE);
+      ORBEngine::GetSharedInstance().LoadDvbUrl(params.Url.Value(), params.RequestId.Value());
+   }
+   else
+   {
+      error = Core::ERROR_BAD_REQUEST;
+   }
+   
+   return error;
 }
 
 /**
@@ -172,11 +206,19 @@ uint32_t ORB::LoadDvbUrl(const LoadDvbUrlParamsData& params)
  */
 uint32_t ORB::SendKeyEvent(Core::JSON::DecUInt16 keyCode, Core::JSON::Boolean& response)
 {
-   SYSLOG(Logging::Notification, (_T("[ORB::SendKeyEvent] keyCode=%hu"), keyCode.Value()));
-
-   response = ORBEngine::GetSharedInstance().SendKeyEvent(keyCode.Value());
-
-   return(Core::ERROR_NONE);
+   uint32_t error = Core::ERROR_NONE;
+   
+   if (keyCode.IsSet())
+   {
+      SYSLOG(Logging::Notification, (_T("[ORB::SendKeyEvent] keyCode=%hu"), keyCode.Value()));
+      response = _orb->SendKeyEvent(keyCode.Value());
+   }
+   else
+   {
+      error = Core::ERROR_BAD_REQUEST;
+   }
+   
+   return error;
 }
 
 /**

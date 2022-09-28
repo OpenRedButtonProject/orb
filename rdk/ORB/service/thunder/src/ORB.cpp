@@ -42,6 +42,7 @@ const string ORB::Initialize(PluginHost::IShell *service)
    if (_orb != nullptr)
    {
       _orb->Register(&_notification);
+      _orb->LoadPlatform();
       RegisterAll();
    }
    else
@@ -128,7 +129,7 @@ void ORB::NotifyJavaScriptEventDispatchRequested(
    std::string propertiesAsString;
    properties.ToString(propertiesAsString);
    fprintf(stderr, "[ORB::NotifyJavaScriptEventDispatchRequested] name=%s properties=%s\n", name.c_str(), propertiesAsString.c_str());
-
+   fprintf(stderr, "[NotifyJavaScriptEventDispatchRequested] PID: %d\n", getpid());
    JavaScriptEventDispatchRequestedParamsData params;
    params.EventName = name;
    params.EventProperties = propertiesAsString;

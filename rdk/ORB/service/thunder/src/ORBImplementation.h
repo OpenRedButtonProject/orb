@@ -41,9 +41,14 @@ namespace Plugin {
         // interface methods
         virtual void Register(INotification* sink) override;
         virtual void Unregister(INotification* sink) override;
+        virtual void LoadPlatform() override;
 
         virtual std::string ExecuteBridgeRequest(std::string request) override;
         virtual std::string CreateToken(std::string uri) override;
+        virtual void NotifyApplicationLoadFailed(std::string url, std::string errorDescription) override;
+        virtual void NotifyApplicationPageChanged(std::string url) override;
+        virtual bool SendKeyEvent(int keyCode) override;
+        virtual void LoadDvbUrl(std::string url, int requestId) override;
 
         BEGIN_INTERFACE_MAP(ORBImplementation)
         INTERFACE_ENTRY(Exchange::IORB)
