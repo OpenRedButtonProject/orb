@@ -53,48 +53,53 @@ hbbtv.objects.AudioTrackList = (function() {
       privates.get(this).eventTarget.removeEventListener(event, listener);
    }
 
-   function AudioTrack(props, eventTarget) {
+   function AudioTrack(allTracks, index, eventTarget) {
       Object.defineProperty(this, "enabled", {
          get() {
-            return props.enabled;
+            return allTracks[index].enabled;
          },
          set(value) {
-            if (value !== props.enabled) {
-               props.enabled = value;
+            if (value !== allTracks[index].enabled) {
+               if (value) {
+                  for (let track of allTracks) {
+                     track.enabled = false;
+                  }
+               }
+               allTracks[index].enabled = value;
                eventTarget.dispatchEvent(new Event("change"));
             }
          }
       });
       Object.defineProperty(this, "index", {
-         value: props.index,
+         value: allTracks[index].index,
          writable: false
       });
       Object.defineProperty(this, "id", {
-         value: props.id,
+         value: allTracks[index].id,
          writable: false
       });
       Object.defineProperty(this, "kind", {
-         value: props.kind,
+         value: allTracks[index].kind,
          writable: false
       });
       Object.defineProperty(this, "label", {
-         value: props.label,
+         value: allTracks[index].label,
          writable: false
       });
       Object.defineProperty(this, "language", {
-         value: props.language,
+         value: allTracks[index].language,
          writable: false
       });
       Object.defineProperty(this, "numChannels", {
-         value: props.numChannels,
+         value: allTracks[index].numChannels,
          writable: false
       });
       Object.defineProperty(this, "encoding", {
-         value: props.encoding,
+         value: allTracks[index].encoding,
          writable: false
       });
       Object.defineProperty(this, "encrypted", {
-         value: props.encrypted,
+         value: allTracks[index].encrypted,
          writable: false
       });
    }
@@ -105,7 +110,7 @@ hbbtv.objects.AudioTrackList = (function() {
       p.length = trackList.length;
       p.eventTarget = document.createDocumentFragment();
       for (let i = 0; i < trackList.length; ++i) {
-         this[i] = new AudioTrack(trackList[i], p.eventTarget);
+         this[i] = new AudioTrack(trackList, i, p.eventTarget);
       }
       Object.freeze(this);
    }
