@@ -22,6 +22,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 find_package(${NAMESPACE}Plugins REQUIRED)
 find_package(${NAMESPACE}Definitions REQUIRED)
+find_package(${NAMESPACE}Core REQUIRED)
 find_package(CompileSettingsDebug CONFIG REQUIRED)
 
 add_library(${MODULE_NAME} SHARED
@@ -30,6 +31,7 @@ add_library(${MODULE_NAME} SHARED
   src/ORBEventListenerImpl.cpp
   src/ORBJsonRpc.cpp
   src/ORBImplementation.cpp
+  src/ORBComRpcClient.cpp
 )
 
 add_dependencies(${MODULE_NAME} ORBEngine)

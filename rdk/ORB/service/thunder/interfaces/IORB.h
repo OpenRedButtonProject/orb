@@ -16,41 +16,54 @@ namespace Exchange {
     struct EXTERNAL IORB : virtual public Core::IUnknown {
         enum { ID = ID_ORB };
 
-        struct INotification : virtual public Core::IUnknown {
-            enum { ID = ID_ORB_NOTIFICATION};
-            
+        struct EXTERNAL INotification : virtual public Core::IUnknown {
+            enum {ID = ID_ORB_NOTIFICATION};
+
             // events
+
+            // @brief 
+            // @param name: The javascript event name (e.g. ChannelStatusChange)
+            // @param properties: Properties of the event (e.g. onid)
+            // @param broadcastRelated: True if event is related to broadcast
+            // @param targetOrigin: The origin
             virtual void JavaScriptEventDispatchRequest(
                 std::string name,
                 std::string properties,
                 bool broadcastRelated,
                 std::string targetOrigin
-            );
+            ) = 0;
 
+            // @brief Event that signifies the successful load of the dvb url
+            // @param requestId: The id for the dvb url request
+            // @param fileContent: The content of the actual file 
+            // @param fileContentLength: The length of the file 
             virtual void DvbUrlLoaded(
                 int requestId,
-                uint8_t* fileContent,
-                uint32_t fileContentLength
-            );
+                const uint8_t fileContent[] /* @length:fileContentLength */, 
+                const uint16_t fileContentLength
+            ) = 0;
 
-            virtual void EventInputKeyGenerated(int keyCode);
-
-            virtual ~INotification() {}
+            // @brief Event that is fired when a key is pressed
+            // @param keyCode: The keyCode that was generated
+            virtual void EventInputKeyGenerated(int keyCode) = 0;
         };
 
         virtual ~IORB() {}
         
-        // clients registration
+        // clients registration for events
         virtual void Register(INotification* sink) = 0;
         virtual void Unregister(INotification* sink) = 0;
         
         // methods 
-        virtual std::string ExecuteBridgeRequest(std::string request);
-        virtual std::string CreateToken(std::string uri);
-        virtual void LoadDvbUrl(std::string url, int requestId);
-        virtual bool SendKeyEvent(int keyCode);
-        virtual void NotifyApplicationPageChanged(std::string url);
-        virtual void NotifyApplicationLoadFailed(std::string url, std::string errorDescription);
+        virtual void LoadPlatform() = 0;
+        virtual std::string ExecuteBridgeRequest(std::string request) = 0;
+        virtual std::string CreateToken(std::string uri) = 0;
+        virtual void NotifyApplicationLoadFailed(std::string url, std::string errorDescription) = 0;
+        virtual void NotifyApplicationPageChanged(std::string url) = 0;
+        virtual bool SendKeyEvent(int keyCode) = 0;
+        virtual void LoadDvbUrl(std::string url, int requestId) = 0;
+
+
 
     };
 
