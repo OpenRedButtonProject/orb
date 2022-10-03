@@ -109,15 +109,15 @@ public:
    /**
     * Singleton.
     */
-   // static ORB* instance(ORB *orb = nullptr)
-   // {
-   //    static ORB *orb_instance = nullptr;
-   //    if (orb != nullptr)
-   //    {
-   //       orb_instance = orb;
-   //    }
-   //    return orb_instance;
-   // }
+   static ORB* instance(ORB *orb = nullptr)
+   {
+      static ORB *orb_instance = nullptr;
+      if (orb != nullptr)
+      {
+         orb_instance = orb;
+      }
+      return orb_instance;
+   }
 
    BEGIN_INTERFACE_MAP(ORB)
    INTERFACE_ENTRY(PluginHost::IPlugin)

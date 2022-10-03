@@ -38,12 +38,12 @@ void ORBEventListenerImpl::OnJavaScriptEventDispatchRequested(
    JsonObject properties;
    properties.FromString(eventProperties);
 
-   // ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested(
-   //    eventName,
-   //    properties,
-   //    broadcastRelated,
-   //    targetOrigin
-   //    );
+   ORB::instance(nullptr)->NotifyJavaScriptEventDispatchRequested(
+      eventName,
+      properties,
+      broadcastRelated,
+      targetOrigin
+      );
 }
 
 /**
@@ -55,7 +55,7 @@ void ORBEventListenerImpl::OnJavaScriptEventDispatchRequested(
  */
 void ORBEventListenerImpl::OnDvbUrlLoaded(int requestId, unsigned short int *content, unsigned int contentLength)
 {
-   //ORB::instance(nullptr)->NotifyDvbUrlLoaded(requestId, contentLength);
+   ORB::instance(nullptr)->NotifyDvbUrlLoaded(requestId, contentLength);
 }
 
 /**
@@ -65,6 +65,6 @@ void ORBEventListenerImpl::OnDvbUrlLoaded(int requestId, unsigned short int *con
  */
 void ORBEventListenerImpl::OnInputKeyGenerated(int keyCode)
 {
-   //ORB::instance(nullptr)->NotifyInputKeyGenerated(keyCode);
+   ORB::instance(nullptr)->NotifyInputKeyGenerated(keyCode);
 }
 } // namespace orb
