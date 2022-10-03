@@ -1,5 +1,4 @@
 #include "ORBComRpcClient.h"
-#include "ORBLogging.h"
 
 namespace orb
 {

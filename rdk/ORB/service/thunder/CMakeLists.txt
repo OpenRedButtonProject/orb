@@ -8,8 +8,13 @@ cmake_minimum_required(VERSION 2.8)
 
 find_package(WPEFramework)
 
+#set(PLUGIN_NAME SamplePlugin)
+#set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})
+#set(PLUGIN_IMPLEMENTATION ${MODULE_NAME}Implementation)
+
 set(PLUGIN_NAME ORB)
-set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})
+set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})             # WPEFrameworkORB
+set(PLUGIN_IMPLEMENTATION ${MODULE_NAME}Implementation) # WPEFrameworkORBImplementation
 
 message(STATUS "==========================================================")
 message(STATUS "${CMAKE_MODULE_PATH}")
@@ -25,13 +30,15 @@ find_package(${NAMESPACE}Definitions REQUIRED)
 find_package(${NAMESPACE}Core REQUIRED)
 find_package(CompileSettingsDebug CONFIG REQUIRED)
 
+###############################################################################
+## libWPEFrameworkORB In process part
+###############################################################################
+
 add_library(${MODULE_NAME} SHARED
   src/Module.cpp
   src/ORB.cpp
   src/ORBEventListenerImpl.cpp
   src/ORBJsonRpc.cpp
-  src/ORBImplementation.cpp
-  src/ORBComRpcClient.cpp
 )
 
 add_dependencies(${MODULE_NAME} ORBEngine)
@@ -56,9 +63,46 @@ target_link_libraries(${MODULE_NAME} PRIVATE
   ORBCore
 )
 
+
+
 install(TARGETS ${MODULE_NAME}
   DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/wpeframework/plugins
 )
+
+
+###############################################################################
+## ORBImplementation library
+###############################################################################
+
+# Build the implementation that runs out-of-process behind a COM-RPC interface
+add_library(${PLUGIN_IMPLEMENTATION} SHARED
+  src/ORBImplementation.cpp
+  src/Module.cpp
+  src/ORBEventListenerImpl.cpp
+)
+
+add_dependencies(${PLUGIN_IMPLEMENTATION} ORBEngine)
+
+target_include_directories(${PLUGIN_IMPLEMENTATION} PUBLIC
+  src
+  ../../library/src/core
+)
+
+set_target_properties(${PLUGIN_IMPLEMENTATION} PROPERTIES
+  CXX_STANDARD 14
+  CXX_STANDARD_REQUIRED YES
+  LINKER_LANGUAGE CXX
+)
+
+target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE
+  ${NAMESPACE}Plugins::${NAMESPACE}Plugins
+  ORBCore
+)
+
+install(TARGETS
+        ${PLUGIN_IMPLEMENTATION}
+        DESTINATION
+        lib/${STORAGE_DIRECTORY}/plugins)
 
 write_config(${PLUGIN_NAME})
 
@@ -68,8 +112,14 @@ write_config(${PLUGIN_NAME})
 
 add_library(ORBClient SHARED 
   src/ORBJsonRpcClient.cpp
+  src/ORBComRpcClient.cpp
   ../../library/src/core/ORBGenericClient.h
   ../../library/src/core/api/ORBBrowserApi.h
+)
+
+target_include_directories(ORBClient PUBLIC
+  src
+  ../../library/src/core
 )
 
 set_target_properties(ORBClient PROPERTIES
