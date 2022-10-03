@@ -78,8 +78,12 @@ uint32_t ORB::ExecuteWpeBridgeRequest(JsonObject request, JsonObject& response)
       response.FromString(responseAsString);
       SYSLOG(Logging::Notification, (_T("[ORB::ExecuteWpeBridgeRequest] response=%s"), responseAsString.c_str()));
    }
-
-   return(Core::ERROR_NONE);
+   else
+   {
+      error = Core::ERROR_BAD_REQUEST;
+   }
+   
+   return error;
 }
 
 /**

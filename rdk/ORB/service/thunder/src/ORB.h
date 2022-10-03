@@ -12,11 +12,12 @@
 #include "ORBImplementation.h"
 #include <memory>
 
+namespace WPEFramework {
+namespace Plugin {
+
 using namespace orb;
 using namespace WPEFramework::JsonData::ORB;
 
-namespace WPEFramework {
-namespace Plugin {
 /**
  * @brief orb::ORB
  *
@@ -32,41 +33,91 @@ class ORB
     * Used to receive activation/deactivation events.
     */
    class Notification : public RPC::IRemoteConnection::INotification, 
-                        public Exchange::IORB::INotification {
-private:
+                        public Exchange::IORB::INotification 
+   {
+   private:
       Notification() = delete;
-      Notification(const Notification&) = delete;
-      Notification& operator=(const Notification&) = delete;
+      Notification(const Notification &) = delete;
+      Notification &operator=(const Notification &) = delete;
 
 public:
 
       explicit Notification(ORB *parent) : _parent(*parent)
       {
          ASSERT(parent != nullptr);
+         fprintf(stderr, "NOTIFICATION CONSTUCTOR WITH NON NULL PARENT CALLED \n");
       }
 
-      virtual ~Notification()
+      virtual ~Notification() override
       {
+         fprintf(stderr, "NOTIFICATION DESTRUCTOR CALLED\n");
       }
 
 public:
-      virtual void Activated(RPC::IRemoteConnection *)
+      void Activated(RPC::IRemoteConnection *) override
       {
+         fprintf(stderr, "ORB NOTIFICATION ACTIVATED %p\n", this);
       }
 
-      virtual void Deactivated(RPC::IRemoteConnection *connection)
+      void Deactivated(RPC::IRemoteConnection *connection) override
       {
          _parent.Deactivated(connection);
       }
+
+      void JavaScriptEventDispatchRequest(
+         std::string name,
+         std::string properties,
+         bool broadcastRelated,
+         std::string targetOrigin
+      )
+      {
+         fprintf(stderr, "JavaScriptEventDispatchRequest\n");
+      }
+
+      void DvbUrlLoaded(
+         int requestId,
+         const uint8_t* fileContent, 
+         const uint16_t fileContentLength
+      )
+      {
+         fprintf(stderr, "DvbUrlLoaded\n");
+      }
+
+      void EventInputKeyGenerated(int keyCode)
+      {
+         fprintf(stderr, "EventInputKeyGenerated\n");
+      }
+  
 
       BEGIN_INTERFACE_MAP(Notification)
       INTERFACE_ENTRY(Exchange::IORB::INotification)
       INTERFACE_ENTRY(RPC::IRemoteConnection::INotification)
       END_INTERFACE_MAP
 private:
-      ORB& _parent;
+      ORB &_parent;
    }; // class Notification
+////////////////////////////////////////////////////////////////
+public:
+   
+   ORB();
+   ~ORB() override;
 
+   // Dont allow copy/move constructors
+   ORB(const ORB &) = delete;
+   ORB &operator=(const ORB &) = delete;   
+
+   /**
+    * Singleton.
+    */
+   // static ORB* instance(ORB *orb = nullptr)
+   // {
+   //    static ORB *orb_instance = nullptr;
+   //    if (orb != nullptr)
+   //    {
+   //       orb_instance = orb;
+   //    }
+   //    return orb_instance;
+   // }
 
    BEGIN_INTERFACE_MAP(ORB)
    INTERFACE_ENTRY(PluginHost::IPlugin)
@@ -76,82 +127,10 @@ private:
 
 public:
 
-   /**
-    * Default constructor.
-    */
-   ORB()
-      : _service(nullptr)
-      , _orb(nullptr)
-      , _skipURL(0)
-      , _connectionId(0)
-      , _notification(this)
-   {
-      ORB::instance(this);
-      //RegisterAll();
-      SYSLOG(Logging::Startup, (_T("ORB service instance constructed")));
-   }
-
-   /**
-    * Destructor.
-    */
-   ~ORB()
-   {
-      //UnregisterAll();
-      SYSLOG(Logging::Shutdown, (_T("ORB service instance destructed")));
-   }
-
-   /**
-    * Singleton.
-    */
-   static ORB* instance(ORB *orb = nullptr)
-   {
-      static ORB *orb_instance = nullptr;
-      if (orb != nullptr)
-      {
-         orb_instance = orb;
-      }
-      return orb_instance;
-   }
-
-
-public:
-
    // IPlugin methods
-   virtual const string Initialize(PluginHost::IShell *service);
-   virtual void Deinitialize(PluginHost::IShell *service);
-   virtual string Information() const;
-
-
-// disallow copying of plugin
-private:
-   ORB(const ORB&) = delete;
-   ORB& operator=(const ORB&) = delete;   
-   /**
-    * @brief ORB::Config
-    *
-    * Used to map the plugin configuration.
-    */
-   class Config : public Core::JSON::Container {
-   private:
-      Config(const Config&);
-      Config& operator=(const Config&);
-
-   public:
-      Config()
-         : Core::JSON::Container()
-         , OutOfProcess(true)
-      {
-         Add(_T("outofprocess"), &OutOfProcess);
-      }
-
-      ~Config()
-      {
-      }
-
-   public:
-      Core::JSON::Boolean OutOfProcess;
-   }; // class Config
-
+   virtual const string Initialize(PluginHost::IShell *service) override;
+   virtual void Deinitialize(PluginHost::IShell *service) override;
+   virtual string Information() const override;
 
 public:
 
@@ -187,8 +166,9 @@ private:
    PluginHost::IShell *_service;
    Exchange::IORB* _orb;
    Core::Sink<Notification> _notification;
-   uint8_t _skipURL;
    uint32_t _connectionId;
+
+   friend class Notification;
 }; // class ORB
 } // namespace Plugin
 } // namespace WPEFramework

@@ -11,7 +11,7 @@ namespace Plugin {
 SERVICE_REGISTRATION(ORBImplementation, ORB_MAJOR_VERSION, ORB_MINOR_VERSION);
 
 
-ORBImplementation::ORBImplementation() : _adminLock()
+ORBImplementation::ORBImplementation() : _adminLock(), _notificationClients({})
 {
    fprintf(stderr, "Orb implementation constructor\n");
    _orbEventListener = std::make_shared<ORBEventListenerImpl>();
@@ -23,35 +23,42 @@ ORBImplementation::~ORBImplementation()
 }
 
 
+// register the notification callbacks
 void ORBImplementation::Register(Exchange::IORB::INotification* sink)
 {
    _adminLock.Lock();
    fprintf(stderr, "Hello from Register ORB %d\n", getpid());
-   // // Make sure a sink is not registered multiple times.
-   // ASSERT(std::find(_notificationClients.begin(), _notificationClients.end(), sink) == _notificationClients.end());
+
+   if (sink == nullptr)
+   {
+      ORB_LOG("NULL SINK ARRIVED");
+   }
    
-   // _notificationClients.push_back(sink);
-   // sink->AddRef();
+   // Make sure a sink is not registered multiple times.
+   if (std::find(_notificationClients.begin(), _notificationClients.end(), sink) == _notificationClients.end())
+   {
+      _notificationClients.push_back(sink);
+      //if (sink != nullptr)
+      sink->AddRef();
+      ORB_LOG("Added a ref");
+   }
    
    _adminLock.Unlock();
 
-//   TRACE_L1("Registered a sink on the ORB %p", sink);
+   ORB_LOG("Registered a sink on the ORB %p", sink);
 }
 
 void ORBImplementation::Unregister(Exchange::IORB::INotification* sink)
 {
    _adminLock.Lock();
    fprintf(stderr, "Hello from UNRegister ORB %d\n", getpid());
-   // std::list<Exchange::IORB::INotification*>::iterator index(std::find(_notificationClients.begin(), _notificationClients.end(), sink));
 
-   // // Make sure you do not unregister something you did not register !!!
-   // ASSERT(index != _notificationClients.end());
-
-   // if (index != _notificationClients.end()) {
-   //    (*index)->Release();
-   //    _notificationClients.erase(index);
-   //    TRACE_L1("Unregistered a sink on the ORB %p", sink);
-   // }
+   auto itr = std::find(_notificationClients.begin(), _notificationClients.end(), sink);
+   if (itr != _notificationClients.end())
+   {
+      (*itr)->Release();
+      _notificationClients.erase(itr);
+   }
 
    _adminLock.Unlock();
 }

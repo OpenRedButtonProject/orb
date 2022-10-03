@@ -16,6 +16,7 @@ namespace Exchange {
     struct EXTERNAL IORB : virtual public Core::IUnknown {
         enum { ID = ID_ORB };
 
+        /* @event */
         struct EXTERNAL INotification : virtual public Core::IUnknown {
             enum {ID = ID_ORB_NOTIFICATION};
 
@@ -39,13 +40,15 @@ namespace Exchange {
             // @param fileContentLength: The length of the file 
             virtual void DvbUrlLoaded(
                 int requestId,
-                const uint8_t fileContent[] /* @length:fileContentLength */, 
+                const uint8_t* fileContent /* @length:fileContentLength */, 
                 const uint16_t fileContentLength
             ) = 0;
 
             // @brief Event that is fired when a key is pressed
             // @param keyCode: The keyCode that was generated
             virtual void EventInputKeyGenerated(int keyCode) = 0;
+
+            virtual ~INotification() {}
         };
 
         virtual ~IORB() {}
@@ -62,8 +65,6 @@ namespace Exchange {
         virtual void NotifyApplicationPageChanged(std::string url) = 0;
         virtual bool SendKeyEvent(int keyCode) = 0;
         virtual void LoadDvbUrl(std::string url, int requestId) = 0;
-
-
 
     };
 

@@ -29,17 +29,22 @@ namespace WPEFramework {
 namespace Plugin {
 
     class ORBImplementation : public Exchange::IORB {
-    public:
-        private:
-            ORBImplementation *_orb;
 
     public:
+        ORBImplementation();
+        ~ORBImplementation() override;
+        
         // We do not allow this plugin to be copied !!
         ORBImplementation(const ORBImplementation&) = delete;
         ORBImplementation& operator=(const ORBImplementation&) = delete;
 
+        BEGIN_INTERFACE_MAP(ORBImplementation)
+        INTERFACE_ENTRY(Exchange::IORB)
+        END_INTERFACE_MAP
+    
+    public:  
         // interface methods
-        virtual void Register(INotification* sink) override;
+        virtual void Register(INotification *sink) override;
         virtual void Unregister(INotification* sink) override;
         virtual void LoadPlatform() override;
 
@@ -50,19 +55,11 @@ namespace Plugin {
         virtual bool SendKeyEvent(int keyCode) override;
         virtual void LoadDvbUrl(std::string url, int requestId) override;
 
-        BEGIN_INTERFACE_MAP(ORBImplementation)
-        INTERFACE_ENTRY(Exchange::IORB)
-        END_INTERFACE_MAP
-
     private:
         mutable Core::CriticalSection _adminLock;
         std::list<Exchange::IORB::INotification*> _notificationClients;
 
         std::shared_ptr<ORBEventListenerImpl> _orbEventListener;
-    public:
-    
-        ORBImplementation();
-        virtual ~ORBImplementation();
     };
 
 

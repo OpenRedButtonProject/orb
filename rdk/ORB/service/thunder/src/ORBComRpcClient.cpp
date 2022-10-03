@@ -3,6 +3,32 @@
 
 namespace orb
 {
+
+   // events handlers
+   void ORBComRpcClient::NotificationHandler::JavaScriptEventDispatchRequest(
+      std::string name,
+      std::string properties,
+      bool broadcastRelated,
+      std::string targetOrigin
+   )
+   {
+      ORB_LOG("%s, %s, %d, %s", name.c_str(), properties.c_str(), broadcastRelated, targetOrigin.c_str());
+   }
+
+   void ORBComRpcClient::NotificationHandler::DvbUrlLoaded(
+      int requestId,
+      const uint8_t* fileContent, 
+      const uint16_t fileContentLength
+   )
+   {
+      //
+   }
+   
+   void ORBComRpcClient::NotificationHandler::EventInputKeyGenerated(int keyCode)
+   {
+      ORB_LOG("%d", keyCode);
+   }
+   
    /**
     * @brief ORBComRpcClient::ORBComRpcClient()
     * 

@@ -15,7 +15,21 @@ class ORBComRpcClient
    // Implement the INotification class to do what we want
    class NotificationHandler : public Exchange::IORB::INotification
    {
-   
+      virtual void JavaScriptEventDispatchRequest(
+         std::string name,
+         std::string properties,
+         bool broadcastRelated,
+         std::string targetOrigin
+      ) override;
+
+      virtual void DvbUrlLoaded(
+         int requestId,
+         const uint8_t* fileContent, 
+         const uint16_t fileContentLength
+      ) override;
+
+      virtual void EventInputKeyGenerated(int keyCode) override;
+
       // Must define an interface map since we are implementing an interface on the exchange
       // so Thunder knows what type we are
       BEGIN_INTERFACE_MAP(NotificationHandler)

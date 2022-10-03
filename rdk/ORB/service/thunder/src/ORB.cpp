@@ -7,13 +7,35 @@
 
 #include "ORB.h"
 #include "ORBEngine.h"
+#include <chrono>
 
+using namespace std::chrono_literals;
 using namespace orb;
 
 namespace WPEFramework {
 namespace Plugin {
+
 SERVICE_REGISTRATION(ORB, 1, 0);
 
+/**
+ * Constructor
+ */
+ORB::ORB()
+   : _service(nullptr)
+   , _orb(nullptr)
+   , _connectionId(0)
+   , _notification(this)
+{
+   SYSLOG(Logging::Startup, (_T("ORB service instance constructed")));
+}
+
+/**
+ * Destructor.
+ */
+ORB::~ORB()
+{
+   SYSLOG(Logging::Shutdown, (_T("ORB service instance destructed")));
+}
 
 /**
  * @brief ORB::Initialize
@@ -26,15 +48,17 @@ SERVICE_REGISTRATION(ORB, 1, 0);
  */
 const string ORB::Initialize(PluginHost::IShell *service)
 {
-   SYSLOG(Logging::Startup, (_T("ORB Initialisation started")));
    string message;
+   
+   ASSERT(_service == nullptr);
+   ASSERT(_orb == nullptr);
 
-   _connectionId = 0;
+   SYSLOG(Logging::Startup, (_T("ORB Initialisation started in process %d"), Core::ProcessInfo().Id()));
+   
+   // Register Connection::Notification
    _service = service;
-   _skipURL = _service->WebPrefix().length();
-
    _service->Register(&_notification);
-
+   
    fprintf(stderr, "READY TO CALL\n");
    _orb = service->Root<Exchange::IORB>(_connectionId, 2000, _T("ORBImplementation"));
 
