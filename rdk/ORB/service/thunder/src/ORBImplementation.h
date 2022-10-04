@@ -44,16 +44,17 @@ namespace Plugin {
     
     public:  
         // interface methods
-        virtual void Register(INotification *sink) override;
-        virtual void Unregister(INotification* sink) override;
-        virtual void LoadPlatform() override;
+        void Register(INotification *sink) override;
+        void Unregister(INotification* sink) override;
+        void LoadPlatform() override;
+        void UnLoadPlatform() override;
 
-        virtual std::string ExecuteBridgeRequest(std::string request) override;
-        virtual std::string CreateToken(std::string uri) override;
-        virtual void NotifyApplicationLoadFailed(std::string url, std::string errorDescription) override;
-        virtual void NotifyApplicationPageChanged(std::string url) override;
-        virtual bool SendKeyEvent(int keyCode) override;
-        virtual void LoadDvbUrl(std::string url, int requestId) override;
+        std::string ExecuteBridgeRequest(std::string request) override;
+        std::string CreateToken(std::string uri) override;
+        void NotifyApplicationLoadFailed(std::string url, std::string errorDescription) override;
+        void NotifyApplicationPageChanged(std::string url) override;
+        bool SendKeyEvent(int keyCode) override;
+        void LoadDvbUrl(std::string url, int requestId) override;
 
     private:
         mutable Core::CriticalSection _adminLock;

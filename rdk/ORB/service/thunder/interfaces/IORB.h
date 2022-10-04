@@ -59,6 +59,7 @@ namespace Exchange {
         
         // methods 
         virtual void LoadPlatform() = 0;
+        virtual void UnLoadPlatform() = 0;
         virtual std::string ExecuteBridgeRequest(std::string request) = 0;
         virtual std::string CreateToken(std::string uri) = 0;
         virtual void NotifyApplicationLoadFailed(std::string url, std::string errorDescription) = 0;

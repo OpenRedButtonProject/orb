@@ -6,11 +6,9 @@
  */
 
 #include "ORB.h"
-#include "ORBEngine.h"
 #include <chrono>
 
 using namespace std::chrono_literals;
-using namespace orb;
 
 namespace WPEFramework {
 namespace Plugin {
@@ -93,17 +91,22 @@ void ORB::Deinitialize(PluginHost::IShell *service)
 
    SYSLOG(Logging::Shutdown, (_T("ORB Deinitialisation started")));
 
-   ORBEngine::GetSharedInstance().Stop();
-
    _service->Unregister(&_notification);
 
    if (_orb != nullptr)
    {
+      _service->Unregister(&_notification);
+      _orb->UnLoadPlatform();
+      _orb->Unregister(&_notification);
+
+      UnregisterAll();
       _orb->Release();
-      _orb = nullptr;
    }
 
+   // Set everything back to default
+   _connectionId = 0;
    _service = nullptr;
+   _orb = nullptr;
 
    SYSLOG(Logging::Shutdown, (_T("ORB Deinitialisation finished")));
 }

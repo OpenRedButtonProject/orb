@@ -37,15 +37,13 @@ find_package(CompileSettingsDebug CONFIG REQUIRED)
 add_library(${MODULE_NAME} SHARED
   src/Module.cpp
   src/ORB.cpp
-  src/ORBEventListenerImpl.cpp
   src/ORBJsonRpc.cpp
 )
 
-add_dependencies(${MODULE_NAME} ORBEngine)
 
 target_include_directories(${MODULE_NAME} PUBLIC
   src
-  ../../library/src/core
+  #../../library/src/core
 )
 
 set_target_properties(${MODULE_NAME} PROPERTIES
@@ -60,9 +58,7 @@ target_link_libraries(${MODULE_NAME} PRIVATE
   CompileSettingsDebug::CompileSettingsDebug
   ${NAMESPACE}Plugins::${NAMESPACE}Plugins
   ${NAMESPACE}Definitions::${NAMESPACE}Definitions
-  ORBCore
 )
-
 
 
 install(TARGETS ${MODULE_NAME}

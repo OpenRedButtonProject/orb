@@ -9,13 +9,13 @@
 
 #include "Module.h"
 #include <interfaces/json/JsonData_ORB.h>
-#include "ORBImplementation.h"
+#include <interfaces/IORB.h>
 #include <memory>
 
 namespace WPEFramework {
 namespace Plugin {
 
-using namespace orb;
+
 using namespace WPEFramework::JsonData::ORB;
 
 /**
@@ -69,7 +69,7 @@ public:
          std::string properties,
          bool broadcastRelated,
          std::string targetOrigin
-      )
+      ) override
       {
          fprintf(stderr, "JavaScriptEventDispatchRequest\n");
       }
@@ -78,12 +78,12 @@ public:
          int requestId,
          const uint8_t* fileContent, 
          const uint16_t fileContentLength
-      )
+      ) override
       {
          fprintf(stderr, "DvbUrlLoaded\n");
       }
 
-      void EventInputKeyGenerated(int keyCode)
+      void EventInputKeyGenerated(int keyCode) override
       {
          fprintf(stderr, "EventInputKeyGenerated\n");
       }

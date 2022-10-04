@@ -1,6 +1,7 @@
 #include "ORBImplementation.h"
 #include "ORBLogging.h"
 
+
 #define ORB_MAJOR_VERSION 1
 #define ORB_MINOR_VERSION 0
 
@@ -73,6 +74,19 @@ void ORBImplementation::LoadPlatform()
    ORB_LOG_NO_ARGS();
    _adminLock.Lock();
    ORBEngine::GetSharedInstance().Start(_orbEventListener);
+   _adminLock.Unlock();
+}
+
+/**
+ * @brief ORBImplementation::UnLoadPlatform
+ * 
+ * Used to unload the platform when exiting
+ */
+void ORBImplementation::UnLoadPlatform()
+{
+   ORB_LOG_NO_ARGS();
+   _adminLock.Lock();
+   ORBEngine::GetSharedInstance().Stop();
    _adminLock.Unlock();
 }
 

@@ -7,10 +7,7 @@
 
 #include "Module.h"
 #include "ORB.h"
-#include "ORBEngine.h"
 #include <vector>
-
-using namespace orb;
 
 namespace WPEFramework {
 namespace Plugin {
@@ -188,7 +185,7 @@ uint32_t ORB::LoadDvbUrl(const LoadDvbUrlParamsData& params)
    {
       SYSLOG(Logging::Notification, (_T("[ORB::LoadDvbUrl] url=%s requestId=%d"),
                                   params.Url.Value().c_str(), params.RequestId.Value()));
-      ORBEngine::GetSharedInstance().LoadDvbUrl(params.Url.Value(), params.RequestId.Value());
+      //ORBEngine::GetSharedInstance().LoadDvbUrl(params.Url.Value(), params.RequestId.Value());
    }
    else
    {
