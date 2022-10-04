@@ -56,7 +56,8 @@ const string ORB::Initialize(PluginHost::IShell *service)
    // Register Connection::Notification
    _service = service;
    _service->Register(&_notification);
-   
+   instance(this);
+
    fprintf(stderr, "READY TO CALL\n");
    _orb = service->Root<Exchange::IORB>(_connectionId, 2000, _T("ORBImplementation"));
 
@@ -194,5 +195,36 @@ void ORB::NotifyInputKeyGenerated(int keyCode)
 
    EventInputKeyGenerated(keyCode);
 }
+
+/**
+ * @brief ORB::Notification::JavaScriptEventDispatchRequest
+ * 
+ * This event comes from COMRPC side. In this handler we will dispatch
+ * a JSONRPC event for 'JavaScriptEventDispatchRequest'
+ * 
+ * @param name 
+ * @param properties 
+ * @param broadcastRelated 
+ * @param targetOrigin 
+ */
+void ORB::Notification::JavaScriptEventDispatchRequest(
+   std::string name, 
+   std::string properties, 
+   bool broadcastRelated, 
+   std::string targetOrigin
+   )
+{
+   fprintf(stderr, "[ORB::Notification::JavaScriptEventDispatchRequest] - COMRPC\n");
+   JsonObject propertiesAsObject;
+
+   propertiesAsObject.FromString(properties);
+   _parent.NotifyJavaScriptEventDispatchRequested(
+      name, 
+      propertiesAsObject, 
+      broadcastRelated, 
+      targetOrigin
+   );
+}
+
 } // namespace Plugin
 } // namespace WPEFramework

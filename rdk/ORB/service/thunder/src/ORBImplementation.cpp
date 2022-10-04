@@ -100,6 +100,7 @@ void ORBImplementation::UnLoadPlatform()
 std::string ORBImplementation::ExecuteBridgeRequest(std::string request)
 {
    ORB_LOG_NO_ARGS();
+  // ORB_LOG("THE REQUEST IS %s", request.c_str());
    return ORBEngine::GetSharedInstance().ExecuteBridgeRequest(request);
 }
 
@@ -179,6 +180,30 @@ bool ORBImplementation::SendKeyEvent(int keyCode)
 {
    ORB_LOG_NO_ARGS();
    return ORBEngine::GetSharedInstance().SendKeyEvent(keyCode);
+}
+
+void ORBImplementation::JavaScriptEventDispatchRequest(
+   std::string name,
+   std::string properties,
+   bool broadcastRelated,
+   std::string targetOrigin
+)
+{
+   ORB_LOG_NO_ARGS();
+   
+   // Send out a notification that we generated a greeting
+   // Loop through all the registered callbacks and fire off the notification
+   std::lock_guard<std::mutex> locker(_notificationMutex);
+   ORB_LOG("We have %d callbacks to trigger", _notificationClients.size());
+   for (const auto client : _notificationClients)
+   {
+      client->JavaScriptEventDispatchRequest(
+         name,
+         properties,
+         broadcastRelated,
+         targetOrigin
+      );
+   }
 }
 
 }  // Plugin

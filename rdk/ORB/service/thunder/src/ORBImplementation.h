@@ -56,11 +56,28 @@ namespace Plugin {
         bool SendKeyEvent(int keyCode) override;
         void LoadDvbUrl(std::string url, int requestId) override;
 
+        // methods to be called when events need to fire
+        void JavaScriptEventDispatchRequest(
+            std::string name,
+            std::string properties,
+            bool broadcastRelated,
+            std::string targetOrigin
+        ) override;
+
+        void DvbUrlLoaded(
+            int requestId,
+            const uint8_t* fileContent, 
+            const uint16_t fileContentLength
+        ) override;
+
+        void EventInputKeyGenerated(int keyCode) override;
+
     private:
         mutable Core::CriticalSection _adminLock;
         std::list<Exchange::IORB::INotification*> _notificationClients;
 
         std::shared_ptr<ORBEventListenerImpl> _orbEventListener;
+        std::mutex _notificationMutex;
     };
 
 

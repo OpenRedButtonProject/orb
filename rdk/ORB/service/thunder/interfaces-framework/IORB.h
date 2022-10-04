@@ -67,6 +67,22 @@ namespace Exchange {
         virtual bool SendKeyEvent(int keyCode) = 0;
         virtual void LoadDvbUrl(std::string url, int requestId) = 0;
 
+        // methods to trigger notifications
+        virtual void JavaScriptEventDispatchRequest(
+            std::string name,
+            std::string properties,
+            bool broadcastRelated,
+            std::string targetOrigin
+        ) = 0;
+
+        virtual void DvbUrlLoaded(
+            int requestId,
+            const uint8_t* fileContent /* @length:fileContentLength */, 
+            const uint16_t fileContentLength
+        ) = 0;
+
+        virtual void EventInputKeyGenerated(int keyCode) = 0;
+
     };
 
 } // Exchange

@@ -64,16 +64,15 @@ public:
          _parent.Deactivated(connection);
       }
 
+      // COMRPC event handlers
       void JavaScriptEventDispatchRequest(
          std::string name,
          std::string properties,
          bool broadcastRelated,
          std::string targetOrigin
-      ) override
-      {
-         fprintf(stderr, "JavaScriptEventDispatchRequest\n");
-      }
+      ) override;
 
+      // leave  these to dummy
       void DvbUrlLoaded(
          int requestId,
          const uint8_t* fileContent, 
@@ -139,6 +138,8 @@ public:
    void NotifyDvbUrlLoaded(int requestId, unsigned int fileContentLength);
    void NotifyInputKeyGenerated(int keyCode);
 
+   // used to give access on ORBEventListener
+   Exchange::IORB* GetORBImplementation();
 private:
 
    void Deactivated(RPC::IRemoteConnection *connection);
