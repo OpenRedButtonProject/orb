@@ -40,7 +40,6 @@ add_library(${MODULE_NAME} SHARED
   src/ORBJsonRpc.cpp
 )
 
-
 target_include_directories(${MODULE_NAME} PUBLIC
   src
   #../../library/src/core
@@ -60,11 +59,9 @@ target_link_libraries(${MODULE_NAME} PRIVATE
   ${NAMESPACE}Definitions::${NAMESPACE}Definitions
 )
 
-
 install(TARGETS ${MODULE_NAME}
   DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/wpeframework/plugins
 )
-
 
 ###############################################################################
 ## ORBImplementation library
