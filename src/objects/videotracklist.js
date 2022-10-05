@@ -64,44 +64,49 @@ hbbtv.objects.VideoTrackList = (function() {
       privates.get(this).eventTarget.removeEventListener(event, listener);
    }
 
-   function VideoTrack(props, eventTarget) {
+   function VideoTrack(allTracks, index, eventTarget) {
       Object.defineProperty(this, "selected", {
          get() {
-            return props.selected;
+            return allTracks[index].selected;
          },
          set(value) {
-            if (value !== props.selected) {
-               props.selected = value;
+            if (value !== allTracks[index].selected) {
+               if (value) {
+                  for (let track of allTracks) {
+                     track.selected = false;
+                  }
+               }
+               allTracks[index].selected = value;
                eventTarget.dispatchEvent(new Event("change"));
             }
          }
       });
       Object.defineProperty(this, "index", {
-         value: props.index,
+         value: allTracks[index].index,
          writable: false
       });
       Object.defineProperty(this, "id", {
-         value: props.id,
+         value: allTracks[index].id,
          writable: false
       });
       Object.defineProperty(this, "kind", {
-         value: props.kind,
+         value: allTracks[index].kind,
          writable: false
       });
       Object.defineProperty(this, "label", {
-         value: props.label,
+         value: allTracks[index].label,
          writable: false
       });
       Object.defineProperty(this, "language", {
-         value: props.language,
+         value: allTracks[index].language,
          writable: false
       });
       Object.defineProperty(this, "encoding", {
-         value: props.encoding,
+         value: allTracks[index].encoding,
          writable: false
       });
       Object.defineProperty(this, "encrypted", {
-         value: props.encrypted,
+         value: allTracks[index].encrypted,
          writable: false
       });
    }
@@ -112,7 +117,7 @@ hbbtv.objects.VideoTrackList = (function() {
       p.length = trackList.length;
       p.eventTarget = document.createDocumentFragment();
       for (let i = 0; i < trackList.length; ++i) {
-         this[i] = new VideoTrack(trackList[i], p.eventTarget);
+         this[i] = new VideoTrack(trackList, i, p.eventTarget);
       }
       Object.freeze(this);
    }
