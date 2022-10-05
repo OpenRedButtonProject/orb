@@ -95,7 +95,7 @@ target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE
 install(TARGETS
         ${PLUGIN_IMPLEMENTATION}
         DESTINATION
-        lib/${STORAGE_DIRECTORY}/plugins)
+        ${CMAKE_INSTALL_PREFIX}/lib/wpeframework/plugins)
 
 write_config(${PLUGIN_NAME})
 
