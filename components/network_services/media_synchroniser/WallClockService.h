@@ -37,7 +37,7 @@
 namespace NetworkServices {
 class WallClockService : public UdpSocketService {
 public:
-    WallClockService(int port, ::SysClock *sysClock, bool followUp = false);
+    WallClockService(int port, ::SysClock *sysClock, bool followUp = true);
     virtual ~WallClockService() = default;
     bool OnConnection();
     void OnMessageReceived(struct lws *wsi, const std::string &text);

@@ -97,7 +97,7 @@ WallClockService::WCMessage::WCMsgData WallClockService::WCMessage::pack()
 {
     WCMsgData msgData;
     msgData.version = 0;
-    msgData.msgtype = 2;
+    msgData.msgtype = msgtype;
     msgData.precision = precision;
     msgData._ = 0;
     msgData.maxFreqError = htonl(maxFreqError);
