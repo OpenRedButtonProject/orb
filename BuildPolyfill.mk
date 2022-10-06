@@ -13,6 +13,7 @@ src/objectmanager.js \
 src/mediamanager.js \
 src/natives/android.js \
 src/natives/rdk.js \
+src/polyfill/xhr.js \
 src/polyfill/close.js \
 src/polyfill/debug.js \
 src/polyfill/keyevent.js \

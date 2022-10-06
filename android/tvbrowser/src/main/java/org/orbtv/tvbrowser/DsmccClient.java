@@ -79,7 +79,7 @@ public class DsmccClient implements IDsmccClient {
         if (!valid) {
             Log.w(TAG, "Request failed " + requestId + " url: " + url);
             mRequestMap.remove(requestId);
-            stream.mValid = false;
+            stream.mStatusOK = false;
             stream.mReceived = true;
             stream.mStatus = 404;
         }
@@ -114,7 +114,7 @@ public class DsmccClient implements IDsmccClient {
         private static final String TAG = "DvbInput";
 
         private final Object mLock = new Object();
-        private volatile boolean mValid;
+        private volatile boolean mStatusOK;
         private volatile int mStatus;
         private boolean mReceived;
         private final int mRequestId;
@@ -125,7 +125,7 @@ public class DsmccClient implements IDsmccClient {
             mRequestId = requestId;
             mBuffer = null;
             mReceived = false;
-            mValid = true;
+            mStatusOK = true;
             mStatus = 202;
             mLength = 0;
         }
@@ -133,8 +133,8 @@ public class DsmccClient implements IDsmccClient {
         @Override
         public int available() throws IOException {
             int avail;
-            if (!mValid) {
-                throw new IOException("no dvb content");
+            if (!mStatusOK) {
+                return 0;
             }
             synchronized (mLock) {
                 if (!mReceived || mBuffer == null) {
@@ -148,8 +148,8 @@ public class DsmccClient implements IDsmccClient {
 
         @Override
         public int read() throws IOException {
-            if (!mValid) {
-                throw new IOException("no dvb content");
+            if (!mStatusOK) {
+                return -1;
             }
             waitForContent();
             if (mBuffer == null) {
@@ -163,8 +163,8 @@ public class DsmccClient implements IDsmccClient {
 
         @Override
         public int read(byte[] dst, int offset, int length) throws IOException {
-            if (!mValid) {
-                throw new IOException("no dvb content");
+            if (!mStatusOK) {
+                return -1;
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 Objects.checkFromIndexSize(offset, length, dst.length);
@@ -191,7 +191,6 @@ public class DsmccClient implements IDsmccClient {
             synchronized (mLock) {
                 Log.d(TAG, "close " + mRequestId);
                 mDsmccEngine.closeDvbContent(mRequestId);
-                mValid = false;
                 mBuffer = null;
             }
         }
@@ -205,7 +204,7 @@ public class DsmccClient implements IDsmccClient {
                     mStatus = 200;
                     mLength = buffer.limit();
                 } else {
-                    mValid = false;
+                    mStatusOK = false;
                     mStatus = 404;
                 }
                 mLock.notifyAll();
