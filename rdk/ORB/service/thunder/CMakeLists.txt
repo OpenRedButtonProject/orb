@@ -72,6 +72,7 @@ add_library(${PLUGIN_IMPLEMENTATION} SHARED
   src/ORBImplementation.cpp
   src/Module.cpp
   src/ORBEventListenerImpl.cpp
+  #src/ORBComRpcClient.cpp  # keep this if we need ORBEventListenerImpl to connect to comrpc
 )
 
 add_dependencies(${PLUGIN_IMPLEMENTATION} ORBEngine)
@@ -89,6 +90,7 @@ set_target_properties(${PLUGIN_IMPLEMENTATION} PROPERTIES
 
 target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE
   ${NAMESPACE}Plugins::${NAMESPACE}Plugins
+  #${NAMESPACE}Definitions::${NAMESPACE}Definitions # not really need to link with definitions
   ORBCore
 )
 

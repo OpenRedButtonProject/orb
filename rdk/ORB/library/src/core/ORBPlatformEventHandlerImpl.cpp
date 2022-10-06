@@ -89,7 +89,7 @@ void ORBPlatformEventHandlerImpl::OnChannelStatusChanged(int onetId, int transId
    {
       properties.emplace("permanentError", permanentError);
    }
-
+   ORB_LOG("I AM HERE");
    ORBEngine::GetSharedInstance().GetEventListener()->OnJavaScriptEventDispatchRequested(
       "ChannelStatusChanged", properties.dump(), "", true);
 }

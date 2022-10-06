@@ -214,7 +214,7 @@ void ORB::Notification::JavaScriptEventDispatchRequest(
    std::string targetOrigin
    )
 {
-   fprintf(stderr, "[ORB::Notification::JavaScriptEventDispatchRequest] - COMRPC\n");
+   fprintf(stderr, "[ORB::Notification::JavaScriptEventDispatchRequest] - COMRPC %d\n", getpid());
    JsonObject propertiesAsObject;
 
    propertiesAsObject.FromString(properties);

@@ -8,6 +8,7 @@
 #pragma once
 
 #include "ORBEventListener.h"
+#include "ORBComRpcClient.h"
 
 namespace orb
 {

@@ -34,6 +34,22 @@ namespace Plugin {
         ORBImplementation();
         ~ORBImplementation() override;
         
+        /**
+        * Singleton.
+        * It is used to receive an instance of the ORBImplementation, to 
+        * have access on dispatch event methods
+        */
+        static ORBImplementation* instance(ORBImplementation *orb = nullptr)
+        {
+            static ORBImplementation *implementation_instance;
+            if (orb != nullptr)
+            {
+                fprintf(stderr,"[ORB] Setting the singleton\n");
+                implementation_instance = orb;
+            }
+            return implementation_instance;
+        }
+
         // We do not allow this plugin to be copied !!
         ORBImplementation(const ORBImplementation&) = delete;
         ORBImplementation& operator=(const ORBImplementation&) = delete;

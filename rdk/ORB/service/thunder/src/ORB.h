@@ -110,9 +110,10 @@ public:
     */
    static ORB* instance(ORB *orb = nullptr)
    {
-      static ORB *orb_instance = nullptr;
+      static ORB *orb_instance;
       if (orb != nullptr)
       {
+         fprintf(stderr,"[ORB] Setting the singleton\n");
          orb_instance = orb;
       }
       return orb_instance;
@@ -139,7 +140,10 @@ public:
    void NotifyInputKeyGenerated(int keyCode);
 
    // used to give access on ORBEventListener
-   Exchange::IORB* GetORBImplementation();
+   Exchange::IORB* GetORBImplementation()
+   {
+      return _orb;
+   }
 private:
 
    void Deactivated(RPC::IRemoteConnection *connection);

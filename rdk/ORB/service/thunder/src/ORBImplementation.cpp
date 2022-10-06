@@ -12,11 +12,26 @@ namespace Plugin {
 SERVICE_REGISTRATION(ORBImplementation, ORB_MAJOR_VERSION, ORB_MINOR_VERSION);
 
 
-ORBImplementation::ORBImplementation() : _adminLock(), _notificationClients({})
+/**
+ * @brief ORBImplementation::ORBImplementation()
+ * 
+ * Constructor of ORBImplentation. Initialise the _orbEventListener
+ * in here, and create a signleton reference to use later
+ */
+ORBImplementation::ORBImplementation() : 
+   _adminLock(), 
+   _notificationClients({})
 {
    fprintf(stderr, "Orb implementation constructor\n");
    _orbEventListener = std::make_shared<ORBEventListenerImpl>();
+   instance(this);
 }
+
+/**
+ * @brief ORBImplementation::~ORBImplementation()
+ * 
+ * Destructor
+ */
 
 ORBImplementation::~ORBImplementation()
 {
@@ -24,7 +39,14 @@ ORBImplementation::~ORBImplementation()
 }
 
 
-// register the notification callbacks
+/**
+ * @brief ORBImplementation::Register
+ * 
+ * Register the callbacks for notifications. Whoever wants to receive notifications
+ * needs to call this with the Exchange::IORB::INotification ref
+ * 
+ * @param sink 
+ */
 void ORBImplementation::Register(Exchange::IORB::INotification* sink)
 {
    _adminLock.Lock();
@@ -49,6 +71,13 @@ void ORBImplementation::Register(Exchange::IORB::INotification* sink)
    ORB_LOG("Registered a sink on the ORB %p", sink);
 }
 
+/**
+ * @brief ORBImplementation::Unregister
+ * 
+ * Unregister callbacks
+ * 
+ * @param sink 
+ */
 void ORBImplementation::Unregister(Exchange::IORB::INotification* sink)
 {
    _adminLock.Lock();
@@ -91,7 +120,7 @@ void ORBImplementation::UnLoadPlatform()
 }
 
 /**
- * @brief ORB::ExecuteWpeBridgeRequest
+ * @brief ORBImplementation::ExecuteBridgeRequest
  * Execute the given WPE bridge request. Platform call
  * 
  * @param request The request as a string
@@ -151,7 +180,7 @@ void ORBImplementation::NotifyApplicationPageChanged(std::string url)
 }
 
 /**
- * @brief ORB::LoadDvbUrl
+ * @brief ORBImplementation::LoadDvbUrl
  *
  * Load the specified DVB URL through the DSM-CC implementation. Platform call.
  *
@@ -182,6 +211,16 @@ bool ORBImplementation::SendKeyEvent(int keyCode)
    return ORBEngine::GetSharedInstance().SendKeyEvent(keyCode);
 }
 
+/**
+ * @brief ORBImplementation::JavaScriptEventDispatchRequest
+ * 
+ * This method is used to notify each client for the 'JavaScriptEventDispatchRequest' event
+ * 
+ * @param name 
+ * @param properties 
+ * @param broadcastRelated 
+ * @param targetOrigin 
+ */
 void ORBImplementation::JavaScriptEventDispatchRequest(
    std::string name,
    std::string properties,
@@ -191,7 +230,6 @@ void ORBImplementation::JavaScriptEventDispatchRequest(
 {
    ORB_LOG_NO_ARGS();
    
-   // Send out a notification that we generated a greeting
    // Loop through all the registered callbacks and fire off the notification
    std::lock_guard<std::mutex> locker(_notificationMutex);
    ORB_LOG("We have %d callbacks to trigger", _notificationClients.size());

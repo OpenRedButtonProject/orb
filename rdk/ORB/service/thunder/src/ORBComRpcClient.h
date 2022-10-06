@@ -84,14 +84,22 @@ class ORBComRpcClient
 
    public:
 
-      // actual calls
+      // client wrappers for methods
       std::string ExecuteBridgeRequest(std::string request);
       std::string CreateToken(std::string uri);
       void NotifyApplicationLoadFailed(std::string url, std::string errorDescription);
       void NotifyApplicationPageChanged(std::string url);
       bool SendKeyEvent(int keyCode);
       void LoadDvbUrl(std::string url, int requestId);
-   
+      
+      // wrapper for event dispatch
+      void JavaScriptEventDispatchRequest(
+         std::string eventName,
+         std::string eventProperties,
+         bool broadcastRelated,
+         std::string targetOrigin
+      );
+      
       bool IsValid();
 
    private:

@@ -7,6 +7,7 @@
 
 #include "ORBEventListenerImpl.h"
 #include "ORB.h"
+#include "ORBImplementation.h"
 
 using namespace WPEFramework::Plugin;
 
@@ -35,12 +36,13 @@ void ORBEventListenerImpl::OnJavaScriptEventDispatchRequested(
    bool broadcastRelated
    )
 {
-   ORB::instance(nullptr)->GetORBImplementation()->JavaScriptEventDispatchRequest(
+   fprintf(stderr, "[ORBEventListenerImpl::OnJavaScriptEventDispatchRequested] GETTING READY FOR COMRPC CALL %d\n", getpid());
+   ORBImplementation::instance(nullptr)->JavaScriptEventDispatchRequest(
       eventName,
       eventProperties,
       broadcastRelated,
       targetOrigin
-   );   
+   );
 }
 
 /**
