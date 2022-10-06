@@ -50,6 +50,31 @@ window.onload = () => {
          req.send();
       }
    });
+
+   orbtest.add({
+      name: "Check headers are not returned for dvb: protocol",
+      description: "Expect an empty string from getAllResponseHeaders and null from getResponseHeader",
+      test: (result) => {
+         const req = new XMLHttpRequest();
+         req.onerror = function() {
+            result.fail(`Got XHR error, status=${req.status}`);
+         };
+         req.onload = function() {
+         console.log(this.getAllResponseHeaders());
+            if (this.getAllResponseHeaders() === "") {
+               if (this.getResponseHeader("Content-Type") === null) {
+                  result.pass("Got expected values");
+               } else {
+                  result.fail("Did not get null from getResponseHeader");
+               }
+            } else {
+               result.fail("Did not get empty string from getAllResponseHeaders");
+            }
+         };
+         req.open("GET", "dvb://3.2.1.1/test.txt");
+         req.send();
+      }
+   });
   
    // Run!
    orbtest.run("dsmcc");
