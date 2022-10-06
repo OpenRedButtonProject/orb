@@ -70,7 +70,13 @@ if(NOT DEFINED WEBKIT_GLIB_API)
         ${SOURCE_LIST}
         ORBInjectedBundle/Tags.cpp
         ORBInjectedBundle/Utils.cpp
-)
+    )
+else()
+    set(SOURCE_LIST
+        ${SOURCE_LIST}
+        ORBWPEWebExtension/src/ORBWPEWebExtensionHelper.cpp
+        ORBWPEWebExtension/src/ORBDVBURILoader.cpp
+    )
 endif()
 
 add_library(${MODULE_NAME} SHARED
@@ -103,6 +109,21 @@ target_include_directories(${MODULE_NAME}
         ${LIBSOUP_INCLUDE_DIRS}
 )
 
+if (WEBKIT_GLIB_API)
+    target_include_directories(${MODULE_NAME} 
+        PRIVATE 
+            ./ORBWPEWebExtension/src
+            ./../ORB/library/src/core
+            ./../ORB/library/src/core/api
+            ./../ORB/library/src/core/utilities
+    )
+
+    target_link_libraries(${MODULE_NAME}
+        PRIVATE
+            ORBClient
+    )
+endif()
+
 if(WPE_WEBKIT_DEPRECATED_API)
     target_compile_definitions(${MODULE_NAME} PRIVATE WPE_WEBKIT_DEPRECATED_API=${WPE_WEBKIT_DEPRECATED_API})
 endif()
@@ -116,8 +137,12 @@ install(
     DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/${STORAGE_DIRECTORY}/plugins
     COMPONENT ${MODULE_NAME})
 
-# also build injected bundle
-add_subdirectory(ORBInjectedBundle)
+# also build injected bundle OR web extension, depending on the wpe version
+if(WEBKIT_GLIB_API)
+    add_subdirectory(ORBWPEWebExtension)
+else()
+    add_subdirectory(ORBInjectedBundle)
+endif()
 
 # resolution handling
 if(PLUGIN_ORBBROWSER_RESOLUTION EQUAL "720p")

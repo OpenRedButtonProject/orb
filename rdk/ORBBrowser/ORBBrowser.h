@@ -140,9 +140,11 @@ public:
 public:
    ORBBrowser()
       : _skipURL(0)
+      , _connectionId(0)
       , _service(nullptr)
       , _browser(nullptr)
       , _memory(nullptr)
+      , _application(nullptr)
       , _notification(this)
       , _jsonBodyDataFactory(2)
    {
@@ -172,6 +174,7 @@ public:
    INTERFACE_ENTRY(PluginHost::IDispatcher)
    INTERFACE_AGGREGATE(PluginHost::IStateControl, _browser)
    INTERFACE_AGGREGATE(Exchange::IBrowser, _browser)
+   INTERFACE_AGGREGATE(Exchange::IApplication, _application)
    INTERFACE_AGGREGATE(Exchange::IWebBrowser, _browser)
    INTERFACE_AGGREGATE(Exchange::IMemory, _memory)
    END_INTERFACE_MAP

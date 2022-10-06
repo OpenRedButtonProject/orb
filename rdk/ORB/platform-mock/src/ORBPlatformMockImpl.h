@@ -37,9 +37,9 @@ public:
    virtual std::shared_ptr<Channel> Broadcast_GetCurrentChannel() override;
    virtual std::vector<Channel> Broadcast_GetChannelList() override;
    virtual bool Broadcast_SetChannelToCcid(std::string ccid, bool trickplay, std::string contentAccessDescriptorURL, int quiet, Channel::ErrorState *errorState) override;
-   virtual bool Broadcast_SetChannelToNull(bool trickplay, std::string contentAccessDescriptorURL, bool quiet, Channel::ErrorState *errorState) override;
-   virtual bool Broadcast_SetChannelToTriplet(int idType, int onid, int tsid, int sid, int sourceID, std::string ipBroadcastID, bool trickplay, std::string contentAccessDescriptorURL, bool quiet, Channel::ErrorState *errorState) override;
-   virtual bool Broadcast_SetChannelToDsd(std::string dsd, int sid, bool trickplay, std::string contentAccessDescriptorURL, bool quiet, Channel::ErrorState *errorState) override;
+   virtual bool Broadcast_SetChannelToNull(bool trickplay, std::string contentAccessDescriptorURL, int quiet, Channel::ErrorState *errorState) override;
+   virtual bool Broadcast_SetChannelToTriplet(int idType, int onid, int tsid, int sid, int sourceID, std::string ipBroadcastID, bool trickplay, std::string contentAccessDescriptorURL, int quiet, Channel::ErrorState *errorState) override;
+   virtual bool Broadcast_SetChannelToDsd(std::string dsd, int sid, bool trickplay, std::string contentAccessDescriptorURL, int quiet, Channel::ErrorState *errorState) override;
    virtual std::vector<Programme> Broadcast_GetProgrammes(std::string ccid) override;
    virtual std::vector<Component> Broadcast_GetComponents(std::string ccid, int componentType) override;
    virtual void Broadcast_OverrideDefaultComponentSelection(int componentType, int pidOrSuspended, int ctag, std::string language) override;

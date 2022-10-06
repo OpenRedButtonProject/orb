@@ -241,9 +241,9 @@ JNIEXPORT jint JNICALL Java_org_orbtv_tvbrowser_ApplicationManager_jniGetKeySetM
 }
 
 extern "C"
-JNIEXPORT jboolean JNICALL
-Java_org_orbtv_tvbrowser_ApplicationManager_jniInKeySet(JNIEnv *env, jobject object,
-      jint calling_app_id, jint key_set) {
+JNIEXPORT jboolean JNICALL Java_org_orbtv_tvbrowser_ApplicationManager_jniInKeySet(JNIEnv *env, jobject object,
+   jint calling_app_id, jint key_set)
+{
    return GetManager(env, object)->InKeySet(calling_app_id, key_set);
 }
 

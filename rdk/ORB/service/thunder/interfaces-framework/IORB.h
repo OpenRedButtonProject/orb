@@ -63,7 +63,7 @@ struct EXTERNAL IORB : virtual public Core::IUnknown
    virtual void Unregister(INotification *sink) = 0;
 
    // methods
-   virtual void LoadPlatform() = 0;
+   virtual bool LoadPlatform() = 0;
    virtual void UnLoadPlatform() = 0;
    virtual std::string ExecuteBridgeRequest(std::string request) = 0;
    virtual std::string CreateToken(std::string uri) = 0;

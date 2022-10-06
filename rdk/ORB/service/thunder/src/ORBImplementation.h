@@ -52,7 +52,7 @@ public:
    // interface methods
    void Register(INotification *sink) override;
    void Unregister(INotification *sink) override;
-   void LoadPlatform() override;
+   bool LoadPlatform() override;
    void UnLoadPlatform() override;
 
    std::string ExecuteBridgeRequest(std::string request) override;
