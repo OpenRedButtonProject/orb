@@ -31,6 +31,25 @@ window.onload = () => {
          req.send();
       }
    });
+
+   orbtest.add({
+      name: "Get missing dvb:// file with XHR",
+      description: "Expect status 404 not found",
+      test: (result) => {
+         const req = new XMLHttpRequest();
+         req.onreadystatechange = function() {
+            if (req.readyState == 4) { // Wait for DONE
+               if (req.status === 404) {
+                  result.pass("Got status: 404");
+               } else {
+                  result.fail("Got status: " + req.status);
+               }
+            }
+         };
+         req.open("GET", "dvb://3.2.1.1/missing.txt");
+         req.send();
+      }
+   });
   
    // Run!
    orbtest.run("dsmcc");
