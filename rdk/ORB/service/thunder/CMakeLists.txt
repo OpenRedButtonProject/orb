@@ -106,7 +106,6 @@ write_config(${PLUGIN_NAME})
 ###############################################################################
 
 add_library(ORBClient SHARED 
-  src/ORBJsonRpcClient.cpp
   src/ORBComRpcClient.cpp
   ../../library/src/core/ORBGenericClient.h
   ../../library/src/core/api/ORBBrowserApi.h

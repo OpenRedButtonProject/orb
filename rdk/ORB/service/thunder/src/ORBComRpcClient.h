@@ -50,12 +50,20 @@ using namespace WPEFramework;
 
 namespace orb
 {
-class ORBComRpcClient
+class ORBComRpcClient :public ORBGenericClient
 {
    // We want do run our own custom code when the plugin raises a notification
    // Implement the INotification class to do what we want
    class NotificationHandler : public Exchange::IORB::INotification
    {
+
+      public:
+      explicit NotificationHandler(ORBComRpcClient *parent) : _parent(*parent)
+      {
+         ASSERT(parent != nullptr);
+         fprintf(stderr, "NOTIFICATIONHANDLE WITH NON NULL PARENT \n");
+      }
+
       virtual void JavaScriptEventDispatchRequest(
          std::string name,
          std::string properties,
@@ -76,29 +84,28 @@ class ORBComRpcClient
       BEGIN_INTERFACE_MAP(NotificationHandler)
       INTERFACE_ENTRY(Exchange::IORB::INotification)
       END_INTERFACE_MAP
+
+      private:
+         ORBComRpcClient &_parent;
    };
 
    public:
-      ORBComRpcClient();
-      ~ORBComRpcClient();
+      // provide callbacks
+      ORBComRpcClient(
+         OnJavaScriptEventDispatchRequested_cb onJavaScriptEventDispatchRequested_cb,
+         OnDvbUrlLoaded_cb onDvbUrlLoaded_cb,
+         OnInputKeyGenerated_cb onInputKeyGenerated_cb
+      );
+      virtual ~ORBComRpcClient();
 
    public:
 
-      // client wrappers for methods
-      std::string ExecuteBridgeRequest(std::string request);
-      std::string CreateToken(std::string uri);
-      void NotifyApplicationLoadFailed(std::string url, std::string errorDescription);
-      void NotifyApplicationPageChanged(std::string url);
-      bool SendKeyEvent(int keyCode);
-      void LoadDvbUrl(std::string url, int requestId);
-      
-      // wrapper for event dispatch
-      void JavaScriptEventDispatchRequest(
-         std::string eventName,
-         std::string eventProperties,
-         bool broadcastRelated,
-         std::string targetOrigin
-      );
+      // ORBBrowser API
+      std::string ExecuteBridgeRequest(std::string jsonRequest) override;
+      std::string CreateToken(std::string uri) override;
+      void LoadDvbUrl(std::string url, int requestId) override;
+      void NotifyApplicationLoadFailed(std::string url, std::string errorDescription) override;
+      void NotifyApplicationPageChanged(std::string url) override;
       
       bool IsValid();
 

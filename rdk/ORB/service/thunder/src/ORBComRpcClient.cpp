@@ -1,5 +1,5 @@
 #include "ORBComRpcClient.h"
-
+MODULE_NAME_DECLARATION(BUILD_REFERENCE)
 namespace orb
 {
 
@@ -25,9 +25,9 @@ void ORBComRpcClient::NotificationHandler::JavaScriptEventDispatchRequest(
 )
 {
    ORB_LOG("%s, %s, %d, %s", name.c_str(), properties.c_str(), broadcastRelated, targetOrigin.c_str());
-   // std::string eventName = params["eventName"].String();
-   // std::string eventProperties = params["eventProperties"].String();
-   // m_onJavaScriptEventDispatchRequested(eventName, eventProperties);
+   std::string eventName = name;
+   std::string eventProperties = properties;
+   _parent.m_onJavaScriptEventDispatchRequested(eventName, eventProperties);
 }
 
 /**
@@ -69,11 +69,16 @@ void ORBComRpcClient::NotificationHandler::EventInputKeyGenerated(int keyCode)
  * 
  * Initialize ORBComRpcClient
  */
-ORBComRpcClient::ORBComRpcClient()
-   :  m_remoteConnection(GetConnectionEndpoint()),
+ORBComRpcClient::ORBComRpcClient(
+   OnJavaScriptEventDispatchRequested_cb onJavaScriptEventDispatchRequested_cb,
+   OnDvbUrlLoaded_cb onDvbUrlLoaded_cb,
+   OnInputKeyGenerated_cb onInputKeyGenerated_cb
+   )
+   :  ORBGenericClient(onJavaScriptEventDispatchRequested_cb, onDvbUrlLoaded_cb, onInputKeyGenerated_cb),
+      m_remoteConnection(GetConnectionEndpoint()),
       m_engine(Core::ProxyType<RPC::InvokeServerType<1, 0, 4>>::Create()),
       m_client(Core::ProxyType<RPC::CommunicatorClient>::Create(m_remoteConnection, Core::ProxyType<Core::IIPCServer>(m_engine))),
-      m_notification(),
+      m_notification(this),
       m_valid(false)
 {
    // Announce our arrival over COM-RPC
@@ -185,7 +190,7 @@ Core::NodeId ORBComRpcClient::GetConnectionEndpoint()
 }
 
 /******************************************************************************
-** Event handlers
+** Browser API Methods
 *****************************************************************************/
 
 /**
@@ -201,7 +206,7 @@ std::string ORBComRpcClient::ExecuteBridgeRequest(std::string request)
    std::string result = "";
    if (_orb)
    {
-      ORB_LOG("Calling ExecuteBridgeRequest");
+      ORB_LOG("Calling ExecuteBridgeRequest: %s", request.c_str());
       result = _orb->ExecuteBridgeRequest(request);
    }
    return result;
@@ -220,39 +225,76 @@ std::string ORBComRpcClient::CreateToken(std::string uri)
    std::string result = "";
    if (_orb)
    {
-      ORB_LOG("Calling CreateToken");
+      ORB_LOG("Calling CreateToken: %s", uri.c_str());
       result = _orb->CreateToken(uri);
    }
    return result;
 }
 
 /**
- * @brief ORBComRpcClient::JavaScriptEventDispatchRequest
+ * @brief 
  * 
- * Calls the ORBImplementation::JavaScriptEventDispatchRequest COMRPC endpoint
- * 
- * @param eventName 
- * @param eventProperties 
- * @param broadcastRelated 
- * @param targetOrigin 
+ * @param url 
+ * @param requestId 
  */
-void ORBComRpcClient::JavaScriptEventDispatchRequest(
-      std::string eventName,
-      std::string eventProperties,
-      bool broadcastRelated,
-      std::string targetOrigin
-   )
+void ORBComRpcClient::LoadDvbUrl(std::string url, int requestId)
 {
    if (_orb)
    {
-      ORB_LOG("Calling JavaScriptEventDispatchRequest");
-      _orb->JavaScriptEventDispatchRequest(
-         eventName,
-         eventProperties,
-         broadcastRelated,
-         targetOrigin
-      );
+      ORB_LOG("Calling LoadDvbUrl: %s, %d", url.c_str(), requestId);
+      _orb->LoadDvbUrl(url, requestId);
    }
+}
+
+/**
+ * @brief 
+ * 
+ * @param url 
+ * @param errorDescription 
+ */
+void ORBComRpcClient::NotifyApplicationLoadFailed(std::string url, std::string errorDescription)
+{
+   if (_orb)
+   {
+      ORB_LOG("Calling NotifyApplicationLoadFailed: %s, %s", url.c_str(), errorDescription.c_str());
+      _orb->NotifyApplicationLoadFailed(url, errorDescription);
+   }
+}
+
+/**
+ * @brief 
+ * 
+ * @param url 
+ */
+void ORBComRpcClient::NotifyApplicationPageChanged(std::string url)
+{
+   if (_orb)
+   {
+      ORB_LOG("Calling NotifyApplicationPageChanged: %s", url.c_str());
+      _orb->NotifyApplicationPageChanged(url);
+   }
+}
+
+/**
+ * Create a new ORB client instance.
+ *
+ * @param onJavaScriptEventDispatchRequested_cb The OnJavaScriptEventDispatchRequested callback
+ * @param onDvbUrlLoaded_cb                     The OnDvbUrlLoaded callback
+ * @param onInputKeyGenerated_cb                The OnInputKeyGenerated callback
+ *
+ * @return Pointer to the new ORB client instance
+ */
+std::shared_ptr<ORBGenericClient> CreateORBClient(
+   OnJavaScriptEventDispatchRequested_cb onJavaScriptEventDispatchRequested_cb,
+   OnDvbUrlLoaded_cb onDvbUrlLoaded_cb,
+   OnInputKeyGenerated_cb onInputKeyGenerated_cb
+   )
+{
+   return std::make_shared<ORBComRpcClient>(
+      onJavaScriptEventDispatchRequested_cb,
+      onDvbUrlLoaded_cb,
+      onInputKeyGenerated_cb
+      );
 }
 
 }   // namespace orb

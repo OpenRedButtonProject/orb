@@ -47,13 +47,16 @@ public:
    virtual void NotifyApplicationLoadFailed(std::string url, std::string errorDescription) override;
    virtual void NotifyApplicationPageChanged(std::string url) override;
 
-   virtual void SubscribeToJavaScriptEventDispatchRequestedEvent() override;
-   virtual void SubscribeToDvbUrlLoadedEvent() override;
-   virtual void SubscribeToInputKeyGeneratedEvent() override;
 
-   virtual void UnsubscribeFromJavaScriptEventDispatchRequestedEvent() override;
-   virtual void UnsubscribeFromDvbUrlLoadedEvent() override;
-   virtual void UnsubscribeFromInputKeyGeneratedEvent() override;
+public:
+   // jsonrpc client will need to subscribe with events
+   void SubscribeToJavaScriptEventDispatchRequestedEvent();
+   void SubscribeToDvbUrlLoadedEvent();
+   void SubscribeToInputKeyGeneratedEvent();
+
+   void UnsubscribeFromJavaScriptEventDispatchRequestedEvent();
+   void UnsubscribeFromDvbUrlLoadedEvent();
+   void UnsubscribeFromInputKeyGeneratedEvent();
 
 private:
 
