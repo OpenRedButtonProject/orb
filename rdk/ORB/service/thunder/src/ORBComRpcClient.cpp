@@ -258,7 +258,9 @@ std::string ORBComRpcClient::CreateToken(std::string uri)
 }
 
 /**
- * @brief 
+ * @brief ORBComRpcClient::LoadDvbUrl
+ * 
+ * Calls the ORBImplementation::LoadDvbUrl COMRPC endpoint
  * 
  * @param url 
  * @param requestId 
@@ -273,7 +275,9 @@ void ORBComRpcClient::LoadDvbUrl(std::string url, int requestId)
 }
 
 /**
- * @brief 
+ * @brief ORBComRpcClient::NotifyApplicationLoadFailed
+ * 
+ * Calls the ORBImplementation::NotifyApplicationLoadFailed COMRPC endpoint
  * 
  * @param url 
  * @param errorDescription 
@@ -288,7 +292,9 @@ void ORBComRpcClient::NotifyApplicationLoadFailed(std::string url, std::string e
 }
 
 /**
- * @brief 
+ * @brief ORBComRpcClient::NotifyApplicationPageChanged
+ * 
+ * Calls the ORBImplementation::NotifyApplicationPageChanged COMRPC endpoint
  * 
  * @param url 
  */
@@ -310,6 +316,7 @@ void ORBComRpcClient::NotifyApplicationPageChanged(std::string url)
  */
 void ORBComRpcClient::SubscribeToJavaScriptEventDispatchRequestedEvent() 
 {
+   ORB_LOG_NO_ARGS();
    m_subscribedEvents[EVENT_JAVASCRIPT_EVENT_DISPATCH_REQUESTED] = true;  
 }
 
@@ -318,6 +325,7 @@ void ORBComRpcClient::SubscribeToJavaScriptEventDispatchRequestedEvent()
  */
 void ORBComRpcClient::SubscribeToDvbUrlLoadedEvent() 
 {
+   ORB_LOG_NO_ARGS();
    m_subscribedEvents[EVENT_DVB_URL_LOADED] = true;  
 }
 
@@ -326,6 +334,7 @@ void ORBComRpcClient::SubscribeToDvbUrlLoadedEvent()
  */
 void ORBComRpcClient::SubscribeToInputKeyGeneratedEvent() 
 {
+   ORB_LOG_NO_ARGS();
    m_subscribedEvents[EVENT_INPUT_KEY_GENERATED] = true;
 }
 
@@ -334,6 +343,7 @@ void ORBComRpcClient::SubscribeToInputKeyGeneratedEvent()
  */
 void ORBComRpcClient::UnsubscribeFromJavaScriptEventDispatchRequestedEvent()
 {
+   ORB_LOG_NO_ARGS();
    m_subscribedEvents[EVENT_JAVASCRIPT_EVENT_DISPATCH_REQUESTED] = false;
 }
 
@@ -342,6 +352,7 @@ void ORBComRpcClient::UnsubscribeFromJavaScriptEventDispatchRequestedEvent()
  */
 void ORBComRpcClient::UnsubscribeFromDvbUrlLoadedEvent()
 {
+   ORB_LOG_NO_ARGS();
    m_subscribedEvents[EVENT_DVB_URL_LOADED] = false;  
 }
 
@@ -350,6 +361,7 @@ void ORBComRpcClient::UnsubscribeFromDvbUrlLoadedEvent()
  */
 void ORBComRpcClient::UnsubscribeFromInputKeyGeneratedEvent()
 {
+   ORB_LOG_NO_ARGS();
    m_subscribedEvents[EVENT_INPUT_KEY_GENERATED] = false;
 }
 

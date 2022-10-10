@@ -139,11 +139,6 @@ public:
    void NotifyDvbUrlLoaded(int requestId, unsigned int fileContentLength);
    void NotifyInputKeyGenerated(int keyCode);
 
-   // used to give access on ORBEventListener
-   Exchange::IORB* GetORBImplementation()
-   {
-      return _orb;
-   }
 private:
 
    void Deactivated(RPC::IRemoteConnection *connection);
