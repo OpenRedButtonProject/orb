@@ -48,6 +48,16 @@ public:
    virtual void NotifyApplicationLoadFailed(std::string url, std::string errorDescription) = 0;
    virtual void NotifyApplicationPageChanged(std::string url) = 0;
 
+public:
+   // Events subscription
+   virtual void SubscribeToJavaScriptEventDispatchRequestedEvent() = 0;
+   virtual void SubscribeToDvbUrlLoadedEvent() = 0;
+   virtual void SubscribeToInputKeyGeneratedEvent() = 0;
+
+   virtual void UnsubscribeFromJavaScriptEventDispatchRequestedEvent() = 0;
+   virtual void UnsubscribeFromDvbUrlLoadedEvent() = 0;
+   virtual void UnsubscribeFromInputKeyGeneratedEvent() = 0;
+
 protected:
    // callbacks
    OnJavaScriptEventDispatchRequested_cb m_onJavaScriptEventDispatchRequested;

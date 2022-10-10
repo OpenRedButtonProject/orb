@@ -1,5 +1,10 @@
 #include "ORBComRpcClient.h"
 MODULE_NAME_DECLARATION(BUILD_REFERENCE)
+
+#define EVENT_JAVASCRIPT_EVENT_DISPATCH_REQUESTED "javaScriptEventDispatchRequested"
+#define EVENT_DVB_URL_LOADED "dvbUrlLoaded"
+#define EVENT_INPUT_KEY_GENERATED "inputKeyGenerated"
+
 namespace orb
 {
 
@@ -25,9 +30,12 @@ void ORBComRpcClient::NotificationHandler::JavaScriptEventDispatchRequest(
 )
 {
    ORB_LOG("%s, %s, %d, %s", name.c_str(), properties.c_str(), broadcastRelated, targetOrigin.c_str());
-   std::string eventName = name;
-   std::string eventProperties = properties;
-   _parent.m_onJavaScriptEventDispatchRequested(eventName, eventProperties);
+   if (_parent.m_subscribedEvents[EVENT_JAVASCRIPT_EVENT_DISPATCH_REQUESTED] == true)
+   {
+      std::string eventName = name;
+      std::string eventProperties = properties;
+      _parent.m_onJavaScriptEventDispatchRequested(eventName, eventProperties);
+   }
 }
 
 /**
@@ -46,6 +54,12 @@ void ORBComRpcClient::NotificationHandler::DvbUrlLoaded(
 )
 {
    ORB_LOG_NO_ARGS();
+
+   if (_parent.m_subscribedEvents[EVENT_DVB_URL_LOADED] == true)
+   {  
+      ORB_LOG("Dispatching DvbUrlLoaded");
+      _parent.m_onDvbUrlLoaded(requestId, fileContentLength);
+   }
 }
 
 /**
@@ -58,6 +72,12 @@ void ORBComRpcClient::NotificationHandler::DvbUrlLoaded(
 void ORBComRpcClient::NotificationHandler::EventInputKeyGenerated(int keyCode)
 {
    ORB_LOG("%d", keyCode);
+
+   if (_parent.m_subscribedEvents[EVENT_INPUT_KEY_GENERATED] == true)
+   {
+      ORB_LOG("Dispatching EventInputKeyGenerated");
+      _parent.m_onInputKeyGenerated(keyCode);
+   }
 }
 
 /******************************************************************************
@@ -79,7 +99,8 @@ ORBComRpcClient::ORBComRpcClient(
       m_engine(Core::ProxyType<RPC::InvokeServerType<1, 0, 4>>::Create()),
       m_client(Core::ProxyType<RPC::CommunicatorClient>::Create(m_remoteConnection, Core::ProxyType<Core::IIPCServer>(m_engine))),
       m_notification(this),
-      m_valid(false)
+      m_valid(false),
+      m_subscribedEvents({})
 {
    // Announce our arrival over COM-RPC
    m_engine->Announcements(m_client->Announcement());
@@ -119,6 +140,11 @@ ORBComRpcClient::ORBComRpcClient(
    _orb->Register(&m_notification);
 
    m_valid = true;
+
+   // event subscription init
+   m_subscribedEvents[EVENT_JAVASCRIPT_EVENT_DISPATCH_REQUESTED] = false;
+   m_subscribedEvents[EVENT_DVB_URL_LOADED] = false;
+   m_subscribedEvents[EVENT_INPUT_KEY_GENERATED] = false;
 }
 
 /**
@@ -273,6 +299,58 @@ void ORBComRpcClient::NotifyApplicationPageChanged(std::string url)
       ORB_LOG("Calling NotifyApplicationPageChanged: %s", url.c_str());
       _orb->NotifyApplicationPageChanged(url);
    }
+}
+
+/******************************************************************************
+** Events subscribe and unsubscribe
+*****************************************************************************/
+
+/**
+ * Subscribe to 'JavaScriptEventDispatchRequestedEvent'
+ */
+void ORBComRpcClient::SubscribeToJavaScriptEventDispatchRequestedEvent() 
+{
+   m_subscribedEvents[EVENT_JAVASCRIPT_EVENT_DISPATCH_REQUESTED] = true;  
+}
+
+/**
+ * Subscribe to 'DvbUrlLoadedEvent'
+ */
+void ORBComRpcClient::SubscribeToDvbUrlLoadedEvent() 
+{
+   m_subscribedEvents[EVENT_DVB_URL_LOADED] = true;  
+}
+
+/**
+ * Subscribe to 'InputKeyGeneratedEvent'
+ */
+void ORBComRpcClient::SubscribeToInputKeyGeneratedEvent() 
+{
+   m_subscribedEvents[EVENT_INPUT_KEY_GENERATED] = true;
+}
+
+/**
+ * Unsubscribe from 'JavaScriptEventDispatchRequestedEvent'
+ */
+void ORBComRpcClient::UnsubscribeFromJavaScriptEventDispatchRequestedEvent()
+{
+   m_subscribedEvents[EVENT_JAVASCRIPT_EVENT_DISPATCH_REQUESTED] = false;
+}
+
+/**
+ * Unsubscribe from 'DvbUrlLoadedEvent'
+ */
+void ORBComRpcClient::UnsubscribeFromDvbUrlLoadedEvent()
+{
+   m_subscribedEvents[EVENT_DVB_URL_LOADED] = false;  
+}
+
+/**
+ * Unsubscribe from 'InputKeyGeneratedEvent'
+ */
+void ORBComRpcClient::UnsubscribeFromInputKeyGeneratedEvent()
+{
+   m_subscribedEvents[EVENT_INPUT_KEY_GENERATED] = false;
 }
 
 /**

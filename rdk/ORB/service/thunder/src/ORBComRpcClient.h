@@ -109,6 +109,16 @@ class ORBComRpcClient :public ORBGenericClient
       
       bool IsValid();
 
+   public:
+      // Events subscription
+      void SubscribeToJavaScriptEventDispatchRequestedEvent() override;
+      void SubscribeToDvbUrlLoadedEvent() override;
+      void SubscribeToInputKeyGeneratedEvent() override;
+
+      void UnsubscribeFromJavaScriptEventDispatchRequestedEvent() override;
+      void UnsubscribeFromDvbUrlLoadedEvent() override;
+      void UnsubscribeFromInputKeyGeneratedEvent() override;
+
    private:
     Core::NodeId GetConnectionEndpoint();
 
@@ -136,6 +146,9 @@ class ORBComRpcClient :public ORBGenericClient
 
       // Instance of our notification handler
       Core::Sink<NotificationHandler> m_notification;
+
+      // keep subscribed events to filter
+      std::map<std::string, bool> m_subscribedEvents;
 
 }; // class ORBComRpcClient 
 }  // namespace orb

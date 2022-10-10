@@ -50,13 +50,13 @@ public:
 
 public:
    // jsonrpc client will need to subscribe with events
-   void SubscribeToJavaScriptEventDispatchRequestedEvent();
-   void SubscribeToDvbUrlLoadedEvent();
-   void SubscribeToInputKeyGeneratedEvent();
+   virtual void SubscribeToJavaScriptEventDispatchRequestedEvent() override;
+   virtual void SubscribeToDvbUrlLoadedEvent() override;
+   virtual void SubscribeToInputKeyGeneratedEvent() override;
 
-   void UnsubscribeFromJavaScriptEventDispatchRequestedEvent();
-   void UnsubscribeFromDvbUrlLoadedEvent();
-   void UnsubscribeFromInputKeyGeneratedEvent();
+   virtual void UnsubscribeFromJavaScriptEventDispatchRequestedEvent() override;
+   virtual void UnsubscribeFromDvbUrlLoadedEvent() override;
+   virtual void UnsubscribeFromInputKeyGeneratedEvent() override;
 
 private:
 
