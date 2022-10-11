@@ -74,7 +74,7 @@ class ORBComRpcClient :public ORBGenericClient
       virtual void DvbUrlLoaded(
          int requestId,
          const uint8_t* fileContent, 
-         const uint16_t fileContentLength
+         unsigned int fileContentLength
       ) override;
 
       virtual void EventInputKeyGenerated(int keyCode) override;

@@ -36,7 +36,7 @@ void ORBEventListenerImpl::OnJavaScriptEventDispatchRequested(
    bool broadcastRelated
    )
 {
-   fprintf(stderr, "[ORBEventListenerImpl::OnJavaScriptEventDispatchRequested] GETTING READY FOR COMRPC CALL %d\n", getpid());
+   fprintf(stderr, "[ORBEventListenerImpl::OnJavaScriptEventDispatchRequested] Calling COMRPC dispatch method - PID: %d\n", getpid());
    ORBImplementation::instance(nullptr)->JavaScriptEventDispatchRequest(
       eventName,
       eventProperties,
@@ -52,9 +52,10 @@ void ORBEventListenerImpl::OnJavaScriptEventDispatchRequested(
  * @param content       The retrieved content
  * @param contentLength The retrieved content length in number of bytes
  */
-void ORBEventListenerImpl::OnDvbUrlLoaded(int requestId, unsigned short int *content, unsigned int contentLength)
+void ORBEventListenerImpl::OnDvbUrlLoaded(int requestId, const uint8_t *content, unsigned int contentLength)
 {
   // ORB::instance(nullptr)->NotifyDvbUrlLoaded(requestId, contentLength);
+  ORBImplementation::instance(nullptr)->DvbUrlLoaded(requestId, content, contentLength);
 }
 
 /**

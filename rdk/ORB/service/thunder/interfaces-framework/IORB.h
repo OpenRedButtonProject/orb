@@ -41,7 +41,7 @@ namespace Exchange {
             virtual void DvbUrlLoaded(
                 int requestId,
                 const uint8_t* fileContent /* @length:fileContentLength */, 
-                const uint16_t fileContentLength
+                unsigned int fileContentLength
             ) = 0;
 
             // @brief Event that is fired when a key is pressed
@@ -78,7 +78,7 @@ namespace Exchange {
         virtual void DvbUrlLoaded(
             int requestId,
             const uint8_t* fileContent /* @length:fileContentLength */, 
-            const uint16_t fileContentLength
+            unsigned int fileContentLength
         ) = 0;
 
         virtual void EventInputKeyGenerated(int keyCode) = 0;

@@ -83,7 +83,7 @@ namespace Plugin {
         void DvbUrlLoaded(
             int requestId,
             const uint8_t* fileContent, 
-            const uint16_t fileContentLength
+            unsigned int fileContentLength
         ) override {};
 
         void EventInputKeyGenerated(int keyCode) override {};

@@ -50,7 +50,7 @@ void ORBComRpcClient::NotificationHandler::JavaScriptEventDispatchRequest(
 void ORBComRpcClient::NotificationHandler::DvbUrlLoaded(
    int requestId,
    const uint8_t* fileContent, 
-   const uint16_t fileContentLength
+   unsigned int fileContentLength
 )
 {
    ORB_LOG_NO_ARGS();
@@ -58,7 +58,7 @@ void ORBComRpcClient::NotificationHandler::DvbUrlLoaded(
    if (_parent.m_subscribedEvents[EVENT_DVB_URL_LOADED] == true)
    {  
       ORB_LOG("Dispatching DvbUrlLoaded");
-      _parent.m_onDvbUrlLoaded(requestId, fileContentLength);
+      _parent.m_onDvbUrlLoaded(requestId, fileContent, fileContentLength);
    }
 }
 
