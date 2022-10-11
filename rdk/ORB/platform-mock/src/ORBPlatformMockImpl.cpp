@@ -350,24 +350,41 @@ std::vector<Component> ORBPlatformMockImpl::Broadcast_GetComponents(std::string 
 }
 
 /**
- * Select the specified component of the currently tuned broadcast channel.
+ * Override the default component selection of the terminal for the specified type.
  *
- * @param componentType The component type (0: video, 1: audio, 2: subtitle)
- * @param pid           The component's pid used as identifier
+ * The component in the stream that has the specified PID, CTAG (if specified), and language (if
+ * specified) shall be selected. If pidOrSuspended equals 0, no component for the specified type
+ * shall be selected for presentation.
+ *
+ * Default component selection shall be restored for the specified type when
+ * restoreDefaultComponentSelection is called, the channel is changed, the application
+ * terminates, or the user selects a different track of the same type in the terminal UI.
+ *
+ * Security: FOR_BROADCAST_APP_ONLY
+ *
+ * @param componentType  The component type (0: video, 1: audio, 2: subtitle)
+ * @param pidOrSuspended The component PID or 0 to suspend presentation
+ * @param ctag           The component tag or 0 if not specified
+ * @param language       The component language or an empty string if not specified
  */
-void ORBPlatformMockImpl::Broadcast_SelectComponent(int componentType, int pid)
+void ORBPlatformMockImpl::Broadcast_OverrideDefaultComponentSelection(
+   int componentType,
+   int pidOrSuspended,
+   int ctag,
+   std::string language
+   )
 {
-   ORB_LOG("componentType=%d pid=%d", componentType, pid);
+   ORB_LOG("componentType=%d pidOrSuspended=%d", componentType, pidOrSuspended);
    switch (componentType)
    {
       case 0:
-         s_SelectedComponent_Pid_Video = pid;
+         s_SelectedComponent_Pid_Video = pidOrSuspended;
          break;
       case 1:
-         s_SelectedComponent_Pid_Audio = pid;
+         s_SelectedComponent_Pid_Audio = pidOrSuspended;
          break;
       case 2:
-         s_SelectedComponent_Pid_Subtitle = pid;
+         s_SelectedComponent_Pid_Subtitle = pidOrSuspended;
          break;
       default:
          break;
@@ -377,12 +394,15 @@ void ORBPlatformMockImpl::Broadcast_SelectComponent(int componentType, int pid)
 }
 
 /**
- * Unselect any currently selected component of the given type for the
- * currently tuned broadcast channel.
+ * Restore the default component selection of the terminal for the specified type.
  *
- * @param componentType The componentType (0: video, 1: audio, 2: subtitle)
+ * If playback has already started, the presented component shall be updated.
+ *
+ * Security: FOR_BROADCAST_APP_ONLY
+ *
+ * @param componentType The component type (0: video, 1: audio, 2: subtitle)
  */
-void ORBPlatformMockImpl::Broadcast_UnselectComponent(int componentType)
+void ORBPlatformMockImpl::Broadcast_RestoreDefaultComponentSelection(int componentType)
 {
    ORB_LOG("componentType=%d", componentType);
    switch (componentType)

@@ -212,7 +212,6 @@ public class TvBrowserTypes {
       public boolean hearingImpaired; // Subtitle
       public boolean encrypted;
       public boolean active;
-      public boolean defaultComponent;
       public boolean hidden;
       public String label; // Subtitle
 
@@ -228,11 +227,10 @@ public class TvBrowserTypes {
        * @param encrypted
        * @param aspectRatio ASPECT_RATIO_4_3 or ASPECT_RATIO_16_9
        * @param active
-       * @param defaultComponent
        * @return
        */
       public static Component createVideoComponent(int componentTag, int pid, String encoding,
-         boolean encrypted, int aspectRatio, boolean active, boolean defaultComponent) {
+         boolean encrypted, int aspectRatio, boolean active) {
          Component c = new Component();
          c.componentType = COMPONENT_TYPE_VIDEO;
          c.componentTag = componentTag;
@@ -241,7 +239,6 @@ public class TvBrowserTypes {
          c.encrypted = encrypted;
          c.aspectRatio = aspectRatio;
          c.active = active;
-         c.defaultComponent = defaultComponent;
          c.hidden = false;
          return c;
       }
@@ -257,12 +254,11 @@ public class TvBrowserTypes {
        * @param audioDescription
        * @param audioChannels
        * @param active
-       * @param defaultComponent
        * @return
        */
       public static Component createAudioComponent(int componentTag, int pid, String encoding,
          boolean encrypted, String language, boolean audioDescription, int audioChannels,
-         boolean active, boolean defaultComponent) {
+         boolean active) {
          Component c = new Component();
          c.componentType = COMPONENT_TYPE_AUDIO;
          c.componentTag = componentTag;
@@ -273,7 +269,6 @@ public class TvBrowserTypes {
          c.audioDescription = audioDescription;
          c.audioChannels = audioChannels;
          c.active = active;
-         c.defaultComponent = defaultComponent;
          c.hidden = false;
          return c;
       }
@@ -289,12 +284,10 @@ public class TvBrowserTypes {
        * @param hearingImpaired
        * @param label
        * @param active
-       * @param defaultComponent
        * @return
        */
       public static Component createSubtitleComponent(int componentTag, int pid, String encoding,
-         boolean encrypted, String language, boolean hearingImpaired, String label, boolean active,
-         boolean defaultComponent) {
+         boolean encrypted, String language, boolean hearingImpaired, String label, boolean active) {
          Component c = new Component();
          c.componentType = COMPONENT_TYPE_SUBTITLE;
          c.componentTag = componentTag;
@@ -305,7 +298,6 @@ public class TvBrowserTypes {
          c.hearingImpaired = hearingImpaired;
          c.label = label;
          c.active = active;
-         c.defaultComponent = defaultComponent;
          c.hidden = false;
          return c;
       }
@@ -345,7 +337,6 @@ public class TvBrowserTypes {
             }
          }
          o.put("active", active);
-         o.put("default", defaultComponent);
          if (hidden) {
             o.put("hidden", true);
          }

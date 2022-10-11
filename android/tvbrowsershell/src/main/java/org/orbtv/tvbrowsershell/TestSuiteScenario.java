@@ -1,6 +1,7 @@
 package org.orbtv.tvbrowsershell;
 
 import android.content.Context;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -43,6 +44,20 @@ public class TestSuiteScenario {
          }
       }
       return false;
+   }
+
+   public void selectComponent(int type, int pidOrSuspend) {
+      if (mCurrentChannelIndex < 0) {
+         return;
+      }
+      MockChannel ch = mMockChannels.get(mCurrentChannelIndex);
+      for (int i = 0; i < ch.components.size(); i++) {
+         TvBrowserTypes.Component c = ch.components.get(i);
+         if (c.componentType == type) {
+            Log.d("TAG", "Setting pid " + c.pid + " to " + (c.pid == pidOrSuspend));
+            c.active = (c.pid == pidOrSuspend);
+         }
+      }
    }
 
    public TvBrowserTypes.Channel getCurrentChannel() {
@@ -151,8 +166,7 @@ public class TestSuiteScenario {
                   info.getString("aspectRatio").equals("16_9") ?
                      TvBrowserTypes.ASPECT_RATIO_16_9 :
                      TvBrowserTypes.ASPECT_RATIO_4_3,
-                  info.getBoolean("active"),
-                  info.getBoolean("defaultComponent")
+                  info.getBoolean("active")
                ));
                break;
             }
@@ -165,8 +179,7 @@ public class TestSuiteScenario {
                   info.getString("language"),
                   info.getBoolean("audioDescription"),
                   info.getInt("audioChannels"),
-                  info.getBoolean("active"),
-                  info.getBoolean("defaultComponent")
+                  info.getBoolean("active")
                );
                component.hidden = info.getBoolean("hidden"); // TODO Add to constructor
                components.add(component);
@@ -181,8 +194,7 @@ public class TestSuiteScenario {
                   info.getString("language"),
                   info.getBoolean("hearingImpaired"),
                   info.getString("label"),
-                  info.getBoolean("active"),
-                  info.getBoolean("defaultComponent")
+                  info.getBoolean("active")
                ));
                break;
             }

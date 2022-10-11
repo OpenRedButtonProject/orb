@@ -763,27 +763,22 @@ hbbtv.objects.VideoBroadcast = (function() {
       if (!p.currentChannelComponents) {
          p.currentChannelComponents = getFormattedComponents(p.currentChannelData.ccid);
       }
-      let foundComponent = null;
       if ((!p.currentChannelComponents) || (p.currentChannelComponents.length === 0)) {
          throw new DOMException('', 'InvalidStateError');
       }
-      /* HbbTV 2.0.3 A.1: The selectComponent() and unselectComponent() methods shall be asynchronous. */
-      if (!isNaN(component)) {
-         foundComponent = p.currentChannelComponents.find(item => {
-            return ((item.type === component) && (item.default));
-         });
-      } else {
-         foundComponent = p.currentChannelComponents.find(item => {
+      if (isNaN(component)) {
+         // Select a specific component
+         let found = p.currentChannelComponents.find(item => {
             return compareComponents.call(this, component, item);
          });
-      }
-      if (foundComponent) { // && (!foundComponent.active)) {//Note: we can't rely on active to avoid repetition as it won't be updated until events with the result are received
-         if (foundComponent.type == this.COMPONENT_TYPE_AUDIO) {
-            hbbtv.bridge.broadcast.selectComponent(foundComponent.type, foundComponent.pid,
-               foundComponent.language);
-         } else {
-            hbbtv.bridge.broadcast.selectComponent(foundComponent.type, foundComponent.pid, "");
+         if (found) {
+            hbbtv.bridge.broadcast.overrideDefaultComponentSelection(found.type, found.pid,
+               (found.ctag != undefined) ? found.ctag : 0,
+               (found.language != undefined) ? found.language : "");
          }
+      } else {
+         // Select the default component
+         hbbtv.bridge.broadcast.restoreDefaultComponentSelection(component);
       }
    };
 
@@ -793,34 +788,23 @@ hbbtv.objects.VideoBroadcast = (function() {
       if (!p.currentChannelComponents) {
          p.currentChannelComponents = getFormattedComponents(p.currentChannelData.ccid);
       }
-      let foundComponent = null;
-      /* HbbTV 2.0.3 A.1: The selectComponent() and unselectComponent() methods shall be asynchronous. */
-      if (!isNaN(component)) {
-         foundComponent = p.currentChannelComponents.find(item => {
-            return ((item.type === component) && item.default);
+      if (isNaN(component)) {
+         let found = p.currentChannelComponents.find(item => {
+            return compareComponents.call(this, component, item);
          });
-      } else {
-         if (((component.type === 1) && (hbbtv.bridge.configuration.getPreferredAudioLanguage() != null)) || /* Return to the default preferred audio language. */
-            ((component.type === 2) && (hbbtv.bridge.configuration.getPreferredSubtitleLanguage() != null))) {
-            /* Return to the default preferred subtitle language */
-            let defaultComponent = p.currentChannelComponents.find(item => {
-               return ((component.type === item.type) && item.default);
-            });
-            if (defaultComponent) { // && !defaultComponent.active) {//Note: we can't rely on active to avoid repetition as it won't be updated until events with the result are received
-               hbbtv.bridge.broadcast.selectComponent(defaultComponent.type, defaultComponent.pid, "");
+         if (found.active) {
+            if (component.type == this.COMPONENT_TYPE_AUDIO ||
+                  component.type == this.COMPONENT_TYPE_SUBTITLE) {
+               // Select the default component
+               hbbtv.bridge.broadcast.restoreDefaultComponentSelection(component.type);
+            } else {
+               // Suspend video
+               hbbtv.bridge.broadcast.overrideDefaultComponentSelection(component.type, 0, 0, "");
             }
-            return;
-         } else {
-            foundComponent = p.currentChannelComponents.find(item => {
-               return compareComponents.call(this, component, item);
-            });
          }
-      }
-      if (foundComponent) { // && foundComponent.active) {//Note: we can't rely on active to avoid repetition as it won't be updated until events with the result are received
-         hbbtv.bridge.broadcast.unselectComponent(
-            foundComponent.type,
-            foundComponent.pid
-         );
+      } else {
+         // Suspend this component type
+         hbbtv.bridge.broadcast.overrideDefaultComponentSelection(component, 0, 0, "");
       }
    };
 
@@ -1396,9 +1380,6 @@ hbbtv.objects.VideoBroadcast = (function() {
       components.forEach(function(item, index) {
          /* Hide internal status properties */
          Object.defineProperty(item, "active", {
-            enumerable: false
-         });
-         Object.defineProperty(item, "default", {
             enumerable: false
          });
          Object.defineProperty(item, "hidden", {

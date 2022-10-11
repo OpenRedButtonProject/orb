@@ -19,8 +19,8 @@ import android.util.SparseArray;
 import android.view.KeyEvent;
 
 import org.orbtv.tvbrowser.TvBrowser;
-import org.orbtv.tvbrowser.TvBrowserCallback;
 import org.orbtv.tvbrowser.TvBrowserTypes;
+import org.orbtv.tvbrowser.TvBrowserCallback;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -218,73 +218,39 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
    }
 
    /**
-    * Instructs the controlling application to present the audio specified by its PID.
+    * Override the default component selection of the terminal for the specified type.
     *
-    * @param pid
-    * @param lang
-    * @return true on success, false otherwise
+    * The component in the stream that has the specified PID, CTAG (if specified), and language (if
+    * specified) shall be selected. If pidOrSuspended equals 0, no component for the specified type
+    * shall be selected for presentation.
+    *
+    * Default component selection shall be restored for the specified type when
+    * restoreDefaultComponentSelection is called, the channel is changed, the application
+    * terminates, or the user selects a different track of the same type in the terminal UI.
+    *
+    * If playback has already started, the presented component shall be updated.
+    *
+    * @param type Type of component selection to override (COMPONENT_TYPE_* code).
+    * @param pidOrSuspended Component PID or 0 to suspend presentation.
+    * @param ctag Component CTAG or 0 if not specified.
+    * @param language Component language of an empty string if not specified.
     */
    @Override
-   public boolean presentDvbAudio(int pid, String lang) {
-      scheduleMockComponentEvent(1, pid, false);
-      return true;
+   public void overrideDefaultComponentSelection(int type, int pidOrSuspended, int ctag,
+      String language) {
+      delaySelectComponent(type, false, pidOrSuspended);
    }
 
    /**
-    * Instructs the controlling application to stop the audio presentation
+    * Restore the default component selection of the terminal for the specified type.
     *
-    * @return true on success, false otherwise
+    * If playback has already started, the presented component shall be updated.
+    *
+    * @param type Type of component selection override to clear (COMPONENT_TYPE_* code).
     */
    @Override
-   public boolean stopDvbAudio() {
-      scheduleMockComponentEvent(1, -1, true);
-      return true;
-   }
-
-   /**
-    * Instructs the controlling application to present the video specified by its PID.
-    *
-    * @param pid
-    * @return true on success, false otherwise
-    */
-   @Override
-   public boolean presentDvbVideo(int pid) {
-      scheduleMockComponentEvent(0, pid, false);
-      return true;
-   }
-
-   /**
-    * Instructs the controlling application to stop the video presentation
-    *
-    * @return true on success, false otherwise
-    */
-   @Override
-   public boolean stopDvbVideo() {
-      scheduleMockComponentEvent(0, -1, true);
-      return true;
-   }
-
-   /**
-    * Instructs the controlling application to present the subtitles specified by its PID.
-    *
-    * @param pid
-    * @return true on success, false otherwise
-    */
-   @Override
-   public boolean presentDvbSubtitles(int pid) {
-      scheduleMockComponentEvent(2, pid, false);
-      return true;
-   }
-
-   /**
-    * Instructs the controlling application to stop the subtitle presentation
-    *
-    * @return true on success, false otherwise
-    */
-   @Override
-   public boolean stopDvbSubtitles() {
-      scheduleMockComponentEvent(2, -1, true);
-      return true;
+   public void restoreDefaultComponentSelection(int type) {
+      delaySelectComponent(type, true, 0);
    }
 
    /**
@@ -725,38 +691,29 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
    @Override
    public void setPresentationSuspended(boolean presentationSuspended) { }
 
-   private void scheduleMockComponentEvent(final int componentType, final int pid, final boolean stop) {
-      new android.os.Handler(Looper.getMainLooper()).postDelayed(
-         new Runnable() {
-            public void run() {
-               Vector<TvBrowserTypes.Component> components = mTestSuiteScenario.getCurrentChannelComponents();
-               if (components != null) {
-                  for (TvBrowserTypes.Component c : components){
-                     //update mock status
-                     if (stop) {
-                        if ((c.componentType == componentType) && (c.active)) {
-                           c.active = false;
-                           break;
-                        }
-                     } else {
-                        if (c.componentType == componentType) {
-                           if (c.pid == pid) {
-                              c.active = true;
-                           } else {
-                              //Mark others as not active anymore
-                              c.active = false;
-                           }
-                        }
-                     }
+   private void delaySelectComponent(final int componentType, final boolean restoreDefault,
+         final int pidOrSuspend) {
+      new android.os.Handler(Looper.getMainLooper()).postDelayed(() -> {
+         if (restoreDefault) {
+            Vector<TvBrowserTypes.Component> components =
+               mTestSuiteScenario.getCurrentChannelComponents();
+            if (components != null) {
+               // Restore to first in list
+               for (TvBrowserTypes.Component c : components) {
+                  if (c.componentType == componentType) {
+                     mTestSuiteScenario.selectComponent(componentType, c.pid);
+                     break;
                   }
                }
-               mSession.onComponentChanged(componentType);
-               mSession.onSelectedComponentChanged(componentType);
-               Log.i(TAG, "sendComponentChanged(" + componentType + ") and " +
-                  "sendSelectedComponentChanged(" + componentType + ")");
             }
-         },
-         500);
+         } else {
+            mTestSuiteScenario.selectComponent(componentType, pidOrSuspend);
+         }
+         mSession.onComponentChanged(componentType);
+         mSession.onSelectedComponentChanged(componentType);
+         Log.i(TAG, "sendComponentChanged(" + componentType + ") and " +
+            "sendSelectedComponentChanged(" + componentType + ")");
+      }, 50);
    }
 
    /**
