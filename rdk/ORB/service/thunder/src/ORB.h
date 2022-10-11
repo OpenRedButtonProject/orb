@@ -32,8 +32,7 @@ class ORB
     *
     * Used to receive activation/deactivation events.
     */
-   class Notification : public RPC::IRemoteConnection::INotification, 
-                        public Exchange::IORB::INotification 
+   class Notification : public RPC::IRemoteConnection::INotification
    {
    private:
       Notification() = delete;
@@ -45,51 +44,23 @@ public:
       explicit Notification(ORB *parent) : _parent(*parent)
       {
          ASSERT(parent != nullptr);
-         fprintf(stderr, "NOTIFICATION CONSTUCTOR WITH NON NULL PARENT CALLED \n");
       }
 
       virtual ~Notification() override
       {
-         fprintf(stderr, "NOTIFICATION DESTRUCTOR CALLED\n");
       }
 
 public:
       void Activated(RPC::IRemoteConnection *) override
       {
-         fprintf(stderr, "ORB NOTIFICATION ACTIVATED %p\n", this);
       }
 
       void Deactivated(RPC::IRemoteConnection *connection) override
       {
          _parent.Deactivated(connection);
-      }
-
-      // COMRPC event handlers
-      void JavaScriptEventDispatchRequest(
-         std::string name,
-         std::string properties,
-         bool broadcastRelated,
-         std::string targetOrigin
-      ) override;
-
-      // leave  these to dummy
-      void DvbUrlLoaded(
-         int requestId,
-         const uint8_t* fileContent, 
-         const uint16_t fileContentLength
-      ) override
-      {
-         fprintf(stderr, "DvbUrlLoaded\n");
-      }
-
-      void EventInputKeyGenerated(int keyCode) override
-      {
-         fprintf(stderr, "EventInputKeyGenerated\n");
-      }
-  
+      }  
 
       BEGIN_INTERFACE_MAP(Notification)
-      INTERFACE_ENTRY(Exchange::IORB::INotification)
       INTERFACE_ENTRY(RPC::IRemoteConnection::INotification)
       END_INTERFACE_MAP
 private:
@@ -132,13 +103,6 @@ public:
    virtual void Deinitialize(PluginHost::IShell *service) override;
    virtual string Information() const override;
 
-public:
-
-   // event notifications
-   void NotifyJavaScriptEventDispatchRequested(std::string name, JsonObject properties, bool broadcastRelated, std::string targetOrigin);
-   void NotifyDvbUrlLoaded(int requestId, unsigned int fileContentLength);
-   void NotifyInputKeyGenerated(int keyCode);
-
 private:
 
    void Deactivated(RPC::IRemoteConnection *connection);
@@ -148,17 +112,7 @@ private:
    void UnregisterAll();
 
    // JsonRpc methods
-   uint32_t ExecuteWpeBridgeRequest(JsonObject request, JsonObject& response);
-   uint32_t CreateToken(Core::JSON::String uri, JsonObject& token);
-   uint32_t ApplicationLoadFailed(const ApplicationLoadFailedParamsData& params);
-   uint32_t ApplicationPageChanged(Core::JSON::String url);
-   uint32_t LoadDvbUrl(const LoadDvbUrlParamsData& params);
    uint32_t SendKeyEvent(Core::JSON::DecUInt16 keyCode, Core::JSON::Boolean& response);
-
-   // JsonRpc events
-   void EventJavaScriptEventDispatchRequested(JavaScriptEventDispatchRequestedParamsData& params);
-   void EventDvbUrlLoaded(DvbUrlLoadedParamsData& params);
-   void EventInputKeyGenerated(Core::JSON::DecSInt32 keyCode);
 
 private:
 

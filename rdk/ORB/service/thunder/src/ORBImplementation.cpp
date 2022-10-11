@@ -38,7 +38,6 @@ ORBImplementation::~ORBImplementation()
    fprintf(stderr, "Orb implementation destr\n");
 }
 
-
 /**
  * @brief ORBImplementation::Register
  * 
@@ -50,18 +49,12 @@ ORBImplementation::~ORBImplementation()
 void ORBImplementation::Register(Exchange::IORB::INotification* sink)
 {
    _adminLock.Lock();
-   fprintf(stderr, "Hello from Register ORB %d\n", getpid());
+   ORB_LOG("Called Register - PID: %d", getpid());
 
-   if (sink == nullptr)
-   {
-      ORB_LOG("NULL SINK ARRIVED");
-   }
-   
    // Make sure a sink is not registered multiple times.
    if (std::find(_notificationClients.begin(), _notificationClients.end(), sink) == _notificationClients.end())
    {
       _notificationClients.push_back(sink);
-      //if (sink != nullptr)
       sink->AddRef();
       ORB_LOG("Added a ref");
    }
@@ -80,9 +73,8 @@ void ORBImplementation::Register(Exchange::IORB::INotification* sink)
  */
 void ORBImplementation::Unregister(Exchange::IORB::INotification* sink)
 {
+   ORB_LOG("Called Unregister - PID: %d", getpid());
    _adminLock.Lock();
-   fprintf(stderr, "Hello from UNRegister ORB %d\n", getpid());
-
    auto itr = std::find(_notificationClients.begin(), _notificationClients.end(), sink);
    if (itr != _notificationClients.end())
    {
@@ -129,7 +121,6 @@ void ORBImplementation::UnLoadPlatform()
 std::string ORBImplementation::ExecuteBridgeRequest(std::string request)
 {
    ORB_LOG_NO_ARGS();
-  // ORB_LOG("THE REQUEST IS %s", request.c_str());
    return ORBEngine::GetSharedInstance().ExecuteBridgeRequest(request);
 }
 

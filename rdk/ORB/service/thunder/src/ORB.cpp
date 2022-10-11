@@ -64,7 +64,6 @@ const string ORB::Initialize(PluginHost::IShell *service)
    // Check if ORB plugin initialisation failed
    if (_orb != nullptr)
    {
-      _orb->Register(&_notification);
       _orb->LoadPlatform();
       RegisterAll();
    }
@@ -75,7 +74,6 @@ const string ORB::Initialize(PluginHost::IShell *service)
       _service = nullptr;
    }
    
-
    // Reached successful initialisation
    SYSLOG(Logging::Startup, (_T("ORB Initialisation finished")));
    return message;
@@ -98,7 +96,6 @@ void ORB::Deinitialize(PluginHost::IShell *service)
    {
       _service->Unregister(&_notification);
       _orb->UnLoadPlatform();
-      _orb->Unregister(&_notification);
 
       UnregisterAll();
       _orb->Release();
@@ -137,93 +134,6 @@ void ORB::Deactivated(RPC::IRemoteConnection *connection)
          PluginHost::IShell::DEACTIVATED, PluginHost::IShell::FAILURE));
    }
    SYSLOG(Logging::Notification, (_T("ORB Deactivation finished")));
-}
-
-/**
- * @brief ORB::NotifyJavaScriptEventDispatchRequested
- *
- * @param name             The name of the event to be dispatched
- * @param properties       The properties of the event to be dispatched
- * @param broadcastRelated Indicates whether the event is broadcast-related or not
- * @param targetOrigin     The event's target origin
- */
-void ORB::NotifyJavaScriptEventDispatchRequested(
-   std::string name,
-   JsonObject properties,
-   bool broadcastRelated,
-   std::string targetOrigin
-   )
-{
-   std::string propertiesAsString;
-   properties.ToString(propertiesAsString);
-   fprintf(stderr, "[ORB::NotifyJavaScriptEventDispatchRequested] name=%s properties=%s\n", name.c_str(), propertiesAsString.c_str());
-   fprintf(stderr, "[NotifyJavaScriptEventDispatchRequested] PID: %d\n", getpid());
-   JavaScriptEventDispatchRequestedParamsData params;
-   params.EventName = name;
-   params.EventProperties = propertiesAsString;
-   params.BroadcastRelated = broadcastRelated;
-   params.TargetOrigin = targetOrigin;
-
-   EventJavaScriptEventDispatchRequested(params);
-}
-
-/**
- * @brief ORB::NotifyDvbUrlLoaded
- *
- * @param requestId         The request identifier
- * @param fileContentLength The DVB file content length in number of bytes
- */
-void ORB::NotifyDvbUrlLoaded(int requestId, unsigned int fileContentLength)
-{
-   fprintf(stderr, "[ORB::NotifyDvbUrlLoaded] requestId=%d fileContentLength=%d\n", requestId, fileContentLength);
-
-   DvbUrlLoadedParamsData params;
-   params.RequestId = requestId;
-   params.FileContentLength = fileContentLength;
-
-   EventDvbUrlLoaded(params);
-}
-
-/**
- * @brief ORB::NotifyInputKeyGenerated
- *
- * @param keyCode The JavaScript key code
- */
-void ORB::NotifyInputKeyGenerated(int keyCode)
-{
-   fprintf(stderr, "[ORB::NotifyInputKeyGenerated] keyCode=%d\n", keyCode);
-
-   EventInputKeyGenerated(keyCode);
-}
-
-/**
- * @brief ORB::Notification::JavaScriptEventDispatchRequest
- * 
- * This event comes from COMRPC side. In this handler we will dispatch
- * a JSONRPC event for 'JavaScriptEventDispatchRequest'
- * 
- * @param name 
- * @param properties 
- * @param broadcastRelated 
- * @param targetOrigin 
- */
-void ORB::Notification::JavaScriptEventDispatchRequest(
-   std::string name, 
-   std::string properties, 
-   bool broadcastRelated, 
-   std::string targetOrigin
-   )
-{
-   fprintf(stderr, "[ORB::Notification::JavaScriptEventDispatchRequest] - COMRPC %d\n", getpid());
-   JsonObject propertiesAsObject;
-
-   propertiesAsObject.FromString(properties);
-   _parent.NotifyJavaScriptEventDispatchRequested(
-      name, 
-      propertiesAsObject, 
-      broadcastRelated, 
-      targetOrigin
-   );
 }
 
 } // namespace Plugin
