@@ -52,7 +52,7 @@ void ORBEventListenerImpl::OnJavaScriptEventDispatchRequested(
  * @param content       The retrieved content
  * @param contentLength The retrieved content length in number of bytes
  */
-void ORBEventListenerImpl::OnDvbUrlLoaded(int requestId, const uint8_t *content, unsigned int contentLength)
+void ORBEventListenerImpl::OnDvbUrlLoaded(int requestId, unsigned char *content, unsigned int contentLength)
 {
   // ORB::instance(nullptr)->NotifyDvbUrlLoaded(requestId, contentLength);
   ORBImplementation::instance(nullptr)->DvbUrlLoaded(requestId, content, contentLength);

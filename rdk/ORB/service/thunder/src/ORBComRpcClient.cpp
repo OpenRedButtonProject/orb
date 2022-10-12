@@ -58,7 +58,8 @@ void ORBComRpcClient::NotificationHandler::DvbUrlLoaded(
    if (_parent.m_subscribedEvents[EVENT_DVB_URL_LOADED] == true)
    {  
       ORB_LOG("Dispatching DvbUrlLoaded");
-      _parent.m_onDvbUrlLoaded(requestId, fileContent, fileContentLength);
+      unsigned char* _fileContent = reinterpret_cast<unsigned char*>(const_cast<uint8_t*>(fileContent));
+      _parent.m_onDvbUrlLoaded(requestId, _fileContent, fileContentLength);
    }
 }
 
