@@ -11,7 +11,7 @@
 #include "ORBBrowserApi.h"
 
 typedef void (*OnJavaScriptEventDispatchRequested_cb)(std::string name, std::string properties);
-typedef void (*OnDvbUrlLoaded_cb)(int requestId, const uint8_t* fileContent, unsigned int contentLength);
+typedef void (*OnDvbUrlLoaded_cb)(int requestId, unsigned char* content, unsigned int contentLength);
 typedef void (*OnInputKeyGenerated_cb)(int keyCode);
 
 namespace orb

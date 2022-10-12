@@ -82,7 +82,7 @@ namespace Plugin {
 
         void DvbUrlLoaded(
             int requestId,
-            const uint8_t* fileContent, 
+            unsigned char* fileContent, 
             unsigned int fileContentLength
         ) override {};
 
