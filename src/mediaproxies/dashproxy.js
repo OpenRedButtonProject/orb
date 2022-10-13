@@ -628,16 +628,12 @@ hbbtv.objects.DashProxy = (function() {
                      filterUnsupportedEssentialProperties: true
                   },
                   retryAttempts: {
-                     MPD: 1,
-                     XLinkExpansion: 1,
-                     MediaSegment: 1,
-                     InitializationSegment: 1,
-                     BitstreamSwitchingSegment: 1,
-                     IndexSegment: 1,
-                     FragmentInfoSegment: 1,
-                     license: 1,
-                     other: 1,
-                     lowLatencyMultiplyFactor: 1
+                     MPD: 0,
+                     MediaSegment: 0,
+                     InitializationSegment: 0,
+                     BitstreamSwitchingSegment: 0,
+                     IndexSegment: 0,
+                     FragmentInfoSegment: 0
                   }
                }
             });
