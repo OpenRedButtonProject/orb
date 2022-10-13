@@ -35,8 +35,8 @@ hbbtv.mediaManager = (function() {
         // when calling play() immediately after setting the src attribute
         HTMLMediaElement.prototype.play = function() {
             const thiz = this;
-            if (HTMLMediaElement.prototype.pause === this.pause) {
-                // check if HTMLMediaElement.pause() is overriden by the call to MediaSynchroniser.addMediaObject()
+            if (!this.__added_to_media_sync__) {
+                // check if the HTMLMediaElement is provided to MediaSynchroniser.addMediaObject() before we pause it
                 if (lastMediaElement && lastMediaElement !== this && !lastMediaElement.paused) {
                     lastMediaElement.pause();
                 }

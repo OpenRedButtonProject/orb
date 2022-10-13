@@ -39,6 +39,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
         p.masterMediaObserver.removeEventListener('MediaUpdated', p.onMasterMediaUpdated);
         p.masterMediaObserver.removeEventListener('Error', p.onFailureToPresentMedia);
         p.mediaObject.removeEventListener('ended', p.onFailureToPresentMedia);
+        delete mediaObject.__added_to_media_sync__;
         Object.setPrototypeOf(p.mediaObject, p.moPrototype);
         clearInterval(p.pollIntervalId);
         privates.delete(this);
@@ -211,6 +212,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
         });
 
         Object.setPrototypeOf(mediaObject, moPrototypeOverride);
+        mediaObject.__added_to_media_sync__ = true;
 
         masterMediaObserver.addEventListener('MediaUpdated', p.onMasterMediaUpdated);
         masterMediaObserver.addEventListener('Error', p.onFailureToPresentMedia);
