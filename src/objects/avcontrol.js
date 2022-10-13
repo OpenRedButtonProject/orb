@@ -791,6 +791,8 @@ hbbtv.objects.AVControl = (function() {
       priv.connected = false;
       priv.seekPos = undefined;
       priv.speed = 0;
+      priv.videoElement.load();
+      priv.videoElement.src = '';
    }
 
    function initialise() {
