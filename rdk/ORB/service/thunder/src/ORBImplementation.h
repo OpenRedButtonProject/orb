@@ -84,9 +84,9 @@ namespace Plugin {
             int requestId,
             const uint8_t* fileContent, 
             unsigned int fileContentLength
-        ) override {};
+        ) override;
 
-        void EventInputKeyGenerated(int keyCode) override {};
+        void EventInputKeyGenerated(int keyCode) override;
 
     private:
         mutable Core::CriticalSection _adminLock;

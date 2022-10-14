@@ -235,5 +235,59 @@ void ORBImplementation::JavaScriptEventDispatchRequest(
    }
 }
 
+/**
+ * @brief ORBImplementation::DvbUrlLoaded
+ * 
+ * This method is used to notify each client for the 'DvbUrlLoaded' event
+ * 
+ * @param requestId 
+ * @param fileContent 
+ * @param fileContentLength 
+ */
+void ORBImplementation::DvbUrlLoaded(
+   int requestId,
+   const uint8_t* fileContent, 
+   unsigned int fileContentLength
+)
+{
+   ORB_LOG_NO_ARGS();
+   
+   // Loop through all the registered callbacks and fire off the notification
+   std::lock_guard<std::mutex> locker(_notificationMutex);
+   ORB_LOG("We have %d callbacks to trigger", _notificationClients.size());
+   for (const auto client : _notificationClients)
+   {
+      client->DvbUrlLoaded(
+         requestId,
+         fileContent,
+         fileContentLength
+      );
+   }
+}
+
+/**
+ * @brief ORBImplementation::EventInputKeyGenerated
+ * 
+ * This method is used to notify each client for the 'EventInputKeyGenerated' event
+ * 
+ * @param requestId 
+ * @param fileContent 
+ * @param fileContentLength 
+ */
+void ORBImplementation::EventInputKeyGenerated(int keyCode)
+{
+   ORB_LOG_NO_ARGS();
+   
+   // Loop through all the registered callbacks and fire off the notification
+   std::lock_guard<std::mutex> locker(_notificationMutex);
+   ORB_LOG("We have %d callbacks to trigger", _notificationClients.size());
+   for (const auto client : _notificationClients)
+   {
+      client->EventInputKeyGenerated(
+         keyCode
+      );
+   }
+}
+
 }  // Plugin
 }  // WPEFramework
