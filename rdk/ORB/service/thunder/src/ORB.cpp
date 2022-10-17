@@ -6,6 +6,8 @@
  */
 
 #include "ORB.h"
+#include "ORBConfiguration.h"
+
 #include <chrono>
 
 using namespace std::chrono_literals;
@@ -66,12 +68,40 @@ const string ORB::Initialize(PluginHost::IShell *service)
    {
       _orb->LoadPlatform();
       RegisterAll();
+
+      ORBConfiguration config;
+      config.FromString(_service->ConfigLine());
+      
+      // start the comrpc server, in case it is set on config
+      if (config.PrivateComRpcServer.Value() == true)
+      {
+         _rpcEngine = Core::ProxyType<RPC::InvokeServer>::Create(&Core::IWorkerPool::Instance());
+         _rpcServer = new ORBComRpcServer(Core::NodeId("/tmp/ORB"), _orb, service, _service->ProxyStubPath(), _rpcEngine);
+
+         if (_rpcServer->IsListening())
+         {
+            SYSLOG(Logging::Startup, (_T("Successfully started COM-RPC server")));
+         }
+         else
+         {
+            delete _rpcServer;
+            _rpcServer = nullptr;
+            _rpcEngine.Release();
+            SYSLOG(Logging::Error, (_T("Failed to start COM-RPC server")));
+
+            // return string for WPEFramework to print as error
+            message = "Failed to start COM-RPC server";
+         }
+
+      }
    }
    else
    {
-      message = _T("ORB plugin could not be initialised");
+      SYSLOG(Logging::Error, (_T("ORB plugin could not be initialised")));
       _service->Unregister(&_notification);
       _service = nullptr;
+
+      message = _T("ORB plugin could not be initialised");
    }
    
    // Reached successful initialisation
@@ -90,7 +120,14 @@ void ORB::Deinitialize(PluginHost::IShell *service)
 
    SYSLOG(Logging::Shutdown, (_T("ORB Deinitialisation started")));
 
-   _service->Unregister(&_notification);
+   // Destroy our COM-RPC server if we started one
+   if (_rpcServer != nullptr)
+   {
+      // release rpcserver and engine
+      delete _rpcServer;
+      _rpcServer = nullptr;
+      _rpcEngine.Release();
+   }
 
    if (_orb != nullptr)
    {
@@ -130,8 +167,13 @@ void ORB::Deactivated(RPC::IRemoteConnection *connection)
    if (connection->Id() == _connectionId)
    {
       ASSERT(_service != nullptr);
-      PluginHost::WorkerPool::Instance().Submit(PluginHost::IShell::Job::Create(_service,
-         PluginHost::IShell::DEACTIVATED, PluginHost::IShell::FAILURE));
+         Core::IWorkerPool::Instance().Submit(
+            PluginHost::IShell::Job::Create(
+               _service, 
+               PluginHost::IShell::DEACTIVATED, 
+               PluginHost::IShell::FAILURE
+            )
+         );
    }
    SYSLOG(Logging::Notification, (_T("ORB Deactivation finished")));
 }

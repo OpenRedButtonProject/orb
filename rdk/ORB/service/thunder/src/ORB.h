@@ -12,6 +12,8 @@
 #include <interfaces/IORB.h>
 #include <memory>
 
+#include "ORBComRpcServer.h"
+
 namespace WPEFramework {
 namespace Plugin {
 
@@ -122,7 +124,10 @@ private:
    Core::Sink<Notification> _notification;
    uint32_t _connectionId;
 
-   friend class Notification;
+    // If set in the config, we should host our own COM-RPC server
+   ORBComRpcServer* _rpcServer;
+   Core::ProxyType<RPC::InvokeServer> _rpcEngine;
+
 }; // class ORB
 } // namespace Plugin
 } // namespace WPEFramework

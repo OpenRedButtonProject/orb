@@ -203,15 +203,18 @@ bool ORBComRpcClient::IsValid()
  */
 Core::NodeId ORBComRpcClient::GetConnectionEndpoint()
 {
-   std::string communicatorPath;
-   Core::SystemInfo::GetEnvironment(_T("COMMUNICATOR_PATH"), communicatorPath);
+   std::string communicatorPath = "";
+   //Core::SystemInfo::GetEnvironment(_T("COMMUNICATOR_PATH"), communicatorPath);
 
    // On linux, Thunder defaults to /tmp/communicator for the generic COM-RPC
    // interface
-   if (communicatorPath.empty())
-   {
+   #if PLUGIN_ORB_PRIVATE_COMRPC == false
       communicatorPath = "/tmp/communicator";
-   }
+   #else
+      communicatorPath = "/tmp/ORB";
+   #endif
+
+   ORB_LOG("COMMUNICATOR PATH: %s\n", communicatorPath.c_str());
 
    return Core::NodeId(communicatorPath.c_str());
 }

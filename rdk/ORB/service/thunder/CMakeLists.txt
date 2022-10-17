@@ -21,7 +21,16 @@ message(STATUS "${CMAKE_MODULE_PATH}")
 message(STATUS "${NAMESPACE}")
 message(STATUS "==========================================================")
 
-set(PLUGIN_ORB_AUTOSTART "false" CACHE STRING "Automatically start ORB plugin")
+if (NOT DEFINED PLUGIN_ORB_AUTOSTART)
+  set(PLUGIN_ORB_AUTOSTART "false" CACHE STRING "Automatically start ORB plugin")
+endif()
+
+if (NOT DEFINED PLUGIN_ORB_PRIVATE_COMRPC)
+  set(PLUGIN_ORB_PRIVATE_COMRPC "true" CACHE STRING "The plugin uses default communicator path (false) or private server (true)")  
+endif()
+
+add_definitions( -DPLUGIN_ORB_AUTOSTART=${PLUGIN_ORB_AUTOSTART} )
+add_definitions( -DPLUGIN_ORB_PRIVATE_COMRPC=${PLUGIN_ORB_PRIVATE_COMRPC} )
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -38,6 +47,7 @@ add_library(${MODULE_NAME} SHARED
   src/Module.cpp
   src/ORB.cpp
   src/ORBJsonRpc.cpp
+  src/ORBComRpcServer.cpp
 )
 
 target_include_directories(${MODULE_NAME} PUBLIC
