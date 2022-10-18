@@ -8,10 +8,6 @@
 #include "ORB.h"
 #include "ORBConfiguration.h"
 
-#include <chrono>
-
-using namespace std::chrono_literals;
-
 namespace WPEFramework {
 namespace Plugin {
 SERVICE_REGISTRATION(ORB, 1, 0);
@@ -59,7 +55,6 @@ const string ORB::Initialize(PluginHost::IShell *service)
    _service->Register(&_notification);
    instance(this);
 
-   fprintf(stderr, "READY TO CALL\n");
    _orb = service->Root<Exchange::IORB>(_connectionId, 2000, _T("ORBImplementation"));
 
    // Check if ORB plugin initialisation failed

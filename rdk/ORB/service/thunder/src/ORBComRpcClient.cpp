@@ -6,6 +6,8 @@
  */
 
 #include "ORBComRpcClient.h"
+#include "ORBLogging.h"
+
 MODULE_NAME_DECLARATION(BUILD_REFERENCE)
 
 #define EVENT_JAVASCRIPT_EVENT_DISPATCH_REQUESTED "javaScriptEventDispatchRequested"
@@ -63,7 +65,7 @@ void ORBComRpcClient::NotificationHandler::DvbUrlLoaded(
 
    if (_parent.m_subscribedEvents[EVENT_DVB_URL_LOADED] == true)
    {
-      ORB_LOG("Dispatching DvbUrlLoaded");
+      ORB_LOG("Dispatching event dvbUrlLoaded");
       unsigned char *_fileContent = reinterpret_cast<unsigned char *>(const_cast<uint8_t *>(fileContent));
       _parent.m_onDvbUrlLoaded(requestId, _fileContent, fileContentLength);
    }
@@ -82,7 +84,7 @@ void ORBComRpcClient::NotificationHandler::EventInputKeyGenerated(int keyCode)
 
    if (_parent.m_subscribedEvents[EVENT_INPUT_KEY_GENERATED] == true)
    {
-      ORB_LOG("Dispatching EventInputKeyGenerated");
+      ORB_LOG("Dispatching event inputKeyGenerated");
       _parent.m_onInputKeyGenerated(keyCode);
    }
 }
@@ -210,9 +212,8 @@ bool ORBComRpcClient::IsValid()
 Core::NodeId ORBComRpcClient::GetConnectionEndpoint()
 {
    std::string communicatorPath = "";
-   //Core::SystemInfo::GetEnvironment(_T("COMMUNICATOR_PATH"), communicatorPath);
-
-   // On linux, Thunder defaults to /tmp/communicator for the generic COM-RPC
+   
+   // On Linux, Thunder defaults to /tmp/communicator for the generic COM-RPC
    // interface
    #if PLUGIN_ORB_PRIVATE_COMRPC == false
    communicatorPath = "/tmp/communicator";
@@ -220,7 +221,7 @@ Core::NodeId ORBComRpcClient::GetConnectionEndpoint()
    communicatorPath = "/tmp/ORB";
    #endif
 
-   ORB_LOG("COMMUNICATOR PATH: %s\n", communicatorPath.c_str());
+   ORB_LOG("Communicator Path: %s", communicatorPath.c_str());
 
    return Core::NodeId(communicatorPath.c_str());
 }
@@ -242,7 +243,7 @@ std::string ORBComRpcClient::ExecuteBridgeRequest(std::string request)
    std::string result = "";
    if (_orb)
    {
-      ORB_LOG("Calling ExecuteBridgeRequest: %s", request.c_str());
+      ORB_LOG("request=%s", request.c_str());
       result = _orb->ExecuteBridgeRequest(request);
    }
    return result;
@@ -261,7 +262,7 @@ std::string ORBComRpcClient::CreateToken(std::string uri)
    std::string result = "";
    if (_orb)
    {
-      ORB_LOG("Calling CreateToken: %s", uri.c_str());
+      ORB_LOG("uri=%s", uri.c_str());
       result = _orb->CreateToken(uri);
    }
    return result;
@@ -279,7 +280,7 @@ void ORBComRpcClient::LoadDvbUrl(std::string url, int requestId)
 {
    if (_orb)
    {
-      ORB_LOG("Calling LoadDvbUrl: %s, %d", url.c_str(), requestId);
+      ORB_LOG("url=%s requestId=%d", url.c_str(), requestId);
       _orb->LoadDvbUrl(url, requestId);
    }
 }
@@ -296,7 +297,7 @@ void ORBComRpcClient::NotifyApplicationLoadFailed(std::string url, std::string e
 {
    if (_orb)
    {
-      ORB_LOG("Calling NotifyApplicationLoadFailed: %s, %s", url.c_str(), errorDescription.c_str());
+      ORB_LOG("url=%s errorDescription=%s", url.c_str(), errorDescription.c_str());
       _orb->NotifyApplicationLoadFailed(url, errorDescription);
    }
 }
@@ -312,7 +313,7 @@ void ORBComRpcClient::NotifyApplicationPageChanged(std::string url)
 {
    if (_orb)
    {
-      ORB_LOG("Calling NotifyApplicationPageChanged: %s", url.c_str());
+      ORB_LOG("url=%s", url.c_str());
       _orb->NotifyApplicationPageChanged(url);
    }
 }

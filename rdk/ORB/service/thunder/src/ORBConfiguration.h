@@ -15,8 +15,11 @@ using namespace WPEFramework;
  * JSON container for custom config options we want to use for
  * this plugin
  */
-class ORBConfiguration : public Core::JSON::Container {
+class ORBConfiguration : public Core::JSON::Container
+{
+
 public:
+
    ORBConfiguration()
       : Core::JSON::Container()
    {
@@ -31,4 +34,5 @@ public:
 
 public:
    Core::JSON::Boolean PrivateComRpcServer;
-};
+
+}; // class ORBConfiguration

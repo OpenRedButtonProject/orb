@@ -65,7 +65,7 @@ public:
 private:
       ORB &_parent;
    }; // class Notification
-////////////////////////////////////////////////////////////////
+
 public:
 
    ORB();
@@ -83,7 +83,6 @@ public:
       static ORB *orb_instance;
       if (orb != nullptr)
       {
-         fprintf(stderr, "[ORB] Setting the singleton\n");
          orb_instance = orb;
       }
       return orb_instance;

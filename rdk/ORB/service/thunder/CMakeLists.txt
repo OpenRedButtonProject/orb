@@ -8,10 +8,6 @@ cmake_minimum_required(VERSION 2.8)
 
 find_package(WPEFramework)
 
-#set(PLUGIN_NAME SamplePlugin)
-#set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})
-#set(PLUGIN_IMPLEMENTATION ${MODULE_NAME}Implementation)
-
 set(PLUGIN_NAME ORB)
 set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})             # WPEFrameworkORB
 set(PLUGIN_IMPLEMENTATION ${MODULE_NAME}Implementation) # WPEFrameworkORBImplementation

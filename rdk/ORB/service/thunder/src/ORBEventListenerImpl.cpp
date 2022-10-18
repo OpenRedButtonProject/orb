@@ -8,15 +8,23 @@
 #include "ORBEventListenerImpl.h"
 #include "ORB.h"
 #include "ORBImplementation.h"
+#include "ORBLogging.h"
 
 using namespace WPEFramework::Plugin;
 
 namespace orb
 {
+
+/**
+ * Constructor.
+ */
 ORBEventListenerImpl::ORBEventListenerImpl()
 {
 }
 
+/**
+ * Destructor.
+ */
 ORBEventListenerImpl::~ORBEventListenerImpl()
 {
 }
@@ -36,7 +44,7 @@ void ORBEventListenerImpl::OnJavaScriptEventDispatchRequested(
    bool broadcastRelated
    )
 {
-   fprintf(stderr, "[ORBEventListenerImpl::OnJavaScriptEventDispatchRequested] Calling COMRPC JavaScriptEventDispatchRequest - PID: %d\n", getpid());
+   ORB_LOG("PID=%d", getpid());
    ORBImplementation::instance(nullptr)->JavaScriptEventDispatchRequest(
       eventName,
       eventProperties,
@@ -54,7 +62,7 @@ void ORBEventListenerImpl::OnJavaScriptEventDispatchRequested(
  */
 void ORBEventListenerImpl::OnDvbUrlLoaded(int requestId, unsigned char *content, unsigned int contentLength)
 {
-   fprintf(stderr, "[ORBEventListenerImpl::OnDvbUrlLoaded] Calling COMRPC OnDvbUrlLoaded - PID: %d\n", getpid());
+   ORB_LOG("PID=%d", getpid());
    ORBImplementation::instance(nullptr)->DvbUrlLoaded(requestId, content, contentLength);
 }
 
@@ -65,7 +73,8 @@ void ORBEventListenerImpl::OnDvbUrlLoaded(int requestId, unsigned char *content,
  */
 void ORBEventListenerImpl::OnInputKeyGenerated(int keyCode)
 {
-   fprintf(stderr, "[ORBEventListenerImpl::OnInputKeyGenerated] Calling COMRPC OnInputKeyGenerated - PID: %d\n", getpid());
+   ORB_LOG("PID=%d", getpid());
    ORBImplementation::instance(nullptr)->EventInputKeyGenerated(keyCode);
 }
+
 } // namespace orb

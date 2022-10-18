@@ -27,7 +27,7 @@ ORBImplementation::ORBImplementation() :
    _adminLock(),
    _notificationClients({})
 {
-   fprintf(stderr, "Orb implementation constructor\n");
+   ORB_LOG_NO_ARGS();
    _orbEventListener = std::make_shared<ORBEventListenerImpl>();
    instance(this);
 }
@@ -40,7 +40,7 @@ ORBImplementation::ORBImplementation() :
 
 ORBImplementation::~ORBImplementation()
 {
-   fprintf(stderr, "Orb implementation destr\n");
+   ORB_LOG_NO_ARGS();
 }
 
 /**
@@ -54,7 +54,7 @@ ORBImplementation::~ORBImplementation()
 void ORBImplementation::Register(Exchange::IORB::INotification *sink)
 {
    _adminLock.Lock();
-   ORB_LOG("Called Register - PID: %d", getpid());
+   ORB_LOG("PID=%d", getpid());
 
    // Make sure a sink is not registered multiple times.
    if (std::find(_notificationClients.begin(), _notificationClients.end(), sink) == _notificationClients.end())
@@ -78,7 +78,7 @@ void ORBImplementation::Register(Exchange::IORB::INotification *sink)
  */
 void ORBImplementation::Unregister(Exchange::IORB::INotification *sink)
 {
-   ORB_LOG("Called Unregister - PID: %d", getpid());
+   ORB_LOG("PID=%d", getpid());
    _adminLock.Lock();
    auto itr = std::find(_notificationClients.begin(), _notificationClients.end(), sink);
    if (itr != _notificationClients.end())
@@ -121,7 +121,7 @@ void ORBImplementation::UnLoadPlatform()
  * Execute the given WPE bridge request. Platform call
  *
  * @param request The request as a string
- * @return std::string The response as a string
+ * @return The response as a string
  */
 std::string ORBImplementation::ExecuteBridgeRequest(std::string request)
 {
@@ -136,7 +136,8 @@ std::string ORBImplementation::ExecuteBridgeRequest(std::string request)
  * Platform call
  *
  * @param uri The given URI
- * @return std::string The resulting token
+ *
+ * @return The resulting token
  */
 std::string ORBImplementation::CreateToken(std::string uri)
 {
@@ -231,12 +232,7 @@ void ORBImplementation::JavaScriptEventDispatchRequest(
    ORB_LOG("We have %d callbacks to trigger", _notificationClients.size());
    for (const auto client : _notificationClients)
    {
-      client->JavaScriptEventDispatchRequest(
-         name,
-         properties,
-         broadcastRelated,
-         targetOrigin
-         );
+      client->JavaScriptEventDispatchRequest(name, properties, broadcastRelated, targetOrigin);
    }
 }
 
@@ -262,11 +258,7 @@ void ORBImplementation::DvbUrlLoaded(
    ORB_LOG("We have %d callbacks to trigger", _notificationClients.size());
    for (const auto client : _notificationClients)
    {
-      client->DvbUrlLoaded(
-         requestId,
-         fileContent,
-         fileContentLength
-         );
+      client->DvbUrlLoaded(requestId, fileContent, fileContentLength);
    }
 }
 
@@ -288,10 +280,9 @@ void ORBImplementation::EventInputKeyGenerated(int keyCode)
    ORB_LOG("We have %d callbacks to trigger", _notificationClients.size());
    for (const auto client : _notificationClients)
    {
-      client->EventInputKeyGenerated(
-         keyCode
-         );
+      client->EventInputKeyGenerated(keyCode);
    }
 }
-}  // Plugin
-}  // WPEFramework
+
+}  // namespace Plugin
+}  // namespace WPEFramework

@@ -8,15 +8,21 @@
 #pragma once
 
 #include "Module.h"
-#include <interfaces/IORB.h>
 #include "tracing/Logging.h"
 #include "ORBEngine.h"
 #include "ORBEventListenerImpl.h"
 
+#include <interfaces/IORB.h>
+
+
 namespace WPEFramework {
 namespace Plugin {
-class ORBImplementation : public Exchange::IORB {
+
+class ORBImplementation : public Exchange::IORB
+{
+
 public:
+
    ORBImplementation();
    ~ORBImplementation() override;
 
@@ -30,7 +36,6 @@ public:
       static ORBImplementation *implementation_instance;
       if (orb != nullptr)
       {
-         fprintf(stderr, "[ORB] Setting the singleton\n");
          implementation_instance = orb;
       }
       return implementation_instance;
@@ -45,6 +50,7 @@ public:
    END_INTERFACE_MAP
 
 public:
+
    // interface methods
    void Register(INotification *sink) override;
    void Unregister(INotification *sink) override;
@@ -59,6 +65,7 @@ public:
    void LoadDvbUrl(std::string url, int requestId) override;
 
    // methods to be called when events need to fire
+ 
    void JavaScriptEventDispatchRequest(
       std::string name,
       std::string properties,
@@ -75,11 +82,14 @@ public:
    void EventInputKeyGenerated(int keyCode) override;
 
 private:
+
    mutable Core::CriticalSection _adminLock;
    std::list<Exchange::IORB::INotification *> _notificationClients;
 
    std::shared_ptr<ORBEventListenerImpl> _orbEventListener;
    std::mutex _notificationMutex;
-};
+
+}; // class ORBImplementation
+
 } // namespace Plugin
 } // namespace WPEFramework

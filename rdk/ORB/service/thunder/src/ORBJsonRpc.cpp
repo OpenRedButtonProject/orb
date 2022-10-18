@@ -7,10 +7,13 @@
 
 #include "Module.h"
 #include "ORB.h"
+#include "ORBLogging.h"
+
 #include <vector>
 
 namespace WPEFramework {
 namespace Plugin {
+
 /**
  * @brief ORB::RegisterAll
  *
@@ -18,7 +21,7 @@ namespace Plugin {
  */
 void ORB::RegisterAll()
 {
-   fprintf(stderr, "RegisterAll call %d\n", getpid());
+   ORB_LOG("PID=%d", getpid());
    JSONRPC::Register<Core::JSON::DecUInt16, Core::JSON::Boolean>(_T("SendKeyEvent"), &ORB::SendKeyEvent, this);
 }
 
@@ -29,7 +32,7 @@ void ORB::RegisterAll()
  */
 void ORB::UnregisterAll()
 {
-   fprintf(stderr, "UNRegisterAll call %d\n", getpid());
+   ORB_LOG("PID=%d", getpid());
    JSONRPC::Unregister(_T("SendKeyEvent"));
 }
 
