@@ -16,8 +16,6 @@
 
 namespace WPEFramework {
 namespace Plugin {
-
-
 using namespace WPEFramework::JsonData::ORB;
 
 /**
@@ -28,15 +26,14 @@ using namespace WPEFramework::JsonData::ORB;
 class ORB
    : public PluginHost::IPlugin
    , public PluginHost::JSONRPC {
-
 /**
-    * @brief ORB::Notification
-    *
-    * Used to receive activation/deactivation events.
-    */
+ * @brief ORB::Notification
+ *
+ * Used to receive activation/deactivation events.
+ */
    class Notification : public RPC::IRemoteConnection::INotification
    {
-   private:
+private:
       Notification() = delete;
       Notification(const Notification &) = delete;
       Notification &operator=(const Notification &) = delete;
@@ -60,7 +57,7 @@ public:
       void Deactivated(RPC::IRemoteConnection *connection) override
       {
          _parent.Deactivated(connection);
-      }  
+      }
 
       BEGIN_INTERFACE_MAP(Notification)
       INTERFACE_ENTRY(RPC::IRemoteConnection::INotification)
@@ -70,13 +67,13 @@ private:
    }; // class Notification
 ////////////////////////////////////////////////////////////////
 public:
-   
+
    ORB();
    ~ORB() override;
 
    // Dont allow copy/move constructors
    ORB(const ORB &) = delete;
-   ORB &operator=(const ORB &) = delete;   
+   ORB &operator=(const ORB &) = delete;
 
    /**
     * Singleton.
@@ -86,7 +83,7 @@ public:
       static ORB *orb_instance;
       if (orb != nullptr)
       {
-         fprintf(stderr,"[ORB] Setting the singleton\n");
+         fprintf(stderr, "[ORB] Setting the singleton\n");
          orb_instance = orb;
       }
       return orb_instance;
@@ -120,14 +117,13 @@ private:
 
    // member variables
    PluginHost::IShell *_service;
-   Exchange::IORB* _orb;
+   Exchange::IORB *_orb;
    Core::Sink<Notification> _notification;
    uint32_t _connectionId;
 
-    // If set in the config, we should host our own COM-RPC server
-   ORBComRpcServer* _rpcServer;
+   // If set in the config, we should host our own COM-RPC server
+   ORBComRpcServer *_rpcServer;
    Core::ProxyType<RPC::InvokeServer> _rpcEngine;
-
 }; // class ORB
 } // namespace Plugin
 } // namespace WPEFramework

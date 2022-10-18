@@ -14,18 +14,17 @@
 
 namespace WPEFramework {
 namespace Plugin {
-
 SERVICE_REGISTRATION(ORBImplementation, ORB_MAJOR_VERSION, ORB_MINOR_VERSION);
 
 
 /**
  * @brief ORBImplementation::ORBImplementation()
- * 
+ *
  * Constructor of ORBImplentation. Initialise the _orbEventListener
  * in here, and create a signleton reference to use later
  */
-ORBImplementation::ORBImplementation() : 
-   _adminLock(), 
+ORBImplementation::ORBImplementation() :
+   _adminLock(),
    _notificationClients({})
 {
    fprintf(stderr, "Orb implementation constructor\n");
@@ -35,7 +34,7 @@ ORBImplementation::ORBImplementation() :
 
 /**
  * @brief ORBImplementation::~ORBImplementation()
- * 
+ *
  * Destructor
  */
 
@@ -46,13 +45,13 @@ ORBImplementation::~ORBImplementation()
 
 /**
  * @brief ORBImplementation::Register
- * 
+ *
  * Register the callbacks for notifications. Whoever wants to receive notifications
  * needs to call this with the Exchange::IORB::INotification ref
- * 
- * @param sink 
+ *
+ * @param sink
  */
-void ORBImplementation::Register(Exchange::IORB::INotification* sink)
+void ORBImplementation::Register(Exchange::IORB::INotification *sink)
 {
    _adminLock.Lock();
    ORB_LOG("Called Register - PID: %d", getpid());
@@ -64,7 +63,7 @@ void ORBImplementation::Register(Exchange::IORB::INotification* sink)
       sink->AddRef();
       ORB_LOG("Added a ref");
    }
-   
+
    _adminLock.Unlock();
 
    ORB_LOG("Registered a sink on the ORB %p", sink);
@@ -72,12 +71,12 @@ void ORBImplementation::Register(Exchange::IORB::INotification* sink)
 
 /**
  * @brief ORBImplementation::Unregister
- * 
+ *
  * Unregister callbacks
- * 
- * @param sink 
+ *
+ * @param sink
  */
-void ORBImplementation::Unregister(Exchange::IORB::INotification* sink)
+void ORBImplementation::Unregister(Exchange::IORB::INotification *sink)
 {
    ORB_LOG("Called Unregister - PID: %d", getpid());
    _adminLock.Lock();
@@ -93,7 +92,7 @@ void ORBImplementation::Unregister(Exchange::IORB::INotification* sink)
 
 /**
  * @brief ORBImplementation::LoadPlatform
- * 
+ *
  * Used to dlopen the ORBPlatform library. Called from ORB::Initialize
  */
 void ORBImplementation::LoadPlatform()
@@ -106,7 +105,7 @@ void ORBImplementation::LoadPlatform()
 
 /**
  * @brief ORBImplementation::UnLoadPlatform
- * 
+ *
  * Used to unload the platform when exiting
  */
 void ORBImplementation::UnLoadPlatform()
@@ -120,7 +119,7 @@ void ORBImplementation::UnLoadPlatform()
 /**
  * @brief ORBImplementation::ExecuteBridgeRequest
  * Execute the given WPE bridge request. Platform call
- * 
+ *
  * @param request The request as a string
  * @return std::string The response as a string
  */
@@ -132,10 +131,10 @@ std::string ORBImplementation::ExecuteBridgeRequest(std::string request)
 
 /**
  * @brief ORBImplementation::CreateToken
- * 
+ *
  * Create a new JSON token for the current application and the given uri.
  * Platform call
- * 
+ *
  * @param uri The given URI
  * @return std::string The resulting token
  */
@@ -164,11 +163,11 @@ void ORBImplementation::NotifyApplicationLoadFailed(std::string url, std::string
 
 /**
  * @brief ORBImplementation::NotifyApplicationPageChanged
- * 
+ *
  * Notify the application manager that the page of the current HbbTV application has changed
  * and is about to load. Platform call.
- * 
- * @param url 
+ *
+ * @param url
  */
 void ORBImplementation::NotifyApplicationPageChanged(std::string url)
 {
@@ -194,13 +193,13 @@ void ORBImplementation::LoadDvbUrl(std::string url, int requestId)
 
 /**
  * @brief ORBImplementation::SendKeyEvent
- * 
+ *
  * Send the specified key event to the current HbbTV application (if any).
  * Platform call.
- * 
- * @param keyCode 
- * @return true 
- * @return false 
+ *
+ * @param keyCode
+ * @return true
+ * @return false
  */
 bool ORBImplementation::SendKeyEvent(int keyCode)
 {
@@ -210,23 +209,23 @@ bool ORBImplementation::SendKeyEvent(int keyCode)
 
 /**
  * @brief ORBImplementation::JavaScriptEventDispatchRequest
- * 
+ *
  * This method is used to notify each client for the 'JavaScriptEventDispatchRequest' event
- * 
- * @param name 
- * @param properties 
- * @param broadcastRelated 
- * @param targetOrigin 
+ *
+ * @param name
+ * @param properties
+ * @param broadcastRelated
+ * @param targetOrigin
  */
 void ORBImplementation::JavaScriptEventDispatchRequest(
    std::string name,
    std::string properties,
    bool broadcastRelated,
    std::string targetOrigin
-)
+   )
 {
    ORB_LOG_NO_ARGS();
-   
+
    // Loop through all the registered callbacks and fire off the notification
    std::lock_guard<std::mutex> locker(_notificationMutex);
    ORB_LOG("We have %d callbacks to trigger", _notificationClients.size());
@@ -237,27 +236,27 @@ void ORBImplementation::JavaScriptEventDispatchRequest(
          properties,
          broadcastRelated,
          targetOrigin
-      );
+         );
    }
 }
 
 /**
  * @brief ORBImplementation::DvbUrlLoaded
- * 
+ *
  * This method is used to notify each client for the 'DvbUrlLoaded' event
- * 
- * @param requestId 
- * @param fileContent 
- * @param fileContentLength 
+ *
+ * @param requestId
+ * @param fileContent
+ * @param fileContentLength
  */
 void ORBImplementation::DvbUrlLoaded(
    int requestId,
-   const uint8_t* fileContent, 
+   const uint8_t *fileContent,
    unsigned int fileContentLength
-)
+   )
 {
    ORB_LOG_NO_ARGS();
-   
+
    // Loop through all the registered callbacks and fire off the notification
    std::lock_guard<std::mutex> locker(_notificationMutex);
    ORB_LOG("We have %d callbacks to trigger", _notificationClients.size());
@@ -267,23 +266,23 @@ void ORBImplementation::DvbUrlLoaded(
          requestId,
          fileContent,
          fileContentLength
-      );
+         );
    }
 }
 
 /**
  * @brief ORBImplementation::EventInputKeyGenerated
- * 
+ *
  * This method is used to notify each client for the 'EventInputKeyGenerated' event
- * 
- * @param requestId 
- * @param fileContent 
- * @param fileContentLength 
+ *
+ * @param requestId
+ * @param fileContent
+ * @param fileContentLength
  */
 void ORBImplementation::EventInputKeyGenerated(int keyCode)
 {
    ORB_LOG_NO_ARGS();
-   
+
    // Loop through all the registered callbacks and fire off the notification
    std::lock_guard<std::mutex> locker(_notificationMutex);
    ORB_LOG("We have %d callbacks to trigger", _notificationClients.size());
@@ -291,9 +290,8 @@ void ORBImplementation::EventInputKeyGenerated(int keyCode)
    {
       client->EventInputKeyGenerated(
          keyCode
-      );
+         );
    }
 }
-
 }  // Plugin
 }  // WPEFramework

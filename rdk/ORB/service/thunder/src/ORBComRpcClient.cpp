@@ -14,27 +14,26 @@ MODULE_NAME_DECLARATION(BUILD_REFERENCE)
 
 namespace orb
 {
-
 /******************************************************************************
 ** Event handlers
 *****************************************************************************/
 
 /**
  * @brief ORBComRpcClient::NotificationHandler::JavaScriptEventDispatchRequest
- * 
+ *
  * React to the 'JavaScriptEventDispatchRequest' event accordingly
- * 
- * @param name 
- * @param properties 
- * @param broadcastRelated 
- * @param targetOrigin 
+ *
+ * @param name
+ * @param properties
+ * @param broadcastRelated
+ * @param targetOrigin
  */
 void ORBComRpcClient::NotificationHandler::JavaScriptEventDispatchRequest(
    std::string name,
    std::string properties,
    bool broadcastRelated,
    std::string targetOrigin
-)
+   )
 {
    ORB_LOG("%s, %s, %d, %s", name.c_str(), properties.c_str(), broadcastRelated, targetOrigin.c_str());
    if (_parent.m_subscribedEvents[EVENT_JAVASCRIPT_EVENT_DISPATCH_REQUESTED] == true)
@@ -47,35 +46,35 @@ void ORBComRpcClient::NotificationHandler::JavaScriptEventDispatchRequest(
 
 /**
  * @brief ORBComRpcClient::NotificationHandler::DvbUrlLoaded
- * 
+ *
  * React to the 'DvbUrlLoaded' event accordingly
- * 
- * @param requestId 
- * @param fileContent 
- * @param fileContentLength 
+ *
+ * @param requestId
+ * @param fileContent
+ * @param fileContentLength
  */
 void ORBComRpcClient::NotificationHandler::DvbUrlLoaded(
    int requestId,
-   const uint8_t* fileContent, 
+   const uint8_t *fileContent,
    unsigned int fileContentLength
-)
+   )
 {
    ORB_LOG_NO_ARGS();
 
    if (_parent.m_subscribedEvents[EVENT_DVB_URL_LOADED] == true)
-   {  
+   {
       ORB_LOG("Dispatching DvbUrlLoaded");
-      unsigned char* _fileContent = reinterpret_cast<unsigned char*>(const_cast<uint8_t*>(fileContent));
+      unsigned char *_fileContent = reinterpret_cast<unsigned char *>(const_cast<uint8_t *>(fileContent));
       _parent.m_onDvbUrlLoaded(requestId, _fileContent, fileContentLength);
    }
 }
 
 /**
  * @brief ORBComRpcClient::NotificationHandler::EventInputKeyGenerated
- * 
+ *
  * React to the 'EventInputKeyGenerated'  accordingly
- * 
- * @param keyCode 
+ *
+ * @param keyCode
  */
 void ORBComRpcClient::NotificationHandler::EventInputKeyGenerated(int keyCode)
 {
@@ -91,10 +90,10 @@ void ORBComRpcClient::NotificationHandler::EventInputKeyGenerated(int keyCode)
 /******************************************************************************
 ** Initialise/Deinitialise and helper methods
 *****************************************************************************/
-   
+
 /**
  * @brief ORBComRpcClient::ORBComRpcClient()
- * 
+ *
  * Initialize ORBComRpcClient
  */
 ORBComRpcClient::ORBComRpcClient(
@@ -103,16 +102,16 @@ ORBComRpcClient::ORBComRpcClient(
    OnInputKeyGenerated_cb onInputKeyGenerated_cb
    )
    :  ORBGenericClient(onJavaScriptEventDispatchRequested_cb, onDvbUrlLoaded_cb, onInputKeyGenerated_cb),
-      m_remoteConnection(GetConnectionEndpoint()),
-      m_engine(Core::ProxyType<RPC::InvokeServerType<1, 0, 4>>::Create()),
-      m_client(Core::ProxyType<RPC::CommunicatorClient>::Create(m_remoteConnection, Core::ProxyType<Core::IIPCServer>(m_engine))),
-      m_notification(this),
-      m_valid(false),
-      m_subscribedEvents({})
+   m_remoteConnection(GetConnectionEndpoint()),
+   m_engine(Core::ProxyType<RPC::InvokeServerType<1, 0, 4> >::Create()),
+   m_client(Core::ProxyType<RPC::CommunicatorClient>::Create(m_remoteConnection, Core::ProxyType<Core::IIPCServer>(m_engine))),
+   m_notification(this),
+   m_valid(false),
+   m_subscribedEvents({})
 {
    // Announce our arrival over COM-RPC
    m_engine->Announcements(m_client->Announcement());
-   
+
    // Check we opened the link correctly (if Thunder isn't running, this will be false)
    if (!m_client.IsValid())
    {
@@ -129,7 +128,7 @@ ORBComRpcClient::ORBComRpcClient(
       m_valid = false;
       return;
    }
-   
+
    //////////////////////////////////////////////////
    // check if plugin is activated functionality
    //////////////////////////////////////////////////
@@ -142,7 +141,7 @@ ORBComRpcClient::ORBComRpcClient(
       m_valid = false;
       return;
    }
-   
+
    // register for notifications
    _orb->AddRef();
    _orb->Register(&m_notification);
@@ -157,7 +156,7 @@ ORBComRpcClient::ORBComRpcClient(
 
 /**
  * @brief ORBComRpcClient::~ORBComRpcClient
- * 
+ *
  * Disposal and clean up
  */
 ORBComRpcClient::~ORBComRpcClient()
@@ -189,24 +188,24 @@ ORBComRpcClient::~ORBComRpcClient()
 
 /**
  * @brief ORBComRpcClient::IsValid
- * 
+ *
  * Return true if we connected to Thunder successfully and managed to
  * find the COM-RPC interface(s) we care about
- * 
- * @return true 
- * @return false 
+ *
+ * @return true
+ * @return false
  */
 bool ORBComRpcClient::IsValid()
 {
    return m_valid;
 }
 
-   /**
+/**
  * @brief ORBComRpcClient::GetConnectionEndpoint
- * 
+ *
  * Returns path for communication (COMRPC)
- * 
- * @return Core::NodeId 
+ *
+ * @return Core::NodeId
  */
 Core::NodeId ORBComRpcClient::GetConnectionEndpoint()
 {
@@ -216,9 +215,9 @@ Core::NodeId ORBComRpcClient::GetConnectionEndpoint()
    // On linux, Thunder defaults to /tmp/communicator for the generic COM-RPC
    // interface
    #if PLUGIN_ORB_PRIVATE_COMRPC == false
-      communicatorPath = "/tmp/communicator";
+   communicatorPath = "/tmp/communicator";
    #else
-      communicatorPath = "/tmp/ORB";
+   communicatorPath = "/tmp/ORB";
    #endif
 
    ORB_LOG("COMMUNICATOR PATH: %s\n", communicatorPath.c_str());
@@ -232,11 +231,11 @@ Core::NodeId ORBComRpcClient::GetConnectionEndpoint()
 
 /**
  * @brief ORBComRpcClient::ExecuteBridgeRequest
- * 
+ *
  * Calls the ORBImplementation::ExecuteBridgeRequest COMRPC endpoint
- * 
- * @param request 
- * @return std::string 
+ *
+ * @param request
+ * @return std::string
  */
 std::string ORBComRpcClient::ExecuteBridgeRequest(std::string request)
 {
@@ -251,11 +250,11 @@ std::string ORBComRpcClient::ExecuteBridgeRequest(std::string request)
 
 /**
  * @brief ORBComRpcClient::CreateToken
- * 
+ *
  * Calls the ORBImplementation::CreateToken COMRPC endpoint
- * 
- * @param uri 
- * @return std::string 
+ *
+ * @param uri
+ * @return std::string
  */
 std::string ORBComRpcClient::CreateToken(std::string uri)
 {
@@ -270,11 +269,11 @@ std::string ORBComRpcClient::CreateToken(std::string uri)
 
 /**
  * @brief ORBComRpcClient::LoadDvbUrl
- * 
+ *
  * Calls the ORBImplementation::LoadDvbUrl COMRPC endpoint
- * 
- * @param url 
- * @param requestId 
+ *
+ * @param url
+ * @param requestId
  */
 void ORBComRpcClient::LoadDvbUrl(std::string url, int requestId)
 {
@@ -287,11 +286,11 @@ void ORBComRpcClient::LoadDvbUrl(std::string url, int requestId)
 
 /**
  * @brief ORBComRpcClient::NotifyApplicationLoadFailed
- * 
+ *
  * Calls the ORBImplementation::NotifyApplicationLoadFailed COMRPC endpoint
- * 
- * @param url 
- * @param errorDescription 
+ *
+ * @param url
+ * @param errorDescription
  */
 void ORBComRpcClient::NotifyApplicationLoadFailed(std::string url, std::string errorDescription)
 {
@@ -304,10 +303,10 @@ void ORBComRpcClient::NotifyApplicationLoadFailed(std::string url, std::string e
 
 /**
  * @brief ORBComRpcClient::NotifyApplicationPageChanged
- * 
+ *
  * Calls the ORBImplementation::NotifyApplicationPageChanged COMRPC endpoint
- * 
- * @param url 
+ *
+ * @param url
  */
 void ORBComRpcClient::NotifyApplicationPageChanged(std::string url)
 {
@@ -325,25 +324,25 @@ void ORBComRpcClient::NotifyApplicationPageChanged(std::string url)
 /**
  * Subscribe to 'JavaScriptEventDispatchRequestedEvent'
  */
-void ORBComRpcClient::SubscribeToJavaScriptEventDispatchRequestedEvent() 
+void ORBComRpcClient::SubscribeToJavaScriptEventDispatchRequestedEvent()
 {
    ORB_LOG_NO_ARGS();
-   m_subscribedEvents[EVENT_JAVASCRIPT_EVENT_DISPATCH_REQUESTED] = true;  
+   m_subscribedEvents[EVENT_JAVASCRIPT_EVENT_DISPATCH_REQUESTED] = true;
 }
 
 /**
  * Subscribe to 'DvbUrlLoadedEvent'
  */
-void ORBComRpcClient::SubscribeToDvbUrlLoadedEvent() 
+void ORBComRpcClient::SubscribeToDvbUrlLoadedEvent()
 {
    ORB_LOG_NO_ARGS();
-   m_subscribedEvents[EVENT_DVB_URL_LOADED] = true;  
+   m_subscribedEvents[EVENT_DVB_URL_LOADED] = true;
 }
 
 /**
  * Subscribe to 'InputKeyGeneratedEvent'
  */
-void ORBComRpcClient::SubscribeToInputKeyGeneratedEvent() 
+void ORBComRpcClient::SubscribeToInputKeyGeneratedEvent()
 {
    ORB_LOG_NO_ARGS();
    m_subscribedEvents[EVENT_INPUT_KEY_GENERATED] = true;
@@ -364,7 +363,7 @@ void ORBComRpcClient::UnsubscribeFromJavaScriptEventDispatchRequestedEvent()
 void ORBComRpcClient::UnsubscribeFromDvbUrlLoadedEvent()
 {
    ORB_LOG_NO_ARGS();
-   m_subscribedEvents[EVENT_DVB_URL_LOADED] = false;  
+   m_subscribedEvents[EVENT_DVB_URL_LOADED] = false;
 }
 
 /**
@@ -397,5 +396,4 @@ std::shared_ptr<ORBGenericClient> CreateORBClient(
       onInputKeyGenerated_cb
       );
 }
-
 }   // namespace orb

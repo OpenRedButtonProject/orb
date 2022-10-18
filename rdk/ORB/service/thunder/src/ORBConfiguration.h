@@ -17,17 +17,18 @@ using namespace WPEFramework;
  */
 class ORBConfiguration : public Core::JSON::Container {
 public:
-    ORBConfiguration()
-        : Core::JSON::Container()
-    {
-        // Map a json object name to c++ object
-        Add(_T("privateComRpc"), &PrivateComRpcServer);
-    }
-    ~ORBConfiguration() = default;
+   ORBConfiguration()
+      : Core::JSON::Container()
+   {
+      // Map a json object name to c++ object
+      Add(_T("privateComRpc"), &PrivateComRpcServer);
+   }
 
-    ORBConfiguration(const ORBConfiguration&) = delete;
-    ORBConfiguration& operator=(const ORBConfiguration&) = delete;
+   ~ORBConfiguration() = default;
+
+   ORBConfiguration(const ORBConfiguration&) = delete;
+   ORBConfiguration& operator=(const ORBConfiguration&) = delete;
 
 public:
-    Core::JSON::Boolean PrivateComRpcServer;
+   Core::JSON::Boolean PrivateComRpcServer;
 };

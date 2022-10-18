@@ -14,7 +14,6 @@ using namespace std::chrono_literals;
 
 namespace WPEFramework {
 namespace Plugin {
-
 SERVICE_REGISTRATION(ORB, 1, 0);
 
 /**
@@ -49,12 +48,12 @@ ORB::~ORB()
 const string ORB::Initialize(PluginHost::IShell *service)
 {
    string message;
-   
+
    ASSERT(_service == nullptr);
    ASSERT(_orb == nullptr);
 
    SYSLOG(Logging::Startup, (_T("ORB Initialisation started in process %d"), Core::ProcessInfo().Id()));
-   
+
    // Register Connection::Notification
    _service = service;
    _service->Register(&_notification);
@@ -71,7 +70,7 @@ const string ORB::Initialize(PluginHost::IShell *service)
 
       ORBConfiguration config;
       config.FromString(_service->ConfigLine());
-      
+
       // start the comrpc server, in case it is set on config
       if (config.PrivateComRpcServer.Value() == true)
       {
@@ -92,7 +91,6 @@ const string ORB::Initialize(PluginHost::IShell *service)
             // return string for WPEFramework to print as error
             message = "Failed to start COM-RPC server";
          }
-
       }
    }
    else
@@ -103,7 +101,7 @@ const string ORB::Initialize(PluginHost::IShell *service)
 
       message = _T("ORB plugin could not be initialised");
    }
-   
+
    // Reached successful initialisation
    SYSLOG(Logging::Startup, (_T("ORB Initialisation finished")));
    return message;
@@ -167,16 +165,15 @@ void ORB::Deactivated(RPC::IRemoteConnection *connection)
    if (connection->Id() == _connectionId)
    {
       ASSERT(_service != nullptr);
-         Core::IWorkerPool::Instance().Submit(
-            PluginHost::IShell::Job::Create(
-               _service, 
-               PluginHost::IShell::DEACTIVATED, 
-               PluginHost::IShell::FAILURE
+      Core::IWorkerPool::Instance().Submit(
+         PluginHost::IShell::Job::Create(
+            _service,
+            PluginHost::IShell::DEACTIVATED,
+            PluginHost::IShell::FAILURE
             )
          );
    }
    SYSLOG(Logging::Notification, (_T("ORB Deactivation finished")));
 }
-
 } // namespace Plugin
 } // namespace WPEFramework

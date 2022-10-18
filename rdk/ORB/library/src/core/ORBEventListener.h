@@ -39,7 +39,7 @@ public:
     * @param content       The retrieved content
     * @param contentLength The retrieved content length in number of bytes
     */
-   virtual void OnDvbUrlLoaded(int requestId, unsigned char* content, unsigned int contentLength) = 0;
+   virtual void OnDvbUrlLoaded(int requestId, unsigned char *content, unsigned int contentLength) = 0;
 
 
    /**

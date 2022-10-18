@@ -15,25 +15,25 @@ using namespace WPEFramework;
 /**
  * A custom COM-RPC server implementation for a private connection to our plugin
  * instead of going via Thunder communicator
-*/
+ */
 class ORBComRpcServer : public RPC::Communicator {
 public:
-    ORBComRpcServer() = delete;
-    ORBComRpcServer(const ORBComRpcServer&) = delete;
-    ORBComRpcServer& operator=(const ORBComRpcServer&) = delete;
+   ORBComRpcServer() = delete;
+   ORBComRpcServer(const ORBComRpcServer&) = delete;
+   ORBComRpcServer& operator=(const ORBComRpcServer&) = delete;
 
-    ORBComRpcServer(const Core::NodeId& socket,
-        Exchange::IORB* parentInterface,
-        PluginHost::IShell* shell,
-        const string& proxyStubPath,
-        const Core::ProxyType<RPC::InvokeServer>& engine);
-    ~ORBComRpcServer();
-
-private:
-    // If a client wants to acquire an interface, provide it to them
-    void* Aquire(const string& className, const uint32_t interfaceId, const uint32_t versionId) override;
+   ORBComRpcServer(const Core::NodeId& socket,
+      Exchange::IORB *parentInterface,
+      PluginHost::IShell *shell,
+      const string& proxyStubPath,
+      const Core::ProxyType<RPC::InvokeServer>& engine);
+   ~ORBComRpcServer();
 
 private:
-    Exchange::IORB* _orb;
-    PluginHost::IShell* _shell;
+   // If a client wants to acquire an interface, provide it to them
+   void* Aquire(const string& className, const uint32_t interfaceId, const uint32_t versionId) override;
+
+private:
+   Exchange::IORB *_orb;
+   PluginHost::IShell *_shell;
 };

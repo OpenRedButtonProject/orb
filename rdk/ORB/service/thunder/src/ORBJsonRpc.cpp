@@ -11,7 +11,6 @@
 
 namespace WPEFramework {
 namespace Plugin {
-   
 /**
  * @brief ORB::RegisterAll
  *
@@ -47,7 +46,7 @@ void ORB::UnregisterAll()
 uint32_t ORB::SendKeyEvent(Core::JSON::DecUInt16 keyCode, Core::JSON::Boolean& response)
 {
    uint32_t error = Core::ERROR_NONE;
-   
+
    if (keyCode.IsSet())
    {
       SYSLOG(Logging::Notification, (_T("[ORB::SendKeyEvent] keyCode=%hu"), keyCode.Value()));
@@ -57,9 +56,8 @@ uint32_t ORB::SendKeyEvent(Core::JSON::DecUInt16 keyCode, Core::JSON::Boolean& r
    {
       error = Core::ERROR_BAD_REQUEST;
    }
-   
+
    return error;
 }
-
 } // namespace Plugin
 } // namespace WPEFramework

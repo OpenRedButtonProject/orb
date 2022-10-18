@@ -42,7 +42,7 @@ void ORBEventListenerImpl::OnJavaScriptEventDispatchRequested(
       eventProperties,
       broadcastRelated,
       targetOrigin
-   );
+      );
 }
 
 /**
@@ -54,8 +54,8 @@ void ORBEventListenerImpl::OnJavaScriptEventDispatchRequested(
  */
 void ORBEventListenerImpl::OnDvbUrlLoaded(int requestId, unsigned char *content, unsigned int contentLength)
 {
-  fprintf(stderr, "[ORBEventListenerImpl::OnDvbUrlLoaded] Calling COMRPC OnDvbUrlLoaded - PID: %d\n", getpid());
-  ORBImplementation::instance(nullptr)->DvbUrlLoaded(requestId, content, contentLength);
+   fprintf(stderr, "[ORBEventListenerImpl::OnDvbUrlLoaded] Calling COMRPC OnDvbUrlLoaded - PID: %d\n", getpid());
+   ORBImplementation::instance(nullptr)->DvbUrlLoaded(requestId, content, contentLength);
 }
 
 /**
@@ -65,7 +65,7 @@ void ORBEventListenerImpl::OnDvbUrlLoaded(int requestId, unsigned char *content,
  */
 void ORBEventListenerImpl::OnInputKeyGenerated(int keyCode)
 {
-  fprintf(stderr, "[ORBEventListenerImpl::OnInputKeyGenerated] Calling COMRPC OnInputKeyGenerated - PID: %d\n", getpid());
-  ORBImplementation::instance(nullptr)->EventInputKeyGenerated(keyCode);
+   fprintf(stderr, "[ORBEventListenerImpl::OnInputKeyGenerated] Calling COMRPC OnInputKeyGenerated - PID: %d\n", getpid());
+   ORBImplementation::instance(nullptr)->EventInputKeyGenerated(keyCode);
 }
 } // namespace orb
