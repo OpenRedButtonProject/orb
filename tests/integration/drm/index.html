@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//HbbTV//1.1.1//EN" "http://www.hbbtv.org/dtd/HbbTV-1.1.1.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>ORB Integration Test Suite - Example</title>
+<meta http-equiv="content-type" content="Content-Type: application/vnd.hbbtv.xhtml+xml; charset=UTF-8" />
+<link rel="stylesheet" type="text/css" href="./common/style.css" />
+<script type="text/javascript" src="../common/orbtest.js"></script>
+</head>
+<body>
+<script>
+//<![CDATA[
+window.onload = () => {
+   const configurations = [{
+      'initDataTypes': ['cenc'],
+      'audioCapabilities': [
+         {
+            'contentType': 'audio/mp4; codecs="mp4a.40.2"'
+         }
+      ],
+      'videoCapabilities': [
+         {
+            'contentType': 'video/mp4; codecs="avc1.42e01e"'
+         }
+      ]
+   }];
+
+   orbtest.add({
+      name: "org.w3.clearkey",
+      description: "Pass if org.w3.clearkey key system supported",
+      test: (result) => {
+         try {
+            navigator.requestMediaKeySystemAccess("org.w3.clearkey", configurations)
+            .then(function() {
+               result.pass("Supported");
+            })
+            .catch(function(e) {
+               result.fail(e);
+            });
+         } catch (e) {
+            result.fail(e);
+         }
+      }
+   });
+   
+   orbtest.add({
+      name: "com.widevine.alpha",
+      description: "Pass if com.widevine.alpha key system supported",
+      test: (result) => {
+         try {
+            navigator.requestMediaKeySystemAccess("com.widevine.alpha", configurations)
+            .then(function() {
+               result.pass("Supported");
+            })
+            .catch(function(e) {
+               result.fail(e);
+            });
+         } catch (e) {
+            result.fail(e);
+         }
+      }
+   });
+   
+   orbtest.add({
+      name: "com.microsoft.playready",
+      description: "Pass if com.microsoft.playready key system supported",
+      test: (result) => {
+         try {
+            navigator.requestMediaKeySystemAccess("com.microsoft.playready", configurations)
+            .then(function() {
+               result.pass("Supported");
+            })
+            .catch(function(e) {
+               result.fail(e);
+            });
+         } catch (e) {
+            result.fail(e);
+         }
+      }
+   });
+
+   // Run!
+   orbtest.run("drm");
+}
+//]]>
+</script>
+</body>
+</html>

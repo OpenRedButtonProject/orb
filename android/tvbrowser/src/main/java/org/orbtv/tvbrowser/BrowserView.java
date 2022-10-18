@@ -13,11 +13,15 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.webkit.JavascriptInterface;
+import android.webkit.PermissionRequest;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import org.json.JSONObject;
+
+import java.util.Arrays;
 
 class BrowserView extends WebView {
    private static final String TAG = BrowserView.class.getSimpleName();
@@ -78,6 +82,25 @@ class BrowserView extends WebView {
          @Override
          public void onScaleChanged(WebView view, float oldScale, float newScale) {
             BrowserView.this.setInitialScale((int)(BrowserView.this.getHeight() / 720.0 * 100.0));
+         }
+      });
+
+      setWebChromeClient(new WebChromeClient() {
+         @Override
+         public void onPermissionRequest(PermissionRequest request) {
+            Log.d(TAG, "Received permission request for resources: "
+               + Arrays.toString(request.getResources()));
+            String[] resources = request.getResources();
+            // Grant access to protected media ID if requested
+            if (resources != null) {
+               for (String resource : resources) {
+                  if (resource.equals(PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID)) {
+                     request.grant(new String[]{resource});
+                     return;
+                  }
+               }
+            }
+            request.deny();
          }
       });
    }
