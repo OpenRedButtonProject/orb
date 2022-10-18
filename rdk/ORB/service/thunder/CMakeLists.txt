@@ -48,6 +48,7 @@ add_library(${MODULE_NAME} SHARED
 
 target_include_directories(${MODULE_NAME} PUBLIC
   src
+  ../../library/src/core/utilities
 )
 
 set_target_properties(${MODULE_NAME} PROPERTIES
@@ -116,7 +117,7 @@ add_library(ORBClient SHARED
 
 target_include_directories(ORBClient PUBLIC
   src
-  ../../library/src/core
+  ../../library/src/core/utilities
 )
 
 set_target_properties(ORBClient PROPERTIES
