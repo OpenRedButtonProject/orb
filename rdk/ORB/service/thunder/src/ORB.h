@@ -8,7 +8,6 @@
 #pragma once
 
 #include "Module.h"
-#include <interfaces/json/JsonData_ORB.h>
 #include <interfaces/IORB.h>
 #include <memory>
 
@@ -16,7 +15,6 @@
 
 namespace WPEFramework {
 namespace Plugin {
-using namespace WPEFramework::JsonData::ORB;
 
 /**
  * @brief orb::ORB
