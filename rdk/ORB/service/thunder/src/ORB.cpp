@@ -6,14 +6,31 @@
  */
 
 #include "ORB.h"
-#include "ORBEngine.h"
-
-using namespace orb;
+#include "ORBConfiguration.h"
 
 namespace WPEFramework {
 namespace Plugin {
 SERVICE_REGISTRATION(ORB, 1, 0);
 
+/**
+ * Constructor
+ */
+ORB::ORB()
+   : _service(nullptr)
+   , _orb(nullptr)
+   , _connectionId(0)
+   , _notification(this)
+{
+   SYSLOG(Logging::Startup, (_T("ORB service instance constructed")));
+}
+
+/**
+ * Destructor.
+ */
+ORB::~ORB()
+{
+   SYSLOG(Logging::Shutdown, (_T("ORB service instance destructed")));
+}
 
 /**
  * @brief ORB::Initialize
@@ -26,27 +43,59 @@ SERVICE_REGISTRATION(ORB, 1, 0);
  */
 const string ORB::Initialize(PluginHost::IShell *service)
 {
-   SYSLOG(Logging::Startup, (_T("ORB Initialisation started")));
    string message;
 
-   _connectionId = 0;
+   ASSERT(_service == nullptr);
+   ASSERT(_orb == nullptr);
+
+   SYSLOG(Logging::Startup, (_T("ORB Initialisation started in process %d"), Core::ProcessInfo().Id()));
+
+   // Register Connection::Notification
    _service = service;
-   _skipURL = _service->WebPrefix().length();
-
    _service->Register(&_notification);
+   instance(this);
 
-   _orb = service->Root<Core::IUnknown>(_connectionId, 2000, _T("ORB"));
+   _orb = service->Root<Exchange::IORB>(_connectionId, 2000, _T("ORBImplementation"));
 
    // Check if ORB plugin initialisation failed
-   if (_orb == nullptr)
+   if (_orb != nullptr)
    {
-      message = _T("ORB plugin could not be initialised");
+      _orb->LoadPlatform();
+      RegisterAll();
+
+      ORBConfiguration config;
+      config.FromString(_service->ConfigLine());
+
+      // start the comrpc server, in case it is set on config
+      if (config.PrivateComRpcServer.Value() == true)
+      {
+         _rpcEngine = Core::ProxyType<RPC::InvokeServer>::Create(&Core::IWorkerPool::Instance());
+         _rpcServer = new ORBComRpcServer(Core::NodeId("/tmp/ORB"), _orb, service, _service->ProxyStubPath(), _rpcEngine);
+
+         if (_rpcServer->IsListening())
+         {
+            SYSLOG(Logging::Startup, (_T("Successfully started COM-RPC server")));
+         }
+         else
+         {
+            delete _rpcServer;
+            _rpcServer = nullptr;
+            _rpcEngine.Release();
+            SYSLOG(Logging::Error, (_T("Failed to start COM-RPC server")));
+
+            // return string for WPEFramework to print as error
+            message = "Failed to start COM-RPC server";
+         }
+      }
+   }
+   else
+   {
+      SYSLOG(Logging::Error, (_T("ORB plugin could not be initialised")));
       _service->Unregister(&_notification);
       _service = nullptr;
-      return message;
-   }
 
-   ORBEngine::GetSharedInstance().Start(_orbEventListener);
+      message = _T("ORB plugin could not be initialised");
+   }
 
    // Reached successful initialisation
    SYSLOG(Logging::Startup, (_T("ORB Initialisation finished")));
@@ -64,17 +113,28 @@ void ORB::Deinitialize(PluginHost::IShell *service)
 
    SYSLOG(Logging::Shutdown, (_T("ORB Deinitialisation started")));
 
-   ORBEngine::GetSharedInstance().Stop();
-
-   _service->Unregister(&_notification);
+   // Destroy our COM-RPC server if we started one
+   if (_rpcServer != nullptr)
+   {
+      // release rpcserver and engine
+      delete _rpcServer;
+      _rpcServer = nullptr;
+      _rpcEngine.Release();
+   }
 
    if (_orb != nullptr)
    {
+      _service->Unregister(&_notification);
+      _orb->UnLoadPlatform();
+
+      UnregisterAll();
       _orb->Release();
-      _orb = nullptr;
    }
 
+   // Set everything back to default
+   _connectionId = 0;
    _service = nullptr;
+   _orb = nullptr;
 
    SYSLOG(Logging::Shutdown, (_T("ORB Deinitialisation finished")));
 }
@@ -100,67 +160,15 @@ void ORB::Deactivated(RPC::IRemoteConnection *connection)
    if (connection->Id() == _connectionId)
    {
       ASSERT(_service != nullptr);
-      PluginHost::WorkerPool::Instance().Submit(PluginHost::IShell::Job::Create(_service,
-         PluginHost::IShell::DEACTIVATED, PluginHost::IShell::FAILURE));
+      Core::IWorkerPool::Instance().Submit(
+         PluginHost::IShell::Job::Create(
+            _service,
+            PluginHost::IShell::DEACTIVATED,
+            PluginHost::IShell::FAILURE
+            )
+         );
    }
    SYSLOG(Logging::Notification, (_T("ORB Deactivation finished")));
-}
-
-/**
- * @brief ORB::NotifyJavaScriptEventDispatchRequested
- *
- * @param name             The name of the event to be dispatched
- * @param properties       The properties of the event to be dispatched
- * @param broadcastRelated Indicates whether the event is broadcast-related or not
- * @param targetOrigin     The event's target origin
- */
-void ORB::NotifyJavaScriptEventDispatchRequested(
-   std::string name,
-   JsonObject properties,
-   bool broadcastRelated,
-   std::string targetOrigin
-   )
-{
-   std::string propertiesAsString;
-   properties.ToString(propertiesAsString);
-   fprintf(stderr, "[ORB::NotifyJavaScriptEventDispatchRequested] name=%s properties=%s\n", name.c_str(), propertiesAsString.c_str());
-
-   JavaScriptEventDispatchRequestedParamsData params;
-   params.EventName = name;
-   params.EventProperties = propertiesAsString;
-   params.BroadcastRelated = broadcastRelated;
-   params.TargetOrigin = targetOrigin;
-
-   EventJavaScriptEventDispatchRequested(params);
-}
-
-/**
- * @brief ORB::NotifyDvbUrlLoaded
- *
- * @param requestId         The request identifier
- * @param fileContentLength The DVB file content length in number of bytes
- */
-void ORB::NotifyDvbUrlLoaded(int requestId, unsigned int fileContentLength)
-{
-   fprintf(stderr, "[ORB::NotifyDvbUrlLoaded] requestId=%d fileContentLength=%d\n", requestId, fileContentLength);
-
-   DvbUrlLoadedParamsData params;
-   params.RequestId = requestId;
-   params.FileContentLength = fileContentLength;
-
-   EventDvbUrlLoaded(params);
-}
-
-/**
- * @brief ORB::NotifyInputKeyGenerated
- *
- * @param keyCode The JavaScript key code
- */
-void ORB::NotifyInputKeyGenerated(int keyCode)
-{
-   fprintf(stderr, "[ORB::NotifyInputKeyGenerated] keyCode=%d\n", keyCode);
-
-   EventInputKeyGenerated(keyCode);
 }
 } // namespace Plugin
 } // namespace WPEFramework
