@@ -17,10 +17,8 @@
 
 namespace WPEFramework {
 namespace Plugin {
-
 class ORBImplementation : public Exchange::IORB
 {
-
 public:
 
    ORBImplementation();
@@ -65,7 +63,7 @@ public:
    void LoadDvbUrl(std::string url, int requestId) override;
 
    // methods to be called when events need to fire
- 
+
    void JavaScriptEventDispatchRequest(
       std::string name,
       std::string properties,
@@ -88,8 +86,6 @@ private:
 
    std::shared_ptr<ORBEventListenerImpl> _orbEventListener;
    std::mutex _notificationMutex;
-
 }; // class ORBImplementation
-
 } // namespace Plugin
 } // namespace WPEFramework

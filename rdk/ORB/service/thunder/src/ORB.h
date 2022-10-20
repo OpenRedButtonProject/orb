@@ -15,7 +15,6 @@
 
 namespace WPEFramework {
 namespace Plugin {
-
 /**
  * @brief orb::ORB
  *

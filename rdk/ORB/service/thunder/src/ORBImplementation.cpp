@@ -255,9 +255,9 @@ void ORBImplementation::DvbUrlLoaded(
 
    if (fileContent == nullptr)
    {
-      fileContent = (uint8_t*)malloc(sizeof(uint8_t*) * fileContentLength);
+      fileContent = (uint8_t *)malloc(sizeof(uint8_t *) * fileContentLength);
    }
-   
+
    // Loop through all the registered callbacks and fire off the notification
    std::lock_guard<std::mutex> locker(_notificationMutex);
    ORB_LOG("We have %d callbacks to trigger", _notificationClients.size());
@@ -288,6 +288,5 @@ void ORBImplementation::EventInputKeyGenerated(int keyCode)
       client->EventInputKeyGenerated(keyCode);
    }
 }
-
 }  // namespace Plugin
 }  // namespace WPEFramework

@@ -18,7 +18,6 @@ using namespace WPEFramework;
  */
 class ORBComRpcServer : public RPC::Communicator
 {
-
 public:
 
    ORBComRpcServer() = delete;
@@ -42,5 +41,4 @@ private:
 
    Exchange::IORB *_orb;
    PluginHost::IShell *_shell;
-
 }; // class ORBComRpcServer

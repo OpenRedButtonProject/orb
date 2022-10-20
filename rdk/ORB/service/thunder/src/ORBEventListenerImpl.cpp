@@ -14,7 +14,6 @@ using namespace WPEFramework::Plugin;
 
 namespace orb
 {
-
 /**
  * Constructor.
  */
@@ -76,5 +75,4 @@ void ORBEventListenerImpl::OnInputKeyGenerated(int keyCode)
    ORB_LOG("PID=%d", getpid());
    ORBImplementation::instance(nullptr)->EventInputKeyGenerated(keyCode);
 }
-
 } // namespace orb

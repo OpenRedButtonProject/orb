@@ -13,7 +13,6 @@
 
 namespace WPEFramework {
 namespace Plugin {
-
 /**
  * @brief ORB::RegisterAll
  *

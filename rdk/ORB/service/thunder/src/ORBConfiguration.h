@@ -17,7 +17,6 @@ using namespace WPEFramework;
  */
 class ORBConfiguration : public Core::JSON::Container
 {
-
 public:
 
    ORBConfiguration()
@@ -34,5 +33,4 @@ public:
 
 public:
    Core::JSON::Boolean PrivateComRpcServer;
-
 }; // class ORBConfiguration
