@@ -11,6 +11,8 @@
 #define MODULE_NAME Plugin_ORBTV
 #endif
 
+#include <core/core.h>
+#include <com/com.h>
 #include <plugins/plugins.h>
 
 #undef EXTERNAL

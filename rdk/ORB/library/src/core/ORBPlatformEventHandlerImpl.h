@@ -121,7 +121,7 @@ public:
      * @param fileContent       The file content
      * @param fileContentLength The file content length in number of bytes
      */
-    virtual void OnDvbUrlLoaded(int requestId, unsigned short int *fileContent, unsigned int
+    virtual void OnDvbUrlLoaded(int requestId, unsigned char *fileContent, unsigned int
         fileContentLength) override final;
 
     /**

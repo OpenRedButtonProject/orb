@@ -11,7 +11,8 @@
 #include "ORBBrowserApi.h"
 
 typedef void (*OnJavaScriptEventDispatchRequested_cb)(std::string name, std::string properties);
-typedef void (*OnDvbUrlLoaded_cb)(int requestId, unsigned int contentLength);
+typedef void (*OnDvbUrlLoaded_cb)(int requestId, unsigned char *content, unsigned int
+    contentLength);
 typedef void (*OnInputKeyGenerated_cb)(int keyCode);
 
 namespace orb
@@ -49,7 +50,7 @@ public:
     virtual void NotifyApplicationPageChanged(std::string url) = 0;
 
 public:
-
+    // Events subscription
     virtual void SubscribeToJavaScriptEventDispatchRequestedEvent() = 0;
     virtual void SubscribeToDvbUrlLoadedEvent() = 0;
     virtual void SubscribeToInputKeyGeneratedEvent() = 0;
@@ -59,7 +60,7 @@ public:
     virtual void UnsubscribeFromInputKeyGeneratedEvent() = 0;
 
 protected:
-
+    // callbacks
     OnJavaScriptEventDispatchRequested_cb m_onJavaScriptEventDispatchRequested;
     OnDvbUrlLoaded_cb m_onDvbUrlLoaded;
     OnInputKeyGenerated_cb m_onInputKeyGenerated;

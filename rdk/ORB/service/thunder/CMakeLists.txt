@@ -9,33 +9,46 @@ cmake_minimum_required(VERSION 2.8)
 find_package(WPEFramework)
 
 set(PLUGIN_NAME ORB)
-set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})
+set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})             # WPEFrameworkORB
+set(PLUGIN_IMPLEMENTATION ${MODULE_NAME}Implementation) # WPEFrameworkORBImplementation
 
 message(STATUS "==========================================================")
 message(STATUS "${CMAKE_MODULE_PATH}")
 message(STATUS "${NAMESPACE}")
 message(STATUS "==========================================================")
 
-set(PLUGIN_ORB_AUTOSTART "true" CACHE STRING "Automatically start ORB plugin")
+if (NOT DEFINED PLUGIN_ORB_AUTOSTART)
+  set(PLUGIN_ORB_AUTOSTART "false" CACHE STRING "Automatically start ORB plugin")
+endif()
+
+if (NOT DEFINED PLUGIN_ORB_PRIVATE_COMRPC)
+  set(PLUGIN_ORB_PRIVATE_COMRPC "true" CACHE STRING "The plugin uses default communicator path (false) or private server (true)")  
+endif()
+
+add_definitions( -DPLUGIN_ORB_AUTOSTART=${PLUGIN_ORB_AUTOSTART} )
+add_definitions( -DPLUGIN_ORB_PRIVATE_COMRPC=${PLUGIN_ORB_PRIVATE_COMRPC} )
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 find_package(${NAMESPACE}Plugins REQUIRED)
 find_package(${NAMESPACE}Definitions REQUIRED)
+find_package(${NAMESPACE}Core REQUIRED)
 find_package(CompileSettingsDebug CONFIG REQUIRED)
+
+###############################################################################
+## libWPEFrameworkORB In process part
+###############################################################################
 
 add_library(${MODULE_NAME} SHARED
   src/Module.cpp
   src/ORB.cpp
-  src/ORBEventListenerImpl.cpp
   src/ORBJsonRpc.cpp
+  src/ORBComRpcServer.cpp
 )
-
-add_dependencies(${MODULE_NAME} ORBEngine)
 
 target_include_directories(${MODULE_NAME} PUBLIC
   src
-  ../../library/src/core
+  ../../library/src/core/utilities
 )
 
 set_target_properties(${MODULE_NAME} PROPERTIES
@@ -50,12 +63,45 @@ target_link_libraries(${MODULE_NAME} PRIVATE
   CompileSettingsDebug::CompileSettingsDebug
   ${NAMESPACE}Plugins::${NAMESPACE}Plugins
   ${NAMESPACE}Definitions::${NAMESPACE}Definitions
-  ORBCore
 )
 
 install(TARGETS ${MODULE_NAME}
   DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/wpeframework/plugins
 )
+
+###############################################################################
+## ORBImplementation library
+###############################################################################
+
+# Build the implementation that runs out-of-process behind a COM-RPC interface
+add_library(${PLUGIN_IMPLEMENTATION} SHARED
+  src/ORBImplementation.cpp
+  src/Module.cpp
+  src/ORBEventListenerImpl.cpp
+)
+
+add_dependencies(${PLUGIN_IMPLEMENTATION} ORBEngine)
+
+target_include_directories(${PLUGIN_IMPLEMENTATION} PUBLIC
+  src
+  ../../library/src/core
+)
+
+set_target_properties(${PLUGIN_IMPLEMENTATION} PROPERTIES
+  CXX_STANDARD 14
+  CXX_STANDARD_REQUIRED YES
+  LINKER_LANGUAGE CXX
+)
+
+target_link_libraries(${PLUGIN_IMPLEMENTATION} PRIVATE
+  ${NAMESPACE}Plugins::${NAMESPACE}Plugins
+  ORBCore
+)
+
+install(TARGETS
+        ${PLUGIN_IMPLEMENTATION}
+        DESTINATION
+        ${CMAKE_INSTALL_PREFIX}/lib/wpeframework/plugins)
 
 write_config(${PLUGIN_NAME})
 
@@ -64,9 +110,14 @@ write_config(${PLUGIN_NAME})
 ###############################################################################
 
 add_library(ORBClient SHARED 
-  src/ORBJsonRpcClient.cpp
+  src/ORBComRpcClient.cpp
   ../../library/src/core/ORBGenericClient.h
   ../../library/src/core/api/ORBBrowserApi.h
+)
+
+target_include_directories(ORBClient PUBLIC
+  src
+  ../../library/src/core/utilities
 )
 
 set_target_properties(ORBClient PROPERTIES

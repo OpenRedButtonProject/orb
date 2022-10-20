@@ -16,7 +16,7 @@ using namespace WPEFramework;
 
 namespace orb {
 void JavaScriptEventDispatchRequested(std::string name, std::string properties);
-void DvbUrlLoaded(int requestId, unsigned int contentLength);
+void DvbUrlLoaded(int requestId, unsigned char *content, unsigned int contentLength);
 void InputKeyGenerated(int keyCode);
 
 /**
@@ -190,7 +190,7 @@ void JavaScriptEventDispatchRequested(std::string name, std::string properties)
  * @param requestId
  * @param contentLength
  */
-void DvbUrlLoaded(int requestId, unsigned int contentLength)
+void DvbUrlLoaded(int requestId, unsigned char *content, unsigned int contentLength)
 {
     fprintf(stderr, "[ORBBridge::DvbUrlLoaded] requestId=%d\n", requestId);
 
