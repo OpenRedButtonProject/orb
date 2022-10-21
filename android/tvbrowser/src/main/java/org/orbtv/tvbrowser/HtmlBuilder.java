@@ -25,11 +25,15 @@ public class HtmlBuilder {
    AssetManager mAssetManager;
    String mHbbtvInjection;
    byte[] mHbbtvInjectionUtf8;
-   
+   String mPlayerPage;
+   byte[] mPlayerPageUtf8;
+
    HtmlBuilder(AssetManager assetManager) {
       mAssetManager = assetManager;
       mHbbtvInjection = getHbbtvInjection();
       mHbbtvInjectionUtf8 = mHbbtvInjection.getBytes(StandardCharsets.UTF_8);
+      mPlayerPage = getPlayerPage();
+      mPlayerPageUtf8 = mPlayerPage.getBytes(StandardCharsets.UTF_8);
    }
 
    public byte[] getRedirectPage(Charset charset, Uri uri) {
@@ -68,6 +72,14 @@ public class HtmlBuilder {
       }
    }
 
+   public byte[] getPlayerPage(Charset charset) {
+      if (charset == StandardCharsets.UTF_8) {
+         return mPlayerPageUtf8;
+      } else {
+         return mPlayerPage.getBytes(charset);
+      }
+   }
+
    private String getHbbtvInjection() {
       StringBuilder builder = new StringBuilder();
       builder.append("<script type=\"text/javascript\">\n//<![CDATA[\n");
@@ -79,6 +91,17 @@ public class HtmlBuilder {
          return "";
       }
       builder.append("\n//]]>\n</script>");
+      return builder.toString();
+   }
+
+   private String getPlayerPage() {
+      StringBuilder builder = new StringBuilder();
+      try {
+         appendAsset(builder, "playerpage.html");
+      } catch (IOException e) {
+         e.printStackTrace();
+         return "";
+      }
       return builder.toString();
    }
 
