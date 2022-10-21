@@ -54,6 +54,7 @@ src/objects/mediasync/broadcastobserver.js \
 src/objects/mediasync/mediaelementtsclient.js \
 src/objects/csmanager.js \
 src/mediaproxies/mediaerror.js \
+src/mediaproxies/mediaelementwrapper.js \
 src/mediaproxies/dashproxy.js \
 src/mediaproxies/nativeproxy.js \
 src/run.js \
