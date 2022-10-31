@@ -281,13 +281,17 @@ hbbtv.objects.DashProxy = (function() {
             p.audioTracks = hbbtv.objects.createAudioTrackList(getAudioTracks.call(this));
             p.videoTracks = hbbtv.objects.createVideoTrackList(getVideoTracks.call(this));
             p.videoTracks.addEventListener('change', () => {
+                const currTrack = p.player.getCurrentTrackFor('video');
+                const videoTracks = p.player.getTracksFor('video');
                 for (let i = 0; i < p.videoTracks.length; ++i) {
                     if (p.videoTracks[i].selected) {
-                        let nextTrack = p.player
-                            .getTracksFor('video')
-                            .find((track) => track.index === p.videoTracks[i].index);
-                        if (p.player.getCurrentTrackFor('video') !== nextTrack) {
-                            p.player.setCurrentTrack(nextTrack);
+                        let nextTrack = videoTracks.find(
+                            (track) => track.index === p.videoTracks[i].index
+                        );
+                        if (currTrack !== nextTrack) {
+                            setTimeout(function() {
+                                p.player.setCurrentTrack(nextTrack);
+                            }, 1);
                         }
                         break;
                     }
@@ -295,14 +299,15 @@ hbbtv.objects.DashProxy = (function() {
             });
             p.audioTracks.addEventListener('change', () => {
                 let mute = true;
-
+                const currTrack = p.player.getCurrentTrackFor('audio');
+                const audioTracks = p.player.getTracksFor('audio');
                 for (let i = 0; i < p.audioTracks.length; ++i) {
                     if (p.audioTracks[i].enabled) {
                         mute = false;
-                        let nextTrack = p.player
-                            .getTracksFor('audio')
-                            .find((track) => track.index === p.audioTracks[i].index);
-                        if (p.player.getCurrentTrackFor('audio') !== nextTrack) {
+                        let nextTrack = audioTracks.find(
+                            (track) => track.index === p.audioTracks[i].index
+                        );
+                        if (currTrack !== nextTrack) {
                             p.player.setCurrentTrack(nextTrack);
                         }
                         break;
@@ -657,6 +662,10 @@ hbbtv.objects.DashProxy = (function() {
                 p.player.registerCustomCapabilitiesFilter(filterCapabilities.bind(this));
                 p.player.updateSettings({
                     streaming: {
+                        trackSwitchMode: {
+                            audio: 'alwaysReplace',
+                            video: 'alwaysReplace',
+                        },
                         capabilities: {
                             filterUnsupportedEssentialProperties: true,
                         },
@@ -667,6 +676,16 @@ hbbtv.objects.DashProxy = (function() {
                             BitstreamSwitchingSegment: 0,
                             IndexSegment: 0,
                             FragmentInfoSegment: 0,
+                        },
+                        buffer: {
+                            enableSeekDecorrelationFix: true,
+                            fastSwitchEnabled: true,
+                            flushBufferAtTrackSwitch: true,
+                        },
+                    },
+                    errors: {
+                        recoverAttempts: {
+                            mediaErrorDecode: 1,
                         },
                     },
                 });
