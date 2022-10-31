@@ -63,5 +63,8 @@ App App::CreateAppFromAitDesc(const Ait::S_AIT_APP_DESC *desc,
     app.is_hidden = is_broadcast; // Broadcast-related applications need to call show.
     app.parental_ratings = desc->parental_ratings;
 
+    /* AUTOSTARTED apps are activated when they receive a key event */
+    app.is_activated = !(desc->control_code == Ait::APP_CTL_AUTOSTART);
+
     return app;
 }

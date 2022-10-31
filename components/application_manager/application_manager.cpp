@@ -23,6 +23,51 @@
 #include "utils.h"
 #include "xml_parser.h"
 
+
+#define KEY_SET_RED 0x1
+#define KEY_SET_GREEN 0x2
+#define KEY_SET_YELLOW 0x4
+#define KET_SET_BLUE 0x8
+#define KEY_SET_NAVIGATION 0x10
+#define KEY_SET_VCR 0x20
+#define KEY_SET_SCROLL 0x40
+#define KEY_SET_INFO 0x80
+#define KEY_SET_NUMERIC 0x100
+#define KEY_SET_ALPHA 0x200
+#define KEY_SET_OTHER 0x400
+
+#define VK_RED 403
+#define VK_GREEN 404
+#define VK_YELLOW 405
+#define VK_BLUE 406
+#define VK_UP 38
+#define VK_DOWN 40
+#define VK_LEFT 37
+#define VK_RIGHT 39
+#define VK_ENTER 13
+#define VK_BACK 461
+#define VK_PLAY 415
+#define VK_STOP 413
+#define VK_PAUSE 19
+#define VK_FAST_FWD 417
+#define VK_REWIND 412
+#define VK_NEXT 425
+#define VK_PREV 424
+#define VK_PLAY_PAUSE 402
+#define VK_PAGE_UP 33
+#define VK_PAGE_DOWN 34
+#define VK_INFO 457
+#define VK_NUMERIC_START 48
+#define VK_NUMERIC_END 57
+#define VK_ALPHA_START 65
+#define VK_ALPHA_END 90
+
+static bool IsKeyNavigation(uint16_t code);
+static bool IsKeyNumeric(uint16_t code);
+static bool IsKeyAlpha(uint16_t code);
+static bool IsKeyVcr(uint16_t code);
+static bool IsKeyScroll(uint16_t code);
+
 /**
  * Application manager
  *
@@ -202,14 +247,31 @@ void ApplicationManager::HideApplication(uint16_t calling_app_id)
  *
  * @param app_id The application.
  * @param key_set_mask The key set mask.
+ * @return The key set mask for the application.
  */
-void ApplicationManager::SetKeySetMask(uint16_t app_id, uint16_t key_set_mask)
+uint16_t ApplicationManager::SetKeySetMask(uint16_t app_id, uint16_t key_set_mask)
 {
     std::lock_guard<std::recursive_mutex> lock(lock_);
     if (app_.id == app_id)
     {
+        if (!app_.is_activated)
+        {
+            if ((key_set_mask & KEY_SET_VCR) != 0)
+            {
+                key_set_mask &= ~KEY_SET_VCR;
+            }
+            if ((key_set_mask & KEY_SET_NUMERIC) != 0)
+            {
+                key_set_mask &= ~KEY_SET_NUMERIC;
+            }
+        }
         app_.key_set_mask = key_set_mask;
     }
+    else
+    {
+        key_set_mask = 0;
+    }
+    return key_set_mask;
 }
 
 /**
@@ -226,6 +288,31 @@ uint16_t ApplicationManager::GetKeySetMask(uint16_t app_id)
         return app_.key_set_mask;
     }
     return 0;
+}
+
+/**
+ * Check the key code is accepted by the current key mask. Activate the app as a result if the
+ * key is accepted.
+ *
+ * @param app_id The application.
+ * @param key_code The key code to check.
+ * @return The supplied key_code is accepted by the current app's key set.
+ */
+bool ApplicationManager::InKeySet(uint16_t app_id, uint16_t key_code)
+{
+    std::lock_guard<std::recursive_mutex> lock(lock_);
+    if (app_.id == app_id)
+    {
+        if ((app_.key_set_mask & GetKeySet(key_code)) != 0)
+        {
+            if (!app_.is_activated)
+            {
+                app_.is_activated = true;
+            }
+            return true;
+        }
+    }
+    return false;
 }
 
 /**
@@ -919,4 +1006,94 @@ const Ait::S_AIT_APP_DESC * ApplicationManager::GetAutoStartApp(const Ait::S_AIT
     int parental_control_age = session_callback_->GetParentalControlAge();
     return Ait::AutoStartApp(ait_table, parental_control_age, parental_control_region,
         parental_control_region3);
+}
+
+/**
+ * Return the KeySet a key code belongs to.
+ *
+ * @param code The key code.
+ * @return The key set.
+ */
+uint16_t ApplicationManager::GetKeySet(const uint16_t code)
+{
+    if (IsKeyNavigation(code))
+    {
+        return KEY_SET_NAVIGATION;
+    }
+    else if (IsKeyNumeric(code))
+    {
+        return KEY_SET_NUMERIC;
+    }
+    else if (IsKeyAlpha(code))
+    {
+        return KEY_SET_ALPHA;
+    }
+    else if (IsKeyVcr(code))
+    {
+        return KEY_SET_VCR;
+    }
+    else if (IsKeyScroll(code))
+    {
+        return KEY_SET_SCROLL;
+    }
+    else if (code == KEY_SET_RED)
+    {
+        return KEY_SET_RED;
+    }
+    else if (code == VK_GREEN)
+    {
+        return KEY_SET_GREEN;
+    }
+    else if (code == VK_YELLOW)
+    {
+        return KEY_SET_YELLOW;
+    }
+    else if (code == VK_BLUE)
+    {
+        return KET_SET_BLUE;
+    }
+    else if (code == VK_INFO)
+    {
+        return KEY_SET_INFO;
+    }
+
+    return KEY_SET_OTHER;
+}
+
+static bool IsKeyNavigation(uint16_t code)
+{
+    return code == VK_UP ||
+           code == VK_DOWN ||
+           code == VK_LEFT ||
+           code == VK_RIGHT ||
+           code == VK_ENTER ||
+           code == VK_BACK;
+}
+
+static bool IsKeyNumeric(uint16_t code)
+{
+    return code >= VK_NUMERIC_START && code <= VK_NUMERIC_END;
+}
+
+static bool IsKeyAlpha(uint16_t code)
+{
+    return code >= VK_ALPHA_START && code <= VK_ALPHA_END;
+}
+
+static bool IsKeyVcr(uint16_t code)
+{
+    return code == VK_PLAY ||
+           code == VK_STOP ||
+           code == VK_PAUSE ||
+           code == VK_FAST_FWD ||
+           code == VK_REWIND ||
+           code == VK_NEXT ||
+           code == VK_PREV ||
+           code == VK_PLAY_PAUSE;
+}
+
+static bool IsKeyScroll(uint16_t code)
+{
+    return code == VK_PAGE_UP ||
+           code == VK_PAGE_DOWN;
 }
