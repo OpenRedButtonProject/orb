@@ -647,7 +647,7 @@ void ApplicationManager::OnSelectedServiceAitReceived()
       {
          if (app_.is_broadcast)
          {
-            LOG(LOG_INFO, "Pre-existing broadcast-related app already running");
+            LOG(LOG_INFO, "OnSelectedServiceAitReceived: Pre-existing broadcast-related app already running");
             if (app_.is_service_bound)
             {
                LOG(LOG_INFO, "Kill running app (is service bound)");
@@ -722,7 +722,7 @@ void ApplicationManager::OnSelectedServiceAitUpdated()
          return;
       }
 
-      LOG(LOG_INFO, "Pre-existing broadcast-related app already running");
+      LOG(LOG_INFO, "OnSelectedServiceAitUpdated: Pre-existing broadcast-related app already running");
       auto signalled = Ait::FindApp(ait, app_.org_id, app_.app_id);
       if (signalled == nullptr)
       {
@@ -950,6 +950,8 @@ bool ApplicationManager::TransitionRunningAppToBroadcastRelated()
    }
 
    app_.is_broadcast = true;
+   app_.is_service_bound = app->app_desc.service_bound;
+   /* Note: what about app.is_trusted, app.parental_ratings, ... */
    session_callback_->DispatchTransitionedToBroadcastRelatedEvent();
 
    return true;
