@@ -26,7 +26,6 @@ class ApplicationManager {
 
    private final Object mLock = new Object();
    private SessionCallback mSessionCallback;
-   private static final SparseArray<Integer> mKeyMap;
    private final TvBrowserCallback mTvBrowserCallback;
 
    interface SessionCallback {
@@ -141,12 +140,11 @@ class ApplicationManager {
    }
 
    public boolean inKeySet(int appId, int keyCode) {
-      return (mKeyMap.get(keyCode, TvBrowserTypes.VK_INVALID) & jniGetKeySetMask(appId)) > 0;
+      return jniInKeySet(appId, keyCode);
    }
 
    public int setKeyValue(int appId, int value) {
-      jniSetKeySetMask(appId, value);
-      return value;
+      return jniSetKeySetMask(appId, value);
    }
 
    public void onNetworkAvailabilityChanged(boolean available) {
@@ -181,8 +179,9 @@ class ApplicationManager {
    private native void jniDestroyApplication(int callingAppId);
    private native void jniShowApplication(int callingAppId);
    private native void jniHideApplication(int callingAppId);
-   private native void jniSetKeySetMask(int appId, int keySetMask);
+   private native int jniSetKeySetMask(int appId, int keySetMask);
    private native int jniGetKeySetMask(int appId);
+   private native boolean jniInKeySet(int appId, int keyCode);
    private native void jniProcessAitSection(int aitPid, int serviceId, byte[] data);
    private native boolean jniProcessXmlAit(String data);
    private native boolean jniIsTeletextApplicationSignalled();
@@ -298,35 +297,6 @@ class ApplicationManager {
 
    private String jniCbonNativeGetParentalControlRegion3() {
       return (mTvBrowserCallback != null) ? mTvBrowserCallback.getCountryId() : "";
-   }
-
-   static {
-      mKeyMap = new SparseArray<Integer>();
-      mKeyMap.put(TvBrowserTypes.VK_RED, KEY_SET_RED);
-      mKeyMap.put(TvBrowserTypes.VK_GREEN, KEY_SET_GREEN);
-      mKeyMap.put(TvBrowserTypes.VK_YELLOW, KEY_SET_YELLOW);
-      mKeyMap.put(TvBrowserTypes.VK_BLUE, KET_SET_BLUE);
-      mKeyMap.put(TvBrowserTypes.VK_UP, KEY_SET_NAVIGATION);
-      mKeyMap.put(TvBrowserTypes.VK_DOWN, KEY_SET_NAVIGATION);
-      mKeyMap.put(TvBrowserTypes.VK_LEFT, KEY_SET_NAVIGATION);
-      mKeyMap.put(TvBrowserTypes.VK_RIGHT, KEY_SET_NAVIGATION);
-      mKeyMap.put(TvBrowserTypes.VK_ENTER, KEY_SET_NAVIGATION);
-      mKeyMap.put(TvBrowserTypes.VK_BACK, KEY_SET_NAVIGATION);
-      mKeyMap.put(TvBrowserTypes.VK_0, KEY_SET_NUMERIC);
-      mKeyMap.put(TvBrowserTypes.VK_1, KEY_SET_NUMERIC);
-      mKeyMap.put(TvBrowserTypes.VK_2, KEY_SET_NUMERIC);
-      mKeyMap.put(TvBrowserTypes.VK_3, KEY_SET_NUMERIC);
-      mKeyMap.put(TvBrowserTypes.VK_4, KEY_SET_NUMERIC);
-      mKeyMap.put(TvBrowserTypes.VK_5, KEY_SET_NUMERIC);
-      mKeyMap.put(TvBrowserTypes.VK_6, KEY_SET_NUMERIC);
-      mKeyMap.put(TvBrowserTypes.VK_7, KEY_SET_NUMERIC);
-      mKeyMap.put(TvBrowserTypes.VK_8, KEY_SET_NUMERIC);
-      mKeyMap.put(TvBrowserTypes.VK_9, KEY_SET_NUMERIC);
-      mKeyMap.put(TvBrowserTypes.VK_STOP, KEY_SET_VCR);
-      mKeyMap.put(TvBrowserTypes.VK_PLAY, KEY_SET_VCR);
-      mKeyMap.put(TvBrowserTypes.VK_PAUSE, KEY_SET_VCR);
-      mKeyMap.put(TvBrowserTypes.VK_FAST_FWD, KEY_SET_VCR);
-      mKeyMap.put(TvBrowserTypes.VK_REWIND, KEY_SET_VCR);
    }
 }
 

@@ -227,10 +227,10 @@ JNIEXPORT void JNICALL Java_org_orbtv_tvbrowser_ApplicationManager_jniHideApplic
 }
 
 extern "C"
-JNIEXPORT void JNICALL Java_org_orbtv_tvbrowser_ApplicationManager_jniSetKeySetMask(JNIEnv *env, jobject object,
+JNIEXPORT jint JNICALL Java_org_orbtv_tvbrowser_ApplicationManager_jniSetKeySetMask(JNIEnv *env, jobject object,
    jint calling_app_id, jint key_set_mask)
 {
-   GetManager(env, object)->SetKeySetMask(calling_app_id, key_set_mask);
+   return GetManager(env, object)->SetKeySetMask(calling_app_id, key_set_mask);
 }
 
 extern "C"
@@ -238,6 +238,13 @@ JNIEXPORT jint JNICALL Java_org_orbtv_tvbrowser_ApplicationManager_jniGetKeySetM
    jint calling_app_id)
 {
    return GetManager(env, object)->GetKeySetMask(calling_app_id);
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_org_orbtv_tvbrowser_ApplicationManager_jniInKeySet(JNIEnv *env, jobject object,
+      jint calling_app_id, jint key_set) {
+   return GetManager(env, object)->InKeySet(calling_app_id, key_set);
 }
 
 extern "C"

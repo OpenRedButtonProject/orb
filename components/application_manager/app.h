@@ -55,6 +55,8 @@ public:
    std::vector<std::string> boundaries;
 
    bool is_running = false;
+   /* Activated by default. Deactivate if they are AUTOSTARTED */
+   bool is_activated = true;
    uint16_t id;
    std::vector<Ait::S_APP_PARENTAL_RATING> parental_ratings;
 };
