@@ -1,3 +1,13 @@
+polyfill_mediamanager_srcs = \
+src/mediamanager.js \
+src/utils.js \
+src/objects/audiotracklist.js \
+src/objects/videotracklist.js \
+src/mediaproxies/mediaerror.js \
+src/mediaproxies/dashproxy.js \
+src/mediaproxies/nativeproxy.js \
+src/mediaproxies/iframe.js
+
 polyfill_dash_srcs = \
 external/dash.all.min.js
 
@@ -10,7 +20,6 @@ src/nativemanager.js \
 src/bridge.js \
 src/holepuncher.js \
 src/objectmanager.js \
-src/mediamanager.js \
 src/natives/android.js \
 src/natives/rdk.js \
 src/polyfill/xhr.js \
@@ -55,14 +64,13 @@ src/objects/mediasync/mediaelementtsclient.js \
 src/objects/csmanager.js \
 src/mediaproxies/mediaerror.js \
 src/mediaproxies/mediaelementwrapper.js \
-src/mediaproxies/dashproxy.js \
-src/mediaproxies/nativeproxy.js \
 src/run.js \
 src/housekeeping/endiffe.js
 
 define build-polyfill
 $(shell mkdir -p $(2); \
 cat $(addprefix $(1)/,$(polyfill_dash_srcs)) > $(2)/dash.all.min.js; \
-cat $(addprefix $(1)/,$(polyfill_hbbtv_srcs)) > $(2)/hbbtv.js)
+cat $(addprefix $(1)/,$(polyfill_hbbtv_srcs)) > $(2)/hbbtv.js; \
+cat $(addprefix $(1)/,$(polyfill_mediamanager_srcs)) > $(2)/mediamanager.js)
 endef
 

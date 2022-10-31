@@ -25,6 +25,8 @@ public class HtmlBuilder {
    AssetManager mAssetManager;
    String mHbbtvInjection;
    byte[] mHbbtvInjectionUtf8;
+   String mMediaManagerInjection;
+   byte[] mMediaManagerInjectionUtf8;
    String mPlayerPage;
    byte[] mPlayerPageUtf8;
 
@@ -32,6 +34,8 @@ public class HtmlBuilder {
       mAssetManager = assetManager;
       mHbbtvInjection = getHbbtvInjection();
       mHbbtvInjectionUtf8 = mHbbtvInjection.getBytes(StandardCharsets.UTF_8);
+      mMediaManagerInjection = getMediaManagerInjection();
+      mMediaManagerInjectionUtf8 = mMediaManagerInjection.getBytes(StandardCharsets.UTF_8);
       mPlayerPage = getPlayerPage();
       mPlayerPageUtf8 = mPlayerPage.getBytes(StandardCharsets.UTF_8);
    }
@@ -72,6 +76,14 @@ public class HtmlBuilder {
       }
    }
 
+   public byte[] getMediaManagerInjection(Charset charset) {
+      if (charset == StandardCharsets.UTF_8) {
+         return mMediaManagerInjectionUtf8;
+      } else {
+         return mMediaManagerInjection.getBytes(charset);
+      }
+   }
+
    public byte[] getPlayerPage(Charset charset) {
       if (charset == StandardCharsets.UTF_8) {
          return mPlayerPageUtf8;
@@ -85,6 +97,20 @@ public class HtmlBuilder {
       builder.append("<script type=\"text/javascript\">\n//<![CDATA[\n");
       try {
          appendAsset(builder, "polyfill/hbbtv.js");
+         appendAsset(builder, "polyfill/dash.all.min.js");
+      } catch (IOException e) {
+         e.printStackTrace();
+         return "";
+      }
+      builder.append("\n//]]>\n</script>");
+      return builder.toString();
+   }
+
+   private String getMediaManagerInjection() {
+      StringBuilder builder = new StringBuilder();
+      builder.append("<script type=\"text/javascript\">\n//<![CDATA[\n");
+      try {
+         appendAsset(builder, "polyfill/mediamanager.js");
          appendAsset(builder, "polyfill/dash.all.min.js");
       } catch (IOException e) {
          e.printStackTrace();

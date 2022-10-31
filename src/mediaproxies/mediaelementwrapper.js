@@ -8,136 +8,180 @@
  hbbtv.objects.MediaElementWrapper = (function() {
    const prototype = Object.create(HTMLIFrameElement.prototype);
    const privates = new WeakMap();
+   const srcOwnProperty = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, "src");
+   const ORB_PLAYER_MAGIC_SUFFIX = "orb_player_magic_suffix";
    const methods = ["pause","load","canPlayType","captureStream","fastSeek"];
    const asyncMethods = ["play","setMediaKeys","setSinkId"];
-   const props = ["src","autoplay","controls","currentTime","playbackRate","volume","muted","loop","defaultMuted","crossOrigin","controlsList",
-                  "defaultPlaybackRate","disableRemotePlayback","preservesPitch","srcObject",
-                  "onloadstart","onprogress","onsuspend","onabort","onerror","onemptied","onstalled","onloadedmetadata","onloadeddata","oncanplay",
-                  "canplaythrough","onplaying","onwaiting","onseeking","onseeked","onended","ondurationchange","ontimeupdate","onplay","onpause",
-                  "ratechange","onresize","onvolumechange"];
+   const props = ["autoplay","controls","currentTime","playbackRate","volume","muted","loop","defaultMuted","crossOrigin","controlsList",
+                  "defaultPlaybackRate","disableRemotePlayback","preservesPitch","srcObject"]
    const roProps = ["textTracks","audioTracks","videoTracks","paused","ended","currentSrc","buffered","error","duration",
                   "networkState","readyState","seekable"];
+   const events = ["loadstart","progress","suspend","abort","error","emptied","stalled","loadedmetadata","loadeddata","canplay",
+                  "canplaythrough","playing","waiting","seeking","seeked","ended","durationchange","timeupdate","play","pause",
+                  "ratechange","resize","volumechange"];
+   const iframes = { };
+   let iframeCounter = 0;
+   let callCounter = 0;
 
    prototype.getAttribute = function(name) {
+      const p = privates.get(this);
+      if (name === "src") {
+         return p.attributes.src;
+      }
       if (props.includes(name)) {
-         const p = privates.get(this);
-         if (p.mediaElement) {
-            return p.mediaElement.getAttribute(name);
+         if (p.id !== -1) {
+            const result = (async function () { await requestProperty.call(this, "getAttribute", [name]) }).call(this);
+            return result;
          }
          return p.attributes[name];
       }
-      return Element.prototype.getAttribute.call(this, name);
+      return HTMLIFrameElement.prototype.getAttribute.call(this, name);
    };
 
    prototype.setAttribute = function(name, value) {
+      const p = privates.get(this);
       if (props.includes(name)) {
-         const p = privates.get(this);
          p.attributes[name] = value;
-         if (p.mediaElement) {
-            p.mediaElement.setAttribute(name, value);
+         if (p.id !== -1) {
+            requestProperty.call(this, "setAttribute", [name, value]);
          }
       }
       else {
-         Element.prototype.setAttribute.call(this, name, value);
+         if (name === "src") {
+            delete iframes[p.id];
+            p.id = -1;
+            p.attributes.src = value;
+            console.log("MediaElementWrapper: Setting iframe src attribute to '" + value + "'.");
+            value += (value.includes("?") ? "&" : "?") + ORB_PLAYER_MAGIC_SUFFIX;
+         }
+         HTMLIFrameElement.prototype.setAttribute.call(this, name, value);
       }
    };
 
    prototype.addEventListener = function (name, callback) {
-      const p = privates.get(this);
-      if (p.mediaElement) {
-         p.mediaElement.addEventListener(name, callback);
+      if (events.includes(name)) {
+         if (callback instanceof Object) {
+            const p = privates.get(this);
+            let callbacks = p.callbacks[name];
+            if (!callbacks) {
+               callbacks = p.callbacks[name] = [];
+            }
+            if (callbacks.indexOf(callback) < 0) {
+               callbacks.push(callback);
+               if (!this["on" + name] && callbacks.length === 1 && p.id !== -1) {
+                  requestProperty.call(this, "addEventListener", [name]);
+               }
+            }
+         }
+         else {
+            throw new TypeError("Failed to execute 'addEventListener' on 'EventTarget': parameter 2 is not of type 'Object'.");
+         }
       }
       else {
-         if (!p.events[name]) {
-            p.events[name] = [];
-         }
-         p.events[name].push(callback);
+         HTMLIFrameElement.prototype.addEventListener.call(this, arguments);
       }
    }
 
    prototype.removeEventListener = function (name, callback) {
-      const p = privates.get(this);
-      if (p.mediaElement) {
-         p.mediaElement.removeEventListener(name, callback);
-      }
-      else {
-         const callbacks = p.events[name];
-         if (callbacks) {
-            const index = callbacks.indexOf(callback);
-            if (index >= 0) {
-               callbacks.splice(index, 1);
-               if (callbacks.length <= 0) {
-                  delete p.events[name];
+      if (events.includes(name)) {
+         if (callback instanceof Object) {
+            const p = privates.get(this);
+            const callbacks = p.callbacks[name];
+            if (callbacks) {
+               const index = callbacks.indexOf(callback);
+               if (index >= 0) {
+                  callbacks.splice(index, 1);
+                  if (!this["on" + name] && callbacks.length <= 0 && p.id !== -1) {
+                     requestProperty.call(this, "removeEventListener", [name]);
+                  }
                }
             }
          }
+         else {
+            throw new TypeError("Failed to execute 'addEventListener' on 'EventTarget': parameter 2 is not of type 'Object'.");
+         }
+      }
+      else {
+         HTMLIFrameElement.prototype.addEventListener.call(this, arguments);
       }
    }
 
-   function makeMethod(name) {
-      return function () {
-         let result;
-         const p = privates.get(this);
-         if (p.mediaElement) {
-            result = p.mediaElement[name](arguments);
+   function requestProperty(name, args = []) {
+      const thiz = this;
+      const iframeId = privates.get(this).id;
+      const callId = callCounter++;
+      this.contentWindow.postMessage(JSON.stringify({callId:callId, name:name, args:args}), '*');
+      return new Promise((resolve, reject) => {
+         function deferResult(e) {
+            window.removeEventListener("message", deferResult);
+            clearInterval(intervalId);
+            try {
+               const msg = JSON.parse(e.data);
+               if (iframeId === msg.iframeId && msg.callId === callId) {
+                  console.log("MediaElementWrapper: received message from iframe:", msg);
+                  resolve(msg.result);
+               }
+            }
+            catch (e) {
+               reject(e);
+            }
          }
-         return result;
+         const intervalId = setTimeout(() => {
+            window.removeEventListener("message", deferResult);
+            reject("MediaElementWrapper: Timeout was reached while calling '" + name + "'");
+         }, 10000);
+         window.addEventListener("message", deferResult);
+      });
+   }
+
+   function makeMethod(name) {
+      return async function () {
+         return await requestProperty.call(this, name, Array.from(arguments).sort((a, b) => { return a - b; }));
       }
    }
 
    function makeAsyncMethod(name) {
-      return function() {
-         const thiz = this;
-         const p = privates.get(this);
-         if (p.mediaElement) {
-            return p.mediaElement[name](arguments);
-         }
-         return new Promise((resolve) => {
-            function deferMethod() {
-               Element.prototype.removeEventListener.call(thiz, "load", deferMethod);
-               resolve(p.mediaElement[name](arguments));
-            }
-            Element.prototype.addEventListener.call(thiz, "load", deferMethod);
-         });
+      return function () {
+         return requestProperty.call(this, name, Array.from(arguments).sort((a, b) => { return a - b; }));
       }
    }
 
-   function initialise(tagName) {
+   function initialise() {
       let p = privates.get(this);
       if (!p) {
          this.frameBorder = 0;
          Object.setPrototypeOf(this, prototype);
          privates.set(this, {
+            id: -1,
             attributes: { },
             properties: { },
-            events: { }
+            callbacks: { }
          });
          p = privates.get(this);
 
-         function onload() {
-            console.log("MediaElementWrapper: iframe loaded");
-            Element.prototype.removeEventListener.call(this, "load", onload);
-            this.contentDocument.body.style.margin = 0;
-            p.mediaElement = this.contentDocument.createElement(tagName);
-            p.mediaElement.style.cssText = "width:100%;height:100%";
+         HTMLIFrameElement.prototype.addEventListener.call(this, "load", () => {
+            p.id = iframeCounter++;
+            iframes[p.id] = this;
+            console.log("MediaElementWrapper: initialising iframe with id", p.id);
+            requestProperty.call(this, "initialise", [p.id]);
 
             // set the properties and events that have been requested
             // before the iframe was loaded
             for (const key in p.attributes) {
-               p.mediaElement.setAttribute(key, p.attributes[key]);
+               requestProperty.call(this, "setAttribute", [key, p.attributes[key]]);
             }
             for (const key in p.properties) {
-               p.mediaElement[key] = p.properties[key];
+               requestProperty.call(this, key, [p.properties[key]]);
             }
-            for (const key in p.events) {
-               for (const cb of p.events[key]) {
-                  p.mediaElement.addEventListener(key, cb);
+            for (const key in p.callbacks) {
+               requestProperty.call(this, "addEventListener", [key]);
+            }
+            for (const key of events) {
+               if (p["on" + key] && (!p.callbacks[key] || p.callbacks[key].length <= 0)) {
+                  requestProperty.call(this, "addEventListener", [key]);
                }
             }
-            p.events = { };
-            this.contentDocument.body.appendChild(p.mediaElement);
-         }
-         Element.prototype.addEventListener.call(this, "load", onload);
+         });
          console.log("MediaElementWrapper: initialised");
       }
       else {
@@ -160,16 +204,20 @@
          set(value) {
             const p = privates.get(this);
             p.properties[key] = value;
-            if (p.mediaElement) {
-               p.mediaElement[key] = value;
+            if (p.id !== -1) {
+               requestProperty.call(this, key, [value]);
             }
          },
          get() {
             const p = privates.get(this);
-            if (p.mediaElement) {
-               return p.mediaElement[key];
+            let result;
+            if (p.id !== -1) {
+               result = (async function () { await requestProperty.call(this, key); }).call(this);
             }
-            return p.properties[key];
+            else {
+               result = p.properties[key];
+            }
+            return result;
          }
       });
    }
@@ -177,14 +225,71 @@
    for (const key of roProps) {
       Object.defineProperty(prototype, key, {
          get() {
-            const p = privates.get(this);
-            if (p.mediaElement) {
-               return p.mediaElement[key];
+            let result;
+            if (privates.get(this).id !== -1) {
+               result = (async function () { await requestProperty.call(this, key); }).call(this);
             }
-            return undefined;
+            return result;
          }
       });
    }
+
+   for (const key of events) {
+      Object.defineProperty(prototype, "on" + key, {
+         set(value) {
+            const p = privates.get(this);
+            if (value instanceof Object) {
+               if (!p["on" + key] && (!p.callbacks[key] || p.callbacks[key].length <= 0) && p.id !== -1) {
+                  requestProperty.call(this, "addEventListener", [key]);
+               }
+               p["on" + key] = value;
+            }
+            else {
+               if ((!p.callbacks[key] || p.callbacks[key].length <= 0) && p.id !== -1) {
+                  requestProperty.call(this, "removeEventListener", [key]);
+               }
+               p["on" + key] = null;
+            }
+         },
+         get() {
+            return privates.get(this)["on" + key];
+         }
+      });
+   }
+
+   Object.defineProperty(prototype, "src", {
+      set(value) {
+         const p = privates.get(this);
+         delete iframes[p.id];
+         p.id = -1;
+         p.properties.src = value;
+         console.log("MediaElementWrapper: Setting iframe src property to '" + value + "'.");
+         srcOwnProperty.set.call(this, value + (value.includes("?") ? "&" : "?") + ORB_PLAYER_MAGIC_SUFFIX);
+      },
+      get() {
+         return privates.get(this).properties.src;
+      }
+   });
+
+   // callback for events received from the iframes
+   window.addEventListener("message", (e) => {
+      const msg = JSON.parse(e.data);
+      if (msg.callId === -1 && iframes[msg.iframeId]) {
+         const p = privates.get(iframes[msg.iframeId]);
+         if (p) {
+            const evt = new Event(msg.type);
+            iframes[msg.iframeId].dispatchEvent(evt);
+            if (p.callbacks[msg.type]) {
+               for (const cb of p.callbacks[msg.type]) {
+                  cb(evt);
+               }
+            }
+            if (iframes[msg.iframeId]["on" + msg.type]) {
+               iframes[msg.iframeId]["on" + msg.type](evt);
+            }
+         }
+      }
+   });
 
    return {
       initialise: initialise
@@ -195,8 +300,8 @@ hbbtv.objects.upgradeMediaElement = function(media) {
    // Create iframe element with Document.prototype.createElement as
    // document.createElement is overrided in object manager
    const element = Document.prototype.createElement.call(document, "iframe");
-   element.src = media.src + "orb_player_magic_suffix";
-   hbbtv.objects.MediaElementWrapper.initialise.call(element, media.tagName);
+   hbbtv.objects.MediaElementWrapper.initialise.call(element);
+   element.innerHTML = media.innerHTML;
    for (const key of media.getAttributeNames()) {
       element.setAttribute(key, media.getAttribute(key));
    }

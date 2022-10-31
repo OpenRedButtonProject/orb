@@ -6,6 +6,8 @@
  * the top level of this repository.
  */
 
+const hbbtv = { objects: { } };
+
 hbbtv.mediaManager = (function() {
    let objectHandlers = {};
    let fallbackHandlers = undefined;
@@ -288,3 +290,5 @@ hbbtv.mediaManager = (function() {
       registerObject: registerObject
    };
 })();
+
+hbbtv.mediaManager.initialise();

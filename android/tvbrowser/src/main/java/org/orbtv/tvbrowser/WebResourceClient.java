@@ -156,7 +156,6 @@ public abstract class WebResourceClient {
       Map<String, String> responseHeaders = new HashMap<>();
       httpResponseHeaders.forEach((k, v) -> responseHeaders.put(k, String.join(",", v)));
       response.setResponseHeaders(responseHeaders);
-
       return response;
    }
 
@@ -381,8 +380,26 @@ public abstract class WebResourceClient {
    WebResourceResponse createPlayerPageResponse() {
       Charset charset = StandardCharsets.UTF_8;
       ByteArrayInputStream data = new ByteArrayInputStream(mHtmlBuilder.getPlayerPage(charset));
+      Vector<InputStream> payload = new Vector<>();
+      int payloadLength = 0;
+
+      byte[] hbbtvInjection = mHtmlBuilder.getMediaManagerInjection(charset);
+      payload.add(new ByteArrayInputStream(hbbtvInjection));
+      payloadLength += hbbtvInjection.length;
+
+      InputStream inputStream = new InjectionInputStream(data, charset, payload, payloadLength) {
+         @Override
+         void onClose() {
+            try {
+               data.close();
+            } catch (IOException e) {
+               e.printStackTrace();
+            }
+         }
+      };
       WebResourceResponse response = new WebResourceResponse("text/html",
-         charset.toString(), data);
+         charset.toString(), inputStream);
       return response;
    }
 }
+
