@@ -22,8 +22,8 @@
 #define BROADCAST_SET_CHANNEL_TO_DSD "setChannelToDsd"
 #define BROADCAST_GET_PROGRAMMES "getProgrammes"
 #define BROADCAST_GET_COMPONENTS "getComponents"
-#define BROADCAST_SELECT_COMPONENT "selectComponent"
-#define BROADCAST_UNSELECT_COMPONENT "unselectComponent"
+#define BROADCAST_OVERRIDE_DEFAULT_COMPONENT_SELECTION "overrideDefaultComponentSelection"
+#define BROADCAST_RESTORE_DEFAULT_COMPONENT_SELECTION "restoreDefaultComponentSelection"
 #define BROADCAST_START_SEARCH "startSearch"
 #define BROADCAST_ABORT_SEARCH "abortSearch"
 #define BROADCAST_ADD_STREAM_EVENT_LISTENER "addStreamEventListener"
@@ -297,8 +297,8 @@ bool BroadcastRequestHandler::Handle(
             response.emplace("result", array);
         }
     }
-    // Broadcast.selectComponent
-    else if (method == BROADCAST_SELECT_COMPONENT)
+    // Broadcast.overrideDefaultComponentSelection
+    else if (method == BROADCAST_OVERRIDE_DEFAULT_COMPONENT_SELECTION)
     {
         if (!IsRequestAllowed(token, ApplicationManager::MethodRequirement::FOR_BROADCAST_APP_ONLY))
         {
@@ -307,13 +307,17 @@ bool BroadcastRequestHandler::Handle(
         else
         {
             int componentType = params.value("type", COMPONENT_TYPE_ANY);
-            int pid = params.value("pid", -1);
-            ORBEngine::GetSharedInstance().GetORBPlatform()->Broadcast_SelectComponent(
-                componentType, pid);
+            int pid = params.value("pidOrSuspended", 0);
+            int ctag = params.value("ctag", 0);
+            std::string language = params.value("language", "");
+
+            ORBEngine::GetSharedInstance().GetORBPlatform()->
+            Broadcast_OverrideDefaultComponentSelection(
+                componentType, pid, ctag, language);
         }
     }
-    // Broadcast.unselectComponent
-    else if (method == BROADCAST_UNSELECT_COMPONENT)
+    // Broadcast.restoreDefaultComponentSelection
+    else if (method == BROADCAST_RESTORE_DEFAULT_COMPONENT_SELECTION)
     {
         if (!IsRequestAllowed(token, ApplicationManager::MethodRequirement::FOR_BROADCAST_APP_ONLY))
         {
@@ -322,8 +326,8 @@ bool BroadcastRequestHandler::Handle(
         else
         {
             int componentType = params.value("type", -1);
-            ORBEngine::GetSharedInstance().GetORBPlatform()->Broadcast_UnselectComponent(
-                componentType);
+            ORBEngine::GetSharedInstance().GetORBPlatform()->
+            Broadcast_RestoreDefaultComponentSelection(componentType);
         }
     }
     // Broadcast.startSearch

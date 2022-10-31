@@ -149,7 +149,6 @@ json JsonUtil::ComponentToJsonObject(Component component)
         json_videoComponent.emplace("encrypted", component.IsEncrypted());
         json_videoComponent.emplace("aspectRatio", component.GetAspectRatio());
         json_videoComponent.emplace("active", component.IsActive());
-        json_videoComponent.emplace("default", component.IsDefaultComponent());
         if (component.IsHidden())
         {
             json_videoComponent.emplace("hidden", true);
@@ -169,7 +168,6 @@ json JsonUtil::ComponentToJsonObject(Component component)
         json_audioComponent.emplace("audioDescription", component.HasAudioDescription());
         json_audioComponent.emplace("audioChannels", component.GetAudioChannels());
         json_audioComponent.emplace("active", component.IsActive());
-        json_audioComponent.emplace("default", component.IsDefaultComponent());
         if (component.IsHidden())
         {
             json_audioComponent.emplace("hidden", true);
@@ -189,7 +187,6 @@ json JsonUtil::ComponentToJsonObject(Component component)
         json_subtitleComponent.emplace("hearingImpaired", component.IsHearingImpaired());
         json_subtitleComponent.emplace("label", component.GetLabel());
         json_subtitleComponent.emplace("active", component.IsActive());
-        json_subtitleComponent.emplace("default", component.IsDefaultComponent());
         if (component.IsHidden())
         {
             json_subtitleComponent.emplace("hidden", true);

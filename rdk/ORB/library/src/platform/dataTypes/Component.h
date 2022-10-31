@@ -36,7 +36,6 @@ public:
      * @param encoding         The encoding of the stream
      * @param encrypted        Flag indicating whether the component is encrypted or not
      * @param active
-     * @param defaultComponent
      * @param hidden
      * @param aspectRatio      Indicates the aspect ratio of the video, 0=4:3, 1=16:9
      *
@@ -48,7 +47,6 @@ public:
         std::string encoding,
         bool encrypted,
         bool active,
-        bool defaultComponent,
         bool hidden,
         int aspectRatio
         )
@@ -59,7 +57,6 @@ public:
             encoding,
             encrypted,
             active,
-            defaultComponent,
             hidden,
             aspectRatio
             );
@@ -74,7 +71,6 @@ public:
      * @param encoding         The encoding of the stream
      * @param encrypted        Flag indicating whether the component is encrypted or not
      * @param active
-     * @param defaultComponent
      * @param hidden
      * @param language         An ISO 639-2 language code representing the language of the stream
      * @param audioDescription Has value true if the stream contains an audio description intended
@@ -89,7 +85,6 @@ public:
         std::string encoding,
         bool encrypted,
         bool active,
-        bool defaultComponent,
         bool hidden,
         std::string language,
         bool audioDescription,
@@ -102,7 +97,6 @@ public:
             encoding,
             encrypted,
             active,
-            defaultComponent,
             hidden,
             language,
             audioDescription,
@@ -119,7 +113,6 @@ public:
      * @param encoding         The encoding of the stream
      * @param encrypted        Flag indicating whether the component is encrypted or not
      * @param active
-     * @param defaultComponent
      * @param hidden
      * @param language         An ISO 639-2 language code representing the language of the stream
      * @param hearingImpaired  Has value true if the stream is intended for the hearing-impaired
@@ -135,7 +128,6 @@ public:
         std::string encoding,
         bool encrypted,
         bool active,
-        bool defaultComponent,
         bool hidden,
         std::string language,
         bool hearingImpaired,
@@ -148,7 +140,6 @@ public:
             encoding,
             encrypted,
             active,
-            defaultComponent,
             hidden,
             language,
             hearingImpaired,
@@ -164,7 +155,6 @@ public:
      * @param encoding
      * @param encrypted
      * @param active
-     * @param defaultComponent
      * @param hidden
      * @param aspectRatio
      */
@@ -174,7 +164,6 @@ public:
         std::string encoding,
         bool encrypted,
         bool active,
-        bool defaultComponent,
         bool hidden,
         int aspectRatio
         )
@@ -185,7 +174,6 @@ public:
         m_encoding = encoding;
         m_encrypted = encrypted;
         m_active = active;
-        m_defaultComponent = defaultComponent;
         m_hidden = hidden;
         m_aspectRatio = aspectRatio;
     }
@@ -198,7 +186,6 @@ public:
      * @param encoding
      * @param encrypted
      * @param active
-     * @param defaultComponent
      * @param hidden
      * @param language
      * @param audioDescription
@@ -210,7 +197,6 @@ public:
         std::string encoding,
         bool encrypted,
         bool active,
-        bool defaultComponent,
         bool hidden,
         std::string language,
         bool audioDescription,
@@ -223,7 +209,6 @@ public:
         m_encoding = encoding;
         m_encrypted = encrypted;
         m_active = active;
-        m_defaultComponent = defaultComponent;
         m_hidden = hidden;
         m_language = language;
         m_audioDescription = audioDescription;
@@ -238,7 +223,6 @@ public:
      * @param encoding
      * @param encrypted
      * @param active
-     * @param defaultComponent
      * @param hidden
      * @param language
      * @param hearingImpaired
@@ -250,7 +234,6 @@ public:
         std::string encoding,
         bool encrypted,
         bool active,
-        bool defaultComponent,
         bool hidden,
         std::string language,
         bool hearingImpaired,
@@ -263,7 +246,6 @@ public:
         m_encoding = encoding;
         m_encrypted = encrypted;
         m_active = active;
-        m_defaultComponent = defaultComponent;
         m_hidden = hidden;
         m_language = language;
         m_hearingImpaired = hearingImpaired;
@@ -305,11 +287,6 @@ public:
     bool IsActive() const
     {
         return m_active;
-    }
-
-    bool IsDefaultComponent() const
-    {
-        return m_defaultComponent;
     }
 
     bool IsHidden() const
@@ -356,7 +333,6 @@ private:
     std::string m_encoding;
     bool m_encrypted;
     bool m_active;
-    bool m_defaultComponent;
     bool m_hidden;
 
     // audio/subtitle attributes

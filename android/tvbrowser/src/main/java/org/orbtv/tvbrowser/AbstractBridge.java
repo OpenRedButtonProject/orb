@@ -468,29 +468,38 @@ public abstract class AbstractBridge {
                                                                               String ccid, int type);
 
     /**
-     * Select the broadcast component with the given type, PID and optionally language.
+     * Override the default component selection of the terminal for the specified type.
+     *
+     * The component in the stream that has the specified PID, CTAG (if specified), and language (if
+     * specified) shall be selected. If pidOrSuspended equals 0, no component for the specified type
+     * shall be selected for presentation.
+     *
+     * Default component selection shall be restored for the specified type when
+     * restoreDefaultComponentSelection is called, the channel is changed, the application
+     * terminates, or the user selects a different track of the same type in the terminal UI.
      *
      * Security: FOR_BROADCAST_APP_ONLY.
      *
      * @param token The token associated with this request.
-     * @param type The type of the component to select (COMPONENT_TYPE_* code).
-     * @param pid The PID of the component to select.
-     * @param language Optionally, the language of the component to select; or an empty string
-     *    otherwise.
+     * @param type Type of component selection to override (COMPONENT_TYPE_* code).
+     * @param pidOrSuspended Component PID or 0 to suspend presentation.
+     * @param ctag Component CTAG or 0 if not specified.
+     * @param language Component language of an empty string if not specified.
      */
-    protected abstract void Broadcast_selectComponent(Token token, int type, int pid,
-                                                      String language);
+    protected abstract void Broadcast_overrideDefaultComponentSelection(Token token, int type,
+                                                                        int pidOrSuspended, int ctag, String language);
 
     /**
-     * Unselect the broadcast component with the given type and PID.
+     * Restore the default component selection of the terminal for the specified type.
+     *
+     * If playback has already started, the presented component shall be updated.
      *
      * Security: FOR_BROADCAST_APP_ONLY.
      *
      * @param token The token associated with this request.
-     * @param type The type of the component to unselect (COMPONENT_TYPE_* code).
-     * @param pid The PID of the component to unselect.
+     * @param type Type of component selection override to clear (COMPONENT_TYPE_* code).
      */
-    protected abstract void Broadcast_unselectComponent(Token token, int type, int pid);
+    protected abstract void Broadcast_restoreDefaultComponentSelection(Token token, int type);
 
     /**
      * Start a metadata search.
@@ -1117,28 +1126,28 @@ public abstract class AbstractBridge {
                 break;
             }
 
-            case "Broadcast.selectComponent": {
+            case "Broadcast.overrideDefaultComponentSelection": {
                 if (!isRequestAllowed(token, SessionCallback.FOR_BROADCAST_APP_ONLY)) {
                     response.put("error", "SecurityError");
                     break;
                 }
-                Broadcast_selectComponent(
+                Broadcast_overrideDefaultComponentSelection(
                         token,
                         params.getInt("type"),
-                        params.getInt("pid"),
+                        params.getInt("pidOrSuspended"),
+                        params.getInt("ctag"),
                         params.getString("language")
                 );
                 break;
             }
-            case "Broadcast.unselectComponent": {
+            case "Broadcast.restoreDefaultComponentSelection": {
                 if (!isRequestAllowed(token, SessionCallback.FOR_BROADCAST_APP_ONLY)) {
                     response.put("error", "SecurityError");
                     break;
                 }
-                Broadcast_unselectComponent(
+                Broadcast_restoreDefaultComponentSelection(
                         token,
-                        params.getInt("type"),
-                        params.getInt("pid")
+                        params.getInt("type")
                 );
                 break;
             }

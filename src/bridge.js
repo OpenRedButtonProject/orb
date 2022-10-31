@@ -290,35 +290,46 @@ hbbtv.bridge.broadcast = (function() {
     };
 
     /**
-     * Select the broadcast component with the given type, PID and optionally language.
+     * Override the default component selection of the terminal for the specified type.
+     *
+     * The component in the stream that has the specified PID, CTAG (if specified), and language (if
+     * specified) shall be selected. If pidOrSuspended equals 0, no component for the specified type
+     * shall be selected for presentation.
+     *
+     * Default component selection shall be restored for the specified type when
+     * restoreDefaultComponentSelection is called, the channel is changed, the application
+     * terminates, or the user selects a different track of the same type in the terminal UI.
+     *
+     * If playback has already started, the presented component shall be updated.
      *
      * Security: FOR_BROADCAST_APP_ONLY.
      *
-     * @param {number} type The type of the component to select (COMPONENT_TYPE_* code).
-     * @param {number} pid The PID of the component to select.
-     * @param {string} language Optionally, the language of the component to select; or an empty
-     *    string otherwise.
+     * @param {number} type Type of component selection to override (COMPONENT_TYPE_* code).
+     * @param {number} pidOrSuspended Component PID or 0 to suspend presentation.
+     * @param {number} ctag Component CTAG or 0 if not specified.
+     * @param {string} language Component language of an empty string if not specified.
      */
-    exported.selectComponent = function(type, pid, language) {
-        hbbtv.native.request('Broadcast.selectComponent', {
+    exported.overrideDefaultComponentSelection = function(type, pidOrSuspended, ctag, language) {
+        hbbtv.native.request('Broadcast.overrideDefaultComponentSelection', {
             type: type,
-            pid: pid,
+            pidOrSuspended: pidOrSuspended,
+            ctag: ctag,
             language: language,
         });
     };
 
     /**
-     * Unselect the broadcast component with the given type and PID.
+     * Restore the default component selection of the terminal for the specified type.
+     *
+     * If playback has already started, the presented component shall be updated.
      *
      * Security: FOR_BROADCAST_APP_ONLY.
      *
-     * @param {number} type The type of the component to unselect (COMPONENT_TYPE_* code).
-     * @param {number} pid The PID of the component to unselect.
+     * @param {number} type Type of component selection to restore (COMPONENT_TYPE_* code).
      */
-    exported.unselectComponent = function(type, pid) {
-        hbbtv.native.request('Broadcast.unselectComponent', {
+    exported.restoreDefaultComponentSelection = function(type) {
+        hbbtv.native.request('Broadcast.restoreDefaultComponentSelection', {
             type: type,
-            pid: pid,
         });
     };
 

@@ -49,8 +49,9 @@ public:
     virtual std::vector<Programme> Broadcast_GetProgrammes(std::string ccid) override;
     virtual std::vector<Component> Broadcast_GetComponents(std::string ccid, int
         componentType) override;
-    virtual void Broadcast_SelectComponent(int componentType, int pid) override;
-    virtual void Broadcast_UnselectComponent(int componentType) override;
+    virtual void Broadcast_OverrideDefaultComponentSelection(int componentType, int pidOrSuspended,
+        int ctag, std::string language) override;
+    virtual void Broadcast_RestoreDefaultComponentSelection(int componentType) override;
     virtual void Broadcast_SetPresentationSuspended(bool presentationSuspended) override;
     virtual void Broadcast_Stop() override;
     virtual void Broadcast_Reset() override;
