@@ -93,50 +93,33 @@ public interface TvBrowserCallback {
    void setPresentationSuspended(boolean presentationSuspended);
 
    /**
-    * Instructs the controlling application to present the audio specified by its PID and language.
+    * Override the default component selection of the terminal for the specified type.
     *
-    * @param pid
-    * @param lang
-    * @return true on success, false otherwise
+    * The component in the stream that has the specified PID, CTAG (if specified), and language (if
+    * specified) shall be selected. If pidOrSuspended equals 0, no component for the specified type
+    * shall be selected for presentation.
+    *
+    * Default component selection shall be restored for the specified type when
+    * restoreDefaultComponentSelection is called, the channel is changed, the application
+    * terminates, or the user selects a different track of the same type in the terminal UI.
+    *
+    * If playback has already started, the presented component shall be updated.
+    *
+    * @param type Type of component selection to override (COMPONENT_TYPE_* code).
+    * @param pidOrSuspended Component PID or 0 to suspend presentation.
+    * @param ctag Component CTAG or 0 if not specified.
+    * @param language Component language of an empty string if not specified.
     */
-   boolean presentDvbAudio(int pid, String lang);
+   void overrideDefaultComponentSelection(int type, int pidOrSuspended, int ctag, String language);
 
    /**
-    * Instructs the controlling application to stop the audio presentation
+    * Restore the default component selection of the terminal for the specified type.
     *
-    * @return true on success, false otherwise
-    */
-   boolean stopDvbAudio();
-
-   /**
-    * Instructs the controlling application to present the video specified by its PID.
+    * If playback has already started, the presented component shall be updated.
     *
-    * @param pid
-    * @return true on success, false otherwise
+    * @param type Type of component selection override to clear (COMPONENT_TYPE_* code).
     */
-   boolean presentDvbVideo(int pid);
-
-   /**
-    * Instructs the controlling application to stop the video presentation
-    *
-    * @return true on success, false otherwise
-    */
-   boolean stopDvbVideo();
-
-   /**
-    * Instructs the controlling application to present the subtitles specified by its component tag.
-    *
-    * @param pid
-    * @return true on success, false otherwise
-    */
-   boolean presentDvbSubtitles(int pid);
-
-   /**
-    * Instructs the controlling application to stop the subtitle presentation
-    *
-    * @return true on success, false otherwise
-    */
-   boolean stopDvbSubtitles();
+   void restoreDefaultComponentSelection(int type);
 
    /**
     * Sets the presentation window of the DVB video. Values are in HbbTV 1280x720 coordinates.

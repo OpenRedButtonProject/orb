@@ -263,20 +263,35 @@ public:
    virtual std::vector<Component> Broadcast_GetComponents(std::string ccid, int componentType) = 0;
 
    /**
-    * Select the specified component of the currently tuned broadcast channel.
+    * Override the default component selection of the terminal for the specified type.
     *
-    * @param componentType The component type (0: video, 1: audio, 2: subtitle)
-    * @param pid           The component's pid used as identifier
+    * The component in the stream that has the specified PID, CTAG (if specified), and language (if
+    * specified) shall be selected. If pidOrSuspended equals 0, no component for the specified type
+    * shall be selected for presentation.
+    *
+    * Default component selection shall be restored for the specified type when
+    * restoreDefaultComponentSelection is called, the channel is changed, the application
+    * terminates, or the user selects a different track of the same type in the terminal UI.
+    *
+    * Security: FOR_BROADCAST_APP_ONLY
+    *
+    * @param componentType  The component type (0: video, 1: audio, 2: subtitle)
+    * @param pidOrSuspended The component PID or 0 to suspend presentation
+    * @param ctag           The component tag or 0 if not specified
+    * @param language       The component language or an empty string if not specified
     */
-   virtual void Broadcast_SelectComponent(int componentType, int pid) = 0;
+   virtual void Broadcast_OverrideDefaultComponentSelection(int componentType, int pidOrSuspended, int ctag, std::string language) = 0;
 
    /**
-    * Unselect any currently selected component of the given type for the
-    * currently tuned broadcast channel.
+    * Restore the default component selection of the terminal for the specified type.
     *
-    * @param componentType The componentType (0: video, 1: audio, 2: subtitle)
+    * If playback has already started, the presented component shall be updated.
+    *
+    * Security: FOR_BROADCAST_APP_ONLY
+    *
+    * @param componentType The component type (0: video, 1: audio, 2: subtitle)
     */
-   virtual void Broadcast_UnselectComponent(int componentType) = 0;
+   virtual void Broadcast_RestoreDefaultComponentSelection(int componentType) = 0;
 
    /**
     * Suspend/resume the presentation of the current broadcast playback.

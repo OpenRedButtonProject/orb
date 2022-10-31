@@ -284,67 +284,43 @@ class Bridge extends AbstractBridge {
    }
 
    /**
-    * Select the broadcast component with the given type, PID and optionally language.
+    * Override the default component selection of the terminal for the specified type.
+    *
+    * The component in the stream that has the specified PID, CTAG (if specified), and language (if
+    * specified) shall be selected. If pidOrSuspended equals 0, no component for the specified type
+    * shall be selected for presentation.
+    *
+    * Default component selection shall be restored for the specified type when
+    * restoreDefaultComponentSelection is called, the channel is changed, the application
+    * terminates, or the user selects a different track of the same type in the terminal UI.
+    *
+    * If playback has already started, the presented component shall be updated.
     *
     * Security: FOR_BROADCAST_APP_ONLY.
     *
     * @param token The token associated with this request.
-    * @param type The type of the component to select (COMPONENT_TYPE_* code).
-    * @param pid The PID of the component to select.
-    * @param language Optionally, the language of the component to select; or an empty string
-    *    otherwise.
+    * @param type Type of component selection to override (COMPONENT_TYPE_* code).
+    * @param pidOrSuspended Component PID or 0 to suspend presentation.
+    * @param ctag Component CTAG or 0 if not specified.
+    * @param language Component language of an empty string if not specified.
     */
-   @Override
-   protected void Broadcast_selectComponent(Token token, int type, int pid, String language) {
-      // TODO Add 1:1 method to callback
-      switch (type) {
-         case TvBrowserTypes.COMPONENT_TYPE_VIDEO: {
-            mTvBrowserCallback.presentDvbVideo(pid);
-            break;
-         }
-         case TvBrowserTypes.COMPONENT_TYPE_AUDIO: {
-            mTvBrowserCallback.presentDvbAudio(pid, language);
-            break;
-         }
-         case TvBrowserTypes.COMPONENT_TYPE_SUBTITLE: {
-            mTvBrowserCallback.presentDvbSubtitles(pid);
-            break;
-         }
-      }
+   protected void Broadcast_overrideDefaultComponentSelection(Token token, int type,
+      int pidOrSuspended, int ctag, String language) {
+      mTvBrowserCallback.overrideDefaultComponentSelection(type, pidOrSuspended, ctag, language);
    }
 
    /**
-    * Unselect the broadcast component with the given type and PID.
+    * Restore the default component selection of the terminal for the specified type.
+    *
+    * If playback has already started, the presented component shall be updated.
     *
     * Security: FOR_BROADCAST_APP_ONLY.
     *
     * @param token The token associated with this request.
-    * @param type The type of the component to unselect (COMPONENT_TYPE_* code).
-    * @param pid The PID of the component to unselect.
+    * @param type Type of component selection override to clear (COMPONENT_TYPE_* code).
     */
-   @Override
-   protected void Broadcast_unselectComponent(Token token, int type, int pid) {
-      // TODO Add 1:1 method to callback
-      switch (type) {
-         case TvBrowserTypes.COMPONENT_TYPE_ANY: {
-            mTvBrowserCallback.stopDvbAudio();
-            mTvBrowserCallback.stopDvbVideo();
-            mTvBrowserCallback.stopDvbSubtitles();
-            break;
-         }
-         case TvBrowserTypes.COMPONENT_TYPE_VIDEO: {
-            mTvBrowserCallback.stopDvbVideo();
-            break;
-         }
-         case TvBrowserTypes.COMPONENT_TYPE_AUDIO: {
-            mTvBrowserCallback.stopDvbAudio();
-            break;
-         }
-         case TvBrowserTypes.COMPONENT_TYPE_SUBTITLE: {
-            mTvBrowserCallback.stopDvbSubtitles();
-            break;
-         }
-      }
+   protected void Broadcast_restoreDefaultComponentSelection(Token token, int type) {
+      mTvBrowserCallback.restoreDefaultComponentSelection(type);
    }
 
    /**
