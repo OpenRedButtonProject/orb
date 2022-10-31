@@ -197,7 +197,9 @@ hbbtv.objects.VideoBroadcast = (function() {
                 );
             } catch (e) {
                 if (e.name === 'SecurityError') {
-                    console.log('Unexpected condition: app appears broadcast-independent.');
+                    console.log(
+                        'bindToCurrentChannel, unexpected condition: app appears broadcast-independent.'
+                    );
                 }
                 throw e;
             }
@@ -207,6 +209,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                     hbbtv.bridge.broadcast.setPresentationSuspended(false);
                     hbbtv.holePuncher.setBroadcastVideoObject(this);
 
+                    let wasPlayStateStopped = false;
                     if (p.playState === this.PLAY_STATE_UNREALIZED) {
                         /* DAE vol5 Table 8 state transition #7 */
                         p.playState = this.PLAY_STATE_PRESENTING;
@@ -214,10 +217,11 @@ hbbtv.objects.VideoBroadcast = (function() {
                         /* PLAY_STATE_STOPPED */
                         /* DAE vol5 Table 8 state transition #17 with HbbTV 2.0.3 modification */
                         p.playState = this.PLAY_STATE_CONNECTING;
+                        wasPlayStateStopped = true;
                     }
                     addBridgeEventListeners.call(this);
                     dispatchPlayStateChangeEvent.call(this, p.playState);
-                    if (p.playState === this.PLAY_STATE_CONNECTING) {
+                    if (wasPlayStateStopped) {
                         /* For PLAY_STATE_STOPPED: extra step to go into Presenting State */
                         /* DAE vol5 Table 8 state transition #17 with HbbTV 2.0.3 modification. */
                         p.playState = this.PLAY_STATE_PRESENTING;
@@ -379,7 +383,7 @@ hbbtv.objects.VideoBroadcast = (function() {
             return;
         }
 
-        if (p.isBroadcastRelated) {
+        if (p.isBroadcastRelated && quiet !== 2) {
             try {
                 p.currentChannelData = hbbtv.objects.createChannel(
                     hbbtv.bridge.broadcast.getCurrentChannel()
@@ -389,7 +393,9 @@ hbbtv.objects.VideoBroadcast = (function() {
                 }
             } catch (e) {
                 if (e.name === 'SecurityError') {
-                    console.log('Unexpected condition: app appears broadcast-independent.');
+                    console.log(
+                        'setChannel, unexpected condition: app appears broadcast-independent.'
+                    );
                 }
                 throw e;
             }
@@ -398,6 +404,7 @@ hbbtv.objects.VideoBroadcast = (function() {
         /* DAE vol5 Table 8 state transition #1 */
         unregisterAllStreamEventListeners(p);
         p.playState = this.PLAY_STATE_CONNECTING;
+        p.waitingPlayStateConnectingConfirm = true;
         dispatchPlayStateChangeEvent.call(this, p.playState);
     };
 
@@ -456,7 +463,9 @@ hbbtv.objects.VideoBroadcast = (function() {
                     ',' +
                     event.servId +
                     '), status: ' +
-                    event.statusCode
+                    event.statusCode +
+                    ' playState: ' +
+                    p.playState
                 );
                 if (p.playState == this.PLAY_STATE_CONNECTING) {
                     switch (event.statusCode) {
@@ -469,8 +478,6 @@ hbbtv.objects.VideoBroadcast = (function() {
                             break;
 
                         case this.CHANNEL_STATUS_CONNECTING:
-                            /* DAE vol5 Table 8 state transition #10, or possibly, a user initiated channel change */
-                            /* Terminal connected to the broadcast or IP multicast stream but presentation blocked */
                             if (
                                 p.currentChannelData == null ||
                                 event.servId != p.currentChannelData.sid ||
@@ -490,9 +497,18 @@ hbbtv.objects.VideoBroadcast = (function() {
                                     throw e;
                                 }
                             }
-                            p.playState = this.PLAY_STATE_CONNECTING;
-                            dispatchChannelChangeSucceededEvent.call(this, p.currentChannelData);
-                            dispatchPlayStateChangeEvent.call(this, p.playState);
+                            if (p.waitingPlayStateConnectingConfirm) {
+                                console.log('waitingPlayStateConnectingConfirm TRUE. Ignore event');
+                            } else {
+                                /* DAE vol5 Table 8 state transition #10, or possibly, a user initiated channel change */
+                                /* Terminal connected to the broadcast or IP multicast stream but presentation blocked */
+                                p.playState = this.PLAY_STATE_CONNECTING;
+                                dispatchChannelChangeSucceededEvent.call(
+                                    this,
+                                    p.currentChannelData
+                                );
+                                dispatchPlayStateChangeEvent.call(this, p.playState);
+                            }
                             break;
 
                         case this.CHANNEL_STATUS_CONNECTING_RECOVERY:
@@ -515,6 +531,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                                 event.statusCode
                             );
                     }
+                    p.waitingPlayStateConnectingConfirm = false;
                 } else if (p.playState == this.PLAY_STATE_PRESENTING) {
                     if (event.permanentError) {
                         /* DAE vol5 Table 8 state transition #16A */
@@ -537,7 +554,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                             } catch (e) {
                                 if (e.name === 'SecurityError') {
                                     console.log(
-                                        'Unexpected condition: app appears broadcast-independent.'
+                                        'onChannelStatusChanged, unexpected condition: app appears broadcast-independent.'
                                     );
                                 }
                                 throw e;
@@ -616,7 +633,9 @@ hbbtv.objects.VideoBroadcast = (function() {
                     dispatchSelectedComponentChanged.call(this, event.componentType);
                 } catch (e) {
                     if (e.name === 'SecurityError') {
-                        console.log('Unexpected condition: app appears broadcast-independent.');
+                        console.log(
+                            'onSelectedComponentChanged, unexpected condition: app appears broadcast-independent.'
+                        );
                     }
                     throw e;
                 }
@@ -637,7 +656,9 @@ hbbtv.objects.VideoBroadcast = (function() {
                     dispatchComponentChanged.call(this, event.componentType);
                 } catch (e) {
                     if (e.name === 'SecurityError') {
-                        console.log('Unexpected condition: app appears broadcast-independent.');
+                        console.log(
+                            'onComponentChanged, unexpected condition: app appears broadcast-independent.'
+                        );
                     }
                     throw e;
                 }
@@ -678,7 +699,9 @@ hbbtv.objects.VideoBroadcast = (function() {
                         }
                     } catch (e) {
                         if (e.name === 'SecurityError') {
-                            console.log('Unexpected condition: app appears broadcast-independent.');
+                            console.log(
+                                'onTransitionedToBroadcastRelated, unexpected condition: app appears broadcast-independent.'
+                            );
                         }
                         throw e;
                     }
@@ -1520,6 +1543,7 @@ hbbtv.objects.VideoBroadcast = (function() {
         /* Associates internal ID with registered listeners */
         p.streamEventListenerMap = new Map();
         p.playState = this.PLAY_STATE_UNREALIZED;
+        p.waitingPlayStateConnectingConfirm = false;
         p.fullScreen = false;
         p.x = 0;
         p.y = 0;
