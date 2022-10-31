@@ -38,7 +38,7 @@ public:
      * @param active
      * @param defaultComponent
      * @param hidden
-     * @param aspectRatio      Indicates the aspect ratio of the video
+     * @param aspectRatio      Indicates the aspect ratio of the video, 0=4:3, 1=16:9
      *
      * @return Pointer to the new video component
      */
@@ -50,7 +50,7 @@ public:
         bool active,
         bool defaultComponent,
         bool hidden,
-        float aspectRatio
+        int aspectRatio
         )
     {
         return std::make_shared<Component>(
@@ -176,7 +176,7 @@ public:
         bool active,
         bool defaultComponent,
         bool hidden,
-        float aspectRatio
+        int aspectRatio
         )
     {
         m_componentType = COMPONENT_TYPE_VIDEO;
@@ -342,7 +342,7 @@ public:
         return m_label;
     }
 
-    float GetAspectRatio() const
+    int GetAspectRatio() const
     {
         return m_aspectRatio;
     }
@@ -371,6 +371,6 @@ private:
     std::string m_label;
 
     // video-only attributes
-    float m_aspectRatio;
+    int m_aspectRatio;
 }; // class Component
 } // namespace orb
