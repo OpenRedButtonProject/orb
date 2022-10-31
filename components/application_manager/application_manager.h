@@ -152,8 +152,9 @@ public:
     *
     * @param app_id The application.
     * @param key_set_mask The key set mask.
+    * @return The key set mask for the application.
     */
-   void SetKeySetMask(uint16_t app_id, uint16_t key_set_mask);
+   uint16_t SetKeySetMask(uint16_t app_id, uint16_t key_set_mask);
 
    /**
     * Get the key set mask for an application.
@@ -162,6 +163,16 @@ public:
     * @return The key set mask for the application.
     */
    uint16_t GetKeySetMask(uint16_t app_id);
+
+   /**
+    * Check the key code is accepted by the current key mask. Activate the app as a result if the
+    * key is accepted.
+    *
+    * @param app_id The application.
+    * @param key_code The key code to check.
+    * @return The supplied key_code is accepted by the current app's key set.
+    */
+   bool InKeySet(uint16_t app_id, uint16_t key_code);
 
    /**
     * Process an AIT section. The table will be processed when it is completed or updated.
@@ -318,6 +329,14 @@ private:
     * @return The App to auto start.
     */
    const Ait::S_AIT_APP_DESC* GetAutoStartApp(const Ait::S_AIT_TABLE *ait_table);
+
+   /**
+    * Return the KeySet a key code belongs to.
+    *
+    * @param key_code The key code.
+    * @return The key set.
+    */
+   uint16_t GetKeySet(const uint16_t key_code);
 
    std::unique_ptr<SessionCallback> session_callback_;
    uint16_t next_app_id_;
