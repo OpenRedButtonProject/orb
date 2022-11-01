@@ -4,7 +4,6 @@
  * Licensed under the ORB License that can be found in the LICENSE file at
  * the top level of this repository.
  */
-
 hbbtv.objects.VideoTrackList = (function() {
    const prototype = {};
    const privates = new WeakMap();

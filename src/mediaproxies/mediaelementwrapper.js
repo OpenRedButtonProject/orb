@@ -13,7 +13,7 @@
    const methods = ["pause","load","canPlayType","captureStream","fastSeek"];
    const asyncMethods = ["play","setMediaKeys","setSinkId"];
    const props = ["autoplay","controls","currentTime","playbackRate","volume","muted","loop","defaultMuted","crossOrigin","controlsList",
-                  "defaultPlaybackRate","disableRemotePlayback","preservesPitch","srcObject"]
+                  "defaultPlaybackRate","disableRemotePlayback","preservesPitch","srcObject","innerHTML"];
    const roProps = ["textTracks","audioTracks","videoTracks","paused","ended","currentSrc","buffered","error","duration",
                   "networkState","readyState","seekable"];
    const events = ["loadstart","progress","suspend","abort","error","emptied","stalled","loadedmetadata","loadeddata","canplay",
@@ -24,18 +24,10 @@
    let callCounter = 0;
 
    prototype.getAttribute = function(name) {
-      const p = privates.get(this);
-      if (name === "src") {
-         return p.attributes.src;
+      if (name === "src" || props.includes(name)) {
+         return privates.get(this).attributes[name];
       }
-      if (props.includes(name)) {
-         if (p.id !== -1) {
-            const result = (async function () { await requestProperty.call(this, "getAttribute", [name]) }).call(this);
-            return result;
-         }
-         return p.attributes[name];
-      }
-      return HTMLIFrameElement.prototype.getAttribute.call(this, name);
+      return HTMLIFrameElement.prototype.getAttribute.apply(this, arguments);
    };
 
    prototype.setAttribute = function(name, value) {
@@ -43,7 +35,7 @@
       if (props.includes(name)) {
          p.attributes[name] = value;
          if (p.id !== -1) {
-            requestProperty.call(this, "setAttribute", [name, value]);
+            callProxyMethod.call(this, "setAttribute", [name, value]);
          }
       }
       else {
@@ -51,10 +43,40 @@
             delete iframes[p.id];
             p.id = -1;
             p.attributes.src = value;
-            console.log("MediaElementWrapper: Setting iframe src attribute to '" + value + "'.");
+            console.log("MediaElementWrapper: Setting iframe src attribute to '" + value + "'...");
             value += (value.includes("?") ? "&" : "?") + ORB_PLAYER_MAGIC_SUFFIX;
          }
          HTMLIFrameElement.prototype.setAttribute.call(this, name, value);
+      }
+   };
+
+   prototype.removeAttribute = function(name) {
+      const p = privates.get(this);
+      if (props.includes(name)) {
+         delete p.attributes.src;
+         if (p.id !== -1) {
+            callProxyMethod.call(this, "removeAttribute", [name]);
+         }
+      }
+      else {
+         if (name === "src") {
+            delete iframes[p.id];
+            delete p.attributes.src;
+            p.id = -1;
+            console.log("MediaElementWrapper: Removing iframe src attribute...");
+         }
+         HTMLIFrameElement.prototype.removeAttribute.apply(this, arguments);
+      }
+   };
+
+   prototype.appendChild = function(node) {
+      if (node.nodeName) {
+         if (node.nodeName.toLowerCase() === "source" && !this.src) {
+            this.src = node.src;
+         }
+         else {
+            callProxyMethod.call(this, "appendChild", [node.outerHTML]);
+         }
       }
    };
 
@@ -69,7 +91,7 @@
             if (callbacks.indexOf(callback) < 0) {
                callbacks.push(callback);
                if (!this["on" + name] && callbacks.length === 1 && p.id !== -1) {
-                  requestProperty.call(this, "addEventListener", [name]);
+                  callProxyMethod.call(this, "addEventListener", [name]);
                }
             }
          }
@@ -78,7 +100,7 @@
          }
       }
       else {
-         HTMLIFrameElement.prototype.addEventListener.call(this, arguments);
+         HTMLIFrameElement.prototype.addEventListener.apply(this, arguments);
       }
    }
 
@@ -92,7 +114,7 @@
                if (index >= 0) {
                   callbacks.splice(index, 1);
                   if (!this["on" + name] && callbacks.length <= 0 && p.id !== -1) {
-                     requestProperty.call(this, "removeEventListener", [name]);
+                     callProxyMethod.call(this, "removeEventListener", [name]);
                   }
                }
             }
@@ -102,24 +124,27 @@
          }
       }
       else {
-         HTMLIFrameElement.prototype.addEventListener.call(this, arguments);
+         HTMLIFrameElement.prototype.addEventListener.apply(this, arguments);
       }
    }
-
-   function requestProperty(name, args = []) {
-      const thiz = this;
-      const iframeId = privates.get(this).id;
+   
+   function callProxyMethodAsync(name, args = []) {
       const callId = callCounter++;
       this.contentWindow.postMessage(JSON.stringify({callId:callId, name:name, args:args}), '*');
       return new Promise((resolve, reject) => {
          function deferResult(e) {
-            window.removeEventListener("message", deferResult);
             clearInterval(intervalId);
             try {
                const msg = JSON.parse(e.data);
-               if (iframeId === msg.iframeId && msg.callId === callId) {
+               if (msg.callId === callId) {
+                  window.removeEventListener("message", deferResult);
                   console.log("MediaElementWrapper: received message from iframe:", msg);
-                  resolve(msg.result);
+                  if (!msg.error) {
+                     resolve();
+                  }
+                  else {
+                     reject(msg.error);
+                  }
                }
             }
             catch (e) {
@@ -133,16 +158,20 @@
          window.addEventListener("message", deferResult);
       });
    }
+   
+   function callProxyMethod(name, args = []) {
+      this.contentWindow.postMessage(JSON.stringify({name:name, args:args}), '*');
+   }
 
    function makeMethod(name) {
-      return async function () {
-         return await requestProperty.call(this, name, Array.from(arguments).sort((a, b) => { return a - b; }));
+      return function () {
+         callProxyMethod.call(this, name, Array.from(arguments).sort((a, b) => { return a - b; }));
       }
    }
 
    function makeAsyncMethod(name) {
       return function () {
-         return requestProperty.call(this, name, Array.from(arguments).sort((a, b) => { return a - b; }));
+         return callProxyMethodAsync.call(this, name, Array.from(arguments).sort((a, b) => { return a - b; }));
       }
    }
 
@@ -163,22 +192,22 @@
             p.id = iframeCounter++;
             iframes[p.id] = this;
             console.log("MediaElementWrapper: initialising iframe with id", p.id);
-            requestProperty.call(this, "initialise", [p.id]);
+            callProxyMethod.call(this, "initialise", [p.id]);
 
             // set the properties and events that have been requested
             // before the iframe was loaded
             for (const key in p.attributes) {
-               requestProperty.call(this, "setAttribute", [key, p.attributes[key]]);
+               callProxyMethod.call(this, "setAttribute", [key, p.attributes[key]]);
             }
             for (const key in p.properties) {
-               requestProperty.call(this, key, [p.properties[key]]);
+               callProxyMethod.call(this, key, [p.properties[key]]);
             }
             for (const key in p.callbacks) {
-               requestProperty.call(this, "addEventListener", [key]);
+               callProxyMethod.call(this, "addEventListener", [key]);
             }
             for (const key of events) {
                if (p["on" + key] && (!p.callbacks[key] || p.callbacks[key].length <= 0)) {
-                  requestProperty.call(this, "addEventListener", [key]);
+                  callProxyMethod.call(this, "addEventListener", [key]);
                }
             }
          });
@@ -205,19 +234,11 @@
             const p = privates.get(this);
             p.properties[key] = value;
             if (p.id !== -1) {
-               requestProperty.call(this, key, [value]);
+               callProxyMethod.call(this, key, [value]);
             }
          },
          get() {
-            const p = privates.get(this);
-            let result;
-            if (p.id !== -1) {
-               result = (async function () { await requestProperty.call(this, key); }).call(this);
-            }
-            else {
-               result = p.properties[key];
-            }
-            return result;
+            return privates.get(this).properties[key];
          }
       });
    }
@@ -225,11 +246,7 @@
    for (const key of roProps) {
       Object.defineProperty(prototype, key, {
          get() {
-            let result;
-            if (privates.get(this).id !== -1) {
-               result = (async function () { await requestProperty.call(this, key); }).call(this);
-            }
-            return result;
+            return privates.get(this).properties[key];
          }
       });
    }
@@ -240,13 +257,13 @@
             const p = privates.get(this);
             if (value instanceof Object) {
                if (!p["on" + key] && (!p.callbacks[key] || p.callbacks[key].length <= 0) && p.id !== -1) {
-                  requestProperty.call(this, "addEventListener", [key]);
+                  callProxyMethod.call(this, "addEventListener", [key]);
                }
                p["on" + key] = value;
             }
             else {
                if ((!p.callbacks[key] || p.callbacks[key].length <= 0) && p.id !== -1) {
-                  requestProperty.call(this, "removeEventListener", [key]);
+                  callProxyMethod.call(this, "removeEventListener", [key]);
                }
                p["on" + key] = null;
             }
@@ -274,19 +291,32 @@
    // callback for events received from the iframes
    window.addEventListener("message", (e) => {
       const msg = JSON.parse(e.data);
-      if (msg.callId === -1 && iframes[msg.iframeId]) {
-         const p = privates.get(iframes[msg.iframeId]);
-         if (p) {
-            const evt = new Event(msg.type);
-            iframes[msg.iframeId].dispatchEvent(evt);
-            if (p.callbacks[msg.type]) {
-               for (const cb of p.callbacks[msg.type]) {
-                  cb(evt);
+      const iframe = iframes[msg.iframeId];
+      if (iframe) {
+         const p = privates.get(iframe);
+         switch (msg.callId) {
+            case -1:
+               if (p) {
+                  const evt = new Event(msg.type);
+                  iframe.dispatchEvent(evt);
+                  if (p.callbacks[msg.type]) {
+                     for (const cb of p.callbacks[msg.type]) {
+                        cb(evt);
+                     }
+                  }
+                  if (iframe["on" + msg.type]) {
+                     iframe["on" + msg.type](evt);
+                  }
                }
-            }
-            if (iframes[msg.iframeId]["on" + msg.type]) {
-               iframes[msg.iframeId]["on" + msg.type](evt);
-            }
+               break;
+            case -2:
+               for (const property of msg.properties) {
+                  p.properties[property.name] = property.value;
+               }
+               break;
+            case -3:
+               p.attributes[msg.attribute.name] = msg.attribute.value;
+               break;
          }
       }
    });
@@ -296,11 +326,24 @@
    };
 })();
 
-hbbtv.objects.upgradeMediaElement = function(media) {
+hbbtv.objects.createMediaElementWrapper = function() {
    // Create iframe element with Document.prototype.createElement as
    // document.createElement is overrided in object manager
    const element = Document.prototype.createElement.call(document, "iframe");
    hbbtv.objects.MediaElementWrapper.initialise.call(element);
+   return element;
+}
+
+hbbtv.objects.upgradeMediaElement = function(media) {
+   const element = hbbtv.objects.createMediaElementWrapper();
+   if (!media.getAttribute("src")) {
+      for (const node of media.children) {
+         if (node.nodeName && node.nodeName.toLowerCase() === "source") {
+            element.src = node.src;
+            break;
+         }
+      }
+   }
    element.innerHTML = media.innerHTML;
    for (const key of media.getAttributeNames()) {
       element.setAttribute(key, media.getAttribute(key));

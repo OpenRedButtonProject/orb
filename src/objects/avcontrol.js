@@ -279,7 +279,7 @@ hbbtv.objects.AVControl = (function() {
 
    prototype.setFullScreen = function(fullscreen) {
       const priv = privates.get(this);
-      const videoWrapper = priv.videoWrapper;
+      const videoWrapper = priv.videoElement;
 
       if (fullscreen) {
          if (!priv.fullscreen) {
@@ -799,7 +799,7 @@ hbbtv.objects.AVControl = (function() {
 
    function updateVideoDimensions() {
       let priv = privates.get(this);
-      let videoWrapper = priv.videoWrapper;
+      let videoWrapper = priv.videoElement;
       if (this.style.width && !this.style.width.includes("%")) {
          videoWrapper.style.width = this.style.width;
       } else if (this.width) {
@@ -876,27 +876,21 @@ hbbtv.objects.AVControl = (function() {
          }
       }
 
-      let videoWrapper = document.createElement("div");
+      // Create a new video element that will be used as a playback backend 'video/mp4' objects.
+      let videoElement = hbbtv.objects.createMediaElementWrapper();
+      
       // set video background to #000 to simulate letterbox and pillarbox effect
       // when the video element aspect ratio is different than the video source
       // aspect ratio
-      videoWrapper.style.backgroundColor = this.style.backgroundColor || "#000";
-      videoWrapper.style.zIndex = this.style.zIndex;
-      videoWrapper.style.position = "static";
-      videoWrapper.style.left = 0;
-      videoWrapper.style.top = 0;
-      priv.videoWrapper = videoWrapper;
-
-      // Create a new video element that will be used as a playback backend 'video/mp4' objects.
-      let videoElement = document.createElement("video");
-      priv.videoElement = videoElement;
-      videoElement.style.width = "100%";
-      videoElement.style.height = "100%";
+      videoElement.style.backgroundColor = this.style.backgroundColor || "#000";
+      videoElement.style.zIndex = this.style.zIndex;
+      videoElement.style.position = "static";
+      videoElement.style.left = 0;
+      videoElement.style.top = 0;
       videoElement.autoplay = false;
       videoElement.hidden = true;
-
-      videoWrapper.appendChild(videoElement);
-      this.appendChild(videoWrapper);
+      priv.videoElement = videoElement;
+      this.appendChild(videoElement);
 
       // update the videoWrapper size
       updateVideoDimensions.call(this);
@@ -1066,7 +1060,7 @@ hbbtv.objects.AVControl = (function() {
                   // if we are in fullscreen mode when the style of the AV Control
                   // object changes, switch to non-fullscreen mode  
                   if (priv.fullscreen) {
-                     videoWrapper.style.zIndex = thiz.style.zIndex;
+                     videoElement.style.zIndex = thiz.style.zIndex;
                      priv.fullscreen = false;
                      dispatchEvent.call(thiz, "FullScreenChange");
                   }
