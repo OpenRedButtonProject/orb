@@ -63,6 +63,7 @@ ORBEngine::ORBEngine()
    , m_orbPlatform(nullptr)
    , m_currentAppId(UINT16_MAX)
    , m_started(false)
+   , m_preferredUiLanguage("")
 {
    ORB_LOG_NO_ARGS();
 }

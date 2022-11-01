@@ -506,19 +506,6 @@ std::string ORBPlatformMockImpl::Configuration_GetPreferredSubtitleLanguage()
 }
 
 /**
- * Get the preferred UI language.
- *
- * @return A comma-separated set of languages to be used for the user interface
- *         of a service, in order of preference. Each language shall be indicated
- *         by its ISO 639-2 language code as defined in [ISO639-2].
- */
-std::string ORBPlatformMockImpl::Configuration_GetPreferredUILanguage()
-{
-   ORB_LOG_NO_ARGS();
-   return "eng,spa,gre";
-}
-
-/**
  * Get the id of the country in which the receiver is deployed.
  *
  * @return An ISO-3166 three character country code identifying the country in

@@ -211,6 +211,22 @@ bool ORBImplementation::SendKeyEvent(int keyCode)
 }
 
 /**
+ * @brief ORBImplementation::SetPreferredUILanguage
+ *
+ * Set the preferred UI language.
+ *
+ * @param preferredUiLanguage The preferred UI language.
+ *                            A comma-separated set of languages to be used for the user interface
+ *                            of a service, in order of preference. Each language shall be indicated
+ *                            by its ISO 639-2 language code as defined in [ISO639-2].
+ */
+void ORBImplementation::SetPreferredUILanguage(std::string preferredUiLanguage)
+{
+   ORB_LOG("preferredUiLanguage=%s", preferredUiLanguage.c_str());
+   ORBEngine::GetSharedInstance().SetPreferredUILanguage(preferredUiLanguage);
+}
+
+/**
  * @brief ORBImplementation::JavaScriptEventDispatchRequest
  *
  * This method is used to notify each client for the 'JavaScriptEventDispatchRequest' event

@@ -13,19 +13,36 @@
   },
   "methods":
   {
-    "SendKeyEvent": {
+    "SendKeyEvent":
+    {
       "summary": "Send the specified key event to the current HbbTV application (if any)",
-      "params": {
+      "params":
+      {
         "description": "The event's JavaScript key code",
         "type": "number",
         "signed": false,
         "size": 16,
         "example": 27
       },
-      "result": {
+      "result":
+      {
         "description": "True if the key event was consumed by the current HbbTV application, otherwise false",
         "type": "boolean",
         "example": true
+      }
+    },
+    "SetPreferredUILanguage":
+    {
+      "summary": "Set the preferred UI language",
+      "params":
+      {
+        "description": "The preferred UI language. A comma-separated set of languages to be used for the user interface of a service, in order of preference. Each language shall be indicated by its ISO 639-2 language code as defined in [ISO639-2].",
+        "type": "string",
+        "example": "eng,spa,gre"
+      },
+      "result":
+      {
+        "$ref": "#/common/results/void"
       }
     }
   }

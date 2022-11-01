@@ -22,6 +22,7 @@ void ORB::RegisterAll()
 {
    ORB_LOG("PID=%d", getpid());
    JSONRPC::Register<Core::JSON::DecUInt16, Core::JSON::Boolean>(_T("SendKeyEvent"), &ORB::SendKeyEvent, this);
+   JSONRPC::Register<Core::JSON::String, void>(_T("SetPreferredUILanguage"), &ORB::SetPreferredUILanguage, this);
 }
 
 /**
@@ -33,6 +34,7 @@ void ORB::UnregisterAll()
 {
    ORB_LOG("PID=%d", getpid());
    JSONRPC::Unregister(_T("SendKeyEvent"));
+   JSONRPC::Unregister(_T("SetPreferredUILanguage"));
 }
 
 /**
@@ -61,5 +63,26 @@ uint32_t ORB::SendKeyEvent(Core::JSON::DecUInt16 keyCode, Core::JSON::Boolean& r
 
    return error;
 }
+
+/**
+ * @brief ORB::SetPreferredUILanguage
+ *
+ * Set the preferred UI language.
+ *
+ * @param preferredUiLanguage The preferred UI language.
+ *                            A comma-separated set of languages to be used for the user interface
+ *                            of a service, in order of preference. Each language shall be indicated
+ *                            by its ISO 639-2 language code as defined in [ISO639-2].
+ *
+ * @return Core::ERROR_NONE
+ */
+uint32_t ORB::SetPreferredUILanguage(Core::JSON::String preferredUiLanguage)
+{
+   SYSLOG(Logging::Notification, (_T("[ORB::SetPreferredUILanguage] preferredUiLanguage=%s"), preferredUiLanguage.Value().c_str()));
+   uint32_t result = Core::ERROR_NONE;
+   _orb->SetPreferredUILanguage(preferredUiLanguage.Value());
+   return result;
+}
+
 } // namespace Plugin
 } // namespace WPEFramework
