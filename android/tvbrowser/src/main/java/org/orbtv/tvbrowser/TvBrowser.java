@@ -161,7 +161,7 @@ public class TvBrowser {
              */
             public void resetBroadcastPresentation() {
                // TODO Make this one call in the API
-               mTvBrowserCallback.setDvbVideoRectangle(0, 0, 1280, 720, false);
+               mTvBrowserCallback.setDvbVideoRectangle(0, 0, 1280, 720);
                mTvBrowserCallback.setPresentationSuspended(false);
             }
 

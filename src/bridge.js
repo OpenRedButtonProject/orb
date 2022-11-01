@@ -93,17 +93,13 @@ hbbtv.bridge.broadcast = (function() {
     * @param {number} y The Y position in pixels.
     * @param {number} width The width in pixels.
     * @param {number} height The height in pixels.
-    * @param {boolean} fullScreen True if the broadcast video should be full screen, layered above
-    *    the browser; or false if the broadcast video should be the size and position of the
-    *    rectangle, layered below the browser.
     */
    exported.setVideoRectangle = function(x, y, width, height, fullScreen) {
       hbbtv.native.request("Broadcast.setVideoRectangle", {
          x: x,
          y: y,
          width: width,
-         height: height,
-         fullScreen: fullScreen
+         height: height
       });
    }
 
