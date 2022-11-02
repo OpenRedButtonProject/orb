@@ -55,14 +55,10 @@ class Bridge extends AbstractBridge {
      * @param y The Y position in pixels.
      * @param width The width in pixels.
      * @param height The height in pixels.
-     * @param fullScreen True if the broadcast video should be full screen, layered above the
-     *    browser; or false if the broadcast video should be the size and position of the rectangle,
-     *    layered below the browser.
      */
     @Override
-    protected void Broadcast_setVideoRectangle(Token token, int x, int y, int width, int height,
-                                               boolean fullScreen) {
-        mTvBrowserCallback.setDvbVideoRectangle(x, y, width, height, fullScreen);
+    protected void Broadcast_setVideoRectangle(Token token, int x, int y, int width, int height) {
+        mTvBrowserCallback.setDvbVideoRectangle(x, y, width, height);
     }
 
     /**

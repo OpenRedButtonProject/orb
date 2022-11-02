@@ -60,23 +60,30 @@ hbbtv.holePuncher = (function() {
         y = y + (height - h) / 2;
 
         if (fullScreen) {
-            hbbtv.bridge.broadcast.setVideoRectangle(0, 0, 1280, 720, fullScreen);
+            hbbtv.bridge.broadcast.setVideoRectangle(0, 0, 1280, 720);
         } else {
             hbbtv.bridge.broadcast.setVideoRectangle(
                 Math.round(x),
                 Math.round(y),
                 Math.round(w),
-                Math.round(h),
-                fullScreen
+                Math.round(h)
             );
         }
     }
 
     function matchVideoRectangleToObject(object) {
         if (object.fullScreen) {
+            object.style.position = 'absolute';
+            object.style.left = '0px';
+            object.style.top = '0px';
+            object.style.width = '1280px';
+            object.style.height = '720px';
             setVideoRectangle(0, 0, 1280, 720, false, true);
             return;
+        } else {
+            // TODO Restore from full screen
         }
+
         if (!(gObjectInDocument || object.offsetWidth || object.offsetHeight)) {
             hideVideoRectangle();
             return;
