@@ -317,12 +317,9 @@ public abstract class AbstractBridge {
     * @param y The Y position in pixels.
     * @param width The width in pixels.
     * @param height The height in pixels.
-    * @param fullScreen True if the broadcast video should be full screen, layered above the
-    *    browser; or false if the broadcast video should be the size and position of the rectangle,
-    *    layered below the browser.
     */
    protected abstract void Broadcast_setVideoRectangle(Token token, int x, int y, int width,
-      int height, boolean fullScreen);
+      int height);
 
    /**
     * Get the current broadcast channel.
@@ -991,8 +988,7 @@ public abstract class AbstractBridge {
                params.getInt("x"),
                params.getInt("y"),
                params.getInt("width"),
-               params.getInt("height"),
-               params.getBoolean("fullScreen")
+               params.getInt("height")
             );
             break;
          }

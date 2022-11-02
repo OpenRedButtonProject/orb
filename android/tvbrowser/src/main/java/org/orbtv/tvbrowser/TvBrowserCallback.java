@@ -128,9 +128,8 @@ public interface TvBrowserCallback {
     * @param y      Rectangle definition
     * @param width  Rectangle definition
     * @param height Rectangle definition
-    * @param fullScreen Whether the video rectangle should be full screen over the browser
     */
-   void setDvbVideoRectangle(final int x, final int y, final int width, final int height, final boolean fullScreen);
+   void setDvbVideoRectangle(final int x, final int y, final int width, final int height);
 
    /**
     * Get the list of channels available.
