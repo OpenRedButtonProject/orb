@@ -41,7 +41,6 @@ public:
     */
    virtual void OnDvbUrlLoaded(int requestId, unsigned char *content, unsigned int contentLength) = 0;
 
-
    /**
     * Trigger the InputKeyGenerated event.
     *

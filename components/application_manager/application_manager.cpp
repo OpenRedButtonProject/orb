@@ -297,7 +297,7 @@ uint16_t ApplicationManager::GetKeySetMask(uint16_t app_id)
  * @param app_id The application.
  * @param key_code The key code to check.
  * @return The supplied key_code is accepted by the current app's key set.
-*/
+ */
 bool ApplicationManager::InKeySet(uint16_t app_id, uint16_t key_code)
 {
    std::lock_guard<std::recursive_mutex> lock(lock_);
@@ -305,10 +305,11 @@ bool ApplicationManager::InKeySet(uint16_t app_id, uint16_t key_code)
    {
       if ((app_.key_set_mask & GetKeySet(key_code)) != 0)
       {
-          if (!app_.is_activated) {
-             app_.is_activated = true;
-          }
-          return true;
+         if (!app_.is_activated)
+         {
+            app_.is_activated = true;
+         }
+         return true;
       }
    }
    return false;
@@ -1000,11 +1001,11 @@ const Ait::S_AIT_APP_DESC * ApplicationManager::GetAutoStartApp(const Ait::S_AIT
 }
 
 /**
-* Return the KeySet a key code belongs to.
-*
-* @param code The key code.
-* @return The key set.
-*/
+ * Return the KeySet a key code belongs to.
+ *
+ * @param code The key code.
+ * @return The key set.
+ */
 uint16_t ApplicationManager::GetKeySet(const uint16_t code)
 {
    if (IsKeyNavigation(code))
@@ -1051,35 +1052,40 @@ uint16_t ApplicationManager::GetKeySet(const uint16_t code)
    return KEY_SET_OTHER;
 }
 
-static bool IsKeyNavigation(uint16_t code) {
+static bool IsKeyNavigation(uint16_t code)
+{
    return code == VK_UP ||
-      code == VK_DOWN ||
-      code == VK_LEFT ||
-      code == VK_RIGHT ||
-      code == VK_ENTER ||
-      code == VK_BACK;
+          code == VK_DOWN ||
+          code == VK_LEFT ||
+          code == VK_RIGHT ||
+          code == VK_ENTER ||
+          code == VK_BACK;
 }
 
-static bool IsKeyNumeric(uint16_t code) {
+static bool IsKeyNumeric(uint16_t code)
+{
    return code >= VK_NUMERIC_START && code <= VK_NUMERIC_END;
 }
 
-static bool IsKeyAlpha(uint16_t code) {
+static bool IsKeyAlpha(uint16_t code)
+{
    return code >= VK_ALPHA_START && code <= VK_ALPHA_END;
 }
 
-static bool IsKeyVcr(uint16_t code) {
+static bool IsKeyVcr(uint16_t code)
+{
    return code == VK_PLAY ||
-      code == VK_STOP ||
-      code == VK_PAUSE ||
-      code == VK_FAST_FWD ||
-      code == VK_REWIND ||
-      code == VK_NEXT ||
-      code == VK_PREV ||
-      code == VK_PLAY_PAUSE;
+          code == VK_STOP ||
+          code == VK_PAUSE ||
+          code == VK_FAST_FWD ||
+          code == VK_REWIND ||
+          code == VK_NEXT ||
+          code == VK_PREV ||
+          code == VK_PLAY_PAUSE;
 }
 
-static bool IsKeyScroll(uint16_t code) {
+static bool IsKeyScroll(uint16_t code)
+{
    return code == VK_PAGE_UP ||
-       code == VK_PAGE_DOWN;
+          code == VK_PAGE_DOWN;
 }

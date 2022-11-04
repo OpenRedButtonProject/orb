@@ -10,15 +10,15 @@ set(TARGET ORBPlatformImpl)
 
 project(${TARGET})
 
-include_directories(
-   ../library/src/platform
-   ../library/src/platform/dataTypes
-   src
-)
-
 add_library(${TARGET} SHARED
    src/DVB.cpp
    src/ORBPlatformMockImpl.cpp
+)
+
+target_include_directories(${TARGET} PRIVATE
+   ../library/src/platform
+   ../library/src/platform/dataTypes
+   src
 )
 
 set_target_properties(${TARGET} PROPERTIES
