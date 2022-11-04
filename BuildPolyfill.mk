@@ -3,6 +3,7 @@ src/mediamanager.js \
 src/utils.js \
 src/objects/audiotracklist.js \
 src/objects/videotracklist.js \
+src/mediaproxies/iframeobjectproxy.js \
 src/mediaproxies/mediaerror.js \
 src/mediaproxies/dashproxy.js \
 src/mediaproxies/nativeproxy.js \
@@ -63,6 +64,7 @@ src/objects/mediasync/broadcastobserver.js \
 src/objects/mediasync/mediaelementtsclient.js \
 src/objects/csmanager.js \
 src/mediaproxies/mediaerror.js \
+src/mediaproxies/iframeobjectproxy.js \
 src/mediaproxies/mediaelementwrapper.js \
 src/run.js \
 src/housekeeping/endiffe.js

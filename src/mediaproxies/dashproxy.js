@@ -177,12 +177,6 @@
       error() {
          let ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "error");
          return ownProperty.get.call(this) || privates.get(this).error;
-      },
-      audioTracks() {
-         return privates.get(this).audioTracks;
-      },
-      videoTracks() {
-         return privates.get(this).videoTracks;
       }
    });
 
@@ -245,6 +239,8 @@
       if (p) {
          console.log("DashProxy: Cleaning up...");
          this.removeEventListener("loadeddata", p.onLoadedData, true);
+         this.audioTracks.removeEventListener("change", p.onAudioTrackChange);
+         this.videoTracks.removeEventListener("change", p.onVideoTrackChange);
          this.textTracks.removeEventListener("change", p.onTextTrackChange);
          p.player.off('error', p.onError);
          p.player.off('manifestLoaded', p.onManifestLoaded);
@@ -268,37 +264,8 @@
       const p = privates.get(this);
       if (p) {
          console.log("DashProxy: Loaded data.");
-         p.audioTracks = hbbtv.objects.createAudioTrackList(getAudioTracks.call(this));
-         p.videoTracks = hbbtv.objects.createVideoTrackList(getVideoTracks.call(this));
-         p.videoTracks.addEventListener("change", () => {
-            const currTrack = p.player.getCurrentTrackFor('video');
-            const videoTracks = p.player.getTracksFor('video');
-            for (let i = 0; i < p.videoTracks.length; ++i) {
-               if (p.videoTracks[i].selected) {
-                  let nextTrack = videoTracks.find(track => track.index === p.videoTracks[i].index);
-                  if (currTrack !== nextTrack) {
-                     setTimeout(function() { p.player.setCurrentTrack(nextTrack);}, 1);
-                  }
-                  break;
-               }
-            }
-         });
-         p.audioTracks.addEventListener("change", () => {
-            let mute = true;
-            const currTrack = p.player.getCurrentTrackFor('audio');
-            const audioTracks = p.player.getTracksFor('audio');
-            for (let i = 0; i < p.audioTracks.length; ++i) {
-               if (p.audioTracks[i].enabled) {
-                  mute = false;
-                  let nextTrack = audioTracks.find(track => track.index === p.audioTracks[i].index);
-                  if (currTrack !== nextTrack) {
-                     p.player.setCurrentTrack(nextTrack);
-                  }
-                  break;
-               }
-            }
-            this.muted = mute;
-         });
+         this.videoTracks.setTrackList(getVideoTracks.call(this));
+         this.audioTracks.setTrackList(getAudioTracks.call(this));
          p.onTextTrackChange();
       } else {
          console.warn("DashProxy: Not initialised.");
@@ -604,6 +571,34 @@
       }
    }
 
+   function onAudioTrackChange() {
+      const p = privates.get(this);
+      let mute = true;
+      for (let i = 0; i < this.audioTracks.length; ++i) {
+         if (this.audioTracks[i].enabled) {
+            mute = false;
+            let nextTrack = p.player.getTracksFor('audio').find(track => track.index === this.audioTracks[i].index);
+            if (p.player.getCurrentTrackFor('audio') !== nextTrack) {
+               p.player.setCurrentTrack(nextTrack);
+            }
+            break;
+         }
+      }
+      this.muted = mute;
+   }
+
+   function onVideoTrackChange() {
+      for (let i = 0; i < this.videoTracks.length; ++i) {
+         if (this.videoTracks[i].selected) {
+            let nextTrack = p.player.getTracksFor('video').find(track => track.index === this.videoTracks[i].index);
+            if (p.player.getCurrentTrackFor('video') !== nextTrack) {
+               p.player.setCurrentTrack(nextTrack);
+            }
+            break;
+         }
+      }
+   }
+
    function initialise(src) {
       if (!privates.get(this)) {
          if (this.orb_invalidate) {
@@ -617,8 +612,12 @@
             p.onLoadedData = onLoadedData.bind(this);
             p.onManifestLoaded = onManifestLoaded.bind(this);
             p.onTextTrackChange = onTextTrackChange.bind(this);
+            p.onAudioTrackChange = onAudioTrackChange.bind(this);
+            p.onVideoTrackChange = onVideoTrackChange.bind(this);
             p.onPeriodChanged = makeStreamInfoCallback(this, "__obs_onperiodchanged__");
             p.onStreamUpdated = makeStreamInfoCallback(this, "__obs_onstreamupdated__");
+            this.audioTracks.addEventListener("change", p.onAudioTrackChange);
+            this.videoTracks.addEventListener("change", p.onVideoTrackChange);
 
             p.onError = onError.bind(this);
             p.onParentalRatingChange = onParentalRatingChange.bind(this);

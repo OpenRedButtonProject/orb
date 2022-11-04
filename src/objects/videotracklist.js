@@ -7,6 +7,37 @@
 hbbtv.objects.VideoTrackList = (function() {
    const prototype = {};
    const privates = new WeakMap();
+   const events = ["change", "addtrack", "removetrack"];
+
+   Object.defineProperty(prototype, "length", {
+      get() {
+         return privates.get(this).trackList.length;
+      }
+   });
+
+   for (const key of events) {
+      Object.defineProperty(prototype, "on" + key, {
+         set(callback) {
+            const p = privates.get(this);
+            if (p["on" + key]) {
+               p.eventTarget.removeEventListener(key, p["on" + key]);
+            }
+
+            if (callback instanceof Object) {
+               p["on" + key] = callback;
+               if (callback) {
+                  p.eventTarget.addEventListener(key, callback);
+               }
+            }
+            else {
+               p["on" + key] = null;
+            }
+         },
+         get() {
+            return privates.get(this)["on" + key];
+         }
+      });
+   }
 
    Object.defineProperty(prototype, "selectedIndex", {
       get() {
@@ -16,28 +47,6 @@ hbbtv.objects.VideoTrackList = (function() {
             }
          }
          return -1;
-      }
-   });
-
-   Object.defineProperty(prototype, "length", {
-      get() {
-         return privates.get(this).length;
-      }
-   });
-
-   Object.defineProperty(prototype, "onchange", {
-      get() {
-         return privates.get(this).onchange;
-      },
-      set(callback) {
-         const p = privates.get(this);
-         if (p.onchange) {
-            p.eventTarget.removeEventListener("change", p.onchange);
-         }
-         p.onchange = callback;
-         if (callback) {
-            p.eventTarget.addEventListener("change", callback);
-         }
       }
    });
 
@@ -61,6 +70,32 @@ hbbtv.objects.VideoTrackList = (function() {
 
    prototype.removeEventListener = function(event, listener) {
       privates.get(this).eventTarget.removeEventListener(event, listener);
+   }
+
+   prototype.setTrackList = function (trackList) {
+      const p = privates.get(this);
+      p.trackList = trackList;
+      for (let i = 0; i < trackList.length; ++i) {
+         this[i] = new VideoTrack(trackList, i, p.eventTarget);
+      }
+   }
+
+   prototype.appendTrack = function (track) {
+      const p = privates.get(this);
+      p.trackList.push(track);
+      this[p.trackList.length - 1] = new VideoTrack(p.trackList, p.trackList.length - 1, p.eventTarget);
+      p.eventTarget.dispatchEvent(new TrackEvent("addtrack"));
+   }
+
+   prototype.removeTrackAt = function (index) {
+      const p = privates.get(this);
+      if (index >= 0 && index < p.trackList.length) {
+         for (let i = index; i < p.trackList.length - 1; i++) {
+            this[i] = this[i + 1];
+         }
+         p.trackList.splice(index, 1);
+         p.eventTarget.dispatchEvent(new TrackEvent("removetrack"));
+      }
    }
 
    function VideoTrack(allTracks, index, eventTarget) {
@@ -110,15 +145,11 @@ hbbtv.objects.VideoTrackList = (function() {
       });
    }
 
-   function initialise(trackList) {
-      privates.set(this, {});
-      const p = privates.get(this);
-      p.length = trackList.length;
-      p.eventTarget = document.createDocumentFragment();
-      for (let i = 0; i < trackList.length; ++i) {
-         this[i] = new VideoTrack(trackList, i, p.eventTarget);
-      }
-      Object.freeze(this);
+   function initialise() {
+      privates.set(this, {
+         trackList: [],
+         eventTarget: document.createDocumentFragment(),
+      });
    }
 
    return {
@@ -127,8 +158,35 @@ hbbtv.objects.VideoTrackList = (function() {
    };
 })();
 
-hbbtv.objects.createVideoTrackList = function(trackList) {
-   const videoTrackList = Object.create(hbbtv.objects.VideoTrackList.prototype);
-   hbbtv.objects.VideoTrackList.initialise.call(videoTrackList, trackList);
-   return videoTrackList;
+hbbtv.objects.createVideoTrackList = function() {
+   const trackList = Object.create(hbbtv.objects.VideoTrackList.prototype);
+   hbbtv.objects.VideoTrackList.initialise.call(trackList);
+   const iframeProxy = hbbtv.objects.createIFrameObjectProxy(trackList, "VideoTrackList");
+   
+   // We create a new Proxy object which we return in order to avoid recursive calls
+   // between the iframe and the main window when the user requests a property update
+   // or a function call.
+   const tracksProxy = new Proxy (trackList, {
+      get: (target, property) => {
+         if (property === "__orb_proxy__") {
+            return iframeProxy;
+         }
+         if (typeof target[property] === "function") {
+            return function() {
+               iframeProxy.setRemoteObjectProperty(property, ...Array.from(arguments).sort((a, b) => { return a - b; }));
+               return target[property].apply(target, arguments);
+            }.bind(this);
+         }
+         return target[property];
+      },
+      set: (target, property, value) => {
+         if (typeof target[property] !== "function") {
+            iframeProxy.setRemoteObjectProperty(property, value);
+         }
+         if (property !== "__orb_proxy__") {
+            target[property] = value;
+         }
+      }
+   });
+   return tracksProxy;
 }
