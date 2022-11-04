@@ -258,7 +258,7 @@ bool ORBPlatformMockImpl::Broadcast_SetChannelToCcid(
 bool ORBPlatformMockImpl::Broadcast_SetChannelToNull(
     bool trickplay,
     std::string contentAccessDescriptorURL,
-    bool quiet,
+    int quiet,
     Channel::ErrorState *errorState
     )
 {
@@ -291,7 +291,7 @@ bool ORBPlatformMockImpl::Broadcast_SetChannelToTriplet(
     std::string ipBroadcastID,
     bool trickplay,
     std::string contentAccessDescriptorURL,
-    bool quiet,
+    int quiet,
     Channel::ErrorState *errorState
     )
 {
@@ -316,7 +316,7 @@ bool ORBPlatformMockImpl::Broadcast_SetChannelToDsd(
     int sid,
     bool trickplay,
     std::string contentAccessDescriptorURL,
-    bool quiet,
+    int quiet,
     Channel::ErrorState *errorState
     )
 {
@@ -595,6 +595,11 @@ bool ORBPlatformMockImpl::Configuration_RequestAccessToDistinctiveIdentifier(std
 void ORBPlatformMockImpl::Dsmcc_RequestFile(std::string url, int requestId)
 {
     ORB_LOG("url=%s requestId=%d", url.c_str(), requestId);
+
+    std::string content =
+        "<html><body style=\"background-color: #333333; color: #aaaaaa;\"><h1>DVB</h1></body></html>";
+    m_platformEventHandler->OnDvbUrlLoaded(requestId, (unsigned char *)content.c_str(),
+        content.length());
 }
 
 /**

@@ -20,7 +20,8 @@ extern "C" {
 //---Enumerations for public use-----------------------------------------------
 
 //---Global type defs for public use-------------------------------------------
-typedef void (*OnDvbUrlLoaded)(int requestId, unsigned int bufferLength, void *caller);
+typedef void (*OnDvbUrlLoaded)(int requestId, unsigned char *buffer, unsigned int bufferLength,
+    void *caller);
 
 //---Global Function prototypes for public use---------------------------------
 

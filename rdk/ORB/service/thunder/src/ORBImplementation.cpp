@@ -96,12 +96,14 @@ void ORBImplementation::Unregister(Exchange::IORB::INotification *sink)
  *
  * Used to dlopen the ORBPlatform library. Called from ORB::Initialize
  */
-void ORBImplementation::LoadPlatform()
+bool ORBImplementation::LoadPlatform()
 {
+    bool result = false;
     ORB_LOG_NO_ARGS();
     _adminLock.Lock();
-    ORBEngine::GetSharedInstance().Start(_orbEventListener);
+    result = ORBEngine::GetSharedInstance().Start(_orbEventListener);
     _adminLock.Unlock();
+    return result;
 }
 
 /**

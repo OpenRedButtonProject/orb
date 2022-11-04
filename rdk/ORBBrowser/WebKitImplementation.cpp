@@ -16,6 +16,8 @@
 
 #ifdef WEBKIT_GLIB_API
 #include <wpe/webkit.h>
+#include "ORBWPEWebExtensionHelper.h"
+using namespace orb;
 #else
 #include <WPE/WebKit.h>
 #include <WPE/WebKit/WKCookieManagerSoup.h>
@@ -442,6 +444,7 @@ public:
                 , UseDFG(true)
                 , UseFTL(true)
                 , UseDOM(true)
+                , UseWeakRef(true)
                 , DumpOptions(_T("0"))
             {
                 Add(_T("useLLInt"), &UseLLInt);
@@ -449,6 +452,7 @@ public:
                 Add(_T("useDFG"), &UseDFG);
                 Add(_T("useFTL"), &UseFTL);
                 Add(_T("useDOM"), &UseDOM);
+                Add(_T("UseWeakRef"), &UseWeakRef);
                 Add(_T("dumpOptions"), &DumpOptions);
             }
 
@@ -462,6 +466,7 @@ public:
             Core::JSON::Boolean UseDFG;
             Core::JSON::Boolean UseFTL;
             Core::JSON::Boolean UseDOM;
+            Core::JSON::Boolean UseWeakRef;
             Core::JSON::String DumpOptions;
         };
 
@@ -481,6 +486,7 @@ public:
             , Transparent(false)
             , Compositor()
             , Inspector()
+            , InspectorNative()
             , FPS(false)
             , Cursor(false)
             , Touch(false)
@@ -531,6 +537,7 @@ public:
             Add(_T("transparent"), &Transparent);
             Add(_T("compositor"), &Compositor);
             Add(_T("inspector"), &Inspector);
+            Add(_T("inspectornative"), &InspectorNative);
             Add(_T("fps"), &FPS);
             Add(_T("cursor"), &Cursor);
             Add(_T("touch"), &Touch);
@@ -590,6 +597,7 @@ public:
         Core::JSON::Boolean Transparent;
         Core::JSON::String Compositor;
         Core::JSON::String Inspector;
+        Core::JSON::Boolean InspectorNative;
         Core::JSON::Boolean FPS;
         Core::JSON::Boolean Cursor;
         Core::JSON::Boolean Touch;
@@ -1821,12 +1829,29 @@ public:
         // WebInspector
         if (_config.Inspector.Value().empty() == false)
         {
-            if (_config.Automation.Value())
+#ifdef WEBKIT_GLIB_API
+            if (_config.InspectorNative.Value())
+            {
                 Core::SystemInfo::SetEnvironment(_T("WEBKIT_INSPECTOR_SERVER"),
                     _config.Inspector.Value(), !environmentOverride);
+            }
             else
+            {
+                Core::SystemInfo::SetEnvironment(_T("WEBKIT_INSPECTOR_HTTP_SERVER"),
+                    _config.Inspector.Value(), !environmentOverride);
+            }
+#else
+            if (_config.Automation.Value())
+            {
+                Core::SystemInfo::SetEnvironment(_T("WEBKIT_INSPECTOR_SERVER"),
+                    _config.Inspector.Value(), !environmentOverride);
+            }
+            else
+            {
                 Core::SystemInfo::SetEnvironment(_T("WEBKIT_LEGACY_INSPECTOR_SERVER"),
                     _config.Inspector.Value(), !environmentOverride);
+            }
+#endif
         }
 
         // RPI mouse support
@@ -1873,6 +1898,13 @@ public:
         if (_config.JavaScript.UseDOM.Value() == false)
         {
             Core::SystemInfo::SetEnvironment(_T("JSC_useDOMJIT"), _T("false"),
+                !environmentOverride);
+        }
+
+        // WPE allows the Weakref JS object to be used if true
+        if (_config.JavaScript.UseWeakRef.Value() == true)
+        {
+            Core::SystemInfo::SetEnvironment(_T("JSC_useWeakRefs"), _T("true"),
                 !environmentOverride);
         }
 
@@ -2145,9 +2177,9 @@ private:
                                                           static_cast<uint32_t>(Core::Time::Now().
                                                                                 Ticks() -
                                                                                 object->_time)));
-
+#ifndef WEBKIT_GLIB_API
                         object->CheckWebProcess();
-
+#endif
                         return FALSE;
                     },
                 this);
@@ -2201,6 +2233,7 @@ private:
             browser->_config.Whitelist.Value().c_str() : nullptr,
             browser->_config.LogToSystemConsoleEnabled.Value());
         webkit_web_context_set_web_extensions_initialization_user_data(context, data);
+        ORBWPEWebExtensionHelper::GetSharedInstance().InitialiseWebExtension(context);
     }
 
     static void wpeNotifyWPEFrameworkMessageReceivedCallback(WebKitUserContentManager *,
@@ -2242,6 +2275,16 @@ private:
     {
         if (loadEvent == WEBKIT_LOAD_FINISHED)
             browser->OnLoadFinished();
+    }
+
+    static gboolean loadFailedCallback(WebKitWebView *web_view, WebKitLoadEvent load_event,
+        gchar *failing_uri, GError *error, gpointer user_data)
+    {
+        std::string url(failing_uri);
+        std::string errorDescription(error->message);
+        ORBWPEWebExtensionHelper::GetSharedInstance().GetORBClient()->NotifyApplicationLoadFailed(
+            url, errorDescription);
+        return true;
     }
 
     static void webProcessTerminatedCallback(WebKitWebView *webView,
@@ -2307,6 +2350,9 @@ private:
 
         bool automationEnabled = _config.Automation.Value();
 
+        // Set the HBBTV_ENABLED environment variable, which is needed in WPE 2.28
+        setenv("HBBTV_ENABLED", "1", 1);
+
         WebKitWebContext *context;
         if (automationEnabled)
         {
@@ -2345,6 +2391,8 @@ private:
             context = webkit_web_context_new_with_website_data_manager(websiteDataManager);
             g_object_unref(websiteDataManager);
         }
+
+        ORBWPEWebExtensionHelper::GetSharedInstance().RegisterDVBURLSchemeHandler(context);
 
         if (_config.InjectedBundle.Value().empty() == false)
         {
@@ -2401,12 +2449,21 @@ private:
         }
 
         if (_config.UserAgent.IsSet() == true && _config.UserAgent.Value().empty() == false)
+        {
             webkit_settings_set_user_agent(preferences, _config.UserAgent.Value().c_str());
+        }
+        else
+        {
+            webkit_settings_set_user_agent(preferences,
+                "HbbTV/1.6.1 (; OBS; WPE; v1.0.0-alpha; OBS;)");
+        }
 
         _view = WEBKIT_WEB_VIEW(g_object_new(WEBKIT_TYPE_WEB_VIEW,
             "backend", webkit_web_view_backend_new(wpe_view_backend_create(), nullptr, nullptr),
             "web-context", context,
             "settings", preferences,
+            "user-content-manager",
+            ORBWPEWebExtensionHelper::GetSharedInstance().CreateWebKitUserContentManager(),
             "is-controlled-by-automation", automationEnabled,
             nullptr));
         g_object_unref(context);
@@ -2434,6 +2491,7 @@ private:
             this);
         g_signal_connect(_view, "load-changed", reinterpret_cast<GCallback>(loadChangedCallback),
             this);
+        g_signal_connect(_view, "load-failed", G_CALLBACK(loadFailedCallback), nullptr);
         g_signal_connect(_view, "web-process-terminated",
             reinterpret_cast<GCallback>(webProcessTerminatedCallback), nullptr);
         g_signal_connect(_view, "close", reinterpret_cast<GCallback>(closeCallback), this);

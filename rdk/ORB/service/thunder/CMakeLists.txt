@@ -132,6 +132,7 @@ target_include_directories(ORBClient PUBLIC
   src
   ../../library/src/core
   ../../library/src/core/api
+  ../../library/src/core/utilities
 )
 
 target_link_libraries(ORBClient PRIVATE

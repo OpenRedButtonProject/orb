@@ -188,6 +188,7 @@ void JavaScriptEventDispatchRequested(std::string name, std::string properties)
  * Callback responding to the 'dvburlloaded' event of the ORB service.
  *
  * @param requestId
+ * @param content
  * @param contentLength
  */
 void DvbUrlLoaded(int requestId, unsigned char *content, unsigned int contentLength)
@@ -197,7 +198,7 @@ void DvbUrlLoaded(int requestId, unsigned char *content, unsigned int contentLen
     OnDvbUrlLoaded callback = ORBBridge::GetSharedInstance().GetDsmccCallback(requestId);
     void *caller = ORBBridge::GetSharedInstance().GetDsmccCaller(requestId);
 
-    callback(requestId, contentLength, caller);
+    callback(requestId, content, contentLength, caller);
 
     ORBBridge::GetSharedInstance().RemoveDsmccCallback(requestId);
     ORBBridge::GetSharedInstance().RemoveDsmccCaller(requestId);

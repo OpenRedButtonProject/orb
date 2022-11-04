@@ -44,6 +44,7 @@ ORB::~ORB()
 const string ORB::Initialize(PluginHost::IShell *service)
 {
     string message;
+    bool orbEngineStarted;
 
     ASSERT(_service == nullptr);
     ASSERT(_orb == nullptr);
@@ -61,32 +62,36 @@ const string ORB::Initialize(PluginHost::IShell *service)
     // Check if ORB plugin initialisation failed
     if (_orb != nullptr)
     {
-        _orb->LoadPlatform();
-        RegisterAll();
-
-        ORBConfiguration config;
-        config.FromString(_service->ConfigLine());
-
-        // start the comrpc server, in case it is set on config
-        if (config.PrivateComRpcServer.Value() == true)
+        orbEngineStarted = _orb->LoadPlatform();
+        if (orbEngineStarted)
         {
-            _rpcEngine = Core::ProxyType<RPC::InvokeServer>::Create(&Core::IWorkerPool::Instance());
-            _rpcServer = new ORBComRpcServer(Core::NodeId("/tmp/ORB"), _orb, service,
-                _service->ProxyStubPath(), _rpcEngine);
+            RegisterAll();
 
-            if (_rpcServer->IsListening())
-            {
-                SYSLOG(Logging::Startup, (_T("Successfully started COM-RPC server")));
-            }
-            else
-            {
-                delete _rpcServer;
-                _rpcServer = nullptr;
-                _rpcEngine.Release();
-                SYSLOG(Logging::Error, (_T("Failed to start COM-RPC server")));
+            ORBConfiguration config;
+            config.FromString(_service->ConfigLine());
 
-                // return string for WPEFramework to print as error
-                message = "Failed to start COM-RPC server";
+            // start the comrpc server, in case it is set on config
+            if (config.PrivateComRpcServer.Value() == true)
+            {
+                _rpcEngine = Core::ProxyType<RPC::InvokeServer>::Create(
+                    &Core::IWorkerPool::Instance());
+                _rpcServer = new ORBComRpcServer(Core::NodeId("/tmp/ORB"), _orb, service,
+                    _service->ProxyStubPath(), _rpcEngine);
+
+                if (_rpcServer->IsListening())
+                {
+                    SYSLOG(Logging::Startup, (_T("Successfully started COM-RPC server")));
+                }
+                else
+                {
+                    delete _rpcServer;
+                    _rpcServer = nullptr;
+                    _rpcEngine.Release();
+                    SYSLOG(Logging::Error, (_T("Failed to start COM-RPC server")));
+
+                    // return string for WPEFramework to print as error
+                    message = "Failed to start COM-RPC server";
+                }
             }
         }
     }
