@@ -2320,6 +2320,12 @@ private:
       g_object_unref(context);
       g_object_unref(preferences);
 
+      if (_config.Transparent.Value() == true)
+      {
+         WebKitColor transparent = {.red = 0, .green = 0, .blue = 0, .alpha = 0};
+         webkit_web_view_set_background_color(_view, &transparent);
+      }
+
       unsigned frameDisplayedCallbackID = 0;
       if (_config.FPS.Value() == true)
       {
