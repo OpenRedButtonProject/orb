@@ -108,6 +108,7 @@ private:
 
    // JsonRpc methods
    uint32_t SendKeyEvent(Core::JSON::DecUInt16 keyCode, Core::JSON::Boolean& response);
+   uint32_t SetPreferredUILanguage(Core::JSON::String preferredUiLanguage);
 
 private:
 

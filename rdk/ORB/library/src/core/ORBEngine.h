@@ -244,6 +244,16 @@ public:
       return m_metadataSearchTasks[queryId];
    }
 
+   void SetPreferredUILanguage(std::string preferredUiLanguage)
+   {
+      m_preferredUiLanguage = preferredUiLanguage;
+   }
+
+   std::string GetPreferredUILanguage() const
+   {
+      return m_preferredUiLanguage;
+   }
+
 private:
 
    // member variables
@@ -261,5 +271,6 @@ private:
    std::map<int, std::shared_ptr<MetadataSearchTask> > m_metadataSearchTasks;
    uint16_t m_currentAppId;
    bool m_started;
+   std::string m_preferredUiLanguage;
 }; // class ORBEngine
 } // namespace orb
