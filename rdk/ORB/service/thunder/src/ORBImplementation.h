@@ -61,6 +61,7 @@ public:
     void NotifyApplicationPageChanged(std::string url) override;
     bool SendKeyEvent(int keyCode) override;
     void LoadDvbUrl(std::string url, int requestId) override;
+    void SetPreferredUILanguage(std::string preferredUiLanguage) override;
 
     // methods to be called when events need to fire
 

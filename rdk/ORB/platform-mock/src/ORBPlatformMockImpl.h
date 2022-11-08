@@ -61,7 +61,6 @@ public:
     virtual std::shared_ptr<LocalSystem> Configuration_GetLocalSystem() override;
     virtual std::string Configuration_GetPreferredAudioLanguage() override;
     virtual std::string Configuration_GetPreferredSubtitleLanguage() override;
-    virtual std::string Configuration_GetPreferredUILanguage() override;
     virtual std::string Configuration_GetCountryId() override;
     virtual bool Configuration_GetSubtitlesEnabled() override;
     virtual bool Configuration_GetAudioDescriptionEnabled() override;

@@ -71,6 +71,7 @@ struct EXTERNAL IORB : virtual public Core::IUnknown
     virtual void NotifyApplicationPageChanged(std::string url) = 0;
     virtual bool SendKeyEvent(int keyCode) = 0;
     virtual void LoadDvbUrl(std::string url, int requestId) = 0;
+    virtual void SetPreferredUILanguage(std::string preferredUiLanguage) = 0;
 
     // methods to trigger notifications
     virtual void JavaScriptEventDispatchRequest(
