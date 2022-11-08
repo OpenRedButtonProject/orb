@@ -167,7 +167,7 @@ hbbtv.objects.createAudioTrackList = function() {
          }
          if (typeof target[property] === "function") {
             return function() {
-               iframeProxy.setRemoteObjectProperty(property, ...Array.from(arguments).sort((a, b) => { return a - b; }));
+               iframeProxy.callMethod(property, Array.from(arguments).sort((a, b) => { return a - b; }));
                return target[property].apply(target, arguments);
             };
          }
@@ -175,7 +175,7 @@ hbbtv.objects.createAudioTrackList = function() {
       },
       set: (target, property, value) => {
          if (typeof target[property] !== "function") {
-            iframeProxy.setRemoteObjectProperty(property, value);
+            iframeProxy.setRemoteObjectProperties({[property]: value});
          }
          if (property !== "__orb_proxy__") {
             target[property] = value;
