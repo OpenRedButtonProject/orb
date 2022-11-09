@@ -65,14 +65,10 @@
    };
 
    prototype.appendChild = function(node) {
-      if (node.nodeName) {
-         if (node.nodeName.toLowerCase() === "source" && !this.src) {
-            this.src = node.src;
-         }
-         else {
-            privates.get(this).proxy.callMethod("appendChild", [node.outerHTML]);
-         }
+      if (node.nodeName && node.nodeName.toLowerCase() === "source" && !this.src) {
+         this.src = node.src;
       }
+      this.innerHTML += node.outerHTML;
    };
    
    function makeMethod(name) {
@@ -83,8 +79,7 @@
 
    function makeAsyncMethod(name) {
       return function () {
-         privates.get(this).proxy.callMethod(name, Array.from(arguments).sort((a, b) => { return a - b; }));
-         return Promise.resolve(); // TODO: need to fix this
+         return privates.get(this).proxy.callAsyncMethod(name, Array.from(arguments).sort((a, b) => { return a - b; }));
       }
    }
 
@@ -109,20 +104,19 @@
 
    /**
     * Helper class to act as intermediate between MediaElementWrapper and
-    * IFrameMediaProxy, in order to prevent going back and forth when calling
-    * a method or updating a property infinitely. In addition to that, updates
-    * read-only properties of the media element from the other end, and when requested
-    * with the MediaElementWrapper, return those.
+    * IFrameMediaProxy, in order to prevent ping-pong effect when calling
+    * a method or updating a property. In addition to that, updates
+    * read-only properties of the media element from the other end, and when
+    * requested with the MediaElementWrapper, return those.
     */
    function VideoDummy(parent) {
       this._attributes = { };
       this.audioTracks = hbbtv.objects.createAudioTrackList();
       this.videoTracks = hbbtv.objects.createVideoTrackList();
       this.dispatchEvent = function(e) {
-         let p = privates.get(parent);
          parent.dispatchEvent(e);
-         if (typeof p["on" + e.type] === "function") {
-            p["on" + e.type](e);
+         if (typeof parent["on" + e.type] === "function") {
+            parent["on" + e.type](e);
          }
       };
    }
@@ -140,12 +134,14 @@
          p = privates.get(this);
 
          HTMLIFrameElement.prototype.addEventListener.call(this, "load", () => {
-            console.log("MediaElementWrapper: initialising iframe...");
+            if (this.src) {
+               console.log("MediaElementWrapper: initialising iframe with src", this.src + "...");
 
-             // TODO: find proper way of generating uuid
-            p.proxy.initiateHandshake(Math.random(), this.contentWindow);
-            p.videoDummy.audioTracks.__orb_proxy__.initiateHandshake(Math.random(), this.contentWindow);
-            p.videoDummy.videoTracks.__orb_proxy__.initiateHandshake(Math.random(), this.contentWindow);
+               // TODO: find proper way of generating uuid
+               p.proxy.initiateHandshake(Math.random(), this.contentWindow);
+               p.videoDummy.audioTracks.__orb_proxy__.initiateHandshake(Math.random(), this.contentWindow);
+               p.videoDummy.videoTracks.__orb_proxy__.initiateHandshake(Math.random(), this.contentWindow);
+            }
          });
          console.log("MediaElementWrapper: initialised");
       }

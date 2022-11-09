@@ -74,6 +74,11 @@ hbbtv.objects.VideoTrackList = (function() {
 
    prototype.setTrackList = function (trackList) {
       const p = privates.get(this);
+      if (p.trackList) {
+         for (let i = trackList.length; i < p.trackList.length; ++i) {
+            delete this[i];
+         }
+      }
       p.trackList = trackList;
       for (let i = 0; i < trackList.length; ++i) {
          this[i] = new VideoTrack(trackList, i, p.eventTarget);
@@ -92,6 +97,9 @@ hbbtv.objects.VideoTrackList = (function() {
       if (index >= 0 && index < p.trackList.length) {
          for (let i = index; i < p.trackList.length - 1; i++) {
             this[i] = this[i + 1];
+         }
+         if (index < p.trackList.length) {
+            delete this[p.trackList.length - 1];
          }
          p.trackList.splice(index, 1);
          p.eventTarget.dispatchEvent(new TrackEvent("removetrack"));
@@ -163,7 +171,7 @@ hbbtv.objects.createVideoTrackList = function() {
    hbbtv.objects.VideoTrackList.initialise.call(trackList);
    const iframeProxy = hbbtv.objects.createIFrameObjectProxy(trackList, "VideoTrackList");
    
-   // We create a new Proxy object which we return in order to avoid recursive calls
+   // We create a new Proxy object which we return in order to avoid ping-pong calls
    // between the iframe and the main window when the user requests a property update
    // or a function call.
    const tracksProxy = new Proxy (trackList, {

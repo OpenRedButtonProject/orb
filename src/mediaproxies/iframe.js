@@ -13,9 +13,6 @@ function onDocumentLoaded() {
    for (const evt of genericEvents) {
       video.addEventListener(evt, genericHandler);
    }
-
-   video.audioTracks = hbbtv.objects.createAudioTrackList();
-   video.videoTracks = hbbtv.objects.createVideoTrackList();
    const propsUpdateCallback = function (e) {
       const props = { };
       const keys = Object.getOwnPropertyNames(HTMLMediaElement.prototype);

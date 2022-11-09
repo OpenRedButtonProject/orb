@@ -6,7 +6,7 @@
  * the top level of this repository.
  */
 
-const hbbtv = { objects: { } };
+const hbbtv = { objects: { }, native: { } }; // TODO: remove non-needed code
 
 hbbtv.mediaManager = (function() {
    let objectHandlers = {};
@@ -199,23 +199,6 @@ hbbtv.mediaManager = (function() {
          }
          Element.prototype.setAttribute.apply(this, arguments);
       };
-
-      HTMLMediaElement.prototype.appendChild = function(node) {
-         if (node.nodeName) {
-            if (node.nodeName.toLowerCase() === "source" && !this.src) {
-               console.log("MediaManager: intercepted source element addition with src " + node.src + " and type " + node.type);
-               if (node.type) {
-                  const nextHandler = getHandlerByContentType(node.type) || fallbackHandlers;
-                  switchObjectHandler.call(this, nextHandler, node.src);
-                  Element.prototype.setAttribute.call(this, "src", node.src);
-               } else {
-                  const thiz = this;
-                  upgradeObject.call(this, node.src).catch(e => upgradeToFallback(thiz, e));
-               }
-            }
-         }
-         Element.prototype.appendChild.apply(this, arguments);
-      };
    }
 
    // Mutation observer
@@ -223,57 +206,17 @@ hbbtv.mediaManager = (function() {
       const observer = new MutationObserver(function(mutationsList) {
          for (const mutation of mutationsList) {
             for (const node of mutation.addedNodes) {
-               if (node.nodeName) {
-                  if (node.nodeName.toLowerCase() === "video" || node.nodeName.toLowerCase() === "audio") {
-                     try {
-                        if (node.src) {
-                           upgradeObject.call(node, node.src).catch(e => upgradeToFallback(node, e));
-                        } else {
-                           let found = false;
-                           for (const nd of node.children) {
-                              if (nd.nodeName && nd.nodeName.toLowerCase() === "source") {
-                                 console.log("MediaManager: intercepted source element addition with src " + nd.src + " and type " + nd.type);
-                                 if (nd.type) {
-                                    const nextHandler = getHandlerByContentType(nd.type) || fallbackHandlers;
-                                    switchObjectHandler.call(node, nextHandler, nd.src);
-                                    Element.prototype.setAttribute.call(node, "src", nd.src);
-                                 } else {
-                                    upgradeObject.call(node, nd.src).catch(e => upgradeToFallback(node, e));
-                                 }
-                                 found = true;
-                                 break;
-                              }
-                           }
-                           if (!found) {
-                              upgradeToFallback(node, "Source is not defined.");
-                           }
-                        }
-                     } catch (e) {
-                        if (fallbackHandlers) {
-                           console.warn("MediaManager: Failed to upgrade object. Fallback to native proxy. Error: " + e);
-                           let type = node.__objectType;
-                           if (type) {
-                              const handler = getHandlerByContentType(type);
-                              if (handler !== fallbackHandlers) {
-                                 node.__objectType = fallbackHandlers.getName();
-                                 fallbackHandlers.initialise(node, node.src);
-                              }
-                           } else {
-                              node.__objectType = fallbackHandlers.getName();
-                              fallbackHandlers.initialise(node, node.src);
-                           }
-                        }
-                     }
-                  } else if (node.nodeName.toLowerCase() === "source" && node.parentNode && !node.parentNode.src) {
-                     console.log("MediaManager: intercepted source element addition with src " + node.src + " and type " + node.type);
-                     if (node.type) {
-                        const nextHandler = getHandlerByContentType(node.type) || fallbackHandlers;
-                        switchObjectHandler.call(node.parentNode, nextHandler, node.src);
-                        Element.prototype.setAttribute.call(node.parentNode, "src", node.src);
-                     } else {
-                        upgradeObject.call(node.parentNode, node.src).catch(e => upgradeToFallback(node.parentNode, e));
-                     }
-                  }
+               if (node.nodeName && node.nodeName.toLowerCase() === "video" || node.nodeName.toLowerCase() === "audio") {
+                  const audioTracks = hbbtv.objects.createAudioTrackList();
+                  const videoTracks = hbbtv.objects.createVideoTrackList();
+                  Object.defineProperty(node, "audioTracks", {
+                     value: audioTracks,
+                     writable: false
+                  });
+                  Object.defineProperty(node, "videoTracks", {
+                     value: videoTracks,
+                     writable: false
+                  });
                }
             }
          }
