@@ -9,7 +9,6 @@ hbbtv.objects.IFrameObjectProxy = (function() {
    const prototype = {};
    const privates = new WeakMap();
    const MSG_TYPE_HANDSHAKE_REQUEST = "orb_iframe_handshake_request";
-   const MSG_TYPE_HANDSHAKE_RESPONSE = "orb_iframe_handshake_response";
    const MSG_TYPE_DISPATCH_EVENT = "orb_iframe_dispatch_event";
    const MSG_TYPE_SET_PROPERTIES = "orb_iframe_set_properties";
    const MSG_TYPE_METHOD_REQUEST = "orb_iframe_method_request";
@@ -17,17 +16,19 @@ hbbtv.objects.IFrameObjectProxy = (function() {
    const MSG_TYPE_ASYNC_METHOD_RESPONSE = "orb_iframe_async_method_response";
    let asyncIDs = 0;
 
-   prototype.initiateHandshake = function (uuid, remoteWindow) {
-      if (uuid === undefined) {
-         reject("IFrameObjectProxy: undefined uuid.");
-      }
-      else {
-         const p = privates.get(this);
-         console.log("IFrameObjectProxy: Requesting handshake for object type", p.objectType, "with uuid", uuid + "...");
-         p.uuid = uuid;
-         p.remoteWindow = remoteWindow;
-         postMessage.call(this, MSG_TYPE_HANDSHAKE_REQUEST, {objectType: p.objectType});
-      }
+   prototype.initiateHandshake = function (remoteWindow) {
+      const p = privates.get(this);
+      const thiz = this;
+      // TODO: find proper way of generating uuid
+      p.uuid = Math.random();
+      p.remoteWindow = remoteWindow;
+      console.log("IFrameObjectProxy: Requesting handshake for object type", p.objectType, "with uuid", p.uuid + "...");
+      return makeAsyncCall.call(this, MSG_TYPE_HANDSHAKE_REQUEST, {objectType: p.objectType}).then(() => {
+         while (p.pending.length) {
+            const pending = p.pending.shift();
+            postMessage.call(thiz, pending.type, pending.data);
+         }
+      });
    }
 
    prototype.invalidate = function () {
@@ -42,10 +43,22 @@ hbbtv.objects.IFrameObjectProxy = (function() {
    }
 
    prototype.callAsyncMethod = function (name, args = []) {
+      console.log("IFrameObjectProxy: Requested call to async method", name, "with arguments", args);
+      return makeAsyncCall.call(this, MSG_TYPE_ASYNC_METHOD_REQUEST, {name: name, args: args});
+   }
+
+   prototype.setRemoteObjectProperties = function (properties) {
+      postMessage.call(this, MSG_TYPE_SET_PROPERTIES, properties);
+   }
+
+   prototype.dispatchEvent = function (name) {
+      postMessage.call(this, MSG_TYPE_DISPATCH_EVENT, {event: name});
+   }
+
+   function makeAsyncCall(type, data) {
       const thiz = this;
       return new Promise((resolve, reject) => {
-         const id = asyncIDs++;
-         console.log("IFrameObjectProxy: Requested call to async method", name, "with arguments", args);
+         data.id = asyncIDs++;
          const callback = (e) => {
             let msg;
             try {
@@ -55,8 +68,8 @@ hbbtv.objects.IFrameObjectProxy = (function() {
                console.warn("IFrameObjectProxy: error parsing message data:", e.data);
                return;
             }
-            if (msg.type === MSG_TYPE_ASYNC_METHOD_RESPONSE && msg.data.id === id && msg.uuid === privates.get(thiz).uuid) {
-               console.log("IFrameObjectProxy: received response from async method", name);
+            if (msg.type === MSG_TYPE_ASYNC_METHOD_RESPONSE && msg.data.id === data.id && msg.uuid === privates.get(thiz).uuid) {
+               console.log("IFrameObjectProxy: received response from async call with id", data.id);
                window.removeEventListener("message", callback);
                clearTimeout(timeoutId);
                if (msg.data.error) {
@@ -70,19 +83,12 @@ hbbtv.objects.IFrameObjectProxy = (function() {
          };
          const timeoutId = setTimeout(() => {
             window.removeEventListener("message", callback);
-            reject("IFrameObjectProxy: Call to async method " + name + " timed out without receiving a response.");
+            reject("IFrameObjectProxy: Async call with id " + data.id +  " timed out without receiving a response.");
          }, 10000);
          window.addEventListener("message", callback);
-         postMessage.call(this, MSG_TYPE_ASYNC_METHOD_REQUEST, {name: name, args: args, id: id});
+         console.log("IFrameObjectProxy: Making an async call with id " + data.id);
+         postMessage.call(thiz, type, data);
       });
-   }
-
-   prototype.setRemoteObjectProperties = function (properties) {
-      postMessage.call(this, MSG_TYPE_SET_PROPERTIES, properties);
-   }
-
-   prototype.dispatchEvent = function (name) {
-      postMessage.call(this, MSG_TYPE_DISPATCH_EVENT, {event: name});
    }
 
    function postMessage(type, data) {
@@ -123,24 +129,19 @@ hbbtv.objects.IFrameObjectProxy = (function() {
             if (msg.data.objectType === objectType) {
                p.remoteWindow = e.source;
                p.uuid = msg.uuid;
-               console.log("IFrameObjectProxy: Received handshake request with uuid", p.uuid + ". Responding back...");
-               postMessage.call(thiz, MSG_TYPE_HANDSHAKE_RESPONSE);
                while (p.pending.length) {
                   const pending = p.pending.shift();
                   postMessage.call(thiz, pending.type, pending.data);
                }
+               console.log("IFrameObjectProxy: Received handshake request with uuid", p.uuid + ". Responding back...");
+               postMessage.call(thiz, MSG_TYPE_ASYNC_METHOD_RESPONSE, { 
+                  id: msg.data.id
+               });
                e.stopImmediatePropagation();
             }
          }
          else if (p.uuid === msg.uuid && p.remoteWindow === e.source) {
             switch (msg.type) {
-               case MSG_TYPE_HANDSHAKE_RESPONSE:
-                  while (p.pending.length) {
-                     const pending = p.pending.shift();
-                     postMessage.call(thiz, pending.type, pending.data);
-                  }
-                  console.log("IFrameObjectProxy: Received handshake response with uuid", msg.uuid + ".");
-                  break;
                case MSG_TYPE_DISPATCH_EVENT:
                   localObject.dispatchEvent(new Event(msg.data.event));
                   break;

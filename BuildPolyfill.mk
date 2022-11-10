@@ -6,8 +6,7 @@ src/objects/videotracklist.js \
 src/mediaproxies/iframeobjectproxy.js \
 src/mediaproxies/mediaerror.js \
 src/mediaproxies/dashproxy.js \
-src/mediaproxies/nativeproxy.js \
-src/mediaproxies/iframe.js
+src/mediaproxies/nativeproxy.js
 
 polyfill_dash_srcs = \
 external/dash.all.min.js

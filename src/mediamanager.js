@@ -201,6 +201,46 @@ hbbtv.mediaManager = (function() {
       };
    }
 
+   function registerMediaEvents(media) {
+      const mediaProxy = hbbtv.objects.createIFrameObjectProxy(media, "media");
+      const genericEvents = [
+         "loadstart", "progress", "suspend", "abort", "error", "emptied", "stalled", "loadedmetadata", "canplay",
+         "canplaythrough", "playing", "waiting", "seeking", "seeked", "resize"
+      ];
+      const genericHandler = (e) => {
+         mediaProxy.dispatchEvent(e.type);
+      };
+      for (const evt of genericEvents) {
+         media.addEventListener(evt, genericHandler);
+      }
+      const propsUpdateCallback = function (e) {
+         const props = { };
+         const keys = Object.getOwnPropertyNames(HTMLMediaElement.prototype);
+         for (const key of keys) {
+            if (typeof media[key] !== "function") {
+               props[key] = media[key];
+            }
+         }
+         mediaProxy.setRemoteObjectProperties(props);
+         mediaProxy.dispatchEvent(e.type);
+         console.log("iframe: update properties", props);
+      };
+      const makeCallback = function(property) {
+         return function (e) {
+            mediaProxy.setRemoteObjectProperties({[property]: media[property]});
+            mediaProxy.dispatchEvent(e.type);
+         }
+      }
+      media.addEventListener("loadeddata", propsUpdateCallback);
+      media.addEventListener("play", propsUpdateCallback);
+      media.addEventListener("ended", propsUpdateCallback);
+      media.addEventListener("pause", propsUpdateCallback);
+      media.addEventListener("durationchanged", makeCallback("duration"));
+      media.addEventListener("timeupdate", makeCallback("currentTime"));
+      media.addEventListener("ratechange", makeCallback("playbackRate"));
+      media.addEventListener("volumechange", makeCallback("volume"));
+   }
+
    // Mutation observer
    function addMutationIntercept() {
       const observer = new MutationObserver(function(mutationsList) {
@@ -217,6 +257,7 @@ hbbtv.mediaManager = (function() {
                      value: videoTracks,
                      writable: false
                   });
+                  registerMediaEvents(node);
                }
             }
          }

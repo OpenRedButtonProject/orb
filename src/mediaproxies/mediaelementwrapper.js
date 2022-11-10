@@ -33,7 +33,7 @@
       if (props.includes(name)) {
          if (p.videoDummy._attributes[name] !== value) {
             p.videoDummy._attributes[name] = value;
-            if (name === "src") {
+            if (name === "src" && value) {
                console.log("MediaElementWrapper: Setting iframe src attribute to '" + value + "'...");
                resetProxySession.call(this);
                HTMLIFrameElement.prototype.setAttribute.call(this, name, value + (value.includes("?") ? "&" : "?") + ORB_PLAYER_MAGIC_SUFFIX);
@@ -129,19 +129,18 @@
          const videoDummy = new VideoDummy(this);
          privates.set(this, {
             videoDummy: videoDummy,
-            proxy: hbbtv.objects.createIFrameObjectProxy(videoDummy, "video")
+            proxy: hbbtv.objects.createIFrameObjectProxy(videoDummy, "media")
          });
          p = privates.get(this);
 
          HTMLIFrameElement.prototype.addEventListener.call(this, "load", () => {
-            if (this.src) {
-               console.log("MediaElementWrapper: initialising iframe with src", this.src + "...");
+            console.log("MediaElementWrapper: initialising iframe with src", this.src + "...");
 
-               // TODO: find proper way of generating uuid
-               p.proxy.initiateHandshake(Math.random(), this.contentWindow);
-               p.videoDummy.audioTracks.__orb_proxy__.initiateHandshake(Math.random(), this.contentWindow);
-               p.videoDummy.videoTracks.__orb_proxy__.initiateHandshake(Math.random(), this.contentWindow);
-            }
+            Promise.all([
+               p.proxy.initiateHandshake(this.contentWindow),
+               p.videoDummy.audioTracks.__orb_proxy__.initiateHandshake(this.contentWindow),
+               p.videoDummy.videoTracks.__orb_proxy__.initiateHandshake(this.contentWindow),
+            ]).then(() => { console.log("MediaElementWrapper: All iframe proxies handshakes completed successfully");});
          });
          console.log("MediaElementWrapper: initialised");
       }
@@ -166,7 +165,7 @@
             const p = privates.get(this);
             if (p.videoDummy[key] !== value) {
                p.videoDummy[key] = value;
-               if (key === "src") {
+               if (key === "src" && value) {
                   console.log("MediaElementWrapper: Setting iframe src property to '" + value + "'.");
                   resetProxySession.call(this);
                   srcOwnProperty.set.call(this, value + (value.includes("?") ? "&" : "?") + ORB_PLAYER_MAGIC_SUFFIX);
