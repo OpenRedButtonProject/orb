@@ -61,20 +61,35 @@ void ORBDVBURILoader::Finish()
 {
    ORB_LOG("requestId=%d requestUri=%s", m_requestId, webkit_uri_scheme_request_get_uri(m_request));
 
-   GInputStream *stream = nullptr;
-   gchar *data = g_strdup_printf((char *)m_data);
-   int dataLength = strlen(data);
-   stream = g_memory_input_stream_new_from_data(data, dataLength, g_free);
+   if (m_data)
+   {
+      ORB_LOG("DVB URI scheme request completed with data");
 
-   ORB_LOG("GInputStream created");
+      GInputStream *stream = nullptr;
+      gchar *data = g_strdup_printf((char *)m_data);
+      int dataLength = strlen(data);
 
-   // TODO Resolve mime type
-   const gchar *mimeType = nullptr;//"text/html";
+      stream = g_memory_input_stream_new_from_data(data, dataLength, g_free);
+      if (stream)
+      {
+         ORB_LOG("GInputStream created with dataLength=%d", dataLength);
+      }
 
-   // Signal completion of the DVB URI scheme request
-   webkit_uri_scheme_request_finish(m_request, stream, dataLength, mimeType);
+      const gchar *mimeType = nullptr;
 
-   g_object_unref(stream);
+      // Signal completion of the DVB URI scheme request
+      webkit_uri_scheme_request_finish(m_request, stream, dataLength, mimeType);
+
+      g_object_unref(stream);
+   }
+   else
+   {
+      ORB_LOG("DVB URI scheme request completed without any data");
+      GError *error = g_error_new(g_quark_from_string(webkit_uri_scheme_request_get_uri(m_request)), 0, "DVB URI scheme request failed");
+      webkit_uri_scheme_request_finish_error(m_request, error);
+      g_error_free(error);
+   }
+
    ORB_LOG("Completed");
 
    return;
@@ -94,7 +109,7 @@ void ORBDVBURILoader::SetData(unsigned char *data, unsigned int dataLength)
       free(m_data);
    }
    m_data = (unsigned char *) malloc(dataLength);
-   memcpy(m_data, data, dataLength);
+   memmove(m_data, data, dataLength);
    m_dataLength = dataLength;
 }
 } // namespace orb

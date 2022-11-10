@@ -368,7 +368,7 @@ bool BroadcastRequestHandler::Handle(
    else if (method == BROADCAST_ADD_STREAM_EVENT_LISTENER)
    {
       std::string targetUrl = params.value("targetURL", "");
-      std::string eventName = params.value("eventName", "");  
+      std::string eventName = params.value("eventName", "");
       int componentTag;
       if (params.contains("componentTag") && params["componentTag"].is_string())
       {
@@ -378,7 +378,7 @@ bool BroadcastRequestHandler::Handle(
       {
          componentTag = params.value("componentTag", -1);
       }
-      
+
       int streamEventId;
       if (params.contains("streamEventId") && params["streamEventId"].is_string())
       {

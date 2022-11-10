@@ -17,6 +17,9 @@
 
 using namespace orb;
 
+// The web extension object
+static WebKitWebExtension *s_orbWpeWebExtension;
+
 // The ORB client to be used for both synchronous and asynchronous communication with the ORB service.
 static std::shared_ptr<ORBGenericClient> s_orbClient;
 
@@ -211,11 +214,38 @@ static void OnWindowObjectCleared(WebKitScriptWorld *world, WebKitWebPage *page,
    ExposeBridge(s_jsContext);
    ExposeToken(s_jsContext, webkit_frame_get_uri(frame));
 
-   ORB_LOG("uri=%s\n", webkit_frame_get_uri(frame));
+   const gchar *uri = webkit_frame_get_uri(frame);
+   ORB_LOG("uri=%s\n", uri);
+
    if (s_orbClient)
    {
       s_orbClient->NotifyApplicationPageChanged(webkit_frame_get_uri(frame));
    }
+}
+
+/**
+ * Callback connected to the 'notify::uri' signal of the web page.
+ *
+ * @param webPage   Pointer to the web page
+ * @param pspec     (not used)
+ * @param extension (not used)
+ */
+static void OnPageUriChanged(WebKitWebPage *webPage, GParamSpec *pspec, WebKitWebExtension *extension)
+{
+   ORB_LOG_NO_ARGS();
+
+   // Reset previous origin access whitelist(s) for this web extension
+   webkit_web_extension_reset_origin_access_whitelists(s_orbWpeWebExtension);
+
+   const gchar *pageUri = webkit_web_page_get_uri(webPage);
+   ORB_LOG("pageUri=%s", pageUri);
+
+   WebKitSecurityOrigin *origin = webkit_security_origin_new_for_uri(pageUri);
+
+   ORB_LOG("Whitelisting dvb URLs for origin: %s", webkit_security_origin_to_string(origin));
+   webkit_web_extension_add_origin_access_whitelist_entry(s_orbWpeWebExtension, origin, "dvb", "", true);
+
+   webkit_security_origin_unref(origin);
 }
 
 /**
@@ -226,10 +256,12 @@ static void OnWindowObjectCleared(WebKitScriptWorld *world, WebKitWebPage *page,
  */
 static void OnPageCreated(WebKitWebExtension *extension, WebKitWebPage *webPage, gpointer userData)
 {
-   ORB_LOG("page_id=%ld uri=%s\n",
-      webkit_web_page_get_id(webPage),
-      webkit_web_page_get_uri(webPage)
-      );
+   const gchar *pageUri = webkit_web_page_get_uri(webPage);
+   guint64 pageId = webkit_web_page_get_id(webPage);
+
+   ORB_LOG("page_id=%ld uri=%s\n", pageId, pageUri);
+
+   g_signal_connect(webPage, "notify::uri", G_CALLBACK(OnPageUriChanged), nullptr);
 }
 
 /******************************************************************************
@@ -262,4 +294,6 @@ void webkit_web_extension_initialize_with_user_data(WebKitWebExtension *extensio
       s_orbClient->SubscribeToJavaScriptEventDispatchRequestedEvent();
       s_orbClient->SubscribeToInputKeyGeneratedEvent();
    }
+
+   s_orbWpeWebExtension = extension;
 }
