@@ -13,16 +13,21 @@ hbbtv.objects.IFrameObjectProxy = (function() {
    const MSG_TYPE_SET_PROPERTIES = "orb_iframe_set_properties";
    const MSG_TYPE_METHOD_REQUEST = "orb_iframe_method_request";
    const MSG_TYPE_ASYNC_METHOD_REQUEST = "orb_iframe_async_method_request";
-   const MSG_TYPE_ASYNC_METHOD_RESPONSE = "orb_iframe_async_method_response";
+   const MSG_TYPE_ASYNC_CALL_RESPONSE = "orb_iframe_async_method_response";
    let asyncIDs = 0;
+   
+   // This may not be ideal in case the iframe content initiates the handshake,
+   // because in case we have multiple video elements, for all of them, sessionIDs
+   // variable would be initially set to 0. At the moment we know that the main
+   // window initiates the handshake, so no problems there.
+   let sessionIDs = 0;
 
    prototype.initiateHandshake = function (remoteWindow) {
       const p = privates.get(this);
       const thiz = this;
-      // TODO: find proper way of generating uuid
-      p.uuid = Math.random();
+      p.sessionId = sessionIDs++;
       p.remoteWindow = remoteWindow;
-      console.log("IFrameObjectProxy: Requesting handshake for object type", p.objectType, "with uuid", p.uuid + "...");
+      console.log("IFrameObjectProxy: Requesting handshake for object type", p.objectType, "with sessionId", p.sessionId + "...");
       return makeAsyncCall.call(this, MSG_TYPE_HANDSHAKE_REQUEST, {objectType: p.objectType}).then(() => {
          while (p.pending.length) {
             const pending = p.pending.shift();
@@ -34,7 +39,7 @@ hbbtv.objects.IFrameObjectProxy = (function() {
    prototype.invalidate = function () {
       const p = privates.get(this);
       p.remoteWindow = undefined;
-      p.uuid = undefined;
+      p.sessionId = undefined;
    }
 
    prototype.callMethod = function (name, args = []) {
@@ -58,7 +63,7 @@ hbbtv.objects.IFrameObjectProxy = (function() {
    function makeAsyncCall(type, data) {
       const thiz = this;
       return new Promise((resolve, reject) => {
-         data.id = asyncIDs++;
+         data.callId = asyncIDs++;
          const callback = (e) => {
             let msg;
             try {
@@ -68,8 +73,8 @@ hbbtv.objects.IFrameObjectProxy = (function() {
                console.warn("IFrameObjectProxy: error parsing message data:", e.data);
                return;
             }
-            if (msg.type === MSG_TYPE_ASYNC_METHOD_RESPONSE && msg.data.id === data.id && msg.uuid === privates.get(thiz).uuid) {
-               console.log("IFrameObjectProxy: received response from async call with id", data.id);
+            if (msg.type === MSG_TYPE_ASYNC_CALL_RESPONSE && msg.data.callId === data.callId && msg.sessionId === privates.get(thiz).sessionId) {
+               console.log("IFrameObjectProxy: received response from async call with callId", data.callId);
                window.removeEventListener("message", callback);
                clearTimeout(timeoutId);
                if (msg.data.error) {
@@ -83,10 +88,10 @@ hbbtv.objects.IFrameObjectProxy = (function() {
          };
          const timeoutId = setTimeout(() => {
             window.removeEventListener("message", callback);
-            reject("IFrameObjectProxy: Async call with id " + data.id +  " timed out without receiving a response.");
+            reject("IFrameObjectProxy: Async call with callId " + data.callId +  " timed out without receiving a response.");
          }, 10000);
          window.addEventListener("message", callback);
-         console.log("IFrameObjectProxy: Making an async call with id " + data.id);
+         console.log("IFrameObjectProxy: Making an async call with callId " + data.callId);
          postMessage.call(thiz, type, data);
       });
    }
@@ -95,7 +100,7 @@ hbbtv.objects.IFrameObjectProxy = (function() {
       const p = privates.get(this);
       if (p.remoteWindow) {
          p.remoteWindow.postMessage(JSON.stringify({
-            uuid: p.uuid,
+            sessionId: p.sessionId,
             type: type,
             data: data
          }), '*');
@@ -128,19 +133,19 @@ hbbtv.objects.IFrameObjectProxy = (function() {
          if (msg.type === MSG_TYPE_HANDSHAKE_REQUEST) {
             if (msg.data.objectType === objectType) {
                p.remoteWindow = e.source;
-               p.uuid = msg.uuid;
+               p.sessionId = msg.sessionId;
+               console.log("IFrameObjectProxy: Received handshake request with sessionId", p.sessionId + ". Responding back...");
+               postMessage.call(thiz, MSG_TYPE_ASYNC_CALL_RESPONSE, { 
+                  callId: msg.data.callId
+               });
                while (p.pending.length) {
                   const pending = p.pending.shift();
                   postMessage.call(thiz, pending.type, pending.data);
                }
-               console.log("IFrameObjectProxy: Received handshake request with uuid", p.uuid + ". Responding back...");
-               postMessage.call(thiz, MSG_TYPE_ASYNC_METHOD_RESPONSE, { 
-                  id: msg.data.id
-               });
                e.stopImmediatePropagation();
             }
          }
-         else if (p.uuid === msg.uuid && p.remoteWindow === e.source) {
+         else if (p.sessionId === msg.sessionId && p.remoteWindow === e.source) {
             switch (msg.type) {
                case MSG_TYPE_DISPATCH_EVENT:
                   localObject.dispatchEvent(new Event(msg.data.event));
@@ -161,20 +166,20 @@ hbbtv.objects.IFrameObjectProxy = (function() {
                   if (typeof localObject[msg.data.name] === "function") {
                      localObject[msg.data.name](...msg.data.args)
                      .then(() => {
-                        postMessage.call(thiz, MSG_TYPE_ASYNC_METHOD_RESPONSE, { 
-                           id: msg.data.id
+                        postMessage.call(thiz, MSG_TYPE_ASYNC_CALL_RESPONSE, { 
+                           callId: msg.data.callId
                         });
                      })
                      .catch(e => {
-                        postMessage.call(thiz, MSG_TYPE_ASYNC_METHOD_RESPONSE, { 
-                           id: msg.data.id,
+                        postMessage.call(thiz, MSG_TYPE_ASYNC_CALL_RESPONSE, { 
+                           callId: msg.data.callId,
                            error: e
                         });
                      });
                   }
                   break;
                default:
-                  return; // return in order to prevent stopImmediatePropagation from being called
+                  return; // return for all other cases in order to prevent stopImmediatePropagation from being called
             }
             e.stopImmediatePropagation();
          }

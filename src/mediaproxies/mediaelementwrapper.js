@@ -13,7 +13,7 @@
    const methods = ["pause","load","canPlayType","captureStream","fastSeek"];
    const asyncMethods = ["play","setMediaKeys","setSinkId"];
    const props = ["src","autoplay","controls","currentTime","playbackRate","volume","muted","loop","defaultMuted","crossOrigin","controlsList",
-                  "defaultPlaybackRate","disableRemotePlayback","preservesPitch","srcObject","innerHTML"];
+                  "defaultPlaybackRate","disableRemotePlayback","preservesPitch","srcObject"];
    const roProps = ["textTracks","audioTracks","videoTracks","paused","ended","currentSrc","buffered","error","duration","networkState","readyState","seekable",
                   "HAVE_CURRENT_DATA","HAVE_ENOUGH_DATA","HAVE_FUTURE_DATA","HAVE_METADATA","HAVE_NOTHING","NETWORK_EMPTY","NETWORK_IDLE","NETWORK_LOADING",
                   "NETWORK_NO_SOURCE"];
@@ -23,7 +23,7 @@
 
    prototype.getAttribute = function(name) {
       if (props.includes(name)) {
-         return privates.get(this).videoDummy._attributes[name];
+         return this[name];
       }
       return HTMLIFrameElement.prototype.getAttribute.apply(this, arguments);
    };
@@ -31,17 +31,7 @@
    prototype.setAttribute = function(name, value) {
       const p = privates.get(this);
       if (props.includes(name)) {
-         if (p.videoDummy._attributes[name] !== value) {
-            p.videoDummy._attributes[name] = value;
-            if (name === "src" && value) {
-               console.log("MediaElementWrapper: Setting iframe src attribute to '" + value + "'...");
-               resetProxySession.call(this);
-               HTMLIFrameElement.prototype.setAttribute.call(this, name, value + (value.includes("?") ? "&" : "?") + ORB_PLAYER_MAGIC_SUFFIX);
-            }
-            else {
-               p.proxy.callMethod("setAttribute", [name, value]);
-            }
-         }
+         this[name] = value;
       }
       else {
          HTMLIFrameElement.prototype.setAttribute.call(this, name, value);
@@ -51,24 +41,16 @@
    prototype.removeAttribute = function(name) {
       const p = privates.get(this);
       if (props.includes(name)) {
-         delete p.videoDummy._attributes.src;
-         p.proxy.callMethod("removeAttribute", name);
+         delete p.videoDummy[name];
+         p.proxy.callMethod("removeAttribute", [name]);
       }
       else {
-         if (name === "src") {
-            delete p.videoDummy._attributes.src;
-            p.proxy.callMethod("removeAttribute", name);
-            console.log("MediaElementWrapper: Removing iframe src attribute...");
-         }
          HTMLIFrameElement.prototype.removeAttribute.apply(this, arguments);
       }
    };
 
    prototype.appendChild = function(node) {
-      if (node.nodeName && node.nodeName.toLowerCase() === "source" && !this.src) {
-         this.src = node.src;
-      }
-      this.innerHTML += node.outerHTML;
+      privates.get(this).divDummy.appendChild(node);
    };
    
    function makeMethod(name) {
@@ -91,9 +73,6 @@
       p.proxy.invalidate();
       p.videoDummy.audioTracks.__orb_proxy__.invalidate();
       p.videoDummy.videoTracks.__orb_proxy__.invalidate();
-      for (const attr in p.videoDummy._attributes) {
-         p.proxy.callMethod("setAttribute", [attr, p.videoDummy._attributes[attr]]);
-      }
       for (const key of persistentProps) {
          if (p.videoDummy[key] !== undefined) {
             properties[key] = p.videoDummy[key];
@@ -110,7 +89,15 @@
     * requested with the MediaElementWrapper, return those.
     */
    function VideoDummy(parent) {
-      this._attributes = { };
+      this.HAVE_CURRENT_DATA = HTMLMediaElement.HAVE_CURRENT_DATA;
+      this.HAVE_ENOUGH_DATA = HTMLMediaElement.HAVE_ENOUGH_DATA;
+      this.HAVE_FUTURE_DATA = HTMLMediaElement.HAVE_FUTURE_DATA;
+      this.HAVE_METADATA = HTMLMediaElement.HAVE_METADATA;
+      this.HAVE_NOTHING = HTMLMediaElement.HAVE_NOTHING;
+      this.NETWORK_EMPTY = HTMLMediaElement.NETWORK_EMPTY;
+      this.NETWORK_IDLE = HTMLMediaElement.NETWORK_IDLE;
+      this.NETWORK_LOADING = HTMLMediaElement.NETWORK_LOADING;
+      this.NETWORK_NO_SOURCE = HTMLMediaElement.NETWORK_NO_SOURCE;
       this.audioTracks = hbbtv.objects.createAudioTrackList();
       this.videoTracks = hbbtv.objects.createVideoTrackList();
       this.dispatchEvent = function(e) {
@@ -124,24 +111,44 @@
    function initialise() {
       let p = privates.get(this);
       if (!p) {
+         const thiz = this;
          this.frameBorder = 0;
          Object.setPrototypeOf(this, prototype);
          const videoDummy = new VideoDummy(this);
          privates.set(this, {
             videoDummy: videoDummy,
-            proxy: hbbtv.objects.createIFrameObjectProxy(videoDummy, "media")
+            divDummy: document.createElement("div"), // will be used to manage append and remove Child on the iframe
+            proxy: hbbtv.objects.createIFrameObjectProxy(videoDummy, "media"),
          });
          p = privates.get(this);
 
          HTMLIFrameElement.prototype.addEventListener.call(this, "load", () => {
-            console.log("MediaElementWrapper: initialising iframe with src", this.src + "...");
+            if (this.src) {
+               console.log("MediaElementWrapper: initialising iframe with src", this.src + "...");
 
-            Promise.all([
-               p.proxy.initiateHandshake(this.contentWindow),
-               p.videoDummy.audioTracks.__orb_proxy__.initiateHandshake(this.contentWindow),
-               p.videoDummy.videoTracks.__orb_proxy__.initiateHandshake(this.contentWindow),
-            ]).then(() => { console.log("MediaElementWrapper: All iframe proxies handshakes completed successfully");});
+               Promise.all([
+                  p.proxy.initiateHandshake(this.contentWindow),
+                  p.videoDummy.audioTracks.__orb_proxy__.initiateHandshake(this.contentWindow),
+                  p.videoDummy.videoTracks.__orb_proxy__.initiateHandshake(this.contentWindow),
+               ]).then(() => { console.log("MediaElementWrapper: All iframe proxies handshakes completed successfully");});
+            }
          });
+         
+         const observer = new MutationObserver(function(mutationsList) {
+            for (const mutation of mutationsList) {
+               for (const node of mutation.addedNodes) {
+                  if (node.nodeName && node.nodeName.toLowerCase() === "source" && !thiz.src) {
+                     thiz.src = node.src;
+                  }
+               }
+            }
+            p.proxy.setRemoteObjectProperties({innerHTML: p.divDummy.innerHTML});
+         });
+   
+         observer.observe(p.divDummy, {
+            childList: true
+         });
+         
          console.log("MediaElementWrapper: initialised");
       }
       else {
@@ -206,6 +213,15 @@
       });
    }
 
+   Object.defineProperty(prototype, "innerHTML", {
+      set(value) {
+         privates.get(this).divDummy.innerHTML = value;
+      },
+      get() {
+         return privates.get(this).divDummy.innerHTML;
+      }
+   });
+
    return {
       initialise: initialise
    };
@@ -231,7 +247,7 @@ hbbtv.objects.upgradeMediaElement = function(media) {
    }
    element.innerHTML = media.innerHTML;
    for (const key of media.getAttributeNames()) {
-      element.setAttribute(key, media.getAttribute(key));
+      element[key] = media.getAttribute(key);
    }
    if (media.parentNode) {
       media.parentNode.insertBefore(element, media);

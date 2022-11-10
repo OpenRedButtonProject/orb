@@ -179,13 +179,13 @@ hbbtv.objects.createVideoTrackList = function() {
          if (property === "__orb_proxy__") {
             return iframeProxy;
          }
-         if (typeof target[property] === "function") {
+         if (typeof target[property] === "function" && property !== "addEventListener" && property !== "removeEventListener") {
             return function() {
                iframeProxy.callMethod(property, Array.from(arguments).sort((a, b) => { return a - b; }));
                return target[property].apply(target, arguments);
             }.bind(this);
          }
-         return target[property];
+         return target[property].bind(target);
       },
       set: (target, property, value) => {
          if (typeof target[property] !== "function") {

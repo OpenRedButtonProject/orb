@@ -210,12 +210,10 @@ hbbtv.mediaManager = (function() {
       const genericHandler = (e) => {
          mediaProxy.dispatchEvent(e.type);
       };
-      for (const evt of genericEvents) {
-         media.addEventListener(evt, genericHandler);
-      }
       const propsUpdateCallback = function (e) {
          const props = { };
-         const keys = Object.getOwnPropertyNames(HTMLMediaElement.prototype);
+         const keys = ["currentTime","playbackRate","volume","muted","loop","defaultMuted","defaultPlaybackRate","disableRemotePlayback",
+                        "preservesPitch","paused","ended","currentSrc","error","duration","networkState","readyState"];
          for (const key of keys) {
             if (typeof media[key] !== "function") {
                props[key] = media[key];
@@ -230,6 +228,9 @@ hbbtv.mediaManager = (function() {
             mediaProxy.setRemoteObjectProperties({[property]: media[property]});
             mediaProxy.dispatchEvent(e.type);
          }
+      };
+      for (const evt of genericEvents) {
+         media.addEventListener(evt, genericHandler);
       }
       media.addEventListener("loadeddata", propsUpdateCallback);
       media.addEventListener("play", propsUpdateCallback);
