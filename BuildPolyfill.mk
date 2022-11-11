@@ -1,5 +1,5 @@
 polyfill_mediamanager_srcs = \
-src/mediamanager.js \
+src/mediaproxies/mediamanager.js \
 src/utils.js \
 src/objects/audiotracklist.js \
 src/objects/videotracklist.js \

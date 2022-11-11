@@ -56,8 +56,8 @@ hbbtv.objects.IFrameObjectProxy = (function() {
       postMessage.call(this, MSG_TYPE_SET_PROPERTIES, properties);
    }
 
-   prototype.dispatchEvent = function (name) {
-      postMessage.call(this, MSG_TYPE_DISPATCH_EVENT, {event: name});
+   prototype.dispatchEvent = function (e) {
+      postMessage.call(this, MSG_TYPE_DISPATCH_EVENT, {eventName: e.type, eventData: e});
    }
 
    function makeAsyncCall(type, data) {
@@ -111,7 +111,10 @@ hbbtv.objects.IFrameObjectProxy = (function() {
    }
 
    // objectType is the only way to know which object to bind from the main window
-   // with the remote window. TODO: find a proper solution as this does not feel right
+   // with the remote window. It also works at the moment, because we know that
+   // on each iframe we have unique object types, and the MediaElementWrapper from
+   // the main window is the one that will initiate a handshake to a targeted iframe.
+   // TODO: find a proper solution as this does not feel right
    function initialise(localObject, objectType) {
       privates.set(this, {
          objectType: objectType,
@@ -148,7 +151,13 @@ hbbtv.objects.IFrameObjectProxy = (function() {
          else if (p.sessionId === msg.sessionId && p.remoteWindow === e.source) {
             switch (msg.type) {
                case MSG_TYPE_DISPATCH_EVENT:
-                  localObject.dispatchEvent(new Event(msg.data.event));
+                  const evt = new Event(msg.data.eventName)
+                  for (const key in msg.data.eventData) {
+                     if (key !== "isTrusted") { // Uncaught TypeError: Cannot set property isTrusted of #<Event> which has only a getter
+                        evt[key] = msg.data.eventData[key];
+                     }
+                  }
+                  localObject.dispatchEvent(evt);
                   break;
                case MSG_TYPE_SET_PROPERTIES:
                   for (const key in msg.data) {

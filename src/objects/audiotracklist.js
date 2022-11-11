@@ -173,13 +173,16 @@ hbbtv.objects.createAudioTrackList = function() {
          if (property === "__orb_proxy__") {
             return iframeProxy;
          }
-         if (typeof target[property] === "function" && property !== "addEventListener" && property !== "removeEventListener") {
-            return function() {
-               iframeProxy.callMethod(property, Array.from(arguments).sort((a, b) => { return a - b; }));
-               return target[property].apply(target, arguments);
-            };
+         if (typeof target[property] === "function") {
+            if (property !== "addEventListener" && property !== "removeEventListener") {
+               return function() {
+                  iframeProxy.callMethod(property, Array.from(arguments).sort((a, b) => { return a - b; }));
+                  return target[property].apply(target, arguments);
+               };
+            }
+            return target[property].bind(target);
          }
-         return target[property].bind(target);
+         return target[property];
       },
       set: (target, property, value) => {
          if (typeof target[property] !== "function") {

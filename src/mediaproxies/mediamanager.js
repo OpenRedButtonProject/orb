@@ -29,19 +29,12 @@ hbbtv.mediaManager = (function() {
       }
 
       const __play = HTMLMediaElement.prototype.play;
-      let lastMediaElement = undefined;
  
       // we override play() for the DASH playback as we end up receiving
       // Uncaught (in promise) DOMException: The play() request was interrupted by a new load request.
       // when calling play() immediately after setting the src attribute
       HTMLMediaElement.prototype.play = function() {
          const thiz = this;
-         if (!this.__added_to_media_sync__) { // check if the HTMLMediaElement is provided to MediaSynchroniser.addMediaObject() before we pause it
-            if (lastMediaElement && lastMediaElement !== this && !lastMediaElement.paused) {
-               lastMediaElement.pause();
-            }
-            lastMediaElement = this;
-         }
          return new Promise((resolve, reject) => {
             if (thiz.readyState < 2) {
                const playFcn = function() {
@@ -205,10 +198,10 @@ hbbtv.mediaManager = (function() {
       const mediaProxy = hbbtv.objects.createIFrameObjectProxy(media, "media");
       const genericEvents = [
          "loadstart", "progress", "suspend", "abort", "error", "emptied", "stalled", "loadedmetadata", "canplay",
-         "canplaythrough", "playing", "waiting", "seeking", "seeked", "resize"
+         "canplaythrough", "playing", "waiting", "seeking", "seeked", "resize","__obs_onerror__"
       ];
       const genericHandler = (e) => {
-         mediaProxy.dispatchEvent(e.type);
+         mediaProxy.dispatchEvent(e);
       };
       const propsUpdateCallback = function (e) {
          const props = { };
@@ -220,13 +213,13 @@ hbbtv.mediaManager = (function() {
             }
          }
          mediaProxy.setRemoteObjectProperties(props);
-         mediaProxy.dispatchEvent(e.type);
+         mediaProxy.dispatchEvent(e);
          console.log("iframe: update properties", props);
       };
       const makeCallback = function(property) {
          return function (e) {
             mediaProxy.setRemoteObjectProperties({[property]: media[property]});
-            mediaProxy.dispatchEvent(e.type);
+            mediaProxy.dispatchEvent(e);
          }
       };
       for (const evt of genericEvents) {

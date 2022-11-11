@@ -11,7 +11,7 @@
    const srcOwnProperty = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, "src");
    const ORB_PLAYER_MAGIC_SUFFIX = "orb_player_magic_suffix";
    const methods = ["pause","load","canPlayType","captureStream","fastSeek"];
-   const asyncMethods = ["play","setMediaKeys","setSinkId"];
+   const asyncMethods = ["setMediaKeys","setSinkId"];
    const props = ["src","autoplay","controls","currentTime","playbackRate","volume","muted","loop","defaultMuted","crossOrigin","controlsList",
                   "defaultPlaybackRate","disableRemotePlayback","preservesPitch","srcObject"];
    const roProps = ["textTracks","audioTracks","videoTracks","paused","ended","currentSrc","buffered","error","duration","networkState","readyState","seekable",
@@ -20,6 +20,7 @@
    const events = ["loadstart","progress","suspend","abort","error","emptied","stalled","loadedmetadata","loadeddata","canplay",
                   "canplaythrough","playing","waiting","seeking","seeked","ended","durationchange","timeupdate","play","pause",
                   "ratechange","resize","volumechange"];
+   let lastMediaElement = undefined;
 
    prototype.getAttribute = function(name) {
       if (props.includes(name)) {
@@ -51,6 +52,16 @@
 
    prototype.appendChild = function(node) {
       privates.get(this).divDummy.appendChild(node);
+   };
+
+   prototype.play = function() {
+      if (!this.__added_to_media_sync__) { // check if the HTMLMediaElement is provided to MediaSynchroniser.addMediaObject() before we pause it
+         if (lastMediaElement && lastMediaElement !== this && !lastMediaElement.paused) {
+            lastMediaElement.pause();
+         }
+         lastMediaElement = this;
+      }
+      return privates.get(this).proxy.callAsyncMethod("play");
    };
    
    function makeMethod(name) {
@@ -102,9 +113,6 @@
       this.videoTracks = hbbtv.objects.createVideoTrackList();
       this.dispatchEvent = function(e) {
          parent.dispatchEvent(e);
-         if (typeof parent["on" + e.type] === "function") {
-            parent["on" + e.type](e);
-         }
       };
    }
 
@@ -198,10 +206,17 @@
 
    for (const key of events) {
       Object.defineProperty(prototype, "on" + key, {
-         set(value) {
+         set(callback) {
             const p = privates.get(this);
-            if (value instanceof Object) {
-               p["on" + key] = value;
+            if (p["on" + key]) {
+               this.removeEventListener(key, p["on" + key]);
+            }
+
+            if (callback instanceof Object) {
+               p["on" + key] = callback;
+               if (callback) {
+                  this.addEventListener(key, callback);
+               }
             }
             else {
                p["on" + key] = null;
