@@ -125,7 +125,7 @@ hbbtv.objects.NativeProxy = (function() {
             console.warn("NativeProxy: Failed to populate texttracks. Error:", e)
          });
       
-      this.videoTracks.setTrackList([{
+      this.videoTracks._setTrackList([{
          selected: true,
          index: 0,
          id: "0",
@@ -135,7 +135,7 @@ hbbtv.objects.NativeProxy = (function() {
          encoding: undefined,
          encrypted: false
       }]);
-      this.audioTracks.setTrackList([{
+      this.audioTracks._setTrackList([{
          enabled: true,
          index: 0,
          id: "0",

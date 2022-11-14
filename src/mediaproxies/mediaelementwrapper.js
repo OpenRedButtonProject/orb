@@ -10,6 +10,7 @@
    const privates = new WeakMap();
    const srcOwnProperty = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, "src");
    const ORB_PLAYER_MAGIC_SUFFIX = "orb_player_magic_suffix";
+   const MEDIA_PROXY_ID = "media";
    const methods = ["pause","load","canPlayType","captureStream","fastSeek"];
    const asyncMethods = ["setMediaKeys","setSinkId"];
    const props = ["src","autoplay","controls","currentTime","playbackRate","volume","muted","loop","defaultMuted","crossOrigin","controlsList",
@@ -61,18 +62,18 @@
          }
          lastMediaElement = this;
       }
-      return privates.get(this).proxy.callAsyncMethod("play");
+      return privates.get(this).proxy.callAsyncMethod(MEDIA_PROXY_ID, "play");
    };
    
    function makeMethod(name) {
       return function () {
-         privates.get(this).proxy.callMethod(name, Array.from(arguments).sort((a, b) => { return a - b; }));
+         privates.get(this).proxy.callMethod(MEDIA_PROXY_ID, name, Array.from(arguments).sort((a, b) => { return a - b; }));
       }
    }
 
    function makeAsyncMethod(name) {
       return function () {
-         return privates.get(this).proxy.callAsyncMethod(name, Array.from(arguments).sort((a, b) => { return a - b; }));
+         return privates.get(this).proxy.callAsyncMethod(MEDIA_PROXY_ID, name, Array.from(arguments).sort((a, b) => { return a - b; }));
       }
    }
 
@@ -82,14 +83,12 @@
       const p = privates.get(this);
       const properties = { };
       p.proxy.invalidate();
-      p.videoDummy.audioTracks.__orb_proxy__.invalidate();
-      p.videoDummy.videoTracks.__orb_proxy__.invalidate();
       for (const key of persistentProps) {
          if (p.videoDummy[key] !== undefined) {
             properties[key] = p.videoDummy[key];
          }
       }
-      p.proxy.setRemoteObjectProperties(properties);
+      p.proxy.setRemoteObjectProperties(MEDIA_PROXY_ID, properties);
    }
 
    /**
@@ -99,7 +98,7 @@
     * read-only properties of the media element from the other end, and when
     * requested with the MediaElementWrapper, return those.
     */
-   function VideoDummy(parent) {
+   function VideoDummy(parent, proxy) {
       this.HAVE_CURRENT_DATA = HTMLMediaElement.HAVE_CURRENT_DATA;
       this.HAVE_ENOUGH_DATA = HTMLMediaElement.HAVE_ENOUGH_DATA;
       this.HAVE_FUTURE_DATA = HTMLMediaElement.HAVE_FUTURE_DATA;
@@ -109,8 +108,8 @@
       this.NETWORK_IDLE = HTMLMediaElement.NETWORK_IDLE;
       this.NETWORK_LOADING = HTMLMediaElement.NETWORK_LOADING;
       this.NETWORK_NO_SOURCE = HTMLMediaElement.NETWORK_NO_SOURCE;
-      this.audioTracks = hbbtv.objects.createAudioTrackList();
-      this.videoTracks = hbbtv.objects.createVideoTrackList();
+      this.audioTracks = hbbtv.objects.createAudioTrackList(proxy);
+      this.videoTracks = hbbtv.objects.createVideoTrackList(proxy);
       this.dispatchEvent = function(e) {
          parent.dispatchEvent(e);
       };
@@ -122,23 +121,21 @@
          const thiz = this;
          this.frameBorder = 0;
          Object.setPrototypeOf(this, prototype);
-         const videoDummy = new VideoDummy(this);
+         const proxy = hbbtv.objects.createIFrameObjectProxy();
          privates.set(this, {
-            videoDummy: videoDummy,
+            videoDummy: new VideoDummy(thiz, proxy),
             divDummy: document.createElement("div"), // will be used to manage append and remove Child on the iframe
-            proxy: hbbtv.objects.createIFrameObjectProxy(videoDummy, "media"),
+            proxy: proxy,
          });
          p = privates.get(this);
+         p.proxy.registerObject(MEDIA_PROXY_ID, p.videoDummy);
 
          HTMLIFrameElement.prototype.addEventListener.call(this, "load", () => {
             if (this.src) {
                console.log("MediaElementWrapper: initialising iframe with src", this.src + "...");
 
-               Promise.all([
-                  p.proxy.initiateHandshake(this.contentWindow),
-                  p.videoDummy.audioTracks.__orb_proxy__.initiateHandshake(this.contentWindow),
-                  p.videoDummy.videoTracks.__orb_proxy__.initiateHandshake(this.contentWindow),
-               ]).then(() => { console.log("MediaElementWrapper: All iframe proxies handshakes completed successfully");});
+               p.proxy.initiateHandshake(this.contentWindow)
+               .then(() => { console.log("MediaElementWrapper: iframe proxy handshake completed successfully");});
             }
          });
          
@@ -150,7 +147,7 @@
                   }
                }
             }
-            p.proxy.setRemoteObjectProperties({innerHTML: p.divDummy.innerHTML});
+            p.proxy.setRemoteObjectProperties(MEDIA_PROXY_ID, {innerHTML: p.divDummy.innerHTML});
          });
    
          observer.observe(p.divDummy, {
@@ -186,7 +183,7 @@
                   srcOwnProperty.set.call(this, value + (value.includes("?") ? "&" : "?") + ORB_PLAYER_MAGIC_SUFFIX);
                }
                else {
-                  p.proxy.setRemoteObjectProperties({[key]: value});
+                  p.proxy.setRemoteObjectProperties(MEDIA_PROXY_ID, {[key]: value});
                }
             }
          },

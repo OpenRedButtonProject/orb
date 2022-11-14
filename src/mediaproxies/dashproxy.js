@@ -264,8 +264,8 @@
       const p = privates.get(this);
       if (p) {
          console.log("DashProxy: Loaded data.");
-         this.videoTracks.setTrackList(getVideoTracks.call(this));
-         this.audioTracks.setTrackList(getAudioTracks.call(this));
+         this.videoTracks._setTrackList(getVideoTracks.call(this));
+         this.audioTracks._setTrackList(getAudioTracks.call(this));
          p.onTextTrackChange();
       } else {
          console.warn("DashProxy: Not initialised.");

@@ -194,14 +194,28 @@ hbbtv.mediaManager = (function() {
       };
    }
 
-   function registerMediaEvents(media) {
-      const mediaProxy = hbbtv.objects.createIFrameObjectProxy(media, "media");
+   function initialiseMediaProxy(media) {
+      const MEDIA_PROXY_ID = "media";
+      const mediaProxy = hbbtv.objects.createIFrameObjectProxy();
+      mediaProxy.registerObject(MEDIA_PROXY_ID, media);
+      
+      const audioTracks = hbbtv.objects.createAudioTrackList(mediaProxy);
+      const videoTracks = hbbtv.objects.createVideoTrackList(mediaProxy);
+      Object.defineProperty(media, "audioTracks", {
+         value: audioTracks,
+         writable: false
+      });
+      Object.defineProperty(media, "videoTracks", {
+         value: videoTracks,
+         writable: false
+      });
+
       const genericEvents = [
          "loadstart", "progress", "suspend", "abort", "error", "emptied", "stalled", "loadedmetadata", "canplay",
          "canplaythrough", "playing", "waiting", "seeking", "seeked", "resize","__obs_onerror__"
       ];
       const genericHandler = (e) => {
-         mediaProxy.dispatchEvent(e);
+         mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
       };
       const propsUpdateCallback = function (e) {
          const props = { };
@@ -212,14 +226,14 @@ hbbtv.mediaManager = (function() {
                props[key] = media[key];
             }
          }
-         mediaProxy.setRemoteObjectProperties(props);
-         mediaProxy.dispatchEvent(e);
+         mediaProxy.setRemoteObjectProperties(MEDIA_PROXY_ID, props);
+         mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
          console.log("iframe: update properties", props);
       };
       const makeCallback = function(property) {
          return function (e) {
-            mediaProxy.setRemoteObjectProperties({[property]: media[property]});
-            mediaProxy.dispatchEvent(e);
+            mediaProxy.setRemoteObjectProperties(MEDIA_PROXY_ID, {[property]: media[property]});
+            mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
          }
       };
       for (const evt of genericEvents) {
@@ -241,17 +255,7 @@ hbbtv.mediaManager = (function() {
          for (const mutation of mutationsList) {
             for (const node of mutation.addedNodes) {
                if (node.nodeName && node.nodeName.toLowerCase() === "video" || node.nodeName.toLowerCase() === "audio") {
-                  const audioTracks = hbbtv.objects.createAudioTrackList();
-                  const videoTracks = hbbtv.objects.createVideoTrackList();
-                  Object.defineProperty(node, "audioTracks", {
-                     value: audioTracks,
-                     writable: false
-                  });
-                  Object.defineProperty(node, "videoTracks", {
-                     value: videoTracks,
-                     writable: false
-                  });
-                  registerMediaEvents(node);
+                  initialiseMediaProxy(node);
                }
             }
          }

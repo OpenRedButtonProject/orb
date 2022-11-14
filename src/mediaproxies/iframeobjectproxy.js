@@ -27,8 +27,8 @@ hbbtv.objects.IFrameObjectProxy = (function() {
       const thiz = this;
       p.sessionId = sessionIDs++;
       p.remoteWindow = remoteWindow;
-      console.log("IFrameObjectProxy: Requesting handshake for object type", p.objectType, "with sessionId", p.sessionId + "...");
-      return makeAsyncCall.call(this, MSG_TYPE_HANDSHAKE_REQUEST, {objectType: p.objectType}).then(() => {
+      console.log("IFrameObjectProxy: Requesting handshake with sessionId", p.sessionId + "...");
+      return makeAsyncCall.call(this, MSG_TYPE_HANDSHAKE_REQUEST).then(() => {
          while (p.pending.length) {
             const pending = p.pending.shift();
             postMessage.call(thiz, pending.type, pending.data);
@@ -42,25 +42,35 @@ hbbtv.objects.IFrameObjectProxy = (function() {
       p.sessionId = undefined;
    }
 
-   prototype.callMethod = function (name, args = []) {
-      postMessage.call(this, MSG_TYPE_METHOD_REQUEST, {name: name, args: args});
+   prototype.registerObject = function(objectId, object) {
+      console.log("IFrameObjectProxy: Registered id", objectId, "with object",object);
+      privates.get(this).objects[objectId] = object;
+   };
+
+   prototype.unregisterObject = function(objectId) {
+      console.log("IFrameObjectProxy: Unregistered object at id", objectId);
+      delete privates.get(this).objects[objectId];
+   }
+
+   prototype.callMethod = function (objectId, name, args = []) {
+      postMessage.call(this, MSG_TYPE_METHOD_REQUEST, {objectId: objectId, name: name, args: args});
       console.log("IFrameObjectProxy: Requested call to method", name, "with arguments", args);
    }
 
-   prototype.callAsyncMethod = function (name, args = []) {
+   prototype.callAsyncMethod = function (objectId, name, args = []) {
       console.log("IFrameObjectProxy: Requested call to async method", name, "with arguments", args);
-      return makeAsyncCall.call(this, MSG_TYPE_ASYNC_METHOD_REQUEST, {name: name, args: args});
+      return makeAsyncCall.call(this, MSG_TYPE_ASYNC_METHOD_REQUEST, {objectId: objectId, name: name, args: args});
    }
 
-   prototype.setRemoteObjectProperties = function (properties) {
-      postMessage.call(this, MSG_TYPE_SET_PROPERTIES, properties);
+   prototype.setRemoteObjectProperties = function (objectId, properties) {
+      postMessage.call(this, MSG_TYPE_SET_PROPERTIES, {objectId: objectId, properties: properties});
    }
 
-   prototype.dispatchEvent = function (e) {
-      postMessage.call(this, MSG_TYPE_DISPATCH_EVENT, {eventName: e.type, eventData: e});
+   prototype.dispatchEvent = function (objectId, e) {
+      postMessage.call(this, MSG_TYPE_DISPATCH_EVENT, {objectId: objectId, eventName: e.type, eventData: e});
    }
 
-   function makeAsyncCall(type, data) {
+   function makeAsyncCall(type, data = {}) {
       const thiz = this;
       return new Promise((resolve, reject) => {
          data.callId = asyncIDs++;
@@ -110,14 +120,9 @@ hbbtv.objects.IFrameObjectProxy = (function() {
       }
    }
 
-   // objectType is the only way to know which object to bind from the main window
-   // with the remote window. It also works at the moment, because we know that
-   // on each iframe we have unique object types, and the MediaElementWrapper from
-   // the main window is the one that will initiate a handshake to a targeted iframe.
-   // TODO: find a proper solution as this does not feel right
-   function initialise(localObject, objectType) {
+   function initialise() {
       privates.set(this, {
-         objectType: objectType,
+         objects: {},
          pending: []
       });
       
@@ -134,21 +139,20 @@ hbbtv.objects.IFrameObjectProxy = (function() {
             return;
          }
          if (msg.type === MSG_TYPE_HANDSHAKE_REQUEST) {
-            if (msg.data.objectType === objectType) {
-               p.remoteWindow = e.source;
-               p.sessionId = msg.sessionId;
-               console.log("IFrameObjectProxy: Received handshake request with sessionId", p.sessionId + ". Responding back...");
-               postMessage.call(thiz, MSG_TYPE_ASYNC_CALL_RESPONSE, { 
-                  callId: msg.data.callId
-               });
-               while (p.pending.length) {
-                  const pending = p.pending.shift();
-                  postMessage.call(thiz, pending.type, pending.data);
-               }
-               e.stopImmediatePropagation();
+            p.remoteWindow = e.source;
+            p.sessionId = msg.sessionId;
+            console.log("IFrameObjectProxy: Received handshake request with sessionId", p.sessionId + ". Responding back...");
+            postMessage.call(thiz, MSG_TYPE_ASYNC_CALL_RESPONSE, { 
+               callId: msg.data.callId
+            });
+            while (p.pending.length) {
+               const pending = p.pending.shift();
+               postMessage.call(thiz, pending.type, pending.data);
             }
+            e.stopImmediatePropagation();
          }
          else if (p.sessionId === msg.sessionId && p.remoteWindow === e.source) {
+            const localObject = p.objects[msg.data.objectId];
             switch (msg.type) {
                case MSG_TYPE_DISPATCH_EVENT:
                   const evt = new Event(msg.data.eventName)
@@ -160,9 +164,9 @@ hbbtv.objects.IFrameObjectProxy = (function() {
                   localObject.dispatchEvent(evt);
                   break;
                case MSG_TYPE_SET_PROPERTIES:
-                  for (const key in msg.data) {
-                     if (typeof localObject[key] !== "function" && localObject[key] !== msg.data[key]) {
-                        localObject[key] = msg.data[key];
+                  for (const key in msg.data.properties) {
+                     if (typeof localObject[key] !== "function" && localObject[key] !== msg.data.properties[key]) {
+                        localObject[key] = msg.data.properties[key];
                      }
                   }
                   break;
@@ -194,7 +198,7 @@ hbbtv.objects.IFrameObjectProxy = (function() {
          }
       };
       window.addEventListener("message", p.onMessage);
-      console.log("IFrameObjectProxy: initialised for type", objectType);
+      console.log("IFrameObjectProxy: initialised");
    }
 
    return {
@@ -203,8 +207,8 @@ hbbtv.objects.IFrameObjectProxy = (function() {
    };
 })();
 
-hbbtv.objects.createIFrameObjectProxy = function(localObject, objectType) {
+hbbtv.objects.createIFrameObjectProxy = function() {
    const iframeObjectProxy = Object.create(hbbtv.objects.IFrameObjectProxy.prototype);
-   hbbtv.objects.IFrameObjectProxy.initialise.call(iframeObjectProxy, localObject, objectType);
+   hbbtv.objects.IFrameObjectProxy.initialise.call(iframeObjectProxy);
    return iframeObjectProxy;
 };
