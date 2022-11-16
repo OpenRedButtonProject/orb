@@ -10,7 +10,7 @@
    const privates = new WeakMap();
    const srcOwnProperty = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, "src");
    const ORB_PLAYER_MAGIC_SUFFIX = "orb_player_magic_suffix";
-   const MEDIA_PROXY_ID = "media";
+   const MEDIA_PROXY_ID = "HTMLMediaElement";
    const methods = ["pause","load","canPlayType","captureStream","fastSeek"];
    const asyncMethods = ["setMediaKeys","setSinkId"];
    const props = ["src","autoplay","controls","currentTime","playbackRate","volume","muted","loop","defaultMuted","crossOrigin","controlsList",
@@ -44,7 +44,7 @@
       const p = privates.get(this);
       if (props.includes(name)) {
          delete p.videoDummy[name];
-         p.proxy.callMethod("removeAttribute", [name]);
+         p.proxy.callObserverMethod("removeAttribute", [name]);
       }
       else {
          HTMLIFrameElement.prototype.removeAttribute.apply(this, arguments);
@@ -62,18 +62,18 @@
          }
          lastMediaElement = this;
       }
-      return privates.get(this).proxy.callAsyncMethod(MEDIA_PROXY_ID, "play");
+      return privates.get(this).proxy.callAsyncObserverMethod(MEDIA_PROXY_ID, "play");
    };
    
    function makeMethod(name) {
       return function () {
-         privates.get(this).proxy.callMethod(MEDIA_PROXY_ID, name, Array.from(arguments).sort((a, b) => { return a - b; }));
+         privates.get(this).proxy.callObserverMethod(MEDIA_PROXY_ID, name, Array.from(arguments).sort((a, b) => { return a - b; }));
       }
    }
 
    function makeAsyncMethod(name) {
       return function () {
-         return privates.get(this).proxy.callAsyncMethod(MEDIA_PROXY_ID, name, Array.from(arguments).sort((a, b) => { return a - b; }));
+         return privates.get(this).proxy.callAsyncObserverMethod(MEDIA_PROXY_ID, name, Array.from(arguments).sort((a, b) => { return a - b; }));
       }
    }
 
@@ -88,7 +88,7 @@
             properties[key] = p.videoDummy[key];
          }
       }
-      p.proxy.setRemoteObjectProperties(MEDIA_PROXY_ID, properties);
+      p.proxy.updateObserverProperties(MEDIA_PROXY_ID, properties);
    }
 
    /**
@@ -110,8 +110,12 @@
       this.NETWORK_NO_SOURCE = HTMLMediaElement.NETWORK_NO_SOURCE;
       this.audioTracks = hbbtv.objects.createAudioTrackList(proxy);
       this.videoTracks = hbbtv.objects.createVideoTrackList(proxy);
+      this.textTracks = hbbtv.objects.createTextTrackList(proxy);
       this.dispatchEvent = function(e) {
          parent.dispatchEvent(e);
+      };
+      this.addTextTrack = function () {
+         this.textTracks._addTextTrack.apply(this.textTracks, arguments);
       };
    }
 
@@ -128,7 +132,7 @@
             proxy: proxy,
          });
          p = privates.get(this);
-         p.proxy.registerObject(MEDIA_PROXY_ID, p.videoDummy);
+         p.proxy.registerObserver(MEDIA_PROXY_ID, p.videoDummy);
 
          HTMLIFrameElement.prototype.addEventListener.call(this, "load", () => {
             if (this.src) {
@@ -147,7 +151,7 @@
                   }
                }
             }
-            p.proxy.setRemoteObjectProperties(MEDIA_PROXY_ID, {innerHTML: p.divDummy.innerHTML});
+            p.proxy.updateObserverProperties(MEDIA_PROXY_ID, {innerHTML: p.divDummy.innerHTML});
          });
    
          observer.observe(p.divDummy, {
@@ -183,7 +187,7 @@
                   srcOwnProperty.set.call(this, value + (value.includes("?") ? "&" : "?") + ORB_PLAYER_MAGIC_SUFFIX);
                }
                else {
-                  p.proxy.setRemoteObjectProperties(MEDIA_PROXY_ID, {[key]: value});
+                  p.proxy.updateObserverProperties(MEDIA_PROXY_ID, {[key]: value});
                }
             }
          },

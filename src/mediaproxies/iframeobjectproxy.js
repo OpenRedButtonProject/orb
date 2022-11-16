@@ -42,32 +42,32 @@ hbbtv.objects.IFrameObjectProxy = (function() {
       p.sessionId = undefined;
    }
 
-   prototype.registerObject = function(objectId, object) {
-      console.log("IFrameObjectProxy: Registered id", objectId, "with object",object);
-      privates.get(this).objects[objectId] = object;
+   prototype.registerObserver = function(observerId, observer) {
+      console.log("IFrameObjectProxy: Registered observer", observer, "with id", observerId);
+      privates.get(this).observers[observerId] = observer;
    };
 
-   prototype.unregisterObject = function(objectId) {
-      console.log("IFrameObjectProxy: Unregistered object at id", objectId);
-      delete privates.get(this).objects[objectId];
+   prototype.unregisterObserver = function(observerId) {
+      console.log("IFrameObjectProxy: Unregistered observer with id", observerId);
+      delete privates.get(this).observers[observerId];
    }
 
-   prototype.callMethod = function (objectId, name, args = []) {
-      postMessage.call(this, MSG_TYPE_METHOD_REQUEST, {objectId: objectId, name: name, args: args});
-      console.log("IFrameObjectProxy: Requested call to method", name, "with arguments", args);
+   prototype.callObserverMethod = function (observerId, name, args = []) {
+      postMessage.call(this, MSG_TYPE_METHOD_REQUEST, {observerId: observerId, name: name, args: args});
+      console.log("IFrameObjectProxy: Requested call to method", name, "with arguments", args, "to observer with id", observerId);
    }
 
-   prototype.callAsyncMethod = function (objectId, name, args = []) {
-      console.log("IFrameObjectProxy: Requested call to async method", name, "with arguments", args);
-      return makeAsyncCall.call(this, MSG_TYPE_ASYNC_METHOD_REQUEST, {objectId: objectId, name: name, args: args});
+   prototype.callAsyncObserverMethod = function (observerId, name, args = []) {
+      console.log("IFrameObjectProxy: Requested call to async method", name, "with arguments", args, "to observer with id", observerId);
+      return makeAsyncCall.call(this, MSG_TYPE_ASYNC_METHOD_REQUEST, {observerId: observerId, name: name, args: args});
    }
 
-   prototype.setRemoteObjectProperties = function (objectId, properties) {
-      postMessage.call(this, MSG_TYPE_SET_PROPERTIES, {objectId: objectId, properties: properties});
+   prototype.updateObserverProperties = function (observerId, properties) {
+      postMessage.call(this, MSG_TYPE_SET_PROPERTIES, {observerId: observerId, properties: properties});
    }
 
-   prototype.dispatchEvent = function (objectId, e) {
-      postMessage.call(this, MSG_TYPE_DISPATCH_EVENT, {objectId: objectId, eventName: e.type, eventData: e});
+   prototype.dispatchEvent = function (observerId, e) {
+      postMessage.call(this, MSG_TYPE_DISPATCH_EVENT, {observerId: observerId, eventName: e.type, eventData: e});
    }
 
    function makeAsyncCall(type, data = {}) {
@@ -122,7 +122,7 @@ hbbtv.objects.IFrameObjectProxy = (function() {
 
    function initialise() {
       privates.set(this, {
-         objects: {},
+         observers: {},
          pending: []
       });
       
@@ -152,49 +152,51 @@ hbbtv.objects.IFrameObjectProxy = (function() {
             e.stopImmediatePropagation();
          }
          else if (p.sessionId === msg.sessionId && p.remoteWindow === e.source) {
-            const localObject = p.objects[msg.data.objectId];
-            switch (msg.type) {
-               case MSG_TYPE_DISPATCH_EVENT:
-                  const evt = new Event(msg.data.eventName)
-                  for (const key in msg.data.eventData) {
-                     if (key !== "isTrusted") { // Uncaught TypeError: Cannot set property isTrusted of #<Event> which has only a getter
-                        evt[key] = msg.data.eventData[key];
+            const observer = p.observers[msg.data.observerId];
+            if (observer) {
+               switch (msg.type) {
+                  case MSG_TYPE_DISPATCH_EVENT:
+                     const evt = new Event(msg.data.eventName)
+                     for (const key in msg.data.eventData) {
+                        if (key !== "isTrusted") { // Uncaught TypeError: Cannot set property isTrusted of #<Event> which has only a getter
+                           evt[key] = msg.data.eventData[key];
+                        }
                      }
-                  }
-                  localObject.dispatchEvent(evt);
-                  break;
-               case MSG_TYPE_SET_PROPERTIES:
-                  for (const key in msg.data.properties) {
-                     if (typeof localObject[key] !== "function" && localObject[key] !== msg.data.properties[key]) {
-                        localObject[key] = msg.data.properties[key];
+                     observer.dispatchEvent(evt);
+                     break;
+                  case MSG_TYPE_SET_PROPERTIES:
+                     for (const key in msg.data.properties) {
+                        if (typeof observer[key] !== "function" && observer[key] !== msg.data.properties[key]) {
+                           observer[key] = msg.data.properties[key];
+                        }
                      }
-                  }
-                  break;
-               case MSG_TYPE_METHOD_REQUEST:
-                  if (typeof localObject[msg.data.name] === "function") {
-                     localObject[msg.data.name](...msg.data.args);
-                  }
-                  break;
-               case MSG_TYPE_ASYNC_METHOD_REQUEST:
-                  if (typeof localObject[msg.data.name] === "function") {
-                     localObject[msg.data.name](...msg.data.args)
-                     .then(() => {
-                        postMessage.call(thiz, MSG_TYPE_ASYNC_CALL_RESPONSE, { 
-                           callId: msg.data.callId
+                     break;
+                  case MSG_TYPE_METHOD_REQUEST:
+                     if (typeof observer[msg.data.name] === "function") {
+                        observer[msg.data.name](...msg.data.args);
+                     }
+                     break;
+                  case MSG_TYPE_ASYNC_METHOD_REQUEST:
+                     if (typeof observer[msg.data.name] === "function") {
+                        observer[msg.data.name](...msg.data.args)
+                        .then(() => {
+                           postMessage.call(thiz, MSG_TYPE_ASYNC_CALL_RESPONSE, { 
+                              callId: msg.data.callId
+                           });
+                        })
+                        .catch(e => {
+                           postMessage.call(thiz, MSG_TYPE_ASYNC_CALL_RESPONSE, { 
+                              callId: msg.data.callId,
+                              error: e
+                           });
                         });
-                     })
-                     .catch(e => {
-                        postMessage.call(thiz, MSG_TYPE_ASYNC_CALL_RESPONSE, { 
-                           callId: msg.data.callId,
-                           error: e
-                        });
-                     });
-                  }
-                  break;
-               default:
-                  return; // return for all other cases in order to prevent stopImmediatePropagation from being called
+                     }
+                     break;
+                  default:
+                     return; // return for all other cases in order to prevent stopImmediatePropagation from being called
+               }
+               e.stopImmediatePropagation();
             }
-            e.stopImmediatePropagation();
          }
       };
       window.addEventListener("message", p.onMessage);

@@ -5,12 +5,10 @@
  * Licensed under the ORB License that can be found in the LICENSE file at
  * the top level of this repository.
  */
-
-const hbbtv = { objects: { }, native: { } }; // TODO: remove non-needed code
-
 hbbtv.mediaManager = (function() {
    let objectHandlers = {};
    let fallbackHandlers = undefined;
+   const mediaProxy = hbbtv.objects.createIFrameObjectProxy();
 
    function initialise() {
       addSourceManipulationIntercept();
@@ -194,13 +192,13 @@ hbbtv.mediaManager = (function() {
       };
    }
 
-   function initialiseMediaProxy(media) {
-      const MEDIA_PROXY_ID = "media";
-      const mediaProxy = hbbtv.objects.createIFrameObjectProxy();
-      mediaProxy.registerObject(MEDIA_PROXY_ID, media);
+   function registerObservers(media) {
+      const MEDIA_PROXY_ID = "HTMLMediaElement";
+      mediaProxy.registerObserver(MEDIA_PROXY_ID, media);
       
       const audioTracks = hbbtv.objects.createAudioTrackList(mediaProxy);
       const videoTracks = hbbtv.objects.createVideoTrackList(mediaProxy);
+
       Object.defineProperty(media, "audioTracks", {
          value: audioTracks,
          writable: false
@@ -222,19 +220,28 @@ hbbtv.mediaManager = (function() {
          const keys = ["currentTime","playbackRate","volume","muted","loop","defaultMuted","defaultPlaybackRate","disableRemotePlayback",
                         "preservesPitch","paused","ended","currentSrc","error","duration","networkState","readyState"];
          for (const key of keys) {
-            if (typeof media[key] !== "function") {
-               props[key] = media[key];
-            }
+            props[key] = media[key];
          }
-         mediaProxy.setRemoteObjectProperties(MEDIA_PROXY_ID, props);
+         mediaProxy.updateObserverProperties(MEDIA_PROXY_ID, props);
          mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
          console.log("iframe: update properties", props);
       };
       const makeCallback = function(property) {
          return function (e) {
-            mediaProxy.setRemoteObjectProperties(MEDIA_PROXY_ID, {[property]: media[property]});
+            mediaProxy.updateObserverProperties(MEDIA_PROXY_ID, {[property]: media[property]});
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
          }
+      };
+      const makeTimeUpdateCallback = function () {
+         const cb = makeCallback("currentTime");
+         // will be used to prevent the event from being dispatched too frequently
+         // from the iframe to the main window, in order to improve performance
+         let counter = 0;
+         return function (e) {
+            if (counter++ % 5 === 0) {
+               cb(e);
+            }
+         };
       };
       for (const evt of genericEvents) {
          media.addEventListener(evt, genericHandler);
@@ -244,9 +251,42 @@ hbbtv.mediaManager = (function() {
       media.addEventListener("ended", propsUpdateCallback);
       media.addEventListener("pause", propsUpdateCallback);
       media.addEventListener("durationchanged", makeCallback("duration"));
-      media.addEventListener("timeupdate", makeCallback("currentTime"));
+      media.addEventListener("timeupdate", makeTimeUpdateCallback());
       media.addEventListener("ratechange", makeCallback("playbackRate"));
       media.addEventListener("volumechange", makeCallback("volume"));
+      media.addTextTrack = function () {
+         const TEXT_TRACK_KEY = "TextTrack_" + media.textTracks.length;
+         const track = HTMLMediaElement.prototype.addTextTrack.apply(media, arguments);
+         mediaProxy.callObserverMethod(MEDIA_PROXY_ID, "addTextTrack", Array.from(arguments).sort((a, b) => { return a - b; }));
+
+         mediaProxy.registerObserver(TEXT_TRACK_KEY, track);
+         
+         // We create a new Proxy object which we return in order to avoid ping-pong calls
+         // between the iframe and the main window when the user requests a property update
+         // or a function call.
+         const trackProxy = new Proxy (track, {
+            get: (target, property) => {
+               if (typeof target[property] === "function") {
+                  if (property !== "addEventListener" && property !== "removeEventListener" && property !== "dispatchEvent") {
+                     return function() {
+                        mediaProxy.callObserverMethod(TEXT_TRACK_KEY, property, Array.from(arguments).sort((a, b) => { return a - b; }));
+                        return target[property].apply(target, arguments);
+                     };
+                  }
+                  return target[property].bind(target);
+               }
+               return target[property];
+            },
+            set: (target, property, value) => {
+               if (typeof target[property] !== "function") {
+                  mediaProxy.updateObserverProperties(TEXT_TRACK_KEY, {[property]: value});
+               }
+               target[property] = value;
+               return true;
+            }
+         });
+         return trackProxy;
+      };
    }
 
    // Mutation observer
@@ -255,7 +295,7 @@ hbbtv.mediaManager = (function() {
          for (const mutation of mutationsList) {
             for (const node of mutation.addedNodes) {
                if (node.nodeName && node.nodeName.toLowerCase() === "video" || node.nodeName.toLowerCase() === "audio") {
-                  initialiseMediaProxy(node);
+                  registerObservers(node);
                }
             }
          }

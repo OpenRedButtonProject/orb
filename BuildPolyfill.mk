@@ -1,12 +1,14 @@
 polyfill_mediamanager_srcs = \
-src/mediaproxies/mediamanager.js \
-src/utils.js \
-src/objects/audiotracklist.js \
-src/objects/videotracklist.js \
+src/mediaproxies/init.js \
+src/mediaproxies/tracklists/audiotracklist.js \
+src/mediaproxies/tracklists/videotracklist.js \
+src/mediaproxies/tracklists/texttracklist.js \
+src/mediaproxies/tracklists/texttrack.js \
 src/mediaproxies/iframeobjectproxy.js \
+src/mediaproxies/mediamanager.js \
 src/mediaproxies/mediaerror.js \
 src/mediaproxies/dashproxy.js \
-src/mediaproxies/nativeproxy.js
+src/mediaproxies/nativeproxy.js\
 
 polyfill_dash_srcs = \
 external/dash.all.min.js
@@ -28,8 +30,10 @@ src/polyfill/debug.js \
 src/polyfill/keyevent.js \
 src/polyfill/orbdebug.js \
 src/objects/collection.js \
-src/objects/audiotracklist.js \
-src/objects/videotracklist.js \
+src/mediaproxies/tracklists/audiotracklist.js \
+src/mediaproxies/tracklists/videotracklist.js \
+src/mediaproxies/tracklists/texttracklist.js \
+src/mediaproxies/tracklists/texttrack.js \
 src/objects/channel.js \
 src/objects/programme.js \
 src/objects/channellist.js \

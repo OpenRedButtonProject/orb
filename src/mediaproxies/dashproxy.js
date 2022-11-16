@@ -131,50 +131,48 @@
     */
    const MEDIASOURCE_TYPE_UNSUPPORTED_CODE = 35;
 
-   hbbtv.utils.defineGetterSetterProperties(prototype, {
-      playbackRate: {
-         get() {
-            let ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
-            return ownProperty ? ownProperty.get.call(this) : undefined;
-         },
-         set(value) {
-            const player = privates.get(this).player;
-            try {
-               var streamInfo = player.getActiveStream().getStreamInfo();
-               var dashMetrics = player.getDashMetrics();
-               var dashAdapter = player.getDashAdapter();
+   Object.defineProperty(prototype, "playbackRate", {
+      get() {
+         let ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
+         return ownProperty ? ownProperty.get.call(this) : undefined;
+      },
+      set(value) {
+         const player = privates.get(this).player;
+         try {
+            var streamInfo = player.getActiveStream().getStreamInfo();
+            var dashMetrics = player.getDashMetrics();
+            var dashAdapter = player.getDashAdapter();
 
-               if (streamInfo) {
-                  const periodIdx = streamInfo.index;
+            if (streamInfo) {
+               const periodIdx = streamInfo.index;
 
-                  var repSwitch = dashMetrics.getCurrentRepresentationSwitch('video', true);
-                  var adaptation = dashAdapter.getAdaptationForType(periodIdx, 'video', streamInfo);
-                  var currentRep = adaptation.Representation_asArray.find(function(rep) {
-                     return rep.id === repSwitch.to;
-                  });
-                  if (currentRep) {
-                     if (!currentRep.maxPlayoutRate) {
-                        currentRep.maxPlayoutRate = 1;
-                     }
-                     if (value > currentRep.maxPlayoutRate) {
-                        value = currentRep.maxPlayoutRate;
-                     }
+               var repSwitch = dashMetrics.getCurrentRepresentationSwitch('video', true);
+               var adaptation = dashAdapter.getAdaptationForType(periodIdx, 'video', streamInfo);
+               var currentRep = adaptation.Representation_asArray.find(function(rep) {
+                  return rep.id === repSwitch.to;
+               });
+               if (currentRep) {
+                  if (!currentRep.maxPlayoutRate) {
+                     currentRep.maxPlayoutRate = 1;
+                  }
+                  if (value > currentRep.maxPlayoutRate) {
+                     value = currentRep.maxPlayoutRate;
                   }
                }
-            } catch (e) {
-               //value = 1;
-               console.warn("DashProxy:", e);
             }
-            let ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
-            if (ownProperty) {
-               ownProperty.set.call(this, value);
-            }
+         } catch (e) {
+            //value = 1;
+            console.warn("DashProxy:", e);
+         }
+         let ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
+         if (ownProperty) {
+            ownProperty.set.call(this, value);
          }
       }
    });
 
-   hbbtv.utils.defineGetterProperties(prototype, {
-      error() {
+   Object.defineProperty(prototype, "error", {
+      get() {
          let ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "error");
          return ownProperty.get.call(this) || privates.get(this).error;
       }
