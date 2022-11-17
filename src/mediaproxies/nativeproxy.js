@@ -39,9 +39,6 @@ hbbtv.objects.NativeProxy = (function() {
          this.textTracks.removeEventListener("change", p.onTextTrackChange);
          this.removeEventListener("loadedmetadata", p.onLoadedMetadata, true);
          this.removeEventListener("error", p.onError, true);
-         if (p.subs.parentNode) {
-            p.subs.parentNode.removeChild(p.subs);
-         }
          if (p.textTracks) {
             p.textTracks.deleteAllTextTracks();
          }
@@ -70,8 +67,7 @@ hbbtv.objects.NativeProxy = (function() {
       }
       p.textTracks = textTracks;
       textTracks.initialize();
-      for (let i = 0; i < this.textTracks.length; ++i) {
-         const track = this.textTracks[i];
+      for (let i = 0; i < trackElements.length; ++i) {
          const trackElement = trackElements[i];
          if (!trackElement) {
             promises.push(Promise.reject("Text track doesn't match a track element."));
@@ -83,10 +79,10 @@ hbbtv.objects.NativeProxy = (function() {
          textTrackInfo.streamInfo = config.streamInfo;
          textTrackInfo.isTTML = true;
          textTrackInfo.captionData = null;
-         textTrackInfo.kind = track.kind;
-         textTrackInfo.id = track.id;
-         textTrackInfo.lang = track.language;
-         textTrackInfo.labels = track.label;
+         textTrackInfo.kind = trackElement.kind;
+         textTrackInfo.id = trackElement.id;
+         textTrackInfo.lang = trackElement.language;
+         textTrackInfo.labels = trackElement.label;
          textTrackInfo.isFragmented = false;
 
          const ext = trackElement.src.split('.').pop();
@@ -99,14 +95,9 @@ hbbtv.objects.NativeProxy = (function() {
                      reject("An error occurred when requesting the ttml source file '" + trackElement.src + "'.");
                      return;
                   }
-                  textTrackInfo.defaultTrack = track.mode === "showing";
+                  textTrackInfo.defaultTrack = trackElement.default;
                   textTrackInfo.captionData = ttmlParser.parse(xhr.responseText, 0);
                   textTracks.addTextTrack(textTrackInfo);
-
-                  // we remove the track elements, because textTracks.addTextTrack()
-                  // pushes a new text track to the video element's text tracks list,
-                  // ending up having twice as many tracks as we should be having
-                  thiz.removeChild(trackElement);
                   resolve();
                }
                xhr.open("GET", trackElement.src);
@@ -207,17 +198,6 @@ hbbtv.objects.NativeProxy = (function() {
             break;
          }
       }
-      if (index !== -1) {
-         if (this.parentNode && !p.subs.parentNode) {
-            if (this.nextSibling) {
-               this.parentNode.insertBefore(p.subs, this.nextSibling);
-            } else {
-               this.parentNode.appendChild(p.subs);
-            }
-         }
-      } else if (p.subs.parentNode) {
-         p.subs.parentNode.removeChild(p.subs);
-      }
       if (p.textTracks) {
          p.textTracks.setCurrentTrackIdx(index);
       }
@@ -231,15 +211,12 @@ hbbtv.objects.NativeProxy = (function() {
          Object.setPrototypeOf(this, prototype);
          privates.set(this, {});
          const p = privates.get(this);
-         const subtitlesRenderDiv = document.createElement("div");
-         subtitlesRenderDiv.id = "__obs_subsPH__";
-         p.subs = subtitlesRenderDiv;
          p.onTextTrackChange = onTextTrackChange.bind(this);
          p.onLoadedMetadata = onLoadedMetadata.bind(this);
          p.onError = onError.bind(this);
          p.videoModel = orb_dashjs.VideoModel(window).getInstance();
          p.videoModel.setElement(this);
-         p.videoModel.setTTMLRenderingDiv(subtitlesRenderDiv);
+         p.videoModel.setTTMLRenderingDiv(document.getElementById("orb_subsPH"));
          p.ttmlParser = orb_dashjs.TTMLParser(window).getInstance();
 
          this.textTracks.addEventListener("change", p.onTextTrackChange);

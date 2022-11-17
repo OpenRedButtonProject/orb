@@ -169,7 +169,7 @@ hbbtv.objects.AudioTrackList = (function() {
       const tracksProxy = new Proxy (this, {
          get: (target, property) => {
             if (typeof target[property] === "function") {
-               if (property !== "addEventListener" && property !== "removeEventListener" && property !== "dispatchEvent") {
+               if (!evtTargetMethods.includes(property)) {
                   return function() {
                      proxy.callObserverMethod(AUDIO_TRACK_LIST_KEY, property, Array.from(arguments).sort((a, b) => { return a - b; }));
                      return target[property].apply(target, arguments);

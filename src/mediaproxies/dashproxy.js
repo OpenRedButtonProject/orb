@@ -248,9 +248,6 @@
          for (const scheme of PARENTAL_CONTROL_EVENT_SCHEMES) {
             p.player.off(scheme, p.onParentalRatingChange);
          }
-         if (p.subs.parentNode) {
-            p.subs.parentNode.removeChild(p.subs);
-         }
          p.player.destroy();
          privates.delete(this);
       } else {
@@ -279,17 +276,6 @@
                index = i;
                break;
             }
-         }
-         if (index !== -1) {
-            if (this.parentNode && !p.subs.parentNode) {
-               if (this.nextSibling) {
-                  this.parentNode.insertBefore(p.subs, this.nextSibling);
-               } else {
-                  this.parentNode.appendChild(p.subs);
-               }
-            }
-         } else if (p.subs.parentNode) {
-            p.subs.parentNode.removeChild(p.subs);
          }
          p.player.setTextTrack(index);
       }
@@ -660,28 +646,9 @@
             for (const scheme of PARENTAL_CONTROL_EVENT_SCHEMES) {
                p.player.on(scheme, p.onParentalRatingChange);
             }
-            const subtitlesRenderDiv = document.createElement("div");
-            p.subs = subtitlesRenderDiv;
-            subtitlesRenderDiv.id = "__obs_subsPH__";
             p.startDate = new Date(NaN);
-            p.player.attachTTMLRenderingDiv(p.subs);
+            p.player.attachTTMLRenderingDiv(document.getElementById("orb_subsPH"));
             this.textTracks.addEventListener("change", p.onTextTrackChange);
-
-            // Mutation observer
-            (function() {
-               const observer = new MutationObserver(function(mutationsList) {
-                  for (const mutation of mutationsList) {
-                     subtitlesRenderDiv.style.cssText = mutation.target.style.cssText;
-                     subtitlesRenderDiv.style.pointerEvents = "none";
-                     subtitlesRenderDiv.style.backgroundColor = "transparent";
-                  }
-               });
-
-               observer.observe(this, {
-                  attributes: true,
-                  attributeFilter: ["style"]
-               });
-            }).call(this);
 
             console.log("DashProxy: Initialised DashProxy.");
          } else {

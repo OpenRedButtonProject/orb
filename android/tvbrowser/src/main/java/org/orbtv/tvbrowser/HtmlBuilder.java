@@ -97,7 +97,6 @@ public class HtmlBuilder {
       builder.append("<script type=\"text/javascript\">\n//<![CDATA[\n");
       try {
          appendAsset(builder, "polyfill/hbbtv.js");
-         appendAsset(builder, "polyfill/dash.all.min.js");
       } catch (IOException e) {
          e.printStackTrace();
          return "";

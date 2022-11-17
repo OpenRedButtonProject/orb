@@ -5,11 +5,10 @@
  * the top level of this repository.
  */
  hbbtv.objects.TextTrackList = (function() {
-   const prototype = {};
+   const prototype = Object.create(TextTrackList.prototype);
    const privates = new WeakMap();
    const events = ["change", "addtrack", "removetrack"];
    const evtTargetMethods = ["addEventListener", "removeEventListener", "dispatchEvent"];
-   const TEXT_TRACK_KEY = "TextTrack_";
 
    Object.defineProperty(prototype, "length", {
       get() {
@@ -65,18 +64,18 @@
       }
    }
 
-   prototype._addTextTrack = function (kind, label, language) {
+   prototype.orb_addTextTrack = function (kind, label, language, id) {
       const p = privates.get(this);
-      this[p.length] = hbbtv.objects.createTextTrack(p.proxy, {kind, label, language}, p.length);
-      ++p.length;
+      const track = hbbtv.objects.createTextTrack(p.mediaElement, p.proxy, id || id === 0 ? id : p.length, kind, label, language);
+      this[p.length++] = track;
       p.eventTarget.dispatchEvent(new TrackEvent("addtrack"));
-      return this[p.length - 1];
+      return track;
    }
 
-   prototype._removeTrackAtIndex = function (index) {
+   prototype.orb_removeTrackAt = function (index) {
       const p = privates.get(this);
       if (index >= 0 && index < p.length) {
-         p.proxy.unregisterObserver(this[i]);
+         this[i].orb_invalidate();
          for (let i = index; i < p.length - 1; i++) {
             // TODO: update track indexes and registration with the proxy
             this[i] = this[i + 1];
@@ -88,12 +87,13 @@
       }
    }
 
-   function initialise(proxy) {
+   function initialise(mediaElement, proxy) {
       const TEXT_TRACK_LIST_KEY = "TextTrackList";
       privates.set(this, {
          length: 0,
          eventTarget: document.createDocumentFragment(),
-         proxy: proxy
+         proxy,
+         mediaElement
       });
       proxy.registerObserver(TEXT_TRACK_LIST_KEY, this);
       
@@ -103,7 +103,7 @@
       const tracksProxy = new Proxy (this, {
          get: (target, property) => {
             if (typeof target[property] === "function") {
-               if (property !== "addEventListener" && property !== "removeEventListener" && property !== "dispatchEvent") {
+               if (!evtTargetMethods.includes(property)) {
                   return function() {
                      proxy.callObserverMethod(TEXT_TRACK_LIST_KEY, property, Array.from(arguments).sort((a, b) => { return a - b; }));
                      return target[property].apply(target, arguments);
@@ -130,7 +130,7 @@
    };
 })();
 
-hbbtv.objects.createTextTrackList = function(proxy) {
+hbbtv.objects.createTextTrackList = function(mediaElement, proxy) {
    const trackList = Object.create(hbbtv.objects.TextTrackList.prototype);
-   return hbbtv.objects.TextTrackList.initialise.call(trackList, proxy);
+   return hbbtv.objects.TextTrackList.initialise.call(trackList, mediaElement, proxy);
 }

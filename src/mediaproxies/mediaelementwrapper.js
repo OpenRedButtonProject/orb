@@ -110,7 +110,7 @@
       this.NETWORK_NO_SOURCE = HTMLMediaElement.NETWORK_NO_SOURCE;
       this.audioTracks = hbbtv.objects.createAudioTrackList(proxy);
       this.videoTracks = hbbtv.objects.createVideoTrackList(proxy);
-      this.textTracks = hbbtv.objects.createTextTrackList(proxy);
+      this.textTracks = hbbtv.objects.createTextTrackList(parent, proxy);
       this.dispatchEvent = function(e) {
          parent.dispatchEvent(e);
       };

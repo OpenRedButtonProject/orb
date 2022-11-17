@@ -4,6 +4,7 @@ src/mediaproxies/tracklists/audiotracklist.js \
 src/mediaproxies/tracklists/videotracklist.js \
 src/mediaproxies/tracklists/texttracklist.js \
 src/mediaproxies/tracklists/texttrack.js \
+src/mediaproxies/tracklists/texttrackcuelist.js \
 src/mediaproxies/iframeobjectproxy.js \
 src/mediaproxies/mediamanager.js \
 src/mediaproxies/mediaerror.js \
@@ -34,6 +35,7 @@ src/mediaproxies/tracklists/audiotracklist.js \
 src/mediaproxies/tracklists/videotracklist.js \
 src/mediaproxies/tracklists/texttracklist.js \
 src/mediaproxies/tracklists/texttrack.js \
+src/mediaproxies/tracklists/texttrackcuelist.js \
 src/objects/channel.js \
 src/objects/programme.js \
 src/objects/channellist.js \

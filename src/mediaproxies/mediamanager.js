@@ -14,18 +14,6 @@ hbbtv.mediaManager = (function() {
       addSourceManipulationIntercept();
       addMutationIntercept();
 
-      function polyfillDocumentHead() {
-         document.removeEventListener('DOMContentLoaded', polyfillDocumentHead);
-
-         // add a predifined style to the subtitles div
-         document.head.innerHTML += "<style>#__obs_subsPH__ div { position: static; overflow: auto; pointer-events:none; }</style>";
-      }
-      if (document.head) {
-         polyfillDocumentHead();
-      } else {
-         document.addEventListener('DOMContentLoaded', polyfillDocumentHead);
-      }
-
       const __play = HTMLMediaElement.prototype.play;
  
       // we override play() for the DASH playback as we end up receiving
@@ -198,6 +186,7 @@ hbbtv.mediaManager = (function() {
       
       const audioTracks = hbbtv.objects.createAudioTrackList(mediaProxy);
       const videoTracks = hbbtv.objects.createVideoTrackList(mediaProxy);
+      const textTracks = hbbtv.objects.createTextTrackList(media, mediaProxy);
 
       Object.defineProperty(media, "audioTracks", {
          value: audioTracks,
@@ -207,9 +196,13 @@ hbbtv.mediaManager = (function() {
          value: videoTracks,
          writable: false
       });
+      Object.defineProperty(media, "textTracks", {
+         value: textTracks,
+         writable: false
+      });
 
       const genericEvents = [
-         "loadstart", "progress", "suspend", "abort", "error", "emptied", "stalled", "loadedmetadata", "canplay",
+         "loadstart", "progress", "suspend", "abort", "error", "emptied", "stalled", "canplay",
          "canplaythrough", "playing", "waiting", "seeking", "seeked", "resize","__obs_onerror__"
       ];
       const genericHandler = (e) => {
@@ -232,7 +225,17 @@ hbbtv.mediaManager = (function() {
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
          }
       };
-      const makeTimeUpdateCallback = function () {
+      for (const evt of genericEvents) {
+         media.addEventListener(evt, genericHandler, true);
+      }
+      media.addEventListener("loadeddata", propsUpdateCallback, true);
+      media.addEventListener("play", propsUpdateCallback, true);
+      media.addEventListener("ended", propsUpdateCallback, true);
+      media.addEventListener("pause", propsUpdateCallback, true);
+      media.addEventListener("durationchanged", makeCallback("duration"), true);
+      media.addEventListener("ratechange", makeCallback("playbackRate"), true);
+      media.addEventListener("volumechange", makeCallback("volume"), true);
+      media.addEventListener("timeupdate", (() => {
          const cb = makeCallback("currentTime");
          // will be used to prevent the event from being dispatched too frequently
          // from the iframe to the main window, in order to improve performance
@@ -242,50 +245,9 @@ hbbtv.mediaManager = (function() {
                cb(e);
             }
          };
-      };
-      for (const evt of genericEvents) {
-         media.addEventListener(evt, genericHandler);
-      }
-      media.addEventListener("loadeddata", propsUpdateCallback);
-      media.addEventListener("play", propsUpdateCallback);
-      media.addEventListener("ended", propsUpdateCallback);
-      media.addEventListener("pause", propsUpdateCallback);
-      media.addEventListener("durationchanged", makeCallback("duration"));
-      media.addEventListener("timeupdate", makeTimeUpdateCallback());
-      media.addEventListener("ratechange", makeCallback("playbackRate"));
-      media.addEventListener("volumechange", makeCallback("volume"));
+      })(), true);
       media.addTextTrack = function () {
-         const TEXT_TRACK_KEY = "TextTrack_" + media.textTracks.length;
-         const track = HTMLMediaElement.prototype.addTextTrack.apply(media, arguments);
-         mediaProxy.callObserverMethod(MEDIA_PROXY_ID, "addTextTrack", Array.from(arguments).sort((a, b) => { return a - b; }));
-
-         mediaProxy.registerObserver(TEXT_TRACK_KEY, track);
-         
-         // We create a new Proxy object which we return in order to avoid ping-pong calls
-         // between the iframe and the main window when the user requests a property update
-         // or a function call.
-         const trackProxy = new Proxy (track, {
-            get: (target, property) => {
-               if (typeof target[property] === "function") {
-                  if (property !== "addEventListener" && property !== "removeEventListener" && property !== "dispatchEvent") {
-                     return function() {
-                        mediaProxy.callObserverMethod(TEXT_TRACK_KEY, property, Array.from(arguments).sort((a, b) => { return a - b; }));
-                        return target[property].apply(target, arguments);
-                     };
-                  }
-                  return target[property].bind(target);
-               }
-               return target[property];
-            },
-            set: (target, property, value) => {
-               if (typeof target[property] !== "function") {
-                  mediaProxy.updateObserverProperties(TEXT_TRACK_KEY, {[property]: value});
-               }
-               target[property] = value;
-               return true;
-            }
-         });
-         return trackProxy;
+         return textTracks.orb_addTextTrack.apply(textTracks, arguments);
       };
    }
 

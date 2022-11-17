@@ -54,7 +54,7 @@ hbbtv.objects.IFrameObjectProxy = (function() {
 
    prototype.callObserverMethod = function (observerId, name, args = []) {
       postMessage.call(this, MSG_TYPE_METHOD_REQUEST, {observerId: observerId, name: name, args: args});
-      console.log("IFrameObjectProxy: Requested call to method", name, "with arguments", args, "to observer with id", observerId);
+      //console.log("IFrameObjectProxy: Requested call to method", name, "with arguments", args, "to observer with id", observerId);
    }
 
    prototype.callAsyncObserverMethod = function (observerId, name, args = []) {

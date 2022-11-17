@@ -175,7 +175,7 @@ hbbtv.objects.VideoTrackList = (function() {
       const tracksProxy = new Proxy (this, {
          get: (target, property) => {
             if (typeof target[property] === "function") {
-               if (property !== "addEventListener" && property !== "removeEventListener" && property !== "dispatchEvent") {
+               if (!evtTargetMethods.includes(property)) {
                   return function() {
                      proxy.callObserverMethod(VIDEO_TRACK_LIST_KEY, property, Array.from(arguments).sort((a, b) => { return a - b; }));
                      return target[property].apply(target, arguments);
