@@ -382,11 +382,30 @@ bool BroadcastRequestHandler::Handle(
     {
         std::string targetUrl = params.value("targetURL", "");
         std::string eventName = params.value("eventName", "");
-        int componentTag = params.value("componentTag", -1);
-        int streamEventId = params.value("streamEventId", -1);
+        int componentTag;
+        if (params.contains("componentTag") && params["componentTag"].is_string())
+        {
+            componentTag = std::stoi(params.value("componentTag", "-1"));
+        }
+        else
+        {
+            componentTag = params.value("componentTag", -1);
+        }
+
+        int streamEventId;
+        if (params.contains("streamEventId") && params["streamEventId"].is_string())
+        {
+            streamEventId = std::stoi(params.value("streamEventId", "-1"));
+        }
+        else
+        {
+            streamEventId = params.value("streamEventId", -1);
+        }
+
         int id = AddStreamEventListener(targetUrl, eventName, componentTag, streamEventId);
-        response["subscribed"] = (id != -1);
-        response["id"] = id;
+        json resultObj;
+        resultObj["result"] = id;
+        response = resultObj;
     }
     // Broadcast.removeStreamEventListener
     else if (method == BROADCAST_REMOVE_STREAM_EVENT_LISTENER)
