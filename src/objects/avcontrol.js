@@ -123,8 +123,11 @@ hbbtv.objects.AVControl = (function() {
             }
          }
          if (speed == 0 && priv.playState === PLAY_STATE_STOPPED) {
+            notifyBroadbandAvInUse.call(this, true);
             transitionToState.call(this, PLAY_STATE_PAUSED);
-         } else if (transitionToState.call(this, PLAY_STATE_CONNECTING)) {
+         } else if (isStateTransitionValid.call(this, priv.playState, PLAY_STATE_CONNECTING)) {
+            notifyBroadbandAvInUse.call(this, true);
+            transitionToState.call(this, PLAY_STATE_CONNECTING);
             priv.xhr.open('HEAD', this.data);
             priv.xhr.send();
          }
@@ -217,6 +220,7 @@ hbbtv.objects.AVControl = (function() {
          videoElement.currentTime = 0;
          unloadSource.call(this);
          clearInterval(priv.rewindInterval);
+         notifyBroadbandAvInUse.call(this, false);
       }
 
       if (priv.mediaSourceQueue.length !== 0) {
@@ -767,6 +771,32 @@ hbbtv.objects.AVControl = (function() {
       return false;
    };
 
+   function notifyBroadbandAvInUse(broadbandAvInUse) {
+      let priv = privates.get(this);
+      if (broadbandAvInUse) {
+         console.log("A/V control: AV in use");
+         clearTimeout(priv.notifyTimeout);
+         priv.notifyTimeout = null;
+         try {
+            hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(true);
+            priv.videoWrapper.hidden = false;
+         } catch (e) {
+            console.warn("A/V Control: " + e);
+         }
+      } else {
+         console.log("A/V control: AV NOT in use (notification waiting 0.25s)");
+         priv.notifyTimeout = setTimeout(() => {
+            console.log("A/V control: AV NOT in use (notification dispatched)");
+            try {
+               hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
+               priv.videoWrapper.hidden = true;
+            } catch (e) {
+               console.warn("A/V Control: " + e);
+            }
+         }, 250);
+      }
+   }
+
    function updateVideoDimensions() {
       let priv = privates.get(this);
       let videoWrapper = priv.videoWrapper;
@@ -893,15 +923,6 @@ hbbtv.objects.AVControl = (function() {
       priv.fullscreen = false;
 
       this.addEventListener("PlayStateChange", (e) => {
-         try {
-            if (e.state == PLAY_STATE_CONNECTING || e.state == PLAY_STATE_PLAYING) {
-               hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(true);
-            } else if (e.state == PLAY_STATE_STOPPED || e.state == PLAY_STATE_FINISHED || e.state == PLAY_STATE_ERROR) {
-               hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
-            }
-         } catch (e) {
-            console.warn("A/V Control: " + e);
-         }
          switch (e.state) {
             case PLAY_STATE_ERROR:
             case PLAY_STATE_STOPPED:
@@ -929,6 +950,7 @@ hbbtv.objects.AVControl = (function() {
             priv.error = 1;
             unloadSource.call(thiz);
             transitionToState.call(thiz, PLAY_STATE_ERROR);
+            notifyBroadbandAvInUse.call(thiz, false);
             return;
          }
          transitionToState.call(thiz, PLAY_STATE_BUFFERING);
@@ -986,6 +1008,7 @@ hbbtv.objects.AVControl = (function() {
                thiz.play(1);
             } else {
                unloadSource.call(thiz);
+               notifyBroadbandAvInUse.call(thiz, false);
             }
          }
       });
@@ -995,6 +1018,7 @@ hbbtv.objects.AVControl = (function() {
          if (transitionToState.call(thiz, PLAY_STATE_ERROR)) {
             unloadSource.call(thiz);
             priv.error = e.error.code;
+            notifyBroadbandAvInUse.call(thiz, false);
          }
 
          if (priv.mediaSourceQueue.length !== 0) {
