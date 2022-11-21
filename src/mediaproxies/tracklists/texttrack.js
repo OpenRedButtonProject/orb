@@ -9,8 +9,8 @@
    const privates = new WeakMap();
    const events = ["cuechange"];
    const evtTargetMethods = ["addEventListener", "removeEventListener", "dispatchEvent"];
-   const roProps = ["kind", "label", "language", "activeCues", "cues", "id", "renderingType"];
-   const props = ["isTTML", "isEmbedded", "inBandMetadataTrackDispatchType"];
+   const roProps = ["kind", "label", "language", "activeCues", "cues", "id"];
+   const props = ["isTTML", "isEmbedded", "inBandMetadataTrackDispatchType", "renderingType"];
    const TRACK_MODE_SHOWING = "showing";
    const TRACK_MODE_HIDDEN = "hidden";
    const TRACK_MODE_DISABLED = "disabled";
