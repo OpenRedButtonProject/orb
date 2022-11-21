@@ -648,16 +648,9 @@ hbbtv.objects.AVControl = (function() {
                }
             }
             if (index !== -1) {
-               for (let i = 0; i < audioTracks.length; ++i) {
-                  const track = audioTracks[i];
-                  if (i !== index) {
-                     track.enabled = false;
-                  } else {
-                     track.enabled = true;
-                     videoElement.muted = false;
-                     trackChanged = true;
-                  }
-               }
+               audioTracks[index].enabled = true;
+               videoElement.muted = false;
+               trackChanged = true;
                dispatchComponentChangedEvent.call(this, this.COMPONENT_TYPE_AUDIO);
             }
          }
@@ -691,6 +684,7 @@ hbbtv.objects.AVControl = (function() {
                }
                if (index !== -1) {
                   textTracks[index].mode = "showing";
+                  trackChanged = true;
                   dispatchComponentChangedEvent.call(this, this.COMPONENT_TYPE_SUBTITLE);
                }
             }
@@ -710,16 +704,9 @@ hbbtv.objects.AVControl = (function() {
                }
             }
             if (index !== -1) {
-               for (let i = 0; i < videoTracks.length; ++i) {
-                  const track = videoTracks[i];
-                  if (i !== index) {
-                     track.selected = false;
-                  } else {
-                     track.selected = true;
-                     trackChanged = true;
-                     videoElement.hidden = false;
-                  }
-               }
+               videoTracks[index].selected = true;
+               trackChanged = true;
+               videoElement.hidden = false;
                dispatchComponentChangedEvent.call(this, this.COMPONENT_TYPE_VIDEO);
             }
          }
