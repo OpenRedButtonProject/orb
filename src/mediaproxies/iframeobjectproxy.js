@@ -64,6 +64,7 @@ hbbtv.objects.IFrameObjectProxy = (function() {
 
    prototype.updateObserverProperties = function (observerId, properties) {
       postMessage.call(this, MSG_TYPE_SET_PROPERTIES, {observerId: observerId, properties: properties});
+      //console.log("IFrameObjectProxy: Requested update of properties for observer with id", observerId, properties);
    }
 
    prototype.dispatchEvent = function (observerId, e) {

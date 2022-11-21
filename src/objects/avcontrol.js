@@ -690,15 +690,7 @@ hbbtv.objects.AVControl = (function() {
                   index = 0;
                }
                if (index !== -1) {
-                  for (let i = 0; i < textTracks.length; ++i) {
-                     const track = textTracks[i];
-                     if (i !== index) {
-                        track.enabled = false;
-                     } else {
-                        track.mode = "showing";
-                        trackChanged = true;
-                     }
-                  }
+                  textTracks[index].mode = "showing";
                   dispatchComponentChangedEvent.call(this, this.COMPONENT_TYPE_SUBTITLE);
                }
             }

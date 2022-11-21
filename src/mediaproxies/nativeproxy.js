@@ -81,7 +81,7 @@ hbbtv.objects.NativeProxy = (function() {
          textTrackInfo.captionData = null;
          textTrackInfo.kind = trackElement.kind;
          textTrackInfo.id = trackElement.id;
-         textTrackInfo.lang = trackElement.language;
+         textTrackInfo.lang = trackElement.srclang;
          textTrackInfo.labels = trackElement.label;
          textTrackInfo.isFragmented = false;
 

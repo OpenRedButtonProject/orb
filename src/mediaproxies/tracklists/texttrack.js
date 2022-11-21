@@ -9,7 +9,7 @@
    const privates = new WeakMap();
    const events = ["cuechange"];
    const evtTargetMethods = ["addEventListener", "removeEventListener", "dispatchEvent"];
-   const roProps = ["kind", "label", "language", "activeCues", "cues", "id"];
+   const roProps = ["kind", "label", "language", "activeCues", "cues", "id", "renderingType"];
    const props = ["isTTML", "isEmbedded", "inBandMetadataTrackDispatchType"];
    const TRACK_MODE_SHOWING = "showing";
    const TRACK_MODE_HIDDEN = "hidden";
@@ -64,7 +64,7 @@
          if (value !== p.properties.enabled && [TRACK_MODE_DISABLED, TRACK_MODE_HIDDEN, TRACK_MODE_SHOWING].includes(value)) {
             if (value === TRACK_MODE_SHOWING) {
                for (let track of p.mediaElement.textTracks) {
-                  if (track.mode === TRACK_MODE_SHOWING && track !== this) {
+                  if (track.mode === TRACK_MODE_SHOWING && track !== p.trackProxy) {
                      track.mode = TRACK_MODE_DISABLED;
                      break;
                   }
@@ -135,46 +135,12 @@
          kind,
          label,
          language,
+         renderingType: "html",
          cues: hbbtv.objects.createTextTrackCueList(),
          activeCues: hbbtv.objects.createTextTrackCueList(),
          mode: TRACK_MODE_DISABLED,
          default: false
       };
-      privates.set(this, {
-         length: 0,
-         initialized: true,
-         eventTarget: document.createDocumentFragment(),
-         onTimeUpdate: (e) => {
-            const time = mediaElement.currentTime;
-            let changed = false;
-            for (let i = properties.activeCues.length - 1; i >= 0; --i) {
-               const cue = properties.activeCues[i];
-               if (cue.endTime < time || cue.startTime > time) {
-                  properties.activeCues.orb_removeCueAt(i);
-                  if (typeof cue.onexit === "function") {
-                     cue.onexit();
-                  }
-                  changed = true;
-               }
-            }
-            for (const cue of properties.cues) {
-               if (cue.endTime >= time && cue.startTime <= time && properties.activeCues.orb_indexOf(cue) < 0) {
-                  properties.activeCues.orb_addCue(cue);
-                  if (typeof cue.onenter === "function") {
-                     cue.onenter();
-                  }
-                  changed = true;
-               }
-            }
-            if (changed) {
-               thiz.dispatchEvent(new Event("cuechange"));
-            }
-         },
-         properties,
-         mediaElement,
-         observerId,
-         proxy
-      });
 
       proxy.registerObserver(observerId, this);
       
@@ -215,6 +181,44 @@
             return true;
          }
       });
+
+      privates.set(this, {
+         length: 0,
+         initialized: true,
+         eventTarget: document.createDocumentFragment(),
+         onTimeUpdate: (e) => {
+            const time = mediaElement.currentTime;
+            let changed = false;
+            for (let i = properties.activeCues.length - 1; i >= 0; --i) {
+               const cue = properties.activeCues[i];
+               if (cue.endTime < time || cue.startTime > time) {
+                  properties.activeCues.orb_removeCueAt(i);
+                  if (typeof cue.onexit === "function") {
+                     cue.onexit();
+                  }
+                  changed = true;
+               }
+            }
+            for (const cue of properties.cues) {
+               if (cue.endTime >= time && cue.startTime <= time && properties.activeCues.orb_indexOf(cue) < 0) {
+                  properties.activeCues.orb_addCue(cue);
+                  if (typeof cue.onenter === "function") {
+                     cue.onenter();
+                  }
+                  changed = true;
+               }
+            }
+            if (changed) {
+               thiz.dispatchEvent(new Event("cuechange"));
+            }
+         },
+         properties,
+         mediaElement,
+         observerId,
+         proxy,
+         trackProxy
+      });
+
       return trackProxy;
    }
 
