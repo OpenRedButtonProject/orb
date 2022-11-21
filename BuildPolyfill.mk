@@ -1,5 +1,8 @@
 polyfill_mediamanager_srcs = \
 src/mediaproxies/init.js \
+src/nativemanager.js \
+src/natives/android.js \
+src/natives/rdk.js \
 src/mediaproxies/tracklists/audiotracklist.js \
 src/mediaproxies/tracklists/videotracklist.js \
 src/mediaproxies/tracklists/texttracklist.js \
@@ -10,6 +13,7 @@ src/mediaproxies/mediamanager.js \
 src/mediaproxies/mediaerror.js \
 src/mediaproxies/dashproxy.js \
 src/mediaproxies/nativeproxy.js\
+src/mediaproxies/run.js
 
 polyfill_dash_srcs = \
 external/dash.all.min.js

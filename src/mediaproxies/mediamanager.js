@@ -275,4 +275,3 @@ hbbtv.mediaManager = (function() {
    };
 })();
 
-hbbtv.mediaManager.initialise();

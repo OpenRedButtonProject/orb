@@ -61,18 +61,22 @@
    Object.defineProperty(prototype, "mode", {
       set(value) {
          const p = privates.get(this);
-         if (p.properties.mode !== value && [TRACK_MODE_DISABLED, TRACK_MODE_HIDDEN, TRACK_MODE_SHOWING].includes(value)) {
-            p.properties.mode = value;
+         if (value !== p.properties.enabled && [TRACK_MODE_DISABLED, TRACK_MODE_HIDDEN, TRACK_MODE_SHOWING].includes(value)) {
             if (value === TRACK_MODE_SHOWING) {
-               p.onTimeUpdate();
-               if (!p.invalidated) {
-                  p.mediaElement.addEventListener("timeupdate", p.onTimeUpdate, true);
+               for (let track of p.mediaElement.textTracks) {
+                  if (track.mode === TRACK_MODE_SHOWING && track !== this) {
+                     track.mode = TRACK_MODE_DISABLED;
+                     break;
+                  }
                }
+               p.onTimeUpdate();
+               p.mediaElement.addEventListener("timeupdate", p.onTimeUpdate, true);
             }
             else {
                p.properties.activeCues.orb_clear();
                p.mediaElement.removeEventListener("timeupdate", p.onTimeUpdate, true);
             }
+            p.properties.mode = value;
             p.mediaElement.textTracks.dispatchEvent(new Event("change"));
          }
       },
@@ -114,13 +118,13 @@
       p.properties.activeCues.orb_removeCue(cue);
    };
 
-   prototype.orb_invalidate = function () {
+   prototype.orb_finalize = function () {
       const p = privates.get(this);
       p.proxy.unregisterObserver(p.observerId);
       p.activeCues.orb_clear();
       p.cues.orb_clear();
       p.mediaElement.removeEventListener("timeupdate", p.onTimeUpdate, true);
-      p.invalidated = true;
+      privates.delete(this);
    };
 
    function initialise(mediaElement, proxy, id, kind, label, language) {
@@ -138,6 +142,7 @@
       };
       privates.set(this, {
          length: 0,
+         initialized: true,
          eventTarget: document.createDocumentFragment(),
          onTimeUpdate: (e) => {
             const time = mediaElement.currentTime;
@@ -181,18 +186,20 @@
             if (typeof target[property] === "function") {
                if (!evtTargetMethods.includes(property)) {
                   return function() {
+                     let args = [];
                      if (property !== "addCue") {
-                        proxy.callObserverMethod(observerId, property, Array.from(arguments).sort((a, b) => { return a - b; }));
+                        args = Array.from(arguments).sort((a, b) => { return a - b; });
                      }
                      else {
                         const cueObj = { };
                         for (const key in arguments[0]) {
-                           if (typeof arguments[0] !== "function") {
+                           if (typeof arguments[0][key] !== "function") {
                               cueObj[key] = arguments[0][key];
                            }
                         }
-                        proxy.callObserverMethod(observerId, property, [cueObj]);
+                        args.push(cueObj);
                      }
+                     proxy.callObserverMethod(observerId, property, args);
                      return target[property].apply(target, arguments);
                   };
                }

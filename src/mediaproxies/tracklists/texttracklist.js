@@ -75,14 +75,12 @@
    prototype.orb_removeTrackAt = function (index) {
       const p = privates.get(this);
       if (index >= 0 && index < p.length) {
-         this[i].orb_invalidate();
-         for (let i = index; i < p.length - 1; i++) {
+         this[i].orb_finalize();
+         for (let i = index + 1; i < p.length; i++) {
             // TODO: update track indexes and registration with the proxy
-            this[i] = this[i + 1];
+            this[i - 1] = this[i];
          }
-         if (index < p.length) {
-            delete this[p.length - 1];
-         }
+         delete this[--p.length];
          p.eventTarget.dispatchEvent(new TrackEvent("removetrack"));
       }
    }

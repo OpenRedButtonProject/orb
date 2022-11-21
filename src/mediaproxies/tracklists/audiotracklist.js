@@ -4,22 +4,23 @@
  * Licensed under the ORB License that can be found in the LICENSE file at
  * the top level of this repository.
  */
-
 hbbtv.objects.AudioTrackList = (function() {
-   const prototype = {};
+   const AUDIO_TRACK_KEY_PREFIX = "AudioTrack_";
+   const listProto = {};
+   const trackProto = {};
    const privates = new WeakMap();
    const events = ["change", "addtrack", "removetrack"];
    const evtTargetMethods = ["addEventListener", "removeEventListener", "dispatchEvent"];
-   const AUDIO_TRACK_KEY = "AudioTrack_";
+   const trackProps = ["index", "id", "kind", "label", "language", "encoding", "encrypted", "numChannels"];
 
-   Object.defineProperty(prototype, "length", {
+   Object.defineProperty(listProto, "length", {
       get() {
-         return privates.get(this).trackList.length;
+         return privates.get(this).length;
       }
    });
 
    for (const key of events) {
-      Object.defineProperty(prototype, "on" + key, {
+      Object.defineProperty(listProto, "on" + key, {
          set(callback) {
             const p = privates.get(this);
             if (p["on" + key]) {
@@ -49,10 +50,39 @@ hbbtv.objects.AudioTrackList = (function() {
    }
 
    for (const func of evtTargetMethods) {
-      prototype[func] = makeEventTargetMethod(func);
+      listProto[func] = makeEventTargetMethod(func);
    }
 
-   prototype.getTrackById = function(id) {
+   for (const key of trackProps) {
+      Object.defineProperty(trackProto, key, {
+         get() {
+            return privates.get(this).properties[key];
+         }
+      });
+   }
+
+   Object.defineProperty(trackProto, "enabled", {
+      get() {
+         return privates.get(this).properties.enabled;
+      },
+      set(value) {
+         const p = privates.get(this);
+         if (value !== p.properties.enabled) {
+            if (value) {
+               for (let track of p.trackList) {
+                  if (track.enabled && track !== this) {
+                     track.enabled = false;
+                     break;
+                  }
+               }
+            }
+            p.properties.enabled = !!value;
+            p.trackList.dispatchEvent(new Event("change"));
+         }
+      }
+   });
+
+   listProto.getTrackById = function(id) {
       for (const track of this) {
          if (track.id === id.toString()) {
             return track;
@@ -60,106 +90,76 @@ hbbtv.objects.AudioTrackList = (function() {
       }
    }
 
-   prototype[Symbol.iterator] = function*() {
+   listProto[Symbol.iterator] = function*() {
       for (let i = 0; i < this.length; ++i) {
          yield this[i];
       }
    }
 
-   prototype._setTrackList = function (trackList) {
+   listProto.obs_setTrackList = function (trackList) {
       const p = privates.get(this);
-      if (p.trackList) {
-         for (let i = trackList.length; i < p.trackList.length; ++i) {
-            p.proxy.unregisterObserver(AUDIO_TRACK_KEY + i);
-            delete this[i];
-         }
+      for (let i = trackList.length; i < this.length; ++i) {
+         p.proxy.unregisterObserver(AUDIO_TRACK_KEY_PREFIX + i);
+         delete this[i];
       }
-      p.trackList = trackList;
       for (let i = 0; i < trackList.length; ++i) {
-         this[i] = new AudioTrack(p.trackList, i, p.eventTarget, p.proxy);
+         this[i] = makeAudioTrack(this, i, trackList[i]);
       }
+      privates.get(this).length = trackList.length;
    }
 
-   prototype._appendTrack = function (track) {
+   listProto.obs_appendTrack = function (track) {
       const p = privates.get(this);
-      p.trackList.push(track);
-      this[p.trackList.length - 1] = new AudioTrack(p.trackList, p.trackList.length - 1, p.eventTarget, p.proxy);
+      const t = makeAudioTrack(this, p.length, track);
+      this[p.length++] = t;
       p.eventTarget.dispatchEvent(new TrackEvent("addtrack"));
    }
 
-   prototype._removeTrackAtIndex = function (index) {
+   listProto.obs_removeTrackAt = function (index) {
       const p = privates.get(this);
-      if (index >= 0 && index < p.trackList.length) {
-         for (let i = index; i < p.trackList.length - 1; i++) {
-            this[i] = this[i + 1];
+      if (index >= 0 && index < p.length) {
+         // TODO: update all tracks indexes and keys with the iframe proxy
+         for (let i = index + 1; i < p.length; i++) {
+            this[i - 1] = this[i];
          }
-         if (index < p.trackList.length) {
-            delete this[p.trackList.length - 1];
-         }
-         p.trackList.splice(index, 1);
+         delete this[--p.length];
          p.eventTarget.dispatchEvent(new TrackEvent("removetrack"));
       }
    }
 
-   function AudioTrack(allTracks, index, eventTarget, proxy) {
-      proxy.registerObserver(AUDIO_TRACK_KEY + index, this);
-      Object.defineProperty(this, "enabled", {
-         get() {
-            return allTracks[index].enabled;
+   function makeAudioTrack(trackList, index, properties) {
+      const track = Object.create(trackProto);
+      const proxy = privates.get(trackList).proxy;
+      proxy.registerObserver(AUDIO_TRACK_KEY_PREFIX + index, track);
+      privates.set(track, {
+         trackList,
+         properties
+      });
+
+      // We create a new Proxy object which we return in order to avoid ping-pong calls
+      // between the iframe and the main window when the user requests a property update
+      // or a function call.
+      const trackProxy = new Proxy (track, {
+         get: (target, property) => {
+            return target[property];
          },
-         set(value) {
-            if (value !== allTracks[index].enabled) {
-               if (value) {
-                  for (let track of allTracks) {
-                     track.enabled = false;
-                  }
-               }
-               allTracks[index].enabled = value;
-               proxy.updateObserverProperties(AUDIO_TRACK_KEY + index, {enabled: value});
-               eventTarget.dispatchEvent(new Event("change"));
+         set: (target, property, value) => {
+            if (property === "enabled") {
+               proxy.updateObserverProperties(AUDIO_TRACK_KEY_PREFIX + index, {[property]: value});
             }
+            target[property] = value;
+            return true;
          }
       });
-      Object.defineProperty(this, "index", {
-         value: allTracks[index].index,
-         writable: false
-      });
-      Object.defineProperty(this, "id", {
-         value: allTracks[index].id,
-         writable: false
-      });
-      Object.defineProperty(this, "kind", {
-         value: allTracks[index].kind,
-         writable: false
-      });
-      Object.defineProperty(this, "label", {
-         value: allTracks[index].label,
-         writable: false
-      });
-      Object.defineProperty(this, "language", {
-         value: allTracks[index].language,
-         writable: false
-      });
-      Object.defineProperty(this, "numChannels", {
-         value: allTracks[index].numChannels,
-         writable: false
-      });
-      Object.defineProperty(this, "encoding", {
-         value: allTracks[index].encoding,
-         writable: false
-      });
-      Object.defineProperty(this, "encrypted", {
-         value: allTracks[index].encrypted,
-         writable: false
-      });
+      return trackProxy;
    }
 
    function initialise(proxy) {
       const AUDIO_TRACK_LIST_KEY = "AudioTrackList";
       privates.set(this, {
-         trackList: [],
+         length: 0,
          eventTarget: document.createDocumentFragment(),
-         proxy: proxy
+         proxy
       });
       proxy.registerObserver(AUDIO_TRACK_LIST_KEY, this);
       
@@ -191,7 +191,7 @@ hbbtv.objects.AudioTrackList = (function() {
    }
 
    return {
-      prototype: prototype,
+      prototype: listProto,
       initialise: initialise,
    };
 })();
