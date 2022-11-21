@@ -8,6 +8,7 @@
 #pragma once
 
 #include "Module.h"
+#include <interfaces/json/JsonData_ORB.h>
 #include <interfaces/IORB.h>
 #include <memory>
 
@@ -15,6 +16,8 @@
 
 namespace WPEFramework {
 namespace Plugin {
+using namespace JsonData::ORB;
+
 /**
  * @brief orb::ORB
  *
@@ -107,7 +110,7 @@ private:
    void UnregisterAll();
 
    // JsonRpc methods
-   uint32_t SendKeyEvent(Core::JSON::DecUInt16 keyCode, Core::JSON::Boolean& response);
+   uint32_t SendKeyEvent(const SendKeyEventParamsData& params, Core::JSON::Boolean& response);
    uint32_t SetPreferredUILanguage(Core::JSON::String preferredUiLanguage);
 
 private:

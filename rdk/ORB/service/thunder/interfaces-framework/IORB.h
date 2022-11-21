@@ -47,7 +47,8 @@ struct EXTERNAL IORB : virtual public Core::IUnknown
 
       // @brief Event that is fired when a key is pressed
       // @param keyCode: The keyCode that was generated
-      virtual void EventInputKeyGenerated(int keyCode) = 0;
+      // @param keyAction: The keyAction (0 = keyup , 1 = keydown)
+      virtual void EventInputKeyGenerated(int keyCode, uint8_t keyAction) = 0;
 
       virtual ~INotification()
       {
@@ -69,7 +70,7 @@ struct EXTERNAL IORB : virtual public Core::IUnknown
    virtual std::string CreateToken(std::string uri) = 0;
    virtual void NotifyApplicationLoadFailed(std::string url, std::string errorDescription) = 0;
    virtual void NotifyApplicationPageChanged(std::string url) = 0;
-   virtual bool SendKeyEvent(int keyCode) = 0;
+   virtual bool SendKeyEvent(int keyCode, uint8_t keyAction) = 0;
    virtual void LoadDvbUrl(std::string url, int requestId) = 0;
    virtual void SetPreferredUILanguage(std::string preferredUiLanguage) = 0;
 
@@ -87,7 +88,7 @@ struct EXTERNAL IORB : virtual public Core::IUnknown
       unsigned int fileContentLength
       ) = 0;
 
-   virtual void EventInputKeyGenerated(int keyCode) = 0;
+   virtual void EventInputKeyGenerated(int keyCode, uint8_t keyAction) = 0;
 };
 } // Exchange
 } // WPEFramework

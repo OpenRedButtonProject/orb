@@ -306,32 +306,19 @@ void ORBEngine::NotifyApplicationPageChanged(std::string url)
  * This method is intended to serve scenarios where the resident app is the main component
  * responsible for key event handling.
  *
- * @param keyCode The event's JavaScript key code
+ * @param keyCode   The event's JavaScript key code
+ * @param keyAction The event's action (0 = keyup , 1 = keydown)
  *
  * @return True if the key event was generated on the current HbbTV application, otherwise false
  */
-bool ORBEngine::SendKeyEvent(int keyCode)
+bool ORBEngine::SendKeyEvent(int keyCode, uint8_t keyAction)
 {
-   ORB_LOG("keyCode=%d", keyCode);
-   bool response = false;
+   ORB_LOG("keyCode=%d keyAction=%d", keyCode, keyAction);
 
-   // check if there is any application currently running
-   if (m_currentAppId == UINT16_MAX)
-   {
-      ORB_LOG("No app is currently running");
-      return response;
-   }
+   KeyAction action = keyAction == 0 ? KeyAction::KEY_ACTION_UP : KeyAction::KEY_ACTION_DOWN;
 
-   uint16_t mask = m_applicationManager->GetKeySetMask(m_currentAppId);
-   uint16_t keyEventCode = 0;
+   bool consumed = GetPlatformEventHandler()->OnInputKeyGenerated(keyCode, action);
 
-   keyEventCode = m_orbPlatform->Platform_ResolveKeyEvent(keyCode);
-
-   if (mask & keyEventCode)
-   {
-      response = m_orbPlatform->Application_SendKeyEvent(static_cast<int>(keyCode));
-   }
-
-   return response;
+   return consumed;
 }
 } // namespace orb

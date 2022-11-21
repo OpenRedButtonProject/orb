@@ -44,8 +44,9 @@ public:
    /**
     * Trigger the InputKeyGenerated event.
     *
-    * @param keyCode The JavaScript key code
+    * @param keyCode   The JavaScript key code
+    * @param keyAction The JavaScript key action (0 = keyup , 1 = keydown)
     */
-   virtual void OnInputKeyGenerated(int keyCode) = 0;
+   virtual void OnInputKeyGenerated(int keyCode, uint8_t keyAction) = 0;
 }; // class ORBEventListener
 } // namespace orb
