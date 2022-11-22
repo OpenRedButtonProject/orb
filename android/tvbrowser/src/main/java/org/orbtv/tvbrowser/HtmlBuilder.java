@@ -9,6 +9,7 @@ package org.orbtv.tvbrowser;
 
 import android.content.res.AssetManager;
 import android.net.Uri;
+import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -20,8 +21,11 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.Arrays;
 
 public class HtmlBuilder {
+   private static final String TAG = "Orb/HtmlBuilder"; 
+   
    AssetManager mAssetManager;
    String mHbbtvInjection;
    byte[] mHbbtvInjectionUtf8;
@@ -122,7 +126,8 @@ public class HtmlBuilder {
    private String getPlayerPage() {
       StringBuilder builder = new StringBuilder();
       try {
-         appendAsset(builder, "playerpage.html");
+         Log.i(TAG,"Found Assets: " + Arrays.toString(mAssetManager.list("polyfill")));
+         appendAsset(builder, "polyfill/playerpage.html");
       } catch (IOException e) {
          e.printStackTrace();
          return "";
