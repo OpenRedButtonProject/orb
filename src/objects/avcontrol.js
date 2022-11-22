@@ -758,7 +758,7 @@ hbbtv.objects.AVControl = (function() {
          priv.notifyTimeout = null;
          try {
             hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(true);
-            priv.videoWrapper.hidden = false;
+            priv.videoElement.hidden = false;
          } catch (e) {
             console.warn("A/V Control: " + e);
          }
@@ -768,7 +768,7 @@ hbbtv.objects.AVControl = (function() {
             console.log("A/V control: AV NOT in use (notification dispatched)");
             try {
                hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
-               priv.videoWrapper.hidden = true;
+               priv.videoElement.hidden = true;
             } catch (e) {
                console.warn("A/V Control: " + e);
             }
@@ -931,6 +931,8 @@ hbbtv.objects.AVControl = (function() {
       };
 
       videoElement.addEventListener("loadeddata", () => {
+         if (!videoElement.src) { return };
+
          // we add here the onpause handler as there will be no way to be added
          // in case the user changes the media source when we are in rewind mode
          videoElement.onpause = priv.onPauseHandler;

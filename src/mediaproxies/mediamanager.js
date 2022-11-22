@@ -135,7 +135,7 @@ hbbtv.mediaManager = (function() {
       });
 
       HTMLMediaElement.prototype.setAttribute = function(name, value) {
-         if (name === "src") {
+         if (name === "src" && !this.__objectType) {
             const thiz = this;
             console.log("MediaManager: intercepted src manipulation. new src: " + value);
             upgradeObject.call(this, value).catch(e => upgradeToFallback(thiz, e));
