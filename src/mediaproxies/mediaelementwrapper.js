@@ -13,7 +13,7 @@
    const MEDIA_PROXY_ID = "HTMLMediaElement";
    const methods = ["pause","load","canPlayType","captureStream","fastSeek"];
    const asyncMethods = ["setMediaKeys","setSinkId"];
-   const props = ["src","autoplay","controls","currentTime","playbackRate","volume","muted","loop","defaultMuted","crossOrigin","controlsList",
+   const props = ["autoplay","controls","currentTime","playbackRate","volume","muted","loop","defaultMuted","crossOrigin","controlsList",
                   "defaultPlaybackRate","disableRemotePlayback","preservesPitch","srcObject"];
    const roProps = ["textTracks","audioTracks","videoTracks","paused","ended","currentSrc","buffered","error","duration","networkState","readyState","seekable",
                   "HAVE_CURRENT_DATA","HAVE_ENOUGH_DATA","HAVE_FUTURE_DATA","HAVE_METADATA","HAVE_NOTHING","NETWORK_EMPTY","NETWORK_IDLE","NETWORK_LOADING",
@@ -44,7 +44,7 @@
       const p = privates.get(this);
       if (props.includes(name)) {
          delete p.videoDummy[name];
-         p.proxy.callObserverMethod("removeAttribute", [name]);
+         p.proxy.callObserverMethod(MEDIA_PROXY_ID, "removeAttribute", [name]);
       }
       else {
          HTMLIFrameElement.prototype.removeAttribute.apply(this, arguments);
@@ -181,14 +181,7 @@
             const p = privates.get(this);
             if (p.videoDummy[key] !== value) {
                p.videoDummy[key] = value;
-               if (key === "src" && value) {
-                  console.log("MediaElementWrapper: Setting iframe src property to '" + value + "'.");
-                  resetProxySession.call(this);
-                  srcOwnProperty.set.call(this, value + (value.includes("?") ? "&" : "?") + ORB_PLAYER_MAGIC_SUFFIX);
-               }
-               else {
-                  p.proxy.updateObserverProperties(MEDIA_PROXY_ID, {[key]: value});
-               }
+               p.proxy.updateObserverProperties(MEDIA_PROXY_ID, {[key]: value});
             }
          },
          get() {
@@ -238,15 +231,38 @@
       }
    });
 
+   Object.defineProperty(prototype, "src", {
+      set(value) {
+         const p = privates.get(this);
+         if (p.videoDummy.src !== value) {
+            p.videoDummy.src = value;
+            if (value) {
+               console.log("MediaElementWrapper: Setting iframe src property to '" + value + "'.");
+               resetProxySession.call(this);
+               srcOwnProperty.set.call(this, value + (value.includes("?") ? "&" : "?") + ORB_PLAYER_MAGIC_SUFFIX);
+            }
+            else {
+               p.proxy.updateObserverProperties(MEDIA_PROXY_ID, {src: value});
+            }
+         }
+      },
+      get() {
+         return privates.get(this).videoDummy.src;
+      }
+   });
+
+   // mandatory step as setAttribute examines the props array
+   // before setting a value to an attribute, and we need to be able
+   // to change the src property that way as well
+   props.push("src");
+
    return {
       initialise: initialise
    };
 })();
 
 hbbtv.objects.createMediaElementWrapper = function() {
-   // Create iframe element with Document.prototype.createElement as
-   // document.createElement is overrided in object manager
-   const element = Document.prototype.createElement.call(document, "iframe");
+   const element = document.createElement("iframe");
    hbbtv.objects.MediaElementWrapper.initialise.call(element);
    return element;
 };

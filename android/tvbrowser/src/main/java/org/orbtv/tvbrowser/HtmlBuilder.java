@@ -109,7 +109,7 @@ public class HtmlBuilder {
       StringBuilder builder = new StringBuilder();
       builder.append("<script type=\"text/javascript\">\n//<![CDATA[\n");
       try {
-         appendAsset(builder, "polyfill/mediamanager.js");
+         appendAsset(builder, "polyfill/iframe.js");
          appendAsset(builder, "polyfill/dash.all.min.js");
       } catch (IOException e) {
          e.printStackTrace();

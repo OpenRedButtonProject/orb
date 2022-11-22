@@ -54,19 +54,9 @@ hbbtv.mediaManager = (function() {
       return undefined;
    }
 
-   function switchObjectHandler(nextHandler, src) {
-      let objType = this.__objectType;
-      if (objType) {
-         if (objectHandlers[objType] !== nextHandler) {
-            this.__objectType = nextHandler.getName();
-            nextHandler.initialise(this, src);
-         } else {
-            nextHandler.onSourceAboutToChange(this, src);
-         }
-      } else {
-         this.__objectType = nextHandler.getName();
-         nextHandler.initialise(this, src);
-      }
+   function setObjectHandler(nextHandler, src) {
+      this.__objectType = nextHandler.getName();
+      nextHandler.initialise(this, src);
    }
 
    function upgradeObject(src) {
@@ -87,7 +77,7 @@ hbbtv.mediaManager = (function() {
          console.log("MediaManager: Checking extension support for ." + ext + "...");
          for (const key in objectHandlers) {
             if (objectHandlers[key].getSupportedExtensions().indexOf(ext) >= 0) {
-               switchObjectHandler.call(object, objectHandlers[key], src);
+               setObjectHandler.call(object, objectHandlers[key], src);
                return Promise.resolve();
             }
          }
@@ -113,7 +103,7 @@ hbbtv.mediaManager = (function() {
                console.log("MediaManager: Requested content of type " + contentType);
                const nextHandler = getHandlerByContentType(contentType);
                if (nextHandler) {
-                  switchObjectHandler.call(object, nextHandler, src);
+                  setObjectHandler.call(object, nextHandler, src);
                   resolve();
                } else {
                   reject("Failed to find a registered playback proxy for the content type " + contentType);
@@ -128,17 +118,8 @@ hbbtv.mediaManager = (function() {
    function upgradeToFallback(node, err) {
       console.warn("MediaManager: Failed to upgrade object. Fallback to native proxy. Error: " + err);
       if (fallbackHandlers) {
-         let type = node.__objectType;
-         if (type) {
-            const handler = getHandlerByContentType(type);
-            if (handler !== fallbackHandlers) {
-               node.__objectType = fallbackHandlers.getName();
-               fallbackHandlers.initialise(node, node.src);
-            }
-         } else {
-            node.__objectType = fallbackHandlers.getName();
-            fallbackHandlers.initialise(node, node.src);
-         }
+         node.__objectType = fallbackHandlers.getName();
+         fallbackHandlers.initialise(node, node.src);
       }
    }
 
@@ -152,23 +133,6 @@ hbbtv.mediaManager = (function() {
             return ownProperty.get.call(this);
          }
       });
-
-      HTMLMediaElement.prototype.removeAttribute = function(name) {
-         if (this.getAttribute(name)) {
-            Element.prototype.removeAttribute.apply(this, arguments);
-            if (name === "src") {
-               console.log("MediaManager: removing src attribute.");
-               let type = this.__objectType;
-               if (type) {
-                  const handler = getHandlerByContentType(type) || fallbackHandlers;
-                  handler.onSourceAboutToChange(this, null);
-               } else {
-                  this.__objectType = fallbackHandlers.getName();
-                  fallbackHandlers.initialise(this, undefined);
-               }
-            }
-         }
-      };
 
       HTMLMediaElement.prototype.setAttribute = function(name, value) {
          if (name === "src") {

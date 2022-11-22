@@ -33,20 +33,6 @@ hbbtv.objects.NativeProxy = (function() {
       return undefined;
    };
 
-   prototype.orb_invalidate = function() {
-      const p = privates.get(this);
-      if (p) {
-         this.textTracks.removeEventListener("change", p.onTextTrackChange);
-         this.removeEventListener("loadedmetadata", p.onLoadedMetadata, true);
-         this.removeEventListener("error", p.onError, true);
-         if (p.textTracks) {
-            p.textTracks.deleteAllTextTracks();
-         }
-         console.log("NativeProxy: Cleaning up...");
-         privates.delete(this);
-      }
-   };
-
    function onLoadedMetadata() {
       let promises = [];
       const thiz = this;
@@ -204,29 +190,22 @@ hbbtv.objects.NativeProxy = (function() {
    }
 
    function initialise(src) {
-      if (!privates.get(this)) {
-         if (this.orb_invalidate) {
-            this.orb_invalidate();
-         }
-         Object.setPrototypeOf(this, prototype);
-         privates.set(this, {});
-         const p = privates.get(this);
-         p.onTextTrackChange = onTextTrackChange.bind(this);
-         p.onLoadedMetadata = onLoadedMetadata.bind(this);
-         p.onError = onError.bind(this);
-         p.videoModel = orb_dashjs.VideoModel(window).getInstance();
-         p.videoModel.setElement(this);
-         p.videoModel.setTTMLRenderingDiv(document.getElementById("orb_subsPH"));
-         p.ttmlParser = orb_dashjs.TTMLParser(window).getInstance();
+      Object.setPrototypeOf(this, prototype);
+      privates.set(this, {});
+      const p = privates.get(this);
+      p.onTextTrackChange = onTextTrackChange.bind(this);
+      p.onLoadedMetadata = onLoadedMetadata.bind(this);
+      p.onError = onError.bind(this);
+      p.videoModel = orb_dashjs.VideoModel(window).getInstance();
+      p.videoModel.setElement(this);
+      p.videoModel.setTTMLRenderingDiv(document.getElementById("orb_subsPH"));
+      p.ttmlParser = orb_dashjs.TTMLParser(window).getInstance();
 
-         this.textTracks.addEventListener("change", p.onTextTrackChange);
-         this.addEventListener("loadedmetadata", p.onLoadedMetadata, true);
-         this.addEventListener("error", p.onError, true);
+      this.textTracks.addEventListener("change", p.onTextTrackChange);
+      this.addEventListener("loadedmetadata", p.onLoadedMetadata, true);
+      this.addEventListener("error", p.onError, true);
 
-         console.log("NativeProxy: Initialised NativeProxy.");
-      } else {
-         console.log("NativeProxy: Already initialised. Skipping...");
-      }
+      console.log("NativeProxy: Initialised NativeProxy.");
    }
 
    return {
@@ -238,7 +217,6 @@ hbbtv.mediaManager.registerObject({
    initialise: function(object, src) {
       hbbtv.objects.NativeProxy.initialise.call(object, src);
    },
-   onSourceAboutToChange: function(object, src) {},
    getName: function() {
       return "native";
    },
