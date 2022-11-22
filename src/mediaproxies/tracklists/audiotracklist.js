@@ -32,8 +32,7 @@ hbbtv.objects.AudioTrackList = (function() {
                if (callback) {
                   p.eventTarget.addEventListener(key, callback);
                }
-            }
-            else {
+            } else {
                p["on" + key] = null;
             }
          },
@@ -96,7 +95,7 @@ hbbtv.objects.AudioTrackList = (function() {
       }
    }
 
-   listProto.obs_setTrackList = function (trackList) {
+   listProto.obs_setTrackList = function(trackList) {
       const p = privates.get(this);
       for (let i = trackList.length; i < this.length; ++i) {
          p.proxy.unregisterObserver(AUDIO_TRACK_KEY_PREFIX + i);
@@ -108,14 +107,14 @@ hbbtv.objects.AudioTrackList = (function() {
       privates.get(this).length = trackList.length;
    }
 
-   listProto.obs_appendTrack = function (track) {
+   listProto.obs_appendTrack = function(track) {
       const p = privates.get(this);
       const t = makeAudioTrack(this, p.length, track);
       this[p.length++] = t;
       p.eventTarget.dispatchEvent(new TrackEvent("addtrack"));
    }
 
-   listProto.obs_removeTrackAt = function (index) {
+   listProto.obs_removeTrackAt = function(index) {
       const p = privates.get(this);
       if (index >= 0 && index < p.length) {
          // TODO: update all tracks indexes and keys with the iframe proxy
@@ -139,13 +138,15 @@ hbbtv.objects.AudioTrackList = (function() {
       // We create a new Proxy object which we return in order to avoid ping-pong calls
       // between the iframe and the main window when the user requests a property update
       // or a function call.
-      const trackProxy = new Proxy (track, {
+      const trackProxy = new Proxy(track, {
          get: (target, property) => {
             return target[property];
          },
          set: (target, property, value) => {
             if (property === "enabled") {
-               proxy.updateObserverProperties(AUDIO_TRACK_KEY_PREFIX + index, {[property]: value});
+               proxy.updateObserverProperties(AUDIO_TRACK_KEY_PREFIX + index, {
+                  [property]: value
+               });
             }
             target[property] = value;
             return true;
@@ -162,16 +163,18 @@ hbbtv.objects.AudioTrackList = (function() {
          proxy
       });
       proxy.registerObserver(AUDIO_TRACK_LIST_KEY, this);
-      
+
       // We create a new Proxy object which we return in order to avoid ping-pong calls
       // between the iframe and the main window when the user requests a property update
       // or a function call.
-      const tracksProxy = new Proxy (this, {
+      const tracksProxy = new Proxy(this, {
          get: (target, property) => {
             if (typeof target[property] === "function") {
                if (!evtTargetMethods.includes(property)) {
                   return function() {
-                     proxy.callObserverMethod(AUDIO_TRACK_LIST_KEY, property, Array.from(arguments).sort((a, b) => { return a - b; }));
+                     proxy.callObserverMethod(AUDIO_TRACK_LIST_KEY, property, Array.from(arguments).sort((a, b) => {
+                        return a - b;
+                     }));
                      return target[property].apply(target, arguments);
                   };
                }
@@ -181,7 +184,9 @@ hbbtv.objects.AudioTrackList = (function() {
          },
          set: (target, property, value) => {
             if (typeof target[property] !== "function") {
-               proxy.updateObserverProperties(AUDIO_TRACK_LIST_KEY, {[property]: value});
+               proxy.updateObserverProperties(AUDIO_TRACK_LIST_KEY, {
+                  [property]: value
+               });
             }
             target[property] = value;
             return true;

@@ -857,7 +857,7 @@ hbbtv.objects.AVControl = (function() {
 
       // Create a new video element that will be used as a playback backend 'video/mp4' objects.
       let videoElement = hbbtv.objects.createMediaElementWrapper();
-      
+
       // set video background to #000 to simulate letterbox and pillarbox effect
       // when the video element aspect ratio is different than the video source
       // aspect ratio

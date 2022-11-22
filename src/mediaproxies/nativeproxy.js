@@ -101,7 +101,7 @@ hbbtv.objects.NativeProxy = (function() {
          .catch(e => {
             console.warn("NativeProxy: Failed to populate texttracks. Error:", e)
          });
-      
+
       this.videoTracks.obs_setTrackList([{
          selected: true,
          index: 0,
@@ -145,8 +145,7 @@ hbbtv.objects.NativeProxy = (function() {
                   data.code = 2;
                   break;
             }
-         }
-         else {
+         } else {
             // normally, errors should be the distinguished by checking the value of
             // videoElement.error.code, but since its value is mostly 4, the only way
             // to differentiate the error events is by the videoElement.error.message value

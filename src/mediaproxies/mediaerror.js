@@ -20,14 +20,17 @@ hbbtv.objects.MediaError = (function() {
 
    for (const key of roProps) {
       Object.defineProperty(prototype, key, {
-         get () {
+         get() {
             return privates.get(this)[key];
          }
       });
    }
 
    function initialise(code, message) {
-      privates.set(this, {code, message});
+      privates.set(this, {
+         code,
+         message
+      });
    }
 
    return {

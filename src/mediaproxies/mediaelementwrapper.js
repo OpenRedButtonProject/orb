@@ -5,22 +5,25 @@
  * the top level of this repository.
  */
 
- hbbtv.objects.MediaElementWrapper = (function() {
+hbbtv.objects.MediaElementWrapper = (function() {
    const prototype = Object.create(HTMLIFrameElement.prototype);
    const privates = new WeakMap();
    const srcOwnProperty = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, "src");
    const ORB_PLAYER_MAGIC_SUFFIX = "orb_player_magic_suffix";
    const MEDIA_PROXY_ID = "HTMLMediaElement";
-   const methods = ["pause","load","canPlayType","captureStream","fastSeek"];
-   const asyncMethods = ["setMediaKeys","setSinkId"];
-   const props = ["autoplay","controls","currentTime","playbackRate","volume","muted","loop","defaultMuted","crossOrigin","controlsList",
-                  "defaultPlaybackRate","disableRemotePlayback","preservesPitch","srcObject"];
-   const roProps = ["textTracks","audioTracks","videoTracks","paused","ended","currentSrc","buffered","error","duration","networkState","readyState","seekable",
-                  "HAVE_CURRENT_DATA","HAVE_ENOUGH_DATA","HAVE_FUTURE_DATA","HAVE_METADATA","HAVE_NOTHING","NETWORK_EMPTY","NETWORK_IDLE","NETWORK_LOADING",
-                  "NETWORK_NO_SOURCE"];
-   const events = ["loadstart","progress","suspend","abort","error","emptied","stalled","loadedmetadata","loadeddata","canplay",
-                  "canplaythrough","playing","waiting","seeking","seeked","ended","durationchange","timeupdate","play","pause",
-                  "ratechange","resize","volumechange"];
+   const methods = ["pause", "load", "canPlayType", "captureStream", "fastSeek"];
+   const asyncMethods = ["setMediaKeys", "setSinkId"];
+   const props = ["autoplay", "controls", "currentTime", "playbackRate", "volume", "muted", "loop", "defaultMuted", "crossOrigin", "controlsList",
+      "defaultPlaybackRate", "disableRemotePlayback", "preservesPitch", "srcObject"
+   ];
+   const roProps = ["textTracks", "audioTracks", "videoTracks", "paused", "ended", "currentSrc", "buffered", "error", "duration", "networkState", "readyState", "seekable",
+      "HAVE_CURRENT_DATA", "HAVE_ENOUGH_DATA", "HAVE_FUTURE_DATA", "HAVE_METADATA", "HAVE_NOTHING", "NETWORK_EMPTY", "NETWORK_IDLE", "NETWORK_LOADING",
+      "NETWORK_NO_SOURCE"
+   ];
+   const events = ["loadstart", "progress", "suspend", "abort", "error", "emptied", "stalled", "loadedmetadata", "loadeddata", "canplay",
+      "canplaythrough", "playing", "waiting", "seeking", "seeked", "ended", "durationchange", "timeupdate", "play", "pause",
+      "ratechange", "resize", "volumechange"
+   ];
    let lastMediaElement = undefined;
 
    prototype.getAttribute = function(name) {
@@ -34,8 +37,7 @@
       const p = privates.get(this);
       if (props.includes(name)) {
          this[name] = value;
-      }
-      else {
+      } else {
          HTMLIFrameElement.prototype.setAttribute.call(this, name, value);
       }
    };
@@ -45,8 +47,7 @@
       if (props.includes(name)) {
          delete p.videoDummy[name];
          p.proxy.callObserverMethod(MEDIA_PROXY_ID, "removeAttribute", [name]);
-      }
-      else {
+      } else {
          HTMLIFrameElement.prototype.removeAttribute.apply(this, arguments);
       }
    };
@@ -64,24 +65,29 @@
       }
       return privates.get(this).proxy.callAsyncObserverMethod(MEDIA_PROXY_ID, "play");
    };
-   
+
    function makeMethod(name) {
-      return function () {
-         privates.get(this).proxy.callObserverMethod(MEDIA_PROXY_ID, name, Array.from(arguments).sort((a, b) => { return a - b; }));
+      return function() {
+         privates.get(this).proxy.callObserverMethod(MEDIA_PROXY_ID, name, Array.from(arguments).sort((a, b) => {
+            return a - b;
+         }));
       }
    }
 
    function makeAsyncMethod(name) {
-      return function () {
-         return privates.get(this).proxy.callAsyncObserverMethod(MEDIA_PROXY_ID, name, Array.from(arguments).sort((a, b) => { return a - b; }));
+      return function() {
+         return privates.get(this).proxy.callAsyncObserverMethod(MEDIA_PROXY_ID, name, Array.from(arguments).sort((a, b) => {
+            return a - b;
+         }));
       }
    }
 
    function resetProxySession() {
-      const persistentProps = ["src","autoplay","controls","playbackRate","volume","muted","loop","defaultMuted",
-                              "crossOrigin","controlsList","defaultPlaybackRate","disableRemotePlayback","preservesPitch"];
+      const persistentProps = ["src", "autoplay", "controls", "playbackRate", "volume", "muted", "loop", "defaultMuted",
+         "crossOrigin", "controlsList", "defaultPlaybackRate", "disableRemotePlayback", "preservesPitch"
+      ];
       const p = privates.get(this);
-      const properties = { };
+      const properties = {};
       p.proxy.invalidate();
       for (const key of persistentProps) {
          if (p.videoDummy[key] !== undefined) {
@@ -114,7 +120,7 @@
       this.dispatchEvent = function(e) {
          parent.dispatchEvent(e);
       };
-      this.addTextTrack = function () {
+      this.addTextTrack = function() {
          this.textTracks._addTextTrack.apply(this.textTracks, arguments);
       };
    }
@@ -139,10 +145,12 @@
                console.log("MediaElementWrapper: initialising iframe with src", this.src + "...");
 
                p.proxy.initiateHandshake(this.contentWindow)
-               .then(() => { console.log("MediaElementWrapper: iframe proxy handshake completed successfully");});
+                  .then(() => {
+                     console.log("MediaElementWrapper: iframe proxy handshake completed successfully");
+                  });
             }
          });
-         
+
          const observer = new MutationObserver(function(mutationsList) {
             for (const mutation of mutationsList) {
                for (const node of mutation.addedNodes) {
@@ -151,29 +159,30 @@
                   }
                }
             }
-            p.proxy.updateObserverProperties(MEDIA_PROXY_ID, {innerHTML: p.divDummy.innerHTML});
+            p.proxy.updateObserverProperties(MEDIA_PROXY_ID, {
+               innerHTML: p.divDummy.innerHTML
+            });
          });
-   
+
          observer.observe(p.divDummy, {
             childList: true
          });
-         
+
          console.log("MediaElementWrapper: initialised");
-      }
-      else {
+      } else {
          console.log("MediaElementWrapper: already initialised");
       }
    }
-   
+
    // create the HTMLMediaElement's proxy methods
    for (const key of methods) {
       prototype[key] = makeMethod(key);
    }
-   
+
    for (const key of asyncMethods) {
       prototype[key] = makeAsyncMethod(key);
    }
-   
+
    // create the HTMLMediaElement's proxy properties
    for (const key of props) {
       Object.defineProperty(prototype, key, {
@@ -181,7 +190,9 @@
             const p = privates.get(this);
             if (p.videoDummy[key] !== value) {
                p.videoDummy[key] = value;
-               p.proxy.updateObserverProperties(MEDIA_PROXY_ID, {[key]: value});
+               p.proxy.updateObserverProperties(MEDIA_PROXY_ID, {
+                  [key]: value
+               });
             }
          },
          get() {
@@ -189,7 +200,7 @@
          }
       });
    }
-   
+
    for (const key of roProps) {
       Object.defineProperty(prototype, key, {
          get() {
@@ -211,8 +222,7 @@
                if (callback) {
                   this.addEventListener(key, callback);
                }
-            }
-            else {
+            } else {
                p["on" + key] = null;
             }
          },
@@ -240,9 +250,10 @@
                console.log("MediaElementWrapper: Setting iframe src property to '" + value + "'.");
                resetProxySession.call(this);
                srcOwnProperty.set.call(this, value + (value.includes("?") ? "&" : "?") + ORB_PLAYER_MAGIC_SUFFIX);
-            }
-            else {
-               p.proxy.updateObserverProperties(MEDIA_PROXY_ID, {src: value});
+            } else {
+               p.proxy.updateObserverProperties(MEDIA_PROXY_ID, {
+                  src: value
+               });
             }
          }
       },

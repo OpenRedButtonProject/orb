@@ -5,7 +5,7 @@
  * the top level of this repository.
  */
 
- hbbtv.objects.DashProxy = (function() {
+hbbtv.objects.DashProxy = (function() {
    const prototype = Object.create(HTMLMediaElement.prototype);
    const privates = new WeakMap();
    const PARENTAL_CONTROL_EVENT_SCHEMES = [
@@ -511,7 +511,7 @@
    }
 
    function makeStreamInfoCallback(context, eventName) {
-      return function (e) {
+      return function(e) {
          let evt = new Event(eventName);
          Object.assign(evt, {
             data: (e.streamInfo ? e.streamInfo : e.toStreamInfo)
@@ -594,9 +594,9 @@
             },
             errors: {
                recoverAttempts: {
-                     mediaErrorDecode: 1
-                  }
+                  mediaErrorDecode: 1
                }
+            }
          });
          p.player.initialize(this, src, false);
          p.player.on('error', p.onError);

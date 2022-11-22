@@ -15,7 +15,7 @@ hbbtv.mediaManager = (function() {
       addMutationIntercept();
 
       const __play = HTMLMediaElement.prototype.play;
- 
+
       // we override play() for the DASH playback as we end up receiving
       // Uncaught (in promise) DOMException: The play() request was interrupted by a new load request.
       // when calling play() immediately after setting the src attribute
@@ -147,7 +147,7 @@ hbbtv.mediaManager = (function() {
    function registerObservers(media) {
       const MEDIA_PROXY_ID = "HTMLMediaElement";
       mediaProxy.registerObserver(MEDIA_PROXY_ID, media);
-      
+
       const audioTracks = hbbtv.objects.createAudioTrackList(mediaProxy);
       const videoTracks = hbbtv.objects.createVideoTrackList(mediaProxy);
       const textTracks = hbbtv.objects.createTextTrackList(media, mediaProxy);
@@ -167,15 +167,16 @@ hbbtv.mediaManager = (function() {
 
       const genericEvents = [
          "loadstart", "progress", "suspend", "abort", "error", "emptied", "stalled", "canplay",
-         "canplaythrough", "playing", "waiting", "seeking", "seeked", "resize","__obs_onerror__"
+         "canplaythrough", "playing", "waiting", "seeking", "seeked", "resize", "__obs_onerror__"
       ];
       const genericHandler = (e) => {
          mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
       };
-      const propsUpdateCallback = function (e) {
-         const props = { };
-         const keys = ["currentTime","playbackRate","volume","muted","loop","defaultMuted","defaultPlaybackRate","disableRemotePlayback",
-                        "preservesPitch","paused","ended","currentSrc","error","duration","networkState","readyState"];
+      const propsUpdateCallback = function(e) {
+         const props = {};
+         const keys = ["currentTime", "playbackRate", "volume", "muted", "loop", "defaultMuted", "defaultPlaybackRate", "disableRemotePlayback",
+            "preservesPitch", "paused", "ended", "currentSrc", "error", "duration", "networkState", "readyState"
+         ];
          for (const key of keys) {
             props[key] = media[key];
          }
@@ -184,8 +185,10 @@ hbbtv.mediaManager = (function() {
          console.log("iframe: update properties", props);
       };
       const makeCallback = function(property) {
-         return function (e) {
-            mediaProxy.updateObserverProperties(MEDIA_PROXY_ID, {[property]: media[property]});
+         return function(e) {
+            mediaProxy.updateObserverProperties(MEDIA_PROXY_ID, {
+               [property]: media[property]
+            });
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
          }
       };
@@ -204,13 +207,13 @@ hbbtv.mediaManager = (function() {
          // will be used to prevent the event from being dispatched too frequently
          // from the iframe to the main window, in order to improve performance
          let counter = 0;
-         return function (e) {
+         return function(e) {
             if (counter++ % 5 === 0) {
                cb(e);
             }
          };
       })(), true);
-      media.addTextTrack = function () {
+      media.addTextTrack = function() {
          return textTracks.orb_addTextTrack.apply(textTracks, arguments);
       };
    }
@@ -238,4 +241,3 @@ hbbtv.mediaManager = (function() {
       registerObject: registerObject
    };
 })();
-

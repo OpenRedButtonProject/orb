@@ -58,8 +58,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
          }
          if (canSeek) {
             checkMediaSync.call(this, targetTime);
-         }
-         else if (p.canSyncWithMaster) {
+         } else if (p.canSyncWithMaster) {
             p.canSyncWithMaster = false;
             dispatchErrorEvent(p.eventTarget, 1); // insufficient buffer size (transient)
          }
@@ -75,7 +74,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
             console.log(contentTime, p.mediaObject.currentTime);
             if (p.mediaObject.paused) {
                p.moPrototype.play.call(p.mediaObject);
-            } 
+            }
             const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
             if (ownProperty) {
                ownProperty.set.call(p.mediaObject, p.masterMediaObserver.timelineSpeedMultiplier);
@@ -157,7 +156,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
                const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "currentTime");
                return ownProperty ? ownProperty.get.call(mediaObject) : undefined;
             },
-            set (value) {
+            set(value) {
                dispatchErrorEvent9();
                const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "currentTime");
                if (ownProperty) {
@@ -170,7 +169,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
                const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
                return ownProperty ? ownProperty.get.call(mediaObject) : undefined;
             },
-            set (value) {
+            set(value) {
                dispatchErrorEvent9();
                const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
                if (ownProperty) {

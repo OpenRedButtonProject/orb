@@ -4,7 +4,7 @@
  * Licensed under the ORB License that can be found in the LICENSE file at
  * the top level of this repository.
  */
- hbbtv.objects.TextTrackCueList = (function() {
+hbbtv.objects.TextTrackCueList = (function() {
    const prototype = Object.create(TextTrackCueList.prototype);
    const privates = new WeakMap();
 
@@ -28,7 +28,7 @@
       }
    };
 
-   prototype.orb_addCue = function (cue) {
+   prototype.orb_addCue = function(cue) {
       for (const c of this) {
          if (cue === c) {
             return;
@@ -39,14 +39,13 @@
       ++p.length;
    };
 
-   prototype.orb_removeCue = function (cue) {
+   prototype.orb_removeCue = function(cue) {
       const p = privates.get(this);
       let found = false;
       for (let i = 0; i < p.length; ++i) {
          if (found) {
             this[i - 1] = this[i];
-         }
-         else if (cue === this[i]){
+         } else if (cue === this[i]) {
             found = true;
          }
       }
@@ -55,7 +54,7 @@
       }
    };
 
-   prototype.orb_removeCueAt = function (index) {
+   prototype.orb_removeCueAt = function(index) {
       const p = privates.get(this);
       for (let i = index + 1; i < p.length; ++i) {
          this[i - 1] = this[i];
@@ -65,7 +64,7 @@
       }
    };
 
-   prototype.orb_indexOf = function (cue) {
+   prototype.orb_indexOf = function(cue) {
       for (let i = 0; i < this.length; ++i) {
          if (cue === this[i]) {
             return i;

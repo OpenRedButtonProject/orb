@@ -4,7 +4,7 @@
  * Licensed under the ORB License that can be found in the LICENSE file at
  * the top level of this repository.
  */
- hbbtv.objects.TextTrack = (function() {
+hbbtv.objects.TextTrack = (function() {
    const prototype = Object.create(TextTrack.prototype);
    const privates = new WeakMap();
    const events = ["cuechange"];
@@ -28,8 +28,7 @@
                if (callback) {
                   p.eventTarget.addEventListener(key, callback);
                }
-            }
-            else {
+            } else {
                p["on" + key] = null;
             }
          },
@@ -71,8 +70,7 @@
                }
                p.onTimeUpdate();
                p.mediaElement.addEventListener("timeupdate", p.onTimeUpdate, true);
-            }
-            else {
+            } else {
                p.properties.activeCues.orb_clear();
                p.mediaElement.removeEventListener("timeupdate", p.onTimeUpdate, true);
             }
@@ -102,23 +100,23 @@
          EventTarget.prototype[name].apply(privates.get(this).eventTarget, arguments);
       };
    }
-   
+
    for (const func of evtTargetMethods) {
       prototype[func] = makeEventTargetMethod(func);
    }
 
-   prototype.addCue = function (cue) {
+   prototype.addCue = function(cue) {
       const p = privates.get(this);
       p.properties.cues.orb_addCue(cue);
    };
-   
-   prototype.removeCue = function (cue) {
+
+   prototype.removeCue = function(cue) {
       const p = privates.get(this);
       p.properties.cues.orb_removeCue(cue);
       p.properties.activeCues.orb_removeCue(cue);
    };
 
-   prototype.orb_finalize = function () {
+   prototype.orb_finalize = function() {
       const p = privates.get(this);
       p.proxy.unregisterObserver(p.observerId);
       p.activeCues.orb_clear();
@@ -143,21 +141,22 @@
       };
 
       proxy.registerObserver(observerId, this);
-      
+
       // We create a new Proxy object which we return in order to avoid ping-pong calls
       // between the iframe and the main window when the user requests a property update
       // or a function call.
-      const trackProxy = new Proxy (this, {
+      const trackProxy = new Proxy(this, {
          get: (target, property) => {
             if (typeof target[property] === "function") {
                if (!evtTargetMethods.includes(property)) {
                   return function() {
                      let args = [];
                      if (property !== "addCue") {
-                        args = Array.from(arguments).sort((a, b) => { return a - b; });
-                     }
-                     else {
-                        const cueObj = { };
+                        args = Array.from(arguments).sort((a, b) => {
+                           return a - b;
+                        });
+                     } else {
+                        const cueObj = {};
                         for (const key in arguments[0]) {
                            if (typeof arguments[0][key] !== "function") {
                               cueObj[key] = arguments[0][key];
@@ -175,7 +174,9 @@
          },
          set: (target, property, value) => {
             if (typeof target[property] !== "function") {
-               proxy.updateObserverProperties(observerId, {[property]: value});
+               proxy.updateObserverProperties(observerId, {
+                  [property]: value
+               });
             }
             target[property] = value;
             return true;

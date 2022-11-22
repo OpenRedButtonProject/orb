@@ -147,7 +147,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
                   //make available timeline based on e.data.id
                   let currentTimelineSelector = timelineSelector.replace(curPeriod, e.data.id);
                   relIndex = currentTimelineSelector.indexOf(":rel:");
-                  
+
                   if (relIndex >= 0) {
                      console.warn("MediaSynchroniser: DASH period id changed from " + curPeriod + " to " + e.data.id + ". Stopping timeline monitoring.");
 
