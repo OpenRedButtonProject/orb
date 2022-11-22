@@ -1,4 +1,6 @@
 polyfill_iframe_srcs = \
+src/housekeeping/banner.js \
+src/housekeeping/beginiffe.js \
 src/mediaproxies/init.js \
 src/nativemanager.js \
 src/natives/android.js \
@@ -13,7 +15,8 @@ src/mediaproxies/mediamanager.js \
 src/mediaproxies/mediaerror.js \
 src/mediaproxies/dashproxy.js \
 src/mediaproxies/nativeproxy.js\
-src/mediaproxies/run.js
+src/mediaproxies/run.js \
+src/housekeeping/endiffe.js
 
 polyfill_dash_srcs = \
 external/dash.all.min.js
