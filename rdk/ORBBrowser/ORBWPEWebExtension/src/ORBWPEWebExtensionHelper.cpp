@@ -34,6 +34,33 @@ static std::condition_variable cv;
 static std::map<int, std::shared_ptr<ORBDVBURILoader> > s_dvbUriLoaders;
 
 /**
+ * Read the available Dsmcc file from the shared memory.
+ *
+ * @param requestId The corresponding Dsmcc request id
+ * @param fileSize  The Dsmcc file size
+ *
+ * @return The Dsmcc file content
+ */
+static unsigned char* ReadDsmccFileFromSharedMemory(int requestId, int fileSize)
+{
+   unsigned char *buffer = (unsigned char *) malloc(fileSize);
+
+   std::string name = "orb-dsmcc-request-" + std::to_string(requestId);
+
+   ORB_LOG("requestId=%d fileName=%s fileSize=%d", requestId, name.c_str(), fileSize);
+
+   int shm_fd = shm_open(name.c_str(), O_RDONLY, 0666);
+   uint8_t *ptr = (uint8_t *) mmap(0, fileSize, PROT_READ, MAP_SHARED, shm_fd, 0);
+
+   memmove(buffer, ptr, fileSize);
+
+   munmap(ptr, fileSize);
+   shm_unlink(name.c_str());
+
+   return buffer;
+}
+
+/**
  * Callback for the javaScriptEventDispatchRequested event coming from ORB.
  */
 static void OnJavaScriptEventDispatchRequested(std::string name, std::string properties)
@@ -48,11 +75,24 @@ static void OnDvbUrlLoaded(int requestId, unsigned char *content, unsigned int c
 {
    ORB_LOG("requestId=%d contentLength=%u content is %s", requestId, contentLength, content ? "NOT null" : "null");
 
+   // Read file content from shared memory only if the DVB URL was successfully loaded
+   if (contentLength > 0)
+   {
+      ORB_LOG("Read dsmcc file content from shared memory");
+      content = ReadDsmccFileFromSharedMemory(requestId, contentLength);
+   }
+
    {
       std::lock_guard<std::mutex> lk(m);
       s_dvbUriLoaders[requestId]->SetData(content, contentLength);
       s_dvbUriLoaders[requestId]->SetDataReady(true);
    }
+
+   if (content)
+   {
+      free(content);
+   }
+
    cv.notify_one();
 }
 
@@ -72,8 +112,6 @@ static void OnInputKeyGenerated(int keyCode)
  */
 static void HandleDVBURISchemeRequest(WebKitURISchemeRequest *request, gpointer user_data)
 {
-   ORB_LOG("thread_id=%d", std::this_thread::get_id());
-
    static int requestId = 0;
 
    ORB_LOG("uri=%s requestId=%d", webkit_uri_scheme_request_get_uri(request), requestId);
@@ -173,6 +211,10 @@ WebKitUserContentManager * ORBWPEWebExtensionHelper::CreateWebKitUserContentMana
 void ORBWPEWebExtensionHelper::RegisterDVBURLSchemeHandler(WebKitWebContext *context)
 {
    ORB_LOG_NO_ARGS();
+
+   WebKitSecurityManager *securityManager = webkit_web_context_get_security_manager(context);
+   webkit_security_manager_register_uri_scheme_as_cors_enabled(securityManager, "dvb");
+
    webkit_web_context_register_uri_scheme(context, "dvb",
       (WebKitURISchemeRequestCallback) HandleDVBURISchemeRequest, nullptr, nullptr);
 }

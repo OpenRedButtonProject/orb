@@ -83,6 +83,5 @@ uint32_t ORB::SetPreferredUILanguage(Core::JSON::String preferredUiLanguage)
    _orb->SetPreferredUILanguage(preferredUiLanguage.Value());
    return result;
 }
-
 } // namespace Plugin
 } // namespace WPEFramework
