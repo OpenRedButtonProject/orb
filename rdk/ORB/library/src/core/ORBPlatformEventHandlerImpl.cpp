@@ -271,31 +271,40 @@ void ORBPlatformEventHandlerImpl::OnDvbUrlLoaded(int requestId, unsigned char *f
 /**
  * Notify the browser that the specified input key was generated.
  *
- * @param keyCode The JavaScript key code
+ * @param keyCode   The JavaScript key code
+ * @param keyAction The key action (0 = keyup , 1 = keydown)
  */
-void ORBPlatformEventHandlerImpl::OnInputKeyGenerated(int keyCode)
+bool ORBPlatformEventHandlerImpl::OnInputKeyGenerated(int keyCode, KeyAction keyAction)
 {
-    ORB_LOG("keyCode=%d", keyCode);
+    ORB_LOG("keyCode=%d, action=%d", keyCode, keyAction);
 
+    // Apply platform-specific keycode mapping if neccessary
+    keyCode = ORBEngine::GetSharedInstance().GetORBPlatform()->Platform_MapKeyCode(keyCode);
+
+    bool consumed = false;
     uint16_t currentAppId = ORBEngine::GetSharedInstance().GetCurrentAppId();
 
     // check if there is any application currently running
     if (currentAppId == UINT16_MAX)
     {
         ORB_LOG("No app is currently running");
-        return;
+        return false;
     }
 
-    uint16_t mask = ORBEngine::GetSharedInstance().GetApplicationManager()->GetKeySetMask(
-        currentAppId);
-    uint16_t keyEventCode = 0;
-
-    keyEventCode = ORBEngine::GetSharedInstance().GetORBPlatform()->Platform_ResolveKeyEvent(
-        keyCode);
-
-    if (mask & keyEventCode)
+    if (ORBEngine::GetSharedInstance().GetApplicationManager()->InKeySet(currentAppId, keyCode))
     {
-        ORBEngine::GetSharedInstance().GetEventListener()->OnInputKeyGenerated(keyCode);
+        consumed = true;
+
+        if (keyAction == KEY_ACTION_UP)
+        {
+            ORBEngine::GetSharedInstance().GetEventListener()->OnInputKeyGenerated(keyCode, 0);
+        }
+        else if (keyAction == KEY_ACTION_DOWN)
+        {
+            ORBEngine::GetSharedInstance().GetEventListener()->OnInputKeyGenerated(keyCode, 1);
+        }
     }
+
+    return consumed;
 }
 } // namespace orb

@@ -201,14 +201,16 @@ void ORBImplementation::LoadDvbUrl(std::string url, int requestId)
  * Send the specified key event to the current HbbTV application (if any).
  * Platform call.
  *
- * @param keyCode
+ * @param keyCode   The JavaScript key code
+ * @param keyAction The JavaScript key action (0 = keyup , 1 = keydown)
+ *
  * @return true
  * @return false
  */
-bool ORBImplementation::SendKeyEvent(int keyCode)
+bool ORBImplementation::SendKeyEvent(int keyCode, uint8_t keyAction)
 {
     ORB_LOG_NO_ARGS();
-    return ORBEngine::GetSharedInstance().SendKeyEvent(keyCode);
+    return ORBEngine::GetSharedInstance().SendKeyEvent(keyCode, keyAction);
 }
 
 /**
@@ -295,7 +297,7 @@ void ORBImplementation::DvbUrlLoaded(
  * @param fileContent
  * @param fileContentLength
  */
-void ORBImplementation::EventInputKeyGenerated(int keyCode)
+void ORBImplementation::EventInputKeyGenerated(int keyCode, uint8_t keyAction)
 {
     ORB_LOG_NO_ARGS();
 
@@ -304,7 +306,7 @@ void ORBImplementation::EventInputKeyGenerated(int keyCode)
     ORB_LOG("We have %d callbacks to trigger", _notificationClients.size());
     for (const auto client : _notificationClients)
     {
-        client->EventInputKeyGenerated(keyCode);
+        client->EventInputKeyGenerated(keyCode, keyAction);
     }
 }
 }  // namespace Plugin

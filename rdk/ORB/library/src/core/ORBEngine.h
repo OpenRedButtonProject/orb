@@ -159,11 +159,12 @@ public:
      * This method is intended to serve scenarios where the resident app is the main component
      * responsible for key event handling.
      *
-     * @param keyCode The event's JavaScript key code
+     * @param keyCode   The event's JavaScript key code
+     * @param keyAction The event's action (0 = keyup , 1 = keydown)
      *
      * @return True if the key event was generated on the current HbbTV application, otherwise false
      */
-    bool SendKeyEvent(int keyCode);
+    bool SendKeyEvent(int keyCode, uint8_t keyAction);
 
 public:
 

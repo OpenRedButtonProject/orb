@@ -86,14 +86,40 @@ static void OnDvbUrlLoaded(int requestId, unsigned char *content, unsigned int c
  * Called back by the ORB client upon receipt of the inputKeyGenerated notification from the ORB
  * service.
  *
- * @param keyCode The key code to be generated on the main frame's JavaScript context
+ * @param keyCode   The key code to be generated on the main frame's JavaScript context
+ * @param keyAction The key action (0 = keyup , 1 = keydown)
  */
-static void OnInputKeyGenerated(int keyCode)
+static void OnInputKeyGenerated(int keyCode, unsigned char keyAction)
 {
-    ORB_LOG("keyCode=%d", keyCode);
-    std::string kScript = "document.dispatchEvent(new KeyboardEvent('keydown',{keyCode:" +
-        std::to_string(keyCode) + "}));";
-    g_main_context_invoke(nullptr, EvaluateJavaScript, (gpointer) kScript.c_str());
+    ORB_LOG("keyCode=%d keyAction=%d", keyCode, keyAction);
+
+    std::string kScript = "";
+    char *javascript;
+
+    // keydown
+    if (keyAction == 1)
+    {
+        kScript = "document.dispatchEvent(new KeyboardEvent('keydown',{keyCode:" + std::to_string(
+            keyCode) + "}));";
+        javascript = strdup(kScript.c_str());
+        g_main_context_invoke_full(nullptr, G_PRIORITY_HIGH_IDLE, EvaluateJavaScript,
+            (gpointer) javascript, (GDestroyNotify) free);
+    }
+    // keyup
+    else if (keyAction == 0)
+    {
+        kScript = "document.dispatchEvent(new KeyboardEvent('keypress',{keyCode:" + std::to_string(
+            keyCode) + "}));";
+        javascript = strdup(kScript.c_str());
+        g_main_context_invoke_full(nullptr, G_PRIORITY_HIGH_IDLE, EvaluateJavaScript,
+            (gpointer) javascript, (GDestroyNotify) free);
+
+        kScript = "document.dispatchEvent(new KeyboardEvent('keyup',{keyCode:" + std::to_string(
+            keyCode) + "}));";
+        javascript = strdup(kScript.c_str());
+        g_main_context_invoke_full(nullptr, G_PRIORITY_HIGH_IDLE, EvaluateJavaScript,
+            (gpointer) javascript, (GDestroyNotify) free);
+    }
 }
 
 /******************************************************************************

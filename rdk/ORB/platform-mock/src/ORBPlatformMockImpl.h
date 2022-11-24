@@ -23,12 +23,11 @@ public:
     virtual void Platform_Initialise(
         std::shared_ptr<ORBPlatformEventHandler> platformEventHandler) override;
     virtual void Platform_Finalise() override;
-    virtual HbbTVKeyEvent Platform_ResolveKeyEvent(unsigned short int keyCode) override;
+    virtual unsigned int Platform_MapKeyCode(unsigned int keyCode) override;
 
     // Application api
     virtual bool Application_Load(std::string url) override;
     virtual bool Application_SetVisible(bool visible) override;
-    virtual bool Application_SendKeyEvent(int keyCode) override;
 
     // Network api
     virtual bool Network_IsConnectedToInternet() override;

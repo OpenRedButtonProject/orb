@@ -59,7 +59,7 @@ public:
     std::string CreateToken(std::string uri) override;
     void NotifyApplicationLoadFailed(std::string url, std::string errorDescription) override;
     void NotifyApplicationPageChanged(std::string url) override;
-    bool SendKeyEvent(int keyCode) override;
+    bool SendKeyEvent(int keyCode, uint8_t keyAction) override;
     void LoadDvbUrl(std::string url, int requestId) override;
     void SetPreferredUILanguage(std::string preferredUiLanguage) override;
 
@@ -78,7 +78,7 @@ public:
         unsigned int fileContentLength
         ) override;
 
-    void EventInputKeyGenerated(int keyCode) override;
+    void EventInputKeyGenerated(int keyCode, uint8_t keyAction) override;
 
 private:
 

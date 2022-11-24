@@ -127,8 +127,9 @@ public:
     /**
      * Notify the browser that the specified input key was generated.
      *
-     * @param keyCode The JavaScript key code
+     * @param keyCode   The JavaScript key code
+     * @param keyAction The key action (0 = keyup , 1 = keydown)
      */
-    virtual void OnInputKeyGenerated(int keyCode) override final;
+    virtual bool OnInputKeyGenerated(int keyCode, KeyAction keyAction) override final;
 }; // class ORBPlatformEventHandlerImpl
 } // namespace orb

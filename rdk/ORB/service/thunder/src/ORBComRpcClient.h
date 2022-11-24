@@ -41,7 +41,7 @@ public:
             unsigned int fileContentLength
             ) override;
 
-        virtual void EventInputKeyGenerated(int keyCode) override;
+        virtual void EventInputKeyGenerated(int keyCode, uint8_t keyAction) override;
 
         // Must define an interface map since we are implementing an interface on the exchange
         // so Thunder knows what type we are

@@ -103,15 +103,16 @@ void ORBPlatformMockImpl::Platform_Finalise()
 }
 
 /**
- * Get the OIPF/HbbTV key event that corresponds to the given JavaScript key code.
+ * Map the given, potentially platform-specific key code into the proper, HbbTV-compliant value.
  *
- * @param keyCode The JavaScript key code
+ * @param keyCode The key code to be mapped
  *
- * @return The corresponding OIPF/HbbTV key event code or 0
+ * @return The mapped value
  */
-HbbTVKeyEvent ORBPlatformMockImpl::Platform_ResolveKeyEvent(unsigned short int keyCode)
+unsigned int ORBPlatformMockImpl::Platform_MapKeyCode(unsigned int keyCode)
 {
-    return HbbTVKeyEvent::HBBTV_CODE_INVALID;
+    ORB_LOG("keyCode=%u", keyCode);
+    return 0;
 }
 
 /******************************************************************************
@@ -142,19 +143,6 @@ bool ORBPlatformMockImpl::Application_Load(std::string url)
 bool ORBPlatformMockImpl::Application_SetVisible(bool visible)
 {
     ORB_LOG("visible=%s", visible ? "yes" : "no");
-    return true;
-}
-
-/**
- * Send the specified input key event to the current HbbTV application (if any).
- *
- * @param keyCode The input key code
- *
- * @return true in success, false otherwise
- */
-bool ORBPlatformMockImpl::Application_SendKeyEvent(int keyCode)
-{
-    ORB_LOG("keyCode=%d", keyCode);
     return true;
 }
 

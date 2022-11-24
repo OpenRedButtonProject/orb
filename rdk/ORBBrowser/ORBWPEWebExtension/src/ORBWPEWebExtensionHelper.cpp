@@ -100,7 +100,7 @@ static void OnDvbUrlLoaded(int requestId, unsigned char *content, unsigned int c
 /**
  * Callback for the inputKeyGenerated event coming from ORB.
  */
-static void OnInputKeyGenerated(int keyCode)
+static void OnInputKeyGenerated(int keyCode, unsigned char keyAction)
 {
     ORB_LOG("<Not supported");
 }

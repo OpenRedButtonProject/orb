@@ -18,25 +18,6 @@
 #include <memory>
 #include <vector>
 
-/**
- * Enumeration of the OIPF/HbbTV key event codes.
- */
-enum HbbTVKeyEvent
-{
-    HBBTV_CODE_INVALID    = 0x000,
-    HBBTV_CODE_RED        = 0x001,
-    HBBTV_CODE_GREEN      = 0x002,
-    HBBTV_CODE_YELLOW     = 0x004,
-    HBBTV_CODE_BLUE       = 0x008,
-    HBBTV_CODE_NAVIGATION = 0x010,
-    HBBTV_CODE_VCR        = 0x020,
-    HBBTV_CODE_SCROLL     = 0x040,
-    HBBTV_CODE_INFO       = 0x080,
-    HBBTV_CODE_NUMERIC    = 0x100,
-    HBBTV_CODE_ALPHA      = 0x200,
-    HBBTV_CODE_OTHER      = 0x400
-};
-
 using namespace orb;
 
 /**
@@ -68,13 +49,14 @@ public:
     virtual void Platform_Finalise() = 0;
 
     /**
-     * Get the OIPF/HbbTV key event that corresponds to the given JavaScript key code.
+     * Map the given, potentially platform-specific key code into the proper, HbbTV-compliant value.
      *
-     * @param keyCode The JavaScript key code
+     * @param keyCode The key code to be mapped
      *
-     * @return The corresponding OIPF/HbbTV key event code or 0
+     * @return The mapped value
      */
-    virtual HbbTVKeyEvent Platform_ResolveKeyEvent(unsigned short int keyCode) = 0;
+    virtual unsigned int Platform_MapKeyCode(unsigned int keyCode) = 0;
+
 
 
     /******************************************************************************
@@ -99,15 +81,6 @@ public:
      * @return true in success, false otherwise
      */
     virtual bool Application_SetVisible(bool visible) = 0;
-
-    /**
-     * Send the specified input key event to the current HbbTV application (if any).
-     *
-     * @param keyCode The input key code
-     *
-     * @return true in success, false otherwise
-     */
-    virtual bool Application_SendKeyEvent(int keyCode) = 0;
 
 
 

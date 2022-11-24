@@ -12,6 +12,15 @@
 namespace orb
 {
 /**
+ * Enumerate the available input key actions.
+ */
+enum KeyAction
+{
+    KEY_ACTION_UP   = 0x00,
+    KEY_ACTION_DOWN = 0x01
+};
+
+/**
  * Interface of the ORB platform event handler. The ORB platform implementation is expected to
  * properly call the methods of this interface as to notify the HbbTV application manager embedded
  * in ORB core, and/or the JavaScript layer (i.e. the HbbTV app) of platform-specific events.
@@ -134,8 +143,9 @@ public:
     /**
      * Notify the browser that the specified input key was generated.
      *
-     * @param keyCode The JavaScript key code
+     * @param keyCode   The JavaScript key code
+     * @param keyAction The JavaScript key action (0 = keyup , 1 = keydown)
      */
-    virtual void OnInputKeyGenerated(int keyCode) = 0;
+    virtual bool OnInputKeyGenerated(int keyCode, KeyAction keyAction) = 0;
 }; // class ORBPlatformEventHandler
 } // namespace orb

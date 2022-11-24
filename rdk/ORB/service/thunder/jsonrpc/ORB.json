@@ -18,11 +18,28 @@
       "summary": "Send the specified key event to the current HbbTV application (if any)",
       "params":
       {
-        "description": "The event's JavaScript key code",
-        "type": "number",
-        "signed": false,
-        "size": 16,
-        "example": 27
+        "summary": "The parameters for sendKeyEvent",
+        "type": "object",
+        "properties":
+        {
+          "keycode":
+          {
+            "description": "The event's JavaScript key code",
+            "type": "number",
+            "signed": false,
+            "size": 16,
+            "example": 27
+          },
+          "keyaction":
+          {
+            "description": "Used to distinguish between key up and down",
+            "type": "string",
+            "enum": [
+              "KEY_ACTION_UP",
+              "KEY_ACTION_DOWN"
+            ]
+          }
+        } 
       },
       "result":
       {

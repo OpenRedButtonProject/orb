@@ -13,7 +13,7 @@
 typedef void (*OnJavaScriptEventDispatchRequested_cb)(std::string name, std::string properties);
 typedef void (*OnDvbUrlLoaded_cb)(int requestId, unsigned char *content, unsigned int
     contentLength);
-typedef void (*OnInputKeyGenerated_cb)(int keyCode);
+typedef void (*OnInputKeyGenerated_cb)(int keyCode, unsigned char keyAction);
 
 namespace orb
 {
