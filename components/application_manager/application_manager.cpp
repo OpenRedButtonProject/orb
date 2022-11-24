@@ -1040,7 +1040,7 @@ uint16_t ApplicationManager::GetKeySet(const uint16_t code)
     {
         return KEY_SET_SCROLL;
     }
-    else if (code == KEY_SET_RED)
+    else if (code == VK_RED)
     {
         return KEY_SET_RED;
     }
