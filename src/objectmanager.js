@@ -57,14 +57,6 @@ hbbtv.objectManager = (function() {
             upgradeObject(object, object.getAttribute("type"));
          }
       }
-      
-      // upgrade video and audio elements with iframe
-      for (const object of target.getElementsByTagName("video")) {
-         hbbtv.objects.upgradeMediaElement(object);
-      }
-      for (const object of target.getElementsByTagName("audio")) {
-         hbbtv.objects.upgradeMediaElement(object);
-      }
    }
 
    function upgradeObject(object, mimeType) {
@@ -102,14 +94,8 @@ hbbtv.objectManager = (function() {
          for (const mutation of mutationsList) {
             if (mutation.type === "childList") {
                for (const node of mutation.addedNodes) {
-                  if (node.nodeName) {
-                     if (node.nodeName.toLowerCase() === "object") {
-                        callbackObjectAdded(node);
-                     }
-                     else if(node.nodeName.toLowerCase() === "video" || node.nodeName.toLowerCase() === "audio") {
-                        // upgrade video and audio elements with iframe
-                        hbbtv.objects.upgradeMediaElement(node);
-                     }
+                  if (node.nodeName && node.nodeName.toLowerCase() === "object") {
+                     callbackObjectAdded(node);
                   }
                }
                for (const node of mutation.removedNodes) {
