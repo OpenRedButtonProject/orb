@@ -21,7 +21,7 @@ namespace Plugin {
 void ORB::RegisterAll()
 {
    ORB_LOG("PID=%d", getpid());
-   JSONRPC::Register<Core::JSON::DecUInt16, Core::JSON::Boolean>(_T("SendKeyEvent"), &ORB::SendKeyEvent, this);
+   JSONRPC::Register<SendKeyEventParamsData, Core::JSON::Boolean>(_T("SendKeyEvent"), &ORB::SendKeyEvent, this);
    JSONRPC::Register<Core::JSON::String, void>(_T("SetPreferredUILanguage"), &ORB::SetPreferredUILanguage, this);
 }
 
@@ -42,19 +42,24 @@ void ORB::UnregisterAll()
  *
  * Send the specified key event to the current HbbTV application (if any).
  *
- * @param keyCode  The event's JavaScript key code
+ * @param params   The event's JavaScript key code and key action (0 = keyup , 1 = keydown)
  * @param response True if the key event was consumed by the current HbbTV application, otherwise false
  *
  * @return Core::ERROR_NONE
  */
-uint32_t ORB::SendKeyEvent(Core::JSON::DecUInt16 keyCode, Core::JSON::Boolean& response)
+uint32_t ORB::SendKeyEvent(const SendKeyEventParamsData& params, Core::JSON::Boolean& response)
 {
    uint32_t error = Core::ERROR_NONE;
 
-   if (keyCode.IsSet())
+   if (params.Keycode.IsSet() && params.Keyaction.IsSet())
    {
-      SYSLOG(Logging::Notification, (_T("[ORB::SendKeyEvent] keyCode=%hu"), keyCode.Value()));
-      response = _orb->SendKeyEvent(keyCode.Value());
+      ORB_LOG("Calling the COMRPC SendKeyEvent for %u, %d", params.Keycode.Value(), params.Keyaction.Value());
+
+      // define keyaction to use
+      uint8_t keyAction =
+         params.Keyaction.Value() == SendKeyEventParamsData::KeyactionType::KEY_ACTION_UP ? 0 : 1;
+
+      response = _orb->SendKeyEvent(params.Keycode.Value(), keyAction);
    }
    else
    {

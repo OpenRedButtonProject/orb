@@ -70,9 +70,9 @@ void ORBEventListenerImpl::OnDvbUrlLoaded(int requestId, unsigned char *content,
  *
  * @param keyCode The JavaScript key code
  */
-void ORBEventListenerImpl::OnInputKeyGenerated(int keyCode)
+void ORBEventListenerImpl::OnInputKeyGenerated(int keyCode, uint8_t keyAction)
 {
    ORB_LOG("PID=%d", getpid());
-   ORBImplementation::instance(nullptr)->EventInputKeyGenerated(keyCode);
+   ORBImplementation::instance(nullptr)->EventInputKeyGenerated(keyCode, keyAction);
 }
 } // namespace orb

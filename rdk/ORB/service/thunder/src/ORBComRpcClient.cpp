@@ -76,16 +76,17 @@ void ORBComRpcClient::NotificationHandler::DvbUrlLoaded(
  *
  * React to the 'EventInputKeyGenerated'  accordingly
  *
- * @param keyCode
+ * @param keyCode   The JavaScript key code
+ * @param keyAction The JavaScript key action (0 = keyup , 1 = keydown)
  */
-void ORBComRpcClient::NotificationHandler::EventInputKeyGenerated(int keyCode)
+void ORBComRpcClient::NotificationHandler::EventInputKeyGenerated(int keyCode, uint8_t keyAction)
 {
    ORB_LOG("%d", keyCode);
 
    if (_parent.m_subscribedEvents[EVENT_INPUT_KEY_GENERATED] == true)
    {
       ORB_LOG("Dispatching event inputKeyGenerated");
-      _parent.m_onInputKeyGenerated(keyCode);
+      _parent.m_onInputKeyGenerated(keyCode, keyAction);
    }
 }
 
