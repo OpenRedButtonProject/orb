@@ -56,6 +56,14 @@ hbbtv.objects.MediaElementWrapper = (function() {
       privates.get(this).divDummy.appendChild(node);
    };
 
+   prototype.insertBefore = function(newNode, otherNode) {
+      privates.get(this).divDummy.insertBefore(newNode, otherNode);
+   };
+
+   prototype.removeChild = function(node) {
+      privates.get(this).divDummy.removeChild(node);
+   };
+
    prototype.play = function() {
       if (!this.__added_to_media_sync__) { // check if the HTMLMediaElement is provided to MediaSynchroniser.addMediaObject() before we pause it
          if (lastMediaElement && lastMediaElement !== this && !lastMediaElement.paused) {
@@ -153,6 +161,11 @@ hbbtv.objects.MediaElementWrapper = (function() {
 
          const observer = new MutationObserver(function(mutationsList) {
             for (const mutation of mutationsList) {
+               for (const node of mutation.removedNodes) {
+                  if (node.nodeName && node.nodeName.toLowerCase() === "source") {
+                     thiz.removeAttribute("src");
+                  }
+               }
                for (const node of mutation.addedNodes) {
                   if (node.nodeName && node.nodeName.toLowerCase() === "source" && !thiz.src) {
                      thiz.src = node.src;
