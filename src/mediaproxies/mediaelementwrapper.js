@@ -10,6 +10,24 @@ hbbtv.objects.MediaElementWrapper = (function() {
    const MEDIA_PROXY_ID = "HTMLMediaElement";
    const mediaElementsTable = [];
 
+   // helper function to apply external css meant for video elements
+   // to MediaElementWrapper
+   function applyCSS() {
+      const rules = [].concat(...[...document.styleSheets].map(s => [...s.cssRules||[]]))
+         .filter(r => {
+            if (r.selectorText.startsWith("iframe")) {
+               return false;
+            }
+            return this.matches(r.selectorText.replace(/video/i, "iframe"))
+         });
+      for (const rule of rules) {
+         for (let i = 0; i < rule.styleMap.size; ++i) {
+            const key = rule.style[i];
+            this.style[key] = rule.style[key];
+         }
+      }
+   }
+
    function createPrototype() {
       const srcOwnProperty = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, "src");
       const ORB_PLAYER_MAGIC_SUFFIX = "orb_player_magic_suffix";
@@ -42,6 +60,9 @@ hbbtv.objects.MediaElementWrapper = (function() {
             this[name] = value;
          } else {
             HTMLIFrameElement.prototype.setAttribute.call(this, name, value);
+            if (name === "id") {
+               applyCSS.call(this);
+            }
          }
       };
 
@@ -160,7 +181,7 @@ hbbtv.objects.MediaElementWrapper = (function() {
             return privates.get(this).videoDummy.src;
          }
       });
-
+      
       for (const key of roProps) {
          Object.defineProperty(prototype, key, {
             get() {
@@ -316,6 +337,8 @@ hbbtv.objects.MediaElementWrapper = (function() {
             divDummy: document.createElement("div"), // will be used to manage append and remove Child on the iframe
             proxy: proxy,
          });
+
+         applyCSS.call(this);
          p = privates.get(this);
          p.proxy.registerObserver(MEDIA_PROXY_ID, p.videoDummy);
 
@@ -365,6 +388,7 @@ hbbtv.objects.MediaElementWrapper = (function() {
 
 hbbtv.objects.createMediaElementWrapper = function() {
    const element = document.createElement("iframe");
+   element.style.cssText = "all: unset"; // clear style set by external css to iframe elements
    hbbtv.objects.MediaElementWrapper.initialise.call(element);
    return element;
 };
@@ -378,7 +402,8 @@ hbbtv.objects.upgradeMediaElement = function(media) {
             break;
          }
       }
-   }
+   } 
+
    element.innerHTML = media.innerHTML;
    for (const key of media.getAttributeNames()) {
       element[key] = media.getAttribute(key);

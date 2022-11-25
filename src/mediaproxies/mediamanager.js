@@ -196,6 +196,7 @@ hbbtv.mediaManager = (function() {
          media.addEventListener(evt, genericHandler, true);
       }
       media.addEventListener("loadeddata", propsUpdateCallback, true);
+      media.addEventListener("loadedmetadata", propsUpdateCallback, true);
       media.addEventListener("play", propsUpdateCallback, true);
       media.addEventListener("ended", propsUpdateCallback, true);
       media.addEventListener("pause", propsUpdateCallback, true);

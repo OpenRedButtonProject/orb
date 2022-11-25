@@ -121,7 +121,7 @@ hbbtv.objectManager = (function() {
          let element;
          if (tagname === "video" || tagname === "audio") {
             // upgrade video and audio elements with iframe
-            element = hbbtv.objects.upgradeMediaElement(__createElement.call(document, tagname, options));
+            element = hbbtv.objects.createMediaElementWrapper();
          }
          else if (tagname === "object") {
             element = __createElement.apply(document, arguments);
