@@ -134,7 +134,7 @@ public:
     * @param fileContent       The file content
     * @param fileContentLength The file content length in number of bytes
     */
-   virtual void OnDvbUrlLoaded(int requestId, unsigned char *fileContent, unsigned int fileContentLength) = 0;
+   virtual void OnDvbUrlLoaded(int requestId, std::vector<uint8_t> fileContent, unsigned int fileContentLength) = 0;
 
    /**
     * Notify the browser that the specified input key was generated.

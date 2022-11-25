@@ -108,8 +108,15 @@ void ORBDVBURILoader::SetData(unsigned char *data, unsigned int dataLength)
    {
       free(m_data);
    }
-   m_data = (unsigned char *) malloc(dataLength);
-   memmove(m_data, data, dataLength);
-   m_dataLength = dataLength;
+   if (data != nullptr && dataLength > 0)
+   {
+      m_data = (unsigned char *) malloc(sizeof(unsigned char) * (dataLength + 1));
+      for (int i = 0; i < dataLength; i++)
+      {
+         m_data[i] = data[i];
+      }
+      m_data[dataLength] = '\0';
+      m_dataLength = dataLength;
+   }
 }
 } // namespace orb
