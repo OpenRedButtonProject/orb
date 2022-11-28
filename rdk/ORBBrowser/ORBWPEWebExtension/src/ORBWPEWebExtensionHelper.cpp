@@ -81,19 +81,21 @@ static void OnDvbUrlLoaded(int requestId, unsigned char *content, unsigned int c
     {
         ORB_LOG("Read dsmcc file content from shared memory");
         content = ReadDsmccFileFromSharedMemory(requestId, contentLength);
+        {
+            std::lock_guard<std::mutex> lk(m);
+            s_dvbUriLoaders[requestId]->SetData(content, contentLength);
+            s_dvbUriLoaders[requestId]->SetDataReady(true);
+            free(content);
+        }
     }
-
+    else
     {
-        std::lock_guard<std::mutex> lk(m);
-        s_dvbUriLoaders[requestId]->SetData(content, contentLength);
-        s_dvbUriLoaders[requestId]->SetDataReady(true);
+        {
+            std::lock_guard<std::mutex> lk(m);
+            s_dvbUriLoaders[requestId]->SetData(nullptr, 0);
+            s_dvbUriLoaders[requestId]->SetDataReady(true);
+        }
     }
-
-    if (content)
-    {
-        free(content);
-    }
-
     cv.notify_one();
 }
 

@@ -573,8 +573,8 @@ void ORBPlatformMockImpl::Dsmcc_RequestFile(std::string url, int requestId)
 
     std::string content =
         "<html><body style=\"background-color: #333333; color: #aaaaaa;\"><h1>DVB</h1></body></html>";
-    m_platformEventHandler->OnDvbUrlLoaded(requestId, (unsigned char *)content.c_str(),
-        content.length());
+    std::vector<uint8_t> contentVector(content.begin(), content.end());
+    m_platformEventHandler->OnDvbUrlLoaded(requestId, contentVector, content.length());
 }
 
 /**

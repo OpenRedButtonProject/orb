@@ -59,11 +59,11 @@ void ORBEventListenerImpl::OnJavaScriptEventDispatchRequested(
  * @param content       The retrieved content
  * @param contentLength The retrieved content length in number of bytes
  */
-void ORBEventListenerImpl::OnDvbUrlLoaded(int requestId, unsigned char *content, unsigned int
+void ORBEventListenerImpl::OnDvbUrlLoaded(int requestId, std::vector<uint8_t> content, unsigned int
     contentLength)
 {
     ORB_LOG("PID=%d", getpid());
-    ORBImplementation::instance(nullptr)->DvbUrlLoaded(requestId, content, contentLength);
+    ORBImplementation::instance(nullptr)->DvbUrlLoaded(requestId, &content[0], contentLength);
 }
 
 /**
