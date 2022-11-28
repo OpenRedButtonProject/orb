@@ -102,28 +102,36 @@ hbbtv.objects.NativeProxy = (function() {
             console.warn("NativeProxy: Failed to populate texttracks. Error:", e)
          });
 
-      this.videoTracks.obs_setTrackList([{
-         selected: true,
-         index: 0,
-         id: "0",
-         kind: "main",
-         label: "0",
-         language: undefined,
-         encoding: undefined,
-         encrypted: false
-      }]);
-      this.audioTracks.obs_setTrackList([{
-         enabled: true,
-         index: 0,
-         id: "0",
-         kind: "main",
-         label: "0",
-         language: undefined,
-         numChannels: 2,
-         encoding: undefined,
-         encrypted: false
-      }]);
+      const videoOwnProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "videoTracks");
+      const videoTrackList = [];
+      for (const track of videoOwnProperty.get.call(this)) {
+         const t = {};
+         for (const key in track) {
+            t[key] = track[key];
+         }
+         t.index = videoTrackList.length;
+         t.encoding = undefined;
+         t.encrypted = false;
+         videoTrackList.push(t);
+      }
+      this.videoTracks.obs_setTrackList(videoTrackList);
+
+      const audioOwnProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "audioTracks");
+      const audioTrackList = [];
+      for (const track of audioOwnProperty.get.call(this)) {
+         const t = {};
+         for (const key in track) {
+            t[key] = track[key];
+         }
+         t.numChannels = 2;
+         t.index = audioTrackList.length;
+         t.encoding = undefined;
+         t.encrypted = false;
+         audioTrackList.push(t);
+      }
+      this.audioTracks.obs_setTrackList(audioTrackList);
    }
+   
 
    function onError() {
       if (this.error) {
