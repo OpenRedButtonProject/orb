@@ -15,10 +15,20 @@ hbbtv.objects.MediaElementWrapper = (function() {
    function applyCSS() {
       const rules = [].concat(...[...document.styleSheets].map(s => [...s.cssRules||[]]))
          .filter(r => {
-            if (r.selectorText.startsWith("iframe")) {
-               return false;
+            const ids = r.selectorText.split(",").map(s => s.trim());
+            for (let i = ids.length - 1; i >= 0; --i) {
+               if (ids[i].startsWith("iframe")) {
+                  // remove iframe rule as we are supposed to apply video rules
+                  // to MediaElementWrapper
+                  ids.splice(i, 1);
+               }
+               else if (ids[i].toLowerCase().startsWith("video")) {
+                  // replace video element tag with the iframe element tag
+                  // in order to apply the video element rules to MediaElementWrapper
+                  ids[i] = ids[i].replace(/video/i, "iframe");
+               }
             }
-            return this.matches(r.selectorText.replace(/video/i, "iframe"))
+            return this.matches(ids.join(","));
          });
       for (const rule of rules) {
          for (let i = 0; i < rule.styleMap.size; ++i) {
