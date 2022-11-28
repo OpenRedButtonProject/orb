@@ -191,6 +191,15 @@ hbbtv.objects.MediaElementWrapper = (function() {
             return privates.get(this).videoDummy.src;
          }
       });
+
+      Object.defineProperty(prototype, "id", {
+         set(value) {
+            this.setAttribute("id", value);
+         },
+         get() {
+            return this.getAttribute("id");
+         }
+      });
       
       for (const key of roProps) {
          Object.defineProperty(prototype, key, {
