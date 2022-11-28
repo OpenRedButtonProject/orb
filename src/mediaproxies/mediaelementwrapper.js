@@ -28,6 +28,9 @@ hbbtv.objects.MediaElementWrapper = (function() {
                   ids[i] = ids[i].replace(/video/i, "iframe");
                }
             }
+            if (ids.length <= 0) {
+               return false;
+            }
             return this.matches(ids.join(","));
          });
       for (const rule of rules) {
@@ -407,7 +410,9 @@ hbbtv.objects.MediaElementWrapper = (function() {
 
 hbbtv.objects.createMediaElementWrapper = function() {
    const element = document.createElement("iframe");
-   element.style.cssText = "all: unset"; // clear style set by external css to iframe elements
+   // if style.display is set to whatever value, the hidden property
+   // of MediaElementWrapper will not work as expected
+   // element.style.cssText = "all: initial"; // clear style set by external css to iframe elements
    hbbtv.objects.MediaElementWrapper.initialise.call(element);
    return element;
 };
