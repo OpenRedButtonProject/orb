@@ -74,7 +74,7 @@ static void OnJavaScriptEventDispatchRequested(std::string name, std::string pro
 static void OnDvbUrlLoaded(int requestId, unsigned char *content, unsigned int contentLength)
 {
    ORB_LOG("requestId=%d contentLength=%u content is %s", requestId, contentLength, content ? "NOT null" : "null");
-   
+
    // Read file content from shared memory only if the DVB URL was successfully loaded
    if (contentLength > 0)
    {
