@@ -294,6 +294,7 @@ void ORBEngine::NotifyApplicationPageChanged(std::string url)
 {
    ORB_LOG("appId=%d url=%s", m_currentAppId, url.c_str());
    GetApplicationManager()->OnApplicationPageChanged(m_currentAppId, url);
+   GetORBPlatform()->Platform_SetCurrentKeySetMask(0);
 }
 
 /************************************************************************************************
