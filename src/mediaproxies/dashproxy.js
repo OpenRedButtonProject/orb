@@ -521,14 +521,14 @@ hbbtv.objects.DashProxy = (function() {
    }
 
    function onAudioTrackChange() {
-      const p = privates.get(this);
+      const player = privates.get(this).player;
       let mute = true;
       for (let i = 0; i < this.audioTracks.length; ++i) {
          if (this.audioTracks[i].enabled) {
             mute = false;
-            let nextTrack = p.player.getTracksFor('audio').find(track => track.index === this.audioTracks[i].index);
-            if (p.player.getCurrentTrackFor('audio') !== nextTrack) {
-               p.player.setCurrentTrack(nextTrack);
+            let nextTrack = player.getTracksFor('audio').find(track => track.index === this.audioTracks[i].index);
+            if (player.getCurrentTrackFor('audio') !== nextTrack) {
+               player.setCurrentTrack(nextTrack);
             }
             break;
          }
@@ -537,11 +537,12 @@ hbbtv.objects.DashProxy = (function() {
    }
 
    function onVideoTrackChange() {
+      const player = privates.get(this).player;
       for (let i = 0; i < this.videoTracks.length; ++i) {
          if (this.videoTracks[i].selected) {
-            let nextTrack = p.player.getTracksFor('video').find(track => track.index === this.videoTracks[i].index);
-            if (p.player.getCurrentTrackFor('video') !== nextTrack) {
-               p.player.setCurrentTrack(nextTrack);
+            let nextTrack = player.getTracksFor('video').find(track => track.index === this.videoTracks[i].index);
+            if (player.getCurrentTrackFor('video') !== nextTrack) {
+               player.setCurrentTrack(nextTrack);
             }
             break;
          }
