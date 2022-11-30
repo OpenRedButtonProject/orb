@@ -2452,17 +2452,12 @@ private:
         {
             webkit_settings_set_user_agent(preferences, _config.UserAgent.Value().c_str());
         }
-        else
-        {
-            webkit_settings_set_user_agent(preferences,
-                "HbbTV/1.6.1 (; OBS; WPE; v1.0.0-alpha; OBS;)");
-        }
 
-        if (_config.LogToSystemConsoleEnabled.IsSet() == true)
-        {
-            webkit_settings_set_enable_write_console_messages_to_stdout(preferences,
-                _config.LogToSystemConsoleEnabled.Value());
-        }
+        // Apply additional settings for the ORB browser
+        std::string jsonConfigAsString;
+        _config.ToString(jsonConfigAsString);
+        ORBWPEWebExtensionHelper::GetSharedInstance().SetORBWPEWebExtensionPreferences(preferences,
+            jsonConfigAsString);
 
         _view = WEBKIT_WEB_VIEW(g_object_new(WEBKIT_TYPE_WEB_VIEW,
             "backend", webkit_web_view_backend_new(wpe_view_backend_create(), nullptr, nullptr),

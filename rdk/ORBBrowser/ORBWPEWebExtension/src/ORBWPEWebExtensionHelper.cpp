@@ -222,4 +222,25 @@ void ORBWPEWebExtensionHelper::RegisterDVBURLSchemeHandler(WebKitWebContext *con
     webkit_web_context_register_uri_scheme(context, "dvb",
         (WebKitURISchemeRequestCallback) HandleDVBURISchemeRequest, nullptr, nullptr);
 }
+
+/**
+ * Set custom preferences for the ORB browser.
+ *
+ * @param preferences        Pointer to the browser's global settings
+ * @param jsonConfigAsString String containing the JSON representation of the browser config
+ */
+void ORBWPEWebExtensionHelper::SetORBWPEWebExtensionPreferences(WebKitSettings *preferences,
+    std::string jsonConfigAsString)
+{
+    JsonObject jsonConfig; jsonConfig.FromString(jsonConfigAsString);
+    if (jsonConfig.HasLabel("logtosystemconsoleenabled"))
+    {
+        webkit_settings_set_enable_write_console_messages_to_stdout(preferences,
+            jsonConfig["logtosystemconsoleenabled"].Boolean());
+    }
+
+    webkit_settings_set_user_agent(preferences, "HbbTV/1.6.1 (; OBS; WPE; v1.0.0-alpha; OBS;)");
+
+    webkit_settings_set_enable_plugins(preferences, false);
+}
 } // namespace orb
