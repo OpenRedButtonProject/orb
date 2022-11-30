@@ -23,6 +23,7 @@ public:
    virtual void Platform_Initialise(std::shared_ptr<ORBPlatformEventHandler> platformEventHandler) override;
    virtual void Platform_Finalise() override;
    virtual unsigned int Platform_MapKeyCode(unsigned int keyCode) override;
+   virtual void Platform_SetCurrentKeySetMask(uint16_t keySetMask) override;
 
    // Application api
    virtual bool Application_Load(std::string url) override;

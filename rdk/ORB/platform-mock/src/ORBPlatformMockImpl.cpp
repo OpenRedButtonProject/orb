@@ -54,6 +54,8 @@ int s_SelectedComponent_Pid_Subtitle;
 bool s_BroadcastPresentationSuspended;
 bool s_DsmccStarted;
 
+uint16_t s_keySetMask;
+
 ORBPlatformMockImpl::ORBPlatformMockImpl()
    : m_dvb(std::make_shared<DVB>())
 {
@@ -110,6 +112,17 @@ unsigned int ORBPlatformMockImpl::Platform_MapKeyCode(unsigned int keyCode)
 {
    ORB_LOG("keyCode=%u", keyCode);
    return 0;
+}
+
+/**
+ * Let the ORB platform know of the current HbbTV app's keyset mask.
+ *
+ * @param keySetMask The keyset mask
+ */
+void ORBPlatformMockImpl::Platform_SetCurrentKeySetMask(uint16_t keySetMask)
+{
+   ORB_LOG("keySetMask=%u", keySetMask);
+   s_keySetMask = keySetMask;
 }
 
 /******************************************************************************
