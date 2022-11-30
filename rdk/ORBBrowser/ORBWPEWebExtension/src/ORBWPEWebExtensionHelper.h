@@ -8,6 +8,7 @@
 
 #include <memory>
 #include <wpe/webkit.h>
+#include <core/core.h>
 
 #include "ORBGenericClient.h"
 
@@ -65,6 +66,14 @@ public:
     * @param context Pointer to the WebKit web context
     */
    void RegisterDVBURLSchemeHandler(WebKitWebContext *context);
+
+   /**
+    * Set custom preferences for the ORB browser.
+    *
+    * @param preferences        Pointer to the browser's global settings
+    * @param jsonConfigAsString String containing the JSON representation of the browser config
+    */
+   void SetORBWPEWebExtensionPreferences(WebKitSettings *preferences, std::string jsonConfigAsString);
 
    std::shared_ptr<ORBGenericClient> GetORBClient()
    {
