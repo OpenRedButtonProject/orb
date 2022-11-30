@@ -57,6 +57,13 @@ public:
      */
     virtual unsigned int Platform_MapKeyCode(unsigned int keyCode) = 0;
 
+    /**
+     * Let the ORB platform know of the current HbbTV app's keyset mask.
+     *
+     * @param keySetMask The keyset mask
+     */
+    virtual void Platform_SetCurrentKeySetMask(uint16_t keySetMask) = 0;
+
 
 
     /******************************************************************************
