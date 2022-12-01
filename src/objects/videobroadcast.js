@@ -1,14 +1,66 @@
 /**
- * @fileOverview OIPF video/broadcast object.
- * See: {@link https://web.archive.org/web/20200219165053/http://www.oipf.tv/web-spec/volume5.html#video-broadcast}
+ * @fileOverview video/broadcast embedded object
  * @license ORB Software. Copyright (c) 2022 Ocean Blue Software Limited
  * Licensed under the ORB License that can be found in the LICENSE file at
  * the top level of this repository.
  */
 
+/**
+ * HbbTV programming interface: video/broadcast embedded object.
+ * 
+ * Specifiations:
+ * HBBTV.
+ * <p>
+ * Important sections, in brief:
+ * HBBTV A.1 (Detailed section-by-section definition for volume 5);
+ * OIPF DAE 7.13.1 (The video/broadcast embedded object);
+ * OIPF DAE 7.13.3 (Extensions to video/broadcast for access to EIT p/f);
+ * OIPF DAE 7.13.4 (Extensions to video/broadcast for playback of selected components);
+ * OIPF DAE 7.13.5 (Extensions to video/broadcast for parental ratings errors);
+ * OIPF DAE 7.13.7 (Extensions to video/broadcast for current channel information);
+ * HBBTV 8.2.1.1 (Adding and removing stream event listeners);
+ * HBBTV 9.7.1 (Synchronization and video objects);
+ * HBBTV 10.2.7 (Component selection);
+ * HBBTV A.2.1 (Resource management);
+ * HBBTV A.2.4 (Extensions to the video/broadcast object);
+ * HBBTV A.2.14 (Modifications to clause H.2 "Interaction with the video/broadcast and ...");
+ * HBBTV A.2.17 (Notification of change of components).
+ *
+ * @name VideoBroadcast
+ * @class
+ * @constructor
+ */
 hbbtv.objects.VideoBroadcast = (function() {
    const prototype = Object.create(HTMLObjectElement.prototype);
    const privates = new WeakMap();
+
+   const PLAY_STATE_UNREALIZED = 0;
+   const PLAY_STATE_CONNECTING = 1;
+   const PLAY_STATE_PRESENTING = 2;
+   const PLAY_STATE_STOPPED = 3;
+
+   const CHANNEL_STATUS_UNREALIZED = -4;
+   const CHANNEL_STATUS_PRESENTING = -3;
+   const CHANNEL_STATUS_CONNECTING = -2;
+   const CHANNEL_STATUS_CONNECTING_RECOVERY = -1;
+   const CHANNEL_STATUS_WRONG_TUNER = 0;
+   const CHANNEL_STATUS_NO_SIGNAL = 1;
+   const CHANNEL_STATUS_TUNER_IN_USE = 2;
+   const CHANNEL_STATUS_PARENTAL_LOCKED = 3;
+   const CHANNEL_STATUS_ENCRYPTED = 4;
+   const CHANNEL_STATUS_UNKNOWN_CHANNEL = 5;
+   const CHANNEL_STATUS_INTERRUPTED = 6;
+   const CHANNEL_STATUS_RECORDING_IN_PROGRESS = 7;
+   const CHANNEL_STATUS_CANNOT_RESOLVE_URI = 8;
+   const CHANNEL_STATUS_INSUFFICIENT_BANDWIDTH = 9;
+   const CHANNEL_STATUS_CANNOT_BE_CHANGED = 10;
+   const CHANNEL_STATUS_INSUFFICIENT_RESOURCES = 11;
+   const CHANNEL_STATUS_CHANNEL_NOT_IN_TS = 12;
+   const CHANNEL_STATUS_UNKNOWN_ERROR = 100;
+
+   const ERROR_TUNER_UNAVAILABLE = 2;
+   const ERROR_UNKNOWN_CHANNEL = 5;
+
    let gActiveStateOwner = null;
    let gBroadbandAvInUse = false;
    const gGarbageCollectionBlocked = new Set();
@@ -19,106 +71,373 @@ hbbtv.objects.VideoBroadcast = (function() {
       gActiveStateOwner = null;
    });
 
-   hbbtv.utils.defineConstantProperties(prototype, {
-      PLAY_STATE_UNREALIZED: 0,
-      PLAY_STATE_CONNECTING: 1,
-      PLAY_STATE_PRESENTING: 2,
-      PLAY_STATE_STOPPED: 3,
-      COMPONENT_TYPE_VIDEO: 0,
-      COMPONENT_TYPE_AUDIO: 1,
-      COMPONENT_TYPE_SUBTITLE: 2,
-      ERROR_TUNER_UNAVAILABLE: 2,
-      ERROR_UNKNOWN_CHANNEL: 5,
-      POSITION_START: 0,
-      POSITION_CURRENT: 1,
-      POSITION_END: 2,
+   // Constants
 
-      CHANNEL_STATUS_UNREALIZED: -4,
-      CHANNEL_STATUS_PRESENTING: -3,
-      CHANNEL_STATUS_CONNECTING: -2,
-      CHANNEL_STATUS_CONNECTING_RECOVERY: -1,
-      CHANNEL_STATUS_WRONG_TUNER: 0,
-      CHANNEL_STATUS_NO_SIGNAL: 1,
-      CHANNEL_STATUS_TUNER_IN_USE: 2,
-      CHANNEL_STATUS_PARENTAL_LOCKED: 3,
-      CHANNEL_STATUS_ENCRYPTED: 4,
-      CHANNEL_STATUS_UNKNOWN_CHANNEL: 5,
-      CHANNEL_STATUS_INTERRUPTED: 6,
-      CHANNEL_STATUS_RECORDING_IN_PROGRESS: 7,
-      CHANNEL_STATUS_CANNOT_RESOLVE_URI: 8,
-      CHANNEL_STATUS_INSUFFICIENT_BANDWIDTH: 9,
-      CHANNEL_STATUS_CANNOT_BE_CHANGED: 10,
-      CHANNEL_STATUS_INSUFFICIENT_RESOURCES: 11,
-      CHANNEL_STATUS_CHANNEL_NOT_IN_TS: 12,
-      CHANNEL_STATUS_UNKNOWN_ERROR: 100,
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.4 (Extensions to video/broadcast for playback of selected components);
+    * HBBTV A.2.17 (Notification of change of components).
+    * 
+    * @returns {number}
+    * 
+    * @name COMPONENT_TYPE_VIDEO
+    * @constant
+    * @memberof VideoBroadcast#
+    */
+   Object.defineProperty(prototype, "COMPONENT_TYPE_VIDEO", {
+      value: 0
    });
 
-   /* readonly properties */
-   hbbtv.utils.defineGetterProperties(prototype, {
-      currentChannel() {
-         if (!privates.get(this).isBroadcastRelated) {
-            /* ETSI TS 102 796 V1.6.1 A.2.26 */
-            return null;
-         }
-         const channel = privates.get(this).currentChannelData;
-         return channel;
-      },
-      fullScreen() {
-         noRestrictionSecurityCheck();
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.4 (Extensions to video/broadcast for playback of selected components);
+    * HBBTV A.2.17 (Notification of change of components).
+    * 
+    * @returns {number}
+    * 
+    * @name COMPONENT_TYPE_AUDIO
+    * @constant
+    * @memberof VideoBroadcast#
+    */
+   Object.defineProperty(prototype, "COMPONENT_TYPE_AUDIO", {
+      value: 1
+   });
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.4 (Extensions to video/broadcast for playback of selected components);
+    * HBBTV A.2.17 (Notification of change of components).
+    * 
+    * @returns {number}
+    * 
+    * @name COMPONENT_TYPE_SUBTITLE
+    * @constant
+    * @memberof VideoBroadcast#
+    */
+   Object.defineProperty(prototype, "COMPONENT_TYPE_SUBTITLE", {
+      value: 2
+   });
+
+   // Properties
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+    * HBBTV A.2.4 (Extensions to the video/broadcast object).
+    * <p>
+    * Security: none.
+    * 
+    * @returns {boolean}
+    * 
+    * @name fullScreen
+    * @readonly
+    * @memberof VideoBroadcast#
+    */
+   Object.defineProperty(prototype, "fullScreen", {
+      get: function() {
          return privates.get(this).fullScreen;
-      },
-      playState() {
-         noRestrictionSecurityCheck();
+      }
+   });
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+    * HBBTV A.2.4 (Extensions to the video/broadcast object).
+    * <p>
+    * Security: none.
+    * 
+    * @returns {number}
+    * 
+    * @name playState
+    * @readonly
+    * @memberof VideoBroadcast#
+    */
+   Object.defineProperty(prototype, "playState", {
+      get: function() {
          return privates.get(this).playState;
-      },
+      }
+   });
 
-      /** Extensions to video/broadcast for recording and timeshift.
-       * Broadcast-independent applications: shall throw a "Security Error" */
-      currentTimeShiftMode() {
-         const p = privates.get(this);
-         mandatoryBroadcastRelatedSecurityCheck(p);
-         return undefined; // TODO
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+    * HBBTV A.2.4 (Extensions to the video/broadcast object).
+    * <p>
+    * Security: none.
+    * 
+    * @returns {string}
+    * 
+    * @name data
+    * @readonly
+    * @memberof VideoBroadcast#
+    */
+   Object.defineProperty(prototype, "data", {
+      get: function() {
+         return "";
       },
-      maxOffset() {
-         const p = privates.get(this);
-         mandatoryBroadcastRelatedSecurityCheck(p);
-         return undefined; // TODO
-      },
-      playbackOffset() {
-         const p = privates.get(this);
-         mandatoryBroadcastRelatedSecurityCheck(p);
-         return undefined; // TODO
-      },
-      playPosition() {
-         const p = privates.get(this);
-         mandatoryBroadcastRelatedSecurityCheck(p);
-         return undefined; // TODO
-      },
-      playSpeed() {
-         const p = privates.get(this);
-         mandatoryBroadcastRelatedSecurityCheck(p);
-         return undefined; // TODO
-      },
-      playSpeeds() {
-         const p = privates.get(this);
-         mandatoryBroadcastRelatedSecurityCheck(p);
-         return undefined; // TODO
-      },
-      recordingState() {
-         const p = privates.get(this);
-         mandatoryBroadcastRelatedSecurityCheck(p);
-         return undefined; // TODO
-      },
+      set: function() {
+      }
+   });
 
-      /** Extensions to video.broadcast for access to EIT p/f.
-       *  Broadcast-independent applications: shall throw a "Security Error" */
-      programmes() {
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+    * HBBTV A.2.4 (Extensions to the video/broadcast object).
+    * <p>
+    * Security: none.
+    * 
+    * @returns {number}
+    * 
+    * @name height
+    * @readonly
+    * @memberof VideoBroadcast#
+    */
+   Object.defineProperty(prototype, "height", {
+      get: function() {
+         return this.offsetHeight;
+      },
+      set: function() {
+         if (this.fullScreen) {
+            throw new TypeError('"height" is read-only');
+         } else {
+            this.style.height = val;
+         }
+      }
+   });
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+    * HBBTV A.2.4 (Extensions to the video/broadcast object).
+    * <p>
+    * Security: none.
+    * 
+    * @returns {number}
+    * 
+    * @name width
+    * @readonly
+    * @memberof VideoBroadcast#
+    */
+   Object.defineProperty(prototype, "width", {
+      get: function() {
+         return this.offsetWidth;
+      },
+      set: function() {
+         if (this.fullScreen) {
+            throw new TypeError('"width" is read-only');
+         } else {
+            this.style.width = val;
+         }
+      }
+   });
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+    * HBBTV A.2.4 (Extensions to the video/broadcast object).
+    * <p>
+    * Security: none.
+    * 
+    * @returns {function}
+    * 
+    * @name onfocus
+    * @readonly
+    * @memberof VideoBroadcast#
+    */
+   Object.defineProperty(prototype, "onfocus", {
+      get() {
+         return privates.get(this).onfocusDomLevel0;
+      },
+      set(listener) {
+         const p = privates.get(this);
+         if (p.onfocusDomLevel0) {
+            this.removeEventListener("focus", p.onfocusDomLevel0);
+         }
+         p.onfocusDomLevel0 = listener;
+         if (listener) {
+            this.addEventListener("focus", p.onfocusDomLevel0);
+         }
+      }
+   });
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+    * HBBTV A.2.4 (Extensions to the video/broadcast object).
+    * <p>
+    * Security: none.
+    * 
+    * @returns {function}
+    * 
+    * @name onblur
+    * @readonly
+    * @memberof VideoBroadcast#
+    */
+   Object.defineProperty(prototype, "onblur", {
+      get() {
+         return privates.get(this).onblurDomLevel0;
+      },
+      set(listener) {
+         const p = privates.get(this);
+         if (p.onblurDomLevel0) {
+            this.removeEventListener("blur", p.onblurDomLevel0);
+         }
+         p.onblurDomLevel0 = listener;
+         if (listener) {
+            this.addEventListener("blur", p.onblurDomLevel0);
+         }
+      }
+   });
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+    * HBBTV A.2.4 (Extensions to the video/broadcast object).
+    * <p>
+    * Security: none.
+    * 
+    * @returns {function}
+    * 
+    * @name onFullScreenChange
+    * @readonly
+    * @memberof VideoBroadcast#
+    */
+   Object.defineProperty(prototype, "onFullScreenChange", {
+      get() {
+         return privates.get(this).onFullScreenChangeDomLevel0;
+      },
+      set(listener) {
+         const p = privates.get(this);
+         if (p.onFullScreenChangeDomLevel0) {
+            this.removeEventListener("FullScreenChange", p.onFullScreenChangeDomLevel0);
+         }
+         p.onFullScreenChangeDomLevel0 = listener;
+         if (listener) {
+            this.addEventListener("FullScreenChange", p.onFullScreenChangeDomLevel0);
+         }
+      }
+   });
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+    * HBBTV A.2.4 (Extensions to the video/broadcast object).
+    * <p>
+    * Security: none.
+    * 
+    * @returns {function}
+    * 
+    * @name onChannelChangeError
+    * @readonly
+    * @memberof VideoBroadcast#
+    */
+   Object.defineProperty(prototype, "onChannelChangeError", {
+      get() {
+         return privates.get(this).onChannelChangeErrorDomLevel0;
+      },
+      set(listener) {
+         const p = privates.get(this);
+         if (p.onChannelChangeErrorDomLevel0) {
+            this.removeEventListener("ChannelChangeError", p.onChannelChangeErrorWrapper);
+            p.onChannelChangeErrorWrapper = null;
+         }
+         p.onChannelChangeErrorDomLevel0 = listener;
+         if (listener) {
+            p.onChannelChangeErrorWrapper = (ev) => {
+               listener(ev.channel, ev.errorState);
+            };
+            this.addEventListener("ChannelChangeError", p.onChannelChangeErrorWrapper);
+         }
+      }
+   });
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+    * HBBTV A.2.4 (Extensions to the video/broadcast object).
+    * <p>
+    * Security: none.
+    * 
+    * @returns {function}
+    * 
+    * @name onChannelChangeSucceeded
+    * @readonly
+    * @memberof VideoBroadcast#
+    */
+   Object.defineProperty(prototype, "onChannelChangeSucceeded", {
+      get() {
+         return privates.get(this).onChannelChangeSucceededDomLevel0;
+      },
+      set(listener) {
+         const p = privates.get(this);
+         if (p.onChannelChangeSucceededDomLevel0) {
+            this.removeEventListener("ChannelChangeSucceeded", p.onChannelChangeSucceededWrapper);
+            p.onChannelChangeSucceededWrapper = null;
+         }
+         p.onChannelChangeSucceededDomLevel0 = listener;
+         if (listener) {
+            p.onChannelChangeSucceededWrapper = (ev) => {
+               listener(ev.channel);
+            };
+            this.addEventListener("ChannelChangeSucceeded", p.onChannelChangeSucceededWrapper);
+         }
+      }
+   });
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+    * HBBTV A.2.4 (Extensions to the video/broadcast object).
+    * <p>
+    * Security: none.
+    * 
+    * @returns {function}
+    * 
+    * @name onPlayStateChange
+    * @readonly
+    * @memberof VideoBroadcast#
+    */
+   Object.defineProperty(prototype, "onPlayStateChange", {
+      get() {
+         return privates.get(this).onPlayStateChangeDomLevel0;
+      },
+      set(listener) {
+         const p = privates.get(this);
+         if (p.onPlayStateChangeDomLevel0) {
+            this.removeEventListener("PlayStateChange", p.onPlayStateChangeWrapper);
+            p.onPlayStateChangeWrapper = null;
+         }
+         p.onPlayStateChangeDomLevel0 = listener;
+         if (listener) {
+            p.onPlayStateChangeWrapper = (ev) => {
+               listener(ev.state, ev.error);
+            };
+            this.addEventListener("PlayStateChange", p.onPlayStateChangeWrapper);
+         }
+      }
+   });
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.3 (Extensions to video/broadcast for access to EIT p/f).
+    * <p>
+    * Security: none.
+    * 
+    * @returns {ProgrammeCollection}
+    * 
+    * @name programmes
+    * @readonly
+    * @memberof VideoBroadcast#
+    */
+    Object.defineProperty(prototype, "programmes", {
+      get: function() {
          const p = privates.get(this);
          mandatoryBroadcastRelatedSecurityCheck(p);
          if (!p.currentChannelProgrammes) {
             let programmes = hbbtv.bridge.broadcast.getProgrammes(p.currentChannelData.ccid);
             programmes.forEach(function(item, index) {
-               item.parentalRatings = hbbtv.objects.createParentalRatingCollection(item.parentalRatings);
+               item.parentalRatings = hbbtv.objects
+                  .createParentalRatingCollection(item.parentalRatings);
                programmes[index] = hbbtv.objects.createProgramme(item);
             });
             p.currentChannelProgrammes = programmes;
@@ -127,67 +446,221 @@ hbbtv.objects.VideoBroadcast = (function() {
       }
    });
 
-   hbbtv.utils.defineGetterSetterProperties(prototype, {
-      data: {
-         get: function() {
-            noRestrictionSecurityCheck();
-            return "";
-         },
-         set: function(val) {
-            noRestrictionSecurityCheck();
-         }
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.3 (Extensions to video/broadcast for access to EIT p/f).
+    * <p>
+    * Security: none.
+    * 
+    * @returns {function}
+    * 
+    * @name onProgrammesChanged
+    * @readonly
+    * @memberof VideoBroadcast#
+    */
+   Object.defineProperty(prototype, "onProgrammesChanged", {
+      get() {
+         return privates.get(this).onProgrammesChangedDomLevel0;
       },
-      height: {
-         get: function() {
-            noRestrictionSecurityCheck();
-            return this.offsetHeight;
-         },
-         set: function(val) {
-            noRestrictionSecurityCheck();
-            if (this.fullScreen) {
-               throw new TypeError('"height" is read-only');
-            } else {
-               this.style.height = val;
-            }
+      set(listener) {
+         const p = privates.get(this);
+         if (p.onProgrammesChangedDomLevel0) {
+            this.removeEventListener("ProgrammesChanged", p.onProgrammesChangedDomLevel0);
          }
-      },
-      timeShiftMode: {
-         get: function() {
-            const p = privates.get(this);
-            mandatoryBroadcastRelatedSecurityCheck(p);
-            return undefined; // TODO
-         },
-         set: function(val) {
-            const p = privates.get(this);
-            mandatoryBroadcastRelatedSecurityCheck(p);
+         p.onProgrammesChangedDomLevel0 = listener;
+         if (listener) {
+            this.addEventListener("ProgrammesChanged", p.onProgrammesChangedDomLevel0);
          }
-      },
-      width: {
-         get: function() {
-            noRestrictionSecurityCheck();
-            return this.offsetWidth;
-         },
-         set: function(val) {
-            noRestrictionSecurityCheck();
-            if (this.fullScreen) {
-               throw new TypeError('"height" is read-only');
-            } else {
-               this.style.width = val;
-            }
-         }
-      },
+      }
    });
 
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.4 (Extensions to video/broadcast for playback of selected components);
+    * HBBTV A.2.17 (Notification of change of components).
+    * <p>
+    * Security: none.
+    * 
+    * @returns {function}
+    * 
+    * @name onSelectedComponentChanged
+    * @readonly
+    * @memberof VideoBroadcast#
+    */
+    Object.defineProperty(prototype, "onSelectedComponentChanged", {
+      get() {
+         return privates.get(this).onSelectedComponentChangedDomLevel0;
+      },
+      set(listener) {
+         const p = privates.get(this);
+         if (p.onSelectedComponentChangedDomLevel0) {
+            this.removeEventListener("SelectedComponentChanged", p.onSelectedComponentChangedWrapper);
+            p.onSelectedComponentChangedWrapper = null;
+         }
+         p.onSelectedComponentChangedDomLevel0 = listener;
+         if (listener) {
+            p.onSelectedComponentChangedWrapper = (ev) => {
+               listener(ev.componentType);
+            };
+            this.addEventListener("SelectedComponentChanged", p.onSelectedComponentChangedWrapper);
+         }
+      }
+   });
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.4 (Extensions to video/broadcast for playback of selected components);
+    * HBBTV A.2.17 (Notification of change of components).
+    * <p>
+    * Security: none.
+    * 
+    * @returns {function}
+    * 
+    * @name onComponentChanged
+    * @readonly
+    * @memberof VideoBroadcast#
+    */
+   Object.defineProperty(prototype, "onComponentChanged", {
+      get() {
+         return privates.get(this).onComponentChangedDomLevel0;
+      },
+      set(listener) {
+         const p = privates.get(this);
+         if (p.onComponentChangedDomLevel0) {
+            this.removeEventListener("ComponentChanged", p.onComponentChangedWrapper);
+            p.onComponentChangedWrapper = null;
+         }
+         p.onComponentChangedDomLevel0 = listener;
+         if (listener) {
+            p.onComponentChangedWrapper = (ev) => {
+               listener(ev.componentType);
+            };
+            this.addEventListener("ComponentChanged", p.onComponentChangedWrapper);
+         }
+      }
+   });
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.5 (Extensions to video/broadcast for parental ratings errors)
+    * <p>
+    * Security: none.
+    * 
+    * @returns {function}
+    * 
+    * @name onParentalRatingChange
+    * @readonly
+    * @memberof VideoBroadcast#
+    */
+   Object.defineProperty(prototype, "onParentalRatingChange", {
+      get() {
+         return privates.get(this).onParentalRatingChangeDomLevel0;
+      },
+      set(listener) {
+         const p = privates.get(this);
+         if (p.onParentalRatingChangeDomLevel0) {
+            this.removeEventListener("ParentalRatingChange", p.onParentalRatingChangeWrapper);
+            p.onParentalRatingChangeWrapper = null;
+         }
+         p.onParentalRatingChangeDomLevel0 = listener;
+         if (listener) {
+            p.onParentalRatingChangeWrapper = (ev) => {
+               listener(ev.contentID, ev.ratings, ev.DRMSystemID, ev.blocked);
+            };
+            this.addEventListener("ParentalRatingChange", p.onParentalRatingChangeWrapper);
+         }
+      }
+   });
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.5 (Extensions to video/broadcast for parental ratings errors)
+    * <p>
+    * Security: none.
+    * 
+    * @returns {function}
+    * 
+    * @name onParentalRatingError
+    * @readonly
+    * @memberof VideoBroadcast#
+    */
+   Object.defineProperty(prototype, "onParentalRatingError", {
+      get() {
+         return privates.get(this).onParentalRatingErrorDomLevel0;
+      },
+      set(listener) {
+         const p = privates.get(this);
+         if (p.onParentalRatingErrorDomLevel0) {
+            this.removeEventListener("ParentalRatingError", p.onParentalRatingErrorWrapper);
+            p.onParentalRatingErrorWrapper = null;
+         }
+         p.onParentalRatingErrorDomLevel0 = listener;
+         if (listener) {
+            p.onParentalRatingErrorWrapper = (ev) => {
+               listener(ev.contentID, ev.ratings, ev.DRMSystemID);
+            };
+            this.addEventListener("ParentalRatingError", p.onParentalRatingErrorWrapper);
+         }
+      }
+   });
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.7 (Extensions to video/broadcast for current channel information).
+    * <p>
+    * Security: none.
+    * 
+    * @returns {Channel}
+    * 
+    * @name currentChannel
+    * @readonly
+    * @memberof VideoBroadcast#
+    */
+    Object.defineProperty(prototype, "currentChannel", {
+      get: function() {
+         if (!privates.get(this).isBroadcastRelated) {
+            return null;
+         }
+         return privates.get(this).currentChannelData;
+      }
+   });
+
+   // Methods
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+    * HBBTV A.2.4 (Extensions to the video/broadcast object).
+    * <p>
+    * Security: broadcast-related.
+    * 
+    * @returns {ChannelConfig}
+    *
+    * @method
+    * @memberof VideoBroadcast#
+    */
    prototype.getChannelConfig = function() {
       const p = privates.get(this);
       mandatoryBroadcastRelatedSecurityCheck(p);
       return p.channelConfig;
    };
 
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+    * HBBTV A.2.4 (Extensions to the video/broadcast object).
+    * <p>
+    * Security: broadcast-related.
+    * 
+    * @returns {Channel}
+    *
+    * @method
+    * @memberof VideoBroadcast#
+    */
    prototype.bindToCurrentChannel = function() {
       const p = privates.get(this);
       mandatoryBroadcastRelatedSecurityCheck(p);
-      if (p.playState === this.PLAY_STATE_UNREALIZED || p.playState === this.PLAY_STATE_STOPPED) {
+      if (p.playState === PLAY_STATE_UNREALIZED || p.playState === PLAY_STATE_STOPPED) {
          let tmpChannelData;
          try {
             tmpChannelData = hbbtv.objects.createChannel(hbbtv.bridge.broadcast.getCurrentChannel());
@@ -204,13 +677,13 @@ hbbtv.objects.VideoBroadcast = (function() {
                hbbtv.holePuncher.setBroadcastVideoObject(this);
 
                let wasPlayStateStopped = false;
-               if (p.playState === this.PLAY_STATE_UNREALIZED) {
+               if (p.playState === PLAY_STATE_UNREALIZED) {
                   /* DAE vol5 Table 8 state transition #7 */
-                  p.playState = this.PLAY_STATE_PRESENTING;
+                  p.playState = PLAY_STATE_PRESENTING;
                } else {
                   /* PLAY_STATE_STOPPED */
                   /* DAE vol5 Table 8 state transition #17 with HbbTV 2.0.3 modification */
-                  p.playState = this.PLAY_STATE_CONNECTING;
+                  p.playState = PLAY_STATE_CONNECTING;
                   wasPlayStateStopped = true;
                }
                addBridgeEventListeners.call(this);
@@ -218,25 +691,25 @@ hbbtv.objects.VideoBroadcast = (function() {
                if (wasPlayStateStopped) {
                   /* For PLAY_STATE_STOPPED: extra step to go into Presenting State */
                   /* DAE vol5 Table 8 state transition #17 with HbbTV 2.0.3 modification. */
-                  p.playState = this.PLAY_STATE_PRESENTING;
+                  p.playState = PLAY_STATE_PRESENTING;
                   dispatchPlayStateChangeEvent.call(this, p.playState);
                }
             } else {
-               if (p.playState === this.PLAY_STATE_STOPPED) {
+               if (p.playState === PLAY_STATE_STOPPED) {
                   /* DAE vol5 Table 8 state transition #17 with HbbTV 2.0.3 modification */
                   dispatchPlayStateChangeEvent.call(this, p.playState);
                } else {
                   /* DAE vol5 Table 8 state transition #8 - binding fails */
                   unregisterAllStreamEventListeners(p);
-                  p.playState = this.PLAY_STATE_UNREALIZED;
-                  dispatchPlayStateChangeEvent.call(this, p.playState, this.ERROR_TUNER_UNAVAILABLE);
+                  p.playState = PLAY_STATE_UNREALIZED;
+                  dispatchPlayStateChangeEvent.call(this, p.playState, ERROR_TUNER_UNAVAILABLE);
                }
             }
          } else {
             /* DAE vol5 Table 8 state transition #8 - no channel being presented */
             unregisterAllStreamEventListeners(p);
-            p.playState = this.PLAY_STATE_UNREALIZED;
-            dispatchPlayStateChangeEvent.call(this, p.playState, this.ERROR_UNKNOWN_CHANNEL);
+            p.playState = PLAY_STATE_UNREALIZED;
+            dispatchPlayStateChangeEvent.call(this, p.playState, ERROR_UNKNOWN_CHANNEL);
          }
       }
       if (p.currentChannelData) {
@@ -244,8 +717,27 @@ hbbtv.objects.VideoBroadcast = (function() {
       }
    };
 
-   prototype.createChannelObject = function(idType, dsdOrOnid, sidOrTsid, sid, sourceID, ipBroadcastID) {
-      noRestrictionSecurityCheck();
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+    * HBBTV A.2.4 (Extensions to the video/broadcast object).
+    * <p>
+    * Security: none.
+    *
+    * @param {number} idType
+    * @param {string|number} dsdOrOnid
+    * @param {number} sidOrTsid
+    * @param {number} sid
+    * @param {number} sourceID
+    * @param {string} ipBroadcastID
+    * 
+    * @returns {Channel}
+    * 
+    * @method
+    * @memberof VideoBroadcast#
+    */
+   prototype.createChannelObject = function(idType, dsdOrOnid, sidOrTsid, sid, sourceID,
+         ipBroadcastID) {
       if (idType == 13) {
          // createChannelObject(idType, dsd, tsid)
          return hbbtv.objects.createChannel({
@@ -274,6 +766,21 @@ hbbtv.objects.VideoBroadcast = (function() {
       }
    };
 
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+    * HBBTV A.2.4 (Extensions to the video/broadcast object).
+    * <p>
+    * Security: none.
+    * 
+    * @param {Channel} channel
+    * @param {boolean} trickplay
+    * @param {string} contentAccessDescriptorURL
+    * @param {number} quiet
+    *
+    * @method
+    * @memberof VideoBroadcast#
+    */
    prototype.setChannel = function(channel, trickplay = false, contentAccessDescriptorURL = "", quiet = 0) {
       const p = privates.get(this);
       let releaseOnError = false;
@@ -289,11 +796,11 @@ hbbtv.objects.VideoBroadcast = (function() {
       }
 
       // Acquire active state if required
-      if (p.playState === this.PLAY_STATE_UNREALIZED || p.playState === this.PLAY_STATE_STOPPED) {
+      if (p.playState === PLAY_STATE_UNREALIZED || p.playState === PLAY_STATE_STOPPED) {
          if (!acquireActiveState.call(this)) {
             hbbtv.bridge.broadcast.setPresentationSuspended(false);
             /* DAE vol5 Table 8 state transition #2 & #6 - no suitable tuner is available */
-            dispatchChannelChangeErrorEvent.call(this, channel, this.ERROR_TUNER_UNAVAILABLE);
+            dispatchChannelChangeErrorEvent.call(this, channel, ERROR_TUNER_UNAVAILABLE);
             return;
          }
          addBridgeEventListeners.call(this);
@@ -364,46 +871,387 @@ hbbtv.objects.VideoBroadcast = (function() {
 
       /* DAE vol5 Table 8 state transition #1 */
       unregisterAllStreamEventListeners(p);
-      p.playState = this.PLAY_STATE_CONNECTING;
+      p.playState = PLAY_STATE_CONNECTING;
       p.waitingPlayStateConnectingConfirm = true;
       dispatchPlayStateChangeEvent.call(this, p.playState);
    };
 
-   function removeBridgeEventListeners() {
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+    * HBBTV A.2.4 (Extensions to the video/broadcast object).
+    * <p>
+    * Security: broadcast-related.
+    *
+    * @method
+    * @memberof VideoBroadcast#
+    */
+   prototype.prevChannel = function() {
       const p = privates.get(this);
-      if (p.onChannelStatusChanged != null) {
-         hbbtv.bridge.removeWeakEventListener("ChannelStatusChanged", p.onChannelStatusChanged);
-         p.onChannelStatusChanged = null;
+      mandatoryBroadcastRelatedSecurityCheck(p);
+      cycleChannel.call(this, -1);
+   };
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+    * HBBTV A.2.4 (Extensions to the video/broadcast object).
+    * <p>
+    * Security: broadcast-related.
+    *
+    * @method
+    * @memberof VideoBroadcast#
+    */
+   prototype.nextChannel = function() {
+      const p = privates.get(this);
+      mandatoryBroadcastRelatedSecurityCheck(p);
+      cycleChannel.call(this, 1);
+   };
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+    * HBBTV A.2.4 (Extensions to the video/broadcast object).
+    * <p>
+    * Security: none.
+    * 
+    * @param {boolean} fullScreen
+    *
+    * @method
+    * @memberof VideoBroadcast#
+    */
+   prototype.setFullScreen = function(val) {
+      const p = privates.get(this);
+      /** Broadcast-independent applications: setFullScreen() shall have no effect */
+      if (!p.isBroadcastRelated) {
+         return;
       }
-      if (p.onProgrammesChanged != null) {
-         hbbtv.bridge.removeWeakEventListener("ProgrammesChanged", p.onProgrammesChanged);
-         p.onProgrammesChanged = null;
+      p.fullScreen = val;
+      hbbtv.holePuncher.notifyFullScreenChanged(this);
+      dispatchFullScreenChangeEvent.call(this);
+   };
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+    * HBBTV A.2.4 (Extensions to the video/broadcast object).
+    * <p>
+    * Security: none.
+    * 
+    * @returns {integer}
+    *
+    * @method
+    * @memberof VideoBroadcast#
+    */
+   prototype.release = function() {
+      const p = privates.get(this);
+      /** Broadcast-independent applications: release() shall have no effect */
+      if (!p.isBroadcastRelated) {
+         return; // TODO Really?
       }
-      if (p.onParentalRatingChange != null) {
-         hbbtv.bridge.removeWeakEventListener("ParentalRatingChange", p.onParentalRatingChange);
-         p.onParentalRatingChange = null;
+      removeBridgeEventListeners.call(this);
+      if (p.playState !== PLAY_STATE_UNREALIZED) {
+         /* DAE vol5 Table 8 state transition #12 */
+         p.currentChannelData = null;
+         p.currentChannelProgrammes = null;
+         p.currentChannelComponents = null;
+         unregisterAllStreamEventListeners(p);
+         p.playState = PLAY_STATE_UNREALIZED;
+         hbbtv.holePuncher.setBroadcastVideoObject(null);
+         releaseActiveState.call(this);
+         dispatchPlayStateChangeEvent.call(this, p.playState);
+         /* TODO: If app has modified the set of components, they continue to be presented */
       }
-      if (p.onParentalRatingError != null) {
-         hbbtv.bridge.removeWeakEventListener("ParentalRatingError", p.onParentalRatingError);
-         p.onParentalRatingError = null;
+   };
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+    * HBBTV A.2.4 (Extensions to the video/broadcast object).
+    * <p>
+    * Security: none.
+    * 
+    * @method
+    * @memberof VideoBroadcast#
+    */
+   prototype.stop = function() {
+      const p = privates.get(this);
+      /** Broadcast-independent applications: stop() shall have no effect */
+      if (!p.isBroadcastRelated) {
+         return;
       }
-      if (p.onSelectedComponentChanged != null) {
-         hbbtv.bridge.removeWeakEventListener("SelectedComponentChanged", p.onSelectedComponentChanged);
-         p.onSelectedComponentChanged = null;
+      if (p.playState === PLAY_STATE_CONNECTING || p.playState === PLAY_STATE_PRESENTING) {
+         /* DAE vol5 Table 8 state transition #14 */
+         p.playState = PLAY_STATE_STOPPED;
+         removeBridgeEventListeners.call(this);
+         hbbtv.holePuncher.setBroadcastVideoObject(null);
+         hbbtv.bridge.broadcast.setPresentationSuspended(true);
+         dispatchPlayStateChangeEvent.call(this, p.playState);
       }
-      if (p.onComponentChanged != null) {
-         hbbtv.bridge.removeWeakEventListener("ComponentChanged", p.onComponentChanged);
-         p.onComponentChanged = null;
+   };
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.4 (Extensions to video/broadcast for playback of selected components);
+    * HBBTV A.2.17 (Notification of change of components).
+    * <p>
+    * Security: broadcast-related.
+    * 
+    * @param {number} componentType
+    * 
+    * @return {AVComponentCollection}
+    * 
+    * @method
+    * @memberof VideoBroadcast#
+    */
+   prototype.getComponents = function(componentType) {
+      const p = privates.get(this);
+      mandatoryBroadcastRelatedSecurityCheck(p);
+      if (!p.currentChannelComponents) {
+         p.currentChannelComponents = getFormattedComponents(p.currentChannelData.ccid);
       }
-      if (p.onStreamEvent != null) {
-         hbbtv.bridge.removeWeakEventListener("StreamEvent", p.onStreamEvent);
-         p.onStreamEvent = null;
+      let result;
+      if ((componentType === null) || (componentType === undefined)) {
+         result = p.currentChannelComponents.filter(component => {
+            return (!component.hidden);
+         });
+      } else {
+         result = p.currentChannelComponents.filter(component => {
+            return ((component.type === componentType) && !component.hidden);
+         });
       }
-      if (p.onTransitionedToBroadcastRelated != null) {
-         hbbtv.bridge.removeWeakEventListener("TransitionedToBroadcastRelated", p.onTransitionedToBroadcastRelated);
-         p.onTransitionedToBroadcastRelated = null;
+      return avComponentArrayToCollection.call(this, result);
+   };
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.4 (Extensions to video/broadcast for playback of selected components);
+    * HBBTV A.2.17 (Notification of change of components).
+    * <p>
+    * Security: broadcast-related.
+    * 
+    * @param {number} componentType
+    * 
+    * @return {AVComponentCollection}
+    * 
+    * @method
+    * @memberof VideoBroadcast#
+    */
+   prototype.getCurrentActiveComponents = function(componentType) {
+      const p = privates.get(this);
+      mandatoryBroadcastRelatedSecurityCheck(p);
+      if (!p.currentChannelComponents) {
+         p.currentChannelComponents = getFormattedComponents(p.currentChannelData.ccid);
       }
-   }
+      if ((componentType === null) || (componentType === undefined)) {
+         let result = p.currentChannelComponents.filter(component => {
+            return component.active;
+         });
+         return avComponentArrayToCollection.call(this, result);
+      } else {
+         let result = p.currentChannelComponents.filter(component => {
+            return (component.type === componentType) && component.active;
+         });
+         return avComponentArrayToCollection.call(this, result);
+      }
+   };
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.4 (Extensions to video/broadcast for playback of selected components);
+    * HBBTV A.2.17 (Notification of change of components).
+    * <p>
+    * Security: broadcast-related.
+    * 
+    * @param {AVComponent|number} component
+    * 
+    * @method
+    * @memberof VideoBroadcast#
+    */
+   prototype.selectComponent = function(component) {
+      const p = privates.get(this);
+      mandatoryBroadcastRelatedSecurityCheck(p);
+      if (!p.currentChannelComponents) {
+         p.currentChannelComponents = getFormattedComponents(p.currentChannelData.ccid);
+      }
+      if ((!p.currentChannelComponents) || (p.currentChannelComponents.length === 0)) {
+         throw new DOMException('', 'InvalidStateError');
+      }
+      if (isNaN(component)) {
+         // Select a specific component
+         let found = p.currentChannelComponents.find(item => {
+            return compareComponents.call(this, component, item);
+         });
+         if (found) {
+            hbbtv.bridge.broadcast.overrideDefaultComponentSelection(found.type, found.pid,
+               (found.ctag != undefined) ? found.ctag : 0,
+               (found.language != undefined) ? found.language : "");
+         }
+      } else {
+         // Select the default component
+         hbbtv.bridge.broadcast.restoreDefaultComponentSelection(component);
+      }
+   };
+
+   /**
+    * Specifications:
+    * HBBTV A.1/OIPF DAE 7.13.4 (Extensions to video/broadcast for playback of selected components);
+    * HBBTV A.2.17 (Notification of change of components).
+    * <p>
+    * Security: broadcast-related.
+    * 
+    * @param {AVComponent|number} component
+    * 
+    * @method
+    * @memberof VideoBroadcast#
+    */
+   prototype.unselectComponent = function(component) {
+      const p = privates.get(this);
+      mandatoryBroadcastRelatedSecurityCheck(p);
+      if (!p.currentChannelComponents) {
+         p.currentChannelComponents = getFormattedComponents(p.currentChannelData.ccid);
+      }
+      if (isNaN(component)) {
+         let found = p.currentChannelComponents.find(item => {
+            return compareComponents.call(this, component, item);
+         });
+         if (found.active) {
+            if (component.type == this.COMPONENT_TYPE_AUDIO ||
+                  component.type == this.COMPONENT_TYPE_SUBTITLE) {
+               // Select the default component
+               hbbtv.bridge.broadcast.restoreDefaultComponentSelection(component.type);
+            } else {
+               // Suspend video
+               hbbtv.bridge.broadcast.overrideDefaultComponentSelection(component.type, 0, 0, "");
+            }
+         }
+      } else {
+         // Suspend this component type
+         hbbtv.bridge.broadcast.overrideDefaultComponentSelection(component, 0, 0, "");
+      }
+   };
+
+   /**
+    * Specifications:
+    * HBBTV 8.2.1 (Acquisition of DSM-CC stream events).
+    * <p>
+    * Security: none.
+    * 
+    * @param {string} targetURL
+    * @param {string} eventName
+    * @param {EventListener} listener
+    * 
+    * @method
+    * @memberof VideoBroadcast#
+    */
+   prototype.addStreamEventListener = function(targetURL, eventName, listener) {
+      /* Extensions to video/broadcast for synchronization: No security restrictions specified */
+      const p = privates.get(this);
+      if ((p.playState == PLAY_STATE_PRESENTING) || (p.playState == PLAY_STATE_STOPPED)) {
+         if (targetURL.startsWith("dvb://")) {
+            registerStreamEventListener(p, targetURL, eventName, listener);
+         } else {
+            let found = false;
+            let componentTag, streamEventId;
+            let request = new XMLHttpRequest();
+            request.addEventListener("loadend", () => {
+               if (request.status == 200) {
+                  let dsmcc_objects = request.responseXML.getElementsByTagName("dsmcc:dsmcc_object");
+                  if (dsmcc_objects.length == 0) {
+                     dsmcc_objects = request.responseXML.getElementsByTagName("dsmcc_object");
+                  }
+                  for (let x = 0;
+                     (x < dsmcc_objects.length) && !found; x++) {
+                     let stream_events = dsmcc_objects[x].getElementsByTagName("dsmcc:stream_event");
+                     if (stream_events.length == 0) {
+                        stream_events = dsmcc_objects[x].getElementsByTagName("stream_event");
+                     }
+                     for (var y = 0; y < stream_events.length; y++) {
+                        let streamEventName = stream_events[y].getAttribute('dsmcc:stream_event_name');
+                        if (streamEventName == null) {
+                           streamEventName = stream_events[y].getAttribute('stream_event_name');
+                        }
+                        if (streamEventName === eventName) {
+                           found = true;
+                           componentTag = dsmcc_objects[x].getAttribute("dsmcc:component_tag");
+                           if (componentTag == null) {
+                              componentTag = dsmcc_objects[x].getAttribute("component_tag");
+                           }
+                           streamEventId = stream_events[y].getAttribute('dsmcc:stream_event_id');
+                           if (streamEventId == null) {
+                              streamEventId = stream_events[y].getAttribute('stream_event_id');
+                           }
+                           break;
+                        }
+                     }
+                  }
+               }
+
+               if (found) {
+                  registerStreamEventListener(p, targetURL, eventName, listener, componentTag, streamEventId);
+               } else {
+                  console.error("Failed to find Stream Event for: " + targetURL + ", on event:" + eventName +
+                     ", request status: " + request.status);
+                  raiseStreamEventError(eventName, listener);
+               }
+            });
+            request.open("GET", targetURL);
+            request.send();
+         }
+      }
+   };
+
+   /**
+    * Specifications:
+    * HBBTV 8.2.1 (Acquisition of DSM-CC stream events).
+    * <p>
+    * Security: none.
+    * 
+    * @param {string} targetURL
+    * @param {string} eventName
+    * @param {EventListener} listener
+    * 
+    * @method
+    * @memberof VideoBroadcast#
+    */
+   prototype.removeStreamEventListener = function(targetURL, eventName, listener) {
+      /* Extensions to video/broadcast for synchronization: No security restrictions specified */
+      const p = privates.get(this);
+      const streamEventID = getStreamEventID(targetURL, eventName);
+      const streamEventInternalID = p.streamEventListenerIdMap.get(streamEventID);
+      if (streamEventInternalID) {
+         const streamEventListeners = p.streamEventListenerMap.get(streamEventInternalID);
+         if (streamEventListeners) {
+            const index = streamEventListeners.indexOf(listener);
+            if (index != -1) {
+               streamEventListeners.splice(index, 1);
+               if (streamEventListeners.length == 0) {
+                  p.streamEventListenerIdMap.delete(streamEventID);
+                  p.streamEventListenerMap.delete(streamEventInternalID);
+                  hbbtv.bridge.broadcast.removeStreamEventListener(streamEventInternalID);
+               }
+            }
+         } else {
+            console.error("Unconsistent state, " + streamEventID + "(" + streamEventInternalID + ") has no listeners.");
+         }
+      } else {
+         console.error("Unexisting Stream Event Listener " + streamEventID);
+      }
+   };
+
+   prototype.addEventListener = function(type, listener) {
+      if (privates.get(this).eventDispatcher.addCountedEventListener(type, listener) > 0) {
+         gGarbageCollectionBlocked.add(this);
+      }
+   };
+
+   prototype.removeEventListener = function(type, listener) {
+      if (privates.get(this).eventDispatcher.removeCountedEventListener(type, listener) == 0) {
+         gGarbageCollectionBlocked.delete(this);
+      }
+   };
+
+   // Internal implementation
 
    function addBridgeEventListeners() {
       const p = privates.get(this);
@@ -414,17 +1262,17 @@ hbbtv.objects.VideoBroadcast = (function() {
                event.onetId + "," +
                event.transId + "," +
                event.servId + "), status: " + event.statusCode + " playState: " + p.playState);
-            if (p.playState == this.PLAY_STATE_CONNECTING) {
+            if (p.playState == PLAY_STATE_CONNECTING) {
                switch (event.statusCode) {
-                  case this.CHANNEL_STATUS_PRESENTING:
+                  case CHANNEL_STATUS_PRESENTING:
                      /* DAE vol5 Table 8 state transition #9 */
                      hbbtv.holePuncher.setBroadcastVideoObject(this);
-                     p.playState = this.PLAY_STATE_PRESENTING;
+                     p.playState = PLAY_STATE_PRESENTING;
                      dispatchChannelChangeSucceededEvent.call(this, p.currentChannelData);
                      dispatchPlayStateChangeEvent.call(this, p.playState);
                      break;
 
-                  case this.CHANNEL_STATUS_CONNECTING:
+                  case CHANNEL_STATUS_CONNECTING:
                      if (p.currentChannelData == null ||
                         event.servId != p.currentChannelData.sid ||
                         event.onetId != p.currentChannelData.onid ||
@@ -443,16 +1291,16 @@ hbbtv.objects.VideoBroadcast = (function() {
                      } else {
                         /* DAE vol5 Table 8 state transition #10, or possibly, a user initiated channel change */
                         /* Terminal connected to the broadcast or IP multicast stream but presentation blocked */
-                        p.playState = this.PLAY_STATE_CONNECTING;
+                        p.playState = PLAY_STATE_CONNECTING;
                         dispatchChannelChangeSucceededEvent.call(this, p.currentChannelData);
                         dispatchPlayStateChangeEvent.call(this, p.playState);
                      }
                      break;
 
-                  case this.CHANNEL_STATUS_CONNECTING_RECOVERY:
+                  case CHANNEL_STATUS_CONNECTING_RECOVERY:
                      /* DAE vol5 Table 8 state transition #11 */
                      /* Recovery from transient error */
-                     p.playState = this.PLAY_STATE_PRESENTING;
+                     p.playState = PLAY_STATE_PRESENTING;
                      dispatchPlayStateChangeEvent.call(this, p.playState);
                      break;
 
@@ -460,21 +1308,21 @@ hbbtv.objects.VideoBroadcast = (function() {
                      if (event.permanentError) {
                         /* DAE vol5 Table 8 state transition #13 */
                         unregisterAllStreamEventListeners(p);
-                        p.playState = this.PLAY_STATE_UNREALIZED;
+                        p.playState = PLAY_STATE_UNREALIZED;
                         dispatchPlayStateChangeEvent.call(this, p.playState);
                      } /* else DAE vol5 Table 8 state transition #2 */
                      dispatchChannelChangeErrorEvent.call(this, p.currentChannelData, event.statusCode);
                }
                p.waitingPlayStateConnectingConfirm = false;
-            } else if (p.playState == this.PLAY_STATE_PRESENTING) {
+            } else if (p.playState == PLAY_STATE_PRESENTING) {
                if (event.permanentError) {
                   /* DAE vol5 Table 8 state transition #16A */
                   unregisterAllStreamEventListeners(p);
-                  p.playState = this.PLAY_STATE_UNREALIZED;
+                  p.playState = PLAY_STATE_UNREALIZED;
                   dispatchPlayStateChangeEvent.call(this, p.playState);
-               } else if (event.statusCode == this.CHANNEL_STATUS_CONNECTING) {
+               } else if (event.statusCode == CHANNEL_STATUS_CONNECTING) {
                   /* Possibly a user initiated channel change (with app not bound to service) */
-                  p.playState = this.PLAY_STATE_CONNECTING;
+                  p.playState = PLAY_STATE_CONNECTING;
                   if (p.currentChannelData == null ||
                      event.servId != p.currentChannelData.sid ||
                      event.onetId != p.currentChannelData.onid ||
@@ -492,13 +1340,13 @@ hbbtv.objects.VideoBroadcast = (function() {
                   dispatchPlayStateChangeEvent.call(this, p.playState);
                } else /* temporary error */ {
                   /* DAE vol5 Table 8 state transition #15 */
-                  p.playState = this.PLAY_STATE_CONNECTING;
+                  p.playState = PLAY_STATE_CONNECTING;
                   dispatchPlayStateChangeEvent.call(this, p.playState);
                }
-            } else if ((p.playState == this.PLAY_STATE_STOPPED) && (event.permanentError)) {
+            } else if ((p.playState == PLAY_STATE_STOPPED) && (event.permanentError)) {
                /* DAE vol5 Table 8 state transition #16B */
                unregisterAllStreamEventListeners(p);
-               p.playState = this.PLAY_STATE_UNREALIZED;
+               p.playState = PLAY_STATE_UNREALIZED;
                dispatchPlayStateChangeEvent.call(this, p.playState);
             } else {
                console.log("Unhandled state transition. Current playState " + p.playState + ", event:");
@@ -608,13 +1456,49 @@ hbbtv.objects.VideoBroadcast = (function() {
       hbbtv.bridge.addWeakEventListener("TransitionedToBroadcastRelated", p.onTransitionedToBroadcastRelated);
    }
 
+   function removeBridgeEventListeners() {
+      const p = privates.get(this);
+      if (p.onChannelStatusChanged != null) {
+         hbbtv.bridge.removeWeakEventListener("ChannelStatusChanged", p.onChannelStatusChanged);
+         p.onChannelStatusChanged = null;
+      }
+      if (p.onProgrammesChanged != null) {
+         hbbtv.bridge.removeWeakEventListener("ProgrammesChanged", p.onProgrammesChanged);
+         p.onProgrammesChanged = null;
+      }
+      if (p.onParentalRatingChange != null) {
+         hbbtv.bridge.removeWeakEventListener("ParentalRatingChange", p.onParentalRatingChange);
+         p.onParentalRatingChange = null;
+      }
+      if (p.onParentalRatingError != null) {
+         hbbtv.bridge.removeWeakEventListener("ParentalRatingError", p.onParentalRatingError);
+         p.onParentalRatingError = null;
+      }
+      if (p.onSelectedComponentChanged != null) {
+         hbbtv.bridge.removeWeakEventListener("SelectedComponentChanged", p.onSelectedComponentChanged);
+         p.onSelectedComponentChanged = null;
+      }
+      if (p.onComponentChanged != null) {
+         hbbtv.bridge.removeWeakEventListener("ComponentChanged", p.onComponentChanged);
+         p.onComponentChanged = null;
+      }
+      if (p.onStreamEvent != null) {
+         hbbtv.bridge.removeWeakEventListener("StreamEvent", p.onStreamEvent);
+         p.onStreamEvent = null;
+      }
+      if (p.onTransitionedToBroadcastRelated != null) {
+         hbbtv.bridge.removeWeakEventListener("TransitionedToBroadcastRelated", p.onTransitionedToBroadcastRelated);
+         p.onTransitionedToBroadcastRelated = null;
+      }
+   }
+
    function cycleChannel(delta) {
       const p = privates.get(this);
       if (!p.isBroadcastRelated) {
          throw new DOMException('', 'SecurityError');
       }
-      if ((p.playState === this.PLAY_STATE_UNREALIZED) || (p.channelConfig.channelList.length < 2)) {
-         dispatchChannelChangeErrorEvent.call(this, p.currentChannelData, this.CHANNEL_STATUS_CANNOT_BE_CHANGED);
+      if ((p.playState === PLAY_STATE_UNREALIZED) || (p.channelConfig.channelList.length < 2)) {
+         dispatchChannelChangeErrorEvent.call(this, p.currentChannelData, CHANNEL_STATUS_CANNOT_BE_CHANGED);
          return;
       }
       let i;
@@ -626,17 +1510,17 @@ hbbtv.objects.VideoBroadcast = (function() {
             return;
          }
       }
-      if (p.playState === this.PLAY_STATE_CONNECTING) {
+      if (p.playState === PLAY_STATE_CONNECTING) {
          /* DAE vol5 Table 8 state transition #4 */
          unregisterAllStreamEventListeners(p);
-         p.playState = this.PLAY_STATE_UNREALIZED;
+         p.playState = PLAY_STATE_UNREALIZED;
          /* Note: playState is updated first, so it is already correct for the ChannelChangeErrorEvent */
-         dispatchChannelChangeErrorEvent.call(this, p.currentChannelData, this.CHANNEL_STATUS_CANNOT_BE_CHANGED);
-         dispatchPlayStateChangeEvent.call(this, p.playState, this.CHANNEL_STATUS_CANNOT_BE_CHANGED);
+         dispatchChannelChangeErrorEvent.call(this, p.currentChannelData, CHANNEL_STATUS_CANNOT_BE_CHANGED);
+         dispatchPlayStateChangeEvent.call(this, p.playState, CHANNEL_STATUS_CANNOT_BE_CHANGED);
       } else {
          /* Either Presenting or Stopped */
          /* DAE vol5 Table 8 state transition #5 */
-         dispatchChannelChangeErrorEvent.call(this, p.currentChannelData, this.CHANNEL_STATUS_CANNOT_BE_CHANGED);
+         dispatchChannelChangeErrorEvent.call(this, p.currentChannelData, CHANNEL_STATUS_CANNOT_BE_CHANGED);
       }
    }
 
@@ -646,175 +1530,6 @@ hbbtv.objects.VideoBroadcast = (function() {
          throw new DOMException('', 'SecurityError');
       }
    }
-
-   /** Broadcast-independent applications: shall have no restrictions */
-   function noRestrictionSecurityCheck() {
-      /* noop */
-   };
-
-   prototype.prevChannel = function() {
-      const p = privates.get(this);
-      mandatoryBroadcastRelatedSecurityCheck(p);
-      cycleChannel.call(this, -1);
-   };
-
-   prototype.nextChannel = function() {
-      const p = privates.get(this);
-      mandatoryBroadcastRelatedSecurityCheck(p);
-      cycleChannel.call(this, 1);
-   };
-
-   prototype.setFullScreen = function(val) {
-      const p = privates.get(this);
-      /** Broadcast-independent applications: setFullScreen() shall have no effect */
-      if (!p.isBroadcastRelated) {
-         return;
-      }
-      p.fullScreen = val;
-      hbbtv.holePuncher.notifyFullScreenChanged(this);
-      dispatchFullScreenChangeEvent.call(this);
-   };
-
-   prototype.release = function() {
-      const p = privates.get(this);
-      /** Broadcast-independent applications: release() shall have no effect */
-      if (!p.isBroadcastRelated) {
-         return; // TODO Really?
-      }
-      removeBridgeEventListeners.call(this);
-      if (p.playState !== this.PLAY_STATE_UNREALIZED) {
-         /* DAE vol5 Table 8 state transition #12 */
-         p.currentChannelData = null;
-         p.currentChannelProgrammes = null;
-         p.currentChannelComponents = null;
-         unregisterAllStreamEventListeners(p);
-         p.playState = this.PLAY_STATE_UNREALIZED;
-         hbbtv.holePuncher.setBroadcastVideoObject(null);
-         releaseActiveState.call(this);
-         dispatchPlayStateChangeEvent.call(this, p.playState);
-         /* TODO: If app has modified the set of components, they continue to be presented */
-      }
-   };
-
-   prototype.stop = function() {
-      const p = privates.get(this);
-      /** Broadcast-independent applications: stop() shall have no effect */
-      if (!p.isBroadcastRelated) {
-         return;
-      }
-      if (p.playState === this.PLAY_STATE_CONNECTING || p.playState === this.PLAY_STATE_PRESENTING) {
-         /* DAE vol5 Table 8 state transition #14 */
-         p.playState = this.PLAY_STATE_STOPPED;
-         removeBridgeEventListeners.call(this);
-         hbbtv.holePuncher.setBroadcastVideoObject(null);
-         hbbtv.bridge.broadcast.setPresentationSuspended(true);
-         dispatchPlayStateChangeEvent.call(this, p.playState);
-      }
-   };
-
-   // DOM level 1 event methods
-   prototype.addEventListener = function(type, listener) {
-      noRestrictionSecurityCheck();
-      if (privates.get(this).eventDispatcher.addCountedEventListener(type, listener) > 0) {
-         gGarbageCollectionBlocked.add(this);
-      }
-   };
-
-   prototype.removeEventListener = function(type, listener) {
-      noRestrictionSecurityCheck();
-      if (privates.get(this).eventDispatcher.removeCountedEventListener(type, listener) == 0) {
-         gGarbageCollectionBlocked.delete(this);
-      }
-   };
-
-   prototype.getComponents = function(componentType) {
-      const p = privates.get(this);
-      mandatoryBroadcastRelatedSecurityCheck(p);
-      if (!p.currentChannelComponents) {
-         p.currentChannelComponents = getFormattedComponents(p.currentChannelData.ccid);
-      }
-      let result;
-      if ((componentType === null) || (componentType === undefined)) {
-         result = p.currentChannelComponents.filter(component => {
-            return (!component.hidden);
-         });
-      } else {
-         result = p.currentChannelComponents.filter(component => {
-            return ((component.type === componentType) && !component.hidden);
-         });
-      }
-      return avComponentArrayToCollection.call(this, result);
-   };
-
-   prototype.getCurrentActiveComponents = function(componentType) {
-      const p = privates.get(this);
-      mandatoryBroadcastRelatedSecurityCheck(p);
-      if (!p.currentChannelComponents) {
-         p.currentChannelComponents = getFormattedComponents(p.currentChannelData.ccid);
-      }
-      if ((componentType === null) || (componentType === undefined)) {
-         let result = p.currentChannelComponents.filter(component => {
-            return component.active;
-         });
-         return avComponentArrayToCollection.call(this, result);
-      } else {
-         let result = p.currentChannelComponents.filter(component => {
-            return (component.type === componentType) && component.active;
-         });
-         return avComponentArrayToCollection.call(this, result);
-      }
-   };
-
-   prototype.selectComponent = function(component) {
-      const p = privates.get(this);
-      mandatoryBroadcastRelatedSecurityCheck(p);
-      if (!p.currentChannelComponents) {
-         p.currentChannelComponents = getFormattedComponents(p.currentChannelData.ccid);
-      }
-      if ((!p.currentChannelComponents) || (p.currentChannelComponents.length === 0)) {
-         throw new DOMException('', 'InvalidStateError');
-      }
-      if (isNaN(component)) {
-         // Select a specific component
-         let found = p.currentChannelComponents.find(item => {
-            return compareComponents.call(this, component, item);
-         });
-         if (found) {
-            hbbtv.bridge.broadcast.overrideDefaultComponentSelection(found.type, found.pid,
-               (found.ctag != undefined) ? found.ctag : 0,
-               (found.language != undefined) ? found.language : "");
-         }
-      } else {
-         // Select the default component
-         hbbtv.bridge.broadcast.restoreDefaultComponentSelection(component);
-      }
-   };
-
-   prototype.unselectComponent = function(component) {
-      const p = privates.get(this);
-      mandatoryBroadcastRelatedSecurityCheck(p);
-      if (!p.currentChannelComponents) {
-         p.currentChannelComponents = getFormattedComponents(p.currentChannelData.ccid);
-      }
-      if (isNaN(component)) {
-         let found = p.currentChannelComponents.find(item => {
-            return compareComponents.call(this, component, item);
-         });
-         if (found.active) {
-            if (component.type == this.COMPONENT_TYPE_AUDIO ||
-                  component.type == this.COMPONENT_TYPE_SUBTITLE) {
-               // Select the default component
-               hbbtv.bridge.broadcast.restoreDefaultComponentSelection(component.type);
-            } else {
-               // Suspend video
-               hbbtv.bridge.broadcast.overrideDefaultComponentSelection(component.type, 0, 0, "");
-            }
-         }
-      } else {
-         // Suspend this component type
-         hbbtv.bridge.broadcast.overrideDefaultComponentSelection(component, 0, 0, "");
-      }
-   };
 
    function raiseStreamEventError(name, listener) {
       const event = new Event("StreamEvent");
@@ -863,100 +1578,6 @@ hbbtv.objects.VideoBroadcast = (function() {
       p.streamEventListenerIdMap.clear();
    }
 
-   prototype.addStreamEventListener = function(targetURL, eventName, listener) {
-      /* Extensions to video/broadcast for synchronization: No security restrictions specified */
-      const p = privates.get(this);
-      if ((p.playState == this.PLAY_STATE_PRESENTING) || (p.playState == this.PLAY_STATE_STOPPED)) {
-         if (targetURL.startsWith("dvb://")) {
-            registerStreamEventListener(p, targetURL, eventName, listener);
-         } else {
-            let found = false;
-            let componentTag, streamEventId;
-            let request = new XMLHttpRequest();
-            request.addEventListener("loadend", () => {
-               if (request.status == 200) {
-                  let dsmcc_objects = request.responseXML.getElementsByTagName("dsmcc:dsmcc_object");
-                  if (dsmcc_objects.length == 0) {
-                     dsmcc_objects = request.responseXML.getElementsByTagName("dsmcc_object");
-                  }
-                  for (let x = 0;
-                     (x < dsmcc_objects.length) && !found; x++) {
-                     let stream_events = dsmcc_objects[x].getElementsByTagName("dsmcc:stream_event");
-                     if (stream_events.length == 0) {
-                        stream_events = dsmcc_objects[x].getElementsByTagName("stream_event");
-                     }
-                     for (var y = 0; y < stream_events.length; y++) {
-                        let streamEventName = stream_events[y].getAttribute('dsmcc:stream_event_name');
-                        if (streamEventName == null) {
-                           streamEventName = stream_events[y].getAttribute('stream_event_name');
-                        }
-                        if (streamEventName === eventName) {
-                           found = true;
-                           componentTag = dsmcc_objects[x].getAttribute("dsmcc:component_tag");
-                           if (componentTag == null) {
-                              componentTag = dsmcc_objects[x].getAttribute("component_tag");
-                           }
-                           streamEventId = stream_events[y].getAttribute('dsmcc:stream_event_id');
-                           if (streamEventId == null) {
-                              streamEventId = stream_events[y].getAttribute('stream_event_id');
-                           }
-                           break;
-                        }
-                     }
-                  }
-               }
-
-               if (found) {
-                  registerStreamEventListener(p, targetURL, eventName, listener, componentTag, streamEventId);
-               } else {
-                  console.error("Failed to find Stream Event for: " + targetURL + ", on event:" + eventName +
-                     ", request status: " + request.status);
-                  raiseStreamEventError(eventName, listener);
-               }
-            });
-            request.open("GET", targetURL);
-            request.send();
-         }
-      }
-   };
-
-   prototype.removeStreamEventListener = function(targetURL, eventName, listener) {
-      /* Extensions to video/broadcast for synchronization: No security restrictions specified */
-      const p = privates.get(this);
-      const streamEventID = getStreamEventID(targetURL, eventName);
-      const streamEventInternalID = p.streamEventListenerIdMap.get(streamEventID);
-      if (streamEventInternalID) {
-         const streamEventListeners = p.streamEventListenerMap.get(streamEventInternalID);
-         if (streamEventListeners) {
-            const index = streamEventListeners.indexOf(listener);
-            if (index != -1) {
-               streamEventListeners.splice(index, 1);
-               if (streamEventListeners.length == 0) {
-                  p.streamEventListenerIdMap.delete(streamEventID);
-                  p.streamEventListenerMap.delete(streamEventInternalID);
-                  hbbtv.bridge.broadcast.removeStreamEventListener(streamEventInternalID);
-               }
-            }
-         } else {
-            console.error("Unconsistent state, " + streamEventID + "(" + streamEventInternalID + ") has no listeners.");
-         }
-      } else {
-         console.error("Unexisting Stream Event Listener " + streamEventID);
-      }
-   };
-
-   prototype.recordNow = function() {
-      const p = privates.get(this);
-      mandatoryBroadcastRelatedSecurityCheck(p);
-      // TODO
-   };
-
-   prototype.stopRecording = function() {
-      const p = privates.get(this);
-      mandatoryBroadcastRelatedSecurityCheck(p);
-      // TODO
-   };
-
    function acquireActiveState() {
       if (gActiveStateOwner !== null) {
          const owner = hbbtv.utils.weakDeref(gActiveStateOwner)
@@ -980,231 +1601,22 @@ hbbtv.objects.VideoBroadcast = (function() {
       }
    }
 
-   // DOM level 0 event properties
-   Object.defineProperty(prototype, "onfocus", {
-      get() {
-         return privates.get(this).onfocusDomLevel0;
-      },
-      set(listener) {
-         const p = privates.get(this);
-         if (p.onfocusDomLevel0) {
-            this.removeEventListener("focus", p.onfocusDomLevel0);
-         }
-         p.onfocusDomLevel0 = listener;
-         if (listener) {
-            this.addEventListener("focus", p.onfocusDomLevel0);
-         }
-      }
-   });
-
-   Object.defineProperty(prototype, "onblur", {
-      get() {
-         return privates.get(this).onblurDomLevel0;
-      },
-      set(listener) {
-         const p = privates.get(this);
-         if (p.onblurDomLevel0) {
-            this.removeEventListener("blur", p.onblurDomLevel0);
-         }
-         p.onblurDomLevel0 = listener;
-         if (listener) {
-            this.addEventListener("blur", p.onblurDomLevel0);
-         }
-      }
-   });
-
-   Object.defineProperty(prototype, "onFullScreenChange", {
-      get() {
-         return privates.get(this).onFullScreenChangeDomLevel0;
-      },
-      set(listener) {
-         const p = privates.get(this);
-         if (p.onFullScreenChangeDomLevel0) {
-            this.removeEventListener("FullScreenChange", p.onFullScreenChangeDomLevel0);
-         }
-         p.onFullScreenChangeDomLevel0 = listener;
-         if (listener) {
-            this.addEventListener("FullScreenChange", p.onFullScreenChangeDomLevel0);
-         }
-      }
-   });
-
-   Object.defineProperty(prototype, "onChannelChangeError", {
-      get() {
-         return privates.get(this).onChannelChangeErrorDomLevel0;
-      },
-      set(listener) {
-         const p = privates.get(this);
-         if (p.onChannelChangeErrorDomLevel0) {
-            this.removeEventListener("ChannelChangeError", p.onChannelChangeErrorWrapper);
-            p.onChannelChangeErrorWrapper = null;
-         }
-         p.onChannelChangeErrorDomLevel0 = listener;
-         if (listener) {
-            p.onChannelChangeErrorWrapper = (ev) => {
-               listener(ev.channel, ev.errorState);
-            };
-            this.addEventListener("ChannelChangeError", p.onChannelChangeErrorWrapper);
-         }
-      }
-   });
-
-   Object.defineProperty(prototype, "onChannelChangeSucceeded", {
-      get() {
-         return privates.get(this).onChannelChangeSucceededDomLevel0;
-      },
-      set(listener) {
-         const p = privates.get(this);
-         if (p.onChannelChangeSucceededDomLevel0) {
-            this.removeEventListener("ChannelChangeSucceeded", p.onChannelChangeSucceededWrapper);
-            p.onChannelChangeSucceededWrapper = null;
-         }
-         p.onChannelChangeSucceededDomLevel0 = listener;
-         if (listener) {
-            p.onChannelChangeSucceededWrapper = (ev) => {
-               listener(ev.channel);
-            };
-            this.addEventListener("ChannelChangeSucceeded", p.onChannelChangeSucceededWrapper);
-         }
-      }
-   });
-
-   Object.defineProperty(prototype, "onPlayStateChange", {
-      get() {
-         return privates.get(this).onPlayStateChangeDomLevel0;
-      },
-      set(listener) {
-         const p = privates.get(this);
-         if (p.onPlayStateChangeDomLevel0) {
-            this.removeEventListener("PlayStateChange", p.onPlayStateChangeWrapper);
-            p.onPlayStateChangeWrapper = null;
-         }
-         p.onPlayStateChangeDomLevel0 = listener;
-         if (listener) {
-            p.onPlayStateChangeWrapper = (ev) => {
-               listener(ev.state, ev.error);
-            };
-            this.addEventListener("PlayStateChange", p.onPlayStateChangeWrapper);
-         }
-      }
-   });
-
-   Object.defineProperty(prototype, "onProgrammesChanged", {
-      get() {
-         return privates.get(this).onProgrammesChangedDomLevel0;
-      },
-      set(listener) {
-         const p = privates.get(this);
-         if (p.onProgrammesChangedDomLevel0) {
-            this.removeEventListener("ProgrammesChanged", p.onProgrammesChangedDomLevel0);
-         }
-         p.onProgrammesChangedDomLevel0 = listener;
-         if (listener) {
-            this.addEventListener("ProgrammesChanged", p.onProgrammesChangedDomLevel0);
-         }
-      }
-   });
-
-   Object.defineProperty(prototype, "onParentalRatingChange", {
-      get() {
-         return privates.get(this).onParentalRatingChangeDomLevel0;
-      },
-      set(listener) {
-         const p = privates.get(this);
-         if (p.onParentalRatingChangeDomLevel0) {
-            this.removeEventListener("ParentalRatingChange", p.onParentalRatingChangeWrapper);
-            p.onParentalRatingChangeWrapper = null;
-         }
-         p.onParentalRatingChangeDomLevel0 = listener;
-         if (listener) {
-            p.onParentalRatingChangeWrapper = (ev) => {
-               listener(ev.contentID, ev.ratings, ev.DRMSystemID, ev.blocked);
-            };
-            this.addEventListener("ParentalRatingChange", p.onParentalRatingChangeWrapper);
-         }
-      }
-   });
-
-   Object.defineProperty(prototype, "onParentalRatingError", {
-      get() {
-         return privates.get(this).onParentalRatingErrorDomLevel0;
-      },
-      set(listener) {
-         const p = privates.get(this);
-         if (p.onParentalRatingErrorDomLevel0) {
-            this.removeEventListener("ParentalRatingError", p.onParentalRatingErrorWrapper);
-            p.onParentalRatingErrorWrapper = null;
-         }
-         p.onParentalRatingErrorDomLevel0 = listener;
-         if (listener) {
-            p.onParentalRatingErrorWrapper = (ev) => {
-               listener(ev.contentID, ev.ratings, ev.DRMSystemID);
-            };
-            this.addEventListener("ParentalRatingError", p.onParentalRatingErrorWrapper);
-         }
-      }
-   });
-
-   Object.defineProperty(prototype, "onSelectedComponentChanged", {
-      get() {
-         return privates.get(this).onSelectedComponentChangedDomLevel0;
-      },
-      set(listener) {
-         const p = privates.get(this);
-         if (p.onSelectedComponentChangedDomLevel0) {
-            this.removeEventListener("SelectedComponentChanged", p.onSelectedComponentChangedWrapper);
-            p.onSelectedComponentChangedWrapper = null;
-         }
-         p.onSelectedComponentChangedDomLevel0 = listener;
-         if (listener) {
-            p.onSelectedComponentChangedWrapper = (ev) => {
-               listener(ev.componentType);
-            };
-            this.addEventListener("SelectedComponentChanged", p.onSelectedComponentChangedWrapper);
-         }
-      }
-   });
-
-   Object.defineProperty(prototype, "onComponentChanged", {
-      get() {
-         return privates.get(this).onComponentChangedDomLevel0;
-      },
-      set(listener) {
-         const p = privates.get(this);
-         if (p.onComponentChangedDomLevel0) {
-            this.removeEventListener("ComponentChanged", p.onComponentChangedWrapper);
-            p.onComponentChangedWrapper = null;
-         }
-         p.onComponentChangedDomLevel0 = listener;
-         if (listener) {
-            p.onComponentChangedWrapper = (ev) => {
-               listener(ev.componentType);
-            };
-            this.addEventListener("ComponentChanged", p.onComponentChangedWrapper);
-         }
-      }
-   });
-
    function dispatchFocusEvent() {
-      noRestrictionSecurityCheck();
       const event = new Event("focus");
       privates.get(this).eventDispatcher.dispatchEvent(event);
    }
 
    function dispatchBlurEvent() {
-      noRestrictionSecurityCheck();
       const event = new Event("blur");
       privates.get(this).eventDispatcher.dispatchEvent(event);
    }
 
    function dispatchFullScreenChangeEvent() {
-      noRestrictionSecurityCheck();
       const event = new Event("FullScreenChange");
       privates.get(this).eventDispatcher.dispatchEvent(event);
    }
 
    function dispatchChannelChangeErrorEvent(channel, errorState) {
-      noRestrictionSecurityCheck();
       const event = new Event("ChannelChangeError");
       Object.assign(event, {
          channel: channel,
@@ -1214,7 +1626,6 @@ hbbtv.objects.VideoBroadcast = (function() {
    }
 
    function dispatchChannelChangeSucceededEvent(channel) {
-      noRestrictionSecurityCheck();
       const event = new Event("ChannelChangeSucceeded");
       Object.assign(event, {
          channel: channel
@@ -1223,7 +1634,6 @@ hbbtv.objects.VideoBroadcast = (function() {
    }
 
    function dispatchPlayStateChangeEvent(state, error) {
-      noRestrictionSecurityCheck();
       const event = new Event("PlayStateChange");
       Object.assign(event, {
          state: state,
@@ -1312,46 +1722,6 @@ hbbtv.objects.VideoBroadcast = (function() {
                   break;
                }
             }
-         }
-      }
-   }
-
-   function initialise() {
-      /* TODO: the video/broadcast embedded object (...) SHALL adhere to the tuner related security
-       * requirements in section 10.1.3.1. => TLS handshake through a valid X.509v3 certificate */
-      privates.set(this, {});
-      const p = privates.get(this);
-      p.eventDispatcher = new hbbtv.utils.EventDispatcher(this);
-      /* Associates targetURL::eventName with internal ID */
-      p.streamEventListenerIdMap = new Map();
-      /* Associates internal ID with registered listeners */
-      p.streamEventListenerMap = new Map();
-      p.playState = this.PLAY_STATE_UNREALIZED;
-      p.waitingPlayStateConnectingConfirm = false;
-      p.fullScreen = false;
-      p.x = 0;
-      p.y = 0;
-      p.width = 1280;
-      p.height = 720;
-      this.widescreen = true; // TODO
-      p.display_none = (this.style.display === 'none');
-
-      // The application either starts off broadcast-independent or becomes broadcast-independent
-      // when setChannel(null, ...) is called on the realized v/b object. Here we set we are
-      // broadcast-related unless getCurrentChannel() throws SecurityError.
-      p.currentChannelData = null;
-      p.channelConfig = null;
-      p.isTransitioningToBroadcastRelated = false;
-      setIsBroadcastRelated.call(this, true);
-      try {
-         p.currentChannelData = hbbtv.objects.createChannel(hbbtv.bridge.broadcast.getCurrentChannel());
-         p.channelConfig = hbbtv.objects.createChannelConfig();
-      } catch (e) {
-         if (e.name === 'SecurityError') {
-            p.currentChannelData = null;
-            setIsBroadcastRelated.call(this, false);
-         } else {
-            throw (e);
          }
       }
    }
@@ -1446,6 +1816,46 @@ hbbtv.objects.VideoBroadcast = (function() {
             // It's up to the realized object whether we suspsend broadcast presentation or not.
          } else {
             hbbtv.bridge.broadcast.setPresentationSuspended(broadbandAvInUse);
+         }
+      }
+   }
+
+   function initialise() {
+      /* TODO: the video/broadcast embedded object (...) SHALL adhere to the tuner related security
+       * requirements in section 10.1.3.1. => TLS handshake through a valid X.509v3 certificate */
+      privates.set(this, {});
+      const p = privates.get(this);
+      p.eventDispatcher = new hbbtv.utils.EventDispatcher(this);
+      /* Associates targetURL::eventName with internal ID */
+      p.streamEventListenerIdMap = new Map();
+      /* Associates internal ID with registered listeners */
+      p.streamEventListenerMap = new Map();
+      p.playState = PLAY_STATE_UNREALIZED;
+      p.waitingPlayStateConnectingConfirm = false;
+      p.fullScreen = false;
+      p.x = 0;
+      p.y = 0;
+      p.width = 1280;
+      p.height = 720;
+      this.widescreen = true; // TODO
+      p.display_none = (this.style.display === 'none');
+
+      // The application either starts off broadcast-independent or becomes broadcast-independent
+      // when setChannel(null, ...) is called on the realized v/b object. Here we set we are
+      // broadcast-related unless getCurrentChannel() throws SecurityError.
+      p.currentChannelData = null;
+      p.channelConfig = null;
+      p.isTransitioningToBroadcastRelated = false;
+      setIsBroadcastRelated.call(this, true);
+      try {
+         p.currentChannelData = hbbtv.objects.createChannel(hbbtv.bridge.broadcast.getCurrentChannel());
+         p.channelConfig = hbbtv.objects.createChannelConfig();
+      } catch (e) {
+         if (e.name === 'SecurityError') {
+            p.currentChannelData = null;
+            setIsBroadcastRelated.call(this, false);
+         } else {
+            throw (e);
          }
       }
    }
