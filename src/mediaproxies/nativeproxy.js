@@ -103,39 +103,43 @@ hbbtv.objects.NativeProxy = (function() {
          });
 
       const videoOwnProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "videoTracks");
-      const videoTrackList = [];
-      for (const track of videoOwnProperty.get.call(this)) {
-         const t = {};
-         for (const key in track) {
-            t[key] = track[key];
+      if (videoOwnProperty) {
+         const videoTrackList = [];
+         for (const track of videoOwnProperty.get.call(this)) {
+            const t = {};
+            for (const key in track) {
+               t[key] = track[key];
+            }
+            t.index = videoTrackList.length;
+            t.encoding = undefined;
+            t.encrypted = false;
+            videoTrackList.push(t);
          }
-         t.index = videoTrackList.length;
-         t.encoding = undefined;
-         t.encrypted = false;
-         videoTrackList.push(t);
+         this.videoTracks.orb_setTrackList(videoTrackList);
       }
-      this.videoTracks.obs_setTrackList(videoTrackList);
 
       const audioOwnProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "audioTracks");
-      const audioTrackList = [];
-      for (const track of audioOwnProperty.get.call(this)) {
-         const t = {};
-         for (const key in track) {
-            t[key] = track[key];
+      if (audioOwnProperty) {
+         const audioTrackList = [];
+         for (const track of audioOwnProperty.get.call(this)) {
+            const t = {};
+            for (const key in track) {
+               t[key] = track[key];
+            }
+            t.numChannels = 2;
+            t.index = audioTrackList.length;
+            t.encoding = undefined;
+            t.encrypted = false;
+            audioTrackList.push(t);
          }
-         t.numChannels = 2;
-         t.index = audioTrackList.length;
-         t.encoding = undefined;
-         t.encrypted = false;
-         audioTrackList.push(t);
+         this.audioTracks.orb_setTrackList(audioTrackList);
       }
-      this.audioTracks.obs_setTrackList(audioTrackList);
    }
-   
+
 
    function onError() {
       if (this.error) {
-         let evt = new Event("__obs_onerror__");
+         let evt = new Event("__orb_onerror__");
          let data = {
             code: 2,
             message: this.error.message

@@ -1,1 +1,1 @@
-hbbtv.objects = { };
+hbbtv.objects = {};

@@ -236,8 +236,8 @@ hbbtv.objects.DashProxy = (function() {
       const p = privates.get(this);
       if (p) {
          console.log("DashProxy: Loaded data.");
-         this.videoTracks.obs_setTrackList(getVideoTracks.call(this));
-         this.audioTracks.obs_setTrackList(getAudioTracks.call(this));
+         this.videoTracks.orb_setTrackList(getVideoTracks.call(this));
+         this.audioTracks.orb_setTrackList(getAudioTracks.call(this));
          p.onTextTrackChange();
       } else {
          console.warn("DashProxy: Not initialised.");
@@ -265,7 +265,7 @@ hbbtv.objects.DashProxy = (function() {
       }
       const p = privates.get(this);
       let nativeEvt = new Event("error");
-      let evt = new Event("__obs_onerror__");
+      let evt = new Event("__orb_onerror__");
       let data = {
          code: 2,
          message: e.error.message
@@ -400,7 +400,7 @@ hbbtv.objects.DashProxy = (function() {
    }
 
    function onParentalRatingChange(payload) {
-      let evt = new Event("__obs_onparentalratingchange__");
+      let evt = new Event("__orb_onparentalratingchange__");
       let nativeEvt = new Event("error");
       let data = {
          contentID: undefined,
@@ -540,7 +540,7 @@ hbbtv.objects.DashProxy = (function() {
       const player = privates.get(this).player;
       for (let i = 0; i < this.videoTracks.length; ++i) {
          if (this.videoTracks[i].selected) {
-            let nextTrack = player.getTracksFor('video').find(track => track.index === this.videoTracks[i].index);
+            let nextTrack = p.player.getTracksFor('video').find(track => track.index === this.videoTracks[i].index);
             if (player.getCurrentTrackFor('video') !== nextTrack) {
                player.setCurrentTrack(nextTrack);
             }
@@ -560,8 +560,8 @@ hbbtv.objects.DashProxy = (function() {
          p.onTextTrackChange = onTextTrackChange.bind(this);
          p.onAudioTrackChange = onAudioTrackChange.bind(this);
          p.onVideoTrackChange = onVideoTrackChange.bind(this);
-         p.onPeriodChanged = makeStreamInfoCallback(this, "__obs_onperiodchanged__");
-         p.onStreamUpdated = makeStreamInfoCallback(this, "__obs_onstreamupdated__");
+         p.onPeriodChanged = makeStreamInfoCallback(this, "__orb_onperiodchanged__");
+         p.onStreamUpdated = makeStreamInfoCallback(this, "__orb_onstreamupdated__");
          this.audioTracks.addEventListener("change", p.onAudioTrackChange);
          this.videoTracks.addEventListener("change", p.onVideoTrackChange);
 

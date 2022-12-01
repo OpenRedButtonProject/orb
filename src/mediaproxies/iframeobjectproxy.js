@@ -179,6 +179,7 @@ hbbtv.objects.IFrameObjectProxy = (function() {
                      observer.dispatchEvent(evt);
                      break;
                   case MSG_TYPE_SET_PROPERTIES:
+                     // console.log("IFrameObjectProxy: Received request for update of properties for observer with id", msg.data.observerId, msg.data.properties);
                      for (const key in msg.data.properties) {
                         if (typeof observer[key] !== "function" && observer[key] !== msg.data.properties[key]) {
                            observer[key] = msg.data.properties[key];

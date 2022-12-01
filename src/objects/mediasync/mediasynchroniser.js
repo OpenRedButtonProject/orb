@@ -191,8 +191,8 @@ hbbtv.objects.MediaSynchroniser = (function() {
             p.mediaObserver.addEventListener("Error", errorHandler);
 
             if (relIndex >= 0) {
-               mediaObject.addEventListener("__obs_onstreamupdated__", p.onStreamUpdatedHandler);
-               mediaObject.addEventListener("__obs_onperiodchanged__", p.onPeriodChangedHandler);
+               mediaObject.addEventListener("__orb_onstreamupdated__", p.onStreamUpdatedHandler);
+               mediaObject.addEventListener("__orb_onperiodchanged__", p.onPeriodChangedHandler);
                curPeriod = timelineSelector.substring(relIndex + 5).split(":")[1];
                if (curPeriod) {
                   const curPeriodInfo = mediaObject.orb_getCurrentPeriod();
@@ -436,8 +436,8 @@ hbbtv.objects.MediaSynchroniser = (function() {
             p.mediaObserver = undefined;
          }
          if (p.masterMediaObject) {
-            p.masterMediaObject.removeEventListener("__obs_onstreamupdated__", p.onStreamUpdatedHandler);
-            p.masterMediaObject.removeEventListener("__obs_onperiodchanged__", p.onPeriodChangedHandler);
+            p.masterMediaObject.removeEventListener("__orb_onstreamupdated__", p.onStreamUpdatedHandler);
+            p.masterMediaObject.removeEventListener("__orb_onperiodchanged__", p.onPeriodChangedHandler);
          }
          for (const mediaObject of p.mediaObjects) {
             const priv = privates.get(mediaObject);

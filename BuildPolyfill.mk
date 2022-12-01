@@ -77,7 +77,7 @@ src/objects/mediasync/mediaelementtsclient.js \
 src/objects/csmanager.js \
 src/mediaproxies/mediaerror.js \
 src/mediaproxies/iframeobjectproxy.js \
-src/mediaproxies/mediaelementwrapper.js \
+src/mediaproxies/mediaelementextension.js \
 src/run.js \
 src/housekeeping/endiffe.js
 

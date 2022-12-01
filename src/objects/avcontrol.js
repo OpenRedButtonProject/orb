@@ -856,7 +856,8 @@ hbbtv.objects.AVControl = (function() {
       }
 
       // Create a new video element that will be used as a playback backend 'video/mp4' objects.
-      let videoElement = hbbtv.objects.createMediaElementWrapper();
+      let videoElement = document.createElement("video");
+      hbbtv.objects.upgradeMediaElement(videoElement);
 
       // set video background to #000 to simulate letterbox and pillarbox effect
       // when the video element aspect ratio is different than the video source
@@ -931,7 +932,9 @@ hbbtv.objects.AVControl = (function() {
       };
 
       videoElement.addEventListener("loadeddata", () => {
-         if (!videoElement.src) { return };
+         if (!videoElement.src) {
+            return;
+         };
 
          // we add here the onpause handler as there will be no way to be added
          // in case the user changes the media source when we are in rewind mode
@@ -988,8 +991,8 @@ hbbtv.objects.AVControl = (function() {
          }
       });
 
-      videoElement.addEventListener("__obs_onerror__", (e) => {
-         console.log('A/V Control: __obs_onerror__: ', e.error.message);
+      videoElement.addEventListener("__orb_onerror__", (e) => {
+         console.log('A/V Control: __orb_onerror__: ', e.error.message);
          if (transitionToState.call(thiz, PLAY_STATE_ERROR)) {
             unloadSource.call(thiz);
             priv.error = e.error.code;
@@ -1003,8 +1006,8 @@ hbbtv.objects.AVControl = (function() {
          }
       });
 
-      videoElement.addEventListener("__obs_onparentalratingchange__", (e) => {
-         console.log('A/V Control: __obs_onparentalratingchange__: ', e.blocked);
+      videoElement.addEventListener("__orb_onparentalratingchange__", (e) => {
+         console.log('A/V Control: __orb_onparentalratingchange__: ', e.blocked);
          dispatchEvent.call(thiz, "ParentalRatingChange", {
             contentID: e.contentID,
             ratings: e.ratings,
@@ -1019,7 +1022,7 @@ hbbtv.objects.AVControl = (function() {
             for (const mutation of mutationsList) {
                if (mutation.type === "childList") {
                   for (const node of mutation.removedNodes) {
-                     if (node === videoElement || node.className.includes("__obs_subsPH__")) {
+                     if (node === videoElement || node.className.includes("__orb_subsPH__")) {
                         // in case the videoElement or the subtitles placeholder is removed
                         // (i.e. by re-setting its innerHTML), re-add it 
                         thiz.appendChild(node);

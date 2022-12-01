@@ -106,7 +106,7 @@ hbbtv.objects.VideoTrackList = (function() {
       }
    }
 
-   listProto.obs_setTrackList = function(trackList) {
+   listProto.orb_setTrackList = function(trackList) {
       const p = privates.get(this);
       for (let i = trackList.length; i < this.length; ++i) {
          p.proxy.unregisterObserver(VIDEO_TRACK_KEY_PREFIX + i);
@@ -118,14 +118,14 @@ hbbtv.objects.VideoTrackList = (function() {
       privates.get(this).length = trackList.length;
    }
 
-   listProto.obs_appendTrack = function(track) {
+   listProto.orb_appendTrack = function(track) {
       const p = privates.get(this);
       const t = makeVideoTrack(this, p.length, track);
       this[p.length++] = t;
       p.eventTarget.dispatchEvent(new TrackEvent("addtrack"));
    }
 
-   listProto.obs_removeTrackAt = function(index) {
+   listProto.orb_removeTrackAt = function(index) {
       const p = privates.get(this);
       if (index >= 0 && index < p.length) {
          // TODO: update all tracks indexes and keys with the iframe proxy

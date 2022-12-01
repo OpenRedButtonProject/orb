@@ -57,10 +57,19 @@ hbbtv.objectManager = (function() {
             upgradeObject(object, object.getAttribute("type"));
          }
       }
+      for (const object of target.getElementsByTagName("video")) {
+         upgradeObject(object);
+      }
+      for (const object of target.getElementsByTagName("audio")) {
+         upgradeObject(object);
+      }
    }
 
    function upgradeObject(object, mimeType) {
       if (!mimeType) {
+         if (object.tagName && (object.tagName.toLowerCase() === "video" || object.tagName.toLowerCase() === "audio")) {
+            hbbtv.objects.upgradeMediaElement(object);
+         }
          return;
       }
       mimeType = mimeType.toLowerCase();
@@ -118,13 +127,8 @@ hbbtv.objectManager = (function() {
    // case where a page script creates and uses an object before adding it to the document.
    function addCreateElementTypeIntercept(callbackTypeSet) {
       document.createElement = function(tagname, options) {
-         let element;
-         if (tagname === "video" || tagname === "audio") {
-            // upgrade video and audio elements with iframe
-            element = hbbtv.objects.createMediaElementWrapper();
-         }
-         else if (tagname === "object") {
-            element = __createElement.apply(document, arguments);
+         let element = __createElement.apply(document, arguments);
+         if (tagname === "object") {
             const ownProperty = Object.getOwnPropertyDescriptor(HTMLObjectElement.prototype, "type");
             Object.defineProperty(element, "type", {
                set(val) {
@@ -141,9 +145,8 @@ hbbtv.objectManager = (function() {
                }
                Element.prototype.setAttribute.apply(element, arguments);
             };
-         }
-         else {
-            element = __createElement.apply(document, arguments);
+         } else if (tagname === "video" || tagname === "audio") {
+            callbackTypeSet(element);
          }
          return element;
       };
