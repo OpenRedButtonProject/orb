@@ -4,6 +4,14 @@
  * Licensed under the ORB License that can be found in the LICENSE file at
  * the top level of this repository.
  */
+
+/**
+ * ORB internal interface: system-agnostic bridge to native.
+ *
+ * @name bridge
+ * @class
+ * @constructor
+ */
 hbbtv.bridge = (function() {
     const exported = {};
 
@@ -11,6 +19,9 @@ hbbtv.bridge = (function() {
 
     /**
      * Initialise the bridge.
+     *
+     * @method
+     * @memberof bridge#
      */
     exported.initialise = function() {
         hbbtv.native.setDispatchEventCallback((type, properties) => {
@@ -34,6 +45,9 @@ hbbtv.bridge = (function() {
      *
      * @param {string} type The event type to receive.
      * @param {listenerCallback} callback The callback that is called when the event is received.
+     *
+     * @method
+     * @memberof bridge#
      */
     exported.addStrongEventListener = function(type, callback) {
         gEventDispatcher.addEventListener(type, callback);
@@ -44,6 +58,9 @@ hbbtv.bridge = (function() {
      *
      * @param {string} type The previously added event type.
      * @param {listenerCallback} callbackThe The previously added callback.
+     *
+     * @method
+     * @memberof bridge#
      */
     exported.removeStrongEventListener = function(type, callback) {
         gEventDispatcher.removeEventListener(type, callback);
@@ -62,6 +79,9 @@ hbbtv.bridge = (function() {
      *
      * @param {string} type The event type to subcribe to.
      * @param {listenerCallback} callback The callback that is called when the event is received.
+     *
+     * @method
+     * @memberof bridge#
      */
     exported.addWeakEventListener = function(type, callback) {
         gEventDispatcher.addWeakEventListener(type, callback);
@@ -72,6 +92,9 @@ hbbtv.bridge = (function() {
      *
      * @param {string} type The previously added event type.
      * @param {listenerCallback} callbackThe The previously added callback.
+     *
+     * @method
+     * @memberof bridge#
      */
     exported.removeWeakEventListener = function(type, callback) {
         gEventDispatcher.removeWeakEventListener(type, callback);
@@ -80,6 +103,13 @@ hbbtv.bridge = (function() {
     return exported;
 })();
 
+/**
+ * ORB internal interface: system-agnostic bridge to native broadcast.
+ *
+ * @name bridge.broadcast
+ * @class
+ * @constructor
+ */
 hbbtv.bridge.broadcast = (function() {
     const exported = {};
 
@@ -93,6 +123,9 @@ hbbtv.bridge.broadcast = (function() {
      * @param {number} y The Y position in pixels.
      * @param {number} width The width in pixels.
      * @param {number} height The height in pixels.
+     *
+     * @method
+     * @memberof bridge.broadcast#
      */
     exported.setVideoRectangle = function(x, y, width, height, fullScreen) {
         hbbtv.native.request('Broadcast.setVideoRectangle', {
@@ -110,6 +143,9 @@ hbbtv.bridge.broadcast = (function() {
      *
      * @returns {Channel} A Channel object representing the current broadcast channel; or null if
      *    not available.
+     *
+     * @method
+     * @memberof bridge.broadcast#
      */
     exported.getCurrentChannel = function() {
         return hbbtv.native.request('Broadcast.getCurrentChannel').result;
@@ -125,6 +161,9 @@ hbbtv.bridge.broadcast = (function() {
      *
      * @returns {Channel} A Channel object representing the current broadcast channel; or null if not
      *    available.
+     *
+     * @method
+     * @memberof bridge.broadcast#
      */
     exported.getCurrentChannelForEvent = function() {
         return hbbtv.native.request('Broadcast.getCurrentChannelForEvent').result;
@@ -137,6 +176,9 @@ hbbtv.bridge.broadcast = (function() {
      *
      * @returns {Array.<Channel>} A list of Channel objects representing the broadcast channel list;
      *    or an empty list if not available.
+     *
+     * @method
+     * @memberof bridge.broadcast#
      */
     exported.getChannelList = function() {
         return hbbtv.native.request('Broadcast.getChannelList').result;
@@ -152,6 +194,9 @@ hbbtv.bridge.broadcast = (function() {
      *
      *
      * @returns {number} A CHANNEL_STATUS_* code (on success, the code has a value less than 0).
+     *
+     * @method
+     * @memberof bridge.broadcast#
      */
     exported.setChannelToNull = function(quiet) {
         return hbbtv.native.request('Broadcast.setChannelToNull').result;
@@ -171,6 +216,9 @@ hbbtv.bridge.broadcast = (function() {
      *    (HbbTV A.2.4.3.2).
      *
      * @returns {number} A CHANNEL_STATUS_* code (on success, the code has a value less than 0).
+     *
+     * @method
+     * @memberof bridge.broadcast#
      */
     exported.setChannelToCcid = function(ccid, trickplay, contentAccessDescriptorURL, quiet) {
         return hbbtv.native.request('Broadcast.setChannelToCcid', {
@@ -202,6 +250,9 @@ hbbtv.bridge.broadcast = (function() {
      *    (HbbTV A.2.4.3.2).
      *
      * @returns {number} A CHANNEL_STATUS_* code (on success, the code has a value less than 0).
+     *
+     * @method
+     * @memberof bridge.broadcast#
      */
     exported.setChannelToTriplet = function(
         idType,
@@ -240,6 +291,9 @@ hbbtv.bridge.broadcast = (function() {
      *    (HbbTV A.2.4.3.2).
      *
      * @returns {number} A CHANNEL_STATUS_* code (on success, the code has a value less than 0).
+     *
+     * @method
+     * @memberof bridge.broadcast#
      */
     exported.setChannelToDsd = function(dsd, sid, trickplay, contentAccessDescriptorURL, quiet) {
         return hbbtv.native.request('Broadcast.setChannelToDsd', {
@@ -260,6 +314,9 @@ hbbtv.bridge.broadcast = (function() {
      *
      * @returns {Array.<Programme>} A list of Programme objects available for the broadcast channel;
      *    or an empty list if not available.
+     *
+     * @method
+     * @memberof bridge.broadcast#
      */
     exported.getProgrammes = function(ccid) {
         return hbbtv.native.request('Broadcast.getProgrammes', {
@@ -277,6 +334,9 @@ hbbtv.bridge.broadcast = (function() {
      *
      * @returns {Array.<Component>} A list of Component objects available for the broadcast channel;
      *    or an empty list if not available.
+     *
+     * @method
+     * @memberof bridge.broadcast#
      */
     exported.getComponents = function(ccid, type) {
         return hbbtv.native.request('Broadcast.getComponents', {
@@ -304,6 +364,9 @@ hbbtv.bridge.broadcast = (function() {
      * @param {number} pidOrSuspended Component PID or 0 to suspend presentation.
      * @param {number} ctag Component CTAG or 0 if not specified.
      * @param {string} language Component language of an empty string if not specified.
+     *
+     * @method
+     * @memberof bridge.broadcast#
      */
     exported.overrideDefaultComponentSelection = function(type, pidOrSuspended, ctag, language) {
         hbbtv.native.request('Broadcast.overrideDefaultComponentSelection', {
@@ -322,6 +385,9 @@ hbbtv.bridge.broadcast = (function() {
      * Security: FOR_BROADCAST_APP_ONLY.
      *
      * @param {number} type Type of component selection to restore (COMPONENT_TYPE_* code).
+     *
+     * @method
+     * @memberof bridge.broadcast#
      */
     exported.restoreDefaultComponentSelection = function(type) {
         hbbtv.native.request('Broadcast.restoreDefaultComponentSelection', {
@@ -341,6 +407,9 @@ hbbtv.bridge.broadcast = (function() {
      * @param {number} count Maximum number of items to include in the result from the offset.
      * @param {Array.<string>} channelConstraintList Optionally, a list of strings describing
      *    constraints the application wants applied to the query; or an empty list otherwise.
+     *
+     * @method
+     * @memberof bridge.broadcast#
      */
     exported.startSearch = function(query, offset, count, channelConstraints) {
         hbbtv.native.request('Broadcast.startSearch', {
@@ -357,6 +426,9 @@ hbbtv.bridge.broadcast = (function() {
      * Security: FOR_BROADCAST_APP_ONLY.
      *
      * @param {number} queryId The ID from the query string that started the search.
+     *
+     * @method
+     * @memberof bridge.broadcast#
      */
     exported.abortSearch = function(queryId) {
         hbbtv.native.request('Broadcast.abortSearch', {
@@ -376,6 +448,9 @@ hbbtv.bridge.broadcast = (function() {
      * @param {number} streamEventId If no targetURL is provided, the event ID; or -1 otherwise.
      *
      * @returns {number} The listener ID. Associated StreamEvent events shall include this ID.
+     *
+     * @method
+     * @memberof bridge.broadcast#
      */
     exported.addStreamEventListener = function(targetURL, eventName, componentTag, streamEventId) {
         return hbbtv.native.request('Broadcast.addStreamEventListener', {
@@ -390,6 +465,9 @@ hbbtv.bridge.broadcast = (function() {
      * Remove the given stream event listener.
      *
      * @param {number} id The listener ID to remove.
+     *
+     * @method
+     * @memberof bridge.broadcast#
      */
     exported.removeStreamEventListener = function(id) {
         hbbtv.native.request('Broadcast.removeStreamEventListener', {
@@ -408,6 +486,9 @@ hbbtv.bridge.broadcast = (function() {
      *
      * @param {boolean} presentationSuspended True if the broadcast presentation should be suspended;
      *    false otherwise.
+     *
+     * @method
+     * @memberof bridge.broadcast#
      */
     exported.setPresentationSuspended = function(presentationSuspended) {
         hbbtv.native.request('Broadcast.setPresentationSuspended', {
@@ -418,6 +499,15 @@ hbbtv.bridge.broadcast = (function() {
     return exported;
 })();
 
+/**
+ * ORB internal interface: system-agnostic bridge to native programme information.
+ *
+ * TODO Move to bridge.broadcast
+ *
+ * @name bridge.programme
+ * @class
+ * @constructor
+ */
 hbbtv.bridge.programme = (function() {
     const exported = {};
 
@@ -426,6 +516,9 @@ hbbtv.bridge.programme = (function() {
      *
      * @return {ParentalRating} A ParentalRating object representing the parental rating; or null if
      *    not available.
+     *
+     * @method
+     * @memberof bridge.programme#
      */
     exported.getParentalRating = function() {
         return hbbtv.native.request('Programme.getParentalRating').result;
@@ -444,6 +537,9 @@ hbbtv.bridge.programme = (function() {
      *
      * @return {Array.<string>} A list of SI descriptor data. If there are multiple descriptors with
      *    the same tag ID, they will all be returned.
+     *
+     * @method
+     * @memberof bridge.programme#
      */
     exported.getSIDescriptors = function(
         ccid,
@@ -464,6 +560,13 @@ hbbtv.bridge.programme = (function() {
     return exported;
 })();
 
+/**
+ * ORB internal interface: system-agnostic bridge to native application manager.
+ *
+ * @name bridge.manager
+ * @class
+ * @constructor
+ */
 hbbtv.bridge.manager = (function() {
     const exported = {};
 
@@ -482,6 +585,9 @@ hbbtv.bridge.manager = (function() {
      *    for carousel.
      *
      * @return {boolean} True if the application can be created; false otherwise.
+     *
+     * @method
+     * @memberof bridge.manager#
      */
     exported.createApplication = function(url) {
         return hbbtv.native.request('Manager.createApplication', {
@@ -493,6 +599,9 @@ hbbtv.bridge.manager = (function() {
      * Destroy the calling application.
      *
      * The calling application is identified by the token associated with the request.
+     *
+     * @method
+     * @memberof bridge.manager#
      */
     exported.destroyApplication = function() {
         hbbtv.native.request('Manager.destroyApplication');
@@ -502,6 +611,9 @@ hbbtv.bridge.manager = (function() {
      * Show the calling application.
      *
      * The calling application is identified by the token associated with the request.
+     *
+     * @method
+     * @memberof bridge.manager#
      */
     exported.showApplication = function() {
         hbbtv.native.request('Manager.showApplication');
@@ -511,6 +623,9 @@ hbbtv.bridge.manager = (function() {
      * Hide the calling application.
      *
      * The calling application is identified by the token associated with the request.
+     *
+     * @method
+     * @memberof bridge.manager#
      */
     exported.hideApplication = function() {
         hbbtv.native.request('Manager.hideApplication');
@@ -520,6 +635,9 @@ hbbtv.bridge.manager = (function() {
      * Get the free memory available to the application.
      *
      * @returns {number} The free memory in bytes.
+     *
+     * @method
+     * @memberof bridge.manager#
      */
     exported.getFreeMem = function() {
         return hbbtv.native.request('Manager.getFreeMem').result;
@@ -531,6 +649,9 @@ hbbtv.bridge.manager = (function() {
      * The calling application is identified by the token associated with the request.
      *
      * @return {number} The keyset for this application.
+     *
+     * @method
+     * @memberof bridge.manager#
      */
     exported.getKeyValues = function() {
         return hbbtv.native.request('Manager.getKeyValues').result;
@@ -540,6 +661,9 @@ hbbtv.bridge.manager = (function() {
      * Get the maximum keyset available to applications.
      *
      * @return {number} }he maximum keyset available to applications.
+     *
+     * @method
+     * @memberof bridge.manager#
      */
     exported.getKeyMaximumValue = function() {
         return hbbtv.native.request('Manager.getKeyMaximumValue').result;
@@ -553,6 +677,9 @@ hbbtv.bridge.manager = (function() {
      * @param {number} value The keyset to set for this application.
      *
      * @return {number} The keyset for this application.
+     *
+     * @method
+     * @memberof bridge.manager#
      */
     exported.setKeyValue = function(value, otherKeys) {
         return hbbtv.native.request('Manager.setKeyValue', {
@@ -567,6 +694,9 @@ hbbtv.bridge.manager = (function() {
      * @param {number} code The code of the key to get an icon for (VK_ code).
      *
      * @return {string} A URL of an icon that represents the given key; or null if not available.
+     *
+     * @method
+     * @memberof bridge.manager#
      */
     exported.getKeyIcon = function(code) {
         return hbbtv.native.request('Manager.getKeyIcon', {
@@ -577,6 +707,15 @@ hbbtv.bridge.manager = (function() {
     return exported;
 })();
 
+/**
+ * ORB internal interface: system-agnostic bridge to native parental control.
+ *
+ * TODO Move to bridge.configuration.
+ *
+ * @name bridge.parentalControl
+ * @class
+ * @constructor
+ */
 hbbtv.bridge.parentalControl = (function() {
     const exported = {};
 
@@ -585,6 +724,9 @@ hbbtv.bridge.parentalControl = (function() {
      *
      * @return {Array.<ParentalRatingScheme>} A list of ParentalRatingScheme objects representing the
      *    supported parental rating schemes; or an empty list of not available.
+     *
+     * @method
+     * @memberof bridge.parentalControl#
      */
     exported.getRatingSchemes = function() {
         return hbbtv.native.request('ParentalControl.getRatingSchemes').result;
@@ -596,6 +738,9 @@ hbbtv.bridge.parentalControl = (function() {
      * @param {string} schemeName The name of the scheme to get the threshold of.
      *
      * @return {ParentalRating} A ParentalRating object representing the threshold.
+     *
+     * @method
+     * @memberof bridge.parentalControl#
      */
     exported.getThreshold = function(schemeName) {
         return hbbtv.native.request('ParentalControl.getThreshold', {
@@ -611,6 +756,9 @@ hbbtv.bridge.parentalControl = (function() {
      * @param {number} value The value to test.
      *
      * @return {boolean} True if the rating is blocked; or false otherwise.
+     *
+     * @method
+     * @memberof bridge.parentalControl#
      */
     exported.isRatingBlocked = function(rating) {
         return hbbtv.native.request('ParentalControl.isRatingBlocked', rating).result;
@@ -619,6 +767,13 @@ hbbtv.bridge.parentalControl = (function() {
     return exported;
 })();
 
+/**
+ * ORB internal interface: system-agnostic bridge to native configuration.
+ *
+ * @name bridge.configuration
+ * @class
+ * @constructor
+ */
 hbbtv.bridge.configuration = (function() {
     const exported = {};
 
@@ -626,6 +781,9 @@ hbbtv.bridge.configuration = (function() {
      * Get certain immutable information about the system.
      *
      * @return {SystemInformation} A SystemInformation object.
+     *
+     * @method
+     * @memberof bridge.configuration#
      */
     exported.getLocalSystem = function() {
         return hbbtv.native.request('Configuration.getLocalSystem').result;
@@ -636,6 +794,9 @@ hbbtv.bridge.configuration = (function() {
      *
      * @return {string} Comma separated string of languages (ISO 639-2 codes), in order of
      *    preference.
+     *
+     * @method
+     * @memberof bridge.configuration#
      */
     exported.getPreferredAudioLanguage = function() {
         return hbbtv.native.request('Configuration.getPreferredAudioLanguage').result;
@@ -646,6 +807,9 @@ hbbtv.bridge.configuration = (function() {
      *
      * @return {string} Comma separated string of languages (ISO 639-2 codes), in order of
      *    preference.
+     *
+     * @method
+     * @memberof bridge.configuration#
      */
     exported.getPreferredSubtitleLanguage = function() {
         return hbbtv.native.request('Configuration.getPreferredSubtitleLanguage').result;
@@ -657,6 +821,9 @@ hbbtv.bridge.configuration = (function() {
      *
      * @return {string} Comma separated string of languages (ISO 639-2 codes), in order of
      *    preference.
+     *
+     * @method
+     * @memberof bridge.configuration#
      */
     exported.getPreferredUILanguage = function() {
         return hbbtv.native.request('Configuration.getPreferredUILanguage').result;
@@ -667,6 +834,9 @@ hbbtv.bridge.configuration = (function() {
      * is deployed.
      *
      * @return {string} Country code the receiver is deployed (ISO 3166-1 alpha-3 code).
+     *
+     * @method
+     * @memberof bridge.configuration#
      */
     exported.getCountryId = function() {
         return hbbtv.native.request('Configuration.getCountryId').result;
@@ -676,6 +846,9 @@ hbbtv.bridge.configuration = (function() {
      * Get whether subtitles are enabled on this system.
      *
      * @return {boolean} True if subtitles are enabled; or false otherwise.
+     *
+     * @method
+     * @memberof bridge.configuration#
      */
     exported.getSubtitlesEnabled = function() {
         return hbbtv.native.request('Configuration.getSubtitlesEnabled').result;
@@ -685,6 +858,9 @@ hbbtv.bridge.configuration = (function() {
      * Get whether audio description is enabled on this system.
      *
      * @return {boolean} True if audio description is enabled; or false otherwise.
+     *
+     * @method
+     * @memberof bridge.configuration#
      */
     exported.getAudioDescriptionEnabled = function() {
         return hbbtv.native.request('Configuration.getAudioDescriptionEnabled').result;
@@ -694,6 +870,9 @@ hbbtv.bridge.configuration = (function() {
      * Get the DVB network IDs of the channels in the broadcast channel list.
      *
      * @return {Array.<String>} A list of DVB network IDs; or an empty list of not available.
+     *
+     * @method
+     * @memberof bridge.configuration#
      */
     exported.getDttNetworkIds = function() {
         return hbbtv.native.request('Configuration.getDttNetworkIds').result;
@@ -710,6 +889,9 @@ hbbtv.bridge.configuration = (function() {
      *
      * @return {string} A distinctive identifier, uniquely generated for this terminal and calling
      *    origin; or a status code (DISTINCTIVE_IDENTIFIER_STATUS_ code).
+     *
+     * @method
+     * @memberof bridge.configuration#
      */
     exported.getDeviceId = function() {
         return hbbtv.native.request('Configuration.getDeviceId').result;
@@ -722,6 +904,9 @@ hbbtv.bridge.configuration = (function() {
      *
      * The client application should display a dialog for the user to allow or deny this. When the
      * result is ready, it is dispatched to the bridge as a accesstodistinctiveidentifier event.
+     *
+     * @method
+     * @memberof bridge.configuration#
      */
     exported.requestAccessToDistinctiveIdentifier = function() {
         hbbtv.native.request('Configuration.requestAccessToDistinctiveIdentifier');
@@ -730,12 +915,24 @@ hbbtv.bridge.configuration = (function() {
     return exported;
 })();
 
+/**
+ * ORB internal interface: system-agnostic bridge to native media sync.
+ *
+ * TODO All these methods need to be commented.
+ *
+ * @name bridge.mediaSync
+ * @class
+ * @constructor
+ */
 hbbtv.bridge.mediaSync = (function() {
     const exported = {};
 
     /**
      *
      * @return {number}
+     *
+     * @method
+     * @memberof bridge.mediaSync#
      */
     exported.instantiate = function() {
         return hbbtv.native.request('MediaSynchroniser.instantiate').result;
@@ -746,6 +943,9 @@ hbbtv.bridge.mediaSync = (function() {
      * @param {boolean} isMasterBroadcast
      *
      * @return {boolean}
+     *
+     * @method
+     * @memberof bridge.mediaSync#
      */
     exported.initialise = function(id, isMasterBroadcast) {
         return hbbtv.native.request('MediaSynchroniser.initialise', {
@@ -756,6 +956,9 @@ hbbtv.bridge.mediaSync = (function() {
 
     /**
      * @param {number} id
+     *
+     * @method
+     * @memberof bridge.mediaSync#
      */
     exported.destroy = function(id) {
         hbbtv.native.request('MediaSynchroniser.destroy', {
@@ -765,6 +968,9 @@ hbbtv.bridge.mediaSync = (function() {
 
     /**
      * @param {number} id
+     *
+     * @method
+     * @memberof bridge.mediaSync#
      */
     exported.enableInterDeviceSync = function(id) {
         hbbtv.native.request('MediaSynchroniser.enableInterDeviceSync', {
@@ -774,6 +980,9 @@ hbbtv.bridge.mediaSync = (function() {
 
     /**
      * @param {number} id
+     *
+     * @method
+     * @memberof bridge.mediaSync#
      */
     exported.disableInterDeviceSync = function(id) {
         hbbtv.native.request('MediaSynchroniser.disableInterDeviceSync', {
@@ -785,6 +994,9 @@ hbbtv.bridge.mediaSync = (function() {
      * @param {number} id
      *
      * @return {number}
+     *
+     * @method
+     * @memberof bridge.mediaSync#
      */
     exported.nrOfSlaves = function(id) {
         return hbbtv.native.request('MediaSynchroniser.nrOfSlaves', {
@@ -796,6 +1008,9 @@ hbbtv.bridge.mediaSync = (function() {
      * @param {number} id
      *
      * @return {boolean}
+     *
+     * @method
+     * @memberof bridge.mediaSync#
      */
     exported.interDeviceSyncEnabled = function(id) {
         return hbbtv.native.request('MediaSynchroniser.interDeviceSyncEnabled', {
@@ -807,6 +1022,9 @@ hbbtv.bridge.mediaSync = (function() {
      * @param {number} id
      *
      * @return {string}
+     *
+     * @method
+     * @memberof bridge.mediaSync#
      */
     exported.getContentIdOverride = function(id) {
         return hbbtv.native.request('MediaSynchroniser.getContentIdOverride', {
@@ -819,6 +1037,9 @@ hbbtv.bridge.mediaSync = (function() {
      * @param {Object} timeline
      *
      * @return {number}
+     *
+     * @method
+     * @memberof bridge.mediaSync#
      */
     exported.startTimelineMonitoring = function(id, timelineSelector, isMaster) {
         return hbbtv.native.request('MediaSynchroniser.startTimelineMonitoring', {
@@ -831,6 +1052,9 @@ hbbtv.bridge.mediaSync = (function() {
     /**
      * @param {number} id
      * @param {number} timelineId
+     *
+     * @method
+     * @memberof bridge.mediaSync#
      */
     exported.stopTimelineMonitoring = function(id, timelineSelector, forceStop) {
         hbbtv.native.request('MediaSynchroniser.stopTimelineMonitoring', {
@@ -842,6 +1066,9 @@ hbbtv.bridge.mediaSync = (function() {
 
     /**
      * @param {number} timelineSelector
+     *
+     * @method
+     * @memberof bridge.mediaSync#
      */
     exported.getBroadcastCurrentTime = function(timelineSelector) {
         return hbbtv.native.request('MediaSynchroniser.getBroadcastCurrentTime', {
@@ -852,6 +1079,9 @@ hbbtv.bridge.mediaSync = (function() {
     /**
      * @param {number} id
      * @param {string} contentIdOverride
+     *
+     * @method
+     * @memberof bridge.mediaSync#
      */
     exported.setContentIdOverride = function(id, contentIdOverride) {
         hbbtv.native.request('MediaSynchroniser.setContentIdOverride', {
@@ -864,6 +1094,9 @@ hbbtv.bridge.mediaSync = (function() {
      * @param {number} id
      * @param {number} contentTime
      * @param {number} speed
+     *
+     * @method
+     * @memberof bridge.mediaSync#
      */
     exported.setContentTimeAndSpeed = function(id, timelineSelector, contentTime, speed) {
         hbbtv.native.request('MediaSynchroniser.setContentTimeAndSpeed', {
@@ -877,6 +1110,9 @@ hbbtv.bridge.mediaSync = (function() {
     /**
      * @param {number} id
      * @param {Object} properties
+     *
+     * @method
+     * @memberof bridge.mediaSync#
      */
     exported.updateCssCiiProperties = function(
         id,
@@ -897,6 +1133,9 @@ hbbtv.bridge.mediaSync = (function() {
     /**
      * @param {number} id
      * @param {Object} properties
+     *
+     * @method
+     * @memberof bridge.mediaSync#
      */
     exported.setTimelineAvailability = function(id, timelineSelector, isAvailable, ticks, speed) {
         return hbbtv.native.request('MediaSynchroniser.setTimelineAvailability', {
