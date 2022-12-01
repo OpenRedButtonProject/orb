@@ -256,14 +256,14 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
    /**
     * Sets the presentation window of the DVB video. Values are in HbbTV 1280x720 coordinates.
     *
-    * @param x      Rectangle definition
-    * @param y      Rectangle definition
-    * @param width  Rectangle definition
+    * @param x Rectangle definition
+    * @param y Rectangle definition
+    * @param width Rectangle definition
     * @param height Rectangle definition
     */
    @Override
-   public void setDvbVideoRectangle(final int x, final int y, final int width, final int height, final boolean fullScreen) {
-      Log.v(TAG, "HbbTVClient.setDvbVideoRectangle(" + x + ", " + y +  ", " + width +  ", " + height + ", " + fullScreen + ")");
+   public void setDvbVideoRectangle(int x, int y, int width, int height) {
+      Log.v(TAG, "HbbTVClient.setDvbVideoRectangle(" + x + ", " + y +  ", " + width +  ", " + height + ")");
    }
 
    /**
