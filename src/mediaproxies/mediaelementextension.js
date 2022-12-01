@@ -142,10 +142,10 @@ hbbtv.objects.MediaElementExtension = (function() {
       Object.defineProperty(prototype, "hidden", {
          set(value) {
             privates.get(this).iframe.hidden = value;
-            hiddenOwnProperty.get.call(this, value);
+            hiddenOwnProperty.set.call(this, value);
          },
          get() {
-            return privates.get(this).iframe.hidden;
+            return hiddenOwnProperty.get.call(this);
          }
       });
 
