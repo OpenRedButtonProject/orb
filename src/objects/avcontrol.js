@@ -777,22 +777,10 @@ hbbtv.objects.AVControl = (function() {
    }
 
    function updateVideoDimensions() {
-      let priv = privates.get(this);
-      let videoWrapper = priv.videoElement;
-      if (this.style.width && !this.style.width.includes("%")) {
-         videoWrapper.style.width = this.style.width;
-      } else if (this.width) {
-         videoWrapper.style.width = this.width + "px";
-      } else {
-         videoWrapper.style.width = "100%";
-      }
-      if (this.style.height && !this.style.height.includes("%")) {
-         videoWrapper.style.height = this.style.height;
-      } else if (this.height) {
-         videoWrapper.style.height = this.height + "px";
-      } else {
-         videoWrapper.style.height = "100%";
-      }
+      const videoElement = privates.get(this).videoElement;
+      const bounds = this.getBoundingClientRect();
+      videoElement.style.width = bounds.width + "px";
+      videoElement.style.height = bounds.height + "px";
    }
 
    function unloadSource() {
@@ -858,7 +846,6 @@ hbbtv.objects.AVControl = (function() {
       // Create a new video element that will be used as a playback backend 'video/mp4' objects.
       const mimetype = this.type || "";
       let videoElement = document.createElement(mimetype.startsWith("audio") ? "audio" : "video");
-      hbbtv.objects.upgradeMediaElement(videoElement);
 
       // set video background to #000 to simulate letterbox and pillarbox effect
       // when the video element aspect ratio is different than the video source
@@ -872,10 +859,10 @@ hbbtv.objects.AVControl = (function() {
       videoElement.hidden = true;
       priv.videoElement = videoElement;
       this.appendChild(videoElement);
-      hbbtv.objects.upgradeMediaElement(videoElement);
 
       // update the videoWrapper size
       updateVideoDimensions.call(this);
+      hbbtv.objects.upgradeMediaElement(videoElement);
 
       // parse param nodes and store their values
       priv.params = {};
