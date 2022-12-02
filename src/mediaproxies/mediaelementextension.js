@@ -81,6 +81,7 @@ hbbtv.objects.MediaElementExtension = (function() {
          const p = privates.get(this);
          const properties = {};
          p.iframeProxy.invalidate();
+         p.videoDummy.readyState = HTMLMediaElement.HAVE_NOTHING;
          for (const key in p.videoDummy) {
             if (persistentProps.includes(key)) {
                properties[key] = p.videoDummy[key];
@@ -120,17 +121,15 @@ hbbtv.objects.MediaElementExtension = (function() {
       Object.defineProperty(prototype, "src", {
          set(value) {
             const p = privates.get(this);
-            if (p.videoDummy.src !== value) {
-               p.videoDummy.src = value;
-               if (value) {
-                  console.log("MediaElementExtension: Setting iframe src property to '" + value + "'.");
-                  resetProxySession.call(this);
-                  p.iframe.src = value + (value.includes("?") ? "&" : "?") + ORB_PLAYER_MAGIC_SUFFIX;
-               } else {
-                  p.iframeProxy.updateObserverProperties(MEDIA_PROXY_ID, {
-                     src: value
-                  });
-               }
+            p.videoDummy.src = value;
+            if (value) {
+               console.log("MediaElementExtension: Setting iframe src property to '" + value + "'.");
+               resetProxySession.call(this);
+               p.iframe.src = value + (value.includes("?") ? "&" : "?") + ORB_PLAYER_MAGIC_SUFFIX;
+            } else {
+               p.iframeProxy.updateObserverProperties(MEDIA_PROXY_ID, {
+                  src: value
+               });
             }
          },
          get() {
@@ -143,6 +142,7 @@ hbbtv.objects.MediaElementExtension = (function() {
          set(value) {
             privates.get(this).iframe.hidden = value;
             hiddenOwnProperty.set.call(this, value);
+            updateIFrameCSS.call(this);
          },
          get() {
             return hiddenOwnProperty.get.call(this);
@@ -209,6 +209,7 @@ hbbtv.objects.MediaElementExtension = (function() {
       this.audioTracks = hbbtv.objects.createAudioTrackList(iframeProxy);
       this.videoTracks = hbbtv.objects.createVideoTrackList(iframeProxy);
       this.textTracks = hbbtv.objects.createTextTrackList(parent, iframeProxy);
+      this.readyState = HTMLMediaElement.HAVE_NOTHING;
       this.dispatchEvent = function(e) {
          parent.dispatchEvent(e);
       };
