@@ -6,18 +6,16 @@
  */
 
 (function() {
-    window.XMLHttpRequest = class extends window.XMLHttpRequest {
-        getResponseHeader(headerName) {
-            // Shall return null for dvb: protocol
-            return new URL(this.responseURL).protocol === 'dvb:' ?
-                null :
-                super.getResponseHeader(headerName);
-        }
-        getAllResponseHeaders() {
-            // Shall return an empty string for dvb: protocol
-            return new URL(this.responseURL).protocol === 'dvb:' ?
-                '' :
-                super.getAllResponseHeaders();
-        }
+    const _getResponseHeader = window.XMLHttpRequest.prototype.getResponseHeader;
+    window.XMLHttpRequest.prototype.getResponseHeader = function(headerName) {
+        return new URL(this.responseURL).protocol === 'dvb:' ?
+            null :
+            _getResponseHeader.call(this, headerName);
+    };
+    const _getAllResponseHeaders = window.XMLHttpRequest.prototype.getAllResponseHeaders;
+    window.XMLHttpRequest.prototype.getAllResponseHeaders = function() {
+        return new URL(this.responseURL).protocol === 'dvb:' ?
+            '' :
+            _getAllResponseHeaders.call(this);
     };
 })();
