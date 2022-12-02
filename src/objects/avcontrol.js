@@ -856,7 +856,7 @@ hbbtv.objects.AVControl = (function() {
       }
 
       // Create a new video element that will be used as a playback backend 'video/mp4' objects.
-      const mimetype = this.getAttribute("__mimeType") || "";
+      const mimetype = this.type || "";
       let videoElement = document.createElement(mimetype.startsWith("audio") ? "audio" : "video");
       hbbtv.objects.upgradeMediaElement(videoElement);
 
@@ -872,6 +872,7 @@ hbbtv.objects.AVControl = (function() {
       videoElement.hidden = true;
       priv.videoElement = videoElement;
       this.appendChild(videoElement);
+      hbbtv.objects.upgradeMediaElement(videoElement);
 
       // update the videoWrapper size
       updateVideoDimensions.call(this);
