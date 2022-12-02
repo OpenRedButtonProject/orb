@@ -86,5 +86,5 @@ $(shell mkdir -p $(2); \
 cat $(addprefix $(1)/,$(polyfill_iframe_srcs)) > $(2)/iframe.js; \
 cat $(addprefix $(1)/,$(polyfill_dash_srcs)) > $(2)/dash.all.min.js; \
 cat $(addprefix $(1)/,$(polyfill_hbbtv_srcs)) > $(2)/hbbtv.js; \
-cp external/playerpage.html $(2)/playerpage.html)
+cp $(addprefix $(1)/,external/playerpage.html) $(2)/playerpage.html)
 endef

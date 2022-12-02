@@ -758,7 +758,7 @@ hbbtv.objects.AVControl = (function() {
          priv.notifyTimeout = null;
          try {
             hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(true);
-            priv.videoElement.hidden = false;
+            //priv.videoElement.hidden = false;
          } catch (e) {
             console.warn("A/V Control: " + e);
          }
@@ -768,7 +768,7 @@ hbbtv.objects.AVControl = (function() {
             console.log("A/V control: AV NOT in use (notification dispatched)");
             try {
                hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
-               priv.videoElement.hidden = true;
+               //priv.videoElement.hidden = true;
             } catch (e) {
                console.warn("A/V Control: " + e);
             }
@@ -856,7 +856,7 @@ hbbtv.objects.AVControl = (function() {
       videoElement.style.left = 0;
       videoElement.style.top = 0;
       videoElement.autoplay = false;
-      videoElement.hidden = true;
+      //videoElement.hidden = true;
       priv.videoElement = videoElement;
       this.appendChild(videoElement);
 
@@ -890,11 +890,11 @@ hbbtv.objects.AVControl = (function() {
             case PLAY_STATE_ERROR:
             case PLAY_STATE_STOPPED:
             case PLAY_STATE_FINISHED:
-               videoElement.hidden = true;
+               //videoElement.hidden = true;
                break;
             case PLAY_STATE_PLAYING:
             case PLAY_STATE_PAUSED:
-               videoElement.hidden = false;
+               //videoElement.hidden = false;
                break;
             default:
                break;
