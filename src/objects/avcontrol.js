@@ -856,7 +856,8 @@ hbbtv.objects.AVControl = (function() {
       }
 
       // Create a new video element that will be used as a playback backend 'video/mp4' objects.
-      let videoElement = document.createElement("video");
+      const mimetype = this.getAttribute("__mimeType") || "";
+      let videoElement = document.createElement(mimetype.startsWith("audio") ? "audio" : "video");
       hbbtv.objects.upgradeMediaElement(videoElement);
 
       // set video background to #000 to simulate letterbox and pillarbox effect
