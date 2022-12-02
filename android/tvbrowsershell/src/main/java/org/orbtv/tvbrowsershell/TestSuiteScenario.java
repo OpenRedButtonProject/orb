@@ -46,7 +46,7 @@ public class TestSuiteScenario {
       return false;
    }
 
-   public void selectComponent(int type, int pidOrSuspend) {
+   public void selectComponent(int type, String id) {
       if (mCurrentChannelIndex < 0) {
          return;
       }
@@ -54,8 +54,8 @@ public class TestSuiteScenario {
       for (int i = 0; i < ch.components.size(); i++) {
          TvBrowserTypes.Component c = ch.components.get(i);
          if (c.componentType == type) {
-            Log.d("TAG", "Setting pid " + c.pid + " to " + (c.pid == pidOrSuspend));
-            c.active = (c.pid == pidOrSuspend);
+            Log.d("TAG", "Setting id " + c.id + " to " + (c.id.equals(id)));
+            c.active = (c.id.equals(id));
          }
       }
    }
@@ -159,6 +159,7 @@ public class TestSuiteScenario {
          switch (info.getString("type")) {
             case "video": {
                components.add(TvBrowserTypes.Component.createVideoComponent(
+                  ""+info.getInt("pid"),
                   info.getInt("componentTag"),
                   info.getInt("pid"),
                   info.getString("encoding"),
@@ -172,6 +173,7 @@ public class TestSuiteScenario {
             }
             case "audio": {
                TvBrowserTypes.Component component = TvBrowserTypes.Component.createAudioComponent(
+                  ""+info.getInt("pid"),
                   info.getInt("componentTag"),
                   info.getInt("pid"),
                   info.getString("encoding"),
@@ -187,6 +189,7 @@ public class TestSuiteScenario {
             }
             case "subtitle": {
                components.add(TvBrowserTypes.Component.createSubtitleComponent(
+                  ""+info.getInt("pid"),
                   info.getInt("componentTag"),
                   info.getInt("pid"),
                   info.getString("encoding"),

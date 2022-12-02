@@ -58,6 +58,10 @@ hbbtv.objects.VideoBroadcast = (function() {
    const CHANNEL_STATUS_CHANNEL_NOT_IN_TS = 12;
    const CHANNEL_STATUS_UNKNOWN_ERROR = 100;
 
+   const COMPONENT_TYPE_VIDEO = 0;
+   const COMPONENT_TYPE_AUDIO = 1;
+   const COMPONENT_TYPE_SUBTITLE = 2;
+
    const ERROR_TUNER_UNAVAILABLE = 2;
    const ERROR_UNKNOWN_CHANNEL = 5;
 
@@ -85,7 +89,7 @@ hbbtv.objects.VideoBroadcast = (function() {
     * @memberof VideoBroadcast#
     */
    Object.defineProperty(prototype, "COMPONENT_TYPE_VIDEO", {
-      value: 0
+      value: COMPONENT_TYPE_VIDEO
    });
 
    /**
@@ -100,7 +104,7 @@ hbbtv.objects.VideoBroadcast = (function() {
     * @memberof VideoBroadcast#
     */
    Object.defineProperty(prototype, "COMPONENT_TYPE_AUDIO", {
-      value: 1
+      value: COMPONENT_TYPE_AUDIO
    });
 
    /**
@@ -115,7 +119,7 @@ hbbtv.objects.VideoBroadcast = (function() {
     * @memberof VideoBroadcast#
     */
    Object.defineProperty(prototype, "COMPONENT_TYPE_SUBTITLE", {
-      value: 2
+      value: COMPONENT_TYPE_SUBTITLE
    });
 
    // Properties
@@ -992,6 +996,71 @@ hbbtv.objects.VideoBroadcast = (function() {
 
    /**
     * Specifications:
+    * HBBTV A.2.4.6 (Support for creating audio and video components),
+    * <p>
+    * Security: none.
+    * 
+    * @param {number} componentType
+    * 
+    * @return {AVComponentCollection}
+    * 
+    * @method
+    * @memberof VideoBroadcast#
+    */
+   prototype.createAVAudioComponent = function(componentTag, language, audioDescription,
+      audioChannels, encoding) {
+      if (!p.isBroadcastRelated) {
+         return null;
+      }
+      const component = hbbtv.bridge.broadcast.getPrivateAudioComponent(componentTag);
+      if (id !== null) {
+         return hbbtv.objects.createAVAudioComponent({
+            id: id,
+            type: COMPONENT_TYPE_AUDIO,
+            componentTag: componentTag,
+            language: language,
+            audioDescription: audioDescription,
+            audioChannels: audioChannels,
+            encoding: encoding
+         });
+      }
+      return null;
+   }
+   
+   /**
+    * Specifications:
+    * HBBTV A.2.4.6 (Support for creating audio and video components),
+    * <p>
+    * Security: none.
+    * 
+    * @param {number} componentType
+    * 
+    * @return {AVComponentCollection}
+    * 
+    * @method
+    * @memberof VideoBroadcast#
+    */
+   prototype.createAVVideoComponent = function(componentTag, aspectRatio, encoding) {
+      if (!p.isBroadcastRelated) {
+         return null;
+      }
+      const component = hbbtv.bridge.broadcast.getPrivateVideoComponent(componentTag);
+      if (id !== null) {
+         return hbbtv.objects.createAVVideoComponent({
+            id: id,
+            type: COMPONENT_TYPE_VIDEO,
+            pid: component.pid,
+            encrypted: component.encrypted,
+            componentTag: componentTag,
+            aspectRatio: aspectRatio,
+            encoding: encoding
+         });
+      }
+      return null;
+   }
+
+   /**
+    * Specifications:
     * HBBTV A.1/OIPF DAE 7.13.4 (Extensions to video/broadcast for playback of selected components);
     * HBBTV A.2.17 (Notification of change of components).
     * <p>
@@ -1008,7 +1077,8 @@ hbbtv.objects.VideoBroadcast = (function() {
       const p = privates.get(this);
       mandatoryBroadcastRelatedSecurityCheck(p);
       if (!p.currentChannelComponents) {
-         p.currentChannelComponents = getFormattedComponents(p.currentChannelData.ccid);
+         p.currentChannelComponents = hbbtv.bridge.broadcast.getComponents(
+            p.currentChannelData.ccid, -1);
       }
       let result;
       if ((componentType === null) || (componentType === undefined)) {
@@ -1041,7 +1111,8 @@ hbbtv.objects.VideoBroadcast = (function() {
       const p = privates.get(this);
       mandatoryBroadcastRelatedSecurityCheck(p);
       if (!p.currentChannelComponents) {
-         p.currentChannelComponents = getFormattedComponents(p.currentChannelData.ccid);
+         p.currentChannelComponents = hbbtv.bridge.broadcast.getComponents(
+            p.currentChannelData.ccid, -1);
       }
       if ((componentType === null) || (componentType === undefined)) {
          let result = p.currentChannelComponents.filter(component => {
@@ -1072,24 +1143,20 @@ hbbtv.objects.VideoBroadcast = (function() {
       const p = privates.get(this);
       mandatoryBroadcastRelatedSecurityCheck(p);
       if (!p.currentChannelComponents) {
-         p.currentChannelComponents = getFormattedComponents(p.currentChannelData.ccid);
+         p.currentChannelComponents = hbbtv.bridge.broadcast.getComponents(
+            p.currentChannelData.ccid, -1);
       }
       if ((!p.currentChannelComponents) || (p.currentChannelComponents.length === 0)) {
          throw new DOMException('', 'InvalidStateError');
       }
       if (isNaN(component)) {
-         // Select a specific component
-         let found = p.currentChannelComponents.find(item => {
-            return compareComponents.call(this, component, item);
-         });
-         if (found) {
-            hbbtv.bridge.broadcast.overrideDefaultComponentSelection(found.type, found.pid,
-               (found.ctag != undefined) ? found.ctag : 0,
-               (found.language != undefined) ? found.language : "");
+         const componentId = getComponentId(component);
+         if (componentId !== null) {
+            hbbtv.bridge.broadcast.overrideComponentSelection(component.type, componentId);
          }
       } else {
          // Select the default component
-         hbbtv.bridge.broadcast.restoreDefaultComponentSelection(component);
+         hbbtv.bridge.broadcast.restoreComponentSelection(component);
       }
    };
 
@@ -1108,26 +1175,26 @@ hbbtv.objects.VideoBroadcast = (function() {
    prototype.unselectComponent = function(component) {
       const p = privates.get(this);
       mandatoryBroadcastRelatedSecurityCheck(p);
-      if (!p.currentChannelComponents) {
-         p.currentChannelComponents = getFormattedComponents(p.currentChannelData.ccid);
-      }
       if (isNaN(component)) {
-         let found = p.currentChannelComponents.find(item => {
-            return compareComponents.call(this, component, item);
+         p.currentChannelComponents = hbbtv.bridge.broadcast.getComponents(
+            p.currentChannelData.ccid, -1);
+         const componentId = getComponentId(component);
+         const found = p.currentChannelComponents.find(item => {
+            return componentId !== null && componentId === item.id;
          });
          if (found.active) {
             if (component.type == this.COMPONENT_TYPE_AUDIO ||
                   component.type == this.COMPONENT_TYPE_SUBTITLE) {
                // Select the default component
-               hbbtv.bridge.broadcast.restoreDefaultComponentSelection(component.type);
+               hbbtv.bridge.broadcast.restoreComponentSelection(component.type);
             } else {
                // Suspend video
-               hbbtv.bridge.broadcast.overrideDefaultComponentSelection(component.type, 0, 0, "");
+               hbbtv.bridge.broadcast.overrideComponentSelection(component.type, "");
             }
          }
       } else {
          // Suspend this component type
-         hbbtv.bridge.broadcast.overrideDefaultComponentSelection(component, 0, 0, "");
+         hbbtv.bridge.broadcast.overrideComponentSelection(component, "");
       }
    };
 
@@ -1738,13 +1805,13 @@ hbbtv.objects.VideoBroadcast = (function() {
       let result = [];
       avArray.forEach(function(item, index) {
          switch (item.type) {
-            case this.COMPONENT_TYPE_VIDEO:
+            case COMPONENT_TYPE_VIDEO:
                result[index] = hbbtv.objects.createAVVideoComponent(item);
                break;
-            case this.COMPONENT_TYPE_AUDIO:
+            case COMPONENT_TYPE_AUDIO:
                result[index] = hbbtv.objects.createAVAudioComponent(item);
                break;
-            case this.COMPONENT_TYPE_SUBTITLE:
+            case COMPONENT_TYPE_SUBTITLE:
                result[index] = hbbtv.objects.createAVSubtitleComponent(item);
                break;
             default:
@@ -1754,51 +1821,22 @@ hbbtv.objects.VideoBroadcast = (function() {
       return hbbtv.objects.createCollection(result, this);
    }
 
-   function getFormattedComponents(ccid) {
-      let components = hbbtv.bridge.broadcast.getComponents(ccid, -1);
-      components.forEach(function(item, index) {
-         /* Hide internal status properties */
-         Object.defineProperty(item, "active", {
-            enumerable: false
-         });
-         Object.defineProperty(item, "hidden", {
-            enumerable: false
-         });
-         if (item.aspectRatio !== undefined) {
-            if (item.aspectRatio === 0) {
-               item.aspectRatio = 1.33; // 4:3
-            } else {
-               item.aspectRatio = 1.78; // 16:9
-            }
-         }
-
-      });
-      return components;
-   }
-
-   function compareComponents(a, b) {
-      if (a.type === b.type &&
-         a.componentTag === b.componentTag &&
-         a.pid === b.pid &&
-         a.encoding === b.encoding &&
-         a.encrypted === b.encrypted) {
-         switch (a.type) {
-            case this.COMPONENT_TYPE_VIDEO: {
-               return a.aspectRatio === b.aspectRatio;
-            }
-            case this.COMPONENT_TYPE_AUDIO: {
-               return a.language === b.language &&
-                  a.audioDescription === b.audioDescription &&
-                  a.audioChannels === b.audioChannels;
-            }
-            case this.COMPONENT_TYPE_SUBTITLE: {
-               return a.language === b.language &&
-                  a.hearingImpaired === b.hearingImpaired &&
-                  a.label === b.label;
-            }
-         }
+   function getComponentId(component) {
+      let id = null;
+      if (component.type == COMPONENT_TYPE_VIDEO &&
+            hbbtv.objects.AVVideoComponent.prototype.isPrototypeOf(component)) {
+         id = hbbtv.objects.AVVideoComponent.getId.call(component);
+      } else if (component.type == COMPONENT_TYPE_AUDIO &&
+            hbbtv.objects.AVAudioComponent.prototype.isPrototypeOf(component)) {
+         id = hbbtv.objects.AVAudioComponent.getId.call(component);
+      } else if (component.type == COMPONENT_TYPE_SUBTITLE &&
+            hbbtv.objects.AVSubtitleComponent.prototype.isPrototypeOf(component)) {
+         id = hbbtv.objects.AVSubtitleComponent.getId.call(component);
       }
-      return false;
+      if (id === undefined) {
+         id = null;
+      }
+      return id;
    }
 
    function getStreamEventID(targetURL, eventName) {
