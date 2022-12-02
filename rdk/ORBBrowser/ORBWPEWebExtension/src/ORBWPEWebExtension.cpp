@@ -81,6 +81,19 @@ static void OnDvbUrlLoaded(int requestId, unsigned char *content, unsigned int c
 }
 
 /**
+ * Called back by the ORB client upon receipt of the dvbURLLoaded notification from the ORB service.
+ *
+ * @param requestId     The original request id
+ * @param contentLength The downloaded DVB URL content length (in number of bytes)
+ */
+static void OnDvbUrlLoadedNoData(int requestId, unsigned int contentLength)
+{
+   // No need to implement this callback method as the web extension shall not be
+   // responsible for dealing with DSM-CC
+   ORB_LOG("<Not supported>");
+}
+
+/**
  * Called back by the ORB client upon receipt of the inputKeyGenerated notification from the ORB
  * service.
  *
@@ -310,6 +323,7 @@ void webkit_web_extension_initialize_with_user_data(WebKitWebExtension *extensio
       s_orbClient = CreateORBClient(
          OnJavaScriptEventDispatchRequested,
          OnDvbUrlLoaded,
+         OnDvbUrlLoadedNoData,
          OnInputKeyGenerated
          );
       s_orbClient->SubscribeToJavaScriptEventDispatchRequestedEvent();

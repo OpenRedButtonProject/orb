@@ -283,6 +283,27 @@ void ORBImplementation::DvbUrlLoaded(
 }
 
 /**
+ * @brief ORBImplementation::DvbUrlLoadedNoData
+ *
+ * This method is used to notify each client for the 'DvbUrlLoadedNoData' event
+ *
+ * @param requestId
+ * @param fileContentLength
+ */
+void ORBImplementation::DvbUrlLoadedNoData(int requestId, unsigned int fileContentLength)
+{
+   ORB_LOG_NO_ARGS();
+
+   // Loop through all the registered callbacks and fire off the notification
+   std::lock_guard<std::mutex> locker(_notificationMutex);
+   ORB_LOG("We have %d callbacks to trigger", _notificationClients.size());
+   for (const auto client : _notificationClients)
+   {
+      client->DvbUrlLoadedNoData(requestId, fileContentLength);
+   }
+}
+
+/**
  * @brief ORBImplementation::EventInputKeyGenerated
  *
  * This method is used to notify each client for the 'EventInputKeyGenerated' event

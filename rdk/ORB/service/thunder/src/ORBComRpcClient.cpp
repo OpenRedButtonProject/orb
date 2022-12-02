@@ -12,6 +12,7 @@ MODULE_NAME_DECLARATION(BUILD_REFERENCE)
 
 #define EVENT_JAVASCRIPT_EVENT_DISPATCH_REQUESTED "javaScriptEventDispatchRequested"
 #define EVENT_DVB_URL_LOADED "dvbUrlLoaded"
+#define EVENT_DVB_URL_LOADED_NO_DATA "dvbUrlLoadedNoData"
 #define EVENT_INPUT_KEY_GENERATED "inputKeyGenerated"
 
 namespace orb
@@ -72,6 +73,25 @@ void ORBComRpcClient::NotificationHandler::DvbUrlLoaded(
 }
 
 /**
+ * @brief ORBComRpcClient::NotificationHandler::DvbUrlLoadedNoData
+ *
+ * React to the 'DvbUrlLoadedNoData' event accordingly
+ *
+ * @param requestId
+ * @param fileContentLength
+ */
+void ORBComRpcClient::NotificationHandler::DvbUrlLoadedNoData(int requestId, unsigned int fileContentLength)
+{
+   ORB_LOG_NO_ARGS();
+
+   if (_parent.m_subscribedEvents[EVENT_DVB_URL_LOADED_NO_DATA] == true)
+   {
+      ORB_LOG("Dispatching event dvbUrlLoadedNoData");
+      _parent.m_onDvbUrlLoadedNoData(requestId, fileContentLength);
+   }
+}
+
+/**
  * @brief ORBComRpcClient::NotificationHandler::EventInputKeyGenerated
  *
  * React to the 'EventInputKeyGenerated'  accordingly
@@ -102,9 +122,10 @@ void ORBComRpcClient::NotificationHandler::EventInputKeyGenerated(int keyCode, u
 ORBComRpcClient::ORBComRpcClient(
    OnJavaScriptEventDispatchRequested_cb onJavaScriptEventDispatchRequested_cb,
    OnDvbUrlLoaded_cb onDvbUrlLoaded_cb,
+   OnDvbUrlLoadedNoData_cb onDvbUrlLoadedNoData_cb,
    OnInputKeyGenerated_cb onInputKeyGenerated_cb
    )
-   :  ORBGenericClient(onJavaScriptEventDispatchRequested_cb, onDvbUrlLoaded_cb, onInputKeyGenerated_cb),
+   :  ORBGenericClient(onJavaScriptEventDispatchRequested_cb, onDvbUrlLoaded_cb, onDvbUrlLoadedNoData_cb, onInputKeyGenerated_cb),
    m_remoteConnection(GetConnectionEndpoint()),
    m_engine(Core::ProxyType<RPC::InvokeServerType<1, 0, 4> >::Create()),
    m_client(Core::ProxyType<RPC::CommunicatorClient>::Create(m_remoteConnection, Core::ProxyType<Core::IIPCServer>(m_engine))),
@@ -342,6 +363,15 @@ void ORBComRpcClient::SubscribeToDvbUrlLoadedEvent()
 }
 
 /**
+ * Subscribe to 'DvbUrlLoadedNoDataEvent'
+ */
+void ORBComRpcClient::SubscribeToDvbUrlLoadedNoDataEvent()
+{
+   ORB_LOG_NO_ARGS();
+   m_subscribedEvents[EVENT_DVB_URL_LOADED_NO_DATA] = true;
+}
+
+/**
  * Subscribe to 'InputKeyGeneratedEvent'
  */
 void ORBComRpcClient::SubscribeToInputKeyGeneratedEvent()
@@ -369,6 +399,15 @@ void ORBComRpcClient::UnsubscribeFromDvbUrlLoadedEvent()
 }
 
 /**
+ * Unsubscribe from 'DvbUrlLoadedNoDataEvent'
+ */
+void ORBComRpcClient::UnsubscribeFromDvbUrlLoadedNoDataEvent()
+{
+   ORB_LOG_NO_ARGS();
+   m_subscribedEvents[EVENT_DVB_URL_LOADED_NO_DATA] = false;
+}
+
+/**
  * Unsubscribe from 'InputKeyGeneratedEvent'
  */
 void ORBComRpcClient::UnsubscribeFromInputKeyGeneratedEvent()
@@ -389,12 +428,14 @@ void ORBComRpcClient::UnsubscribeFromInputKeyGeneratedEvent()
 std::shared_ptr<ORBGenericClient> CreateORBClient(
    OnJavaScriptEventDispatchRequested_cb onJavaScriptEventDispatchRequested_cb,
    OnDvbUrlLoaded_cb onDvbUrlLoaded_cb,
+   OnDvbUrlLoadedNoData_cb onDvbUrlLoadedNoData_cb,
    OnInputKeyGenerated_cb onInputKeyGenerated_cb
    )
 {
    return std::make_shared<ORBComRpcClient>(
       onJavaScriptEventDispatchRequested_cb,
       onDvbUrlLoaded_cb,
+      onDvbUrlLoadedNoData_cb,
       onInputKeyGenerated_cb
       );
 }

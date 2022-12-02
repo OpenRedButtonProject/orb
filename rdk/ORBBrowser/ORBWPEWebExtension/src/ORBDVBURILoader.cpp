@@ -66,19 +66,19 @@ void ORBDVBURILoader::Finish()
       ORB_LOG("DVB URI scheme request completed with data");
 
       GInputStream *stream = nullptr;
-      gchar *data = g_strdup_printf((char *)m_data);
-      int dataLength = strlen(data);
+      unsigned char *data = (unsigned char *)malloc(sizeof(unsigned char) * m_dataLength);
+      memmove(data, m_data, m_dataLength);
+      stream = g_memory_input_stream_new_from_data((const void *)data, m_dataLength, free);
 
-      stream = g_memory_input_stream_new_from_data(data, dataLength, g_free);
       if (stream)
       {
-         ORB_LOG("GInputStream created with dataLength=%d", dataLength);
+         ORB_LOG("GInputStream created with dataLength=%d", m_dataLength);
       }
 
       const gchar *mimeType = nullptr;
 
       // Signal completion of the DVB URI scheme request
-      webkit_uri_scheme_request_finish(m_request, stream, dataLength, mimeType);
+      webkit_uri_scheme_request_finish(m_request, stream, m_dataLength, mimeType);
 
       g_object_unref(stream);
    }
