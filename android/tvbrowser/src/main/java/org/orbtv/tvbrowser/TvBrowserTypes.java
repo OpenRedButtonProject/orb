@@ -202,6 +202,7 @@ public class TvBrowserTypes {
 
    public static class Component implements JSONSerializable {
       public int componentType;
+      public String id; // Platform-defined ID that is usable with overrideComponentSelection
       public int componentTag;
       public int pid;
       public String encoding;
@@ -229,10 +230,11 @@ public class TvBrowserTypes {
        * @param active
        * @return
        */
-      public static Component createVideoComponent(int componentTag, int pid, String encoding,
-         boolean encrypted, int aspectRatio, boolean active) {
+      public static Component createVideoComponent(String id, int componentTag, int pid,
+         String encoding, boolean encrypted, int aspectRatio, boolean active) {
          Component c = new Component();
          c.componentType = COMPONENT_TYPE_VIDEO;
+         c.id = id;
          c.componentTag = componentTag;
          c.pid = pid;
          c.encoding = encoding;
@@ -256,11 +258,12 @@ public class TvBrowserTypes {
        * @param active
        * @return
        */
-      public static Component createAudioComponent(int componentTag, int pid, String encoding,
-         boolean encrypted, String language, boolean audioDescription, int audioChannels,
-         boolean active) {
+      public static Component createAudioComponent(String id, int componentTag, int pid,
+         String encoding, boolean encrypted, String language, boolean audioDescription,
+         int audioChannels, boolean active) {
          Component c = new Component();
          c.componentType = COMPONENT_TYPE_AUDIO;
+         c.id = id;
          c.componentTag = componentTag;
          c.pid = pid;
          c.encoding = encoding;
@@ -286,10 +289,12 @@ public class TvBrowserTypes {
        * @param active
        * @return
        */
-      public static Component createSubtitleComponent(int componentTag, int pid, String encoding,
-         boolean encrypted, String language, boolean hearingImpaired, String label, boolean active) {
+      public static Component createSubtitleComponent(String id, int componentTag, int pid,
+         String encoding, boolean encrypted, String language, boolean hearingImpaired, String label,
+         boolean active) {
          Component c = new Component();
          c.componentType = COMPONENT_TYPE_SUBTITLE;
+         c.id = id;
          c.componentTag = componentTag;
          c.pid = pid;
          c.encoding = encoding;
@@ -310,9 +315,10 @@ public class TvBrowserTypes {
        */
       public JSONObject toJSONObject() throws JSONException {
          JSONObject o = new JSONObject();
+         o.put("type", componentType);
+         o.put("id", id);
          o.put("componentTag", componentTag);
          o.put("pid", pid);
-         o.put("type", componentType);
          o.put("encoding", encoding);
          o.put("encrypted", encrypted);
          switch (componentType) {
