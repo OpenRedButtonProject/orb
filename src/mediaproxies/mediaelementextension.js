@@ -331,7 +331,12 @@ hbbtv.objects.MediaElementExtension = (function() {
          console.log("MediaElementExtension: initialised");
       }
       if (this.parentNode && !p.iframe.parentNode) {
-         this.parentNode.appendChild(p.iframe);
+         const sibling = this.nextSibling;
+         if (sibling) {
+            this.parentNode.insertBefore(p.iframe, sibling);
+         } else {
+            this.parentNode.appendChild(p.iframe);
+         }
          updateIFrameCSS.call(this);
       }
    }
