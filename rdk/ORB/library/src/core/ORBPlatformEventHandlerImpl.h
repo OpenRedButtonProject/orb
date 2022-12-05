@@ -120,6 +120,14 @@ public:
    virtual void OnDvbUrlLoaded(int requestId, std::vector<uint8_t> fileContent, unsigned int fileContentLength) override final;
 
    /**
+    * Notify all subscribers that the specified DVB URL load has finished. The content is not passed
+    *
+    * @param requestId         The request identifier
+    * @param fileContentLength The file content length in number of bytes
+    */
+   virtual void OnDvbUrlLoadedNoData(int requestId, unsigned int fileContentLength) override final;
+
+   /**
     * Notify the browser that the specified input key was generated.
     *
     * @param keyCode   The JavaScript key code

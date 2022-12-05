@@ -74,25 +74,31 @@ static void OnJavaScriptEventDispatchRequested(std::string name, std::string pro
 static void OnDvbUrlLoaded(int requestId, unsigned char *content, unsigned int contentLength)
 {
    ORB_LOG("requestId=%d contentLength=%u content is %s", requestId, contentLength, content ? "NOT null" : "null");
+}
+
+/**
+ * Callback for the dvbUrlLoadedNoData event coming from ORB.
+ */
+static void OnDvbUrlLoadedNoData(int requestId, unsigned int contentLength)
+{
+   ORB_LOG("requestId=%d contentLength=%u", requestId, contentLength);
+
+   unsigned char *content = nullptr;
 
    // Read file content from shared memory only if the DVB URL was successfully loaded
    if (contentLength > 0)
    {
       ORB_LOG("Read dsmcc file content from shared memory");
       content = ReadDsmccFileFromSharedMemory(requestId, contentLength);
-      {
-         std::lock_guard<std::mutex> lk(m);
-         s_dvbUriLoaders[requestId]->SetData(content, contentLength);
-         s_dvbUriLoaders[requestId]->SetDataReady(true);
-         free(content);
-      }
    }
-   else
+
    {
+      std::lock_guard<std::mutex> lk(m);
+      s_dvbUriLoaders[requestId]->SetData(content, contentLength);
+      s_dvbUriLoaders[requestId]->SetDataReady(true);
+      if (content)
       {
-         std::lock_guard<std::mutex> lk(m);
-         s_dvbUriLoaders[requestId]->SetData(nullptr, 0);
-         s_dvbUriLoaders[requestId]->SetDataReady(true);
+         free(content);
       }
    }
    cv.notify_one();
@@ -151,10 +157,11 @@ ORBWPEWebExtensionHelper::ORBWPEWebExtensionHelper()
    m_orbClient = CreateORBClient(
       OnJavaScriptEventDispatchRequested,
       OnDvbUrlLoaded,
+      OnDvbUrlLoadedNoData,
       OnInputKeyGenerated
       );
 
-   m_orbClient->SubscribeToDvbUrlLoadedEvent();
+   m_orbClient->SubscribeToDvbUrlLoadedNoDataEvent();
 }
 
 /**
@@ -163,7 +170,7 @@ ORBWPEWebExtensionHelper::ORBWPEWebExtensionHelper()
 ORBWPEWebExtensionHelper::~ORBWPEWebExtensionHelper()
 {
    ORB_LOG_NO_ARGS();
-   m_orbClient->UnsubscribeFromDvbUrlLoadedEvent();
+   m_orbClient->UnsubscribeFromDvbUrlLoadedNoDataEvent();
 }
 
 /**
