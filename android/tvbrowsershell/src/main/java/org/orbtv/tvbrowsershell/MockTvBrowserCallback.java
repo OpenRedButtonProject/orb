@@ -220,25 +220,22 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
     /**
      * Override the default component selection of the terminal for the specified type.
      *
-     * The component in the stream that has the specified PID, CTAG (if specified), and language (if
-     * specified) shall be selected. If pidOrSuspended equals 0, no component for the specified type
-     * shall be selected for presentation.
-     *
-     * Default component selection shall be restored for the specified type when
-     * restoreDefaultComponentSelection is called, the channel is changed, the application
-     * terminates, or the user selects a different track of the same type in the terminal UI.
+     * If id is empty, no component shall be selected for presentation (presentation is explicitly
+     * disabled). Otherwise, the specified component shall be selected for presentation.
      *
      * If playback has already started, the presented component shall be updated.
      *
+     * Default component selection shall be restored (revert back to the control of the terminal)
+     * when: (1) the application terminates, (2) the channel is changed, (3) presentation has not
+     * been explicitly disabled and the user selects another track in the terminal UI, or (4) the
+     * restoreComponentSelection method is called.
+     *
      * @param type Type of component selection to override (COMPONENT_TYPE_* code).
-     * @param pidOrSuspended Component PID or 0 to suspend presentation.
-     * @param ctag Component CTAG or 0 if not specified.
-     * @param language Component language of an empty string if not specified.
+     * @param id A platform-defined component id or an empty string to disable presentation.
      */
     @Override
-    public void overrideDefaultComponentSelection(int type, int pidOrSuspended, int ctag,
-                                                  String language) {
-        delaySelectComponent(type, false, pidOrSuspended);
+    public void overrideComponentSelection(int type, String id) {
+        delaySelectComponent(type, false, id);
     }
 
     /**
@@ -249,8 +246,8 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
      * @param type Type of component selection override to clear (COMPONENT_TYPE_* code).
      */
     @Override
-    public void restoreDefaultComponentSelection(int type) {
-        delaySelectComponent(type, true, 0);
+    public void restoreComponentSelection(int type) {
+        delaySelectComponent(type, true, null);
     }
 
     /**
@@ -447,6 +444,44 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
     @Override
     public List<TvBrowserTypes.Component> getComponentList(String ccid, int typeCode) {
         return mTestSuiteScenario.getCurrentChannelComponents();
+    }
+
+    /**
+     * Get a private audio component in the selected channel.
+     *
+     * @param componentTag The component_tag of the component.
+     *
+     * @return The private component with the specified component_tag in the PMT of the currently
+     *    selected broadcast channel; or null if unavailable or the component is not private (i.e.
+     *    the stream type is audio, video or subtitle).
+     *
+     *    Mandatory properties: id, pid and encrypted. The id property shall be usable with the
+     *    overrideComponentSelection method to select the component as an audio track. Other
+     *    Component properties are not required.
+     */
+    @Override
+    public TvBrowserTypes.Component getPrivateAudioComponent(String componentTag) {
+        // TODO
+        return null;
+    }
+
+    /**
+     * Get a private video component in the selected channel.
+     *
+     * @param componentTag The component_tag of the component.
+     *
+     * @return The private component with the specified component_tag in the PMT of the currently
+     *    selected broadcast channel; or null if unavailable or the component is not private (i.e.
+     *    the stream type is audio, video or subtitle).
+     *
+     *    Mandatory properties: id, pid and encrypted. The id property shall be usable with the
+     *    overrideComponentSelection method to select the component as an video track. Other
+     *    Component properties are not required.
+     */
+    @Override
+    public TvBrowserTypes.Component getPrivateVideoComponent(String componentTag) {
+        // TODO
+        return null;
     }
 
     /**
@@ -692,7 +727,7 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
     }
 
     private void delaySelectComponent(final int componentType, final boolean restoreDefault,
-                                      final int pidOrSuspend) {
+                                      final String id) {
         new android.os.Handler(Looper.getMainLooper()).postDelayed(() -> {
             if (restoreDefault) {
                 Vector<TvBrowserTypes.Component> components =
@@ -701,13 +736,13 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
                     // Restore to first in list
                     for (TvBrowserTypes.Component c : components) {
                         if (c.componentType == componentType) {
-                            mTestSuiteScenario.selectComponent(componentType, c.pid);
+                            mTestSuiteScenario.selectComponent(componentType, c.id);
                             break;
                         }
                     }
                 }
             } else {
-                mTestSuiteScenario.selectComponent(componentType, pidOrSuspend);
+                mTestSuiteScenario.selectComponent(componentType, id);
             }
             mSession.onComponentChanged(componentType);
             mSession.onSelectedComponentChanged(componentType);

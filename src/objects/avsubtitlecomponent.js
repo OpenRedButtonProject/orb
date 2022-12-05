@@ -61,10 +61,10 @@ hbbtv.objects.AVSubtitleComponent = (function() {
         p.avComponentData = avSubtitleComponentData; // Hold reference to caller's object
     }
 
-    // Private method to get a copy of the AVSubtitleComponent data
-    /*function cloneAVSubtitleComponentData() {
-      return Object.assign({}, privates.get(this).avComponentData);
-   }*/
+    function getId() {
+        const p = privates.get(this);
+        return p.avComponentData.id;
+    }
 
     prototype.toString = function() {
         return JSON.stringify(privates.get(this).avComponentData, publicProperties);
@@ -73,12 +73,12 @@ hbbtv.objects.AVSubtitleComponent = (function() {
     return {
         prototype: prototype,
         initialise: initialise,
-        //cloneAVSubtitleComponentData: cloneAVSubtitleComponentData
+        getId: getId,
     };
 })();
 
 hbbtv.objects.createAVSubtitleComponent = function(avSubtitleComponentData) {
-    // Create new instance of hbbtv.objects.Channel.prototype
+    // Create new instance of hbbtv.objects.AVSubtitleComponent.prototype
     const avSubtitleComponent = Object.create(hbbtv.objects.AVSubtitleComponent.prototype);
     hbbtv.objects.AVSubtitleComponent.initialise.call(avSubtitleComponent, avSubtitleComponentData);
     return avSubtitleComponent;

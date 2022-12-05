@@ -30,6 +30,7 @@ public:
     /**
      * Create a video component.
      *
+     * @param id               Platform-defined ID that is usable with Broadcast_OverrideComponentSelection
      * @param componentTag     The component tag identifies a component
      * @param pid              The MPEG Program ID (PID) of the component in the MPEG2-TS in which
      *                         it is carried
@@ -42,6 +43,7 @@ public:
      * @return Pointer to the new video component
      */
     static std::shared_ptr<Component> CreateVideoComponent(
+        std::string id,
         int componentTag,
         int pid,
         std::string encoding,
@@ -52,6 +54,7 @@ public:
         )
     {
         return std::make_shared<Component>(
+            id,
             componentTag,
             pid,
             encoding,
@@ -65,6 +68,7 @@ public:
     /**
      * Create a new audio component.
      *
+     * @param id               Platform-defined ID that is usable with Broadcast_OverrideComponentSelection
      * @param componentTag     The component tag identifies a component
      * @param pid              The MPEG Program ID (PID) of the component in the MPEG2-TS in which
      *                         it is carried
@@ -80,6 +84,7 @@ public:
      * @return Pointer to the new audio component
      */
     static std::shared_ptr<Component> CreateAudioComponent(
+        std::string id,
         int componentTag,
         int pid,
         std::string encoding,
@@ -92,6 +97,7 @@ public:
         )
     {
         return std::make_shared<Component>(
+            id,
             componentTag,
             pid,
             encoding,
@@ -107,6 +113,7 @@ public:
     /**
      * Create a new subtitle component.
      *
+     * @param id               Platform-defined ID that is usable with Broadcast_OverrideComponentSelection
      * @param componentTag     The component tag identifies a component
      * @param pid              The MPEG Program ID (PID) of the component in the MPEG2-TS in which
      *                         it is carried
@@ -123,6 +130,7 @@ public:
      * @return Pointer to the new subtitle component
      */
     static std::shared_ptr<Component> CreateSubtitleComponent(
+        std::string id,
         int componentTag,
         int pid,
         std::string encoding,
@@ -135,6 +143,7 @@ public:
         )
     {
         return std::make_shared<Component>(
+            id,
             componentTag,
             pid,
             encoding,
@@ -150,6 +159,7 @@ public:
     /**
      * Constructor for video components.
      *
+     * @param id
      * @param componentTag
      * @param pid
      * @param encoding
@@ -159,6 +169,7 @@ public:
      * @param aspectRatio
      */
     Component(
+        std::string id,
         int componentTag,
         int pid,
         std::string encoding,
@@ -169,6 +180,7 @@ public:
         )
     {
         m_componentType = COMPONENT_TYPE_VIDEO;
+        m_id = id;
         m_componentTag = componentTag;
         m_pid = pid;
         m_encoding = encoding;
@@ -181,6 +193,7 @@ public:
     /**
      * Constructor for audio components.
      *
+     * @param id
      * @param componentTag
      * @param pid
      * @param encoding
@@ -192,6 +205,7 @@ public:
      * @param audioChannels
      */
     Component(
+        std::string id,
         int componentTag,
         int pid,
         std::string encoding,
@@ -204,6 +218,7 @@ public:
         )
     {
         m_componentType = COMPONENT_TYPE_AUDIO;
+        m_id = id;
         m_componentTag = componentTag;
         m_pid = pid;
         m_encoding = encoding;
@@ -218,6 +233,7 @@ public:
     /**
      * Constructor for subtitle components.
      *
+     * @param id
      * @param componentTag
      * @param pid
      * @param encoding
@@ -229,6 +245,7 @@ public:
      * @param label
      */
     Component(
+        std::string id,
         int componentTag,
         int pid,
         std::string encoding,
@@ -241,6 +258,7 @@ public:
         )
     {
         m_componentType = COMPONENT_TYPE_SUBTITLE;
+        m_id = id;
         m_componentTag = componentTag;
         m_pid = pid;
         m_encoding = encoding;
@@ -262,6 +280,11 @@ public:
     int GetComponentType() const
     {
         return m_componentType;
+    }
+
+    std::string GetId() const
+    {
+        return m_id;
     }
 
     int GetComponentTag() const
@@ -328,6 +351,7 @@ private:
 
     // common attributes
     int m_componentType;
+    std::string m_id;
     int m_componentTag;
     int m_pid;
     std::string m_encoding;

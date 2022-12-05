@@ -40,7 +40,15 @@ hbbtv.objects.AVVideoComponent = (function() {
         },
         aspectRatio() {
             const p = privates.get(this);
-            return p.avComponentData.aspectRatio;
+            let aspectRatio = p.avComponentData.aspectRatio;
+            if (aspectRatio !== undefined) {
+                if (aspectRatio === 0) {
+                    aspectRatio = 1.33; // 4:3
+                } else {
+                    aspectRatio = 1.78; // 16:9
+                }
+            }
+            return aspectRatio;
         },
     });
 
@@ -51,10 +59,10 @@ hbbtv.objects.AVVideoComponent = (function() {
         p.avComponentData = avVideoComponentData; // Hold reference to caller's object
     }
 
-    // Private method to get a copy of the AVVideoComponent data
-    /*function cloneAVVideoComponentData() {
-      return Object.assign({}, privates.get(this).avComponentData);
-   }*/
+    function getId() {
+        const p = privates.get(this);
+        return p.avComponentData.id;
+    }
 
     prototype.toString = function() {
         return JSON.stringify(privates.get(this).avComponentData, publicProperties);
@@ -63,7 +71,7 @@ hbbtv.objects.AVVideoComponent = (function() {
     return {
         prototype: prototype,
         initialise: initialise,
-        //cloneAVVideoComponentData: cloneAVVideoComponentData
+        getId: getId,
     };
 })();
 

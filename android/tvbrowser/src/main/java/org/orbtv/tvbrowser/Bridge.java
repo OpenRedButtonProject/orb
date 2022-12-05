@@ -280,29 +280,70 @@ class Bridge extends AbstractBridge {
     }
 
     /**
+     * Get a private audio component in the selected channel.
+     *
+     * Security: FOR_BROADCAST_APP_ONLY.
+     *
+     * @param token The token associated with this request.
+     * @param componentTag The component_tag of the component.
+     *
+     * @return The private component with the specified component_tag in the PMT of the currently
+     *    selected broadcast channel; or null if unavailable or the component is not private (i.e.
+     *    the stream type is audio, video or subtitle).
+     *
+     *    Mandatory properties: id, pid and encrypted. The id property shall be usable with the
+     *    overrideComponentSelection method to select the component as an audio track. Other
+     *    Component properties are not required.
+     */
+    @Override
+    protected TvBrowserTypes.Component Broadcast_getPrivateAudioComponent(Token token,
+                                                                          String componentTag) {
+        return mTvBrowserCallback.getPrivateAudioComponent(componentTag);
+    }
+
+    /**
+     * Get a private video component in the selected channel.
+     *
+     * Security: FOR_BROADCAST_APP_ONLY.
+     *
+     * @param token The token associated with this request.
+     * @param componentTag The component_tag of the component.
+     *
+     * @return The private component with the specified component_tag in the PMT of the currently
+     *    selected broadcast channel; or null if unavailable or the component is not private (i.e.
+     *    the stream type is audio, video or subtitle).
+     *
+     *    Mandatory properties: id, pid and encrypted. The id property shall be usable with the
+     *    overrideComponentSelection method to select the component as an video track. Other
+     *    Component properties are not required.
+     */
+    @Override
+    protected TvBrowserTypes.Component Broadcast_getPrivateVideoComponent(Token token,
+                                                                          String componentTag) {
+        return mTvBrowserCallback.getPrivateVideoComponent(componentTag);
+    }
+
+    /**
      * Override the default component selection of the terminal for the specified type.
      *
-     * The component in the stream that has the specified PID, CTAG (if specified), and language (if
-     * specified) shall be selected. If pidOrSuspended equals 0, no component for the specified type
-     * shall be selected for presentation.
-     *
-     * Default component selection shall be restored for the specified type when
-     * restoreDefaultComponentSelection is called, the channel is changed, the application
-     * terminates, or the user selects a different track of the same type in the terminal UI.
+     * If id is empty, no component shall be selected for presentation (presentation is explicitly
+     * disabled). Otherwise, the specified component shall be selected for presentation.
      *
      * If playback has already started, the presented component shall be updated.
+     *
+     * Default component selection shall be restored (revert back to the control of the terminal)
+     * when: (1) the application terminates, (2) the channel is changed, (3) presentation has not
+     * been explicitly disabled and the user selects another track in the terminal UI, or (4) the
+     * restoreComponentSelection method is called.
      *
      * Security: FOR_BROADCAST_APP_ONLY.
      *
      * @param token The token associated with this request.
      * @param type Type of component selection to override (COMPONENT_TYPE_* code).
-     * @param pidOrSuspended Component PID or 0 to suspend presentation.
-     * @param ctag Component CTAG or 0 if not specified.
-     * @param language Component language of an empty string if not specified.
+     * @param id A platform-defined component id or an empty string to disable presentation.
      */
-    protected void Broadcast_overrideDefaultComponentSelection(Token token, int type,
-                                                               int pidOrSuspended, int ctag, String language) {
-        mTvBrowserCallback.overrideDefaultComponentSelection(type, pidOrSuspended, ctag, language);
+    protected void Broadcast_overrideComponentSelection(Token token, int type, String id) {
+        mTvBrowserCallback.overrideComponentSelection(type, id);
     }
 
     /**
@@ -315,8 +356,8 @@ class Bridge extends AbstractBridge {
      * @param token The token associated with this request.
      * @param type Type of component selection override to clear (COMPONENT_TYPE_* code).
      */
-    protected void Broadcast_restoreDefaultComponentSelection(Token token, int type) {
-        mTvBrowserCallback.restoreDefaultComponentSelection(type);
+    protected void Broadcast_restoreComponentSelection(Token token, int type) {
+        mTvBrowserCallback.restoreComponentSelection(type);
     }
 
     /**

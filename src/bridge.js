@@ -346,34 +346,78 @@ hbbtv.bridge.broadcast = (function() {
     };
 
     /**
-     * Override the default component selection of the terminal for the specified type.
-     *
-     * The component in the stream that has the specified PID, CTAG (if specified), and language (if
-     * specified) shall be selected. If pidOrSuspended equals 0, no component for the specified type
-     * shall be selected for presentation.
-     *
-     * Default component selection shall be restored for the specified type when
-     * restoreDefaultComponentSelection is called, the channel is changed, the application
-     * terminates, or the user selects a different track of the same type in the terminal UI.
-     *
-     * If playback has already started, the presented component shall be updated.
+     * Get a private audio component in the selected channel.
      *
      * Security: FOR_BROADCAST_APP_ONLY.
      *
-     * @param {number} type Type of component selection to override (COMPONENT_TYPE_* code).
-     * @param {number} pidOrSuspended Component PID or 0 to suspend presentation.
-     * @param {number} ctag Component CTAG or 0 if not specified.
-     * @param {string} language Component language of an empty string if not specified.
+     * @param {string} componentTag The component_tag of the component.
+     *
+     * @returns {Component} The private component with the specified component_tag in the PMT of the
+     * currently selected broadcast channel; or null if unavailable or the component is not
+     * private (i.e. the stream type is audio, video or subtitle).
+     *
+     * Mandatory properties: id, pid and encrypted. The id property shall be usable with the
+     * overrideComponentSelection method to select the component as an audio track. Other Component
+     * properties are not required.
      *
      * @method
      * @memberof bridge.broadcast#
      */
-    exported.overrideDefaultComponentSelection = function(type, pidOrSuspended, ctag, language) {
-        hbbtv.native.request('Broadcast.overrideDefaultComponentSelection', {
+    exported.getPrivateAudioComponent = function(componentTag) {
+        return hbbtv.native.request('Broadcast.getPrivateAudioComponent', {
+            componentTag: componentTag,
+        }).result;
+    };
+
+    /**
+     * Get a private video component in the selected channel.
+     *
+     * Security: FOR_BROADCAST_APP_ONLY.
+     *
+     * @param {string} componentTag The component_tag of the stream.
+     *
+     * @returns {Component} The private component with the specified component_tag in the PMT of the
+     * currently selected broadcast channel; or null if unavailable or the component is not
+     * private (i.e. the stream type is audio, video or subtitle).
+     *
+     * Mandatory properties: id, pid and encrypted. The id property shall be usable with the
+     * overrideComponentSelection method to select the component as a video track. Other Component
+     * properties are not required.
+     *
+     * @method
+     * @memberof bridge.broadcast#
+     */
+    exported.getPrivateVideoComponent = function(componentTag) {
+        return hbbtv.native.request('Broadcast.getPrivateVideoComponent', {
+            componentTag: componentTag,
+        }).result;
+    };
+
+    /**
+     * Override the default component selection of the terminal for the specified type.
+     *
+     * If id is empty, no component shall be selected for presentation (presentation is explicitly
+     * disabled). Otherwise, the specified component shall be selected for presentation.
+     *
+     * If playback has already started, the presented component shall be updated.
+     *
+     * Default component selection shall be restored (revert back to the control of the terminal)
+     * when: (1) the application terminates, (2) the channel is changed, (3) presentation has not
+     * been explicitly disabled and the user selects another track in the terminal UI, or (4) the
+     * restoreComponentSelection method is called.
+     *
+     * Security: FOR_BROADCAST_APP_ONLY.
+     *
+     * @param {number} type Type of component selection to override (COMPONENT_TYPE_* code).
+     * @param {string} id A platform-defined component id or an empty string to disable presentation.
+     *
+     * @method
+     * @memberof bridge.broadcast#
+     */
+    exported.overrideComponentSelection = function(type, id) {
+        hbbtv.native.request('Broadcast.overrideComponentSelection', {
             type: type,
-            pidOrSuspended: pidOrSuspended,
-            ctag: ctag,
-            language: language,
+            id: id,
         });
     };
 
@@ -389,8 +433,8 @@ hbbtv.bridge.broadcast = (function() {
      * @method
      * @memberof bridge.broadcast#
      */
-    exported.restoreDefaultComponentSelection = function(type) {
-        hbbtv.native.request('Broadcast.restoreDefaultComponentSelection', {
+    exported.restoreComponentSelection = function(type) {
+        hbbtv.native.request('Broadcast.restoreComponentSelection', {
             type: type,
         });
     };
