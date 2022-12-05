@@ -44,6 +44,14 @@ public:
         contentLength) = 0;
 
     /**
+     * Trigger the DvbUrlLoaded event.
+     *
+     * @param requestId     The original request identifier
+     * @param contentLength The retrieved content length in number of bytes
+     */
+    virtual void OnDvbUrlLoadedNoData(int requestId, unsigned int contentLength) = 0;
+
+    /**
      * Trigger the InputKeyGenerated event.
      *
      * @param keyCode   The JavaScript key code

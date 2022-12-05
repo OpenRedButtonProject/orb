@@ -41,6 +41,8 @@ public:
             unsigned int fileContentLength
             ) override;
 
+        virtual void DvbUrlLoadedNoData(int requestId, unsigned int fileContentLength) override;
+
         virtual void EventInputKeyGenerated(int keyCode, uint8_t keyAction) override;
 
         // Must define an interface map since we are implementing an interface on the exchange
@@ -58,6 +60,7 @@ public:
     ORBComRpcClient(
         OnJavaScriptEventDispatchRequested_cb onJavaScriptEventDispatchRequested_cb,
         OnDvbUrlLoaded_cb onDvbUrlLoaded_cb,
+        OnDvbUrlLoadedNoData_cb onDvbUrlLoadedNoData_cb,
         OnInputKeyGenerated_cb onInputKeyGenerated_cb
         );
     virtual ~ORBComRpcClient();
@@ -77,10 +80,12 @@ public:
     // Events subscription
     void SubscribeToJavaScriptEventDispatchRequestedEvent() override;
     void SubscribeToDvbUrlLoadedEvent() override;
+    void SubscribeToDvbUrlLoadedNoDataEvent() override;
     void SubscribeToInputKeyGeneratedEvent() override;
 
     void UnsubscribeFromJavaScriptEventDispatchRequestedEvent() override;
     void UnsubscribeFromDvbUrlLoadedEvent() override;
+    void UnsubscribeFromDvbUrlLoadedNoDataEvent() override;
     void UnsubscribeFromInputKeyGeneratedEvent() override;
 
 private:

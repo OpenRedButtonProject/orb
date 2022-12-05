@@ -45,6 +45,11 @@ struct EXTERNAL IORB : virtual public Core::IUnknown
             unsigned int fileContentLength
             ) = 0;
 
+        // @brief Event that signifies the successful load of the dvb url
+        // @param requestId: The id for the dvb url request
+        // @param fileContentLength: The length of the file
+        virtual void DvbUrlLoadedNoData(int requestId, unsigned int fileContentLength) = 0;
+
         // @brief Event that is fired when a key is pressed
         // @param keyCode: The keyCode that was generated
         // @param keyAction: The keyAction (0 = keyup , 1 = keydown)
@@ -87,6 +92,8 @@ struct EXTERNAL IORB : virtual public Core::IUnknown
         const uint8_t *fileContent /* @length:fileContentLength */,
         unsigned int fileContentLength
         ) = 0;
+
+    virtual void DvbUrlLoadedNoData(int requestId, unsigned int fileContentLength) = 0;
 
     virtual void EventInputKeyGenerated(int keyCode, uint8_t keyAction) = 0;
 };

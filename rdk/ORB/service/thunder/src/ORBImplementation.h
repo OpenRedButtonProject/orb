@@ -78,6 +78,8 @@ public:
         unsigned int fileContentLength
         ) override;
 
+    void DvbUrlLoadedNoData(int requestId, unsigned int fileContentLength) override;
+
     void EventInputKeyGenerated(int keyCode, uint8_t keyAction) override;
 
 private:

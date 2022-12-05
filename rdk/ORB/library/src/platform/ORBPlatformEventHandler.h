@@ -141,6 +141,14 @@ public:
         fileContentLength) = 0;
 
     /**
+     * Notify all subscribers that the specified DVB URL load has finished.
+     *
+     * @param requestId         The request identifier
+     * @param fileContentLength The file content length in number of bytes
+     */
+    virtual void OnDvbUrlLoadedNoData(int requestId, unsigned int fileContentLength) = 0;
+
+    /**
      * Notify the browser that the specified input key was generated.
      *
      * @param keyCode   The JavaScript key code
