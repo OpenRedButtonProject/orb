@@ -139,6 +139,7 @@ json JsonUtil::ComponentToJsonObject(Component component)
    if (component.GetComponentType() == COMPONENT_TYPE_VIDEO)
    {
       json json_videoComponent;
+      json_videoComponent.emplace("id", component.GetId());
       json_videoComponent.emplace("componentTag", component.GetComponentTag());
       json_videoComponent.emplace("pid", component.GetPid());
       json_videoComponent.emplace("type", COMPONENT_TYPE_VIDEO);
@@ -156,6 +157,7 @@ json JsonUtil::ComponentToJsonObject(Component component)
    else if (component.GetComponentType() == COMPONENT_TYPE_AUDIO)
    {
       json json_audioComponent;
+      json_audioComponent.emplace("id", component.GetId());
       json_audioComponent.emplace("componentTag", component.GetComponentTag());
       json_audioComponent.emplace("pid", component.GetPid());
       json_audioComponent.emplace("type", COMPONENT_TYPE_AUDIO);
@@ -175,6 +177,7 @@ json JsonUtil::ComponentToJsonObject(Component component)
    else if (component.GetComponentType() == COMPONENT_TYPE_SUBTITLE)
    {
       json json_subtitleComponent;
+      json_subtitleComponent.emplace("id", component.GetId());
       json_subtitleComponent.emplace("componentTag", component.GetComponentTag());
       json_subtitleComponent.emplace("pid", component.GetPid());
       json_subtitleComponent.emplace("type", COMPONENT_TYPE_SUBTITLE);

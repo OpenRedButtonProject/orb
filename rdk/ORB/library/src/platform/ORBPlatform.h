@@ -243,24 +243,58 @@ public:
    virtual std::vector<Component> Broadcast_GetComponents(std::string ccid, int componentType) = 0;
 
    /**
+    * Get a private audio component in the selected channel.
+    *
+    * Security: FOR_BROADCAST_APP_ONLY
+    *
+    * @param componentTag The component_tag of the component
+    *
+    * @return A pointer to the private component with the specified component_tag in the PMT of the
+    * currently selected broadcast channel; or nullptr if unavailable or the component is not
+    * private (i.e. the stream type is audio, video or subtitle).
+    *
+    * Mandatory properties of the returned Component are: id, pid and encrypted.
+    * The id property shall be usable with the Broadcast_OverrideComponentSelection method to
+    * select the component as an audio track. Other Component properties are not required.
+    */
+   virtual std::shared_ptr<Component> Broadcast_GetPrivateAudioComponent(std::string componentTag) = 0;
+
+   /**
+    * Get a private video component in the selected channel.
+    *
+    * Security: FOR_BROADCAST_APP_ONLY
+    *
+    * @param componentTag The component_tag of the component
+    *
+    * @return A pointer to the private component with the specified component_tag in the PMT of the
+    * currently selected broadcast channel; or nullptr if unavailable or the component is not
+    * private (i.e. the stream type is audio, video or subtitle).
+    *
+    * Mandatory properties of the reutrned Component are: id, pid and encrypted.
+    * The id property shall be usable with the Broadcast_OverrideComponentSelection method to
+    * select the component as an video track. Other Component properties are not required.
+    */
+   virtual std::shared_ptr<Component> Broadcast_GetPrivateVideoComponent(std::string componentTag) = 0;
+
+   /**
     * Override the default component selection of the terminal for the specified type.
     *
-    * The component in the stream that has the specified PID, CTAG (if specified), and language (if
-    * specified) shall be selected. If pidOrSuspended equals 0, no component for the specified type
-    * shall be selected for presentation.
+    * If id is empty, no component shall be selected for presentation (presentation is explicitly
+    * disabled). Otherwise, the specified component shall be selected for presentation.
     *
-    * Default component selection shall be restored for the specified type when
-    * restoreDefaultComponentSelection is called, the channel is changed, the application
-    * terminates, or the user selects a different track of the same type in the terminal UI.
+    * If playback has already started, the presented component shall be updated.
+    *
+    * Default component selection shall be restored (revert back to the control of the terminal)
+    * when: (1) the application terminates, (2) the channel is changed, (3) presentation has not
+    * been explicitly disabled and the user selects another track in the terminal UI, or (4) the
+    * Broadcast_RestoreComponentSelection method is called.
     *
     * Security: FOR_BROADCAST_APP_ONLY
     *
     * @param componentType  The component type (0: video, 1: audio, 2: subtitle)
-    * @param pidOrSuspended The component PID or 0 to suspend presentation
-    * @param ctag           The component tag or 0 if not specified
-    * @param language       The component language or an empty string if not specified
+    * @param id             A platform-defined component id or an empty string to disable presentation
     */
-   virtual void Broadcast_OverrideDefaultComponentSelection(int componentType, int pidOrSuspended, int ctag, std::string language) = 0;
+   virtual void Broadcast_OverrideComponentSelection(int componentType, std::string id) = 0;
 
    /**
     * Restore the default component selection of the terminal for the specified type.
@@ -271,7 +305,7 @@ public:
     *
     * @param componentType The component type (0: video, 1: audio, 2: subtitle)
     */
-   virtual void Broadcast_RestoreDefaultComponentSelection(int componentType) = 0;
+   virtual void Broadcast_RestoreComponentSelection(int componentType) = 0;
 
    /**
     * Suspend/resume the presentation of the current broadcast playback.

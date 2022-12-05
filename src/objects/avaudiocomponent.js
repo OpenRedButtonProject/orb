@@ -62,10 +62,10 @@ hbbtv.objects.AVAudioComponent = (function() {
       p.avComponentData = avAudioComponentData; // Hold reference to caller's object
    }
 
-   // Private method to get a copy of the AVAudioComponent data
-   /*function cloneAVAudioComponentData() {
-      return Object.assign({}, privates.get(this).avComponentData);
-   }*/
+   function getId() {
+      const p = privates.get(this);
+      return p.avComponentData.id;
+   }
 
    prototype.toString = function() {
       return JSON.stringify(privates.get(this).avComponentData, publicProperties);
@@ -74,12 +74,12 @@ hbbtv.objects.AVAudioComponent = (function() {
    return {
       prototype: prototype,
       initialise: initialise,
-      //cloneAVAudioComponentData: cloneAVAudioComponentData
+      getId: getId
    }
 })();
 
 hbbtv.objects.createAVAudioComponent = function(avAudioComponentData) {
-   // Create new instance of hbbtv.objects.Channel.prototype
+   // Create new instance of hbbtv.objects.AVAudioComponent.prototype
    const avAudioComponent = Object.create(hbbtv.objects.AVAudioComponent.prototype);
    hbbtv.objects.AVAudioComponent.initialise.call(avAudioComponent, avAudioComponentData);
    return avAudioComponent;

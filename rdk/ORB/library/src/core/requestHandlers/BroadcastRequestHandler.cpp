@@ -22,8 +22,10 @@
 #define BROADCAST_SET_CHANNEL_TO_DSD "setChannelToDsd"
 #define BROADCAST_GET_PROGRAMMES "getProgrammes"
 #define BROADCAST_GET_COMPONENTS "getComponents"
-#define BROADCAST_OVERRIDE_DEFAULT_COMPONENT_SELECTION "overrideDefaultComponentSelection"
-#define BROADCAST_RESTORE_DEFAULT_COMPONENT_SELECTION "restoreDefaultComponentSelection"
+#define BROADCAST_GET_PRIVATE_AUDIO_COMPONENT "getPrivateAudioComponent"
+#define BROADCAST_GET_PRIVATE_VIDEO_COMPONENT "getPrivateVideoComponent"
+#define BROADCAST_OVERRIDE_COMPONENT_SELECTION "overrideComponentSelection"
+#define BROADCAST_RESTORE_COMPONENT_SELECTION "restoreComponentSelection"
 #define BROADCAST_START_SEARCH "startSearch"
 #define BROADCAST_ABORT_SEARCH "abortSearch"
 #define BROADCAST_ADD_STREAM_EVENT_LISTENER "addStreamEventListener"
@@ -288,8 +290,50 @@ bool BroadcastRequestHandler::Handle(
          response.emplace("result", array);
       }
    }
-   // Broadcast.overrideDefaultComponentSelection
-   else if (method == BROADCAST_OVERRIDE_DEFAULT_COMPONENT_SELECTION)
+   // Broadcast.getPrivateAudioComponent
+   else if (method == BROADCAST_GET_PRIVATE_AUDIO_COMPONENT)
+   {
+      if (!IsRequestAllowed(token, ApplicationManager::MethodRequirement::FOR_BROADCAST_APP_ONLY))
+      {
+         response = MakeErrorResponse("SecurityError");
+      }
+      else
+      {
+         std::string componentTag = params.value("componentTag", "");
+         std::shared_ptr<Component> component = ORBEngine::GetSharedInstance().GetORBPlatform()->Broadcast_GetPrivateAudioComponent(componentTag);
+         if (component != nullptr)
+         {
+            response.emplace("result", JsonUtil::ComponentToJsonObject(*(component.get())));
+         }
+         else
+         {
+            response.emplace("result", "{}_json");
+         }
+      }
+   }
+   // Broadcast.getPrivateVideoComponent
+   else if (method == BROADCAST_GET_PRIVATE_VIDEO_COMPONENT)
+   {
+      if (!IsRequestAllowed(token, ApplicationManager::MethodRequirement::FOR_BROADCAST_APP_ONLY))
+      {
+         response = MakeErrorResponse("SecurityError");
+      }
+      else
+      {
+         std::string componentTag = params.value("componentTag", "");
+         std::shared_ptr<Component> component = ORBEngine::GetSharedInstance().GetORBPlatform()->Broadcast_GetPrivateVideoComponent(componentTag);
+         if (component != nullptr)
+         {
+            response.emplace("result", JsonUtil::ComponentToJsonObject(*(component.get())));
+         }
+         else
+         {
+            response.emplace("result", "{}_json");
+         }
+      }
+   }
+   // Broadcast.overrideComponentSelection
+   else if (method == BROADCAST_OVERRIDE_COMPONENT_SELECTION)
    {
       if (!IsRequestAllowed(token, ApplicationManager::MethodRequirement::FOR_BROADCAST_APP_ONLY))
       {
@@ -298,16 +342,14 @@ bool BroadcastRequestHandler::Handle(
       else
       {
          int componentType = params.value("type", COMPONENT_TYPE_ANY);
-         int pid = params.value("pidOrSuspended", 0);
-         int ctag = params.value("ctag", 0);
-         std::string language = params.value("language", "");
+         std::string id = params.value("id", "");
 
-         ORBEngine::GetSharedInstance().GetORBPlatform()->Broadcast_OverrideDefaultComponentSelection(
-            componentType, pid, ctag, language);
+         ORBEngine::GetSharedInstance().GetORBPlatform()->Broadcast_OverrideComponentSelection(
+            componentType, id);
       }
    }
-   // Broadcast.restoreDefaultComponentSelection
-   else if (method == BROADCAST_RESTORE_DEFAULT_COMPONENT_SELECTION)
+   // Broadcast.restoreComponentSelection
+   else if (method == BROADCAST_RESTORE_COMPONENT_SELECTION)
    {
       if (!IsRequestAllowed(token, ApplicationManager::MethodRequirement::FOR_BROADCAST_APP_ONLY))
       {
@@ -316,7 +358,7 @@ bool BroadcastRequestHandler::Handle(
       else
       {
          int componentType = params.value("type", -1);
-         ORBEngine::GetSharedInstance().GetORBPlatform()->Broadcast_RestoreDefaultComponentSelection(componentType);
+         ORBEngine::GetSharedInstance().GetORBPlatform()->Broadcast_RestoreComponentSelection(componentType);
       }
    }
    // Broadcast.startSearch

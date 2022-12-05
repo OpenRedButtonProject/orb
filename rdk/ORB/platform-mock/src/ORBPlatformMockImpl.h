@@ -42,8 +42,10 @@ public:
    virtual bool Broadcast_SetChannelToDsd(std::string dsd, int sid, bool trickplay, std::string contentAccessDescriptorURL, int quiet, Channel::ErrorState *errorState) override;
    virtual std::vector<Programme> Broadcast_GetProgrammes(std::string ccid) override;
    virtual std::vector<Component> Broadcast_GetComponents(std::string ccid, int componentType) override;
-   virtual void Broadcast_OverrideDefaultComponentSelection(int componentType, int pidOrSuspended, int ctag, std::string language) override;
-   virtual void Broadcast_RestoreDefaultComponentSelection(int componentType) override;
+   virtual std::shared_ptr<Component> Broadcast_GetPrivateAudioComponent(std::string componentTag) override;
+   virtual std::shared_ptr<Component> Broadcast_GetPrivateVideoComponent(std::string componentTag) override;
+   virtual void Broadcast_OverrideComponentSelection(int componentType, std::string id) override;
+   virtual void Broadcast_RestoreComponentSelection(int componentType) override;
    virtual void Broadcast_SetPresentationSuspended(bool presentationSuspended) override;
    virtual void Broadcast_Stop() override;
    virtual void Broadcast_Reset() override;
