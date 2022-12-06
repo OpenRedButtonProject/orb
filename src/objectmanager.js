@@ -14,6 +14,7 @@ hbbtv.objectManager = (function() {
    let objectMimeTypeTable = [];
    let objectFactoryMethodTable = [];
    let objectUpgradeHandlers = [];
+   let objectRemovedHandlers = [];
 
    function initialise() {
       addOipfObjectFactory();
@@ -27,6 +28,10 @@ hbbtv.objectManager = (function() {
          hbbtv.holePuncher.notifyObjectAddedToDocument(addedObject);
          upgradeObject(addedObject, addedObject.getAttribute("type"));
       }, function(removedObject) {
+         const handler = objectRemovedHandlers[removedObject.getAttribute("type")];
+         if (handler) {
+            handler(removedObject);
+         }
          hbbtv.holePuncher.notifyObjectRemovedFromDocument(removedObject);
       });
       upgradeDescendantObjects(document);
@@ -41,6 +46,7 @@ hbbtv.objectManager = (function() {
          objectFactoryMethodTable[options.oipfObjectFactoryMethodName] = options.name;
       }
       objectUpgradeHandlers[options.name] = options.upgradeObject;
+      objectRemovedHandlers[options.name] = options.onRemovedFromDOM;
    }
 
    function resolveMimeType(mimeType) {
@@ -58,18 +64,15 @@ hbbtv.objectManager = (function() {
          }
       }
       for (const object of target.getElementsByTagName("video")) {
-         upgradeObject(object);
+         hbbtv.objects.upgradeMediaElement(object);
       }
       for (const object of target.getElementsByTagName("audio")) {
-         upgradeObject(object);
+         hbbtv.objects.upgradeMediaElement(object);
       }
    }
 
    function upgradeObject(object, mimeType) {
       if (!mimeType) {
-         if (object.tagName && (object.tagName.toLowerCase() === "video" || object.tagName.toLowerCase() === "audio")) {
-            hbbtv.objects.upgradeMediaElement(object);
-         }
          return;
       }
       mimeType = mimeType.toLowerCase();
@@ -145,8 +148,6 @@ hbbtv.objectManager = (function() {
                }
                Element.prototype.setAttribute.apply(element, arguments);
             };
-         } else if (tagname === "video" || tagname === "audio") {
-            callbackTypeSet(element);
          }
          return element;
       };

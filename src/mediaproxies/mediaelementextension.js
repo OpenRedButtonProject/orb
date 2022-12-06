@@ -140,9 +140,10 @@ hbbtv.objects.MediaElementExtension = (function() {
       const hiddenOwnProperty = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "hidden");
       Object.defineProperty(prototype, "hidden", {
          set(value) {
-            privates.get(this).iframe.hidden = value;
+            const iframe = privates.get(this).iframe;
+            iframe.hidden = value;
             hiddenOwnProperty.set.call(this, value);
-            updateIFrameCSS.call(this);
+            hbbtv.utils.matchElementStyle(iframe, this);
          },
          get() {
             return hiddenOwnProperty.get.call(this);
@@ -218,20 +219,6 @@ hbbtv.objects.MediaElementExtension = (function() {
       };
    }
 
-   function updateIFrameCSS() {
-      const iframe = privates.get(this).iframe;
-      const style = window.getComputedStyle(this);
-      Array.from(style).forEach(
-         key => iframe.style.setProperty(key, style.getPropertyValue(key), style.getPropertyPriority(key))
-      );
-      if (iframe.style.position !== "fixed") {
-         const bounds = this.getBoundingClientRect();
-         iframe.style.left = bounds.left;
-         iframe.style.top = bounds.top;
-         iframe.style.position = "absolute";
-      }
-   }
-
    function initialise() {
       let p = privates.get(this);
       if (!p) {
@@ -293,7 +280,7 @@ hbbtv.objects.MediaElementExtension = (function() {
          // whenever there is a change on the video element style,
          // update the iframe style as well
          const styleObserver = new MutationObserver(function() {
-            updateIFrameCSS.call(thiz);
+            hbbtv.utils.matchElementStyle(p.iframe, thiz);
          });
          styleObserver.observe(this, {
             attributes: true,
@@ -331,13 +318,8 @@ hbbtv.objects.MediaElementExtension = (function() {
          console.log("MediaElementExtension: initialised");
       }
       if (this.parentNode && !p.iframe.parentNode) {
-         const sibling = this.nextSibling;
-         if (sibling) {
-            this.parentNode.insertBefore(p.iframe, sibling);
-         } else {
-            this.parentNode.appendChild(p.iframe);
-         }
-         updateIFrameCSS.call(this);
+         hbbtv.utils.insertAfter(this.parentNode, p.iframe, this);
+         hbbtv.utils.matchElementStyle(p.iframe, this);
       }
    }
 

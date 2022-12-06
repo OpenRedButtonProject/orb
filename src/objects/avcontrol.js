@@ -285,6 +285,8 @@ hbbtv.objects.AVControl = (function() {
          if (!priv.fullscreen) {
             videoWrapper.style.width = "1280px";
             videoWrapper.style.height = "720px";
+            videoWrapper.style.left = 0;
+            videoWrapper.style.top = 0;
             videoWrapper.style.position = "fixed";
             videoWrapper.style.zIndex = this.style.zIndex ? this.style.zIndex + 1 : 1;
             priv.fullscreen = true;
@@ -294,7 +296,7 @@ hbbtv.objects.AVControl = (function() {
          if (priv.fullscreen) {
             videoWrapper.style.position = "static";
             videoWrapper.style.zIndex = this.style.zIndex;
-            updateVideoDimensions.call(this);
+            hbbtv.utils.matchElementStyle(videoWrapper, this);
             priv.fullscreen = false;
             dispatchEvent.call(this, "FullScreenChange");
          }
@@ -776,13 +778,6 @@ hbbtv.objects.AVControl = (function() {
       }
    }
 
-   function updateVideoDimensions() {
-      const videoElement = privates.get(this).videoElement;
-      const bounds = this.getBoundingClientRect();
-      videoElement.style.width = bounds.width + "px";
-      videoElement.style.height = bounds.height + "px";
-   }
-
    function unloadSource() {
       const priv = privates.get(this);
       priv.connected = false;
@@ -792,9 +787,20 @@ hbbtv.objects.AVControl = (function() {
       priv.videoElement.src = '';
    }
 
+   function removeMediaElement() {
+      let p = privates.get(this);
+      if (p && p.videoElement.parentNode) {
+         p.videoElement.parentNode.removeChild(p.videoElement);
+      }
+   }
+
    function initialise() {
       let priv = privates.get(this);
       if (priv) {
+         if (this.parentNode) {
+            hbbtv.utils.insertAfter(this.parentNode, priv.videoElement, this);
+         }
+         hbbtv.utils.matchElementStyle(priv.videoElement, this);
          return; // already initialised
       }
       privates.set(this, {});
@@ -808,7 +814,7 @@ hbbtv.objects.AVControl = (function() {
             if (!priv.fullscreen) {
                // first set the attribute and then update video dimensions
                Element.prototype.setAttribute.apply(this, arguments);
-               updateVideoDimensions.call(this);
+               hbbtv.utils.matchElementStyle(priv.videoElement, this);
             }
             return;
          } else if (name === "data") {
@@ -858,10 +864,12 @@ hbbtv.objects.AVControl = (function() {
       videoElement.autoplay = false;
       //videoElement.hidden = true;
       priv.videoElement = videoElement;
-      this.appendChild(videoElement);
+      if (this.parentNode) {
+         hbbtv.utils.insertAfter(this.parentNode, videoElement, this);
+      }
 
       // update the videoWrapper size
-      updateVideoDimensions.call(this);
+      hbbtv.utils.matchElementStyle(videoElement, this);
       hbbtv.objects.upgradeMediaElement(videoElement);
 
       // parse param nodes and store their values
@@ -1011,11 +1019,7 @@ hbbtv.objects.AVControl = (function() {
             for (const mutation of mutationsList) {
                if (mutation.type === "childList") {
                   for (const node of mutation.removedNodes) {
-                     if (node === videoElement || node.className.includes("__orb_subsPH__")) {
-                        // in case the videoElement or the subtitles placeholder is removed
-                        // (i.e. by re-setting its innerHTML), re-add it 
-                        thiz.appendChild(node);
-                     } else if (node.nodeName && node.nodeName.toLowerCase() === "param" && node.hasAttribute("name")) {
+                     if (node.nodeName && node.nodeName.toLowerCase() === "param" && node.hasAttribute("name")) {
                         // remove stored params
                         priv.params[node.getAttribute("name")] = undefined;
                      }
@@ -1037,7 +1041,7 @@ hbbtv.objects.AVControl = (function() {
                      priv.fullscreen = false;
                      dispatchEvent.call(thiz, "FullScreenChange");
                   }
-                  updateVideoDimensions.call(thiz);
+                  hbbtv.utils.matchElementStyle(videoElement, thiz);
                }
             }
          });
@@ -1052,21 +1056,20 @@ hbbtv.objects.AVControl = (function() {
 
    return {
       prototype: prototype,
-      initialise: initialise
+      initialise: initialise,
+      removeMediaElement: removeMediaElement
    }
 })();
-
-hbbtv.objects.upgradeVideoMpegObject = function(object) {
-   Object.setPrototypeOf(object, hbbtv.objects.AVControl.prototype);
-   hbbtv.objects.AVControl.initialise.call(object);
-   hbbtv.utils.preventDefaultMediaHandling(object);
-}
 
 hbbtv.objectManager.registerObject({
    name: "video/mpeg",
    mimeTypes: ["video/mp4", "application/dash+xml", "audio/mp4", "audio/mpeg", "video/mpeg"],
    oipfObjectFactoryMethodName: "createVideoMpegObject",
    upgradeObject: function(object) {
-      hbbtv.objects.upgradeVideoMpegObject(object);
+      Object.setPrototypeOf(object, hbbtv.objects.AVControl.prototype);
+      hbbtv.objects.AVControl.initialise.call(object);
+   },
+   onRemovedFromDOM: function(object) {
+      hbbtv.objects.AVControl.removeMediaElement.call(object);
    }
 });
