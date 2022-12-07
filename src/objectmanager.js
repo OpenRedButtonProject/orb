@@ -14,7 +14,6 @@ hbbtv.objectManager = (function() {
    let objectMimeTypeTable = [];
    let objectFactoryMethodTable = [];
    let objectUpgradeHandlers = [];
-   let objectRemovedHandlers = [];
 
    function initialise() {
       addOipfObjectFactory();
@@ -28,10 +27,6 @@ hbbtv.objectManager = (function() {
          hbbtv.holePuncher.notifyObjectAddedToDocument(addedObject);
          upgradeObject(addedObject, addedObject.getAttribute("type"));
       }, function(removedObject) {
-         const handler = objectRemovedHandlers[removedObject.getAttribute("type")];
-         if (handler) {
-            handler(removedObject);
-         }
          hbbtv.holePuncher.notifyObjectRemovedFromDocument(removedObject);
       });
       upgradeDescendantObjects(document);
@@ -46,7 +41,6 @@ hbbtv.objectManager = (function() {
          objectFactoryMethodTable[options.oipfObjectFactoryMethodName] = options.name;
       }
       objectUpgradeHandlers[options.name] = options.upgradeObject;
-      objectRemovedHandlers[options.name] = options.onRemovedFromDOM;
    }
 
    function resolveMimeType(mimeType) {
@@ -120,8 +114,7 @@ hbbtv.objectManager = (function() {
       });
       const config = {
          childList: true,
-         subtree: true,
-         attributes: true,
+         subtree: true
       };
       observer.observe(document.documentElement || document.body, config);
    }

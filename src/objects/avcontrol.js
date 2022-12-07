@@ -29,6 +29,32 @@ hbbtv.objects.AVControl = (function() {
    const prototype = Object.create(HTMLObjectElement.prototype);
    const privates = new WeakMap();
 
+   const observer = new MutationObserver(function(mutationsList) {
+      for (const mutation of mutationsList) {
+         for (const node of mutation.removedNodes) {
+            if (node.nodeName && node.nodeName.toLowerCase() === "object") {
+               const p = privates.get(node);
+               if (p && p.videoElement.parentNode) {
+                  p.videoElement.parentNode.removeChild(p.videoElement);
+               }
+            }
+         }
+         for (const node of mutation.addedNodes) {
+            if (node.nodeName && node.nodeName.toLowerCase() === "object") {
+               const p = privates.get(node);
+               if (p && !p.videoElement.parentNode) {
+                  hbbtv.utils.insertAfter(node.parentNode, p.videoElement, node);
+                  hbbtv.utils.matchElementStyle(p.videoElement, node);
+               }
+            }
+         }
+      }
+   });
+   observer.observe(document.documentElement || document.body, {
+      childList: true,
+      subtree: true
+   });
+
    hbbtv.utils.defineConstantProperties(prototype, {
       "COMPONENT_TYPE_VIDEO": 0,
       "COMPONENT_TYPE_AUDIO": 1,
@@ -787,20 +813,9 @@ hbbtv.objects.AVControl = (function() {
       priv.videoElement.src = '';
    }
 
-   function removeMediaElement() {
-      let p = privates.get(this);
-      if (p && p.videoElement.parentNode) {
-         p.videoElement.parentNode.removeChild(p.videoElement);
-      }
-   }
-
    function initialise() {
       let priv = privates.get(this);
       if (priv) {
-         if (this.parentNode) {
-            hbbtv.utils.insertAfter(this.parentNode, priv.videoElement, this);
-         }
-         hbbtv.utils.matchElementStyle(priv.videoElement, this);
          return; // already initialised
       }
       privates.set(this, {});
@@ -866,10 +881,8 @@ hbbtv.objects.AVControl = (function() {
       priv.videoElement = videoElement;
       if (this.parentNode) {
          hbbtv.utils.insertAfter(this.parentNode, videoElement, this);
+         hbbtv.utils.matchElementStyle(videoElement, this);
       }
-
-      // update the videoWrapper size
-      hbbtv.utils.matchElementStyle(videoElement, this);
       hbbtv.objects.upgradeMediaElement(videoElement);
 
       // parse param nodes and store their values
@@ -1052,12 +1065,13 @@ hbbtv.objects.AVControl = (function() {
             attributeFilter: ["style"]
          });
       })();
+
+      console.log("A/V Control: initialised");
    }
 
    return {
       prototype: prototype,
-      initialise: initialise,
-      removeMediaElement: removeMediaElement
+      initialise: initialise
    }
 })();
 
@@ -1068,8 +1082,5 @@ hbbtv.objectManager.registerObject({
    upgradeObject: function(object) {
       Object.setPrototypeOf(object, hbbtv.objects.AVControl.prototype);
       hbbtv.objects.AVControl.initialise.call(object);
-   },
-   onRemovedFromDOM: function(object) {
-      hbbtv.objects.AVControl.removeMediaElement.call(object);
    }
 });
