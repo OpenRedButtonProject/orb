@@ -120,9 +120,9 @@ hbbtv.utils = (function() {
             key => thiz.style.setProperty(key, style.getPropertyValue(key), style.getPropertyPriority(key))
          );
          if (thiz.style.position !== "fixed") {
-            const bounds = thiz.getBoundingClientRect();
-            thiz.style.left = bounds.left;
-            thiz.style.top = bounds.top;
+            const bounds = element.getBoundingClientRect();
+            thiz.style.left = bounds.left + "px";
+            thiz.style.top = bounds.top + "px";
             thiz.style.position = "absolute";
          }
       }

@@ -309,19 +309,19 @@ hbbtv.objects.AVControl = (function() {
 
       if (fullscreen) {
          if (!priv.fullscreen) {
-            videoWrapper.style.width = "1280px";
-            videoWrapper.style.height = "720px";
-            videoWrapper.style.left = 0;
-            videoWrapper.style.top = 0;
-            videoWrapper.style.position = "fixed";
-            videoWrapper.style.zIndex = this.style.zIndex ? this.style.zIndex + 1 : 1;
+            videoWrapper.style.cssText = `
+               width: 1280px;
+               height: 720px;
+               left: 0px;
+               top: 0px;
+               position: fixed;
+               z-index: 
+            ` + (this.style.zIndex ? this.style.zIndex : 1);
             priv.fullscreen = true;
             dispatchEvent.call(this, "FullScreenChange");
          }
       } else {
          if (priv.fullscreen) {
-            videoWrapper.style.position = "static";
-            videoWrapper.style.zIndex = this.style.zIndex;
             hbbtv.utils.matchElementStyle(videoWrapper, this);
             priv.fullscreen = false;
             dispatchEvent.call(this, "FullScreenChange");
@@ -868,14 +868,6 @@ hbbtv.objects.AVControl = (function() {
       const mimetype = this.type || "";
       let videoElement = document.createElement(mimetype.startsWith("audio") ? "audio" : "video");
 
-      // set video background to #000 to simulate letterbox and pillarbox effect
-      // when the video element aspect ratio is different than the video source
-      // aspect ratio
-      videoElement.style.backgroundColor = this.style.backgroundColor || "#000";
-      videoElement.style.zIndex = this.style.zIndex;
-      videoElement.style.position = "static";
-      videoElement.style.left = 0;
-      videoElement.style.top = 0;
       videoElement.autoplay = false;
       //videoElement.hidden = true;
       priv.videoElement = videoElement;
@@ -1050,7 +1042,6 @@ hbbtv.objects.AVControl = (function() {
                   // if we are in fullscreen mode when the style of the AV Control
                   // object changes, switch to non-fullscreen mode  
                   if (priv.fullscreen) {
-                     videoElement.style.zIndex = thiz.style.zIndex;
                      priv.fullscreen = false;
                      dispatchEvent.call(thiz, "FullScreenChange");
                   }
@@ -1082,5 +1073,6 @@ hbbtv.objectManager.registerObject({
    upgradeObject: function(object) {
       Object.setPrototypeOf(object, hbbtv.objects.AVControl.prototype);
       hbbtv.objects.AVControl.initialise.call(object);
+      hbbtv.utils.preventDefaultMediaHandling(object);
    }
 });
