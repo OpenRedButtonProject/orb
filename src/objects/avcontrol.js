@@ -28,6 +28,7 @@ hbbtv.objects.AVControl = (function() {
 
    const prototype = Object.create(HTMLObjectElement.prototype);
    const privates = new WeakMap();
+   const avsInUse = new Set();
 
    const observer = new MutationObserver(function(mutationsList) {
       for (const mutation of mutationsList) {
@@ -149,10 +150,8 @@ hbbtv.objects.AVControl = (function() {
             }
          }
          if (speed == 0 && priv.playState === PLAY_STATE_STOPPED) {
-            notifyBroadbandAvInUse.call(this, true);
             transitionToState.call(this, PLAY_STATE_PAUSED);
          } else if (isStateTransitionValid.call(this, priv.playState, PLAY_STATE_CONNECTING)) {
-            notifyBroadbandAvInUse.call(this, true);
             transitionToState.call(this, PLAY_STATE_CONNECTING);
             priv.xhr.open('HEAD', this.data);
             priv.xhr.send();
@@ -246,7 +245,6 @@ hbbtv.objects.AVControl = (function() {
          videoElement.currentTime = 0;
          unloadSource.call(this);
          clearInterval(priv.rewindInterval);
-         notifyBroadbandAvInUse.call(this, false);
       }
 
       if (priv.mediaSourceQueue.length !== 0) {
@@ -782,8 +780,7 @@ hbbtv.objects.AVControl = (function() {
       let priv = privates.get(this);
       if (broadbandAvInUse) {
          console.log("A/V control: AV in use");
-         clearTimeout(priv.notifyTimeout);
-         priv.notifyTimeout = null;
+         avsInUse.add(this);
          try {
             hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(true);
             //priv.videoElement.hidden = false;
@@ -792,13 +789,19 @@ hbbtv.objects.AVControl = (function() {
          }
       } else {
          console.log("A/V control: AV NOT in use (notification waiting 0.25s)");
-         priv.notifyTimeout = setTimeout(() => {
-            console.log("A/V control: AV NOT in use (notification dispatched)");
-            try {
-               hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
-               //priv.videoElement.hidden = true;
-            } catch (e) {
-               console.warn("A/V Control: " + e);
+         avsInUse.delete(this);
+         setTimeout(() => {
+            if (avsInUse.size <= 0) {
+               console.log("A/V control: AV NOT in use (notification dispatched)");
+               try {
+                  hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
+                  //priv.videoElement.hidden = true;
+               } catch (e) {
+                  console.warn("A/V Control: " + e);
+               }
+            }
+            else {
+               console.log("A/V control: Another AV is in use.");
             }
          }, 250);
       }
@@ -903,13 +906,10 @@ hbbtv.objects.AVControl = (function() {
             case PLAY_STATE_ERROR:
             case PLAY_STATE_STOPPED:
             case PLAY_STATE_FINISHED:
-               //videoElement.hidden = true;
-               break;
-            case PLAY_STATE_PLAYING:
-            case PLAY_STATE_PAUSED:
-               //videoElement.hidden = false;
+               notifyBroadbandAvInUse.call(this, false);
                break;
             default:
+               notifyBroadbandAvInUse.call(this, true);
                break;
          }
       });
@@ -926,7 +926,6 @@ hbbtv.objects.AVControl = (function() {
             priv.error = 1;
             unloadSource.call(thiz);
             transitionToState.call(thiz, PLAY_STATE_ERROR);
-            notifyBroadbandAvInUse.call(thiz, false);
             return;
          }
          transitionToState.call(thiz, PLAY_STATE_BUFFERING);
@@ -988,7 +987,6 @@ hbbtv.objects.AVControl = (function() {
                thiz.play(1);
             } else {
                unloadSource.call(thiz);
-               notifyBroadbandAvInUse.call(thiz, false);
             }
          }
       });
@@ -998,7 +996,6 @@ hbbtv.objects.AVControl = (function() {
          if (transitionToState.call(thiz, PLAY_STATE_ERROR)) {
             unloadSource.call(thiz);
             priv.error = e.error.code;
-            notifyBroadbandAvInUse.call(thiz, false);
          }
 
          if (priv.mediaSourceQueue.length !== 0) {
