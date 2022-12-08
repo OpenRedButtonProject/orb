@@ -110,18 +110,18 @@ static void OnInputKeyGenerated(int keyCode, unsigned char keyAction)
    // keydown
    if (keyAction == 1)
    {
-      kScript = "document.dispatchEvent(new KeyboardEvent('keydown',{keyCode:" + std::to_string(keyCode) + "}));";
+      kScript = "document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{'keyCode':" + std::to_string(keyCode) + ", 'bubbles': true}));";
       javascript = strdup(kScript.c_str());
       g_main_context_invoke_full(nullptr, G_PRIORITY_HIGH_IDLE, EvaluateJavaScript, (gpointer) javascript, (GDestroyNotify) free);
    }
    // keyup
    else if (keyAction == 0)
    {
-      kScript = "document.dispatchEvent(new KeyboardEvent('keypress',{keyCode:" + std::to_string(keyCode) + "}));";
+      kScript = "document.activeElement.dispatchEvent(new KeyboardEvent('keypress',{keyCode:" + std::to_string(keyCode) + ", 'bubbles': true}));";
       javascript = strdup(kScript.c_str());
       g_main_context_invoke_full(nullptr, G_PRIORITY_HIGH_IDLE, EvaluateJavaScript, (gpointer) javascript, (GDestroyNotify) free);
 
-      kScript = "document.dispatchEvent(new KeyboardEvent('keyup',{keyCode:" + std::to_string(keyCode) + "}));";
+      kScript = "document.activeElement.dispatchEvent(new KeyboardEvent('keyup',{keyCode:" + std::to_string(keyCode) + ", 'bubbles': true}));";
       javascript = strdup(kScript.c_str());
       g_main_context_invoke_full(nullptr, G_PRIORITY_HIGH_IDLE, EvaluateJavaScript, (gpointer) javascript, (GDestroyNotify) free);
    }
