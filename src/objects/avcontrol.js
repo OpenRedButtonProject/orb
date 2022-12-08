@@ -852,12 +852,17 @@ hbbtv.objects.AVControl = (function() {
       priv.playState = PLAY_STATE_STOPPED;
       priv.xhr = new XMLHttpRequest();
       const thiz = this;
-      priv.data = this.getAttribute("data");
+
+      const _setAttribute = this.setAttribute;
+      priv.data = Element.prototype.getAttribute.call(this, "data");
+
+      // override setAttribute here and not in the prototype, as
+      // it is already overriden in objectmanager.js
       this.setAttribute = function(name, value) {
          if (name === "width" || name === "height") {
             if (!priv.fullscreen) {
                // first set the attribute and then update video dimensions
-               Element.prototype.setAttribute.apply(this, arguments);
+               _setAttribute.apply(this, arguments);
                hbbtv.utils.matchElementStyle(priv.videoElement, this);
             }
             return;
@@ -872,7 +877,7 @@ hbbtv.objects.AVControl = (function() {
                setMediaSettings.call(this, priv.MediaSettingsConfiguration);
             }
          }
-         Element.prototype.setAttribute.apply(this, arguments);
+         _setAttribute.apply(this, arguments);
       };
 
       function onPlayHandler() {
