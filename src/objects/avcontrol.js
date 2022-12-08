@@ -117,6 +117,28 @@ hbbtv.objects.AVControl = (function() {
       }
    });
 
+   prototype.getAttribute = function(name) {
+      if (name === "data") {
+         return privates.get(this).data;
+      }
+      return Element.prototype.getAttribute.apply(this, arguments);
+   };
+
+   prototype.removeAttribute = function(name) {
+      if (name === "data") {
+         delete privates.get(this).data;
+         if (priv.playState !== PLAY_STATE_STOPPED) {
+            this.stop();
+         }
+         if (value !== this.data) {
+            priv.seekPos = undefined;
+            priv.connected = false;
+            setMediaSettings.call(this, priv.MediaSettingsConfiguration);
+         }
+      }
+      Element.prototype.removeAttribute.apply(this, arguments);
+   };
+
    prototype.play = function(speed) {
       const priv = privates.get(this);
       const videoElement = priv.videoElement;
@@ -233,18 +255,10 @@ hbbtv.objects.AVControl = (function() {
 
    prototype.stop = function() {
       const priv = privates.get(this);
-      const videoElement = priv.videoElement;
-
       priv.xhr.abort();
       if (transitionToState.call(this, PLAY_STATE_STOPPED)) {
-         console.log('A/V Control: Stopping playback of ' + this.data);
-         // remove the onpause event as it will be triggered when this
-         // function is called
-         videoElement.onpause = undefined;
-         videoElement.pause();
-         videoElement.currentTime = 0;
+         _internalStop.call(this);
          unloadSource.call(this);
-         clearInterval(priv.rewindInterval);
       }
 
       if (priv.mediaSourceQueue.length !== 0) {
@@ -443,6 +457,18 @@ hbbtv.objects.AVControl = (function() {
 
    prototype.removeEventListener = function(type, listener) {
       privates.get(this).eventTarget.removeEventListener(type, listener);
+   }
+
+   function _internalStop() {
+      const priv = privates.get(this);
+      const videoElement = priv.videoElement;
+      console.log('A/V Control: Stopping playback of ' + this.data);
+      // remove the onpause event as it will be triggered when this
+      // function is called
+      videoElement.onpause = undefined;
+      videoElement.pause();
+      videoElement.currentTime = 0;
+      clearInterval(priv.rewindInterval);
    }
 
    // helper function due to unclear event names between spec versions
@@ -826,7 +852,7 @@ hbbtv.objects.AVControl = (function() {
       priv.playState = PLAY_STATE_STOPPED;
       priv.xhr = new XMLHttpRequest();
       const thiz = this;
-
+      priv.data = this.getAttribute("data");
       this.setAttribute = function(name, value) {
          if (name === "width" || name === "height") {
             if (!priv.fullscreen) {
@@ -839,7 +865,8 @@ hbbtv.objects.AVControl = (function() {
             if (priv.playState !== PLAY_STATE_STOPPED) {
                this.stop();
             }
-            if (value !== this.data) {
+            if (value !== priv.data) {
+               priv.data = value;
                priv.seekPos = undefined;
                priv.connected = false;
                setMediaSettings.call(this, priv.MediaSettingsConfiguration);
@@ -983,7 +1010,8 @@ hbbtv.objects.AVControl = (function() {
                   thiz.play(priv.speed);
                }
             } else if (priv.mediaSourceQueue.length !== 0) {
-               thiz.data = priv.mediaSourceQueue.shift();
+               _internalStop.call(thiz);
+               priv.data = priv.mediaSourceQueue.shift();
                thiz.play(1);
             } else {
                unloadSource.call(thiz);
