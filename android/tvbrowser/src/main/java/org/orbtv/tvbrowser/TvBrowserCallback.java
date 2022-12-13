@@ -478,6 +478,58 @@ public interface TvBrowserCallback {
    String getHostAddress();
 
    /**
+    * Get the list of supported DRM System IDs currently available. Once called,
+    * the caller can track the availability changes by listening to
+    * onDRMSystemStatusChange events. DRM System ID can enter the following states:
+    *    - 0 READY, fully initialised and ready
+    *    - 1 UNKNOWN, no longer available
+    *    - 2 INITIALISING, initialising and not ready to communicate
+    *    - 3 ERROR, in error state
+    * @return List of supported DRM System IDs currently available.
+    */
+   List<TvBrowserTypes.DRMSystemStatus> getSupportedDRMSystemIDs();
+
+   /**
+    * Checks the availability of a valid license for playing a protected content item.
+    *
+    * @param DRMPrivateData DRM proprietary private data
+    * @param DRMSystemID ID of the DRM System
+    * @return true if there is a valid license available that may allow playing the
+   content
+    */
+   boolean canPlayContent(String DRMPrivateData, String DRMSystemID);
+
+   /**
+    * Checks the availability of a valid license for recording a protected content item.
+    *
+    * @param DRMPrivateData DRM proprietary private data
+    * @param DRMSystemID ID of the DRM System
+    * @return true if there is a valid license available locally that may allow recording
+   the content
+    */
+   boolean canRecordContent(String DRMPrivateData, String DRMSystemID);
+
+   /**
+    * Send message to the DRM system.
+    *
+    * @param msgId unique ID to identify the message, to be passed as the 'msgID'
+    *        argument for onDRMMessageResult
+    * @param msgType message type as defined by the DRM system
+    * @param msg message to be provided to the underlying DRM system
+    * @param drmSystemID ID of the DRM System
+    */
+   void sendDRMMessage(String msgId, String msgType, String msg, String drmSystemID);
+
+   /**
+    * Set the DRM system, that the terminal shall use for playing protected broadband content.
+    *
+    * @param DRMSystemID ID of the DRM System
+    * @return false if the terminal is unable to set the specified DRM system as requested,
+    *         true otherwise
+    */
+   boolean setActiveDRM(String DRMSystemID);
+
+   /**
     * Publish a test report (debug build only).
     *
     * @param testSuite A unique test suite name.

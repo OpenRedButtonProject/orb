@@ -58,6 +58,8 @@ src/objects/privatedata.js \
 src/objects/application.js \
 src/objects/applicationmanager.js \
 src/objects/avcontrol.js \
+src/objects/oipfgatewayinfo.js \
+src/objects/oipfdrmagent.js \
 src/objects/parentalcontrol/oipfparentalcontrolmanager.js \
 src/objects/parentalcontrol/parentalratingscheme.js \
 src/objects/parentalcontrol/parentalratingschemecollection.js \
