@@ -11,6 +11,7 @@
 #include <string>
 #include <nlohmann/json.hpp>
 
+#include "Capabilities.h"
 #include "Channel.h"
 #include "Programme.h"
 #include "ParentalRating.h"
@@ -24,6 +25,16 @@ namespace orb
 class JsonUtil
 {
 public:
+
+   // Capabilities
+
+   static json CapabilitiesToJsonObject(std::shared_ptr<Capabilities> capabilities);
+
+   static json AudioProfileToJsonObject(AudioProfile audioProfile);
+
+   static json VideoProfileToJsonObject(VideoProfile videoProfile);
+
+   static json VideoDisplayFormatToJsonObject(VideoDisplayFormat videoDisplayFormat);
 
    // Channel
 

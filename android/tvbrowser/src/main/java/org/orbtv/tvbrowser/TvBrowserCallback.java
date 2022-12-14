@@ -19,6 +19,72 @@ public interface TvBrowserCallback {
    void onSessionReady(TvBrowser.Session session);
 
    /**
+    * Get the current capabilities of the terminal.
+    *
+    * @return A Capabilities object.
+    */
+   TvBrowserTypes.Capabilities getCapabilities();
+
+   /**
+    * Get a list of audio profiles supported by the terminal, as defined by HBBTV 10.2.4.7 for
+    * the audio_profile element.
+    *
+    * @return A list of audio profiles supported by the terminal.
+    */
+   List<TvBrowserTypes.AudioProfile> getAudioProfiles();
+
+   /**
+    * Get a list of video profiles supported by the terminal, as defined by HBBTV 10.2.4.7 for
+    * the video_profile element.
+    *
+    * @return A list of video profiles supported by the terminal.
+    */
+   List<TvBrowserTypes.VideoProfile> getVideoProfiles();
+
+   /**
+    * If the terminal supports UHD, get a list that describes the highest quality video format the
+    * terminal supports, as defined by HBBTV 10.2.4.7 for the video_display_format element;
+    * otherwise get an empty list.
+    *
+    * Note: If the terminal changes its display format based on the content being played, multiple
+    * elements may be included in the list when multiple frame rate families are usable or the
+    * highest resolution does not support each highest quality parameter.
+    *
+    * @return A list that describes the highest quality video format.
+    */
+   List<TvBrowserTypes.VideoDisplayFormat> getVideoDisplayFormats();
+
+   /**
+    * Get the current number of additional media streams containing SD video accompanied by audio
+    * that can be decoded and presented by an A/V control object or HTML5 media element.
+    *
+    * @return The current number of additional media streams. If the value is non-zero, then a call
+    * to play an A/V control object, HTML5 media element or video/broadcast object shall not fail
+    * due to lack of resources for SD media.
+    */
+   int getExtraSDVideoDecodes();
+
+   /**
+    * Get the current number of additional media streams containing HD video accompanied by audio
+    * that can be decoded and presented by an A/V control object or HTML5 media element.
+    *
+    * @return The current number of additional media streams. If the value is non-zero, then a call
+    * to play an A/V control object, HTML5 media element or video/broadcast object shall not fail
+    * due to lack of resources for HD media.
+    */
+   int getExtraHDVideoDecodes();
+
+   /**
+    * Get the current number of additional media streams containing UHD video accompanied by audio
+    * that can be decoded and presented by an A/V control object or HTML5 media element.
+    *
+    * @return The current number of additional media streams. If the value is non-zero, then a call
+    * to play an A/V control object, HTML5 media element or video/broadcast object shall not fail
+    * due to lack of resources for UHD media.
+    */
+   int getExtraUHDVideoDecodes();
+
+   /**
     * Get immutable system information.
     *
     * @return Valid SystemInformation on success, otherwise invalid SystemInformation
