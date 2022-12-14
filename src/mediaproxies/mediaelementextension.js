@@ -121,6 +121,7 @@ hbbtv.objects.MediaElementExtension = (function() {
       Object.defineProperty(prototype, "src", {
          set(value) {
             const p = privates.get(this);
+            value = new __URL(value, document.baseURI).href;
             p.videoDummy.src = value;
             if (value) {
                console.log("MediaElementExtension: Setting iframe src property to '" + value + "'.");
