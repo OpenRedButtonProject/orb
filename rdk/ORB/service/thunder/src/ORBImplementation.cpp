@@ -230,6 +230,18 @@ void ORBImplementation::SetPreferredUILanguage(std::string preferredUiLanguage)
 }
 
 /**
+ * Get the User-Agent string.
+ *
+ * @return The User-Agent string
+ */
+std::string ORBImplementation::GetUserAgentString()
+{
+    ORB_LOG_NO_ARGS();
+    std::string userAgentString = ORBEngine::GetSharedInstance().GetUserAgentString();
+    return userAgentString;
+}
+
+/**
  * @brief ORBImplementation::JavaScriptEventDispatchRequest
  *
  * This method is used to notify each client for the 'JavaScriptEventDispatchRequest' event

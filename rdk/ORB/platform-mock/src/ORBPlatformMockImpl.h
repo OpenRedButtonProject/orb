@@ -69,6 +69,7 @@ public:
     virtual bool Configuration_GetAudioDescriptionEnabled() override;
     virtual std::string Configuration_GetDeviceId() override;
     virtual bool Configuration_RequestAccessToDistinctiveIdentifier(std::string origin) override;
+    virtual std::string Configuration_GetUserAgentString() override;
 
     // Dsmcc api
     virtual void Dsmcc_RequestFile(std::string url, int requestId) override;

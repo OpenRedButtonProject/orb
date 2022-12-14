@@ -73,6 +73,7 @@ public:
     void LoadDvbUrl(std::string url, int requestId) override;
     void NotifyApplicationLoadFailed(std::string url, std::string errorDescription) override;
     void NotifyApplicationPageChanged(std::string url) override;
+    std::string GetUserAgentString() override;
 
     bool IsValid();
 

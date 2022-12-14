@@ -346,6 +346,22 @@ void ORBComRpcClient::NotifyApplicationPageChanged(std::string url)
     }
 }
 
+/**
+ * Get the User-Agent string.
+ *
+ * @return The User-Agent string
+ */
+std::string ORBComRpcClient::GetUserAgentString()
+{
+    std::string userAgentString;
+    if (_orb)
+    {
+        ORB_LOG_NO_ARGS();
+        userAgentString = _orb->GetUserAgentString();
+    }
+    return userAgentString;
+}
+
 /******************************************************************************
 ** Events subscribe and unsubscribe
 *****************************************************************************/

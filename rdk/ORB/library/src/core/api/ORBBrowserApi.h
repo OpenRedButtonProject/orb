@@ -65,5 +65,12 @@ public:
      * @param url The application page URL
      */
     virtual void NotifyApplicationPageChanged(std::string url) = 0;
+
+    /**
+     * Get the User-Agent string.
+     *
+     * @return The User-Agent string
+     */
+    virtual std::string GetUserAgentString() = 0;
 }; // class ORBBrowserApi
 } // namespace orb
