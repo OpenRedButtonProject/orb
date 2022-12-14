@@ -62,6 +62,7 @@ public:
    bool SendKeyEvent(int keyCode, uint8_t keyAction) override;
    void LoadDvbUrl(std::string url, int requestId) override;
    void SetPreferredUILanguage(std::string preferredUiLanguage) override;
+   std::string GetUserAgentString() override;
 
    // methods to be called when events need to fire
 

@@ -297,6 +297,18 @@ void ORBEngine::NotifyApplicationPageChanged(std::string url)
    GetORBPlatform()->Platform_SetCurrentKeySetMask(0);
 }
 
+/**
+ * Get the User-Agent string.
+ *
+ * @return The User-Agent string
+ */
+std::string ORBEngine::GetUserAgentString()
+{
+   ORB_LOG_NO_ARGS();
+   std::string userAgentString = GetORBPlatform()->Configuration_GetUserAgentString();
+   return userAgentString;
+}
+
 /************************************************************************************************
 ** Public WebApp-specific API
 ***********************************************************************************************/
