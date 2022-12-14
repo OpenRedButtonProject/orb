@@ -82,6 +82,7 @@ hbbtv.objects.MediaElementExtension = (function() {
          const properties = {};
          p.iframeProxy.invalidate();
          p.videoDummy.readyState = HTMLMediaElement.HAVE_NOTHING;
+         p.videoDummy.error = null;
          for (const key in p.videoDummy) {
             if (persistentProps.includes(key)) {
                properties[key] = p.videoDummy[key];
@@ -208,6 +209,7 @@ hbbtv.objects.MediaElementExtension = (function() {
     * requested with the MediaElementExtension, return those.
     */
    function VideoDummy(parent, iframeProxy) {
+      let _error = null;
       this.audioTracks = hbbtv.objects.createAudioTrackList(iframeProxy);
       this.videoTracks = hbbtv.objects.createVideoTrackList(iframeProxy);
       this.textTracks = hbbtv.objects.createTextTrackList(parent, iframeProxy);
@@ -218,6 +220,17 @@ hbbtv.objects.MediaElementExtension = (function() {
       this.addTextTrack = function() {
          this.textTracks.orb_addTextTrack.apply(this.textTracks, arguments);
       };
+      Object.defineProperty(this, "error", {
+         set(value) {
+            if (value) {
+               _error = hbbtv.objects.createMediaError(value.code, value.message);
+            }
+            else {
+               _error = value;
+            }
+         },
+         get() { return _error; }
+      });
    }
 
    function initialise() {

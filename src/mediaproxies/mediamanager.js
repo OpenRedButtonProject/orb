@@ -166,7 +166,7 @@ hbbtv.mediaManager = (function() {
       });
 
       const genericEvents = [
-         "loadstart", "progress", "suspend", "abort", "error", "emptied", "stalled", "canplay",
+         "loadstart", "progress", "suspend", "abort", "emptied", "stalled", "canplay",
          "canplaythrough", "playing", "waiting", "seeking", "seeked", "resize", "__orb_onerror__"
       ];
       const genericHandler = (e) => {
@@ -175,14 +175,14 @@ hbbtv.mediaManager = (function() {
       const propsUpdateCallback = function(e) {
          const props = {};
          const keys = ["currentTime", "playbackRate", "volume", "muted", "loop", "defaultMuted", "defaultPlaybackRate", "disableRemotePlayback",
-            "preservesPitch", "paused", "ended", "currentSrc", "error", "duration", "networkState", "readyState"
+            "preservesPitch", "paused", "ended", "currentSrc", "duration", "networkState", "readyState"
          ];
          for (const key of keys) {
             props[key] = media[key];
          }
          mediaProxy.updateObserverProperties(MEDIA_PROXY_ID, props);
          mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
-         console.log("iframe: update properties", props);
+         console.log("iframe: update properties", e.type, props);
       };
       const makeCallback = function(property) {
          return function(e) {
@@ -203,6 +203,15 @@ hbbtv.mediaManager = (function() {
       media.addEventListener("durationchanged", makeCallback("duration"), true);
       media.addEventListener("ratechange", makeCallback("playbackRate"), true);
       media.addEventListener("volumechange", makeCallback("volume"), true);
+      media.addEventListener("error", (e) => {
+         mediaProxy.updateObserverProperties(MEDIA_PROXY_ID, {
+            error: {
+               code: media.error.code,
+               message: media.error.message
+            }
+         });
+         mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
+      }, true);
       media.addEventListener("timeupdate", (() => {
          const cb = makeCallback("currentTime");
          // will be used to prevent the event from being dispatched too frequently
