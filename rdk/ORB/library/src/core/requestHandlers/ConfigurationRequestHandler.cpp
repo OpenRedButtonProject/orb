@@ -10,6 +10,13 @@
 #include "ORBEngine.h"
 #include "JsonUtil.h"
 
+#define CONFIGURATION_GET_CAPABILITIES "getCapabilities"
+#define CONFIGURATION_GET_AUDIO_PROFILES "getAudioProfiles"
+#define CONFIGURATION_GET_VIDEO_PROFILES "getVideoProfiles"
+#define CONFIGURATION_GET_VIDEO_DISPLAY_FORMATS "getVideoDisplayFormats"
+#define CONFIGURATION_GET_EXTRA_SD_VIDEO_DECODES "getExtraSDVideoDecodes"
+#define CONFIGURATION_GET_EXTRA_HD_VIDEO_DECODES "getExtraHDVideoDecodes"
+#define CONFIGURATION_GET_EXTRA_UHD_VIDEO_DECODES "getExtraUHDVideoDecodes"
 #define CONFIGURATION_GET_LOCAL_SYSTEM "getLocalSystem"
 #define CONFIGURATION_GET_PREFERRED_AUDIO_LANGUAGE "getPreferredAudioLanguage"
 #define CONFIGURATION_GET_PREFERRED_SUBTITLE_LANGUAGE "getPreferredSubtitleLanguage"
@@ -57,8 +64,43 @@ bool ConfigurationRequestHandler::Handle(
    bool ret = true;
    response = "{}"_json;
 
+   // Configuration.getCapabilities
+   if (method == CONFIGURATION_GET_CAPABILITIES)
+   {
+      response["result"] = GetCapabilities();
+   }
+   // Configuration.getAudioProfiles
+   else if (method == CONFIGURATION_GET_AUDIO_PROFILES)
+   {
+      response["result"] = GetAudioProfiles();
+   }
+   // Configuration.getVideoProfiles
+   else if (method == CONFIGURATION_GET_VIDEO_PROFILES)
+   {
+      response["result"] = GetVideoProfiles();
+   }
+   // Configuration.getVideoDisplayFormats
+   else if (method == CONFIGURATION_GET_VIDEO_DISPLAY_FORMATS)
+   {
+      response["result"] = GetVideoDisplayFormats();
+   }
+   // Configuration.getExtraSDVideoDecodes
+   else if (method == CONFIGURATION_GET_EXTRA_SD_VIDEO_DECODES)
+   {
+      response["result"] = GetExtraSDVideoDecodes();
+   }
+   // Configuration.getExtraHDVideoDecodes
+   else if (method == CONFIGURATION_GET_EXTRA_HD_VIDEO_DECODES)
+   {
+      response["result"] = GetExtraHDVideoDecodes();
+   }
+   // Configuration.getExtraUHDVideoDecodes
+   else if (method == CONFIGURATION_GET_EXTRA_UHD_VIDEO_DECODES)
+   {
+      response["result"] = GetExtraUHDVideoDecodes();
+   }
    // Configuration.getLocalSystem
-   if (method == CONFIGURATION_GET_LOCAL_SYSTEM)
+   else if (method == CONFIGURATION_GET_LOCAL_SYSTEM)
    {
       std::shared_ptr<LocalSystem> localSystem = ORBEngine::GetSharedInstance().GetORBPlatform()->Configuration_GetLocalSystem();
       response["result"] = JsonUtil::LocalSystemToJsonObject(*(localSystem.get()));
@@ -131,6 +173,104 @@ bool ConfigurationRequestHandler::Handle(
    }
 
    return ret;
+}
+
+/**
+ * Get the current capabilities of the terminal.
+ *
+ * @return A JSON representation of the capabilities object
+ */
+json ConfigurationRequestHandler::GetCapabilities()
+{
+   json result;
+   std::shared_ptr<Capabilities> capabilities = ORBEngine::GetSharedInstance().GetORBPlatform()->Configuration_GetCapabilities();
+   result = JsonUtil::CapabilitiesToJsonObject(capabilities);
+   return result;
+}
+
+/**
+ * Get a list of audio profiles supported by the terminal, as defined by HBBTV 10.2.4.7 for
+ * the audio_profile element.
+ *
+ * @return A JSON array with the audio profiles
+ */
+json ConfigurationRequestHandler::GetAudioProfiles()
+{
+   json result;
+   std::vector<AudioProfile> audioProfiles = ORBEngine::GetSharedInstance().GetORBPlatform()->Configuration_GetAudioProfiles();
+   for (AudioProfile audioProfile : audioProfiles)
+   {
+      result.push_back(JsonUtil::AudioProfileToJsonObject(audioProfile));
+   }
+   return result;
+}
+
+/**
+ * Get a list of video profiles supported by the terminal, as defined by HBBTV 10.2.4.7 for
+ * the video_profile element.
+ *
+ * @return A JSON array with the video profiles
+ */
+json ConfigurationRequestHandler::GetVideoProfiles()
+{
+   json result;
+   std::vector<VideoProfile> videoProfiles = ORBEngine::GetSharedInstance().GetORBPlatform()->Configuration_GetVideoProfiles();
+   for (VideoProfile videoProfile : videoProfiles)
+   {
+      result.push_back(JsonUtil::VideoProfileToJsonObject(videoProfile));
+   }
+   return result;
+}
+
+/**
+ * If the terminal supports UHD, get a list that describes the highest quality video format the
+ * terminal supports, as defined by HBBTV 10.2.4.7 for the video_display_format element;
+ * otherwise get an empty list.
+ *
+ * @return A JSON array with the video display formats
+ */
+json ConfigurationRequestHandler::GetVideoDisplayFormats()
+{
+   json result;
+   std::vector<VideoDisplayFormat> videoDisplayFormats = ORBEngine::GetSharedInstance().GetORBPlatform()->Configuration_GetVideoDisplayFormats();
+   for (VideoDisplayFormat videoDisplayFormat : videoDisplayFormats)
+   {
+      result.push_back(JsonUtil::VideoDisplayFormatToJsonObject(videoDisplayFormat));
+   }
+   return result;
+}
+
+/**
+ * Get the current number of additional media streams containing SD video accompanied by audio
+ * that can be decoded and presented by an A/V control object or HTML5 media element.
+ *
+ * @return The extra SD video decodes
+ */
+int ConfigurationRequestHandler::GetExtraSDVideoDecodes()
+{
+   return ORBEngine::GetSharedInstance().GetORBPlatform()->Configuration_GetExtraSDVideoDecodes();
+}
+
+/**
+ * Get the current number of additional media streams containing HD video accompanied by audio
+ * that can be decoded and presented by an A/V control object or HTML5 media element.
+ *
+ * @return The extra HD video decodes
+ */
+int ConfigurationRequestHandler::GetExtraHDVideoDecodes()
+{
+   return ORBEngine::GetSharedInstance().GetORBPlatform()->Configuration_GetExtraHDVideoDecodes();
+}
+
+/**
+ * Get the current number of additional media streams containing UHD video accompanied by audio
+ * that can be decoded and presented by an A/V control object or HTML5 media element.
+ *
+ * @return The extra UHD video decodes
+ */
+int ConfigurationRequestHandler::GetExtraUHDVideoDecodes()
+{
+   return ORBEngine::GetSharedInstance().GetORBPlatform()->Configuration_GetExtraUHDVideoDecodes();
 }
 
 /**

@@ -759,6 +759,86 @@ public abstract class AbstractBridge {
    protected abstract boolean ParentalControl_isRatingBlocked(Token token, String scheme, String region, int value);
 
    /**
+    * Get the current capabilities of the terminal.
+    *
+    * @param token The token associated with this request.
+    *
+    * @return A Capabilities object.
+    */
+   protected abstract TvBrowserTypes.Capabilities Configuration_getCapabilities(Token token);
+
+   /**
+    * Get a list of audio profiles supported by the terminal, as defined by HBBTV 10.2.4.7 for
+    * the audio_profile element.
+    *
+    * @param token The token associated with this request.
+    *
+    * @return A list of audio profiles supported by the terminal.
+    */
+   protected abstract List<TvBrowserTypes.AudioProfile> Configuration_getAudioProfiles(Token token);
+
+   /**
+    * Get a list of video profiles supported by the terminal, as defined by HBBTV 10.2.4.7 for
+    * the video_profile element.
+    *
+    * @param token The token associated with this request.
+    *
+    * @return A list of video profiles supported by the terminal.
+    */
+   protected abstract List<TvBrowserTypes.VideoProfile> Configuration_getVideoProfiles(Token token);
+
+   /**
+    * If the terminal supports UHD, get a list that describes the highest quality video format the
+    * terminal supports, as defined by HBBTV 10.2.4.7 for the video_display_format element;
+    * otherwise get an empty list.
+    *
+    * Note: If the terminal changes its display format based on the content being played, multiple
+    * elements may be included in the list when multiple frame rate families are usable or the
+    * highest resolution does not support each highest quality parameter.
+    *
+    * @param token The token associated with this request.
+    *
+    * @return A list that describes the highest quality video format.
+    */
+   protected abstract List<TvBrowserTypes.VideoDisplayFormat> Configuration_getVideoDisplayFormats(Token token);
+
+   /**
+    * Get the current number of additional media streams containing SD video accompanied by audio
+    * that can be decoded and presented by an A/V control object or HTML5 media element.
+    *
+    * @param token The token associated with this request.
+    *
+    * @return The current number of additional media streams. If the value is non-zero, then a call
+    * to play an A/V control object, HTML5 media element or video/broadcast object shall not fail
+    * due to lack of resources for SD media.
+    */
+   protected abstract int Configuration_getExtraSDVideoDecodes(Token token);
+
+   /**
+    * Get the current number of additional media streams containing HD video accompanied by audio
+    * that can be decoded and presented by an A/V control object or HTML5 media element.
+    *
+    * @param token The token associated with this request.
+    *
+    * @return The current number of additional media streams. If the value is non-zero, then a call
+    * to play an A/V control object, HTML5 media element or video/broadcast object shall not fail
+    * due to lack of resources for HD media.
+    */
+   protected abstract int Configuration_getExtraHDVideoDecodes(Token token);
+
+   /**
+    * Get the current number of additional media streams containing UHD video accompanied by audio
+    * that can be decoded and presented by an A/V control object or HTML5 media element.
+    *
+    * @param token The token associated with this request.
+    *
+    * @return The current number of additional media streams. If the value is non-zero, then a call
+    * to play an A/V control object, HTML5 media element or video/broadcast object shall not fail
+    * due to lack of resources for UHD media.
+    */
+   protected abstract int Configuration_getExtraUHDVideoDecodes(Token token);
+
+   /**
     * Get certain immutable information about the system.
     *
     * @param token The token associated with this request.
@@ -1390,6 +1470,62 @@ public abstract class AbstractBridge {
                params.getString("scheme"),
                params.getString("region"),
                params.getInt("value")
+            );
+            response.put("result", result);
+            break;
+         }
+
+         case "Configuration.getCapabilities": {
+            TvBrowserTypes.Capabilities result = Configuration_getCapabilities(
+               token
+            );
+            response.put("result", TvBrowserTypes.toJSONObject(result));
+            break;
+         }
+
+         case "Configuration.getAudioProfiles": {
+            List<TvBrowserTypes.AudioProfile> result = Configuration_getAudioProfiles(
+               token
+            );
+            response.put("result", TvBrowserTypes.toJSONArray(result));
+            break;
+         }
+
+         case "Configuration.getVideoProfiles": {
+            List<TvBrowserTypes.VideoProfile> result = Configuration_getVideoProfiles(
+               token
+            );
+            response.put("result", TvBrowserTypes.toJSONArray(result));
+            break;
+         }
+
+         case "Configuration.getVideoDisplayFormats": {
+            List<TvBrowserTypes.VideoDisplayFormat> result = Configuration_getVideoDisplayFormats(
+               token
+            );
+            response.put("result", TvBrowserTypes.toJSONArray(result));
+            break;
+         }
+
+         case "Configuration.getExtraSDVideoDecodes": {
+            int result = Configuration_getExtraSDVideoDecodes(
+               token
+            );
+            response.put("result", result);
+            break;
+         }
+
+         case "Configuration.getExtraHDVideoDecodes": {
+            int result = Configuration_getExtraHDVideoDecodes(
+               token
+            );
+            response.put("result", result);
+            break;
+         }
+
+         case "Configuration.getExtraUHDVideoDecodes": {
+            int result = Configuration_getExtraUHDVideoDecodes(
+               token
             );
             response.put("result", result);
             break;
