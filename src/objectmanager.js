@@ -142,6 +142,9 @@ hbbtv.objectManager = (function() {
                Element.prototype.setAttribute.apply(element, arguments);
             };
          }
+         else if (tagname === "video" || tagname === "audio") {
+            hbbtv.objects.upgradeMediaElement(element);
+         }
          return element;
       };
    }
