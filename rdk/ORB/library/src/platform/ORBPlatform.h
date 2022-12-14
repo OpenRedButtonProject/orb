@@ -396,7 +396,12 @@ public:
     */
    virtual bool Configuration_RequestAccessToDistinctiveIdentifier(std::string origin) = 0;
 
-
+   /**
+    * Get the User-Agent string to be used by the browser.
+    *
+    * @return The User-Agent string
+    */
+   virtual std::string Configuration_GetUserAgentString() = 0;
 
    /******************************************************************************
    ** DSM-CC API

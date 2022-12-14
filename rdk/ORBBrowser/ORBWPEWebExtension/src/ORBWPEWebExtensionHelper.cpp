@@ -236,13 +236,15 @@ void ORBWPEWebExtensionHelper::RegisterDVBURLSchemeHandler(WebKitWebContext *con
  */
 void ORBWPEWebExtensionHelper::SetORBWPEWebExtensionPreferences(WebKitSettings *preferences, std::string jsonConfigAsString)
 {
-   JsonObject jsonConfig; jsonConfig.FromString(jsonConfigAsString);
+   JsonObject jsonConfig;
+   jsonConfig.FromString(jsonConfigAsString);
    if (jsonConfig.HasLabel("logtosystemconsoleenabled"))
    {
       webkit_settings_set_enable_write_console_messages_to_stdout(preferences, jsonConfig["logtosystemconsoleenabled"].Boolean());
    }
 
-   webkit_settings_set_user_agent(preferences, "HbbTV/1.6.1 (; OBS; WPE; v1.0.0-alpha; OBS;)");
+   std::string userAgentString = GetORBClient()->GetUserAgentString();
+   webkit_settings_set_user_agent(preferences, userAgentString.c_str());
 
    webkit_settings_set_enable_plugins(preferences, false);
 }

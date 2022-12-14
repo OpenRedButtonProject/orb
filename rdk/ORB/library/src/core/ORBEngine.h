@@ -147,6 +147,13 @@ public:
     */
    virtual void NotifyApplicationPageChanged(std::string url) override;
 
+   /**
+    * Get the User-Agent string.
+    *
+    * @return The User-Agent string
+    */
+   virtual std::string GetUserAgentString() override;
+
 
    /************************************************************************************************
    ** Public WebApp-specific API
