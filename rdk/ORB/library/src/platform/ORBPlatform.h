@@ -9,6 +9,7 @@
 #define ORB_PLATFORM_H
 
 #include "ORBPlatformEventHandler.h"
+#include "Capabilities.h"
 #include "Channel.h"
 #include "Component.h"
 #include "LocalSystem.h"
@@ -334,6 +335,72 @@ public:
     *****************************************************************************/
 
 
+
+    /**
+     * Get the current capabilities of the terminal.
+     *
+     * @return Pointer to the Capabilities object
+     */
+    virtual std::shared_ptr<Capabilities> Configuration_GetCapabilities() = 0;
+
+    /**
+     * Get a list of audio profiles supported by the terminal, as defined by HBBTV 10.2.4.7 for
+     * the audio_profile element.
+     *
+     * @return A vector of audio profiles supported by the terminal
+     */
+    virtual std::vector<AudioProfile> Configuration_GetAudioProfiles() = 0;
+
+    /**
+     * Get a list of video profiles supported by the terminal, as defined by HBBTV 10.2.4.7 for
+     * the video_profile element.
+     *
+     * @return A vector of video profiles supported by the terminal
+     */
+    virtual std::vector<VideoProfile> Configuration_GetVideoProfiles() = 0;
+
+    /**
+     * If the terminal supports UHD, get a list that describes the highest quality video format the
+     * terminal supports, as defined by HBBTV 10.2.4.7 for the video_display_format element;
+     * otherwise get an empty list.
+     *
+     * Note: If the terminal changes its display format based on the content being played, multiple
+     * elements may be included in the list when multiple frame rate families are usable or the
+     * highest resolution does not support each highest quality parameter.
+     *
+     * @return A vector that describes the highest quality video format
+     */
+    virtual std::vector<VideoDisplayFormat> Configuration_GetVideoDisplayFormats() = 0;
+
+    /**
+     * Get the current number of additional media streams containing SD video accompanied by audio
+     * that can be decoded and presented by an A/V control object or HTML5 media element.
+     *
+     * @return The current number of additional media streams. If the value is non-zero, then a call
+     *         to play an A/V control object, HTML5 media element or video/broadcast object shall not fail
+     *         due to lack of resources for SD media.
+     */
+    virtual int Configuration_GetExtraSDVideoDecodes() = 0;
+
+    /**
+     * Get the current number of additional media streams containing HD video accompanied by audio
+     * that can be decoded and presented by an A/V control object or HTML5 media element.
+     *
+     * @return The current number of additional media streams. If the value is non-zero, then a call
+     *         to play an A/V control object, HTML5 media element or video/broadcast object shall not fail
+     *         due to lack of resources for HD media.
+     */
+    virtual int Configuration_GetExtraHDVideoDecodes() = 0;
+
+    /**
+     * Get the current number of additional media streams containing UHD video accompanied by audio
+     * that can be decoded and presented by an A/V control object or HTML5 media element.
+     *
+     * @return The current number of additional media streams. If the value is non-zero, then a call
+     *         to play an A/V control object, HTML5 media element or video/broadcast object shall not fail
+     *         due to lack of resources for UHD media.
+     */
+    virtual int Configuration_GetExtraUHDVideoDecodes() = 0;
 
     /**
      * Get local system information.

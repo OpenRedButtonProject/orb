@@ -61,6 +61,13 @@ public:
     virtual void Broadcast_Reset() override;
 
     // Configuration api
+    virtual std::shared_ptr<Capabilities> Configuration_GetCapabilities() override;
+    virtual std::vector<AudioProfile> Configuration_GetAudioProfiles() override;
+    virtual std::vector<VideoProfile> Configuration_GetVideoProfiles() override;
+    virtual std::vector<VideoDisplayFormat> Configuration_GetVideoDisplayFormats() override;
+    virtual int Configuration_GetExtraSDVideoDecodes() override;
+    virtual int Configuration_GetExtraHDVideoDecodes() override;
+    virtual int Configuration_GetExtraUHDVideoDecodes() override;
     virtual std::shared_ptr<LocalSystem> Configuration_GetLocalSystem() override;
     virtual std::string Configuration_GetPreferredAudioLanguage() override;
     virtual std::string Configuration_GetPreferredSubtitleLanguage() override;

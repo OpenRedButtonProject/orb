@@ -101,6 +101,327 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
     }
 
     /**
+     * Get the current capabilities of the terminal.
+     *
+     * @return A Capabilities object.
+     */
+    @Override
+    public TvBrowserTypes.Capabilities getCapabilities() {
+        // TODO These are mock values, instead obtain from system/broadcast software.
+
+        List<String> optionStrings = new ArrayList<>();
+        //optionStrings.add("+PVR");
+        //optionStrings.add("+DRM");
+
+        List<String> profileNameFragments = new ArrayList<>();
+        profileNameFragments.add("+TRICKMODE"); // +ITV_KEYS is inherited from the base profile
+        profileNameFragments.add("+DVB_T");
+        profileNameFragments.add("+DVB_T2");
+        profileNameFragments.add("+DVB_S");
+        profileNameFragments.add("+DVB_S2");
+
+        List<String> parentalSchemes = new ArrayList<>();
+        parentalSchemes.add("dvb-si");
+
+        List<String> graphicsLevels = new ArrayList<>();
+        graphicsLevels.add("urn:hbbtv:graphics:performance:level1");
+        graphicsLevels.add("urn:hbbtv:graphics:performance:level2");
+
+        List<String> broadcastUrns = new ArrayList<>();
+        broadcastUrns.add("urn:dvb:broadcast:ird:video:25_Hz_H.264_AVC_HDTV_IRD");
+        broadcastUrns.add("urn:dvb:broadcast:ird:video:30_Hz_H.264_AVC_HDTV_IRD");
+        broadcastUrns.add("urn:dvb:broadcast:ird:video:50_Hz_H.264_AVC_HDTV_IRD");
+        broadcastUrns.add("urn:dvb:broadcast:ird:video:60_Hz_H.264_AVC_HDTV_IRD");
+        broadcastUrns.add("urn:dvb:broadcast:ird:video:50_Hz_HEVC_HDTV_8-bit_IRD");
+        broadcastUrns.add("urn:dvb:broadcast:ird:video:60_Hz_HEVC_HDTV_8-bit_IRD");
+        //broadcastUrns.add("urn:dvb:broadcast:ird:video:50_Hz_HEVC_HDTV_10-bit_IRD");
+        //broadcastUrns.add("urn:dvb:broadcast:ird:video:60_Hz_HEVC_HDTV_10-bit_IRD");
+        //broadcastUrns.add("urn:dvb:broadcast:ird:video:HEVC_UHDTV_IRD");
+        //broadcastUrns.add("urn:dvb:broadcast:ird:video:HEVC_HDR_UHDTV_IRD_using_HLG10");
+        //broadcastUrns.add("urn:dvb:broadcast:ird:video:HEVC_HDR_UHDTV_IRD_using_PQ10");
+        //broadcastUrns.add("urn:dvb:broadcast:ird:video:HEVC_HDR_HFR_UHDTV_IRD_using_HLG10");
+        //broadcastUrns.add("urn:dvb:broadcast:ird:video:HEVC_HDR_HFR_UHDTV_IRD_using_PQ10");
+        broadcastUrns.add("urn:dvb:broadcast:ird:audio:MPEG-1_and_MPEG-2_backwards_compatible");
+        broadcastUrns.add("urn:dvb:broadcast:ird:audio:AC-3_and_enhanced_AC-3");
+        broadcastUrns.add("urn:dvb:broadcast:ird:audio:MPEG-4_AAC_family");
+        //broadcastUrns.add("urn:dvb:broadcast:ird:audio:DTS");
+        //broadcastUrns.add("urn:dvb:broadcast:ird:audio:AC-4_channel_based");
+        //broadcastUrns.add("urn:dvb:broadcast:ird:audio:AC-4_channel_based_immersive_personalized");
+        //broadcastUrns.add("urn:dvb:broadcast:ird:audio:MPEG-H");
+
+        String displaySizeWidth = "70.9"; // Mock 32" TV
+        String displaySizeHeight = "39.9"; // Mock 32" TV
+        String displaySizeMeasurementType = "built-in"; // hdmi-accurate, hdmi-other
+        String audioOutputFormat = "stereo"; // multichannel, multichannel-preferred
+        String html5MediaVariableRateMin = "0.5";
+        String html5MediaVariableRateMax = "5.0";
+
+        return new TvBrowserTypes.Capabilities(
+                optionStrings,
+                profileNameFragments,
+                broadcastUrns,
+                parentalSchemes,
+                graphicsLevels,
+                displaySizeWidth,
+                displaySizeHeight,
+                displaySizeMeasurementType,
+                audioOutputFormat,
+                html5MediaVariableRateMin,
+                html5MediaVariableRateMax
+        );
+    }
+
+    /**
+     * Get a list of audio profiles supported by the terminal, as defined by HBBTV 10.2.4.7 for
+     * the audio_profile element.
+     *
+     * @return A list of audio profiles supported by the terminal.
+     */
+    @Override
+    public List<TvBrowserTypes.AudioProfile> getAudioProfiles() {
+        List<TvBrowserTypes.AudioProfile> profiles = new ArrayList<>();
+        profiles.add(new TvBrowserTypes.AudioProfile(
+                "MPEG1_L3",
+                "audio/mpeg",
+                null,
+                null,
+                null
+        ));
+        profiles.add(new TvBrowserTypes.AudioProfile(
+                "HEAAC",
+                "audio/mp4",
+                null,
+                null,
+                null
+        ));
+        profiles.add(new TvBrowserTypes.AudioProfile(
+                "MP4_HEAAC",
+                "audio/mp4",
+                "dash",
+                "dash_pr",
+                null
+        ));
+
+        // For terminals that support E-AC3 audio:
+        profiles.add(new TvBrowserTypes.AudioProfile(
+                "MP4_E-AC3",
+                "audio/mp4",
+                null,
+                null,
+                null
+        ));
+        profiles.add(new TvBrowserTypes.AudioProfile(
+                "MP4_E-AC3",
+                "audio/mp4",
+                "dash",
+                "dash_pr",
+                null
+        ));
+
+        return profiles;
+    }
+
+    /**
+     * Get a list of video profiles supported by the terminal, as defined by HBBTV 10.2.4.7 for
+     * the video_profile element.
+     *
+     * @return A list of video profiles supported by the terminal.
+     */
+    @Override
+    public List<TvBrowserTypes.VideoProfile> getVideoProfiles() {
+        List<TvBrowserTypes.VideoProfile> profiles = new ArrayList<>();
+        profiles.add(new TvBrowserTypes.VideoProfile(
+                "MP4_AVC_SD_25_HEAAC",
+                "video/mp4",
+                "dash",
+                "dash_pr",
+                null,
+                null
+        ));
+        profiles.add(new TvBrowserTypes.VideoProfile(
+                "MP4_AVC_HD_25_HEAAC",
+                "video/mp4",
+                "dash",
+                "dash_pr",
+                null,
+                null
+        ));
+        profiles.add(new TvBrowserTypes.VideoProfile(
+                "MP4_AVC_SD_25_HEAAC_EBUTTD",
+                "video/mp4",
+                "dash",
+                "dash_pr",
+                null,
+                null
+        ));
+        profiles.add(new TvBrowserTypes.VideoProfile(
+                "MP4_AVC_HD_25_HEAAC_EBUTTD",
+                "video/mp4",
+                "dash",
+                "dash_pr",
+                null,
+                null
+        ));
+        profiles.add(new TvBrowserTypes.VideoProfile(
+                "TS_AVC_SD_25_HEAAC",
+                "video/mpeg",
+                null,
+                "temi",
+                null,
+                null
+        ));
+        profiles.add(new TvBrowserTypes.VideoProfile(
+                "TS_AVC_HD_25_HEAAC",
+                "video/mpeg",
+                null,
+                "temi",
+                null,
+                null
+        ));
+        profiles.add(new TvBrowserTypes.VideoProfile(
+                "MP4_AVC_SD_25_HEAAC",
+                "video/mp4",
+                null,
+                null,
+                null,
+                null
+        ));
+        profiles.add(new TvBrowserTypes.VideoProfile(
+                "MP4_AVC_HD_25_HEAAC",
+                "video/mp4",
+                null,
+                null,
+                null,
+                null
+        ));
+
+        // For terminals that support E-AC3 audio:
+        profiles.add(new TvBrowserTypes.VideoProfile(
+                "TS_AVC_SD_25_E-AC3",
+                "video/mpeg",
+                null,
+                "temi",
+                null,
+                null
+        ));
+        profiles.add(new TvBrowserTypes.VideoProfile(
+                "TS_AVC_HD_25_E-AC3",
+                "video/mpeg",
+                null,
+                "temi",
+                null,
+                null
+        ));
+        profiles.add(new TvBrowserTypes.VideoProfile(
+                "MP4_AVC_SD_25_E-AC3",
+                "video/mp4",
+                null,
+                null,
+                null,
+                null
+        ));
+        profiles.add(new TvBrowserTypes.VideoProfile(
+                "MP4_AVC_HD_25_E-AC3",
+                "video/mp4",
+                null,
+                null,
+                null,
+                null
+        ));
+        profiles.add(new TvBrowserTypes.VideoProfile(
+                "MP4_AVC_SD_25_E-AC3",
+                "video/mp4",
+                "dash",
+                "dash_pr",
+                null,
+                null
+        ));
+        profiles.add(new TvBrowserTypes.VideoProfile(
+                "MP4_AVC_HD_25_E-AC3",
+                "video/mp4",
+                "dash",
+                "dash_pr",
+                null,
+                null
+        ));
+        profiles.add(new TvBrowserTypes.VideoProfile(
+                "MP4_AVC_SD_25_E-AC3_EBUTTD",
+                "video/mp4",
+                "dash",
+                "dash_pr",
+                null,
+                null
+        ));
+        profiles.add(new TvBrowserTypes.VideoProfile(
+                "MP4_AVC_HD_25_E-AC3_EBUTTD",
+                "video/mp4",
+                "dash",
+                "dash_pr",
+                null,
+                null
+        ));
+
+        // TODO UHD
+
+        return profiles;
+    }
+
+    /**
+     * If the terminal supports UHD, get a list that describes the highest quality video format
+     * the terminal supports, as defined by HBBTV 10.2.4.7 for the video_display_format element;
+     * otherwise get an empty list.
+     *
+     * Note: If the terminal changes its display format based on the content being played,
+     * multiple elements may be included in the list when multiple frame rate families are usable
+     * or the highest resolution does not support each highest quality parameter.
+     *
+     * @return A list that describes the highest quality video format.
+     */
+    @Override
+    public List<TvBrowserTypes.VideoDisplayFormat> getVideoDisplayFormats() {
+        return new ArrayList<>(); // TODO UHD
+    }
+
+    /**
+     * Get the current number of additional media streams containing SD video accompanied by audio
+     * that can be decoded and presented by an A/V control object or HTML5 media element.
+     *
+     * @return The current number of additional media streams. If the value is non-zero, then a
+     *    call to play an A/V control object, HTML5 media element or video/broadcast object shall
+     *    not fail due to lack of resources for SD media.
+     */
+    @Override
+    public int getExtraSDVideoDecodes() {
+        return 1; // TODO
+    }
+
+    /**
+     * Get the current number of additional media streams containing HD video accompanied by audio
+     * that can be decoded and presented by an A/V control object or HTML5 media element.
+     *
+     * @return The current number of additional media streams. If the value is non-zero, then a
+     *    call to play an A/V control object, HTML5 media element or video/broadcast object shall
+     *    not fail due to lack of resources for HD media.
+     */
+    @Override
+    public int getExtraHDVideoDecodes() {
+        return 1; // TODO
+    }
+
+    /**
+     * Get the current number of additional media streams containing UHD video accompanied by
+     * audio that can be decoded and presented by an A/V control object or HTML5 media element.
+     *
+     * @return The current number of additional media streams. If the value is non-zero, then a
+     *    call to play an A/V control object, HTML5 media element or video/broadcast object shall
+     *    not fail due to lack of resources for UHD media.
+     */
+    @Override
+    public int getExtraUHDVideoDecodes() {
+        return 0; // TODO UHD
+    }
+
+    /**
      * Get immutable system information.
      *
      * @return Valid SystemInformation on success, otherwise invalid SystemInformation

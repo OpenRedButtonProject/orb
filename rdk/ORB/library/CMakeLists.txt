@@ -49,6 +49,7 @@ set(CORE_UTILITIES_SOURCES
 
 # orb api headers
 set(ORB_API_HEADERS
+   src/platform/dataTypes/Capabilities.h
    src/platform/dataTypes/Channel.h
    src/platform/dataTypes/Component.h
    src/platform/dataTypes/LocalSystem.h

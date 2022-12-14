@@ -8,6 +8,131 @@
 
 namespace orb
 {
+json JsonUtil::CapabilitiesToJsonObject(std::shared_ptr<Capabilities> capabilities)
+{
+    json jsonCapabilities;
+
+    json jsonOptionStrings;
+    for (std::string optionString : capabilities->m_optionStrings)
+    {
+        jsonOptionStrings.push_back(optionString);
+    }
+    jsonCapabilities.emplace("optionStrings", jsonOptionStrings);
+
+    json jsonProfileNameFragments;
+    for (std::string profileNameFragment : capabilities->m_profileNameFragments)
+    {
+        jsonProfileNameFragments.push_back(profileNameFragment);
+    }
+    jsonCapabilities.emplace("profileNameFragments", jsonProfileNameFragments);
+
+    json jsonParentalSchemes;
+    for (std::string parentalScheme : capabilities->m_parentalSchemes)
+    {
+        jsonParentalSchemes.push_back(parentalScheme);
+    }
+    jsonCapabilities.emplace("parentalSchemes", jsonParentalSchemes);
+
+    if (!capabilities->m_graphicsLevels.empty())
+    {
+        json jsonGraphicsLevels;
+        for (std::string graphicsLevel : capabilities->m_graphicsLevels)
+        {
+            jsonGraphicsLevels.push_back(graphicsLevel);
+        }
+        jsonCapabilities.emplace("graphicsLevels", jsonGraphicsLevels);
+    }
+
+    if (!capabilities->m_broadcastUrns.empty())
+    {
+        json jsonBroadcastUrns;
+        for (std::string broadcastUrn : capabilities->m_broadcastUrns)
+        {
+            jsonBroadcastUrns.push_back(broadcastUrn);
+        }
+        jsonCapabilities.emplace("broadcastUrns", jsonBroadcastUrns);
+    }
+
+    jsonCapabilities.emplace("displaySizeWidth", capabilities->m_displaySizeWidth);
+    jsonCapabilities.emplace("displaySizeHeight", capabilities->m_displaySizeHeight);
+    jsonCapabilities.emplace("displaySizeMeasurementType",
+        capabilities->m_displaySizeMeasurementType);
+
+    if (!capabilities->m_audioOutputFormat.empty())
+    {
+        jsonCapabilities.emplace("audioOutputFormat", capabilities->m_audioOutputFormat);
+    }
+
+    if (!capabilities->m_html5MediaVariableRateMin.empty())
+    {
+        jsonCapabilities.emplace("html5MediaVariableRateMin",
+            capabilities->m_html5MediaVariableRateMin);
+    }
+
+    if (!capabilities->m_html5MediaVariableRateMax.empty())
+    {
+        jsonCapabilities.emplace("html5MediaVariableRateMax",
+            capabilities->m_html5MediaVariableRateMax);
+    }
+
+    return jsonCapabilities;
+}
+
+json JsonUtil::AudioProfileToJsonObject(AudioProfile audioProfile)
+{
+    json jsonAudioProfile;
+    jsonAudioProfile.emplace("name", audioProfile.m_name);
+    jsonAudioProfile.emplace("type", audioProfile.m_type);
+    if (!audioProfile.m_transport.empty())
+    {
+        jsonAudioProfile.emplace("transport", audioProfile.m_transport);
+    }
+    if (!audioProfile.m_syncTl.empty())
+    {
+        jsonAudioProfile.emplace("syncTl", audioProfile.m_syncTl);
+    }
+    if (!audioProfile.m_drmSystemId.empty())
+    {
+        jsonAudioProfile.emplace("drmSystemId", audioProfile.m_drmSystemId);
+    }
+    return jsonAudioProfile;
+}
+
+json JsonUtil::VideoProfileToJsonObject(VideoProfile videoProfile)
+{
+    json jsonVideoProfile;
+    jsonVideoProfile.emplace("name", videoProfile.m_name);
+    jsonVideoProfile.emplace("type", videoProfile.m_type);
+    if (!videoProfile.m_transport.empty())
+    {
+        jsonVideoProfile.emplace("transport", videoProfile.m_transport);
+    }
+    if (!videoProfile.m_syncTl.empty())
+    {
+        jsonVideoProfile.emplace("syncTl", videoProfile.m_syncTl);
+    }
+    if (!videoProfile.m_drmSystemId.empty())
+    {
+        jsonVideoProfile.emplace("drmSystemId", videoProfile.m_drmSystemId);
+    }
+    if (!videoProfile.m_hdr.empty())
+    {
+        jsonVideoProfile.emplace("hdr", videoProfile.m_hdr);
+    }
+    return jsonVideoProfile;
+}
+
+json JsonUtil::VideoDisplayFormatToJsonObject(VideoDisplayFormat videoDisplayFormat)
+{
+    json jsonVideoDisplayFormat;
+    jsonVideoDisplayFormat.emplace("width", videoDisplayFormat.m_width);
+    jsonVideoDisplayFormat.emplace("height", videoDisplayFormat.m_height);
+    jsonVideoDisplayFormat.emplace("frameRate", videoDisplayFormat.m_frameRate);
+    jsonVideoDisplayFormat.emplace("bitDepth", videoDisplayFormat.m_bitDepth);
+    jsonVideoDisplayFormat.emplace("colorimetry", videoDisplayFormat.m_colorimetry);
+    return jsonVideoDisplayFormat;
+}
+
 std::shared_ptr<Channel> JsonUtil::ChannelFromJsonString(std::string jsonChannelAsString)
 {
     json jsonChannel = json::parse(jsonChannelAsString);

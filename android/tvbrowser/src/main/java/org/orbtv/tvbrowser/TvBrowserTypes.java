@@ -774,8 +774,296 @@ public class TvBrowserTypes {
         }
     }
 
+    public static class Capabilities implements JSONSerializable {
+        public List<String> optionStrings;
+        public List<String> profileNameFragments;
+        public List<String> parentalSchemes;
+        public List<String> graphicsLevels; // Optional
+        public List<String> broadcastUrns; // Optional
+        public String displaySizeWidth;
+        public String displaySizeHeight;
+        public String displaySizeMeasurementType;
+        public String audioOutputFormat; // Optional
+        public String html5MediaVariableRateMin; // Optional
+        public String html5MediaVariableRateMax; // Optional
 
-    static public <T extends TvBrowserTypes.JSONSerializable> JSONObject toJSONObject(T object) throws JSONException {
+        /**
+         * Create a capabilities type that describes the current capabilities of the terminal.
+         *
+         * @param optionStrings A list of HbbTV option strings supported by the terminal.
+         * Valid values as defined by HBBTV 10.2.4.8 table 13.
+         * @param profileNameFragments A list of OIPF UI Profile Name Fragments supported by the
+         * terminal; this shall always include trick mode ("+TRICKMODE"), any supported broadcast
+         * delivery systems (e.g. "+DVB_S") and no other values.
+         * Valid values as defined by OIPF DAE table 16.
+         * @param parentalSchemes A list of parental scheme names registered with the platform.
+         * Valid values are usable as scheme names with other parental APIs.
+         * @param graphicsLevels A list of graphics performance levels supported by the terminal
+         * (required if any of the graphics levels are supported, null to omit).
+         * Valid values as defined by HBBTV 10.2.4.7 table 12c.
+         * @param broadcastUrns A list of URNs for each supported broadcast technology (required if
+         * any broadcast delivery is supported, null to omit).
+         * Valid values as defined in HBBTV 10.2.4.7 for broadcast element value.
+         * @param displaySizeWidth The current width of the primary display in centimetres.
+         * Valid values as defined by HBBTV 10.2.4.7 for display_size width.
+         * @param displaySizeHeight The current height of the primary display in centimetres.
+         * Valid values as defined by HBBTV 10.2.4.7 for display_size height.
+         * @param displaySizeMeasurementType The measurement type.
+         * Valid values as defined by HBBTV 10.2.4.7 for display_size measurement_type.
+         * @param audioOutputFormat The current multi-channel audio capabilities (required where
+         * terminals support multi-channel audio, null to omit).
+         * Valid values as defined by HBBTV 10.2.4.7 for audio_system audio_output_format.
+         * @param html5MediaVariableRateMin Minimum supported forward playback rate (required where
+         * terminals support a playbackRate with a MediaSource object other than "1.0", null to omit).
+         * Valid values as defined by HBBTV 10.2.4.7 for html5_media_variable_rate min.
+         * @param html5MediaVariableRateMax Maximum supported forward playback rate (required where
+         * terminals support a playbackRate with a MediaSource object other than "1.0", null to omit).
+         * Valid values as defined by HBBTV 10.2.4.7 for html5_media_variable_rate max.
+         * @throws IllegalArgumentException Thrown to indicate an invalid argument was provided.
+         */
+        public Capabilities(
+                List<String> optionStrings,
+                List<String> profileNameFragments,
+                List<String> broadcastUrns,
+                List<String> parentalSchemes,
+                List<String> graphicsLevels,
+                String displaySizeWidth,
+                String displaySizeHeight,
+                String displaySizeMeasurementType,
+                String audioOutputFormat,
+                String html5MediaVariableRateMin,
+                String html5MediaVariableRateMax) throws IllegalArgumentException {
+            if (optionStrings == null) {
+                throw new IllegalArgumentException("Argument 'optionStrings' cannot be null.");
+            }
+            this.optionStrings = optionStrings;
+            if (profileNameFragments == null) {
+                throw new IllegalArgumentException("Argument 'profileNameFragments' cannot be null.");
+            }
+            this.profileNameFragments = profileNameFragments;
+            if (parentalSchemes == null) {
+                throw new IllegalArgumentException("Argument 'parentalSchemes' cannot be null.");
+            }
+            this.parentalSchemes = parentalSchemes;
+            this.graphicsLevels = graphicsLevels;
+            this.broadcastUrns = broadcastUrns;
+            if (displaySizeWidth == null) {
+                throw new IllegalArgumentException(
+                        "Argument 'displaySizeWidth' cannot be null.");
+            }
+            this.displaySizeWidth = displaySizeWidth;
+            if (displaySizeHeight == null) {
+                throw new IllegalArgumentException(
+                        "Argument 'displaySizeHeight' cannot be null.");
+            }
+            this.displaySizeHeight = displaySizeHeight;
+            if (displaySizeMeasurementType == null) {
+                throw new IllegalArgumentException(
+                        "Argument 'displaySizeMeasurementType' cannot be null.");
+            }
+            this.displaySizeMeasurementType = displaySizeMeasurementType;
+            this.audioOutputFormat = audioOutputFormat;
+            this.html5MediaVariableRateMin = html5MediaVariableRateMin;
+            this.html5MediaVariableRateMax = html5MediaVariableRateMax;
+        }
+
+        public JSONObject toJSONObject() throws JSONException {
+            JSONObject o = new JSONObject();
+            o.put("optionStrings", new JSONArray(optionStrings));
+            o.put("profileNameFragments", new JSONArray(profileNameFragments));
+            o.put("parentalSchemes", new JSONArray(parentalSchemes));
+            if (graphicsLevels != null) {
+                o.put("graphicsLevels", new JSONArray(graphicsLevels));
+            }
+            if (broadcastUrns != null) {
+                o.put("broadcastUrns", new JSONArray(broadcastUrns));
+            }
+            o.put("displaySizeWidth", displaySizeWidth);
+            o.put("displaySizeHeight", displaySizeHeight);
+            o.put("displaySizeMeasurementType", displaySizeMeasurementType);
+            if (audioOutputFormat != null) {
+                o.put("audioOutputFormat", audioOutputFormat);
+            }
+            if (html5MediaVariableRateMin != null) {
+                o.put("html5MediaVariableRateMin", html5MediaVariableRateMin);
+            }
+            if (html5MediaVariableRateMax != null) {
+                o.put("html5MediaVariableRateMax", html5MediaVariableRateMax);
+            }
+            return o;
+        }
+    }
+
+    public static class AudioProfile implements JSONSerializable {
+        public String name;
+        public String type;
+        public String transport; // Optional
+        public String syncTl; // Optional
+        public String drmSystemId; // Optional
+
+        /**
+         * Create an AudioProfile type that describes an audio profile, valid combinations are as
+         * defined by HBBTV 10.2.4.7 for the audio_profile element.
+         *
+         * @param name Name of profile (required).
+         * Valid values as defined by OIPF DAE 9.3.11 for audio_profile name.
+         * @param type MIME type of profile (required).
+         * Valid values as defined by OIPF DAE 9.3.11 for audio_profile type.
+         * @param transport Space separated list of supported protocol names (optional, null to omit).
+         * Valid values as defined by OIPF DAE 9.3.11 for audio_profile transport and HBBTV 10.2.4.7.
+         * @param syncTl Space separated list of timeline types (optional, null to omit).
+         * Valid values as defined by HBBTV 10.2.4.7 table 12a.
+         * @param drmSystemId Space separated list of DRM system IDs (optional, null to omit).
+         * Valid values as defined by OIPF DAE 9.3.11 for audio_profile DRMSystemID.
+         * @throws IllegalArgumentException Thrown to indicate an invalid argument was provided.
+         */
+        public AudioProfile(String name, String type, String transport, String syncTl,
+                            String drmSystemId) throws IllegalArgumentException {
+            if (name == null) {
+                throw new IllegalArgumentException("Argument 'name' cannot be null.");
+            }
+            this.name = name;
+            if (type == null) {
+                throw new IllegalArgumentException("Argument 'type' cannot be null.");
+            }
+            this.type = type;
+            this.transport = transport;
+            this.syncTl = syncTl;
+            this.drmSystemId = drmSystemId;
+        }
+
+        public JSONObject toJSONObject() throws JSONException {
+            JSONObject o = new JSONObject();
+            o.put("name", name);
+            o.put("type", type);
+            if (transport != null) {
+                o.put("transport", transport);
+            }
+            if (syncTl != null) {
+                o.put("syncTl", syncTl);
+            }
+            if (drmSystemId != null) {
+                o.put("drmSystemId", drmSystemId);
+            }
+            return o;
+        }
+    }
+
+    public static class VideoProfile implements JSONSerializable {
+        public String name;
+        public String type;
+        public String transport; // Optional
+        public String syncTl; // Optional
+        public String drmSystemId; // Optional
+        public String hdr; // Optional
+
+        /**
+         * Create a VideoProfile type that describes a video profile, valid combinations are as
+         * defined by HBBTV 10.2.4.7 for the video_profile element.
+         *
+         * @param name Name of profile (required).
+         * Valid values as defined by OIPF DAE 9.3.11 for video_profile name.
+         * @param type MIME type of profile (required).
+         * Valid values as defined by OIPF DAE 9.3.11 for video_profile type.
+         * @param transport Space separated list of supported protocol names (optional, null to omit).
+         * Valid values as defined by OIPF DAE 9.3.11 for video_profile transport and HBBTV 10.2.4.7.
+         * @param syncTl Space separated list of timeline types (optional, null to omit).
+         * Valid values as defined by HBBTV 10.2.4.7 table 12a.
+         * @param drmSystemId Space separated list of DRM system IDs (optional, null to omit).
+         * Valid values as defined by OIPF DAE 9.3.11 for video_profile DRMSystemID.
+         * @param hdr URI of HDR technology (optional, null to omit).
+         * Valid values as defined by HBBTV 10.2.4.7 table 12b.
+         * @throws IllegalArgumentException Thrown to indicate an invalid argument was provided.
+         */
+        public VideoProfile(String name, String type, String transport, String syncTl,
+                            String drmSystemId, String hdr) throws IllegalArgumentException {
+            if (name == null) {
+                throw new IllegalArgumentException("Argument 'name' cannot be null.");
+            }
+            this.name = name;
+            if (type == null) {
+                throw new IllegalArgumentException("Argument 'type' cannot be null.");
+            }
+            this.type = type;
+            this.transport = transport;
+            this.syncTl = syncTl;
+            this.drmSystemId = drmSystemId;
+            this.hdr = hdr;
+        }
+
+        public JSONObject toJSONObject() throws JSONException {
+            JSONObject o = new JSONObject();
+            o.put("name", name);
+            o.put("type", type);
+            if (transport != null) {
+                o.put("transport", transport);
+            }
+            if (syncTl != null) {
+                o.put("syncTl", syncTl);
+            }
+            if (drmSystemId != null) {
+                o.put("drmSystemId", drmSystemId);
+            }
+            if (hdr != null) {
+                o.put("hdr", hdr);
+            }
+            return o;
+        }
+    }
+
+    public static class VideoDisplayFormat implements JSONSerializable {
+        public int width;
+        public int height;
+        public int frameRate;
+        public int bitDepth;
+        public String colorimetry;
+
+        /**
+         * Create a VideoDisplayFormat type that describes a video display format, valid combinations
+         * are as defined by HBBTV 10.2.4.7 for the video_display_format element.
+         *
+         * @param width Width of the video content (required).
+         * Valid values as defined by HBBTV 10.2.4.7 for video_display_format name.
+         * @param height Height of the video content (required).
+         * Valid values as defined by HBBTV 10.2.4.7 for video_display_format height.
+         * @param frameRate Frame rate of the video content (required).
+         * Valid values as defined by HBBTV 10.2.4.7 for video_display_format frame_rate.
+         * @param bitDepth Bit depth of the video content (required).
+         * Valid values as defined by HBBTV 10.2.4.7 for video_display_format bit_depth.
+         * @param colorimetry A space separated list of colorimetry strings (required).
+         * Valid values as defined by HBBTV 10.2.4.7 for video_display_format colorimetry.
+         * @throws IllegalArgumentException Thrown to indicate an invalid argument was provided.
+         */
+        public VideoDisplayFormat(
+                int width,
+                int height,
+                int frameRate,
+                int bitDepth,
+                String colorimetry) throws IllegalArgumentException {
+            this.width = width;
+            this.height = height;
+            this.frameRate = frameRate;
+            this.bitDepth = bitDepth;
+            if (colorimetry == null) {
+                throw new IllegalArgumentException("Argument 'colorimetry' cannot be null.");
+            }
+            this.colorimetry = colorimetry;
+        }
+
+        @Override
+        public JSONObject toJSONObject() throws JSONException {
+            JSONObject o = new JSONObject();
+            o.put("width", width);
+            o.put("height", height);
+            o.put("frameRate", frameRate);
+            o.put("bitDepth", bitDepth);
+            o.put("colorimetry", colorimetry);
+            return o;
+        }
+    }
+
+    static public <T extends TvBrowserTypes.JSONSerializable> JSONObject toJSONObject(T object)
+            throws JSONException {
         if (object == null) {
             return null;
         } else {
@@ -783,7 +1071,8 @@ public class TvBrowserTypes {
         }
     }
 
-    static public <T extends TvBrowserTypes.JSONSerializable> JSONArray toJSONArray(List<T> list) throws JSONException {
+    static public <T extends TvBrowserTypes.JSONSerializable> JSONArray toJSONArray(List<T> list)
+            throws JSONException {
         JSONArray array = new JSONArray();
         if (list != null) {
             for (T item : list) {

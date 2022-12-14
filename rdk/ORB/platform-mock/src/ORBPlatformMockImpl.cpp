@@ -511,6 +511,326 @@ void ORBPlatformMockImpl::Broadcast_Reset()
 
 
 /**
+ * Get the current capabilities of the terminal.
+ *
+ * @return Pointer to the Capabilities object
+ */
+std::shared_ptr<Capabilities> ORBPlatformMockImpl::Configuration_GetCapabilities()
+{
+    std::vector<std::string> optionStrings;
+    //optionStrings.push_back("+PVR");
+    //optionStrings.push_back("+DRM");
+
+    std::vector<std::string> profileNameFragments;
+    profileNameFragments.push_back("+TRICKMODE"); // +ITV_KEYS is inherited from the base profile
+    profileNameFragments.push_back("+DVB_T");
+    profileNameFragments.push_back("+DVB_T2");
+    profileNameFragments.push_back("+DVB_S");
+    profileNameFragments.push_back("+DVB_S2");
+
+    std::vector<std::string> parentalSchemes;
+    parentalSchemes.push_back("dvb-si");
+
+    std::vector<std::string> graphicsLevels;
+    graphicsLevels.push_back("urn:hbbtv:graphics:performance:level1");
+    graphicsLevels.push_back("urn:hbbtv:graphics:performance:level2");
+
+    std::vector<std::string> broadcastUrns;
+    broadcastUrns.push_back("urn:dvb:broadcast:ird:video:25_Hz_H.264_AVC_HDTV_IRD");
+    broadcastUrns.push_back("urn:dvb:broadcast:ird:video:30_Hz_H.264_AVC_HDTV_IRD");
+    broadcastUrns.push_back("urn:dvb:broadcast:ird:video:50_Hz_H.264_AVC_HDTV_IRD");
+    broadcastUrns.push_back("urn:dvb:broadcast:ird:video:60_Hz_H.264_AVC_HDTV_IRD");
+    broadcastUrns.push_back("urn:dvb:broadcast:ird:video:50_Hz_HEVC_HDTV_8-bit_IRD");
+    broadcastUrns.push_back("urn:dvb:broadcast:ird:video:60_Hz_HEVC_HDTV_8-bit_IRD");
+    //broadcastUrns.push_back("urn:dvb:broadcast:ird:video:50_Hz_HEVC_HDTV_10-bit_IRD");
+    //broadcastUrns.push_back("urn:dvb:broadcast:ird:video:60_Hz_HEVC_HDTV_10-bit_IRD");
+    //broadcastUrns.push_back("urn:dvb:broadcast:ird:video:HEVC_UHDTV_IRD");
+    //broadcastUrns.push_back("urn:dvb:broadcast:ird:video:HEVC_HDR_UHDTV_IRD_using_HLG10");
+    //broadcastUrns.push_back("urn:dvb:broadcast:ird:video:HEVC_HDR_UHDTV_IRD_using_PQ10");
+    //broadcastUrns.push_back("urn:dvb:broadcast:ird:video:HEVC_HDR_HFR_UHDTV_IRD_using_HLG10");
+    //broadcastUrns.push_back("urn:dvb:broadcast:ird:video:HEVC_HDR_HFR_UHDTV_IRD_using_PQ10");
+    broadcastUrns.push_back("urn:dvb:broadcast:ird:audio:MPEG-1_and_MPEG-2_backwards_compatible");
+    broadcastUrns.push_back("urn:dvb:broadcast:ird:audio:AC-3_and_enhanced_AC-3");
+    broadcastUrns.push_back("urn:dvb:broadcast:ird:audio:MPEG-4_AAC_family");
+    //broadcastUrns.push_back("urn:dvb:broadcast:ird:audio:DTS");
+    //broadcastUrns.push_back("urn:dvb:broadcast:ird:audio:AC-4_channel_based");
+    //broadcastUrns.push_back("urn:dvb:broadcast:ird:audio:AC-4_channel_based_immersive_personalized");
+    //broadcastUrns.push_back("urn:dvb:broadcast:ird:audio:MPEG-H");
+
+    std::string displaySizeWidth = "70.9"; // Mock 32" TV
+    std::string displaySizeHeight = "39.9"; // Mock 32" TV
+    std::string displaySizeMeasurementType = "built-in"; // hdmi-accurate, hdmi-other
+    std::string audioOutputFormat = "stereo"; // multichannel, multichannel-preferred
+    std::string html5MediaVariableRateMin = "0.5";
+    std::string html5MediaVariableRateMax = "5.0";
+
+    std::shared_ptr<Capabilities> capabilities = std::make_shared<Capabilities>(
+        optionStrings,
+        profileNameFragments,
+        parentalSchemes,
+        graphicsLevels,
+        broadcastUrns,
+        displaySizeWidth,
+        displaySizeHeight,
+        displaySizeMeasurementType,
+        audioOutputFormat,
+        html5MediaVariableRateMin,
+        html5MediaVariableRateMax);
+
+    return capabilities;
+}
+
+/**
+ * Get a list of audio profiles supported by the terminal, as defined by HBBTV 10.2.4.7 for
+ * the audio_profile element.
+ *
+ * @return A vector of audio profiles supported by the terminal
+ */
+std::vector<AudioProfile> ORBPlatformMockImpl::Configuration_GetAudioProfiles()
+{
+    std::vector<AudioProfile> audioProfiles;
+
+    audioProfiles.push_back(AudioProfile(
+        "MPEG1_L3",
+        "audio/mpeg",
+        "",
+        "",
+        ""));
+
+    audioProfiles.push_back(AudioProfile(
+        "HEAAC",
+        "audio/mp4",
+        "",
+        "",
+        ""));
+
+    audioProfiles.push_back(AudioProfile(
+        "MP4_HEAAC",
+        "audio/mp4",
+        "dash",
+        "dash_pr",
+        ""));
+
+    audioProfiles.push_back(AudioProfile(
+        "MP4_E-AC3",
+        "audio/mp4",
+        "",
+        "",
+        ""));
+
+    audioProfiles.push_back(AudioProfile(
+        "MP4_E-AC3",
+        "audio/mp4",
+        "dash",
+        "dash_pr",
+        ""));
+
+    return audioProfiles;
+}
+
+/**
+ * Get a list of video profiles supported by the terminal, as defined by HBBTV 10.2.4.7 for
+ * the video_profile element.
+ *
+ * @return A vector of video profiles supported by the terminal
+ */
+std::vector<VideoProfile> ORBPlatformMockImpl::Configuration_GetVideoProfiles()
+{
+    std::vector<VideoProfile> videoProfiles;
+
+    videoProfiles.push_back(VideoProfile(
+        "MP4_AVC_SD_25_HEAAC",
+        "video/mp4",
+        "dash",
+        "dash_pr",
+        "",
+        ""));
+
+    videoProfiles.push_back(VideoProfile(
+        "MP4_AVC_HD_25_HEAAC",
+        "video/mp4",
+        "dash",
+        "dash_pr",
+        "",
+        ""));
+
+    videoProfiles.push_back(VideoProfile(
+        "MP4_AVC_SD_25_HEAAC_EBUTTD",
+        "video/mp4",
+        "dash",
+        "dash_pr",
+        "",
+        ""));
+
+    videoProfiles.push_back(VideoProfile(
+        "MP4_AVC_HD_25_HEAAC_EBUTTD",
+        "video/mp4",
+        "dash",
+        "dash_pr",
+        "",
+        ""));
+
+    videoProfiles.push_back(VideoProfile(
+        "TS_AVC_SD_25_HEAAC",
+        "video/mpeg",
+        "",
+        "temi",
+        "",
+        ""));
+
+    videoProfiles.push_back(VideoProfile(
+        "TS_AVC_HD_25_HEAAC",
+        "video/mpeg",
+        "",
+        "temi",
+        "",
+        ""));
+
+    videoProfiles.push_back(VideoProfile(
+        "MP4_AVC_SD_25_HEAAC",
+        "video/mp4",
+        "",
+        "",
+        "",
+        ""));
+
+    videoProfiles.push_back(VideoProfile(
+        "MP4_AVC_HD_25_HEAAC",
+        "video/mp4",
+        "",
+        "",
+        "",
+        ""));
+
+    // For terminals that support E-AC3 audio:
+    videoProfiles.push_back(VideoProfile(
+        "TS_AVC_SD_25_E-AC3",
+        "video/mpeg",
+        "",
+        "temi",
+        "",
+        ""
+        ));
+
+    videoProfiles.push_back(VideoProfile(
+        "TS_AVC_HD_25_E-AC3",
+        "video/mpeg",
+        "",
+        "temi",
+        "",
+        ""
+        ));
+
+    videoProfiles.push_back(VideoProfile(
+        "MP4_AVC_SD_25_E-AC3",
+        "video/mp4",
+        "",
+        "",
+        "",
+        ""));
+
+    videoProfiles.push_back(VideoProfile(
+        "MP4_AVC_HD_25_E-AC3",
+        "video/mp4",
+        "",
+        "",
+        "",
+        ""));
+
+    videoProfiles.push_back(VideoProfile(
+        "MP4_AVC_SD_25_E-AC3",
+        "video/mp4",
+        "dash",
+        "dash_pr",
+        "",
+        ""));
+
+    videoProfiles.push_back(VideoProfile(
+        "MP4_AVC_HD_25_E-AC3",
+        "video/mp4",
+        "dash",
+        "dash_pr",
+        "",
+        ""));
+
+    videoProfiles.push_back(VideoProfile(
+        "MP4_AVC_SD_25_E-AC3_EBUTTD",
+        "video/mp4",
+        "dash",
+        "dash_pr",
+        "",
+        ""));
+
+    videoProfiles.push_back(VideoProfile(
+        "MP4_AVC_HD_25_E-AC3_EBUTTD",
+        "video/mp4",
+        "dash",
+        "dash_pr",
+        "",
+        ""));
+
+    // TODO UHD
+
+    return videoProfiles;
+}
+
+/**
+ * If the terminal supports UHD, get a list that describes the highest quality video format the
+ * terminal supports, as defined by HBBTV 10.2.4.7 for the video_display_format element;
+ * otherwise get an empty list.
+ *
+ * Note: If the terminal changes its display format based on the content being played, multiple
+ * elements may be included in the list when multiple frame rate families are usable or the
+ * highest resolution does not support each highest quality parameter.
+ *
+ * @return A vector that describes the highest quality video format
+ */
+std::vector<VideoDisplayFormat> ORBPlatformMockImpl::Configuration_GetVideoDisplayFormats()
+{
+    std::vector<VideoDisplayFormat> videoDisplayFormats;
+    return videoDisplayFormats;
+}
+
+/**
+ * Get the current number of additional media streams containing SD video accompanied by audio
+ * that can be decoded and presented by an A/V control object or HTML5 media element.
+ *
+ * @return The current number of additional media streams. If the value is non-zero, then a call
+ *         to play an A/V control object, HTML5 media element or video/broadcast object shall not fail
+ *         due to lack of resources for SD media.
+ */
+int ORBPlatformMockImpl::Configuration_GetExtraSDVideoDecodes()
+{
+    return 1;
+}
+
+/**
+ * Get the current number of additional media streams containing HD video accompanied by audio
+ * that can be decoded and presented by an A/V control object or HTML5 media element.
+ *
+ * @return The current number of additional media streams. If the value is non-zero, then a call
+ *         to play an A/V control object, HTML5 media element or video/broadcast object shall not fail
+ *         due to lack of resources for HD media.
+ */
+int ORBPlatformMockImpl::Configuration_GetExtraHDVideoDecodes()
+{
+    return 1;
+}
+
+/**
+ * Get the current number of additional media streams containing UHD video accompanied by audio
+ * that can be decoded and presented by an A/V control object or HTML5 media element.
+ *
+ * @return The current number of additional media streams. If the value is non-zero, then a call
+ *         to play an A/V control object, HTML5 media element or video/broadcast object shall not fail
+ *         due to lack of resources for UHD media.
+ */
+int ORBPlatformMockImpl::Configuration_GetExtraUHDVideoDecodes()
+{
+    return 0;
+}
+
+/**
  * Get local system information.
  *
  * @return Pointer to the LocalSystem object

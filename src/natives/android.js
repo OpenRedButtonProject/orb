@@ -1,6 +1,5 @@
 /**
  * @fileOverview Android native
- * See: {@link https://web.archive.org/web/20200219165053/http://www.oipf.tv/web-spec/volume5.html#configuration-class}
  * @license ORB Software. Copyright (c) 2022 Ocean Blue Software Limited
  * Licensed under the ORB License that can be found in the LICENSE file at
  * the top level of this repository.
@@ -8,61 +7,6 @@
 
 hbbtv.nativeManager.registerNative({
     name: 'android',
-    __capabilities: {
-        options: [], // TODO ["+PVR", "+DRM"]
-        broadcastSystems: ['+DVB_T'],
-        parentalSchemes: 'dvb-si',
-        extraSDVideoDecodes: 0,
-        extraHDVideoDecodes: 0,
-        extraUHDVideoDecodes: 0,
-        audioFormats: [{
-            name: 'MPEG1_L3',
-            type: 'audio/mpeg',
-        }, {
-            name: 'HEAAC',
-            type: 'audio/mp4',
-        }, {
-            name: 'MP4_HEAAC',
-            type: 'audio/mp4',
-            transport: 'dash',
-            sync_tl: 'dash_pr',
-        }, ],
-        videoFormats: [{
-            name: 'MP4_AVC_SD_25_HEAAC',
-            type: 'video/mp4',
-            transport: 'dash',
-            sync_tl: 'dash_pr',
-        }, {
-            name: 'MP4_AVC_HD_25_HEAAC',
-            type: 'video/mp4',
-            transport: 'dash',
-            sync_tl: 'dash_pr',
-        }, {
-            name: 'MP4_AVC_SD_25_HEAAC_EBUTTD',
-            type: 'video/mp4',
-            transport: 'dash',
-            sync_tl: 'dash_pr',
-        }, {
-            name: 'MP4_AVC_HD_25_HEAAC_EBUTTD',
-            type: 'video/mp4',
-            transport: 'dash',
-            sync_tl: 'dash_pr',
-        }, {
-            name: 'TS_AVC_SD_25_HEAAC',
-            type: 'video/mpeg',
-            sync_tl: 'temi',
-        }, {
-            name: 'TS_AVC_HD_25_HEAAC',
-            type: 'video/mpeg',
-            sync_tl: 'temi',
-        }, {
-            name: 'MP4_AVC_SD_25_HEAAC',
-            type: 'video/mp4',
-        }, {
-            name: 'MP4_AVC_HD_25_HEAAC',
-            type: 'video/mp4',
-        }, ],
-    },
     isNative: function() {
         return navigator.userAgent.indexOf('Android') !== -1;
     },
@@ -96,9 +40,6 @@ hbbtv.nativeManager.registerNative({
         document.dispatchBridgeEvent = (type, properties) => {
             callback(type, properties);
         };
-    },
-    getCapabilities: function() {
-        return Object.freeze(this.__capabilities);
     },
     isDebugBuild: function() {
         return true; // TODO Move
