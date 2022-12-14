@@ -690,6 +690,107 @@ class Bridge extends AbstractBridge {
    }
 
    /**
+    * Get the current capabilities of the terminal.
+    *
+    * @param token The token associated with this request.
+    *
+    * @return A Capabilities object.
+    */
+   @Override
+   protected TvBrowserTypes.Capabilities Configuration_getCapabilities(Token token) {
+      return mTvBrowserCallback.getCapabilities();
+   }
+
+   /**
+    * Get a list of audio profiles supported by the terminal, as defined by HBBTV 10.2.4.7 for the
+    * audio_profile element.
+    *
+    * @param token The token associated with this request.
+    *
+    * @return A list of audio profiles supported by the terminal.
+    */
+   @Override
+   protected List<TvBrowserTypes.AudioProfile> Configuration_getAudioProfiles(Token token) {
+      return mTvBrowserCallback.getAudioProfiles();
+   }
+
+   /**
+    * Get a list of video profiles supported by the terminal, as defined by HBBTV 10.2.4.7 for the
+    * video_profile element.
+    *
+    * @param token The token associated with this request.
+    *
+    * @return A list of video profiles supported by the terminal.
+    */
+   @Override
+   protected List<TvBrowserTypes.VideoProfile> Configuration_getVideoProfiles(Token token) {
+      return mTvBrowserCallback.getVideoProfiles();
+   }
+
+   /**
+    * If the terminal supports UHD, get a list that describes the highest quality video format the
+    * terminal supports, as defined by HBBTV 10.2.4.7 for the video_display_format element;
+    * otherwise get an empty list.
+    *
+    * Note: If the terminal changes its display format based on the content being played, multiple
+    * elements may be included in the list when multiple frame rate families are usable or the
+    * highest resolution does not support each highest quality parameter.
+    *
+    * @param token The token associated with this request.
+    *
+    * @return A list that describes the highest quality video format.
+    */
+   @Override
+   protected List<TvBrowserTypes.VideoDisplayFormat> Configuration_getVideoDisplayFormats(Token token) {
+      return mTvBrowserCallback.getVideoDisplayFormats();
+   }
+
+   /**
+    * Get the current number of additional media streams containing SD video accompanied by audio
+    * that can be decoded and presented by an A/V control object or HTML5 media element.
+    *
+    * @param token The token associated with this request.
+    *
+    * @return The current number of additional media streams. If the value is non-zero, then a call
+    *    to play an A/V control object, HTML5 media element or video/broadcast object shall not fail
+    *    due to lack of resources for SD media.
+    */
+   @Override
+   protected int Configuration_getExtraSDVideoDecodes(Token token) {
+      return mTvBrowserCallback.getExtraSDVideoDecodes();
+   }
+
+   /**
+    * Get the current number of additional media streams containing HD video accompanied by audio
+    * that can be decoded and presented by an A/V control object or HTML5 media element.
+    *
+    * @param token The token associated with this request.
+    *
+    * @return The current number of additional media streams. If the value is non-zero, then a call
+    *    to play an A/V control object, HTML5 media element or video/broadcast object shall not fail
+    *    due to lack of resources for HD media.
+    */
+   @Override
+   protected int Configuration_getExtraHDVideoDecodes(Token token) {
+      return mTvBrowserCallback.getExtraHDVideoDecodes();
+   }
+
+   /**
+    * Get the current number of additional media streams containing UHD video accompanied by audio
+    * that can be decoded and presented by an A/V control object or HTML5 media element.
+    *
+    * @param token The token associated with this request.
+    *
+    * @return The current number of additional media streams. If the value is non-zero, then a call
+    *    to play an A/V control object, HTML5 media element or video/broadcast object shall not fail
+    *    due to lack of resources for UHD media.
+    */
+   @Override
+   protected int Configuration_getExtraUHDVideoDecodes(Token token) {
+      return mTvBrowserCallback.getExtraUHDVideoDecodes();
+   }
+
+   /**
     * Get certain immutable information about the system.
     *
     * @param token The token associated with this request.

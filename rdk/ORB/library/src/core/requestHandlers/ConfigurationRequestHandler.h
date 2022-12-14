@@ -25,6 +25,13 @@ public:
 
 private:
 
+   json GetCapabilities();
+   json GetAudioProfiles();
+   json GetVideoProfiles();
+   json GetVideoDisplayFormats();
+   int GetExtraSDVideoDecodes();
+   int GetExtraHDVideoDecodes();
+   int GetExtraUHDVideoDecodes();
    std::vector<int> GetDttNetworkIds();
 }; // class ConfigurationRequestHandler
 } // namespace orb

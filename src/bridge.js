@@ -810,6 +810,204 @@ hbbtv.bridge.configuration = (function() {
    const exported = {};
 
    /**
+    * @typedef {Object} Capabilities Create a capabilities type that describes the current
+    * capabilities of the terminal.
+    * 
+    * @property {Array.<string>} optionStrings A list of HbbTV option strings supported by the
+    * terminal.
+    * Valid values as defined by HBBTV 10.2.4.8 table 13.
+    * @property {Array.<string>} profileNameFragments A list of OIPF UI Profile Name Fragments
+    * supported by the terminal; this shall always include trick mode ("+TRICKMODE"), any supported
+    * broadcast delivery systems (e.g. "+DVB_S") and no other values.
+    * Valid values as defined by OIPF DAE table 16.
+    * @property {Array.<string>} parentalSchemes A list of parental scheme names registered with
+    * the platform.
+    * Valid values are usable as scheme names with other parental APIs.
+    * @property {Array.<string>|null} graphicsLevels A list of graphics performance levels supported
+    * by the terminal
+    * (required if any of the graphics levels are supported, null to omit).
+    * Valid values as defined by HBBTV 10.2.4.7 table 12c.
+    * @property {Array.<string>|null} broadcastUrns A list of URNs for each supported broadcast
+    * technology (required if any broadcast delivery is supported, null to omit).
+    * Valid values as defined in HBBTV 10.2.4.7 for broadcast element value.
+    * @property {string} displaySizeWidth The current width of the primary display in centimetres.
+    * Valid values as defined by HBBTV 10.2.4.7 for display_size width.
+    * @property {string} displaySizeHeight The current height of the primary display in centimetres.
+    * Valid values as defined by HBBTV 10.2.4.7 for display_size height.
+    * @property {string} displaySizeMeasurementType The measurement type.
+    * Valid values as defined by HBBTV 10.2.4.7 for display_size measurement_type.
+    * @property {string|null} audioOutputFormat The current multi-channel audio capabilities
+    * (required where terminals support multi-channel audio, null to omit).
+    * Valid values as defined by HBBTV 10.2.4.7 for audio_system audio_output_format.
+    * @property {string|null} html5MediaVariableRateMin Minimum supported forward playback rate
+    * (required where terminals support a playbackRate with a MediaSource object other than "1.0",
+    * null to omit).
+    * Valid values as defined by HBBTV 10.2.4.7 for html5_media_variable_rate min.
+    * @property {string|null} html5MediaVariableRateMax Maximum supported forward playback rate
+    * (required where terminals support a playbackRate with a MediaSource object other than "1.0",
+    * null to omit).
+    * Valid values as defined by HBBTV 10.2.4.7 for html5_media_variable_rate max.
+    */
+
+   /**
+    * @typedef {Object} AudioProfile Create an AudioProfile type that describes an audio profile,
+    * valid combinations are as defined by HBBTV 10.2.4.7 for the audio_profile element.
+    * 
+    * @property {string} name Name of profile (required).
+    * Valid values as defined by OIPF DAE 9.3.11 for audio_profile name.
+    * @property {string} type MIME type of profile (required).
+    * Valid values as defined by OIPF DAE 9.3.11 for audio_profile type.
+    * @property {string|null} transport Space separated list of supported protocol names (optional,
+    * null to omit).
+    * Valid values as defined by OIPF DAE 9.3.11 for audio_profile transport and HBBTV 10.2.4.7.
+    * @property {string|null} syncTl Space separated list of timeline types (optional, null to
+    * omit).
+    * Valid values as defined by HBBTV 10.2.4.7 table 12a.
+    * @property {string|null} drmSystemId Space separated list of DRM system IDs (optional, null to
+    * omit).
+    * Valid values as defined by OIPF DAE 9.3.11 for audio_profile DRMSystemID.
+    */
+
+   /**
+    * @typedef {Object} VideoProfile Create a VideoProfile type that describes a video profile,
+    * valid combinations are as defined by HBBTV 10.2.4.7 for the video_profile element.
+    * 
+    * @property {string} name Name of profile (required).
+    * Valid values as defined by OIPF DAE 9.3.11 for video_profile name.
+    * @property {string} type MIME type of profile (required).
+    * Valid values as defined by OIPF DAE 9.3.11 for video_profile type.
+    * @property {string} transport Space separated list of supported protocol names (optional, null
+    * to omit).
+    * Valid values as defined by OIPF DAE 9.3.11 for video_profile transport and HBBTV 10.2.4.7.
+    * @property {string|null} syncTl Space separated list of timeline types (optional, null to
+    * omit).
+    * Valid values as defined by HBBTV 10.2.4.7 table 12a.
+    * @property {string|null} drmSystemId Space separated list of DRM system IDs (optional, null to
+    * omit).
+    * Valid values as defined by OIPF DAE 9.3.11 for video_profile DRMSystemID.
+    * @property {string|null} hdr URI of HDR technology (optional, null to omit).
+    * Valid values as defined by HBBTV 10.2.4.7 table 12b.
+    */
+
+   /**
+    * @typedef {Object} VideoDisplayFormat Create a VideoDisplayFormat type that describes a video
+    * display format, valid combinations are as defined by HBBTV 10.2.4.7 for the
+    * video_display_format element.
+    * 
+    * @property {number} width Width of the video content (required).
+    * Valid values as defined by HBBTV 10.2.4.7 for video_display_format name.
+    * @property {number} height Height of the video content (required).
+    * Valid values as defined by HBBTV 10.2.4.7 for video_display_format height.
+    * @property {number} frameRate Frame rate of the video content (required).
+    * Valid values as defined by HBBTV 10.2.4.7 for video_display_format frame_rate.
+    * @property {number} bitDepth Bit depth of the video content (required).
+    * Valid values as defined by HBBTV 10.2.4.7 for video_display_format bit_depth.
+    * @property {string} colorimetry A space separated list of colorimetry strings (required).
+    * Valid values as defined by HBBTV 10.2.4.7 for video_display_format colorimetry.
+    */
+
+   /**
+    * Get the current capabilities of the terminal.
+    *
+    * @return {Capabilities} A Capabilities object.
+    * 
+    * @method
+    * @memberof bridge.configuration#
+    */
+   exported.getCapabilities = function() {
+      return hbbtv.native.request("Configuration.getCapabilities", {}).result;
+   }
+
+   /**
+    * Get a list of audio profiles supported by the terminal, as defined by HBBTV 10.2.4.7 for
+    * the audio_profile element.
+    * 
+    * @return {Array.<AudioProfile>} A list of audio profiles supported by the terminal.
+    * 
+    * @method
+    * @memberof bridge.configuration#
+    */
+   exported.getAudioProfiles = function() {
+      return hbbtv.native.request("Configuration.getAudioProfiles", {}).result;
+   }
+
+   /**
+    * Get a list of video profiles supported by the terminal, as defined by HBBTV 10.2.4.7 for
+    * the video_profile element.
+    *
+    * @return {Array.<VideoProfile>} A list of video profiles supported by the terminal.
+    * 
+    * @method
+    * @memberof bridge.configuration#
+    */
+   exported.getVideoProfiles = function() {
+      return hbbtv.native.request("Configuration.getVideoProfiles", {}).result;
+   }
+
+   /**
+    * If the terminal supports UHD, get a list that describes the highest quality video format the
+    * terminal supports, as defined by HBBTV 10.2.4.7 for the video_display_format element;
+    * otherwise get an empty list.
+    * 
+    * Note: If the terminal changes its display format based on the content being played, multiple
+    * elements may be included in the list when multiple frame rate families are usable or the
+    * highest resolution does not support each highest quality parameter.
+    * 
+    * @return {Array.<VideoDisplayFormat>} A list that describes the highest quality video format.
+    * 
+    * @method
+    * @memberof bridge.configuration#
+    */
+   exported.getVideoDisplayFormats = function() {
+      return hbbtv.native.request("Configuration.getVideoDisplayFormats", {}).result;
+   }
+
+   /**
+    * Get the current number of additional media streams containing SD video accompanied by audio
+    * that can be decoded and presented by an A/V control object or HTML5 media element.
+    *
+    * @return {number} The current number of additional media streams. If the value is non-zero,
+    * then a call to play an A/V control object, HTML5 media element or video/broadcast object
+    * shall not fail due to lack of resources for SD media.
+    * 
+    * @method
+    * @memberof bridge.configuration#
+    */
+   exported.getExtraSDVideoDecodes = function() {
+      return hbbtv.native.request("Configuration.getExtraSDVideoDecodes", {}).result;
+   }
+
+   /**
+    * Get the current number of additional media streams containing HD video accompanied by audio
+    * that can be decoded and presented by an A/V control object or HTML5 media element.
+    *
+    * @return {number} The current number of additional media streams. If the value is non-zero,
+    * then a call to play an A/V control object, HTML5 media element or video/broadcast object
+    * shall not fail due to lack of resources for HD media.
+    * 
+    * @method
+    * @memberof bridge.configuration#
+    */
+   exported.getExtraHDVideoDecodes = function() {
+      return hbbtv.native.request("Configuration.getExtraHDVideoDecodes", {}).result;
+   }
+
+   /**
+    * Get the current number of additional media streams containing UHD video accompanied by audio
+    * that can be decoded and presented by an A/V control object or HTML5 media element.
+    *
+    * @return {number} The current number of additional media streams. If the value is non-zero,
+    * then a call to play an A/V control object, HTML5 media element or video/broadcast object
+    * shall not fail due to lack of resources for UHD media.
+    * 
+    * @method
+    * @memberof bridge.configuration#
+    */
+   exported.getExtraUHDVideoDecodes = function() {
+      return hbbtv.native.request("Configuration.getExtraUHDVideoDecodes", {}).result;
+   }
+
+   /**
     * Get certain immutable information about the system.
     *
     * @return {SystemInformation} A SystemInformation object.
