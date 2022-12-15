@@ -203,6 +203,11 @@ hbbtv.objects.DashProxy = (function() {
       }
    };
 
+   prototype.orb_unload = function() {
+      privates.get(this).player.reset();
+      this.load();
+   };
+
    prototype.getStartDate = function() {
       return privates.get(this).startDate;
    };

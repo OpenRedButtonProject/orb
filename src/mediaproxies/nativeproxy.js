@@ -33,6 +33,11 @@ hbbtv.objects.NativeProxy = (function() {
       return undefined;
    };
 
+   prototype.orb_unload = function() {
+      this.removeAttribute("src");
+      this.load();
+   };
+
    function onLoadedMetadata() {
       let promises = [];
       const thiz = this;

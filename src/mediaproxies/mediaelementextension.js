@@ -44,6 +44,12 @@ hbbtv.objects.MediaElementExtension = (function() {
          }
       };
 
+      prototype.orb_unload = function() {
+         const p = privates.get(this);
+         p.iframeProxy.callObserverMethod(MEDIA_PROXY_ID, "orb_unload");
+         delete p.videoDummy.src;
+      };
+
       prototype.play = function() {
          if (!this.__orb_addedToMediaSync__) { // check if the HTMLMediaElement is provided to MediaSynchroniser.addMediaObject() before we pause it
             if (lastMediaElement && lastMediaElement !== this && !lastMediaElement.paused) {
