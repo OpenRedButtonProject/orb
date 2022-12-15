@@ -79,6 +79,7 @@ struct EXTERNAL IORB : virtual public Core::IUnknown
    virtual void LoadDvbUrl(std::string url, int requestId) = 0;
    virtual void SetPreferredUILanguage(std::string preferredUiLanguage) = 0;
    virtual std::string GetUserAgentString() = 0;
+   virtual std::string GetCurrentAppUrl() = 0;
 
    // methods to trigger notifications
    virtual void JavaScriptEventDispatchRequest(

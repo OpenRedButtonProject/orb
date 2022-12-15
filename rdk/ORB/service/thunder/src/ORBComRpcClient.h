@@ -74,6 +74,7 @@ public:
    void NotifyApplicationLoadFailed(std::string url, std::string errorDescription) override;
    void NotifyApplicationPageChanged(std::string url) override;
    std::string GetUserAgentString() override;
+   std::string GetCurrentAppUrl() override;
 
    bool IsValid();
 
