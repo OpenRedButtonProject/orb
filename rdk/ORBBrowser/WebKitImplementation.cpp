@@ -2277,16 +2277,6 @@ private:
             browser->OnLoadFinished();
     }
 
-    static gboolean loadFailedCallback(WebKitWebView *web_view, WebKitLoadEvent load_event,
-        gchar *failing_uri, GError *error, gpointer user_data)
-    {
-        std::string url(failing_uri);
-        std::string errorDescription(error->message);
-        ORBWPEWebExtensionHelper::GetSharedInstance().GetORBClient()->NotifyApplicationLoadFailed(
-            url, errorDescription);
-        return true;
-    }
-
     static void webProcessTerminatedCallback(WebKitWebView *webView,
         WebKitWebProcessTerminationReason reason)
     {
@@ -2340,6 +2330,48 @@ private:
 
         g_signal_connect(session, "create-web-view",
             reinterpret_cast<GCallback>(createWebViewForAutomationCallback), browser);
+    }
+
+    /**
+     * Respond to the WebKitWebResource::failed signal.
+     */
+    static void resourceFailedCallback(WebKitWebResource *resource, GError *error, gpointer
+        user_data)
+    {
+        // Get the current app URL from ORB
+        std::string currentAppUrl;
+        currentAppUrl =
+            ORBWPEWebExtensionHelper::GetSharedInstance().GetORBClient()->GetCurrentAppUrl();
+        if (currentAppUrl.back() == '/')
+        {
+            currentAppUrl.pop_back();
+        }
+
+        // Resolve the failed resource URI
+        std::string resourceUri(webkit_web_resource_get_uri(resource));
+        if (resourceUri.back() == '/')
+        {
+            resourceUri.pop_back();
+        }
+
+        // Send the application-load-failed notification to ORB iff the failed resource
+        // corresponds to the current app URL
+        if (currentAppUrl == resourceUri)
+        {
+            std::string errorDescription(error->message);
+            ORBWPEWebExtensionHelper::GetSharedInstance().GetORBClient()->
+            NotifyApplicationLoadFailed(resourceUri, errorDescription);
+        }
+    }
+
+    /**
+     * Respond to the WebKitWebView::resource-load-started signal
+     */
+    static void resourceLoadStartedCallback(WebKitWebView *webView, WebKitWebResource *resource,
+        WebKitURIRequest *request, gpointer user_data)
+    {
+        g_signal_connect(resource, "failed", reinterpret_cast<GCallback>(resourceFailedCallback),
+            nullptr);
     }
 
     uint32_t Worker() override
@@ -2498,7 +2530,6 @@ private:
             this);
         g_signal_connect(_view, "load-changed", reinterpret_cast<GCallback>(loadChangedCallback),
             this);
-        g_signal_connect(_view, "load-failed", G_CALLBACK(loadFailedCallback), nullptr);
         g_signal_connect(_view, "web-process-terminated",
             reinterpret_cast<GCallback>(webProcessTerminatedCallback), nullptr);
         g_signal_connect(_view, "close", reinterpret_cast<GCallback>(closeCallback), this);
@@ -2506,6 +2537,8 @@ private:
             reinterpret_cast<GCallback>(decidePermissionCallback), nullptr);
         g_signal_connect(_view, "show-notification",
             reinterpret_cast<GCallback>(showNotificationCallback), this);
+        g_signal_connect(_view, "resource-load-started",
+            reinterpret_cast<GCallback>(resourceLoadStartedCallback), nullptr);
 
         _configurationCompleted.SetState(true);
 

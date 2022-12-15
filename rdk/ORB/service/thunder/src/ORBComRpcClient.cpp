@@ -362,6 +362,22 @@ std::string ORBComRpcClient::GetUserAgentString()
     return userAgentString;
 }
 
+/**
+ * Get the current application URL.
+ *
+ * @return The current application URL
+ */
+std::string ORBComRpcClient::GetCurrentAppUrl()
+{
+    std::string currentAppUrl;
+    if (_orb)
+    {
+        ORB_LOG_NO_ARGS();
+        currentAppUrl = _orb->GetCurrentAppUrl();
+    }
+    return currentAppUrl;
+}
+
 /******************************************************************************
 ** Events subscribe and unsubscribe
 *****************************************************************************/

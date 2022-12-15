@@ -155,6 +155,13 @@ public:
      */
     virtual std::string GetUserAgentString() override;
 
+    /**
+     * Get the current application URL.
+     *
+     * @return The current application URL
+     */
+    virtual std::string GetCurrentAppUrl() override;
+
 
     /************************************************************************************************
     ** Public WebApp-specific API
@@ -227,6 +234,7 @@ public:
     }
 
     // orb state getters/setters
+
     void SetCurrentAppId(uint16_t appId)
     {
         m_currentAppId = appId;
@@ -235,6 +243,11 @@ public:
     uint16_t GetCurrentAppId() const
     {
         return m_currentAppId;
+    }
+
+    void SetCurrentAppUrl(std::string appUrl)
+    {
+        m_currentAppUrl = appUrl;
     }
 
     // orb metadata search task pool handling
@@ -279,6 +292,7 @@ private:
     ORBPlatform *m_orbPlatform;
     std::map<int, std::shared_ptr<MetadataSearchTask> > m_metadataSearchTasks;
     uint16_t m_currentAppId;
+    std::string m_currentAppUrl;
     bool m_started;
     std::string m_preferredUiLanguage;
 }; // class ORBEngine

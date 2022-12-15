@@ -40,6 +40,7 @@ void SessionCallbackImpl::LoadApplication(uint16_t app_id, const char *url)
 {
     ORB_LOG("app_id=%hu url=%s", app_id, url);
     ORBEngine::GetSharedInstance().SetCurrentAppId(app_id);
+    ORBEngine::GetSharedInstance().SetCurrentAppUrl(url);
     ORBEngine::GetSharedInstance().GetORBPlatform()->Application_Load(url);
 }
 
@@ -125,10 +126,15 @@ void SessionCallbackImpl::ResetBroadcastPresentation()
     ORBEngine::GetSharedInstance().GetORBPlatform()->Broadcast_Reset();
 }
 
+/**
+ * @brief SessionCallbackImpl::DispatchApplicationLoadErrorEvent
+ */
 void SessionCallbackImpl::DispatchApplicationLoadErrorEvent()
 {
-    ORB_LOG("TODO DispatchApplicationLoadErrorEvent !!!!!!!!!!!!!!!");
-    return;
+    ORB_LOG_NO_ARGS();
+    json properties;
+    ORBEngine::GetSharedInstance().GetEventListener()->OnJavaScriptEventDispatchRequested(
+        "ApplicationLoadError", properties.dump(), "", false);
 }
 
 /**

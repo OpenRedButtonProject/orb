@@ -242,6 +242,18 @@ std::string ORBImplementation::GetUserAgentString()
 }
 
 /**
+ * Get the current application URL.
+ *
+ * @return The current application URL
+ */
+std::string ORBImplementation::GetCurrentAppUrl()
+{
+    ORB_LOG_NO_ARGS();
+    std::string currentAppUrl = ORBEngine::GetSharedInstance().GetCurrentAppUrl();
+    return currentAppUrl;
+}
+
+/**
  * @brief ORBImplementation::JavaScriptEventDispatchRequest
  *
  * This method is used to notify each client for the 'JavaScriptEventDispatchRequest' event

@@ -86,11 +86,31 @@ void ORBDVBURILoader::Finish()
     }
     else
     {
+        std::string errorDescription = "DVB URI scheme request failed";
+        std::string failedUri(webkit_uri_scheme_request_get_uri(m_request));
+        if (failedUri.back() == '/')
+        {
+            failedUri.pop_back();
+        }
+
         ORB_LOG("DVB URI scheme request completed without any data");
-        GError *error = g_error_new(g_quark_from_string(webkit_uri_scheme_request_get_uri(
-            m_request)), 0, "DVB URI scheme request failed");
+        GError *error = g_error_new(g_quark_from_string(failedUri.c_str()), 0,
+            errorDescription.c_str());
         webkit_uri_scheme_request_finish_error(m_request, error);
         g_error_free(error);
+
+        std::string currentAppUrl =
+            ORBWPEWebExtensionHelper::GetSharedInstance().GetORBClient()->GetCurrentAppUrl();
+        if (currentAppUrl.back() == '/')
+        {
+            currentAppUrl.pop_back();
+        }
+
+        if (currentAppUrl == failedUri)
+        {
+            ORBWPEWebExtensionHelper::GetSharedInstance().GetORBClient()->
+            NotifyApplicationLoadFailed(failedUri, errorDescription);
+        }
     }
 
     ORB_LOG("Completed");

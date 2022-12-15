@@ -62,6 +62,7 @@ ORBEngine::ORBEngine()
     , m_platformEventHandler(std::make_shared<ORBPlatformEventHandlerImpl>())
     , m_orbPlatform(nullptr)
     , m_currentAppId(UINT16_MAX)
+    , m_currentAppUrl("")
     , m_started(false)
     , m_preferredUiLanguage("")
 {
@@ -278,12 +279,6 @@ void ORBEngine::NotifyApplicationLoadFailed(std::string url, std::string errorDe
     bool isConnectedToInternet = GetORBPlatform()->Network_IsConnectedToInternet();
     GetApplicationManager()->OnNetworkAvailabilityChanged(isConnectedToInternet);
     GetApplicationManager()->OnLoadApplicationFailed(m_currentAppId);
-
-    // notify the current JavaScript context that the given application has failed to load
-    json properties;
-    properties["url"] = url;
-    m_eventListener->OnJavaScriptEventDispatchRequested("ApplicationLoadError", properties.dump(),
-        "", false);
 }
 
 /**
@@ -309,6 +304,17 @@ std::string ORBEngine::GetUserAgentString()
     ORB_LOG_NO_ARGS();
     std::string userAgentString = GetORBPlatform()->Configuration_GetUserAgentString();
     return userAgentString;
+}
+
+/**
+ * Get the current application URL.
+ *
+ * @return The current application URL
+ */
+std::string ORBEngine::GetCurrentAppUrl()
+{
+    ORB_LOG("currentAppUrl = %s", m_currentAppUrl);
+    return m_currentAppUrl;
 }
 
 /************************************************************************************************

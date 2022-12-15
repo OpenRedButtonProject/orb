@@ -63,6 +63,7 @@ public:
     void LoadDvbUrl(std::string url, int requestId) override;
     void SetPreferredUILanguage(std::string preferredUiLanguage) override;
     std::string GetUserAgentString() override;
+    std::string GetCurrentAppUrl() override;
 
     // methods to be called when events need to fire
 

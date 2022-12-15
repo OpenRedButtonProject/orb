@@ -72,5 +72,12 @@ public:
      * @return The User-Agent string
      */
     virtual std::string GetUserAgentString() = 0;
+
+    /**
+     * Get the current application URL.
+     *
+     * @return The current application URL
+     */
+    virtual std::string GetCurrentAppUrl() = 0;
 }; // class ORBBrowserApi
 } // namespace orb
