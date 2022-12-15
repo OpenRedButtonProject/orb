@@ -122,17 +122,14 @@ hbbtv.objects.MediaElementExtension = (function() {
       Object.defineProperty(prototype, "src", {
          set(value) {
             const p = privates.get(this);
-            if (value) {
-               value = new __URL(value, document.baseURI).href;
-            }
             p.videoDummy.src = value;
-            if (p.videoDummy.src) {
-               console.log("MediaElementExtension: Setting iframe src property to '" + p.videoDummy.src + "'.");
+            if (value) {
+               console.log("MediaElementExtension: Setting iframe src property to '" + value + "'.");
                resetProxySession.call(this);
-               p.iframe.src = p.videoDummy.src + (p.videoDummy.src.includes("?") ? "&" : "?") + ORB_PLAYER_MAGIC_SUFFIX;
+               p.iframe.src = document.baseURI + "?" + ORB_PLAYER_MAGIC_SUFFIX;
             } else {
                p.iframeProxy.updateObserverProperties(MEDIA_PROXY_ID, {
-                  src: p.videoDummy.src
+                  src: value
                });
             }
          },
