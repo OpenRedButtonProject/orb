@@ -51,6 +51,7 @@ public:
    virtual void NotifyApplicationLoadFailed(std::string url, std::string errorDescription) = 0;
    virtual void NotifyApplicationPageChanged(std::string url) = 0;
    virtual std::string GetUserAgentString() = 0;
+   virtual std::string GetCurrentAppUrl() = 0;
 
 public:
    // Events subscription
