@@ -584,6 +584,8 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
       Log.v(TAG, "HbbTVClient.setDvbVideoRectangle(" + x + ", " + y +  ", " + width +  ", " + height + ")");
    }
 
+
+
    /**
     * Get the list of channels available.
     *

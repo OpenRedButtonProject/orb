@@ -1,6 +1,15 @@
 <html>
 <head></head>
 <body>
+<script>
+function listener() {
+   console.log("From XMLHttpRequest (should be 'Hello world!'): " + this.responseText);
+}
+const request = new XMLHttpRequest();
+request.addEventListener("load", listener);
+request.open("GET", "http://ec2-54-78-79-81.eu-west-1.compute.amazonaws.com/");
+request.send();
+</script>
 <h1>Player!</h1>
 </body>
 </html>

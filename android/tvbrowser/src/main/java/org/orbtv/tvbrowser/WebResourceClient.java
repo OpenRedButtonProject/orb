@@ -44,7 +44,7 @@ public abstract class WebResourceClient {
       "application/xml",
       "application/vnd.hbbtv.xhtml+xml"
    );
-   private static final String ORB_PLAYER_MAGIC_SUFFIX = "orb_player_magic_suffix";
+   private static final String ORB_PLAYER_URI = "orb://player";
 
    private final HtmlBuilder mHtmlBuilder;
    OkHttpClient mHttpClient;
@@ -61,7 +61,7 @@ public abstract class WebResourceClient {
       Uri url = request.getUrl();
       String scheme = url.getScheme();
       if (request.getMethod().equalsIgnoreCase("GET")) {
-         if (url.toString().endsWith(ORB_PLAYER_MAGIC_SUFFIX)) {
+         if (url.toString().equals(ORB_PLAYER_URI)) {
             return createPlayerPageResponse();
          }  else if (scheme.equals("http") || scheme.equals("https")) {
             return shouldInterceptHttpRequest(request, appId);
