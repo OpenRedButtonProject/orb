@@ -2342,17 +2342,9 @@ private:
         std::string currentAppUrl;
         currentAppUrl =
             ORBWPEWebExtensionHelper::GetSharedInstance().GetORBClient()->GetCurrentAppUrl();
-        if (currentAppUrl.back() == '/')
-        {
-            currentAppUrl.pop_back();
-        }
 
         // Resolve the failed resource URI
         std::string resourceUri(webkit_web_resource_get_uri(resource));
-        if (resourceUri.back() == '/')
-        {
-            resourceUri.pop_back();
-        }
 
         // Send the application-load-failed notification to ORB iff the failed resource
         // corresponds to the current app URL
