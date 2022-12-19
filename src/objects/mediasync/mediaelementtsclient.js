@@ -39,7 +39,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
       p.masterMediaObserver.removeEventListener("MediaUpdated", p.onMasterMediaUpdated);
       p.masterMediaObserver.removeEventListener("Error", p.onFailureToPresentMedia);
       p.mediaObject.removeEventListener("ended", p.onFailureToPresentMedia);
-      delete mediaObject.__added_to_media_sync__;
+      delete mediaObject.__orb_addedToMediaSync__;
       Object.setPrototypeOf(p.mediaObject, p.moPrototype);
       clearInterval(p.pollIntervalId);
       privates.delete(this);
@@ -58,8 +58,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
          }
          if (canSeek) {
             checkMediaSync.call(this, targetTime);
-         }
-         else if (p.canSyncWithMaster) {
+         } else if (p.canSyncWithMaster) {
             p.canSyncWithMaster = false;
             dispatchErrorEvent(p.eventTarget, 1); // insufficient buffer size (transient)
          }
@@ -75,7 +74,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
             console.log(contentTime, p.mediaObject.currentTime);
             if (p.mediaObject.paused) {
                p.moPrototype.play.call(p.mediaObject);
-            } 
+            }
             const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
             if (ownProperty) {
                ownProperty.set.call(p.mediaObject, p.masterMediaObserver.timelineSpeedMultiplier);
@@ -157,7 +156,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
                const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "currentTime");
                return ownProperty ? ownProperty.get.call(mediaObject) : undefined;
             },
-            set (value) {
+            set(value) {
                dispatchErrorEvent9();
                const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "currentTime");
                if (ownProperty) {
@@ -170,7 +169,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
                const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
                return ownProperty ? ownProperty.get.call(mediaObject) : undefined;
             },
-            set (value) {
+            set(value) {
                dispatchErrorEvent9();
                const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
                if (ownProperty) {
@@ -181,7 +180,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
       });
 
       Object.setPrototypeOf(mediaObject, moPrototypeOverride);
-      mediaObject.__added_to_media_sync__ = true;
+      mediaObject.__orb_addedToMediaSync__ = true;
 
       masterMediaObserver.addEventListener("MediaUpdated", p.onMasterMediaUpdated);
       masterMediaObserver.addEventListener("Error", p.onFailureToPresentMedia);

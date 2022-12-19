@@ -28,6 +28,33 @@ hbbtv.objects.AVControl = (function() {
 
    const prototype = Object.create(HTMLObjectElement.prototype);
    const privates = new WeakMap();
+   const avsInUse = new Set();
+
+   const observer = new MutationObserver(function(mutationsList) {
+      for (const mutation of mutationsList) {
+         for (const node of mutation.removedNodes) {
+            if (node.nodeName && node.nodeName.toLowerCase() === "object") {
+               const p = privates.get(node);
+               if (p && p.videoElement.parentNode) {
+                  p.videoElement.parentNode.removeChild(p.videoElement);
+               }
+            }
+         }
+         for (const node of mutation.addedNodes) {
+            if (node.nodeName && node.nodeName.toLowerCase() === "object") {
+               const p = privates.get(node);
+               if (p && !p.videoElement.parentNode) {
+                  hbbtv.utils.insertAfter(node.parentNode, p.videoElement, node);
+                  hbbtv.utils.matchElementStyle(p.videoElement, node);
+               }
+            }
+         }
+      }
+   });
+   observer.observe(document.documentElement || document.body, {
+      childList: true,
+      subtree: true
+   });
 
    hbbtv.utils.defineConstantProperties(prototype, {
       "COMPONENT_TYPE_VIDEO": 0,
@@ -90,6 +117,28 @@ hbbtv.objects.AVControl = (function() {
       }
    });
 
+   prototype.getAttribute = function(name) {
+      if (name === "data") {
+         return privates.get(this).data;
+      }
+      return Element.prototype.getAttribute.apply(this, arguments);
+   };
+
+   prototype.removeAttribute = function(name) {
+      if (name === "data") {
+         delete privates.get(this).data;
+         if (priv.playState !== PLAY_STATE_STOPPED) {
+            this.stop();
+         }
+         if (value !== this.data) {
+            priv.seekPos = undefined;
+            priv.connected = false;
+            setMediaSettings.call(this, priv.MediaSettingsConfiguration);
+         }
+      }
+      Element.prototype.removeAttribute.apply(this, arguments);
+   };
+
    prototype.play = function(speed) {
       const priv = privates.get(this);
       const videoElement = priv.videoElement;
@@ -123,10 +172,8 @@ hbbtv.objects.AVControl = (function() {
             }
          }
          if (speed == 0 && priv.playState === PLAY_STATE_STOPPED) {
-            notifyBroadbandAvInUse.call(this, true);
             transitionToState.call(this, PLAY_STATE_PAUSED);
          } else if (isStateTransitionValid.call(this, priv.playState, PLAY_STATE_CONNECTING)) {
-            notifyBroadbandAvInUse.call(this, true);
             transitionToState.call(this, PLAY_STATE_CONNECTING);
             priv.xhr.open('HEAD', this.data);
             priv.xhr.send();
@@ -208,19 +255,10 @@ hbbtv.objects.AVControl = (function() {
 
    prototype.stop = function() {
       const priv = privates.get(this);
-      const videoElement = priv.videoElement;
-
       priv.xhr.abort();
       if (transitionToState.call(this, PLAY_STATE_STOPPED)) {
-         console.log('A/V Control: Stopping playback of ' + this.data);
-         // remove the onpause event as it will be triggered when this
-         // function is called
-         videoElement.onpause = undefined;
-         videoElement.pause();
-         videoElement.currentTime = 0;
+         _internalStop.call(this);
          unloadSource.call(this);
-         clearInterval(priv.rewindInterval);
-         notifyBroadbandAvInUse.call(this, false);
       }
 
       if (priv.mediaSourceQueue.length !== 0) {
@@ -279,22 +317,24 @@ hbbtv.objects.AVControl = (function() {
 
    prototype.setFullScreen = function(fullscreen) {
       const priv = privates.get(this);
-      const videoWrapper = priv.videoWrapper;
+      const videoWrapper = priv.videoElement;
 
       if (fullscreen) {
          if (!priv.fullscreen) {
-            videoWrapper.style.width = "1280px";
-            videoWrapper.style.height = "720px";
-            videoWrapper.style.position = "fixed";
-            videoWrapper.style.zIndex = this.style.zIndex ? this.style.zIndex + 1 : 1;
+            videoWrapper.style.cssText = `
+               width: 1280px;
+               height: 720px;
+               left: 0px;
+               top: 0px;
+               position: fixed;
+               z-index: 
+            ` + (this.style.zIndex ? this.style.zIndex : 1);
             priv.fullscreen = true;
             dispatchEvent.call(this, "FullScreenChange");
          }
       } else {
          if (priv.fullscreen) {
-            videoWrapper.style.position = "static";
-            videoWrapper.style.zIndex = this.style.zIndex;
-            updateVideoDimensions.call(this);
+            hbbtv.utils.matchElementStyle(videoWrapper, this);
             priv.fullscreen = false;
             dispatchEvent.call(this, "FullScreenChange");
          }
@@ -417,6 +457,18 @@ hbbtv.objects.AVControl = (function() {
 
    prototype.removeEventListener = function(type, listener) {
       privates.get(this).eventTarget.removeEventListener(type, listener);
+   }
+
+   function _internalStop() {
+      const priv = privates.get(this);
+      const videoElement = priv.videoElement;
+      console.log('A/V Control: Stopping playback of ' + this.data);
+      // remove the onpause event as it will be triggered when this
+      // function is called
+      videoElement.onpause = undefined;
+      videoElement.pause();
+      videoElement.currentTime = 0;
+      clearInterval(priv.rewindInterval);
    }
 
    // helper function due to unclear event names between spec versions
@@ -648,16 +700,9 @@ hbbtv.objects.AVControl = (function() {
                }
             }
             if (index !== -1) {
-               for (let i = 0; i < audioTracks.length; ++i) {
-                  const track = audioTracks[i];
-                  if (i !== index) {
-                     track.enabled = false;
-                  } else {
-                     track.enabled = true;
-                     videoElement.muted = false;
-                     trackChanged = true;
-                  }
-               }
+               audioTracks[index].enabled = true;
+               videoElement.muted = false;
+               trackChanged = true;
                dispatchComponentChangedEvent.call(this, this.COMPONENT_TYPE_AUDIO);
             }
          }
@@ -690,15 +735,8 @@ hbbtv.objects.AVControl = (function() {
                   index = 0;
                }
                if (index !== -1) {
-                  for (let i = 0; i < textTracks.length; ++i) {
-                     const track = textTracks[i];
-                     if (i !== index) {
-                        track.enabled = false;
-                     } else {
-                        track.mode = "showing";
-                        trackChanged = true;
-                     }
-                  }
+                  textTracks[index].mode = "showing";
+                  trackChanged = true;
                   dispatchComponentChangedEvent.call(this, this.COMPONENT_TYPE_SUBTITLE);
                }
             }
@@ -718,16 +756,9 @@ hbbtv.objects.AVControl = (function() {
                }
             }
             if (index !== -1) {
-               for (let i = 0; i < videoTracks.length; ++i) {
-                  const track = videoTracks[i];
-                  if (i !== index) {
-                     track.selected = false;
-                  } else {
-                     track.selected = true;
-                     trackChanged = true;
-                     videoElement.hidden = false;
-                  }
-               }
+               videoTracks[index].selected = true;
+               trackChanged = true;
+               videoElement.hidden = false;
                dispatchComponentChangedEvent.call(this, this.COMPONENT_TYPE_VIDEO);
             }
          }
@@ -775,44 +806,30 @@ hbbtv.objects.AVControl = (function() {
       let priv = privates.get(this);
       if (broadbandAvInUse) {
          console.log("A/V control: AV in use");
-         clearTimeout(priv.notifyTimeout);
-         priv.notifyTimeout = null;
+         avsInUse.add(this);
          try {
             hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(true);
-            priv.videoWrapper.hidden = false;
+            //priv.videoElement.hidden = false;
          } catch (e) {
             console.warn("A/V Control: " + e);
          }
       } else {
          console.log("A/V control: AV NOT in use (notification waiting 0.25s)");
-         priv.notifyTimeout = setTimeout(() => {
-            console.log("A/V control: AV NOT in use (notification dispatched)");
-            try {
-               hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
-               priv.videoWrapper.hidden = true;
-            } catch (e) {
-               console.warn("A/V Control: " + e);
+         avsInUse.delete(this);
+         setTimeout(() => {
+            if (avsInUse.size <= 0) {
+               console.log("A/V control: AV NOT in use (notification dispatched)");
+               try {
+                  hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
+                  //priv.videoElement.hidden = true;
+               } catch (e) {
+                  console.warn("A/V Control: " + e);
+               }
+            }
+            else {
+               console.log("A/V control: Another AV is in use.");
             }
          }, 250);
-      }
-   }
-
-   function updateVideoDimensions() {
-      let priv = privates.get(this);
-      let videoWrapper = priv.videoWrapper;
-      if (this.style.width && !this.style.width.includes("%")) {
-         videoWrapper.style.width = this.style.width;
-      } else if (this.width) {
-         videoWrapper.style.width = this.width + "px";
-      } else {
-         videoWrapper.style.width = "100%";
-      }
-      if (this.style.height && !this.style.height.includes("%")) {
-         videoWrapper.style.height = this.style.height;
-      } else if (this.height) {
-         videoWrapper.style.height = this.height + "px";
-      } else {
-         videoWrapper.style.height = "100%";
       }
    }
 
@@ -821,8 +838,7 @@ hbbtv.objects.AVControl = (function() {
       priv.connected = false;
       priv.seekPos = undefined;
       priv.speed = 0;
-      priv.videoElement.load();
-      priv.videoElement.src = '';
+      priv.videoElement.orb_unload();
    }
 
    function initialise() {
@@ -836,25 +852,31 @@ hbbtv.objects.AVControl = (function() {
       priv.xhr = new XMLHttpRequest();
       const thiz = this;
 
+      const _setAttribute = this.setAttribute;
+      priv.data = Element.prototype.getAttribute.call(this, "data");
+
+      // override setAttribute here and not in the prototype, as
+      // it is already overriden in objectmanager.js
       this.setAttribute = function(name, value) {
          if (name === "width" || name === "height") {
             if (!priv.fullscreen) {
                // first set the attribute and then update video dimensions
-               Element.prototype.setAttribute.apply(this, arguments);
-               updateVideoDimensions.call(this);
+               _setAttribute.apply(this, arguments);
+               hbbtv.utils.matchElementStyle(priv.videoElement, this);
             }
             return;
          } else if (name === "data") {
             if (priv.playState !== PLAY_STATE_STOPPED) {
                this.stop();
             }
-            if (value !== this.data) {
+            if (value !== priv.data) {
+               priv.data = value;
                priv.seekPos = undefined;
                priv.connected = false;
                setMediaSettings.call(this, priv.MediaSettingsConfiguration);
             }
          }
-         Element.prototype.setAttribute.apply(this, arguments);
+         _setAttribute.apply(this, arguments);
       };
 
       function onPlayHandler() {
@@ -876,30 +898,18 @@ hbbtv.objects.AVControl = (function() {
          }
       }
 
-      let videoWrapper = document.createElement("div");
-      // set video background to #000 to simulate letterbox and pillarbox effect
-      // when the video element aspect ratio is different than the video source
-      // aspect ratio
-      videoWrapper.style.backgroundColor = this.style.backgroundColor || "#000";
-      videoWrapper.style.zIndex = this.style.zIndex;
-      videoWrapper.style.position = "static";
-      videoWrapper.style.left = 0;
-      videoWrapper.style.top = 0;
-      priv.videoWrapper = videoWrapper;
-
       // Create a new video element that will be used as a playback backend 'video/mp4' objects.
-      let videoElement = document.createElement("video");
-      priv.videoElement = videoElement;
-      videoElement.style.width = "100%";
-      videoElement.style.height = "100%";
+      const mimetype = this.type || "";
+      let videoElement = document.createElement(mimetype.startsWith("audio") ? "audio" : "video");
+
       videoElement.autoplay = false;
-      videoElement.hidden = true;
-
-      videoWrapper.appendChild(videoElement);
-      this.appendChild(videoWrapper);
-
-      // update the videoWrapper size
-      updateVideoDimensions.call(this);
+      //videoElement.hidden = true;
+      priv.videoElement = videoElement;
+      if (this.parentNode) {
+         hbbtv.utils.insertAfter(this.parentNode, videoElement, this);
+         hbbtv.utils.matchElementStyle(videoElement, this);
+      }
+      hbbtv.objects.upgradeMediaElement(videoElement);
 
       // parse param nodes and store their values
       priv.params = {};
@@ -927,13 +937,10 @@ hbbtv.objects.AVControl = (function() {
             case PLAY_STATE_ERROR:
             case PLAY_STATE_STOPPED:
             case PLAY_STATE_FINISHED:
-               videoElement.hidden = true;
-               break;
-            case PLAY_STATE_PLAYING:
-            case PLAY_STATE_PAUSED:
-               videoElement.hidden = false;
+               notifyBroadbandAvInUse.call(this, false);
                break;
             default:
+               notifyBroadbandAvInUse.call(this, true);
                break;
          }
       });
@@ -950,7 +957,6 @@ hbbtv.objects.AVControl = (function() {
             priv.error = 1;
             unloadSource.call(thiz);
             transitionToState.call(thiz, PLAY_STATE_ERROR);
-            notifyBroadbandAvInUse.call(thiz, false);
             return;
          }
          transitionToState.call(thiz, PLAY_STATE_BUFFERING);
@@ -958,6 +964,10 @@ hbbtv.objects.AVControl = (function() {
       };
 
       videoElement.addEventListener("loadeddata", () => {
+         if (!videoElement.src) {
+            return;
+         };
+
          // we add here the onpause handler as there will be no way to be added
          // in case the user changes the media source when we are in rewind mode
          videoElement.onpause = priv.onPauseHandler;
@@ -1004,21 +1014,20 @@ hbbtv.objects.AVControl = (function() {
                   thiz.play(priv.speed);
                }
             } else if (priv.mediaSourceQueue.length !== 0) {
-               thiz.data = priv.mediaSourceQueue.shift();
+               _internalStop.call(thiz);
+               priv.data = priv.mediaSourceQueue.shift();
                thiz.play(1);
             } else {
                unloadSource.call(thiz);
-               notifyBroadbandAvInUse.call(thiz, false);
             }
          }
       });
 
-      videoElement.addEventListener("__obs_onerror__", (e) => {
-         console.log('A/V Control: __obs_onerror__: ', e.error.message);
+      videoElement.addEventListener("__orb_onerror__", (e) => {
+         console.log('A/V Control: __orb_onerror__: ', e.error.message);
          if (transitionToState.call(thiz, PLAY_STATE_ERROR)) {
             unloadSource.call(thiz);
             priv.error = e.error.code;
-            notifyBroadbandAvInUse.call(thiz, false);
          }
 
          if (priv.mediaSourceQueue.length !== 0) {
@@ -1028,8 +1037,8 @@ hbbtv.objects.AVControl = (function() {
          }
       });
 
-      videoElement.addEventListener("__obs_onparentalratingchange__", (e) => {
-         console.log('A/V Control: __obs_onparentalratingchange__: ', e.blocked);
+      videoElement.addEventListener("__orb_onparentalratingchange__", (e) => {
+         console.log('A/V Control: __orb_onparentalratingchange__: ', e.blocked);
          dispatchEvent.call(thiz, "ParentalRatingChange", {
             contentID: e.contentID,
             ratings: e.ratings,
@@ -1044,11 +1053,7 @@ hbbtv.objects.AVControl = (function() {
             for (const mutation of mutationsList) {
                if (mutation.type === "childList") {
                   for (const node of mutation.removedNodes) {
-                     if (node === videoElement || node.className.includes("__obs_subsPH__")) {
-                        // in case the videoElement or the subtitles placeholder is removed
-                        // (i.e. by re-setting its innerHTML), re-add it 
-                        thiz.appendChild(node);
-                     } else if (node.nodeName && node.nodeName.toLowerCase() === "param" && node.hasAttribute("name")) {
+                     if (node.nodeName && node.nodeName.toLowerCase() === "param" && node.hasAttribute("name")) {
                         // remove stored params
                         priv.params[node.getAttribute("name")] = undefined;
                      }
@@ -1066,11 +1071,10 @@ hbbtv.objects.AVControl = (function() {
                   // if we are in fullscreen mode when the style of the AV Control
                   // object changes, switch to non-fullscreen mode  
                   if (priv.fullscreen) {
-                     videoWrapper.style.zIndex = thiz.style.zIndex;
                      priv.fullscreen = false;
                      dispatchEvent.call(thiz, "FullScreenChange");
                   }
-                  updateVideoDimensions.call(thiz);
+                  hbbtv.utils.matchElementStyle(videoElement, thiz);
                }
             }
          });
@@ -1081,6 +1085,8 @@ hbbtv.objects.AVControl = (function() {
             attributeFilter: ["style"]
          });
       })();
+
+      console.log("A/V Control: initialised");
    }
 
    return {
@@ -1089,17 +1095,13 @@ hbbtv.objects.AVControl = (function() {
    }
 })();
 
-hbbtv.objects.upgradeVideoMpegObject = function(object) {
-   Object.setPrototypeOf(object, hbbtv.objects.AVControl.prototype);
-   hbbtv.objects.AVControl.initialise.call(object);
-   hbbtv.utils.preventDefaultMediaHandling(object);
-}
-
 hbbtv.objectManager.registerObject({
    name: "video/mpeg",
    mimeTypes: ["video/mp4", "application/dash+xml", "audio/mp4", "audio/mpeg", "video/mpeg"],
    oipfObjectFactoryMethodName: "createVideoMpegObject",
    upgradeObject: function(object) {
-      hbbtv.objects.upgradeVideoMpegObject(object);
+      Object.setPrototypeOf(object, hbbtv.objects.AVControl.prototype);
+      hbbtv.objects.AVControl.initialise.call(object);
+      hbbtv.utils.preventDefaultMediaHandling(object);
    }
 });

@@ -102,6 +102,32 @@ hbbtv.utils = (function() {
       return result;
    }
 
+   function insertAfter(thiz, child, sibling) {
+      if (thiz) {
+         const nextSibling = sibling.nextSibling;
+         if (nextSibling) {
+            thiz.insertBefore(child, nextSibling);
+         } else {
+            thiz.appendChild(child);
+         }
+      }
+   }
+
+   function matchElementStyle(thiz, element) {
+      if (thiz) {
+         const style = window.getComputedStyle(element);
+         Array.from(style).forEach(
+            key => thiz.style.setProperty(key, style.getPropertyValue(key), style.getPropertyPriority(key))
+         );
+         if (thiz.style.position !== "fixed") {
+            const bounds = element.getBoundingClientRect();
+            thiz.style.left = bounds.left + "px";
+            thiz.style.top = bounds.top + "px";
+            thiz.style.position = "absolute";
+         }
+      }
+   }
+
    const gListenerFinalization = createFinalizationRegistry(({
       target,
       type,
@@ -238,6 +264,8 @@ hbbtv.utils = (function() {
       defineGetterSetterProperties: defineGetterSetterProperties,
       preventDefaultMediaHandling: preventDefaultMediaHandling,
       base64Encode: base64Encode,
+      insertAfter: insertAfter,
+      matchElementStyle: matchElementStyle,
       EventDispatcher: EventDispatcher
    };
 })();

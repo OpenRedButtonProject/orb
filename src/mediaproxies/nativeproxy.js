@@ -33,21 +33,9 @@ hbbtv.objects.NativeProxy = (function() {
       return undefined;
    };
 
-   prototype.orb_invalidate = function() {
-      const p = privates.get(this);
-      if (p) {
-         this.textTracks.removeEventListener("change", p.onTextTrackChange);
-         this.removeEventListener("loadedmetadata", p.onLoadedMetadata, true);
-         this.removeEventListener("error", p.onError, true);
-         if (p.subs.parentNode) {
-            p.subs.parentNode.removeChild(p.subs);
-         }
-         if (p.textTracks) {
-            p.textTracks.deleteAllTextTracks();
-         }
-         console.log("NativeProxy: Cleaning up...");
-         privates.delete(this);
-      }
+   prototype.orb_unload = function() {
+      this.removeAttribute("src");
+      this.load();
    };
 
    function onLoadedMetadata() {
@@ -70,8 +58,7 @@ hbbtv.objects.NativeProxy = (function() {
       }
       p.textTracks = textTracks;
       textTracks.initialize();
-      for (let i = 0; i < this.textTracks.length; ++i) {
-         const track = this.textTracks[i];
+      for (let i = 0; i < trackElements.length; ++i) {
          const trackElement = trackElements[i];
          if (!trackElement) {
             promises.push(Promise.reject("Text track doesn't match a track element."));
@@ -83,10 +70,10 @@ hbbtv.objects.NativeProxy = (function() {
          textTrackInfo.streamInfo = config.streamInfo;
          textTrackInfo.isTTML = true;
          textTrackInfo.captionData = null;
-         textTrackInfo.kind = track.kind;
-         textTrackInfo.id = track.id;
-         textTrackInfo.lang = track.language;
-         textTrackInfo.labels = track.label;
+         textTrackInfo.kind = trackElement.kind;
+         textTrackInfo.id = trackElement.id;
+         textTrackInfo.lang = trackElement.srclang;
+         textTrackInfo.labels = trackElement.label;
          textTrackInfo.isFragmented = false;
 
          const ext = trackElement.src.split('.').pop();
@@ -99,14 +86,9 @@ hbbtv.objects.NativeProxy = (function() {
                      reject("An error occurred when requesting the ttml source file '" + trackElement.src + "'.");
                      return;
                   }
-                  textTrackInfo.defaultTrack = track.mode === "showing";
+                  textTrackInfo.defaultTrack = trackElement.default;
                   textTrackInfo.captionData = ttmlParser.parse(xhr.responseText, 0);
                   textTracks.addTextTrack(textTrackInfo);
-
-                  // we remove the track elements, because textTracks.addTextTrack()
-                  // pushes a new text track to the video element's text tracks list,
-                  // ending up having twice as many tracks as we should be having
-                  thiz.removeChild(trackElement);
                   resolve();
                }
                xhr.open("GET", trackElement.src);
@@ -124,11 +106,45 @@ hbbtv.objects.NativeProxy = (function() {
          .catch(e => {
             console.warn("NativeProxy: Failed to populate texttracks. Error:", e)
          });
+
+      const videoOwnProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "videoTracks");
+      if (videoOwnProperty) {
+         const videoTrackList = [];
+         for (const track of videoOwnProperty.get.call(this)) {
+            const t = {};
+            for (const key in track) {
+               t[key] = track[key];
+            }
+            t.index = videoTrackList.length;
+            t.encoding = undefined;
+            t.encrypted = false;
+            videoTrackList.push(t);
+         }
+         this.videoTracks.orb_setTrackList(videoTrackList);
+      }
+
+      const audioOwnProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "audioTracks");
+      if (audioOwnProperty) {
+         const audioTrackList = [];
+         for (const track of audioOwnProperty.get.call(this)) {
+            const t = {};
+            for (const key in track) {
+               t[key] = track[key];
+            }
+            t.numChannels = 2;
+            t.index = audioTrackList.length;
+            t.encoding = undefined;
+            t.encrypted = false;
+            audioTrackList.push(t);
+         }
+         this.audioTracks.orb_setTrackList(audioTrackList);
+      }
    }
+
 
    function onError() {
       if (this.error) {
-         let evt = new Event("__obs_onerror__");
+         let evt = new Event("__orb_onerror__");
          let data = {
             code: 2,
             message: this.error.message
@@ -146,8 +162,7 @@ hbbtv.objects.NativeProxy = (function() {
                   data.code = 2;
                   break;
             }
-         }
-         else {
+         } else {
             // normally, errors should be the distinguished by checking the value of
             // videoElement.error.code, but since its value is mostly 4, the only way
             // to differentiate the error events is by the videoElement.error.message value
@@ -185,49 +200,28 @@ hbbtv.objects.NativeProxy = (function() {
             break;
          }
       }
-      if (index !== -1) {
-         if (this.parentNode && !p.subs.parentNode) {
-            if (this.nextSibling) {
-               this.parentNode.insertBefore(p.subs, this.nextSibling);
-            } else {
-               this.parentNode.appendChild(p.subs);
-            }
-         }
-      } else if (p.subs.parentNode) {
-         p.subs.parentNode.removeChild(p.subs);
-      }
       if (p.textTracks) {
          p.textTracks.setCurrentTrackIdx(index);
       }
    }
 
    function initialise(src) {
-      if (!privates.get(this)) {
-         if (this.orb_invalidate) {
-            this.orb_invalidate();
-         }
-         Object.setPrototypeOf(this, prototype);
-         privates.set(this, {});
-         const p = privates.get(this);
-         const subtitlesRenderDiv = document.createElement("div");
-         subtitlesRenderDiv.id = "__obs_subsPH__";
-         p.subs = subtitlesRenderDiv;
-         p.onTextTrackChange = onTextTrackChange.bind(this);
-         p.onLoadedMetadata = onLoadedMetadata.bind(this);
-         p.onError = onError.bind(this);
-         p.videoModel = orb_dashjs.VideoModel(window).getInstance();
-         p.videoModel.setElement(this);
-         p.videoModel.setTTMLRenderingDiv(subtitlesRenderDiv);
-         p.ttmlParser = orb_dashjs.TTMLParser(window).getInstance();
+      Object.setPrototypeOf(this, prototype);
+      privates.set(this, {});
+      const p = privates.get(this);
+      p.onTextTrackChange = onTextTrackChange.bind(this);
+      p.onLoadedMetadata = onLoadedMetadata.bind(this);
+      p.onError = onError.bind(this);
+      p.videoModel = orb_dashjs.VideoModel(window).getInstance();
+      p.videoModel.setElement(this);
+      p.videoModel.setTTMLRenderingDiv(document.getElementById("orb_subsPH"));
+      p.ttmlParser = orb_dashjs.TTMLParser(window).getInstance();
 
-         this.textTracks.addEventListener("change", p.onTextTrackChange);
-         this.addEventListener("loadedmetadata", p.onLoadedMetadata, true);
-         this.addEventListener("error", p.onError, true);
+      this.textTracks.addEventListener("change", p.onTextTrackChange);
+      this.addEventListener("loadedmetadata", p.onLoadedMetadata, true);
+      this.addEventListener("error", p.onError, true);
 
-         console.log("NativeProxy: Initialised NativeProxy.");
-      } else {
-         console.log("NativeProxy: Already initialised. Skipping...");
-      }
+      console.log("NativeProxy: Initialised NativeProxy.");
    }
 
    return {
@@ -239,7 +233,6 @@ hbbtv.mediaManager.registerObject({
    initialise: function(object, src) {
       hbbtv.objects.NativeProxy.initialise.call(object, src);
    },
-   onSourceAboutToChange: function(object, src) {},
    getName: function() {
       return "native";
    },

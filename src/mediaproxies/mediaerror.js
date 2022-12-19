@@ -8,28 +8,29 @@
 hbbtv.objects.MediaError = (function() {
    const prototype = {};
    const privates = new WeakMap();
+   const constants = ["MEDIA_ERR_ABORTED", "MEDIA_ERR_NETWORK", "MEDIA_ERR_DECODE", "MEDIA_ERR_SRC_NOT_SUPPORTED"];
+   const roProps = ["code", "message"];
 
-   hbbtv.utils.defineConstantProperties(prototype, {
-      MEDIA_ERR_ABORTED: MediaError.MEDIA_ERR_ABORTED,
-      MEDIA_ERR_NETWORK: MediaError.MEDIA_ERR_NETWORK,
-      MEDIA_ERR_DECODE: MediaError.MEDIA_ERR_DECODE,
-      MEDIA_ERR_SRC_NOT_SUPPORTED: MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED
-   });
+   for (const key of constants) {
+      Object.defineProperty(prototype, key, {
+         value: MediaError[key],
+         writable: false
+      });
+   }
 
-   hbbtv.utils.defineGetterProperties(prototype, {
-      code() {
-         return privates.get(this).code;
-      },
-      message() {
-         return privates.get(this).message;
-      },
-   });
+   for (const key of roProps) {
+      Object.defineProperty(prototype, key, {
+         get() {
+            return privates.get(this)[key];
+         }
+      });
+   }
 
    function initialise(code, message) {
-      privates.set(this, {});
-      const p = privates.get(this);
-      p.code = code;
-      p.message = message;
+      privates.set(this, {
+         code,
+         message
+      });
    }
 
    return {
@@ -42,4 +43,4 @@ hbbtv.objects.createMediaError = function(code, message) {
    const mediaError = Object.create(hbbtv.objects.MediaError.prototype);
    hbbtv.objects.MediaError.initialise.call(mediaError, code, message);
    return mediaError;
-}
+};
