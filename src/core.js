@@ -10,7 +10,6 @@ hbbtv.core = (function() {
         hbbtv.nativeManager.initialise();
         hbbtv.bridge.initialise();
         hbbtv.objectManager.initialise();
-        hbbtv.mediaManager.initialise();
         hbbtv.orbDebug.polyfill();
     }
     return {

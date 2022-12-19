@@ -250,11 +250,11 @@ hbbtv.objects.MediaSynchroniser = (function() {
 
                 if (relIndex >= 0) {
                     mediaObject.addEventListener(
-                        '__obs_onstreamupdated__',
+                        '__orb_onstreamupdated__',
                         p.onStreamUpdatedHandler
                     );
                     mediaObject.addEventListener(
-                        '__obs_onperiodchanged__',
+                        '__orb_onperiodchanged__',
                         p.onPeriodChangedHandler
                     );
                     curPeriod = timelineSelector.substring(relIndex + 5).split(':')[1];
@@ -578,11 +578,11 @@ hbbtv.objects.MediaSynchroniser = (function() {
             }
             if (p.masterMediaObject) {
                 p.masterMediaObject.removeEventListener(
-                    '__obs_onstreamupdated__',
+                    '__orb_onstreamupdated__',
                     p.onStreamUpdatedHandler
                 );
                 p.masterMediaObject.removeEventListener(
-                    '__obs_onperiodchanged__',
+                    '__orb_onperiodchanged__',
                     p.onPeriodChangedHandler
                 );
             }

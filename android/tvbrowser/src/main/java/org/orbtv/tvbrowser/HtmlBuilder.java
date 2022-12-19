@@ -9,6 +9,7 @@ package org.orbtv.tvbrowser;
 
 import android.content.res.AssetManager;
 import android.net.Uri;
+import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -20,16 +21,27 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.Arrays;
 
 public class HtmlBuilder {
+    private static final String TAG = "Orb/HtmlBuilder";
+
     AssetManager mAssetManager;
     String mHbbtvInjection;
     byte[] mHbbtvInjectionUtf8;
+    String mMediaManagerInjection;
+    byte[] mMediaManagerInjectionUtf8;
+    String mPlayerPage;
+    byte[] mPlayerPageUtf8;
 
     HtmlBuilder(AssetManager assetManager) {
         mAssetManager = assetManager;
         mHbbtvInjection = getHbbtvInjection();
         mHbbtvInjectionUtf8 = mHbbtvInjection.getBytes(StandardCharsets.UTF_8);
+        mMediaManagerInjection = getMediaManagerInjection();
+        mMediaManagerInjectionUtf8 = mMediaManagerInjection.getBytes(StandardCharsets.UTF_8);
+        mPlayerPage = getPlayerPage();
+        mPlayerPageUtf8 = mPlayerPage.getBytes(StandardCharsets.UTF_8);
     }
 
     public byte[] getRedirectPage(Charset charset, Uri uri) {
@@ -68,17 +80,58 @@ public class HtmlBuilder {
         }
     }
 
+    public byte[] getMediaManagerInjection(Charset charset) {
+        if (charset == StandardCharsets.UTF_8) {
+            return mMediaManagerInjectionUtf8;
+        } else {
+            return mMediaManagerInjection.getBytes(charset);
+        }
+    }
+
+    public byte[] getPlayerPage(Charset charset) {
+        if (charset == StandardCharsets.UTF_8) {
+            return mPlayerPageUtf8;
+        } else {
+            return mPlayerPage.getBytes(charset);
+        }
+    }
+
     private String getHbbtvInjection() {
         StringBuilder builder = new StringBuilder();
         builder.append("<script type=\"text/javascript\">\n//<![CDATA[\n");
         try {
             appendAsset(builder, "polyfill/hbbtv.js");
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "";
+        }
+        builder.append("\n//]]>\n</script>");
+        return builder.toString();
+    }
+
+    private String getMediaManagerInjection() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("<script type=\"text/javascript\">\n//<![CDATA[\n");
+        try {
+            appendAsset(builder, "polyfill/iframe.js");
             appendAsset(builder, "polyfill/dash.all.min.js");
         } catch (IOException e) {
             e.printStackTrace();
             return "";
         }
         builder.append("\n//]]>\n</script>");
+        return builder.toString();
+    }
+
+    private String getPlayerPage() {
+        StringBuilder builder = new StringBuilder();
+        try {
+            Log.i(TAG, "Found Assets: " + Arrays.toString(mAssetManager.list("polyfill")));
+            appendAsset(builder, "polyfill/playerpage.html");
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "";
+        }
         return builder.toString();
     }
 

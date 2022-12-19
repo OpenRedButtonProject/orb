@@ -582,7 +582,9 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
     @Override
     public void setDvbVideoRectangle(int x, int y, int width, int height) {
         Log.v(TAG, "HbbTVClient.setDvbVideoRectangle(" + x + ", " + y + ", " + width + ", " + height + ")");
+
     }
+
 
     /**
      * Get the list of channels available.

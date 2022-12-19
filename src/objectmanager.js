@@ -60,6 +60,12 @@ hbbtv.objectManager = (function() {
                 upgradeObject(object, object.getAttribute('type'));
             }
         }
+        for (const object of target.getElementsByTagName('video')) {
+            hbbtv.objects.upgradeMediaElement(object);
+        }
+        for (const object of target.getElementsByTagName('audio')) {
+            hbbtv.objects.upgradeMediaElement(object);
+        }
     }
 
     function upgradeObject(object, mimeType) {
@@ -112,7 +118,6 @@ hbbtv.objectManager = (function() {
         const config = {
             childList: true,
             subtree: true,
-            attributes: true,
         };
         observer.observe(document.documentElement || document.body, config);
     }
@@ -142,6 +147,8 @@ hbbtv.objectManager = (function() {
                     }
                     Element.prototype.setAttribute.apply(element, arguments);
                 };
+            } else if (tagname === 'video' || tagname === 'audio') {
+                hbbtv.objects.upgradeMediaElement(element);
             }
             return element;
         };
