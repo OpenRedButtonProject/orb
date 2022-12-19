@@ -212,17 +212,7 @@ hbbtv.mediaManager = (function() {
          });
          mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
       }, true);
-      media.addEventListener("timeupdate", (() => {
-         const cb = makeCallback("currentTime");
-         // will be used to prevent the event from being dispatched too frequently
-         // from the iframe to the main window, in order to improve performance
-         let counter = 0;
-         return function(e) {
-            if (counter++ % 5 === 0) {
-               cb(e);
-            }
-         };
-      })(), true);
+      media.addEventListener("timeupdate", makeCallback("currentTime"), true);
       media.addTextTrack = function() {
          return textTracks.orb_addTextTrack.apply(textTracks, arguments);
       };

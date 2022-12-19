@@ -61,10 +61,10 @@ hbbtv.objects.TextTrack = (function() {
       set(value) {
          const p = privates.get(this);
          if (value !== p.properties.enabled && [TRACK_MODE_DISABLED, TRACK_MODE_HIDDEN, TRACK_MODE_SHOWING].includes(value)) {
-            if (value === TRACK_MODE_SHOWING) {
+            if (value !== TRACK_MODE_DISABLED) {
                for (let track of p.mediaElement.textTracks) {
                   if (track.mode === TRACK_MODE_SHOWING && track !== p.trackProxy) {
-                     track.mode = TRACK_MODE_DISABLED;
+                     track.mode = TRACK_MODE_HIDDEN;
                      break;
                   }
                }
@@ -220,6 +220,7 @@ hbbtv.objects.TextTrack = (function() {
          trackProxy
       });
 
+      this.mode = TRACK_MODE_HIDDEN;
       return trackProxy;
    }
 
