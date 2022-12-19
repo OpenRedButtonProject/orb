@@ -13,7 +13,7 @@ hbbtv.objects.MediaElementExtension = (function() {
    ];
 
    function createPrototype() {
-      const ORB_PLAYER_MAGIC_SUFFIX = "orb_player_magic_suffix";
+      const ORB_PLAYER_URL = "orb://player";
       const prototype = Object.create(HTMLMediaElement.prototype);
       const methods = ["pause", "load"];
       const roProps = ["textTracks", "audioTracks", "videoTracks", "paused", "ended", "currentSrc", "error", "duration", "networkState", "readyState"];
@@ -132,7 +132,7 @@ hbbtv.objects.MediaElementExtension = (function() {
             if (value) {
                console.log("MediaElementExtension: Setting iframe src property to '" + value + "'.");
                resetProxySession.call(this);
-               p.iframe.src = document.baseURI + "?" + ORB_PLAYER_MAGIC_SUFFIX;
+               p.iframe.src = ORB_PLAYER_URL + "?base=" + document.baseURI;
             } else {
                p.iframeProxy.updateObserverProperties(MEDIA_PROXY_ID, {
                   src: value

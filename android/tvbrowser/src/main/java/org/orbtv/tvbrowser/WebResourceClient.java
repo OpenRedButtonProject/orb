@@ -61,7 +61,7 @@ public abstract class WebResourceClient {
       Uri url = request.getUrl();
       String scheme = url.getScheme();
       if (request.getMethod().equalsIgnoreCase("GET")) {
-         if (url.toString().equals(ORB_PLAYER_URI)) {
+         if (url.toString().startsWith(ORB_PLAYER_URI)) {
             return createPlayerPageResponse();
          }  else if (scheme.equals("http") || scheme.equals("https")) {
             return shouldInterceptHttpRequest(request, appId);
