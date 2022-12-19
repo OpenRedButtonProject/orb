@@ -250,11 +250,6 @@ static void OnWindowObjectCleared(WebKitScriptWorld *world, WebKitWebPage *page,
 
    const gchar *uri = webkit_frame_get_uri(frame);
    ORB_LOG("uri=%s\n", uri);
-
-   if (s_orbClient)
-   {
-      s_orbClient->NotifyApplicationPageChanged(webkit_frame_get_uri(frame));
-   }
 }
 
 /**
@@ -278,6 +273,11 @@ static void OnPageUriChanged(WebKitWebPage *webPage, GParamSpec *pspec, WebKitWe
 
    ORB_LOG("Whitelisting dvb URLs for origin: %s", webkit_security_origin_to_string(origin));
    webkit_web_extension_add_origin_access_whitelist_entry(s_orbWpeWebExtension, origin, "dvb", "", true);
+
+   if (s_orbClient)
+   {
+      s_orbClient->NotifyApplicationPageChanged(pageUri);
+   }
 
    webkit_security_origin_unref(origin);
 }

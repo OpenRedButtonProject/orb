@@ -289,6 +289,8 @@ void ORBEngine::NotifyApplicationLoadFailed(std::string url, std::string errorDe
 void ORBEngine::NotifyApplicationPageChanged(std::string url)
 {
    ORB_LOG("appId=%d url=%s", m_currentAppId, url.c_str());
+
+   m_currentAppUrl = url;
    GetApplicationManager()->OnApplicationPageChanged(m_currentAppId, url);
    GetORBPlatform()->Platform_SetCurrentKeySetMask(0);
 }
