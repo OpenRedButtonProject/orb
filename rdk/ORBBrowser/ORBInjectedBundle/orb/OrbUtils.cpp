@@ -91,7 +91,7 @@ fail:
  * @param caller Raw pointer to the caller object
  * @param callback Callback function
  */
-void LoadDvbUrl(const char *url, void *caller, OnDvbUrlLoaded callback)
+void LoadDvbUrl(const char *url, void *caller, OnDvbUrlLoadedNoData callback)
 {
    static int requestId = 0;
    requestId++;

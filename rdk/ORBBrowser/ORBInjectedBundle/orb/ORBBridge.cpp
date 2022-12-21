@@ -17,7 +17,8 @@ using namespace WPEFramework;
 namespace orb {
 void JavaScriptEventDispatchRequested(std::string name, std::string properties);
 void DvbUrlLoaded(int requestId, unsigned char *content, unsigned int contentLength);
-void InputKeyGenerated(int keyCode);
+void DvbUrlLoadedNoData(int requestId, unsigned int contentLength);
+void InputKeyGenerated(int keyCode, unsigned char action);
 
 /**
  * Private constructor.
@@ -28,6 +29,7 @@ ORBBridge::ORBBridge()
    m_orbClient = CreateORBClient(
       JavaScriptEventDispatchRequested,
       DvbUrlLoaded,
+      DvbUrlLoadedNoData,
       InputKeyGenerated
       );
 }
@@ -101,7 +103,7 @@ void ORBBridge::AddDsmccCaller(int requestId, void *caller)
  * @param requestId The request identifier
  * @param callback  The callback
  */
-void ORBBridge::AddDsmccCallback(int requestId, OnDvbUrlLoaded callback)
+void ORBBridge::AddDsmccCallback(int requestId, OnDvbUrlLoadedNoData callback)
 {
    m_dsmccCallbacks[requestId] = callback;
 }
@@ -125,7 +127,7 @@ void * ORBBridge::GetDsmccCaller(int requestId)
  *
  * @return The DSM-CC callback
  */
-OnDvbUrlLoaded ORBBridge::GetDsmccCallback(int requestId)
+OnDvbUrlLoadedNoData ORBBridge::GetDsmccCallback(int requestId)
 {
    return m_dsmccCallbacks[requestId];
 }
@@ -182,20 +184,32 @@ void JavaScriptEventDispatchRequested(std::string name, std::string properties)
 }
 
 /**
- * Callback responding to the 'dvburlloaded' event of the ORB service.
+ * Called back by the ORB client upon receipt of the dvbURLLoaded notification from the ORB service.
+ *
+ * @param requestId     The original request id
+ * @param content       The downloaded DVB URL content
+ * @param contentLength The downloaded DVB URL content length (in number of bytes)
+ */
+void DvbUrlLoaded(int requestId, unsigned char *content, unsigned int contentLength)
+{
+   fprintf(stderr, "[ORBBridge::DvbUrlLoadedNoData] Not supported\n");
+}
+
+/**
+ * Callback responding to the 'dvburlloadedNoData' event of the ORB service.
  *
  * @param requestId
  * @param content
  * @param contentLength
  */
-void DvbUrlLoaded(int requestId, unsigned char *content, unsigned int contentLength)
+void DvbUrlLoadedNoData(int requestId, unsigned char *content, unsigned int contentLength)
 {
-   fprintf(stderr, "[ORBBridge::DvbUrlLoaded] requestId=%d\n", requestId);
+   fprintf(stderr, "[ORBBridge::DvbUrlLoadedNoData] requestId=%d\n", requestId);
 
-   OnDvbUrlLoaded callback = ORBBridge::GetSharedInstance().GetDsmccCallback(requestId);
+   OnDvbUrlLoadedNoData callback = ORBBridge::GetSharedInstance().GetDsmccCallback(requestId);
    void *caller = ORBBridge::GetSharedInstance().GetDsmccCaller(requestId);
 
-   callback(requestId, content, contentLength, caller);
+   callback(requestId, contentLength, caller);
 
    ORBBridge::GetSharedInstance().RemoveDsmccCallback(requestId);
    ORBBridge::GetSharedInstance().RemoveDsmccCaller(requestId);
@@ -206,7 +220,7 @@ void DvbUrlLoaded(int requestId, unsigned char *content, unsigned int contentLen
  *
  * @parm keyCode
  */
-void InputKeyGenerated(int keyCode)
+void InputKeyGenerated(int keyCode, unsigned char action)
 {
    fprintf(stderr, "[ORBBridge::InputKeyGenerated] keyCode=%d\n", keyCode);
 
