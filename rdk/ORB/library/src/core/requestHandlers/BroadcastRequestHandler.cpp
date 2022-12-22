@@ -559,7 +559,7 @@ bool BroadcastRequestHandler::IsRequestAllowed(json token, ApplicationManager::M
     methodType)
 {
     json payload = token["payload"];
-    ORB_LOG("payload=%s", payload.dump());
+    ORB_LOG("payload=%s", payload.dump().c_str());
 
     int appId = payload.value("appId", 0);
     std::string uri = payload.value("uri", "");

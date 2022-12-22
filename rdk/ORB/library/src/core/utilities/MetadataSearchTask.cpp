@@ -332,7 +332,7 @@ bool MetadataSearchTask::CompareLongValues(Query::Comparison comparison,
             result = (programmeValue != queryValue);
             break;
         case Query::Comparison::CMP_MORE:
-            ORB_LOG("Checking %d > %d", programmeValue, queryValue);
+            ORB_LOG("Checking %ld > %ld", programmeValue, queryValue);
             result = (programmeValue > queryValue);
             break;
         case Query::Comparison::CMP_MORE_EQL:

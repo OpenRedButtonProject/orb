@@ -315,7 +315,7 @@ std::string ORBEngine::GetUserAgentString()
  */
 std::string ORBEngine::GetCurrentAppUrl()
 {
-    ORB_LOG("currentAppUrl = %s", m_currentAppUrl);
+    ORB_LOG("currentAppUrl = %s", m_currentAppUrl.c_str());
     return m_currentAppUrl;
 }
 

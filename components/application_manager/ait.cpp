@@ -1172,7 +1172,7 @@ bool Ait::IsAgeRestricted(const std::vector<Ait::S_APP_PARENTAL_RATING> parental
                 ((pr.region.size() == 3) && (strcasecmp(pr.region.c_str(),
                     parental_control_region3.c_str()) == 0)),
                 (pr.value <= parental_control_age));
-            LOG(LOG_ERROR, "%d %d %d", pr.region.size(), strcasecmp(pr.region.c_str(),
+            LOG(LOG_ERROR, "%ld %d %d", pr.region.size(), strcasecmp(pr.region.c_str(),
                 parental_control_region.c_str()),
                 (strcasecmp(pr.region.c_str(), parental_control_region3.c_str()) == 0));
             if ((pr.scheme == "dvb-si") &&
