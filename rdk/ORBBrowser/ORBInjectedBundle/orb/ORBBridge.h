@@ -30,10 +30,10 @@ public:
     void GenerateKey(int keyCode);
 
     void AddDsmccCaller(int requestId, void *caller);
-    void AddDsmccCallback(int requestId, OnDvbUrlLoaded callback);
+    void AddDsmccCallback(int requestId, OnDvbUrlLoadedNoData callback);
 
     void* GetDsmccCaller(int requestId);
-    OnDvbUrlLoaded GetDsmccCallback(int requestId);
+    OnDvbUrlLoadedNoData GetDsmccCallback(int requestId);
 
     void RemoveDsmccCaller(int requestId);
     void RemoveDsmccCallback(int requestId);
@@ -52,7 +52,7 @@ private:
     // member variables
     JSContextRef m_javaScriptContext;
     std::map<int, void *> m_dsmccCallers;
-    std::map<int, OnDvbUrlLoaded> m_dsmccCallbacks;
+    std::map<int, OnDvbUrlLoadedNoData> m_dsmccCallbacks;
     std::shared_ptr<ORBGenericClient> m_orbClient;
 }; // class ORBBridge
 } // namespace orb
