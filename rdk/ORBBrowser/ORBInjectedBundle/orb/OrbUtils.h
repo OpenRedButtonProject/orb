@@ -20,7 +20,7 @@ extern "C" {
 //---Enumerations for public use-----------------------------------------------
 
 //---Global type defs for public use-------------------------------------------
-typedef void (*OnDvbUrlLoaded)(int requestId, unsigned char *buffer, unsigned int bufferLength, void *caller);
+typedef void (*OnDvbUrlLoadedNoData)(int requestId, unsigned int bufferLength, void *caller);
 
 //---Global Function prototypes for public use---------------------------------
 
@@ -42,7 +42,7 @@ const char* InjectInto(const char *htmlSource, int *injected);
  * @param caller Raw pointer to the caller object
  * @param callback Callback function
  */
-void LoadDvbUrl(const char *url, void *caller, OnDvbUrlLoaded callback);
+void LoadDvbUrl(const char *url, void *caller, OnDvbUrlLoadedNoData callback);
 
 #ifdef __cplusplus
 }
