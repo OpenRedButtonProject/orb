@@ -68,7 +68,7 @@ bool ProgrammeRequestHandler::Handle(
       int privateDataSpecifier = params.value("privateDataSpecifier", -1);
       std::vector<std::string> siDescriptors = ORBEngine::GetSharedInstance().GetORBPlatform()->Programme_GetSiDescriptors(
          ccid, programmeId, descriptorTag, descriptorTagExtension, privateDataSpecifier);
-      json array;
+      json array = json::array();
       for (auto descriptor : siDescriptors)
       {
          array.push_back(descriptor);
