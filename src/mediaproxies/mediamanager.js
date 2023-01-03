@@ -138,9 +138,12 @@ hbbtv.mediaManager = (function() {
          if (name === "src" && !this.__objectType) {
             const thiz = this;
             console.log("MediaManager: intercepted src manipulation. new src: " + value);
+            if (value && !value.startsWith("http")) {
+               value = document.baseURI.substring(document.baseURI.indexOf("base=") + 5, document.baseURI.lastIndexOf("/") + 1) + value;
+            }
             upgradeObject.call(this, value).catch(e => upgradeToFallback(thiz, e));
          }
-         Element.prototype.setAttribute.apply(this, arguments);
+         Element.prototype.setAttribute.call(this, name, value);
       };
    }
 
