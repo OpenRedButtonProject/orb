@@ -199,17 +199,7 @@ hbbtv.objects.AVControl = (function() {
             videoElement.onpause = priv.onPauseHandler;
          }
          if (speed > 0) {
-            try {
-               videoElement.playbackRate = speed;
-               // there are cases in dash playback, where after trying to set the playbackRate to some
-               // value, it will not be set to it if the @maxPlayoutRate is specified in the mpd,
-               // and the following event dispatch will not match the actual value of the speed,
-               // so we update the speed argument here
-               speed = videoElement.playbackRate;
-            } catch (e) {
-               console.warn("A/V Control: " + e);
-               speed = videoElement.playbackRate;
-            }
+            videoElement.playbackRate = speed;
             if (videoElement.paused) {
                videoElement.play();
             } else {
@@ -247,9 +237,11 @@ hbbtv.objects.AVControl = (function() {
          }
       }
       priv.speed = speed;
-      dispatchEvent.call(this, "PlaySpeedChanged", {
-         speed: speed
-      });
+      setTimeout( () => {
+         dispatchEvent.call(this, "PlaySpeedChanged", {
+            speed: videoElement.playbackRate
+         }
+      )}, 0);
       return true;
    }
 
@@ -971,12 +963,8 @@ hbbtv.objects.AVControl = (function() {
          // we add here the onpause handler as there will be no way to be added
          // in case the user changes the media source when we are in rewind mode
          videoElement.onpause = priv.onPauseHandler;
-         try {
-            videoElement.playbackRate = priv.speed;
-         } catch (e) {
-            console.warn("A/V Control: " + e);
-         }
-         priv.speed = videoElement.playbackRate;
+         videoElement.playbackRate = priv.speed
+         setTimeout(() => priv.speed = videoElement.playbackRate, 0);
          priv.connected = true;
          if (priv.speed > 0) {
             videoElement.play();

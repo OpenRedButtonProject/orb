@@ -166,6 +166,10 @@ hbbtv.objects.DashProxy = (function() {
          }
          let ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
          if (ownProperty) {
+            if (value === this.playbackRate) {
+               let evt = new Event("__orb_onplaybackRateChanged__");
+               this.dispatchEvent(evt);
+            }
             ownProperty.set.call(this, value);
          }
       }

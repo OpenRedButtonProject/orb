@@ -205,6 +205,7 @@ hbbtv.mediaManager = (function() {
       media.addEventListener("pause", propsUpdateCallback, true);
       media.addEventListener("durationchanged", makeCallback("duration"), true);
       media.addEventListener("ratechange", makeCallback("playbackRate"), true);
+      media.addEventListener("__orb_onplaybackRateChanged__", makeCallback("playbackRate"), true);
       media.addEventListener("volumechange", makeCallback("volume"), true);
       media.addEventListener("error", (e) => {
          mediaProxy.updateObserverProperties(MEDIA_PROXY_ID, {
