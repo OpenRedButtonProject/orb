@@ -124,6 +124,29 @@ hbbtv.objects.AVControl = (function() {
       return Element.prototype.getAttribute.apply(this, arguments);
    };
 
+   prototype.setAttribute = function(name, value) {
+      const priv = privates.get(this);
+      if (name === "width" || name === "height") {
+         if (!priv.fullscreen) {
+            // first set the attribute and then update video dimensions
+            HTMLObjectElement.prototype.setAttribute.apply(this, arguments);
+            hbbtv.utils.matchElementStyle(priv.videoElement, this);
+         }
+         return;
+      } else if (name === "data") {
+         if (priv.playState !== PLAY_STATE_STOPPED) {
+            this.stop();
+         }
+         if (value !== priv.data) {
+            priv.data = value;
+            priv.seekPos = undefined;
+            priv.connected = false;
+            setMediaSettings.call(this, priv.MediaSettingsConfiguration);
+         }
+      }
+      HTMLObjectElement.prototype.setAttribute.apply(this, arguments);
+   };
+
    prototype.removeAttribute = function(name) {
       if (name === "data") {
          delete privates.get(this).data;
@@ -844,32 +867,7 @@ hbbtv.objects.AVControl = (function() {
       priv.xhr = new XMLHttpRequest();
       const thiz = this;
 
-      const _setAttribute = this.setAttribute;
       priv.data = Element.prototype.getAttribute.call(this, "data");
-
-      // override setAttribute here and not in the prototype, as
-      // it is already overriden in objectmanager.js
-      this.setAttribute = function(name, value) {
-         if (name === "width" || name === "height") {
-            if (!priv.fullscreen) {
-               // first set the attribute and then update video dimensions
-               _setAttribute.apply(this, arguments);
-               hbbtv.utils.matchElementStyle(priv.videoElement, this);
-            }
-            return;
-         } else if (name === "data") {
-            if (priv.playState !== PLAY_STATE_STOPPED) {
-               this.stop();
-            }
-            if (value !== priv.data) {
-               priv.data = value;
-               priv.seekPos = undefined;
-               priv.connected = false;
-               setMediaSettings.call(this, priv.MediaSettingsConfiguration);
-            }
-         }
-         _setAttribute.apply(this, arguments);
-      };
 
       function onPlayHandler() {
          transitionToState.call(thiz, PLAY_STATE_PLAYING);
