@@ -124,6 +124,8 @@ hbbtv.utils = (function() {
             thiz.style.left = bounds.left + "px";
             thiz.style.top = bounds.top + "px";
             thiz.style.position = "absolute";
+
+            thiz.style.margin = 0;
          }
       }
    }
