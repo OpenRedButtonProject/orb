@@ -197,17 +197,17 @@ hbbtv.mediaManager = (function() {
          }
       };
       for (const evt of genericEvents) {
-         media.addEventListener(evt, genericHandler, true);
+         media.addEventListener(evt, genericHandler);
       }
-      media.addEventListener("loadeddata", propsUpdateCallback, true);
-      media.addEventListener("loadedmetadata", propsUpdateCallback, true);
-      media.addEventListener("play", propsUpdateCallback, true);
-      media.addEventListener("ended", propsUpdateCallback, true);
-      media.addEventListener("pause", propsUpdateCallback, true);
-      media.addEventListener("durationchanged", makeCallback("duration"), true);
-      media.addEventListener("ratechange", makeCallback("playbackRate"), true);
-      media.addEventListener("__orb_onplaybackRateChanged__", makeCallback("playbackRate"), true);
-      media.addEventListener("volumechange", makeCallback("volume"), true);
+      media.addEventListener("loadeddata", propsUpdateCallback);
+      media.addEventListener("loadedmetadata", propsUpdateCallback);
+      media.addEventListener("play", propsUpdateCallback);
+      media.addEventListener("ended", propsUpdateCallback);
+      media.addEventListener("pause", propsUpdateCallback);
+      media.addEventListener("durationchanged", makeCallback("duration"));
+      media.addEventListener("ratechange", makeCallback("playbackRate"));
+      media.addEventListener("__orb_onplaybackRateChanged__", makeCallback("playbackRate"));
+      media.addEventListener("volumechange", makeCallback("volume"));
       media.addEventListener("error", (e) => {
          mediaProxy.updateObserverProperties(MEDIA_PROXY_ID, {
             error: {
@@ -216,8 +216,8 @@ hbbtv.mediaManager = (function() {
             }
          });
          mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
-      }, true);
-      media.addEventListener("timeupdate", makeCallback("currentTime"), true);
+      });
+      media.addEventListener("timeupdate", makeCallback("currentTime"));
       media.addTextTrack = function() {
          return textTracks.orb_addTextTrack.apply(textTracks, arguments);
       };
