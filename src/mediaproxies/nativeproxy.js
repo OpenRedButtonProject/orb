@@ -224,6 +224,7 @@ hbbtv.objects.NativeProxy = (function() {
    }
 
    function initialise(src) {
+      Element.prototype.setAttribute.call(this, "src", src);
       Object.setPrototypeOf(this, prototype);
       privates.set(this, {});
       const p = privates.get(this);

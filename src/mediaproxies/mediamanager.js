@@ -142,6 +142,7 @@ hbbtv.mediaManager = (function() {
                value = document.baseURI.substring(document.baseURI.indexOf("base=") + 5, document.baseURI.lastIndexOf("/") + 1) + value;
             }
             upgradeObject.call(this, value).catch(e => upgradeToFallback(thiz, e));
+            return;
          }
          Element.prototype.setAttribute.call(this, name, value);
       };
