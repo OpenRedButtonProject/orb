@@ -318,7 +318,7 @@ bool BroadcastRequestHandler::Handle(
             }
             else
             {
-                response.emplace("result", "{}_json");
+                response.emplace("result", R"({})"_json);
             }
         }
     }
@@ -341,7 +341,7 @@ bool BroadcastRequestHandler::Handle(
             }
             else
             {
-                response.emplace("result", "{}_json");
+                response.emplace("result", R"({})"_json);
             }
         }
     }

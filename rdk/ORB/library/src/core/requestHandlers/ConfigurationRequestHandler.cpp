@@ -154,7 +154,7 @@ bool ConfigurationRequestHandler::Handle(
     else if (method == CONFIGURATION_GET_DTT_NETWORK_IDS)
     {
         std::vector<int> dttNetworkIds = GetDttNetworkIds();
-        json array;
+        json array = json::array();
         for (int nid : dttNetworkIds)
         {
             array.push_back(nid);
@@ -208,7 +208,7 @@ json ConfigurationRequestHandler::GetCapabilities()
  */
 json ConfigurationRequestHandler::GetAudioProfiles()
 {
-    json result;
+    json result = json::array();
     std::vector<AudioProfile> audioProfiles =
         ORBEngine::GetSharedInstance().GetORBPlatform()->Configuration_GetAudioProfiles();
     for (AudioProfile audioProfile : audioProfiles)
@@ -226,7 +226,7 @@ json ConfigurationRequestHandler::GetAudioProfiles()
  */
 json ConfigurationRequestHandler::GetVideoProfiles()
 {
-    json result;
+    json result = json::array();
     std::vector<VideoProfile> videoProfiles =
         ORBEngine::GetSharedInstance().GetORBPlatform()->Configuration_GetVideoProfiles();
     for (VideoProfile videoProfile : videoProfiles)
@@ -245,7 +245,7 @@ json ConfigurationRequestHandler::GetVideoProfiles()
  */
 json ConfigurationRequestHandler::GetVideoDisplayFormats()
 {
-    json result;
+    json result = json::array();
     std::vector<VideoDisplayFormat> videoDisplayFormats =
         ORBEngine::GetSharedInstance().GetORBPlatform()->Configuration_GetVideoDisplayFormats();
     for (VideoDisplayFormat videoDisplayFormat : videoDisplayFormats)
