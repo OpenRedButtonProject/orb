@@ -200,6 +200,7 @@ hbbtv.mediaManager = (function() {
          media.addEventListener(evt, genericHandler);
       }
       media.addEventListener("loadeddata", propsUpdateCallback);
+      media.addEventListener("__orb_startDateUpdated__", (e) => mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e));
       media.addEventListener("loadedmetadata", propsUpdateCallback);
       media.addEventListener("play", propsUpdateCallback);
       media.addEventListener("ended", propsUpdateCallback);

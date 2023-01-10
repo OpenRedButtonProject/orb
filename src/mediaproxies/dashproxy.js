@@ -513,10 +513,13 @@ hbbtv.objects.DashProxy = (function() {
    function onManifestLoaded(e) {
       const p = privates.get(this);
       p.profiles = e.data.profiles;
-      p.startDate = new Date(e.data.availabilityStartTime);
+      p.startDate = e.data.availabilityStartTime;
       p.periods = e.data.Period_asArray;
       p.mrsUrl = e.data.mrsUrl;
       p.ciAncillaryData = e.data.ciAncillaryData;
+      const evt = new Event("__orb_startDateUpdated__");
+      Object.assign(evt, { startDate: p.startDate });
+      this.dispatchEvent(evt);
    }
 
    function makeStreamInfoCallback(context, eventName) {
@@ -627,7 +630,7 @@ hbbtv.objects.DashProxy = (function() {
          for (const scheme of PARENTAL_CONTROL_EVENT_SCHEMES) {
             p.player.on(scheme, p.onParentalRatingChange);
          }
-         p.startDate = new Date(NaN);
+         p.startDate = NaN;
          p.player.attachTTMLRenderingDiv(document.getElementById("orb_subsPH"));
          this.textTracks.addEventListener("change", p.onTextTrackChange);
 

@@ -19,6 +19,10 @@ hbbtv.objects.MediaElementExtension = (function() {
       const roProps = ["textTracks", "audioTracks", "videoTracks", "paused", "ended", "currentSrc", "error", "duration", "networkState", "readyState"];
       let lastMediaElement = undefined;
 
+      prototype.getStartDate = function() {
+         return privates.get(this).videoDummy.startDate;
+      }
+
       prototype.getAttribute = function(name) {
          if (props.includes(name)) {
             return this[name];
@@ -89,6 +93,7 @@ hbbtv.objects.MediaElementExtension = (function() {
          p.iframeProxy.invalidate();
          p.videoDummy.readyState = HTMLMediaElement.HAVE_NOTHING;
          p.videoDummy.error = null;
+         p.videoDummy.startDate = new Date(NaN);
          for (const key in p.videoDummy) {
             if (persistentProps.includes(key)) {
                properties[key] = p.videoDummy[key];
@@ -215,11 +220,15 @@ hbbtv.objects.MediaElementExtension = (function() {
     */
    function VideoDummy(parent, iframeProxy) {
       let _error = null;
+      this.startDate = new Date(NaN);
       this.audioTracks = hbbtv.objects.createAudioTrackList(iframeProxy);
       this.videoTracks = hbbtv.objects.createVideoTrackList(iframeProxy);
       this.textTracks = hbbtv.objects.createTextTrackList(parent, iframeProxy);
       this.readyState = HTMLMediaElement.HAVE_NOTHING;
       this.dispatchEvent = function(e) {
+         if (e.type === "__orb_startDateUpdated__") {
+            this.startDate = new Date(e.startDate);
+         }
          parent.dispatchEvent(e);
       };
       this.addTextTrack = function() {
