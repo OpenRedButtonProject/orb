@@ -168,9 +168,9 @@ hbbtv.mediaManager = (function() {
          value: textTracks,
          writable: false
       });
-
+;
       const genericEvents = [
-         "loadstart", "progress", "suspend", "abort", "emptied", "stalled", "canplay",
+         "loadstart", "suspend", "abort", "emptied", "stalled", "canplay",
          "canplaythrough", "playing", "waiting", "seeking", "seeked", "resize", "__orb_onerror__"
       ];
       const genericHandler = (e) => {
@@ -216,6 +216,17 @@ hbbtv.mediaManager = (function() {
                message: media.error.message
             }
          });
+         mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
+      });
+      media.addEventListener("progress", (e) => {
+         const ranges = [];
+         for (let i = 0; i < media.seekable.length; ++i) {
+            ranges.push({
+               start: media.seekable.start(i),
+               end: media.seekable.end(i)
+            });
+         }
+         mediaProxy.callObserverMethod(MEDIA_PROXY_ID, "setSeekable", [ranges]);
          mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
       });
       media.addEventListener("timeupdate", makeCallback("currentTime"));
