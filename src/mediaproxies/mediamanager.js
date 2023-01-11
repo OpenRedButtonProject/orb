@@ -188,6 +188,17 @@ hbbtv.mediaManager = (function() {
          mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
          console.log("iframe: update properties", e.type, props);
       };
+      const updateSeekable = function (e) {
+         const ranges = [];
+         for (let i = 0; i < media.seekable.length; ++i) {
+            ranges.push({
+               start: media.seekable.start(i),
+               end: media.seekable.end(i)
+            });
+         }
+         mediaProxy.callObserverMethod(MEDIA_PROXY_ID, "setSeekable", [ranges]);
+         mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
+      }
       const makeCallback = function(property) {
          return function(e) {
             mediaProxy.updateObserverProperties(MEDIA_PROXY_ID, {
@@ -218,17 +229,8 @@ hbbtv.mediaManager = (function() {
          });
          mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
       });
-      media.addEventListener("progress", (e) => {
-         const ranges = [];
-         for (let i = 0; i < media.seekable.length; ++i) {
-            ranges.push({
-               start: media.seekable.start(i),
-               end: media.seekable.end(i)
-            });
-         }
-         mediaProxy.callObserverMethod(MEDIA_PROXY_ID, "setSeekable", [ranges]);
-         mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
-      });
+      media.addEventListener("progress", updateSeekable);
+      media.addEventListener("__orb_onperiodchanged__", updateSeekable);
       media.addEventListener("timeupdate", makeCallback("currentTime"));
       media.addTextTrack = function() {
          return textTracks.orb_addTextTrack.apply(textTracks, arguments);
