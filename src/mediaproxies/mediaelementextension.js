@@ -16,8 +16,14 @@ hbbtv.objects.MediaElementExtension = (function() {
       const ORB_PLAYER_URL = "orb://player";
       const prototype = Object.create(HTMLMediaElement.prototype);
       const methods = ["pause", "load"];
-      const roProps = ["textTracks", "audioTracks", "videoTracks", "paused", "ended", "currentSrc", "error", "duration", "networkState", "readyState"];
+      const roProps = ["textTracks", "audioTracks", "videoTracks", "paused", "ended", "currentSrc", "error",
+         "networkState", "readyState", "seekable"
+      ];
       let lastMediaElement = undefined;
+
+      prototype.getStartDate = function() {
+         return privates.get(this).videoDummy.startDate;
+      }
 
       prototype.getAttribute = function(name) {
          if (props.includes(name)) {
@@ -89,6 +95,7 @@ hbbtv.objects.MediaElementExtension = (function() {
          p.iframeProxy.invalidate();
          p.videoDummy.readyState = HTMLMediaElement.HAVE_NOTHING;
          p.videoDummy.error = null;
+         p.videoDummy.startDate = new Date(NaN);
          for (const key in p.videoDummy) {
             if (persistentProps.includes(key)) {
                properties[key] = p.videoDummy[key];
@@ -174,6 +181,16 @@ hbbtv.objects.MediaElementExtension = (function() {
          });
       }
 
+      Object.defineProperty(prototype, "duration", {
+         get() {
+            const videoDummy = privates.get(this).videoDummy;
+            if (videoDummy.duration === null) {
+               return Infinity;
+            }
+            return videoDummy.duration;
+         }
+      });
+
       return prototype;
    }
 
@@ -215,26 +232,34 @@ hbbtv.objects.MediaElementExtension = (function() {
     */
    function VideoDummy(parent, iframeProxy) {
       let _error = null;
+      this.startDate = new Date(NaN);
       this.audioTracks = hbbtv.objects.createAudioTrackList(iframeProxy);
       this.videoTracks = hbbtv.objects.createVideoTrackList(iframeProxy);
       this.textTracks = hbbtv.objects.createTextTrackList(parent, iframeProxy);
       this.readyState = HTMLMediaElement.HAVE_NOTHING;
       this.dispatchEvent = function(e) {
+         if (e.type === "__orb_startDateUpdated__") {
+            this.startDate = new Date(e.startDate);
+         }
          parent.dispatchEvent(e);
       };
       this.addTextTrack = function() {
          this.textTracks.orb_addTextTrack.apply(this.textTracks, arguments);
       };
+      this.setSeekable = function(ranges) {
+         this.seekable = hbbtv.objects.createTimeRanges(ranges);
+      }
       Object.defineProperty(this, "error", {
          set(value) {
             if (value) {
                _error = hbbtv.objects.createMediaError(value.code, value.message);
-            }
-            else {
+            } else {
                _error = value;
             }
          },
-         get() { return _error; }
+         get() {
+            return _error;
+         }
       });
    }
 

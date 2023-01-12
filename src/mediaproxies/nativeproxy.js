@@ -102,6 +102,8 @@ hbbtv.objects.NativeProxy = (function() {
                track.encoding = "application/ttml+xml";
             }
             p.onTextTrackChange();
+            p.onAudioTrackChange();
+            p.onVideoTrackChange();
          })
          .catch(e => {
             console.warn("NativeProxy: Failed to populate texttracks. Error:", e)
@@ -205,11 +207,30 @@ hbbtv.objects.NativeProxy = (function() {
       }
    }
 
+   function onAudioTrackChange() {
+      const audioOwnProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "audioTracks");
+      const tracks = audioOwnProperty.get.call(this);
+      for (let i = 0; i < this.audioTracks.length; ++i) {
+         tracks[i].enabled = this.audioTracks[i].enabled;
+      }
+   }
+
+   function onVideoTrackChange() {
+      const videoOwnProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "videoTracks");
+      const tracks = videoOwnProperty.get.call(this);
+      for (let i = 0; i < this.videoTracks.length; ++i) {
+         tracks[i].selected = this.videoTracks[i].selected;
+      }
+   }
+
    function initialise(src) {
+      Element.prototype.setAttribute.call(this, "src", src);
       Object.setPrototypeOf(this, prototype);
       privates.set(this, {});
       const p = privates.get(this);
       p.onTextTrackChange = onTextTrackChange.bind(this);
+      p.onAudioTrackChange = onAudioTrackChange.bind(this);
+      p.onVideoTrackChange = onVideoTrackChange.bind(this);
       p.onLoadedMetadata = onLoadedMetadata.bind(this);
       p.onError = onError.bind(this);
       p.videoModel = orb_dashjs.VideoModel(window).getInstance();
@@ -218,6 +239,8 @@ hbbtv.objects.NativeProxy = (function() {
       p.ttmlParser = orb_dashjs.TTMLParser(window).getInstance();
 
       this.textTracks.addEventListener("change", p.onTextTrackChange);
+      this.audioTracks.addEventListener("change", p.onAudioTrackChange);
+      this.videoTracks.addEventListener("change", p.onVideoTrackChange);
       this.addEventListener("loadedmetadata", p.onLoadedMetadata, true);
       this.addEventListener("error", p.onError, true);
 

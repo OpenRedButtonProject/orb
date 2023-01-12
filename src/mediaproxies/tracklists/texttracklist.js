@@ -68,7 +68,10 @@ hbbtv.objects.TextTrackList = (function() {
       const track = hbbtv.objects.createTextTrack(p.mediaElement, p.proxy, id || id === 0 ? id : p.length, kind, label, language);
       this[p.length++] = track;
       const evt = new TrackEvent("addtrack");
-      Object.defineProperty(evt, "track", { value: track, writable: false});
+      Object.defineProperty(evt, "track", {
+         value: track,
+         writable: false
+      });
       p.eventTarget.dispatchEvent(evt);
       return track;
    }

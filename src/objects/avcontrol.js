@@ -124,6 +124,29 @@ hbbtv.objects.AVControl = (function() {
       return Element.prototype.getAttribute.apply(this, arguments);
    };
 
+   prototype.setAttribute = function(name, value) {
+      const priv = privates.get(this);
+      if (name === "width" || name === "height") {
+         if (!priv.fullscreen) {
+            // first set the attribute and then update video dimensions
+            HTMLObjectElement.prototype.setAttribute.apply(this, arguments);
+            hbbtv.utils.matchElementStyle(priv.videoElement, this);
+         }
+         return;
+      } else if (name === "data") {
+         if (priv.playState !== PLAY_STATE_STOPPED) {
+            this.stop();
+         }
+         if (value !== priv.data) {
+            priv.data = value;
+            priv.seekPos = undefined;
+            priv.connected = false;
+            setMediaSettings.call(this, priv.MediaSettingsConfiguration);
+         }
+      }
+      HTMLObjectElement.prototype.setAttribute.apply(this, arguments);
+   };
+
    prototype.removeAttribute = function(name) {
       if (name === "data") {
          delete privates.get(this).data;
@@ -199,17 +222,7 @@ hbbtv.objects.AVControl = (function() {
             videoElement.onpause = priv.onPauseHandler;
          }
          if (speed > 0) {
-            try {
-               videoElement.playbackRate = speed;
-               // there are cases in dash playback, where after trying to set the playbackRate to some
-               // value, it will not be set to it if the @maxPlayoutRate is specified in the mpd,
-               // and the following event dispatch will not match the actual value of the speed,
-               // so we update the speed argument here
-               speed = videoElement.playbackRate;
-            } catch (e) {
-               console.warn("A/V Control: " + e);
-               speed = videoElement.playbackRate;
-            }
+            videoElement.playbackRate = speed;
             if (videoElement.paused) {
                videoElement.play();
             } else {
@@ -247,9 +260,11 @@ hbbtv.objects.AVControl = (function() {
          }
       }
       priv.speed = speed;
-      dispatchEvent.call(this, "PlaySpeedChanged", {
-         speed: speed
-      });
+      setTimeout(() => {
+         dispatchEvent.call(this, "PlaySpeedChanged", {
+            speed: videoElement.playbackRate
+         })
+      }, 0);
       return true;
    }
 
@@ -825,8 +840,7 @@ hbbtv.objects.AVControl = (function() {
                } catch (e) {
                   console.warn("A/V Control: " + e);
                }
-            }
-            else {
+            } else {
                console.log("A/V control: Another AV is in use.");
             }
          }, 250);
@@ -852,32 +866,7 @@ hbbtv.objects.AVControl = (function() {
       priv.xhr = new XMLHttpRequest();
       const thiz = this;
 
-      const _setAttribute = this.setAttribute;
       priv.data = Element.prototype.getAttribute.call(this, "data");
-
-      // override setAttribute here and not in the prototype, as
-      // it is already overriden in objectmanager.js
-      this.setAttribute = function(name, value) {
-         if (name === "width" || name === "height") {
-            if (!priv.fullscreen) {
-               // first set the attribute and then update video dimensions
-               _setAttribute.apply(this, arguments);
-               hbbtv.utils.matchElementStyle(priv.videoElement, this);
-            }
-            return;
-         } else if (name === "data") {
-            if (priv.playState !== PLAY_STATE_STOPPED) {
-               this.stop();
-            }
-            if (value !== priv.data) {
-               priv.data = value;
-               priv.seekPos = undefined;
-               priv.connected = false;
-               setMediaSettings.call(this, priv.MediaSettingsConfiguration);
-            }
-         }
-         _setAttribute.apply(this, arguments);
-      };
 
       function onPlayHandler() {
          transitionToState.call(thiz, PLAY_STATE_PLAYING);
@@ -971,12 +960,8 @@ hbbtv.objects.AVControl = (function() {
          // we add here the onpause handler as there will be no way to be added
          // in case the user changes the media source when we are in rewind mode
          videoElement.onpause = priv.onPauseHandler;
-         try {
-            videoElement.playbackRate = priv.speed;
-         } catch (e) {
-            console.warn("A/V Control: " + e);
-         }
-         priv.speed = videoElement.playbackRate;
+         videoElement.playbackRate = priv.speed
+         setTimeout(() => priv.speed = videoElement.playbackRate, 0);
          priv.connected = true;
          if (priv.speed > 0) {
             videoElement.play();

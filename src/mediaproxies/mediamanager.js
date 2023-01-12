@@ -15,6 +15,18 @@ hbbtv.mediaManager = (function() {
       addMutationIntercept();
 
       const __play = HTMLMediaElement.prototype.play;
+      const __load = HTMLMediaElement.prototype.load;
+
+      HTMLMediaElement.prototype.load = function() {
+         let tracks = this.textTracks;
+         if (tracks) {
+            for (const track of tracks) {
+               track.mode = "hidden";
+            }
+         }
+
+         __load.call(this);
+      }
 
       // we override play() for the DASH playback as we end up receiving
       // Uncaught (in promise) DOMException: The play() request was interrupted by a new load request.
@@ -138,9 +150,13 @@ hbbtv.mediaManager = (function() {
          if (name === "src" && !this.__objectType) {
             const thiz = this;
             console.log("MediaManager: intercepted src manipulation. new src: " + value);
+            if (value && !value.startsWith("http")) {
+               value = document.baseURI.substring(document.baseURI.indexOf("base=") + 5, document.baseURI.lastIndexOf("/") + 1) + value;
+            }
             upgradeObject.call(this, value).catch(e => upgradeToFallback(thiz, e));
+            return;
          }
-         Element.prototype.setAttribute.apply(this, arguments);
+         Element.prototype.setAttribute.call(this, name, value);
       };
    }
 
@@ -163,10 +179,9 @@ hbbtv.mediaManager = (function() {
       Object.defineProperty(media, "textTracks", {
          value: textTracks,
          writable: false
-      });
-
+      });;
       const genericEvents = [
-         "loadstart", "progress", "suspend", "abort", "emptied", "stalled", "canplay",
+         "loadstart", "suspend", "abort", "emptied", "stalled", "canplay",
          "canplaythrough", "playing", "waiting", "seeking", "seeked", "resize", "__orb_onerror__"
       ];
       const genericHandler = (e) => {
@@ -184,6 +199,17 @@ hbbtv.mediaManager = (function() {
          mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
          console.log("iframe: update properties", e.type, props);
       };
+      const updateSeekable = function(e) {
+         const ranges = [];
+         for (let i = 0; i < media.seekable.length; ++i) {
+            ranges.push({
+               start: media.seekable.start(i),
+               end: media.seekable.end(i)
+            });
+         }
+         mediaProxy.callObserverMethod(MEDIA_PROXY_ID, "setSeekable", [ranges]);
+         mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
+      }
       const makeCallback = function(property) {
          return function(e) {
             mediaProxy.updateObserverProperties(MEDIA_PROXY_ID, {
@@ -193,16 +219,18 @@ hbbtv.mediaManager = (function() {
          }
       };
       for (const evt of genericEvents) {
-         media.addEventListener(evt, genericHandler, true);
+         media.addEventListener(evt, genericHandler);
       }
-      media.addEventListener("loadeddata", propsUpdateCallback, true);
-      media.addEventListener("loadedmetadata", propsUpdateCallback, true);
-      media.addEventListener("play", propsUpdateCallback, true);
-      media.addEventListener("ended", propsUpdateCallback, true);
-      media.addEventListener("pause", propsUpdateCallback, true);
-      media.addEventListener("durationchanged", makeCallback("duration"), true);
-      media.addEventListener("ratechange", makeCallback("playbackRate"), true);
-      media.addEventListener("volumechange", makeCallback("volume"), true);
+      media.addEventListener("loadeddata", propsUpdateCallback);
+      media.addEventListener("__orb_startDateUpdated__", (e) => mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e));
+      media.addEventListener("loadedmetadata", propsUpdateCallback);
+      media.addEventListener("play", propsUpdateCallback);
+      media.addEventListener("ended", propsUpdateCallback);
+      media.addEventListener("pause", propsUpdateCallback);
+      media.addEventListener("durationchanged", makeCallback("duration"));
+      media.addEventListener("ratechange", makeCallback("playbackRate"));
+      media.addEventListener("__orb_onplaybackRateChanged__", makeCallback("playbackRate"));
+      media.addEventListener("volumechange", makeCallback("volume"));
       media.addEventListener("error", (e) => {
          mediaProxy.updateObserverProperties(MEDIA_PROXY_ID, {
             error: {
@@ -211,8 +239,9 @@ hbbtv.mediaManager = (function() {
             }
          });
          mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
-      }, true);
-      media.addEventListener("timeupdate", makeCallback("currentTime"), true);
+      });
+      media.addEventListener("progress", updateSeekable);
+      media.addEventListener("timeupdate", makeCallback("currentTime"));
       media.addTextTrack = function() {
          return textTracks.orb_addTextTrack.apply(textTracks, arguments);
       };
