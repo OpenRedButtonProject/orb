@@ -16,7 +16,6 @@ hbbtv.mediaManager = (function() {
 
       const __play = HTMLMediaElement.prototype.play;
       const __load = HTMLMediaElement.prototype.load;
-
       HTMLMediaElement.prototype.load = function() {
          let tracks = this.textTracks;
          if (tracks) {
