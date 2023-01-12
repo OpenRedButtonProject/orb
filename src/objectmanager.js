@@ -125,29 +125,26 @@ hbbtv.objectManager = (function() {
     // Override createElement install a proxy to monitor and intercept objects. Needed for the
     // case where a page script creates and uses an object before adding it to the document.
     function addCreateElementTypeIntercept(callbackTypeSet) {
+        const ownProperty = Object.getOwnPropertyDescriptor(HTMLObjectElement.prototype, 'type');
+        Object.defineProperty(HTMLObjectElement.prototype, 'type', {
+            set(val) {
+                this.setAttribute('type', val);
+            },
+            get() {
+                return ownProperty.get.call(this);
+            },
+        });
+
+        HTMLObjectElement.prototype.setAttribute = function(name, value) {
+            if (name === 'type') {
+                callbackTypeSet(this, value);
+            }
+            Element.prototype.setAttribute.apply(this, arguments);
+        };
+
         document.createElement = function(tagname, options) {
             let element = __createElement.apply(document, arguments);
-            if (tagname === 'object') {
-                const ownProperty = Object.getOwnPropertyDescriptor(
-                    HTMLObjectElement.prototype,
-                    'type'
-                );
-                Object.defineProperty(element, 'type', {
-                    set(val) {
-                        this.setAttribute('type', val);
-                    },
-                    get() {
-                        return ownProperty.get.call(this);
-                    },
-                });
-
-                element.setAttribute = function(name, value) {
-                    if (name === 'type') {
-                        callbackTypeSet(element, value);
-                    }
-                    Element.prototype.setAttribute.apply(element, arguments);
-                };
-            } else if (tagname === 'video' || tagname === 'audio') {
+            if (tagname === 'video' || tagname === 'audio') {
                 hbbtv.objects.upgradeMediaElement(element);
             }
             return element;
