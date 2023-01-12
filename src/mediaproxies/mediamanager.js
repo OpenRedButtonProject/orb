@@ -15,6 +15,18 @@ hbbtv.mediaManager = (function() {
       addMutationIntercept();
 
       const __play = HTMLMediaElement.prototype.play;
+      const __load = HTMLMediaElement.prototype.load;
+      
+      HTMLMediaElement.prototype.load = function() {
+         let tracks = this.textTracks;
+         if (tracks) {
+            for (const track of tracks) {
+               track.mode = "hidden";
+            }
+         }
+
+         __load.call(this);
+      }
 
       // we override play() for the DASH playback as we end up receiving
       // Uncaught (in promise) DOMException: The play() request was interrupted by a new load request.
