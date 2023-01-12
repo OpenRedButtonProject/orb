@@ -17,7 +17,8 @@ hbbtv.objects.MediaElementExtension = (function() {
       const prototype = Object.create(HTMLMediaElement.prototype);
       const methods = ["pause", "load"];
       const roProps = ["textTracks", "audioTracks", "videoTracks", "paused", "ended", "currentSrc", "error",
-                     "networkState", "readyState", "seekable"];
+         "networkState", "readyState", "seekable"
+      ];
       let lastMediaElement = undefined;
 
       prototype.getStartDate = function() {
@@ -179,7 +180,7 @@ hbbtv.objects.MediaElementExtension = (function() {
             }
          });
       }
-      
+
       Object.defineProperty(prototype, "duration", {
          get() {
             const videoDummy = privates.get(this).videoDummy;
@@ -252,12 +253,13 @@ hbbtv.objects.MediaElementExtension = (function() {
          set(value) {
             if (value) {
                _error = hbbtv.objects.createMediaError(value.code, value.message);
-            }
-            else {
+            } else {
                _error = value;
             }
          },
-         get() { return _error; }
+         get() {
+            return _error;
+         }
       });
    }
 

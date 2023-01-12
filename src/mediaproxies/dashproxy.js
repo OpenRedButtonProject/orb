@@ -518,7 +518,9 @@ hbbtv.objects.DashProxy = (function() {
       p.mrsUrl = e.data.mrsUrl;
       p.ciAncillaryData = e.data.ciAncillaryData;
       const evt = new Event("__orb_startDateUpdated__");
-      Object.assign(evt, { startDate: p.startDate });
+      Object.assign(evt, {
+         startDate: p.startDate
+      });
       this.dispatchEvent(evt);
    }
 

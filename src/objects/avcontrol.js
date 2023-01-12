@@ -260,11 +260,11 @@ hbbtv.objects.AVControl = (function() {
          }
       }
       priv.speed = speed;
-      setTimeout( () => {
+      setTimeout(() => {
          dispatchEvent.call(this, "PlaySpeedChanged", {
             speed: videoElement.playbackRate
-         }
-      )}, 0);
+         })
+      }, 0);
       return true;
    }
 
@@ -840,8 +840,7 @@ hbbtv.objects.AVControl = (function() {
                } catch (e) {
                   console.warn("A/V Control: " + e);
                }
-            }
-            else {
+            } else {
                console.log("A/V control: Another AV is in use.");
             }
          }, 250);

@@ -16,7 +16,7 @@ hbbtv.mediaManager = (function() {
 
       const __play = HTMLMediaElement.prototype.play;
       const __load = HTMLMediaElement.prototype.load;
-      
+
       HTMLMediaElement.prototype.load = function() {
          let tracks = this.textTracks;
          if (tracks) {
@@ -179,8 +179,7 @@ hbbtv.mediaManager = (function() {
       Object.defineProperty(media, "textTracks", {
          value: textTracks,
          writable: false
-      });
-;
+      });;
       const genericEvents = [
          "loadstart", "suspend", "abort", "emptied", "stalled", "canplay",
          "canplaythrough", "playing", "waiting", "seeking", "seeked", "resize", "__orb_onerror__"
@@ -200,7 +199,7 @@ hbbtv.mediaManager = (function() {
          mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
          console.log("iframe: update properties", e.type, props);
       };
-      const updateSeekable = function (e) {
+      const updateSeekable = function(e) {
          const ranges = [];
          for (let i = 0; i < media.seekable.length; ++i) {
             ranges.push({
@@ -242,7 +241,6 @@ hbbtv.mediaManager = (function() {
          mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
       });
       media.addEventListener("progress", updateSeekable);
-      media.addEventListener("__orb_onperiodchanged__", updateSeekable);
       media.addEventListener("timeupdate", makeCallback("currentTime"));
       media.addTextTrack = function() {
          return textTracks.orb_addTextTrack.apply(textTracks, arguments);
