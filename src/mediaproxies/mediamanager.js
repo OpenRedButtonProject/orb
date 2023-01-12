@@ -230,6 +230,15 @@ hbbtv.mediaManager = (function() {
       media.addEventListener("ratechange", makeCallback("playbackRate"));
       media.addEventListener("__orb_onplaybackRateChanged__", makeCallback("playbackRate"));
       media.addEventListener("volumechange", makeCallback("volume"));
+      videoTracks.addEventListener("change", () => {
+         for (const track of videoTracks) {
+            if (track.selected) {
+               media.style.display = "block";
+               return;
+            }
+         }
+         media.style.display = "none";
+      });
       media.addEventListener("error", (e) => {
          mediaProxy.updateObserverProperties(MEDIA_PROXY_ID, {
             error: {
