@@ -1,10 +1,9 @@
-polyfill_iframe_srcs = \
+define build-polyfill
+$(eval polyfill_iframe_srcs = \
 src/housekeeping/banner.js \
 src/housekeeping/beginiffe.js \
 src/mediaproxies/init.js \
-src/nativemanager.js \
-src/natives/android.js \
-src/natives/rdk.js \
+src/natives/$(3).js \
 src/mediaproxies/tracklists/audiotracklist.js \
 src/mediaproxies/tracklists/videotracklist.js \
 src/mediaproxies/tracklists/texttracklist.js \
@@ -16,22 +15,20 @@ src/mediaproxies/mediaerror.js \
 src/mediaproxies/dashproxy.js \
 src/mediaproxies/nativeproxy.js\
 src/mediaproxies/run.js \
-src/housekeeping/endiffe.js
+src/housekeeping/endiffe.js)
 
-polyfill_dash_srcs = \
-external/dash.all.min.js
+$(eval polyfill_dash_srcs = \
+external/dash.all.min.js)
 
-polyfill_hbbtv_srcs = \
+$(eval polyfill_hbbtv_srcs = \
 src/housekeeping/banner.js \
 src/housekeeping/beginiffe.js \
 src/utils.js \
 src/core.js \
-src/nativemanager.js \
 src/bridge.js \
 src/holepuncher.js \
 src/objectmanager.js \
-src/natives/android.js \
-src/natives/rdk.js \
+src/natives/$(3).js \
 src/polyfill/xhr.js \
 src/polyfill/close.js \
 src/polyfill/debug.js \
@@ -80,9 +77,8 @@ src/mediaproxies/timeranges.js \
 src/mediaproxies/iframeobjectproxy.js \
 src/mediaproxies/mediaelementextension.js \
 src/run.js \
-src/housekeeping/endiffe.js
+src/housekeeping/endiffe.js)
 
-define build-polyfill
 $(shell mkdir -p $(2); \
 cat $(addprefix $(1)/,$(polyfill_iframe_srcs)) > $(2)/iframe.js; \
 cat $(addprefix $(1)/,$(polyfill_dash_srcs)) > $(2)/dash.all.min.js; \
