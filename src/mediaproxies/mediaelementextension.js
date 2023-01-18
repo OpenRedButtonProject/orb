@@ -228,8 +228,13 @@ hbbtv.objects.MediaElementExtension = (function() {
                }
             }
             for (const node of mutation.addedNodes) {
-               if (node.nodeName && (node.nodeName.toLowerCase() === "video" || node.nodeName.toLowerCase() === "audio")) {
-                  initialise.call(node, node.src);
+               if (node.nodeName) {
+                  if (node.nodeName.toLowerCase() === "video" || node.nodeName.toLowerCase() === "audio") {
+                     initialise.call(node, node.src);
+                  }
+                  else if (node.nodeName.toLowerCase() === "source" && node.parentNode && node.parentNode.nodeName && node.parentNode.nodeName.toLowerCase() === "video") {
+                     initialise.call(node.parentNode, node.src);
+                  }
                }
             }
          }
