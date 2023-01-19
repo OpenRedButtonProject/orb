@@ -76,14 +76,15 @@ hbbtv.objects.NativeProxy = (function() {
          textTrackInfo.labels = trackElement.label;
          textTrackInfo.isFragmented = false;
 
-         const ext = trackElement.src.split('.').pop();
+         let src = trackElement.getAttribute("src");
+         const ext = src.split('.').pop();
          if (ext === 'ttml' || ext === 'xml') {
             promises.push(new Promise((resolve, reject) => {
                const xhr = new XMLHttpRequest();
                xhr.onreadystatechange = function() {
                   if (xhr.readyState != XMLHttpRequest.DONE) return;
                   if (xhr.status !== 0 && xhr.status != 200 && xhr.status != 304) {
-                     reject("An error occurred when requesting the ttml source file '" + trackElement.src + "'.");
+                     reject("An error occurred when requesting the ttml source file '" + src + "'.");
                      return;
                   }
                   textTrackInfo.defaultTrack = trackElement.default;
@@ -91,7 +92,10 @@ hbbtv.objects.NativeProxy = (function() {
                   textTracks.addTextTrack(textTrackInfo);
                   resolve();
                }
-               xhr.open("GET", trackElement.src);
+               if (!src.startsWith("http")) {
+                  src = document.baseURI.substring(document.baseURI.indexOf("base=") + 5, document.baseURI.lastIndexOf("/") + 1) + src;
+               }
+               xhr.open("GET", src);
                xhr.send();
             }));
          }
