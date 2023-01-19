@@ -12,6 +12,21 @@ hbbtv.objects.MediaElementExtension = (function() {
       "defaultPlaybackRate", "disableRemotePlayback", "preservesPitch", "srcObject"
    ];
 
+   HTMLMediaElement.prototype.orb_unload = function() {};
+
+   // Override default play() for the case where it is being called
+   // immediatelly after setting its source. Due to the fact
+   // that the upgrade is asynchronous, the call is being skipped,
+   // so we call it inside setTimeout()
+   HTMLMediaElement.prototype.play = function() {
+      const thiz = this;
+      return new Promise((resolve, reject) => {
+         setTimeout(() => {
+            thiz.play().then(resolve).catch(reject);
+         }, 0);
+      });
+   };
+
    function addSourceSetterIntercept() {
       const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "src");
       const setAttribute = HTMLMediaElement.prototype.setAttribute;
