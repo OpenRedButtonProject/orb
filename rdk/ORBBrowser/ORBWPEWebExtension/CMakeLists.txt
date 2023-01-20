@@ -59,7 +59,7 @@ set(POLLYFILL_JS_FILES
 )
 
 add_custom_command(OUTPUT ${POLLYFILL_JS_FILES}
-                   COMMAND make WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../../
+                   COMMAND ORB_NATIVE=rdk make WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../../
                    COMMENT "Creating polyfill objects")
 
 add_custom_target(polyfill_js ALL DEPENDS ${POLLYFILL_JS_FILES})

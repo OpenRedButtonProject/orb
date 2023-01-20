@@ -56,6 +56,7 @@ task unzipLibwebsockets(type: Copy) {
 
 task makePolyfill(type: Exec) {
     workingDir "${projectDir}/../../"
+    environment "ORB_NATIVE", "android"
     commandLine "make"
 }
 

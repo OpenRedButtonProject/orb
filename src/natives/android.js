@@ -5,11 +5,8 @@
  * the top level of this repository.
  */
 
-hbbtv.nativeManager.registerNative({
+hbbtv.native = {
     name: 'android',
-    isNative: function() {
-        return navigator.userAgent.indexOf('Android') !== -1;
-    },
     initialise: function() {
         this.token = Object.assign({}, document.token);
     },
@@ -50,4 +47,4 @@ hbbtv.nativeManager.registerNative({
         }
         return false;
     },
-});
+};

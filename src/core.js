@@ -7,7 +7,7 @@
 
 hbbtv.core = (function() {
     function initialise() {
-        hbbtv.nativeManager.initialise();
+        hbbtv.native.initialise();
         hbbtv.bridge.initialise();
         hbbtv.objectManager.initialise();
         hbbtv.orbDebug.polyfill();
