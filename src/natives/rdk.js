@@ -1,13 +1,9 @@
 // RDK/Linux native
-hbbtv.nativeManager.registerNative({
+hbbtv.native = {
     name: "rdk",
-    isNative: function() {
-        return navigator.userAgent.indexOf("WPE") !== -1;
-    },
     initialise: function() {
         this.token = Object.assign({}, document.token);
     },
-
     request: function(method, params) {
         const body = {
            token: this.token,
@@ -45,4 +41,4 @@ hbbtv.nativeManager.registerNative({
       }
       return false;
     }
-});
+};
