@@ -105,7 +105,7 @@ hbbtv.holePuncher = (function() {
    function startPunchHole(object) {
       object.setAttribute("noshade", true);
       if (hbbtv.native.name === "rdk") {
-         let video = document.createElement('video');
+         let video = hbbtv.objectManager.createRdkVideoElement();
          let source = document.createElement('source');
          video.setAttribute("style", "transform: scale(1); width:100%; height:100%");
          video.setAttribute("id", "vid_elem");

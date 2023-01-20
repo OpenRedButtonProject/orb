@@ -274,6 +274,11 @@ static void OnPageUriChanged(WebKitWebPage *webPage, GParamSpec *pspec, WebKitWe
    ORB_LOG("Whitelisting dvb URLs for origin: %s", webkit_security_origin_to_string(origin));
    webkit_web_extension_add_origin_access_whitelist_entry(s_orbWpeWebExtension, origin, "dvb", "", true);
 
+   WebKitSecurityOrigin *originReverse = webkit_security_origin_new_for_uri("orb://player");
+   ORB_LOG("Whitelisting orb URLs for origin: %s", webkit_security_origin_to_string(originReverse));
+   webkit_web_extension_add_origin_access_whitelist_entry(s_orbWpeWebExtension, originReverse, "http", "", true);
+   webkit_web_extension_add_origin_access_whitelist_entry(s_orbWpeWebExtension, originReverse, "https", "", true);
+
    if (s_orbClient)
    {
       s_orbClient->NotifyApplicationPageChanged(pageUri);

@@ -205,9 +205,17 @@ hbbtv.objectManager = (function() {
          };
       }
    }
+   
+   function createRdkVideoElement() {
+      console.log ("[RDK] Creating video element for holepunch");
+      const video = __createElement.call(document, 'video');
+      video._rdkHolepunch = true;
+      return video;
+   }
 
    return {
       initialise: initialise,
-      registerObject: registerObject
+      registerObject: registerObject,
+      createRdkVideoElement: createRdkVideoElement
    };
 })();

@@ -2273,6 +2273,7 @@ private:
       }
 
       ORBWPEWebExtensionHelper::GetSharedInstance().RegisterDVBURLSchemeHandler(context);
+      ORBWPEWebExtensionHelper::GetSharedInstance().RegisterORBURLSchemeHandler(context);
 
       if (_config.InjectedBundle.Value().empty() == false)
       {
