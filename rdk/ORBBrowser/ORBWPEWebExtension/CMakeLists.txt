@@ -52,29 +52,21 @@ if(NOT DEFINED JAVASCRIPT_PAYLOAD_PATH)
 endif()
 
 set(POLLYFILL_JS_FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../out/resources/assets/polyfill/iframe.js"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../out/resources/assets/polyfill/hbbtv.js"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../out/resources/assets/polyfill/dash.all.min.js"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../out/resources/assets/polyfill/playerpage.html"
 )
-
-set(POLLYFILL_JS_FILE_ALL_IN_ONE
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../../out/resources/assets/polyfill/injection.js")
-
-file(WRITE ${POLLYFILL_JS_FILE_ALL_IN_ONE} "")
 
 add_custom_command(OUTPUT ${POLLYFILL_JS_FILES}
                    COMMAND make WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../../
                    COMMENT "Creating polyfill objects")
 
-add_custom_command(OUTPUT ${POLLYFILL_JS_FILE_ALL_IN_ONE}
-                   COMMAND cat ${POLLYFILL_JS_FILES} >> ${POLLYFILL_JS_FILE_ALL_IN_ONE}
-                   COMMENT "Creating concat polyfill file"
-                   DEPENDS ${POLLYFILL_JS_FILES})
-
-add_custom_target(polyfill_js ALL DEPENDS ${POLLYFILL_JS_FILES} ${POLLYFILL_JS_FILE_ALL_IN_ONE})
+add_custom_target(polyfill_js ALL DEPENDS ${POLLYFILL_JS_FILES})
 
 install(DIRECTORY 
    DESTINATION ${JAVASCRIPT_PAYLOAD_PATH}
 )
 
-install(PROGRAMS ${POLLYFILL_JS_FILE_ALL_IN_ONE} DESTINATION ${JAVASCRIPT_PAYLOAD_PATH})
+install(PROGRAMS ${POLLYFILL_JS_FILES} DESTINATION ${JAVASCRIPT_PAYLOAD_PATH})
 

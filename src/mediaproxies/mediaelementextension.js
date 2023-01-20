@@ -430,5 +430,7 @@ hbbtv.objects.MediaElementExtension = (function() {
 })();
 
 hbbtv.objects.upgradeMediaElement = function(media) {
-    hbbtv.objects.MediaElementExtension.initialise.call(media);
+    if (!media._rdkHolepunch) {
+        hbbtv.objects.MediaElementExtension.initialise.call(media);
+    }
 };

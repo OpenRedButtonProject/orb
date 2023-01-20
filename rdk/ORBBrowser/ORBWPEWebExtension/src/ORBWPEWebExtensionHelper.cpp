@@ -19,9 +19,17 @@ using namespace orb;
 #include <sys/mman.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <string>
+#include <fstream>
+#include <streambuf>
 
-// Full path of the ORB JavaScript to be injected
-#define ORB_INJECTION_JS_PATH "/usr/share/WPEFramework/ORBBrowser/injection.js"
+// JavaScript files to be injected
+#define ORB_HBBTV_JS_PATH  "/usr/share/WPEFramework/ORBBrowser/hbbtv.js"
+#define ORB_IFRAME_JS_PATH "/usr/share/WPEFramework/ORBBrowser/iframe.js"
+#define ORB_DASH_JS_PATH   "/usr/share/WPEFramework/ORBBrowser/dash.all.min.js"
+
+// HTML player page to be returned for ORB URI scheme requests
+#define ORB_PLAYER_PAGE_PATH "/usr/share/WPEFramework/ORBBrowser/playerpage.html"
 
 // Home directory of the ORB WPE web extension
 #define ORB_WPE_WEB_EXTENSION_HOME "/usr/lib/orb"
@@ -32,6 +40,21 @@ static std::condition_variable cv;
 
 // Map of currently active DVB URL loaders
 static std::map<int, std::shared_ptr<ORBDVBURILoader> > s_dvbUriLoaders;
+
+/**
+ * Read the specified file contents into a string buffer.
+ *
+ * @param filePath The absolute file path
+ *
+ * @return The string buffer
+ */
+static std::string ReadFileContentsIntoString(std::string filePath)
+{
+    std::ifstream inputFileStream(filePath);
+    std::string buffer((std::istreambuf_iterator<char>(inputFileStream)),
+                       std::istreambuf_iterator<char>());
+    return buffer;
+}
 
 /**
  * Read the available Dsmcc file from the shared memory.
@@ -148,6 +171,65 @@ static void HandleDVBURISchemeRequest(WebKitURISchemeRequest *request, gpointer 
     requestId++;
 }
 
+/**
+ * Handle the specified ORB URI scheme request.
+ *
+ * @param request  The ORB URI scheme request
+ * @param userData The user data or nullptr
+ */
+static void HandleORBURISchemeRequest(WebKitURISchemeRequest *request, gpointer userData)
+{
+    std::string uri(webkit_uri_scheme_request_get_uri(request));
+    ORB_LOG("uri=%s", uri.c_str());
+
+    // Return immediately if request URI does not start with orb://player
+    if (uri.rfind("orb://player", 0) != 0)
+    {
+        std::string errorDescription = "The given ORB URI does not start with 'orb://player'";
+        ORB_LOG("%s", errorDescription.c_str());
+        GError *error = g_error_new(g_quark_from_string(uri.c_str()), 0, errorDescription.c_str());
+        webkit_uri_scheme_request_finish_error(request, error);
+        g_error_free(error);
+        return;
+    }
+
+    // Read playerpage.html
+    std::string playerPageHtml = ReadFileContentsIntoString(ORB_PLAYER_PAGE_PATH);
+
+    // Read iframe.js
+    std::string iframeJs = "<script type=\"text/javascript\">\n//<![CDATA[\n";
+    iframeJs.append(ReadFileContentsIntoString(ORB_IFRAME_JS_PATH));
+    iframeJs.append("\n//]]>\n</script>");
+
+    // Read dash.all.min.js
+    std::string dashJs = "<script type=\"text/javascript\">\n//<![CDATA[\n";
+    dashJs.append(ReadFileContentsIntoString(ORB_DASH_JS_PATH));
+    dashJs.append("\n//]]>\n</script>");
+
+    std::string::size_type pos = playerPageHtml.find("</head>");
+    std::string playerPageHtmlStart = playerPageHtml.substr(0, pos);
+    std::string playerPageHtmlEnd = playerPageHtml.substr(pos, std::string::npos);
+
+    // Construct response
+    std::string response;
+    response.append(playerPageHtmlStart);
+    response.append("\n");
+    response.append(iframeJs);
+    response.append("\n");
+    response.append(dashJs);
+    response.append("\n");
+    response.append(playerPageHtmlEnd);
+
+    // Finish request with response
+    const gchar *mimeType = "text/html";
+    GInputStream *stream = nullptr;
+    char *data = (char *) malloc(sizeof(char) * response.length());
+    memmove(data, response.c_str(), response.length());
+    stream = g_memory_input_stream_new_from_data((const void *)data, response.length(), free);
+    webkit_uri_scheme_request_finish(request, stream, response.length(), mimeType);
+    g_object_unref(stream);
+}
+
 namespace orb
 {
 /**
@@ -198,7 +280,7 @@ WebKitUserContentManager * ORBWPEWebExtensionHelper::CreateWebKitUserContentMana
     webkit_user_content_manager_remove_all_scripts(userContentManager);
     gchar *source = nullptr;
     WebKitUserScript *script = nullptr;
-    if (g_file_get_contents(ORB_INJECTION_JS_PATH, &source, NULL, NULL))
+    if (g_file_get_contents(ORB_HBBTV_JS_PATH, &source, NULL, NULL))
     {
         script = webkit_user_script_new(
             source,
@@ -228,6 +310,22 @@ void ORBWPEWebExtensionHelper::RegisterDVBURLSchemeHandler(WebKitWebContext *con
 
     webkit_web_context_register_uri_scheme(context, "dvb",
         (WebKitURISchemeRequestCallback) HandleDVBURISchemeRequest, nullptr, nullptr);
+}
+
+/**
+ * Register the ORB URL scheme handler.
+ *
+ * @param context Pointer to the WebKit web context
+ */
+void ORBWPEWebExtensionHelper::RegisterORBURLSchemeHandler(WebKitWebContext *context)
+{
+    ORB_LOG_NO_ARGS();
+
+    WebKitSecurityManager *securityManager = webkit_web_context_get_security_manager(context);
+    webkit_security_manager_register_uri_scheme_as_cors_enabled(securityManager, "orb");
+
+    webkit_web_context_register_uri_scheme(context, "orb",
+        (WebKitURISchemeRequestCallback) HandleORBURISchemeRequest, nullptr, nullptr);
 }
 
 /**

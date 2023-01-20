@@ -165,15 +165,23 @@ hbbtv.objects.NativeProxy = (function() {
             };
 
             if (hbbtv.native.name === 'rdk') {
+                console.log(this.error);
                 switch (this.error.code) {
-                    case 3: // This file contains no playable streams
-                        data.code = 4;
+                    case MediaError.MEDIA_ERR_DECODE:
+                        data.code = 4; // content corrupt or invalid
                         break;
-                    case 4: // Connection Timeout
-                        data.code = 1;
+                    case MediaError.MEDIA_ERR_NETWORK:
+                        data.code = 1; // cannot connect to server or connection lost
+                        break;
+                    case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                        if (this.error.message === 'R1: Could not connect: Connection timed out') {
+                            data.code = 1; // cannot connect to server or connection lost
+                        } else {
+                            data.code = 0; // A/V format not supported
+                        }
                         break;
                     default:
-                        data.code = 2;
+                        data.code = 2; // unidentified error
                         break;
                 }
             } else {
@@ -279,10 +287,10 @@ hbbtv.mediaManager.registerObject({
     },
     // TODO: add more extensions
     getSupportedExtensions: function() {
-        return ['mp4', 'mp3', 'wav'];
+        return ['mp4', 'mp3', 'wav', 'mpeg'];
     },
     // TODO: add more content types
     getSupportedContentTypes: function() {
-        return ['video/mp4', 'audio/mp4', 'audio/mpeg'];
+        return ['video/mp4', 'audio/mp4', 'audio/mpeg', 'video/mpeg'];
     },
 });
