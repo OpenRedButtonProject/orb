@@ -135,6 +135,7 @@ hbbtv.utils = (function() {
             thiz.style.left = rect.left;
             thiz.style.top = rect.top;
             thiz.style.margin = 0;
+            thiz.style.position = "absolute";
          }
       }
    }
