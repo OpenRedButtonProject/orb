@@ -164,14 +164,14 @@ hbbtv.mediaManager = (function() {
       const MEDIA_KEYS_ID = "MediaKeys";
       const MEDIA_KEY_SESSION_ID = "MediaKeySession";
       mediaProxy.registerObserver(MEDIA_PROXY_ID, media);
-      let _mediaKeys;
 
       const audioTracks = hbbtv.objects.createAudioTrackList(mediaProxy);
       const videoTracks = hbbtv.objects.createVideoTrackList(mediaProxy);
       const textTracks = hbbtv.objects.createTextTrackList(media, mediaProxy);
 
       media.setMediaKeys = function(mediaKeys) {
-         return navigator.requestMediaKeySystemAccess(mediaKeys.keySystem, mediaKeys.config)
+         let _mediaKeys;
+         return navigator.requestMediaKeySystemAccess(mediaKeys.mediaKeySystemAccess.keySystem, mediaKeys.mediaKeySystemAccess.configuration)
          .then(mediaKeySystemAccess => mediaKeySystemAccess.createMediaKeys())
          .then(keys => {
             _mediaKeys = keys;

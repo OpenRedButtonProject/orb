@@ -8,57 +8,13 @@
 hbbtv.objects.MediaElementExtension = (function() {
    const privates = new WeakMap();
    const MEDIA_PROXY_ID = "HTMLMediaElement";
-   const MEDIA_KEYS_ID = "MediaKeys";
-   const MEDIA_KEY_SESSION_ID = "MediaKeySession";
    const props = ["autoplay", "controls", "currentTime", "playbackRate", "volume", "muted", "loop", "defaultMuted", "crossOrigin", "controlsList",
       "defaultPlaybackRate", "disableRemotePlayback", "preservesPitch", "srcObject"
    ];
 
    if (Navigator.prototype.requestMediaKeySystemAccess) {
-      function MediaKeySession(proxy) {
-         let _proxy = proxy;
-         _proxy.registerObserver(MEDIA_KEY_SESSION_ID, this);
-
-         this.generateRequest = function(initDataType, initData) {
-            return _proxy.callAsyncObserverMethod(MEDIA_KEY_SESSION_ID, "generateRequest", [initDataType, [...new Uint8Array(initData)]]);
-         };
-         this.addEventListener = function(){};
-      }
-      function MediaKeys(mediaKeySystemAccess) {
-         let _proxy;
-         this.createSession = function() {
-            _proxy.callObserverMethod(MEDIA_KEYS_ID, "createSession");
-            return new MediaKeySession(_proxy);
-         };
-         this.setServerCertificate = function() {
-         };
-         this.orb_setIFrameProxy = function (proxy) {
-            _proxy = proxy;
-            _proxy.registerObserver(MEDIA_KEYS_ID, this);
-         }
-         this.toJSON = function() {
-            return mediaKeySystemAccess.toJSON();
-         }
-      }
-      function MediaKeySystemAccess(keySystem, config) {
-         Object.freeze(config);
-         Object.defineProperty(this, "keySystem", {
-            value: keySystem,
-            writable: false
-         });
-         this.createMediaKeys = function () {
-            return Promise.resolve(new MediaKeys());
-         };
-         this.getConfiguration = function () {
-            return config;
-         };
-
-         this.toJSON = function() {
-            return {keySystem, config};
-         };
-      }
       Navigator.prototype.requestMediaKeySystemAccess = function() {
-         return Promise.resolve(new MediaKeySystemAccess(arguments));
+         return Promise.resolve(hbbtv.objects.createMediaKeySystemAccess.apply(undefined, arguments));
       }
    }
 

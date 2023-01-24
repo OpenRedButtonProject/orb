@@ -74,6 +74,9 @@ src/objects/mediasync/mediaelementtsclient.js \
 src/objects/csmanager.js \
 src/mediaproxies/mediaerror.js \
 src/mediaproxies/timeranges.js \
+src/mediaproxies/eme/mediakeysystemaccess.js \
+src/mediaproxies/eme/mediakeys.js \
+src/mediaproxies/eme/mediakeysession.js \
 src/mediaproxies/iframeobjectproxy.js \
 src/mediaproxies/mediaelementextension.js \
 src/run.js \
