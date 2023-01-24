@@ -161,11 +161,34 @@ hbbtv.mediaManager = (function() {
 
    function registerObservers(media) {
       const MEDIA_PROXY_ID = "HTMLMediaElement";
+      const MEDIA_KEYS_ID = "MediaKeys";
+      const MEDIA_KEY_SESSION_ID = "MediaKeySession";
       mediaProxy.registerObserver(MEDIA_PROXY_ID, media);
+      let _mediaKeys;
 
       const audioTracks = hbbtv.objects.createAudioTrackList(mediaProxy);
       const videoTracks = hbbtv.objects.createVideoTrackList(mediaProxy);
       const textTracks = hbbtv.objects.createTextTrackList(media, mediaProxy);
+
+      media.setMediaKeys = function(mediaKeys) {
+         return navigator.requestMediaKeySystemAccess(mediaKeys.keySystem, mediaKeys.config)
+         .then(mediaKeySystemAccess => mediaKeySystemAccess.createMediaKeys())
+         .then(keys => {
+            _mediaKeys = keys;
+            _mediaKeys.createSession = function() {
+               const session = MediaKeys.prototype.createSession.apply(this, arguments);
+               mediaProxy.registerObserver(MEDIA_KEY_SESSION_ID, session);
+               session.generateRequest = function(initDataType, initData) {
+                  return MediaKeySession.prototype.call(this, initDataType, new Uint8Array(initData).buffer);
+               };
+               return session;
+            };
+            return HTMLMediaElement.prototype.call(media, keys)
+         })
+         .then(() => {
+            mediaProxy.registerObserver(MEDIA_KEYS_ID, _mediaKeys);
+         });
+      };
 
       Object.defineProperty(media, "audioTracks", {
          value: audioTracks,
