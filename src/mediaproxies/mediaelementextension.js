@@ -182,15 +182,17 @@ hbbtv.objects.MediaElementExtension = (function() {
       Object.defineProperty(prototype, "src", {
          set(value) {
             const p = privates.get(this);
-            p.videoDummy.src = value;
-            if (value) {
-               console.log("MediaElementExtension: Setting iframe src property to '" + value + "'.");
-               resetProxySession.call(this);
-               p.iframe.src = ORB_PLAYER_URL + "?base=" + document.baseURI;
-            } else {
-               p.iframeProxy.updateObserverProperties(MEDIA_PROXY_ID, {
-                  src: value
-               });
+            if (value !== p.videoDummy.src) {
+               p.videoDummy.src = value;
+               if (value) {
+                  console.log("MediaElementExtension: Setting iframe src property to '" + value + "'.");
+                  resetProxySession.call(this);
+                  p.iframe.src = ORB_PLAYER_URL + "?base=" + document.baseURI;
+               } else {
+                  p.iframeProxy.updateObserverProperties(MEDIA_PROXY_ID, {
+                     src: value
+                  });
+               }
             }
          },
          get() {
@@ -347,14 +349,8 @@ hbbtv.objects.MediaElementExtension = (function() {
                   this.removeAttribute(key);
                }
             }
-            if (!initialProps.src) {
-               for (const node of this.children) {
-                  if (node.nodeName && node.nodeName.toLowerCase() === "source") {
-                     initialProps.src = node.src;
-                     break;
-                  }
-               }
-            }
+            initialProps.src = src;
+               
             initialProps.innerHTML = this.innerHTML;
             this.innerHTML = "";
 
