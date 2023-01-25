@@ -38,7 +38,11 @@ hbbtv.objects.NativeProxy = (function() {
       this.load();
    };
 
-   function onLoadedMetadata() {
+   function onLoadedMetadata(e) {
+      if (e.orb_handled) {
+         return;
+      }
+      e.stopImmediatePropagation();
       let promises = [];
       const thiz = this;
       const p = privates.get(this);
@@ -110,7 +114,11 @@ hbbtv.objects.NativeProxy = (function() {
             p.onVideoTrackChange();
          })
          .catch(e => {
-            console.warn("NativeProxy: Failed to populate texttracks. Error:", e)
+            console.warn("NativeProxy: Failed to populate texttracks. Error:", e);
+         })
+         .finally(() => {
+            e.orb_handled = true;
+            thiz.dispatchEvent(e);
          });
 
       const videoOwnProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "videoTracks");
