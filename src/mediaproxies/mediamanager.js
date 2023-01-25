@@ -181,6 +181,9 @@ hbbtv.mediaManager = (function() {
                session.generateRequest = function(initDataType, initData) {
                   return MediaKeySession.prototype.call(this, initDataType, new Uint8Array(initData).buffer);
                };
+               session.onmessage = session.onkeystatuseschange = (e) => {
+                  mediaProxy.dispatchEvent(MEDIA_KEY_SESSION_ID, e);
+               }
                return session;
             };
             return HTMLMediaElement.prototype.call(media, keys)
