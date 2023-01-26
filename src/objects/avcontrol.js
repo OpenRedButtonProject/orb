@@ -898,7 +898,6 @@ hbbtv.objects.AVControl = (function() {
          hbbtv.utils.insertAfter(this.parentNode, videoElement, this);
          hbbtv.utils.matchElementStyle(videoElement, this);
       }
-      hbbtv.objects.upgradeMediaElement(videoElement);
 
       // parse param nodes and store their values
       priv.params = {};
