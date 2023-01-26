@@ -554,7 +554,7 @@ hbbtv.objects.DashProxy = (function() {
       const player = privates.get(this).player;
       for (let i = 0; i < this.videoTracks.length; ++i) {
          if (this.videoTracks[i].selected) {
-            let nextTrack = p.player.getTracksFor('video').find(track => track.index === this.videoTracks[i].index);
+            let nextTrack = player.getTracksFor('video').find(track => track.index === this.videoTracks[i].index);
             if (player.getCurrentTrackFor('video') !== nextTrack) {
                player.setCurrentTrack(nextTrack);
             }
