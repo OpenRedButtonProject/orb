@@ -60,12 +60,6 @@ hbbtv.objectManager = (function() {
                 upgradeObject(object, object.getAttribute('type'));
             }
         }
-        for (const object of target.getElementsByTagName('video')) {
-            hbbtv.objects.upgradeMediaElement(object);
-        }
-        for (const object of target.getElementsByTagName('audio')) {
-            hbbtv.objects.upgradeMediaElement(object);
-        }
     }
 
     function upgradeObject(object, mimeType) {
@@ -144,9 +138,6 @@ hbbtv.objectManager = (function() {
 
         document.createElement = function(tagname, options) {
             let element = __createElement.apply(document, arguments);
-            if (tagname === 'video' || tagname === 'audio') {
-                hbbtv.objects.upgradeMediaElement(element);
-            }
             return element;
         };
     }
