@@ -12,6 +12,48 @@ hbbtv.objects.MediaElementExtension = (function() {
       "defaultPlaybackRate", "disableRemotePlayback", "preservesPitch", "srcObject"
    ];
 
+   if (Navigator.prototype.requestMediaKeySystemAccess) {
+      Navigator.prototype.requestMediaKeySystemAccess = function() {
+         return Promise.resolve(hbbtv.objects.createMediaKeySystemAccess.apply(undefined, arguments));
+      }
+   }
+
+   HTMLMediaElement.prototype.orb_unload = function() {};
+
+   // Override default play() for the case where it is being called
+   // immediatelly after setting its source. Due to the fact
+   // that the upgrade is asynchronous, the call is being skipped,
+   // so we call it inside setTimeout()
+   HTMLMediaElement.prototype.play = function() {
+      const thiz = this;
+      return new Promise((resolve, reject) => {
+         setTimeout(() => {
+            thiz.play().then(resolve).catch(reject);
+         }, 0);
+      });
+   };
+
+   function addSourceSetterIntercept() {
+      const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "src");
+      const setAttribute = HTMLMediaElement.prototype.setAttribute;
+      Object.defineProperty(HTMLMediaElement.prototype, "src", {
+         set(val) {
+            this.setAttribute("src", val);
+         },
+         get() {
+            return ownProperty.get.call(this);
+         }
+      });
+
+      HTMLMediaElement.prototype.setAttribute = function(name, value) {
+         if (name === "src" && initialise.call(this, value)) {
+            this.src = value;
+            return;
+         }
+         return setAttribute.apply(this, arguments);
+      };
+   }
+
    function createPrototype() {
       const ORB_PLAYER_URL = "orb://player";
       const prototype = Object.create(HTMLMediaElement.prototype);
@@ -64,6 +106,11 @@ hbbtv.objects.MediaElementExtension = (function() {
             lastMediaElement = this;
          }
          return privates.get(this).iframeProxy.callAsyncObserverMethod(MEDIA_PROXY_ID, "play");
+      };
+
+      prototype.setMediaKeys = function(mediaKeys) {
+         mediaKeys.orb_setIFrameProxy(privates.get(this).iframeProxy);
+         return privates.get(this).iframeProxy.callAsyncObserverMethod(MEDIA_PROXY_ID, "setMediaKeys", [mediaKeys]);
       };
 
       prototype.appendChild = function(node) {
@@ -135,15 +182,17 @@ hbbtv.objects.MediaElementExtension = (function() {
       Object.defineProperty(prototype, "src", {
          set(value) {
             const p = privates.get(this);
-            p.videoDummy.src = value;
-            if (value) {
-               console.log("MediaElementExtension: Setting iframe src property to '" + value + "'.");
-               resetProxySession.call(this);
-               p.iframe.src = ORB_PLAYER_URL + "?base=" + document.baseURI;
-            } else {
-               p.iframeProxy.updateObserverProperties(MEDIA_PROXY_ID, {
-                  src: value
-               });
+            if (value !== p.videoDummy.src) {
+               p.videoDummy.src = value;
+               if (value) {
+                  console.log("MediaElementExtension: Setting iframe src property to '" + value + "'.");
+                  resetProxySession.call(this);
+                  p.iframe.src = ORB_PLAYER_URL + "?base=" + document.baseURI;
+               } else {
+                  p.iframeProxy.updateObserverProperties(MEDIA_PROXY_ID, {
+                     src: value
+                  });
+               }
             }
          },
          get() {
@@ -207,8 +256,19 @@ hbbtv.objects.MediaElementExtension = (function() {
                }
             }
             for (const node of mutation.addedNodes) {
-               if (node.nodeName && (node.nodeName.toLowerCase() === "video" || node.nodeName.toLowerCase() === "audio")) {
-                  hbbtv.objects.upgradeMediaElement(node);
+               if (node.nodeName) {
+                  if (node.nodeName.toLowerCase() === "video" || node.nodeName.toLowerCase() === "audio") {
+                     if (!initialise.call(node, node.src)) {
+                        for (const child of node.children) {
+                           if (child.nodeName && child.nodeName.toLowerCase() === "source" && initialise.call(node, child.src)) {
+                              break;
+                           }
+                        }
+                     }
+                  }
+                  else if (node.nodeName.toLowerCase() === "source" && node.parentNode && node.parentNode.nodeName && (node.parentNode.nodeName.toLowerCase() === "video" || node.parentNode.nodeName.toLowerCase() === "audio")) {
+                     initialise.call(node.parentNode, node.src);
+                  }
                }
             }
          }
@@ -220,6 +280,7 @@ hbbtv.objects.MediaElementExtension = (function() {
       observer.observe(document.documentElement || document.body, config);
    }
 
+   addSourceSetterIntercept();
    addDocumentMutationIntercept();
    const prototype = createPrototype();
 
@@ -263,117 +324,106 @@ hbbtv.objects.MediaElementExtension = (function() {
       });
    }
 
-   function initialise() {
-      let p = privates.get(this);
-      if (!p) {
-         const thiz = this;
-         const iframeProxy = hbbtv.objects.createIFrameObjectProxy();
-         const videoDummy = new VideoDummy(this, iframeProxy);
+   function initialise(src) {
+      if (src && !src.startsWith("blob:") && !this._rdkHolepunch) {
+         let p = privates.get(this);
+         if (!p) {
+            const thiz = this;
+            const iframeProxy = hbbtv.objects.createIFrameObjectProxy();
+            const videoDummy = new VideoDummy(this, iframeProxy);
 
-         // will be used as a placeholder to store the attributes of
-         // the original video element, and after the custom prototype
-         // is set, update all the stored properties with the original
-         // values
-         const initialProps = {};
+            // will be used as a placeholder to store the attributes of
+            // the original video element, and after the custom prototype
+            // is set, update all the stored properties with the original
+            // values
+            const initialProps = {};
 
-         // will be used to intercept child addition/removal of
-         // the actual video element
-         const divDummy = document.createElement("div");
+            // will be used to intercept child addition/removal of
+            // the actual video element
+            const divDummy = document.createElement("div");
 
-         // extract attributes and reset them before setting the custom prototype
-         for (const key of this.getAttributeNames()) {
-            if (props.includes(key)) {
-               initialProps[key] = this.getAttribute(key) || true;
-               this.removeAttribute(key);
-            }
-         }
-         if (!initialProps.src) {
-            for (const node of this.children) {
-               if (node.nodeName && node.nodeName.toLowerCase() === "source") {
-                  initialProps.src = node.src;
-                  break;
+            // extract attributes and reset them before setting the custom prototype
+            for (const key of this.getAttributeNames()) {
+               if (props.includes(key)) {
+                  initialProps[key] = this.getAttribute(key) || true;
+                  this.removeAttribute(key);
                }
             }
-         }
-         initialProps.innerHTML = this.innerHTML;
-         this.innerHTML = "";
+            initialProps.src = src;
+               
+            initialProps.innerHTML = this.innerHTML;
+            this.innerHTML = "";
 
-         Object.setPrototypeOf(this, prototype);
-         privates.set(this, {
-            videoDummy,
-            divDummy,
-            iframeProxy,
-            iframe: document.createElement("iframe")
-         });
-
-         p = privates.get(this);
-         iframeProxy.registerObserver(MEDIA_PROXY_ID, videoDummy);
-
-         p.iframe.frameBorder = 0;
-         p.iframe.addEventListener("load", () => {
-            if (thiz.src) {
-               console.log("MediaElementExtension: initialising iframe with src", thiz.src + "...");
-
-               iframeProxy.initiateHandshake(p.iframe.contentWindow)
-                  .then(() => {
-                     console.log("MediaElementExtension: iframe proxy handshake completed successfully");
-                  });
-            }
-         });
-
-         // whenever there is a change on the video element style,
-         // update the iframe style as well
-         const styleObserver = new MutationObserver(function() {
-            hbbtv.utils.matchElementStyle(p.iframe, thiz);
-         });
-         styleObserver.observe(this, {
-            attributes: true,
-            attributeFilter: ["style"]
-         });
-
-         // whenever there is a change in the childList of the divDummy,
-         // check if the added/removed child is <source>, and if so
-         // set/unset the iframe's src property
-         const childListObserver = new MutationObserver(function(mutationsList) {
-            for (const mutation of mutationsList) {
-               for (const node of mutation.removedNodes) {
-                  if (node.nodeName && node.nodeName.toLowerCase() === "source") {
-                     thiz.removeAttribute("src");
-                  }
-               }
-               for (const node of mutation.addedNodes) {
-                  if (node.nodeName && node.nodeName.toLowerCase() === "source" && !thiz.src) {
-                     thiz.src = node.src;
-                  }
-               }
-            }
-            iframeProxy.updateObserverProperties(MEDIA_PROXY_ID, {
-               innerHTML: divDummy.innerHTML
+            Object.setPrototypeOf(this, prototype);
+            privates.set(this, {
+               videoDummy,
+               divDummy,
+               iframeProxy,
+               iframe: document.createElement("iframe")
             });
-         });
-         childListObserver.observe(divDummy, {
-            childList: true
-         });
 
-         // update the new prototype with the values stored in initialProps
-         for (const prop in initialProps) {
-            this[prop] = initialProps[prop];
+            p = privates.get(this);
+            iframeProxy.registerObserver(MEDIA_PROXY_ID, videoDummy);
+
+            p.iframe.frameBorder = 0;
+            p.iframe.addEventListener("load", () => {
+               if (thiz.src) {
+                  console.log("MediaElementExtension: initialising iframe with src", thiz.src + "...");
+
+                  iframeProxy.initiateHandshake(p.iframe.contentWindow)
+                     .then(() => {
+                        console.log("MediaElementExtension: iframe proxy handshake completed successfully");
+                     });
+               }
+            });
+
+            // whenever there is a change on the video element style,
+            // update the iframe style as well
+            const styleObserver = new MutationObserver(function() {
+               hbbtv.utils.matchElementStyle(p.iframe, thiz);
+            });
+            styleObserver.observe(this, {
+               attributes: true,
+               attributeFilter: ["style"]
+            });
+
+            // whenever there is a change in the childList of the divDummy,
+            // check if the added/removed child is <source>, and if so
+            // set/unset the iframe's src property
+            const childListObserver = new MutationObserver(function(mutationsList) {
+               for (const mutation of mutationsList) {
+                  for (const node of mutation.removedNodes) {
+                     if (node.nodeName && node.nodeName.toLowerCase() === "source") {
+                        thiz.removeAttribute("src");
+                     }
+                  }
+                  for (const node of mutation.addedNodes) {
+                     if (node.nodeName && node.nodeName.toLowerCase() === "source" && !thiz.src) {
+                        thiz.src = node.src;
+                     }
+                  }
+               }
+               iframeProxy.updateObserverProperties(MEDIA_PROXY_ID, {
+                  innerHTML: divDummy.innerHTML
+               });
+            });
+            childListObserver.observe(divDummy, {
+               childList: true
+            });
+
+            // update the new prototype with the values stored in initialProps
+            for (const prop in initialProps) {
+               this[prop] = initialProps[prop];
+            }
+            console.log("MediaElementExtension: initialised");
          }
-         console.log("MediaElementExtension: initialised");
+         if (this.parentNode && !p.iframe.parentNode) {
+            hbbtv.utils.insertAfter(this.parentNode, p.iframe, this);
+            hbbtv.utils.matchElementStyle(p.iframe, this);
+         }
+         return true;
       }
-      if (this.parentNode && !p.iframe.parentNode) {
-         hbbtv.utils.insertAfter(this.parentNode, p.iframe, this);
-         hbbtv.utils.matchElementStyle(p.iframe, this);
-      }
+      console.log("MediaElementExtension: failed to initialise");
+      return false;
    }
-
-   return {
-      initialise: initialise
-   };
 })();
-
-hbbtv.objects.upgradeMediaElement = function(media) {
-   if (!media._rdkHolepunch) {
-      hbbtv.objects.MediaElementExtension.initialise.call(media);
-   }
-};

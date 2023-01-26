@@ -38,7 +38,11 @@ hbbtv.objects.NativeProxy = (function() {
       this.load();
    };
 
-   function onLoadedMetadata() {
+   function onLoadedMetadata(e) {
+      if (e.orb_handled) {
+         return;
+      }
+      e.stopImmediatePropagation();
       let promises = [];
       const thiz = this;
       const p = privates.get(this);
@@ -76,14 +80,15 @@ hbbtv.objects.NativeProxy = (function() {
          textTrackInfo.labels = trackElement.label;
          textTrackInfo.isFragmented = false;
 
-         const ext = trackElement.src.split('.').pop();
+         let src = trackElement.getAttribute("src");
+         const ext = src.split('.').pop();
          if (ext === 'ttml' || ext === 'xml') {
             promises.push(new Promise((resolve, reject) => {
                const xhr = new XMLHttpRequest();
                xhr.onreadystatechange = function() {
                   if (xhr.readyState != XMLHttpRequest.DONE) return;
                   if (xhr.status !== 0 && xhr.status != 200 && xhr.status != 304) {
-                     reject("An error occurred when requesting the ttml source file '" + trackElement.src + "'.");
+                     reject("An error occurred when requesting the ttml source file '" + src + "'.");
                      return;
                   }
                   textTrackInfo.defaultTrack = trackElement.default;
@@ -91,7 +96,10 @@ hbbtv.objects.NativeProxy = (function() {
                   textTracks.addTextTrack(textTrackInfo);
                   resolve();
                }
-               xhr.open("GET", trackElement.src);
+               if (!src.startsWith("http")) {
+                  src = document.baseURI.substring(document.baseURI.indexOf("base=") + 5, document.baseURI.lastIndexOf("/") + 1) + src;
+               }
+               xhr.open("GET", src);
                xhr.send();
             }));
          }
@@ -106,7 +114,11 @@ hbbtv.objects.NativeProxy = (function() {
             p.onVideoTrackChange();
          })
          .catch(e => {
-            console.warn("NativeProxy: Failed to populate texttracks. Error:", e)
+            console.warn("NativeProxy: Failed to populate texttracks. Error:", e);
+         })
+         .finally(() => {
+            e.orb_handled = true;
+            thiz.dispatchEvent(e);
          });
 
       const videoOwnProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "videoTracks");
