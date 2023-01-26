@@ -252,7 +252,7 @@ hbbtv.mediaManager = (function() {
       media.addEventListener("play", propsUpdateCallback);
       media.addEventListener("ended", propsUpdateCallback);
       media.addEventListener("pause", propsUpdateCallback);
-      media.addEventListener("durationchanged", makeCallback("duration"));
+      media.addEventListener("durationchange", makeCallback("duration"));
       media.addEventListener("ratechange", makeCallback("playbackRate"));
       media.addEventListener("__orb_onplaybackRateChanged__", makeCallback("playbackRate"));
       media.addEventListener("volumechange", makeCallback("volume"));
