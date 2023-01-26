@@ -117,8 +117,9 @@ hbbtv.objects.NativeProxy = (function() {
             console.warn("NativeProxy: Failed to populate texttracks. Error:", e);
          })
          .finally(() => {
-            e.orb_handled = true;
-            thiz.dispatchEvent(e);
+            const evt = new Event(e.type, e);
+            evt.orb_handled = true;
+            thiz.dispatchEvent(evt);
          });
 
       const videoOwnProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "videoTracks");
