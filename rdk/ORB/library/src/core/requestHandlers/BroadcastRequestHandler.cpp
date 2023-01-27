@@ -145,17 +145,10 @@ bool BroadcastRequestHandler::Handle(
          bool trickPlay = params.value("trickplay", false);
          std::string contentAccessDescriptorURL = params.value("contentAccessDescriptorURL", "");
          bool quiet = params.value("quiet", 0);
-         Channel::ErrorState errorState = Channel::ErrorState::CHANNEL_ERROR_STATE_UNKNOWN_ERROR;
 
-         bool success =
+         response["result"] =
             ORBEngine::GetSharedInstance().GetORBPlatform()->
-            Broadcast_SetChannelToCcid(ccid, trickPlay, contentAccessDescriptorURL, quiet, &errorState);
-
-         response["success"] = success;
-         if (!success)
-         {
-            response["errorState"] = errorState;
-         }
+            Broadcast_SetChannelToCcid(ccid, trickPlay, contentAccessDescriptorURL, quiet);
       }
    }
    // Broadcast.setChannelToNull
@@ -170,17 +163,9 @@ bool BroadcastRequestHandler::Handle(
          bool trickPlay = params.value("trickplay", false);
          std::string contentAccessDescriptorURL = params.value("contentAccessDescriptorURL", "");
          bool quiet = params.value("quiet", 0);
-         Channel::ErrorState errorState = Channel::ErrorState::CHANNEL_ERROR_STATE_UNKNOWN_ERROR;
 
-         bool success =
-            ORBEngine::GetSharedInstance().GetORBPlatform()->
-            Broadcast_SetChannelToNull(trickPlay, contentAccessDescriptorURL, quiet, &errorState);
-
-         response["success"] = success;
-         if (!success)
-         {
-            response["errorState"] = errorState;
-         }
+         response["result"] =
+            ORBEngine::GetSharedInstance().GetORBPlatform()->Broadcast_SetChannelToNull();
       }
    }
    // Broadcast.setChannelToTriplet
@@ -201,28 +186,18 @@ bool BroadcastRequestHandler::Handle(
          bool trickPlay = params.value("trickplay", false);
          std::string contentAccessDescriptorURL = params.value("contentAccessDescriptorURL", "");
          bool quiet = params.value("quiet", 0);
-         Channel::ErrorState errorState = Channel::ErrorState::CHANNEL_ERROR_STATE_UNKNOWN_ERROR;
 
-         bool success =
-            ORBEngine::GetSharedInstance().GetORBPlatform()->
-            Broadcast_SetChannelToTriplet(
-               idType,
-               onid,
-               tsid,
-               sid,
-               sourceID,
-               ipBroadcastID,
-               trickPlay,
-               contentAccessDescriptorURL,
-               quiet,
-               &errorState
-               );
-
-         response["success"] = success;
-         if (!success)
-         {
-            response["errorState"] = errorState;
-         }
+         response["result"] = ORBEngine::GetSharedInstance().GetORBPlatform()->Broadcast_SetChannelToTriplet(
+            idType,
+            onid,
+            tsid,
+            sid,
+            sourceID,
+            ipBroadcastID,
+            trickPlay,
+            contentAccessDescriptorURL,
+            quiet
+            );
       }
    }
    // Broadcast.setChannelToDsd
@@ -239,14 +214,9 @@ bool BroadcastRequestHandler::Handle(
          bool trickPlay = params.value("trickplay", false);
          std::string contentAccessDescriptorURL = params.value("contentAccessDescriptorURL", "");
          bool quiet = params.value("quiet", 0);
-         Channel::ErrorState errorState = Channel::ErrorState::CHANNEL_ERROR_STATE_UNKNOWN_ERROR;
 
-         bool success = ORBEngine::GetSharedInstance().GetORBPlatform()->Broadcast_SetChannelToDsd(dsd, sid, trickPlay, contentAccessDescriptorURL, quiet, &errorState);
-         response["success"] = success;
-         if (!success)
-         {
-            response["errorState"] = errorState;
-         }
+         response["result"] = ORBEngine::GetSharedInstance().GetORBPlatform()->Broadcast_SetChannelToDsd(
+            dsd, sid, trickPlay, contentAccessDescriptorURL, quiet);
       }
    }
    // Broadcast.getProgrammes
