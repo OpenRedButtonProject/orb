@@ -98,8 +98,8 @@ bool ManagerRequestHandler::Handle(
     // Manager.searchOwner
     else if (method == MANAGER_SEARCH_OWNER)
     {
-        std::string owner = params[0];
-        response["uri"] = owner;
+        std::string owner = params["owner"];
+        response["result"] = owner;
     }
     // Manager.getFreeMem
     else if (method == MANAGER_GET_FREE_MEM)
