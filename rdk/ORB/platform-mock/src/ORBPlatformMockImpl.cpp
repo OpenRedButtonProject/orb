@@ -221,22 +221,25 @@ std::vector<Channel> ORBPlatformMockImpl::Broadcast_GetChannelList()
 }
 
 /**
- * Tune to the specified broadcast channel using ccid.
+ * Select the broadcast channel (e.g. tune) with the given CCID.
  *
- * @param ccid                       The ccid of the channel
- * @param trickplay                  <currently not supported>
- * @param contentAccessDescriptorURL <currently not supported>
- * @param quiet                      <currently not supported>
- * @param errorState                 Channel error state code, set only in case of failure
+ * Security: FOR_RUNNING_APP_ONLY.
  *
- * @return true in success, otherwise false
+ * @param ccid                         The CCID of the channel to set.
+ * @param trickplay                    True if the application has optionally hinted trickplay resources are
+ *                                     required; or false otherwise. Does not affect the success of this operation.
+ * @param contentAccessDescriptorURL   Optionally, additional information for DRM-protected IPTV
+ *                                     broadcasts; or an empty string otherwise.
+ * @param quiet                        Type of channel change: 0 for normal; 1 for normal, no UI; 2 for quiet (HbbTV
+ *                                     A.2.4.3.2).
+ *
+ * @return A CHANNEL_STATUS_* code (on success, the code has a value less than 0).
  */
-bool ORBPlatformMockImpl::Broadcast_SetChannelToCcid(
+int ORBPlatformMockImpl::Broadcast_SetChannelToCcid(
    std::string ccid,
    bool trickplay,
    std::string contentAccessDescriptorURL,
-   int quiet,
-   Channel::ErrorState *errorState
+   int quiet
    )
 {
    // TODO Implement me
@@ -244,43 +247,43 @@ bool ORBPlatformMockImpl::Broadcast_SetChannelToCcid(
 }
 
 /**
- * Tune off channel.
+ * Select a logically null broadcast channel (e.g. tune off).
  *
- * @param trickplay                  <currently not supported>
- * @param contentAccessDescriptorURL <currently not supported>
- * @param quiet                      <currently not supported>
- * @param errorState                 Channel error state code, set only in case of failure
+ * When a logically null broadcast channel is selected, the Application Manager must transition
+ * the running application to broadcast-independent or kill it, depending on the signalling.
  *
- * @return true in success, otherwise false
+ * Security: FOR_RUNNING_APP_ONLY.
+ *
+ * @return A CHANNEL_STATUS_* code (on success, the code has a value less than 0).
  */
-bool ORBPlatformMockImpl::Broadcast_SetChannelToNull(
-   bool trickplay,
-   std::string contentAccessDescriptorURL,
-   int quiet,
-   Channel::ErrorState *errorState
-   )
+int ORBPlatformMockImpl::Broadcast_SetChannelToNull()
 {
    // TODO Implement me
    return false;
 }
 
 /**
- * Tune to the specified broadcast channel using dvb triplet.
+ * Select the given broadcast channel (e.g. tune) with the given triplet and information.
  *
- * @param idType                     The channel type
- * @param onid                       Channel onid
- * @param tsid                       Channel tsid
- * @param sid                        Channel sid
- * @param sourceID                   Channel source id
- * @param ipBroadcastID              Channel ip broadcast id
- * @param trickplay                  <currently not supported>
- * @param contentAccessDescriptorURL <currently not supported>
- * @param quiet                      <currently not supported>
- * @param errorState                 Channel error state code, set only in case of failure
+ * Security: FOR_RUNNING_APP_ONLY.
  *
- * @return true in success, otherwise false
+ * @param idType                       The type of the channel to set (ID_* code).
+ * @param onid                         The original network ID of the channel to set.
+ * @param tsid                         The transport stream ID of the channel to set.
+ * @param sid                          The service ID of the channel to set.
+ * @param sourceID                     Optionally, the ATSC source_ID of the channel to set; or -1 otherwise.
+ * @param ipBroadcastID                Optionally, the DVB textual service ID of the (IP broadcast) channel
+ *                                     to set; or an empty string otherwise.
+ * @param trickplay                    True if the application has optionally hinted trickplay resources are
+ *                                     required; or false otherwise. Does not affect the success of this operation.
+ * @param contentAccessDescriptorURL   Optionally, additional information for DRM-protected IPTV
+ *                                     broadcasts; or an empty string otherwise.
+ * @param quiet                        Type of channel change: 0 for normal, 1 for normal no UI, 2 for quiet (HbbTV
+ *                                     A.2.4.3.2).
+ *
+ * @return A CHANNEL_STATUS_* code (on success, the code has a value less than 0).
  */
-bool ORBPlatformMockImpl::Broadcast_SetChannelToTriplet(
+int ORBPlatformMockImpl::Broadcast_SetChannelToTriplet(
    int idType,
    int onid,
    int tsid,
@@ -289,8 +292,7 @@ bool ORBPlatformMockImpl::Broadcast_SetChannelToTriplet(
    std::string ipBroadcastID,
    bool trickplay,
    std::string contentAccessDescriptorURL,
-   int quiet,
-   Channel::ErrorState *errorState
+   int quiet
    )
 {
    // TODO Implement me
@@ -298,24 +300,25 @@ bool ORBPlatformMockImpl::Broadcast_SetChannelToTriplet(
 }
 
 /**
- * Tune to the specified broadcast channel using delivery system descriptor.
+ * Select the broadcast channel with the given DSD. 8 Security: FOR_RUNNING_APP_ONLY.
  *
- * @param dsd                        The channel delivery system descriptor
- * @param sid                        Channel sid
- * @param trickplay                  <currently not supported>
- * @param contentAccessDescriptorURL <currently not supported>
- * @param quiet                      <currently not supported>
- * @param errorState                 Channel error state code, set only in case of failure
+ * @param dsd                          The DSD of the channel to set.
+ * @param sid                          The service ID of the channel to set.
+ * @param trickplay                    True if the application has optionally hinted trickplay resources are
+ *                                     required; or false otherwise. Does not affect the success of this operation.
+ * @param contentAccessDescriptorURL   Optionally, additional information for DRM-protected IPTV
+ *                                     broadcasts; or an empty string otherwise.
+ * @param quiet                        Type of channel change: 0 for normal, 1 for normal no UI, 2 for quiet (HbbTV
+ *                                     A.2.4.3.2).
  *
- * @return true in success, otherwise false
+ * @return A CHANNEL_STATUS_* code (on success, the code has a value less than 0).
  */
-bool ORBPlatformMockImpl::Broadcast_SetChannelToDsd(
+int ORBPlatformMockImpl::Broadcast_SetChannelToDsd(
    std::string dsd,
    int sid,
    bool trickplay,
    std::string contentAccessDescriptorURL,
-   int quiet,
-   Channel::ErrorState *errorState
+   int quiet
    )
 {
    // TODO Implement me
