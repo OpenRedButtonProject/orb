@@ -120,20 +120,8 @@ hbbtv.utils = (function() {
             key => thiz.style.setProperty(key, style.getPropertyValue(key), style.getPropertyPriority(key))
          );
          if (thiz.style.position !== "fixed") {
-            const bounds = element.getBoundingClientRect();
-            const rect = {
-               top: bounds.top,
-               right: bounds.right,
-               bottom: bounds.bottom,
-               left: bounds.left
-            };
-
-            for (const side in rect) {
-               rect[side] = rect[side] - (parseFloat(style.getPropertyValue("padding-" + side)) +
-                  parseFloat(style.getPropertyValue("border-" + side + "-width")));
-            }
-            thiz.style.left = rect.left;
-            thiz.style.top = rect.top;
+            thiz.style.left = element.offsetLeft + "px";
+            thiz.style.top = element.offsetTop + "px";
             thiz.style.margin = 0;
             thiz.style.position = "absolute";
          }
