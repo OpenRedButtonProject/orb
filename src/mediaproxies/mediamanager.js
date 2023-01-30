@@ -170,27 +170,34 @@ hbbtv.mediaManager = (function() {
       const textTracks = hbbtv.objects.createTextTrackList(media, mediaProxy);
 
       media.setMediaKeys = function(mediaKeys) {
-         let _mediaKeys;
-         return navigator.requestMediaKeySystemAccess(mediaKeys.mediaKeySystemAccess.keySystem, mediaKeys.mediaKeySystemAccess.configuration)
-         .then(mediaKeySystemAccess => mediaKeySystemAccess.createMediaKeys())
-         .then(keys => {
-            _mediaKeys = keys;
-            _mediaKeys.createSession = function() {
-               const session = MediaKeys.prototype.createSession.apply(this, arguments);
-               mediaProxy.registerObserver(MEDIA_KEY_SESSION_ID, session);
-               session.generateRequest = function(initDataType, initData) {
-                  return MediaKeySession.prototype.call(this, initDataType, new Uint8Array(initData).buffer);
+         if (mediaKeys && mediaKeys.mediaKeySystemAccess) {
+            let _mediaKeys;
+            return navigator.requestMediaKeySystemAccess(mediaKeys.mediaKeySystemAccess.keySystem, mediaKeys.mediaKeySystemAccess.configuration)
+            .then(mediaKeySystemAccess => mediaKeySystemAccess.createMediaKeys())
+            .then(keys => {
+               _mediaKeys = keys;
+               _mediaKeys.createSession = function() {
+                  const session = MediaKeys.prototype.createSession.apply(this, arguments);
+                  mediaProxy.registerObserver(MEDIA_KEY_SESSION_ID, session);
+                  session.generateRequest = function(initDataType, initData) {
+                     return MediaKeySession.prototype.generateRequest.call(this, initDataType, new Uint8Array(initData).buffer);
+                  };
+                  session.update = function(licence) {
+                     return MediaKeySession.prototype.update.call(this, new Uint8Array(licence));
+                  };
+                  session.onmessage = (e) => {
+                     mediaProxy.dispatchEvent(MEDIA_KEY_SESSION_ID, e);
+                  }
+                  session.onkeystatuseschange = (e) => {
+                     mediaProxy.dispatchEvent(MEDIA_KEY_SESSION_ID, e);
+                  }
+                  return session;
                };
-               session.onmessage = session.onkeystatuseschange = (e) => {
-                  mediaProxy.dispatchEvent(MEDIA_KEY_SESSION_ID, e);
-               }
-               return session;
-            };
-            return HTMLMediaElement.prototype.call(media, keys)
-         })
-         .then(() => {
-            mediaProxy.registerObserver(MEDIA_KEYS_ID, _mediaKeys);
-         });
+               return HTMLMediaElement.prototype.setMediaKeys.call(media, keys);
+            })
+            .then(() => mediaProxy.registerObserver(MEDIA_KEYS_ID, _mediaKeys));
+         }
+         return HTMLMediaElement.prototype.setMediaKeys.call(media, mediaKeys);
       };
 
       Object.defineProperty(media, "audioTracks", {
@@ -246,6 +253,14 @@ hbbtv.mediaManager = (function() {
       for (const evt of genericEvents) {
          media.addEventListener(evt, genericHandler);
       }
+      media.addEventListener("encrypted", (e) => {
+         const evt = new Event(e.type, e);
+         Object.assign(evt, {
+            initDataType: e.initDataType,
+            initData: [...new Uint8Array(e.initData)]
+         });
+         mediaProxy.dispatchEvent(MEDIA_PROXY_ID, evt);
+      });
       media.addEventListener("loadeddata", propsUpdateCallback);
       media.addEventListener("__orb_startDateUpdated__", (e) => mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e));
       media.addEventListener("loadedmetadata", propsUpdateCallback);

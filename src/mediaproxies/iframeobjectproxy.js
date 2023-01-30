@@ -171,11 +171,14 @@ hbbtv.objects.IFrameObjectProxy = (function() {
                switch (msg.type) {
                   case MSG_TYPE_DISPATCH_EVENT:
                      const evt = new Event(msg.data.eventName)
+                     const evtProps = {};
                      for (const key in msg.data.eventData) {
-                        if (key !== "isTrusted") { // Uncaught TypeError: Cannot set property isTrusted of #<Event> which has only a getter
-                           evt[key] = msg.data.eventData[key];
+                        if (key !== "isTrusted") { // Uncaught TypeError: Cannot redefine property: isTrusted
+                           evtProps[key] = { value: msg.data.eventData[key], writable: false };
                         }
                      }
+                     evtProps.target = { value: observer, writable: false };
+                     Object.defineProperties(evt, evtProps);
                      observer.dispatchEvent(evt);
                      break;
                   case MSG_TYPE_SET_PROPERTIES:

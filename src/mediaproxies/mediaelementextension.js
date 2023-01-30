@@ -366,6 +366,7 @@ hbbtv.objects.MediaElementExtension = (function() {
             iframeProxy.registerObserver(MEDIA_PROXY_ID, videoDummy);
 
             p.iframe.frameBorder = 0;
+            p.iframe.allow = "encrypted-media";
             p.iframe.addEventListener("load", () => {
                if (thiz.src) {
                   console.log("MediaElementExtension: initialising iframe with src", thiz.src + "...");

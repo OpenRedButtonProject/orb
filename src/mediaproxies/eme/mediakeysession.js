@@ -50,6 +50,12 @@ hbbtv.objects.MediaKeySession = (function() {
       );
    };
 
+   prototype.update = function(licence) {
+      return privates.get(this).proxy.callAsyncObserverMethod(
+         MEDIA_KEY_SESSION_ID, "update", [Array.from(licence)]
+      );
+   };
+
    function instantiate(proxy) {
       const obj = Object.create(prototype);
       privates.set(obj, { 
