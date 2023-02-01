@@ -105,7 +105,7 @@ hbbtv.objects.IFrameObjectProxy = (function() {
                if (msg.data.error) {
                   reject(msg.data.error);
                } else {
-                  resolve();
+                  resolve(...msg.data.args);
                }
                e.stopImmediatePropagation();
             }
@@ -158,7 +158,8 @@ hbbtv.objects.IFrameObjectProxy = (function() {
             p.sessionId = msg.sessionId;
             console.log("IFrameObjectProxy: Received handshake request with sessionId", p.sessionId + ". Responding back...");
             postMessage.call(thiz, MSG_TYPE_ASYNC_CALL_RESPONSE, {
-               callId: msg.data.callId
+               callId: msg.data.callId,
+               args: []
             });
             while (p.pending.length) {
                const pending = p.pending.shift();
@@ -199,7 +200,8 @@ hbbtv.objects.IFrameObjectProxy = (function() {
                         observer[msg.data.name](...msg.data.args)
                            .then(() => {
                               postMessage.call(thiz, MSG_TYPE_ASYNC_CALL_RESPONSE, {
-                                 callId: msg.data.callId
+                                 callId: msg.data.callId,
+                                 args: Array.from(arguments)
                               });
                            })
                            .catch(e => {

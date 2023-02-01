@@ -176,8 +176,8 @@ hbbtv.mediaManager = (function() {
             .then(mediaKeySystemAccess => mediaKeySystemAccess.createMediaKeys())
             .then(keys => {
                _mediaKeys = keys;
-               _mediaKeys.createSession = function() {
-                  const session = MediaKeys.prototype.createSession.apply(this, arguments);
+               _mediaKeys.createSession = function(sessionType) {
+                  const session = MediaKeys.prototype.createSession.call(this, sessionType || undefined);
                   mediaProxy.registerObserver(MEDIA_KEY_SESSION_ID, session);
                   session.generateRequest = function(initDataType, initData) {
                      return MediaKeySession.prototype.generateRequest.call(this, initDataType, new Uint8Array(initData).buffer);
@@ -185,13 +185,28 @@ hbbtv.mediaManager = (function() {
                   session.update = function(licence) {
                      return MediaKeySession.prototype.update.call(this, new Uint8Array(licence));
                   };
+                  session.close = function() {
+                     return MediaKeySession.prototype.close.call(this);
+                  };
+                  session.load = function(sessionId) {
+                     return MediaKeySession.prototype.load.call(this, sessionId);
+                  };
+                  session.remove = function() {
+                     return MediaKeySession.prototype.remove.call(this);
+                  };
                   session.onmessage = (e) => {
                      mediaProxy.dispatchEvent(MEDIA_KEY_SESSION_ID, e);
-                  }
+                  };
                   session.onkeystatuseschange = (e) => {
                      mediaProxy.dispatchEvent(MEDIA_KEY_SESSION_ID, e);
+                  };
+                  session.orb_closed = function() {
+                     return this.closed;
                   }
                   return session;
+               };
+               _mediaKeys.setServerCertificate = function(cert) {
+                  return MediaKeys.prototype.setServerCertificate.call(this, new Uint8Array(cert).buffer);
                };
                return HTMLMediaElement.prototype.setMediaKeys.call(media, keys);
             })
