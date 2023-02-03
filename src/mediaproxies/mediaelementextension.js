@@ -12,9 +12,31 @@ hbbtv.objects.MediaElementExtension = (function() {
       "defaultPlaybackRate", "disableRemotePlayback", "preservesPitch", "srcObject"
    ];
 
-   if (Navigator.prototype.requestMediaKeySystemAccess) {
+   if (location.protocol !== 'http:' && location.hostname !== 'localhost') {
+      const _requestMediaKeySystemAccess = Navigator.prototype.requestMediaKeySystemAccess;
       Navigator.prototype.requestMediaKeySystemAccess = function() {
          return Promise.resolve(hbbtv.objects.createMediaKeySystemAccess.apply(undefined, arguments));
+      }
+
+      // consider custom EME playback
+      const _setMediaKeys = HTMLMediaElement.prototype.setMediaKeys;
+      HTMLMediaElement.prototype.setMediaKeys = function(mediaKeys) {
+         const thiz = this;
+         if (mediaKeys instanceof MediaKeys) { // should never happen, but just in case...
+            return _setMediaKeys.call(thiz, mediaKeys);
+         }
+         const conf = mediaKeys.toJSON().mediaKeySystemAccess;
+         return _requestMediaKeySystemAccess.call(navigator, conf.keySystem, conf.configuration)
+            .then(mksa => mksa.createMediaKeys())
+            .then(mkeys => { 
+               mediaKeys.createSession = function(sessionType) {
+                  return mkeys.createSession(sessionType);
+               };
+               mediaKeys.setServerCertificate = function(cert) {
+                  return mkeys.setServerCertificate(cert);
+               };
+               return _setMediaKeys.call(thiz, mkeys);
+            });
       }
    }
 
