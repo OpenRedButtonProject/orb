@@ -372,9 +372,10 @@ hbbtv.objects.MediaElementExtension = (function() {
                }
             }
             initialProps.src = src;
-               
-            initialProps.innerHTML = this.innerHTML;
-            this.innerHTML = "";
+
+            while(this.childNodes.length) {
+               divDummy.appendChild(this.childNodes[0]);
+            }
 
             Object.setPrototypeOf(this, prototype);
             privates.set(this, {
