@@ -279,12 +279,22 @@ hbbtv.mediaManager = (function() {
       media.addEventListener("loadeddata", propsUpdateCallback);
       media.addEventListener("__orb_startDateUpdated__", (e) => mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e));
       media.addEventListener("loadedmetadata", propsUpdateCallback);
-      media.addEventListener("play", propsUpdateCallback);
+      media.addEventListener("play", (e) => {
+         let evt = new Event("__orb_onplayspeedchanged__");
+         Object.assign(evt, { speed: media.playbackRate });
+         mediaProxy.dispatchEvent(MEDIA_PROXY_ID, evt);
+         propsUpdateCallback(e);
+      });
       media.addEventListener("ended", propsUpdateCallback);
-      media.addEventListener("pause", propsUpdateCallback);
+      media.addEventListener("pause", (e) => {
+         let evt = new Event("__orb_onplayspeedchanged__");
+         Object.assign(evt, { speed: 0 });
+         mediaProxy.dispatchEvent(MEDIA_PROXY_ID, evt);
+         propsUpdateCallback(e);
+      });
       media.addEventListener("durationchange", makeCallback("duration"));
       media.addEventListener("ratechange", makeCallback("playbackRate"));
-      media.addEventListener("__orb_onplaybackRateChanged__", makeCallback("playbackRate"));
+      media.addEventListener("__orb_onplayspeedchanged__", makeCallback("playbackRate"));
       media.addEventListener("volumechange", makeCallback("volume"));
       videoTracks.addEventListener("change", () => {
          for (const track of videoTracks) {

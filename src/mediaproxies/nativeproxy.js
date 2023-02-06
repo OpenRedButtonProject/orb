@@ -8,6 +8,21 @@
 hbbtv.objects.NativeProxy = (function() {
    const prototype = Object.create(HTMLMediaElement.prototype);
    const privates = new WeakMap();
+   const playbackRateOwnProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
+
+   Object.defineProperty(prototype, "playbackRate", {
+      get() {
+         return playbackRateOwnProperty.get.call(this);
+      },
+      set(value) {
+         playbackRateOwnProperty.set.call(this, value);
+         if (!this.paused) {
+            let evt = new Event("__orb_onplayspeedchanged__");
+            Object.assign(evt, { speed: this.playbackRate });
+            this.dispatchEvent(evt);
+         }
+      }
+   });
 
    prototype.getStartDate = function() {
       return new Date(NaN);
