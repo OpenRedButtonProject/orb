@@ -373,10 +373,6 @@ hbbtv.objects.MediaElementExtension = (function() {
             }
             initialProps.src = src;
 
-            while(this.childNodes.length) {
-               divDummy.appendChild(this.childNodes[0]);
-            }
-
             Object.setPrototypeOf(this, prototype);
             privates.set(this, {
                videoDummy,
@@ -434,6 +430,10 @@ hbbtv.objects.MediaElementExtension = (function() {
             childListObserver.observe(divDummy, {
                childList: true
             });
+
+            while(this.childNodes.length) {
+               divDummy.appendChild(this.childNodes[0]);
+            }
 
             // update the new prototype with the values stored in initialProps
             for (const prop in initialProps) {
