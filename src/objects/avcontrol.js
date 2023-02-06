@@ -992,12 +992,16 @@ hbbtv.objects.AVControl = (function() {
       });
 
       videoElement.addEventListener("ended", () => {
-         if (transitionToState.call(thiz, PLAY_STATE_FINISHED)) {
-            if (priv.params.loop) {
-               if (priv.loop === 'infinite' || --priv.loop > 0) {
-                  thiz.play(priv.speed);
-               }
-            } else if (priv.mediaSourceQueue.length !== 0) {
+         if (priv.params.loop) {
+            if (priv.loop === 'infinite' || --priv.loop > 0) {
+               videoElement.play();
+            }
+            else if (transitionToState.call(thiz, PLAY_STATE_FINISHED)) {
+               unloadSource.call(thiz);
+            }
+         } 
+         else if (transitionToState.call(thiz, PLAY_STATE_FINISHED)) {
+            if (priv.mediaSourceQueue.length !== 0) {
                _internalStop.call(thiz);
                priv.data = priv.mediaSourceQueue.shift();
                thiz.play(1);
