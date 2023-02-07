@@ -229,7 +229,7 @@ hbbtv.mediaManager = (function() {
       });;
       const genericEvents = [
          "loadstart", "suspend", "abort", "emptied", "stalled", "canplay",
-         "canplaythrough", "playing", "waiting", "seeking", "seeked", "resize", "__orb_onerror__"
+         "canplaythrough", "playing", "waiting", "seeking", "seeked", "__orb_onerror__"
       ];
       const genericHandler = (e) => {
          mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
@@ -277,6 +277,15 @@ hbbtv.mediaManager = (function() {
          mediaProxy.dispatchEvent(MEDIA_PROXY_ID, evt);
       });
       media.addEventListener("loadeddata", propsUpdateCallback);
+      media.addEventListener("resize", (e) => {
+         const widthProperty = Object.getOwnPropertyDescriptor(HTMLVideoElement.prototype, "videoWidth");
+         const heightProperty = Object.getOwnPropertyDescriptor(HTMLVideoElement.prototype, "videoHeight");
+         mediaProxy.updateObserverProperties(MEDIA_PROXY_ID, {
+            videoWidth: widthProperty.get.call(media),
+            videoHeight: heightProperty.get.call(media)
+         });
+         mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
+      });
       media.addEventListener("__orb_startDateUpdated__", (e) => mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e));
       media.addEventListener("loadedmetadata", propsUpdateCallback);
       media.addEventListener("play", (e) => {

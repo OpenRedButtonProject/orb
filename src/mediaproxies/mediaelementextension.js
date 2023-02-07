@@ -81,7 +81,7 @@ hbbtv.objects.MediaElementExtension = (function() {
       const prototype = Object.create(HTMLMediaElement.prototype);
       const methods = ["pause", "load"];
       const roProps = ["textTracks", "audioTracks", "videoTracks", "paused", "ended", "currentSrc", "error",
-         "networkState", "readyState", "seekable"
+         "networkState", "readyState", "seekable", "videoWidth", "videoHeight"
       ];
       let lastMediaElement = undefined;
 
