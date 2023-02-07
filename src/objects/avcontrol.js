@@ -398,9 +398,9 @@ hbbtv.objects.AVControl = (function() {
 
    prototype.unselectComponent = function(component) {
       const priv = privates.get(this);
+      const videoElement = priv.videoElement;
 
       function stopRenderingComponent(componentType) {
-         const videoElement = priv.videoElement;
          let tracks;
          switch (componentType) {
             case this.COMPONENT_TYPE_VIDEO:
@@ -437,12 +437,22 @@ hbbtv.objects.AVControl = (function() {
       }
       if (component !== null) {
          if (typeof component === 'object') {
-            if (playStates[priv.playState] & 6) { // playing or paused      
-               let preferredMediaSettings = createPreferedMediaSettings.call(this, component.type);
-               let tracksChanged = setMediaSettings.call(this, preferredMediaSettings);
+            if (playStates[priv.playState] & 6) { // playing or paused    
+               if (component.type === this.COMPONENT_TYPE_VIDEO) {
+                  for (const track of videoElement.videoTracks) {
+                     if (track.id === component.componentTag) {
+                        track.selected = false;
+                        break;
+                     }
+                  }
+               }
+               else {
+                  let preferredMediaSettings = createPreferedMediaSettings.call(this, component.type);
+                  let tracksChanged = setMediaSettings.call(this, preferredMediaSettings);
 
-               if (tracksChanged === false) {
-                  stopRenderingComponent.call(this, component.type);
+                  if (tracksChanged === false) {
+                     stopRenderingComponent.call(this, component.type);
+                  }
                }
                dispatchComponentChangedEvent.call(this, component.type);
             }
