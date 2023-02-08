@@ -404,7 +404,7 @@ hbbtv.objects.MediaElementExtension = (function() {
             });
             styleObserver.observe(this, {
                attributes: true,
-               attributeFilter: ["style"]
+               attributeFilter: ["style", "class"]
             });
 
             // whenever there is a change in the childList of the divDummy,
