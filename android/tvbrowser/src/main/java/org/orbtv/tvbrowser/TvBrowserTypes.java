@@ -758,6 +758,53 @@ public class TvBrowserTypes {
       }
    }
 
+   public static class DRMSystemStatus implements JSONSerializable {
+      private static final String TAG = "DRMSystemStatus";
+
+      public String drmSystemID;
+      public int status;
+      public String protectionGateways;
+      public String supportedFormats;
+
+      /**
+       * DRMSystemStatus data structure.
+       *
+       * @param drmSystemID ID of the DRM System
+       * @param status status status of the indicated DRM system. Possible states:
+       *              - 0 READY, fully initialised and ready
+       *              - 1 UNKNOWN, no longer available
+       *              - 2 INITIALISING, initialising and not ready to communicate
+       *              - 3 ERROR, in error state
+       * @param protectionGateways space separated list of zero or more CSP Gateway types that are
+       *                           capable of supporting the DRM system
+       * @param supportedFormats space separated list of zero or more supported file and/or
+       *                         container formats by the DRM system
+       */
+      public DRMSystemStatus(String drmSystemID, int status, String protectionGateways,
+                             String supportedFormats) {
+         this.drmSystemID = drmSystemID;
+         this.status = status;
+         this.protectionGateways = protectionGateways;
+         this.supportedFormats = supportedFormats;
+      }
+
+      /**
+       * Get the data structure as a JSONObject.
+       *
+       * @return The data structure as a JSONObject.
+       * @throws JSONException
+       */
+      @Override
+      public JSONObject toJSONObject() throws JSONException {
+         JSONObject o = new JSONObject();
+         o.put("DRMSystemID", drmSystemID);
+         o.put("status", status);
+         o.put("protectionGateways", protectionGateways);
+         o.put("supportedFormats", supportedFormats);
+         return o;
+      }
+   }
+
    public static class Capabilities implements JSONSerializable {
       public List<String> optionStrings;
       public List<String> profileNameFragments;

@@ -1404,6 +1404,45 @@ hbbtv.bridge.csManager = (function() {
    return exported;
 })();
 
+hbbtv.bridge.drm = (function() {
+   const exported = {};
+   
+   exported.getSupportedDRMSystemIDs = function() {
+      return hbbtv.native.request("Drm.getSupportedDRMSystemIDs").result;
+   };
+
+   exported.sendDRMMessage = function(msgID, msgType, msg, DRMSystemID) {
+      hbbtv.native.request("Drm.sendDRMMessage", {
+         msgID: msgID,
+         msgType: msgType,
+         msg: msg,
+         DRMSystemID: DRMSystemID
+      });
+   };
+
+   exported.canPlayContent = function(DRMPrivateData, DRMSystemID) {
+      return hbbtv.native.request("Drm.canPlayContent", {
+         DRMPrivateData: DRMPrivateData,
+         DRMSystemID: DRMSystemID
+      }).result;
+   };
+
+   exported.canRecordContent = function(DRMPrivateData, DRMSystemID) {
+      return hbbtv.native.request("Drm.canRecordContent", {
+         DRMPrivateData: DRMPrivateData,
+         DRMSystemID: DRMSystemID
+      }).result;
+   };
+
+   exported.setActiveDRM = function(DRMSystemID) {
+      return hbbtv.native.request("Drm.setActiveDRM", {
+         DRMSystemID: DRMSystemID
+      }).result;
+   };
+
+   return exported;
+})();
+
 hbbtv.bridge.orbDebug = (function() {
    const exported = {};
 

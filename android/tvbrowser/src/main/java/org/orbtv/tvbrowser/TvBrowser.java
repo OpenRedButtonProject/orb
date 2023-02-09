@@ -581,6 +581,70 @@ public class TvBrowser {
       }
 
       /**
+       * Notify about DRM licensing errors during playback of DRM protected A/V content.
+       *
+       * @param errorState details the type of error:
+       *           - 0: no license, consumption of the content is blocked.
+       *           - 1: invalid license, consumption of the content is blocked.
+       *           - 2: valid license, consumption of the content is unblocked.
+       * @param contentID unique identifier of the protected content
+       * @param DRMSystemID ID of the DRM System
+       * @param rightsIssuerURL indicates the value of the rightsIssuerURL that can
+       *        be used to non-silently obtain the rights for the content item
+       */
+      public void onDRMRightsError(int errorState, String contentID, String DRMSystemID, String rightsIssuerURL) {
+         mBridge.dispatchDRMRightsError(errorState, contentID, DRMSystemID, rightsIssuerURL);
+      }
+
+      /**
+       * Called when the status of a DRM system changes.
+       *
+       * @param drmSystemId ID of the DRM System
+       * @param status status of the indicated DRM system. Possible states:
+       *    - 0 READY, fully initialised and ready
+       *    - 1 UNKNOWN, no longer available
+       *    - 2 INITIALISING, initialising and not ready to communicate
+       *    - 3 ERROR, in error state
+       * @param protectionGateways space separated list of zero or more CSP Gateway
+       *        types that are capable of supporting the DRM system
+       * @param supportedFormats space separated list of zero or more supported
+       *        file and/or container formats by the DRM system
+       */
+      public void onDRMSystemStatusChange(String drmSystemId, int status, String protectionGateways,
+                                          String supportedFormats) {
+         mBridge.dispatchDRMSystemStatusChange(drmSystemId, status, protectionGateways, supportedFormats);
+      }
+
+      /**
+       * Called when the underlying DRM system has a result message as a consequence
+       * of a call to sendDRMMessage.
+       *
+       * @param msgID identifies the original message which has led to this resulting message
+       * @param resultMsg DRM system specific result message
+       * @param resultCode result code. Valid values include:
+       *    - 0 Successful
+       *    - 1 Unknown error
+       *    - 2 Cannot process request
+       *    - 3 Unknown MIME type
+       *    - 4 User consent needed
+       *    - 5 Unknown DRM system
+       *    - 6 Wrong format
+       */
+      public void onDRMMessageResult(String msgID, String resultMsg, int resultCode) {
+         mBridge.dispatchDRMMessageResult(msgID, resultMsg, resultCode);
+      }
+
+      /**
+       * Called when the underlying DRM system has a message to report.
+       *
+       * @param msg DRM system specific message
+       * @param DRMSystemID ID of the DRM System
+       */
+      public void onDRMSystemMessage(String msg, String DRMSystemID) {
+         mBridge.dispatchDRMSystemMessage(msg, DRMSystemID);
+      }
+
+      /**
        * TODO(library) What makes sense here?
        */
       public void close() {

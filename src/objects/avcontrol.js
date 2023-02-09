@@ -214,7 +214,7 @@ hbbtv.objects.AVControl = (function() {
          }
       } else if (playStates[priv.playState] & 6) { // playing or paused
          clearInterval(priv.rewindInterval);
-         if (priv.speed < 0 && speed >= 0) {
+         if (priv.targetSpeed < 0 && speed >= 0) {
             // add the pause event listener in case the requested speed
             // is greater than or equal to 0, and we are currently in
             // rewind mode, because it was removed when we first
@@ -230,7 +230,7 @@ hbbtv.objects.AVControl = (function() {
             }
          } else if (speed == 0) {
             videoElement.pause();
-            if (priv.speed <= 0) {
+            if (priv.targetSpeed <= 0) {
                // here, because we are in rewind mode or stopped, the videoElement is already
                // in paused state, and because of that the event listener will not
                // be triggered, so we call explicitly onPauseHandler()
@@ -259,12 +259,7 @@ hbbtv.objects.AVControl = (function() {
             transitionToState.call(this, PLAY_STATE_PLAYING);
          }
       }
-      priv.speed = speed;
-      setTimeout(() => {
-         dispatchEvent.call(this, "PlaySpeedChanged", {
-            speed: videoElement.playbackRate
-         })
-      }, 0);
+      priv.targetSpeed = speed;
       return true;
    }
 
@@ -403,9 +398,9 @@ hbbtv.objects.AVControl = (function() {
 
    prototype.unselectComponent = function(component) {
       const priv = privates.get(this);
+      const videoElement = priv.videoElement;
 
       function stopRenderingComponent(componentType) {
-         const videoElement = priv.videoElement;
          let tracks;
          switch (componentType) {
             case this.COMPONENT_TYPE_VIDEO:
@@ -442,12 +437,22 @@ hbbtv.objects.AVControl = (function() {
       }
       if (component !== null) {
          if (typeof component === 'object') {
-            if (playStates[priv.playState] & 6) { // playing or paused      
-               let preferredMediaSettings = createPreferedMediaSettings.call(this, component.type);
-               let tracksChanged = setMediaSettings.call(this, preferredMediaSettings);
+            if (playStates[priv.playState] & 6) { // playing or paused    
+               if (component.type === this.COMPONENT_TYPE_VIDEO) {
+                  for (const track of videoElement.videoTracks) {
+                     if (track.id === component.componentTag) {
+                        track.selected = false;
+                        break;
+                     }
+                  }
+               }
+               else {
+                  let preferredMediaSettings = createPreferedMediaSettings.call(this, component.type);
+                  let tracksChanged = setMediaSettings.call(this, preferredMediaSettings);
 
-               if (tracksChanged === false) {
-                  stopRenderingComponent.call(this, component.type);
+                  if (tracksChanged === false) {
+                     stopRenderingComponent.call(this, component.type);
+                  }
                }
                dispatchComponentChangedEvent.call(this, component.type);
             }
@@ -818,7 +823,7 @@ hbbtv.objects.AVControl = (function() {
    };
 
    function notifyBroadbandAvInUse(broadbandAvInUse) {
-      let priv = privates.get(this);
+      //let priv = privates.get(this);
       if (broadbandAvInUse) {
          console.log("A/V control: AV in use");
          avsInUse.add(this);
@@ -851,7 +856,7 @@ hbbtv.objects.AVControl = (function() {
       const priv = privates.get(this);
       priv.connected = false;
       priv.seekPos = undefined;
-      priv.speed = 0;
+      priv.targetSpeed = priv.speed = 0;
       priv.videoElement.orb_unload();
    }
 
@@ -913,7 +918,7 @@ hbbtv.objects.AVControl = (function() {
       priv.connected = false;
       priv.seekPos = undefined;
       priv.playTime = 0;
-      priv.speed = 0;
+      priv.targetSpeed = priv.speed = 0;
       priv.eventTarget = document.createDocumentFragment();
       priv.mediaSourceQueue = [];
       priv.MediaSettingsConfiguration = createPreferedMediaSettings.call(this);
@@ -959,10 +964,9 @@ hbbtv.objects.AVControl = (function() {
          // we add here the onpause handler as there will be no way to be added
          // in case the user changes the media source when we are in rewind mode
          videoElement.onpause = priv.onPauseHandler;
-         videoElement.playbackRate = priv.speed
-         setTimeout(() => priv.speed = videoElement.playbackRate, 0);
+         videoElement.playbackRate = priv.targetSpeed;
          priv.connected = true;
-         if (priv.speed > 0) {
+         if (priv.targetSpeed > 0) {
             videoElement.play();
          } else {
             priv.onPauseHandler();
@@ -992,12 +996,16 @@ hbbtv.objects.AVControl = (function() {
       });
 
       videoElement.addEventListener("ended", () => {
-         if (transitionToState.call(thiz, PLAY_STATE_FINISHED)) {
-            if (priv.params.loop) {
-               if (priv.loop === 'infinite' || --priv.loop > 0) {
-                  thiz.play(priv.speed);
-               }
-            } else if (priv.mediaSourceQueue.length !== 0) {
+         if (priv.params.loop) {
+            if (priv.loop === 'infinite' || --priv.loop > 0) {
+               videoElement.play();
+            }
+            else if (transitionToState.call(thiz, PLAY_STATE_FINISHED)) {
+               unloadSource.call(thiz);
+            }
+         } 
+         else if (transitionToState.call(thiz, PLAY_STATE_FINISHED)) {
+            if (priv.mediaSourceQueue.length !== 0) {
                _internalStop.call(thiz);
                priv.data = priv.mediaSourceQueue.shift();
                thiz.play(1);
@@ -1019,6 +1027,16 @@ hbbtv.objects.AVControl = (function() {
                priv.mediaSourceQueue.pop();
             }
          }
+      });
+
+      videoElement.addEventListener("__orb_onplayspeedchanged__", (e) => {
+         priv.speed = e.speed;
+         if (e.speed) {
+            priv.targetSpeed = e.speed;
+         }
+         dispatchEvent.call(this, "PlaySpeedChanged", {
+            speed: e.speed
+         });
       });
 
       videoElement.addEventListener("__orb_onparentalratingchange__", (e) => {
