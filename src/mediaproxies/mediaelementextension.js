@@ -25,11 +25,35 @@ hbbtv.objects.MediaElementExtension = (function() {
         'srcObject',
     ];
 
-    if (Navigator.prototype.requestMediaKeySystemAccess) {
+    if (location.protocol !== 'http:' && location.hostname !== 'localhost') {
+        const _requestMediaKeySystemAccess = Navigator.prototype.requestMediaKeySystemAccess;
         Navigator.prototype.requestMediaKeySystemAccess = function() {
             return Promise.resolve(
                 hbbtv.objects.createMediaKeySystemAccess.apply(undefined, arguments)
             );
+        };
+
+        // consider custom EME playback
+        const _setMediaKeys = HTMLMediaElement.prototype.setMediaKeys;
+        HTMLMediaElement.prototype.setMediaKeys = function(mediaKeys) {
+            const thiz = this;
+            if (mediaKeys instanceof MediaKeys) {
+                // should never happen, but just in case...
+                return _setMediaKeys.call(thiz, mediaKeys);
+            }
+            const conf = mediaKeys.toJSON().mediaKeySystemAccess;
+            return _requestMediaKeySystemAccess
+                .call(navigator, conf.keySystem, conf.configuration)
+                .then((mksa) => mksa.createMediaKeys())
+                .then((mkeys) => {
+                    mediaKeys.createSession = function(sessionType) {
+                        return mkeys.createSession(sessionType);
+                    };
+                    mediaKeys.setServerCertificate = function(cert) {
+                        return mkeys.setServerCertificate(cert);
+                    };
+                    return _setMediaKeys.call(thiz, mkeys);
+                });
         };
     }
 
@@ -84,6 +108,8 @@ hbbtv.objects.MediaElementExtension = (function() {
             'networkState',
             'readyState',
             'seekable',
+            'videoWidth',
+            'videoHeight',
         ];
         let lastMediaElement = undefined;
 
@@ -412,9 +438,6 @@ hbbtv.objects.MediaElementExtension = (function() {
                 }
                 initialProps.src = src;
 
-                initialProps.innerHTML = this.innerHTML;
-                this.innerHTML = '';
-
                 Object.setPrototypeOf(this, prototype);
                 privates.set(this, {
                     videoDummy,
@@ -427,6 +450,7 @@ hbbtv.objects.MediaElementExtension = (function() {
                 iframeProxy.registerObserver(MEDIA_PROXY_ID, videoDummy);
 
                 p.iframe.frameBorder = 0;
+                p.iframe.allow = 'encrypted-media';
                 p.iframe.addEventListener('load', () => {
                     if (thiz.src) {
                         console.log(
@@ -449,7 +473,7 @@ hbbtv.objects.MediaElementExtension = (function() {
                 });
                 styleObserver.observe(this, {
                     attributes: true,
-                    attributeFilter: ['style'],
+                    attributeFilter: ['style', 'class'],
                 });
 
                 // whenever there is a change in the childList of the divDummy,
@@ -479,6 +503,10 @@ hbbtv.objects.MediaElementExtension = (function() {
                 childListObserver.observe(divDummy, {
                     childList: true,
                 });
+
+                while (this.childNodes.length) {
+                    divDummy.appendChild(this.childNodes[0]);
+                }
 
                 // update the new prototype with the values stored in initialProps
                 for (const prop in initialProps) {

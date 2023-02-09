@@ -182,35 +182,66 @@ hbbtv.mediaManager = (function() {
         const textTracks = hbbtv.objects.createTextTrackList(media, mediaProxy);
 
         media.setMediaKeys = function(mediaKeys) {
-            let _mediaKeys;
-            return navigator
-                .requestMediaKeySystemAccess(
-                    mediaKeys.mediaKeySystemAccess.keySystem,
-                    mediaKeys.mediaKeySystemAccess.configuration
-                )
-                .then((mediaKeySystemAccess) => mediaKeySystemAccess.createMediaKeys())
-                .then((keys) => {
-                    _mediaKeys = keys;
-                    _mediaKeys.createSession = function() {
-                        const session = MediaKeys.prototype.createSession.apply(this, arguments);
-                        mediaProxy.registerObserver(MEDIA_KEY_SESSION_ID, session);
-                        session.generateRequest = function(initDataType, initData) {
-                            return MediaKeySession.prototype.call(
+            if (mediaKeys && mediaKeys.mediaKeySystemAccess) {
+                let _mediaKeys;
+                return navigator
+                    .requestMediaKeySystemAccess(
+                        mediaKeys.mediaKeySystemAccess.keySystem,
+                        mediaKeys.mediaKeySystemAccess.configuration
+                    )
+                    .then((mediaKeySystemAccess) => mediaKeySystemAccess.createMediaKeys())
+                    .then((keys) => {
+                        _mediaKeys = keys;
+                        _mediaKeys.createSession = function(sessionType) {
+                            const session = MediaKeys.prototype.createSession.call(
                                 this,
-                                initDataType,
-                                new Uint8Array(initData).buffer
+                                sessionType || undefined
+                            );
+                            mediaProxy.registerObserver(MEDIA_KEY_SESSION_ID, session);
+                            session.generateRequest = function(initDataType, initData) {
+                                return MediaKeySession.prototype.generateRequest.call(
+                                    this,
+                                    initDataType,
+                                    new Uint8Array(initData).buffer
+                                );
+                            };
+                            session.update = function(licence) {
+                                return MediaKeySession.prototype.update.call(
+                                    this,
+                                    new Uint8Array(licence)
+                                );
+                            };
+                            session.close = function() {
+                                return MediaKeySession.prototype.close.call(this);
+                            };
+                            session.load = function(sessionId) {
+                                return MediaKeySession.prototype.load.call(this, sessionId);
+                            };
+                            session.remove = function() {
+                                return MediaKeySession.prototype.remove.call(this);
+                            };
+                            session.onmessage = (e) => {
+                                mediaProxy.dispatchEvent(MEDIA_KEY_SESSION_ID, e);
+                            };
+                            session.onkeystatuseschange = (e) => {
+                                mediaProxy.dispatchEvent(MEDIA_KEY_SESSION_ID, e);
+                            };
+                            session.orb_closed = function() {
+                                return this.closed;
+                            };
+                            return session;
+                        };
+                        _mediaKeys.setServerCertificate = function(cert) {
+                            return MediaKeys.prototype.setServerCertificate.call(
+                                this,
+                                new Uint8Array(cert).buffer
                             );
                         };
-                        session.onmessage = session.onkeystatuseschange = (e) => {
-                            mediaProxy.dispatchEvent(MEDIA_KEY_SESSION_ID, e);
-                        };
-                        return session;
-                    };
-                    return HTMLMediaElement.prototype.call(media, keys);
-                })
-                .then(() => {
-                    mediaProxy.registerObserver(MEDIA_KEYS_ID, _mediaKeys);
-                });
+                        return HTMLMediaElement.prototype.setMediaKeys.call(media, keys);
+                    })
+                    .then(() => mediaProxy.registerObserver(MEDIA_KEYS_ID, _mediaKeys));
+            }
+            return HTMLMediaElement.prototype.setMediaKeys.call(media, mediaKeys);
         };
 
         Object.defineProperty(media, 'audioTracks', {
@@ -237,7 +268,6 @@ hbbtv.mediaManager = (function() {
             'waiting',
             'seeking',
             'seeked',
-            'resize',
             '__orb_onerror__',
         ];
         const genericHandler = (e) => {
@@ -291,17 +321,54 @@ hbbtv.mediaManager = (function() {
         for (const evt of genericEvents) {
             media.addEventListener(evt, genericHandler);
         }
+        media.addEventListener('encrypted', (e) => {
+            const evt = new Event(e.type, e);
+            Object.assign(evt, {
+                initDataType: e.initDataType,
+                initData: [...new Uint8Array(e.initData)],
+            });
+            mediaProxy.dispatchEvent(MEDIA_PROXY_ID, evt);
+        });
         media.addEventListener('loadeddata', propsUpdateCallback);
+        media.addEventListener('resize', (e) => {
+            const widthProperty = Object.getOwnPropertyDescriptor(
+                HTMLVideoElement.prototype,
+                'videoWidth'
+            );
+            const heightProperty = Object.getOwnPropertyDescriptor(
+                HTMLVideoElement.prototype,
+                'videoHeight'
+            );
+            mediaProxy.updateObserverProperties(MEDIA_PROXY_ID, {
+                videoWidth: widthProperty.get.call(media),
+                videoHeight: heightProperty.get.call(media),
+            });
+            mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
+        });
         media.addEventListener('__orb_startDateUpdated__', (e) =>
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e)
         );
         media.addEventListener('loadedmetadata', propsUpdateCallback);
-        media.addEventListener('play', propsUpdateCallback);
+        media.addEventListener('play', (e) => {
+            let evt = new Event('__orb_onplayspeedchanged__');
+            Object.assign(evt, {
+                speed: media.playbackRate
+            });
+            mediaProxy.dispatchEvent(MEDIA_PROXY_ID, evt);
+            propsUpdateCallback(e);
+        });
         media.addEventListener('ended', propsUpdateCallback);
-        media.addEventListener('pause', propsUpdateCallback);
+        media.addEventListener('pause', (e) => {
+            let evt = new Event('__orb_onplayspeedchanged__');
+            Object.assign(evt, {
+                speed: 0
+            });
+            mediaProxy.dispatchEvent(MEDIA_PROXY_ID, evt);
+            propsUpdateCallback(e);
+        });
         media.addEventListener('durationchange', makeCallback('duration'));
         media.addEventListener('ratechange', makeCallback('playbackRate'));
-        media.addEventListener('__orb_onplaybackRateChanged__', makeCallback('playbackRate'));
+        media.addEventListener('__orb_onplayspeedchanged__', makeCallback('playbackRate'));
         media.addEventListener('volumechange', makeCallback('volume'));
         videoTracks.addEventListener('change', () => {
             for (const track of videoTracks) {

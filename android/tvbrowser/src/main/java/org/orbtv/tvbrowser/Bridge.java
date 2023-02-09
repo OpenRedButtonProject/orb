@@ -1120,6 +1120,104 @@ class Bridge extends AbstractBridge {
     }
 
     /**
+     * Get the list of supported DRM System IDs currently available. Once called,
+     * the caller can track the availability changes by listening to
+     * onDRMSystemStatusChange events. DRM System ID can enter the following states:
+     *    - 0 READY, fully initialised and ready
+     *    - 1 UNKNOWN, no longer available
+     *    - 2 INITIALISING, initialising and not ready to communicate
+     *    - 3 ERROR, in error state
+     *
+     * @return JSONObject {
+     *    "drmSystemIDs": array // Array of supported DRM System IDs currently available
+     *       [
+     *          {
+     *             "DRMSystemID": string,        // ID of the DRM System
+     *             "status": int,                // status of the indicated DRM system
+     *             "protectionGateways": string, // space separated list of zero or more
+     *                // CSP Gateway types that are capable of supporting the DRM system
+     *             "supportedFormats": string,   // space separated list of zero or more
+     *                // supported file and/or container formats by the DRM system
+     *          }, (...)
+     *       ]
+     * }
+     * @throws JSONException
+     */
+    @Override
+    protected List<TvBrowserTypes.DRMSystemStatus> Drm_getSupportedDRMSystemIDs(Token token) {
+        return mTvBrowserCallback.getSupportedDRMSystemIDs();
+    }
+
+    /**
+     * Send message to the DRM system.
+     *
+     * @param params JSONObject {
+     *    "msgID": string,      // unique ID to identify the message, to be passed as
+     *                          // the 'msgID' argument for onDRMMessageResult
+     *    "msgType": string,    // message type as defined by the DRM system
+     *    "msg": string,        // message to be provided to the underlying DRM system
+     *    "DRMSystemID": string // ID of the DRM System
+     * }
+     * @return JSONObject {
+     * }
+     * @throws JSONException
+     */
+    @Override
+    protected void Drm_sendDRMMessage(Token token, String msgID, String msgType, String msg, String DRMSystemID) {
+        mTvBrowserCallback.sendDRMMessage(msgID, msgType, msg, DRMSystemID);
+    }
+
+    /**
+     * Checks the availability of a valid license for playing a protected content item.
+     *
+     * @param params JSONObject {
+     *    "DRMPrivateData": string, // DRM proprietary private data
+     *    "DRMSystemID": string,    // ID of the DRM System
+     * }
+     * @return JSONObject {
+     *    "canPlayContent": boolean, // true if the application can be created, false otherwise
+     * }
+     * @throws JSONException
+     */
+    @Override
+    protected boolean Drm_canPlayContent(Token token, String DRMPrivateData, String DRMSystemID) {
+        return mTvBrowserCallback.canPlayContent(DRMPrivateData, DRMSystemID);
+    }
+
+    /**
+     * Checks the availability of a valid license for recording a protected content item.
+     *
+     * @param params JSONObject {
+     *    "DRMPrivateData": string, // DRM proprietary private data
+     *    "DRMSystemID": string,    // ID of the DRM System
+     * }
+     * @return JSONObject {
+     *    "canRecordContent": boolean, // true if the application can be created, false otherwise
+     * }
+     * @throws JSONException
+     */
+    @Override
+    protected boolean Drm_canRecordContent(Token token, String DRMPrivateData, String DRMSystemID) {
+        return mTvBrowserCallback.canRecordContent(DRMPrivateData, DRMSystemID);
+    }
+
+    /**
+     * Set the DRM system, that the terminal shall use for playing protected broadband content.
+     *
+     * @param params JSONObject {
+     *    "DRMSystemID": string, // ID of the DRM System
+     * }
+     * @return JSONObject {
+     *    "success": boolean, // true if the application can be created, false otherwise
+     * }
+     * @throws JSONException
+     */
+    @Override
+    protected boolean Drm_setActiveDRM(Token token, String DRMSystemID) {
+        return mTvBrowserCallback.setActiveDRM(DRMSystemID);
+    }
+
+    /**
      * Publish a test report (debug build only).
      *
      * @param token The token associated with this request.

@@ -638,6 +638,26 @@ hbbtv.objects.VideoBroadcast = (function() {
         },
     });
 
+    Object.defineProperty(prototype, 'onDRMRightsError', {
+        get() {
+            return privates.get(this).onDRMRightsErrorDomLevel0;
+        },
+        set(listener) {
+            const p = privates.get(this);
+            if (p.onDRMRightsErrorDomLevel0) {
+                this.removeEventListener('DRMRightsError', p.onDRMRightsErrorWrapper);
+                p.onDRMRightsErrorWrapper = null;
+            }
+            p.onDRMRightsErrorDomLevel0 = listener;
+            if (listener) {
+                p.onDRMRightsErrorWrapper = (ev) => {
+                    listener(ev.errorState, ev.contentID, ev.DRMSystemID, ev.rightsIssuerURL);
+                };
+                this.addEventListener('DRMRightsError', p.onDRMRightsErrorWrapper);
+            }
+        },
+    });
+
     // Methods
 
     /**
@@ -1671,6 +1691,21 @@ hbbtv.objects.VideoBroadcast = (function() {
             'TransitionedToBroadcastRelated',
             p.onTransitionedToBroadcastRelated
         );
+
+        if (!p.onDRMRightsError) {
+            p.onDRMRightsError = (event) => {
+                console.log('Received DRMRightsError');
+                console.log(event);
+                dispatchEvent.call(this, 'DRMRightsError', {
+                    errorState: event.errorState,
+                    contentID: event.contentID,
+                    DRMSystemID: event.DRMSystemID,
+                    rightsIssuerURL: event.rightsIssuerURL,
+                });
+            };
+
+            hbbtv.bridge.addWeakEventListener('DRMRightsError', p.onDRMRightsError);
+        }
     }
 
     function removeBridgeEventListeners() {
@@ -1712,6 +1747,10 @@ hbbtv.objects.VideoBroadcast = (function() {
                 p.onTransitionedToBroadcastRelated
             );
             p.onTransitionedToBroadcastRelated = null;
+        }
+        if (p.onDRMRightsError != null) {
+            hbbtv.bridge.removeWeakEventListener('DRMRightsError', p.onDRMRightsError);
+            p.onDRMRightsError = null;
         }
     }
 

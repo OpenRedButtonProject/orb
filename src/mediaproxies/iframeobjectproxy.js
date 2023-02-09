@@ -119,7 +119,7 @@ hbbtv.objects.IFrameObjectProxy = (function() {
                     if (msg.data.error) {
                         reject(msg.data.error);
                     } else {
-                        resolve();
+                        resolve(...msg.data.args);
                     }
                     e.stopImmediatePropagation();
                 }
@@ -183,6 +183,7 @@ hbbtv.objects.IFrameObjectProxy = (function() {
                 );
                 postMessage.call(thiz, MSG_TYPE_ASYNC_CALL_RESPONSE, {
                     callId: msg.data.callId,
+                    args: [],
                 });
                 while (p.pending.length) {
                     const pending = p.pending.shift();
@@ -195,12 +196,21 @@ hbbtv.objects.IFrameObjectProxy = (function() {
                     switch (msg.type) {
                         case MSG_TYPE_DISPATCH_EVENT:
                             const evt = new Event(msg.data.eventName);
+                            const evtProps = {};
                             for (const key in msg.data.eventData) {
                                 if (key !== 'isTrusted') {
-                                    // Uncaught TypeError: Cannot set property isTrusted of #<Event> which has only a getter
-                                    evt[key] = msg.data.eventData[key];
+                                    // Uncaught TypeError: Cannot redefine property: isTrusted
+                                    evtProps[key] = {
+                                        value: msg.data.eventData[key],
+                                        writable: false,
+                                    };
                                 }
                             }
+                            evtProps.target = {
+                                value: observer,
+                                writable: false
+                            };
+                            Object.defineProperties(evt, evtProps);
                             observer.dispatchEvent(evt);
                             break;
                         case MSG_TYPE_SET_PROPERTIES:
@@ -225,6 +235,7 @@ hbbtv.objects.IFrameObjectProxy = (function() {
                                     .then(() => {
                                         postMessage.call(thiz, MSG_TYPE_ASYNC_CALL_RESPONSE, {
                                             callId: msg.data.callId,
+                                            args: Array.from(arguments),
                                         });
                                     })
                                     .catch((e) => {

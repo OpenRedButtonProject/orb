@@ -307,6 +307,100 @@ public abstract class AbstractBridge {
     }
 
     /**
+     * Notify about DRM licensing errors during playback of DRM protected A/V content.
+     *
+     * @param errorState details the type of error:
+     *           - 0: no license, consumption of the content is blocked.
+     *           - 1: invalid license, consumption of the content is blocked.
+     *           - 2: valid license, consumption of the content is unblocked.
+     * @param contentID unique identifier of the protected content
+     * @param DRMSystemID ID of the DRM System
+     * @param rightsIssuerURL indicates the value of the rightsIssuerURL that can
+     *        be used to non-silently obtain the rights for the content item
+     */
+    public void dispatchDRMRightsError(int errorState, String contentID, String DRMSystemID,
+                                       String rightsIssuerURL) {
+        JSONObject properties = new JSONObject();
+        try {
+            properties.put("errorState", errorState);
+            properties.put("contentID", contentID);
+            properties.put("DRMSystemID", DRMSystemID);
+            properties.put("rightsIssuerURL", rightsIssuerURL);
+        } catch (JSONException ignored) {
+        }
+        mSessionCallback.dispatchEvent("DRMRightsError", properties);
+    }
+
+    /**
+     * Called when the status of a DRM system changes.
+     *
+     * @param drmSystemId ID of the DRM System
+     * @param status status of the indicated DRM system. Possible states:
+     *    - 0 READY, fully initialised and ready
+     *    - 1 UNKNOWN, no longer available
+     *    - 2 INITIALISING, initialising and not ready to communicate
+     *    - 3 ERROR, in error state
+     * @param protectionGateways space separated list of zero or more CSP Gateway
+     *        types that are capable of supporting the DRM system
+     * @param supportedFormats space separated list of zero or more supported
+     *        file and/or container formats by the DRM system
+     */
+    public void dispatchDRMSystemStatusChange(String drmSystemId, int status, String protectionGateways,
+                                              String supportedFormats) {
+        JSONObject properties = new JSONObject();
+        try {
+            properties.put("DRMSystemID", drmSystemId);
+            properties.put("status", status);
+            properties.put("protectionGateways", protectionGateways);
+            properties.put("supportedFormats", supportedFormats);
+        } catch (JSONException ignored) {
+        }
+        mSessionCallback.dispatchEvent("DRMSystemStatusChange", properties);
+    }
+
+    /**
+     * Called when the underlying DRM system has a result message as a consequence
+     * of a call to sendDRMMessage.
+     *
+     * @param msgID identifies the original message which has led to this resulting message
+     * @param resultMsg DRM system specific result message
+     * @param resultCode result code. Valid values include:
+     *    - 0 Successful
+     *    - 1 Unknown error
+     *    - 2 Cannot process request
+     *    - 3 Unknown MIME type
+     *    - 4 User consent needed
+     *    - 5 Unknown DRM system
+     *    - 6 Wrong format
+     */
+    public void dispatchDRMMessageResult(String msgID, String resultMsg, int resultCode) {
+        JSONObject properties = new JSONObject();
+        try {
+            properties.put("msgID", msgID);
+            properties.put("resultMsg", resultMsg);
+            properties.put("resultCode", resultCode);
+        } catch (JSONException ignored) {
+        }
+        mSessionCallback.dispatchEvent("DRMMessageResult", properties);
+    }
+
+    /**
+     * Called when the underlying DRM system has a message to report.
+     *
+     * @param msg DRM system specific message
+     * @param DRMSystemID ID of the DRM System
+     */
+    public void dispatchDRMSystemMessage(String msg, String DRMSystemID) {
+        JSONObject properties = new JSONObject();
+        try {
+            properties.put("msg", msg);
+            properties.put("DRMSystemID", DRMSystemID);
+        } catch (JSONException ignored) {
+        }
+        mSessionCallback.dispatchEvent("DRMSystemMessage", properties);
+    }
+
+    /**
      * Set the size and position of the broadcast video.
      *
      * Values in pixels are relative to a 1280x720 logical coordinate system and should be scaled to
@@ -1087,6 +1181,89 @@ public abstract class AbstractBridge {
     protected abstract String CSManager_getApp2AppRemoteBaseURL(Token token);
 
     /**
+     * Get the list of supported DRM System IDs currently available. Once called,
+     * the caller can track the availability changes by listening to
+     * onDRMSystemStatusChange events. DRM System ID can enter the following states:
+     *    - 0 READY, fully initialised and ready
+     *    - 1 UNKNOWN, no longer available
+     *    - 2 INITIALISING, initialising and not ready to communicate
+     *    - 3 ERROR, in error state
+     *
+     * @return JSONObject {
+     *    "drmSystemIDs": array // Array of supported DRM System IDs currently available
+     *       [
+     *          {
+     *             "DRMSystemID": string,        // ID of the DRM System
+     *             "status": int,                // status of the indicated DRM system
+     *             "protectionGateways": string, // space separated list of zero or more
+     *                // CSP Gateway types that are capable of supporting the DRM system
+     *             "supportedFormats": string,   // space separated list of zero or more
+     *                // supported file and/or container formats by the DRM system
+     *          }, (...)
+     *       ]
+     * }
+     * @throws JSONException
+     */
+    protected abstract List<TvBrowserTypes.DRMSystemStatus> Drm_getSupportedDRMSystemIDs(Token token);
+
+    /**
+     * Send message to the DRM system.
+     *
+     * @param params JSONObject {
+     *    "msgID": string,      // unique ID to identify the message, to be passed as
+     *                          // the 'msgID' argument for onDRMMessageResult
+     *    "msgType": string,    // message type as defined by the DRM system
+     *    "msg": string,        // message to be provided to the underlying DRM system
+     *    "DRMSystemID": string // ID of the DRM System
+     * }
+     * @return JSONObject {
+     * }
+     * @throws JSONException
+     */
+    protected abstract void Drm_sendDRMMessage(Token token, String msgID, String msgType, String msg, String DRMSystemID);
+
+    /**
+     * Checks the availability of a valid license for playing a protected content item.
+     *
+     * @param params JSONObject {
+     *    "DRMPrivateData": string, // DRM proprietary private data
+     *    "DRMSystemID": string,    // ID of the DRM System
+     * }
+     * @return JSONObject {
+     *    "canPlayContent": boolean, // true if the application can be created, false otherwise
+     * }
+     * @throws JSONException
+     */
+    protected abstract boolean Drm_canPlayContent(Token token, String DRMPrivateData, String DRMSystemID);
+
+    /**
+     * Checks the availability of a valid license for recording a protected content item.
+     *
+     * @param params JSONObject {
+     *    "DRMPrivateData": string, // DRM proprietary private data
+     *    "DRMSystemID": string,    // ID of the DRM System
+     * }
+     * @return JSONObject {
+     *    "canRecordContent": boolean, // true if the application can be created, false otherwise
+     * }
+     * @throws JSONException
+     */
+    protected abstract boolean Drm_canRecordContent(Token token, String DRMPrivateData, String DRMSystemID);
+
+    /**
+     * Set the DRM system, that the terminal shall use for playing protected broadband content.
+     *
+     * @param params JSONObject {
+     *    "DRMSystemID": string, // ID of the DRM System
+     * }
+     * @return JSONObject {
+     *    "success": boolean, // true if the application can be created, false otherwise
+     * }
+     * @throws JSONException
+     */
+    protected abstract boolean Drm_setActiveDRM(Token token, String DRMSystemID);
+
+    /**
      * Publish a test report (debug build only).
      *
      * @param token The token associated with this request.
@@ -1778,6 +1955,68 @@ public abstract class AbstractBridge {
             case "CSManager.getApp2AppRemoteBaseURL": {
                 String result = CSManager_getApp2AppRemoteBaseURL(
                         token
+                );
+                response.put("result", result);
+                break;
+            }
+
+            case "Drm.getSupportedDRMSystemIDs": {
+            /*if (!isRequestAllowed(token, TvBrowserTypes.SECURITY_LEVEL_NONE)) {
+               return makeErrorResponse("SecurityError");
+            }*/
+                List<TvBrowserTypes.DRMSystemStatus> result = Drm_getSupportedDRMSystemIDs(token);
+                response.put("result", TvBrowserTypes.toJSONArray(result));
+                break;
+            }
+
+            case "Drm.sendDRMMessage": {
+                // TODO Check security level (for this request and all other DRM requests)
+            /*if (!isRequestAllowed(token, TvBrowserTypes.SECURITY_LEVEL_NONE)) {
+               return makeErrorResponse("SecurityError");
+            }*/
+                Drm_sendDRMMessage(
+                        token,
+                        params.getString("msgID"),
+                        params.getString("msgType"),
+                        params.getString("msg"),
+                        params.getString("DRMSystemID")
+                );
+                break;
+            }
+
+            case "Drm.canPlayContent": {
+            /*if (!isRequestAllowed(token, TvBrowserTypes.SECURITY_LEVEL_NONE)) {
+               return makeErrorResponse("SecurityError");
+            }*/
+                boolean result = Drm_canPlayContent(
+                        token,
+                        params.getString("DRMPrivateData"),
+                        params.getString("DRMSystemID")
+                );
+                response.put("result", result);
+                break;
+            }
+
+            case "Drm.canRecordContent": {
+            /*if (!isRequestAllowed(token, TvBrowserTypes.SECURITY_LEVEL_NONE)) {
+               return makeErrorResponse("SecurityError");
+            }*/
+                boolean result = Drm_canRecordContent(
+                        token,
+                        params.getString("DRMPrivateData"),
+                        params.getString("DRMSystemID")
+                );
+                response.put("result", result);
+                break;
+            }
+
+            case "Drm.setActiveDRM": {
+            /*if (!isRequestAllowed(token, TvBrowserTypes.SECURITY_LEVEL_NONE)) {
+               return makeErrorResponse("SecurityError");
+            }*/
+                boolean result = Drm_setActiveDRM(
+                        token,
+                        params.getString("DRMSystemID")
                 );
                 response.put("result", result);
                 break;

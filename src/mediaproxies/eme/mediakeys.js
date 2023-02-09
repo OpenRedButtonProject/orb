@@ -9,13 +9,19 @@ hbbtv.objects.MediaKeys = (function() {
     const privates = new WeakMap();
     const prototype = {};
 
-    prototype.createSession = function() {
+    prototype.createSession = function(sessionType) {
         const proxy = privates.get(this).proxy;
-        proxy.callObserverMethod(MEDIA_KEYS_ID, 'createSession');
+        proxy.callObserverMethod(MEDIA_KEYS_ID, 'createSession', [sessionType]);
         return hbbtv.objects.createMediaKeySession(proxy);
     };
 
-    prototype.setServerCertificate = function() {};
+    prototype.setServerCertificate = function(cert) {
+        return privates
+            .get(this)
+            .proxy.callAsyncObserverMethod(MEDIA_KEYS_ID, 'setServerCertificate', [
+                [...new Uint8Array(cert)],
+            ]);
+    };
 
     prototype.orb_setIFrameProxy = function(proxy) {
         privates.get(this).proxy = proxy;

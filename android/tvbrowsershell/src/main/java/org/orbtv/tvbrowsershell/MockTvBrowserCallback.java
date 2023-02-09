@@ -1125,6 +1125,95 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
     }
 
     /**
+     * Get the list of supported DRM System IDs currently available. Once called,
+     * the caller can track the availability changes by listening to
+     * onDRMSystemStatusChange events. DRM System ID can enter the following states:
+     *    - 0 READY, fully initialised and ready
+     *    - 1 UNKNOWN, no longer available
+     *    - 2 INITIALISING, initialising and not ready to communicate
+     *    - 3 ERROR, in error state
+     * @return List of supported DRM System IDs currently available.
+     */
+    @Override
+    public List<TvBrowserTypes.DRMSystemStatus> getSupportedDRMSystemIDs() {
+        ArrayList<TvBrowserTypes.DRMSystemStatus> result = new ArrayList<>();
+        result.add(new TvBrowserTypes.DRMSystemStatus("test", 2, //INITIALISING
+                "ci+ dtcp-ip", "TS_BBTS TTS_BBTS MP4_PDCF"));
+        Handler handler = new android.os.Handler(Looper.getMainLooper());
+        handler.postDelayed(new Runnable() {
+                                public void run() {
+                                    mSession.onDRMSystemStatusChange("test", 0,// READY
+                                            "ci+ dtcp-ip", "TS_BBTS TTS_BBTS MP4_PDCF");
+                                    mSession.onDRMSystemStatusChange("urn:dvb:casystemid:19188", 0, // READY
+                                            "ci+ dtcp-ip", "TS_BBTS TTS_BBTS MP4_PDCF");
+                                }
+                            },
+                6000);
+
+        return result;
+    }
+
+    /**
+     * Checks the availability of a valid license for playing a protected content item.
+     *
+     * @param DRMPrivateData DRM proprietary private data
+     * @param DRMSystemID ID of the DRM System
+     * @return true if there is a valid license available that may allow playing the content
+     */
+    @Override
+    public boolean canPlayContent(String DRMPrivateData, String DRMSystemID) {
+        return true;
+    }
+
+    /**
+     * Checks the availability of a valid license for recording a protected content item.
+     *
+     * @param DRMPrivateData DRM proprietary private data
+     * @param DRMSystemID ID of the DRM System
+     * @return true if there is a valid license available locally that may allow recording the content
+     */
+    @Override
+    public boolean canRecordContent(String DRMPrivateData, String DRMSystemID) {
+        return true;
+    }
+
+    /**
+     * Send message to the DRM system.
+     *
+     * @param msgId unique ID to identify the message, to be passed as the 'msgID'
+     *        argument for onDRMMessageResult
+     * @param msgType message type as defined by the DRM system
+     * @param msg message to be provided to the underlying DRM system
+     * @param drmSystemID ID of the DRM System
+     */
+    @Override
+    public void sendDRMMessage(String msgId, String msgType, String msg, String drmSystemID) {
+        Handler handler = new android.os.Handler(Looper.getMainLooper());
+        handler.postDelayed(new Runnable() {
+            public void run() {
+                mSession.onDRMMessageResult(msgId, msg + "ECHO", 0);
+            }
+        }, 3000);
+        handler.postDelayed(new Runnable() {
+            public void run() {
+                mSession.onDRMSystemMessage(msg + "ECHO2", "test");
+            }
+        }, 6000);
+    }
+
+    /**
+     * Set the DRM system, that the terminal shall use for playing protected broadband content.
+     *
+     * @param DRMSystemID ID of the DRM System
+     * @return false if the terminal is unable to set the specified DRM system as requested,
+     *         true otherwise
+     */
+    @Override
+    public boolean setActiveDRM(String DRMSystemID) {
+        return true;
+    }
+
+    /**
      * Publish a test report (debug build only).
      *
      * @param testSuite A unique test suite name.

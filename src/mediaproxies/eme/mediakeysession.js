@@ -44,6 +44,23 @@ hbbtv.objects.MediaKeySession = (function() {
         prototype[func] = makeEventTargetMethod(func);
     }
 
+    hbbtv.utils.defineGetterProperties(prototype, {
+        closed() {
+            return privates
+                .get(this)
+                .proxy.callAsyncObserverMethod(MEDIA_KEY_SESSION_ID, 'orb_closed');
+        },
+        expiration() {
+            return NaN;
+        }, // TODO
+        keyStatuses() {
+            return {};
+        }, // TODO
+        sessionId() {
+            return '';
+        }, // TODO
+    });
+
     prototype.generateRequest = function(initDataType, initData) {
         return privates
             .get(this)
@@ -51,6 +68,28 @@ hbbtv.objects.MediaKeySession = (function() {
                 initDataType,
                 [...new Uint8Array(initData)],
             ]);
+    };
+
+    prototype.update = function(licence) {
+        return privates
+            .get(this)
+            .proxy.callAsyncObserverMethod(MEDIA_KEY_SESSION_ID, 'update', [
+                [...new Uint8Array(licence)],
+            ]);
+    };
+
+    prototype.close = function() {
+        return privates.get(this).proxy.callAsyncObserverMethod(MEDIA_KEY_SESSION_ID, 'close');
+    };
+
+    prototype.load = function(sessionId) {
+        return privates
+            .get(this)
+            .proxy.callAsyncObserverMethod(MEDIA_KEY_SESSION_ID, 'load', [sessionId]);
+    };
+
+    prototype.remove = function() {
+        return privates.get(this).proxy.callAsyncObserverMethod(MEDIA_KEY_SESSION_ID, 'remove');
     };
 
     function instantiate(proxy) {
