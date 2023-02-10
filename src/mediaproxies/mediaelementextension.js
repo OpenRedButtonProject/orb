@@ -80,10 +80,50 @@ hbbtv.objects.MediaElementExtension = (function() {
       const ORB_PLAYER_URL = "orb://player";
       const prototype = Object.create(HTMLMediaElement.prototype);
       const methods = ["pause", "load"];
+      const nodeMethods = ["appendChild", "insertBefore", "removeChild", "replaceChild", "hasChildNodes"];
+      const nodeProps = ["childNodes", "firstChild", "lastChild", "children"];
       const roProps = ["textTracks", "audioTracks", "videoTracks", "paused", "ended", "currentSrc", "error",
          "networkState", "readyState", "seekable", "videoWidth", "videoHeight"
       ];
       let lastMediaElement = undefined;
+
+      function makeNodeMethod(name) {
+         return function() {
+            const thiz = privates.get(this).divDummy;
+            return thiz[name].apply(thiz, arguments);
+         };
+      }
+
+      for (const name of nodeMethods) {
+         prototype[name] = makeNodeMethod(name);
+      }
+
+      for (const key of nodeProps) {
+         Object.defineProperty(prototype, key, {
+            get() {
+               return privates.get(this).divDummy[key];
+            }
+         });
+      }
+
+      hbbtv.utils.defineGetterProperties(prototype, {
+         nextSibling() {
+            const nextSibling = Object.getOwnPropertyDescriptor(Node.prototype, "nextSibling").get.call(this);
+            // skip the generated iframe
+            if (nextSibling && nextSibling.__orb_mediaElementExtension__) {
+               return nextSibling.nextSibling;
+            }
+            return nextSibling;
+         },
+         previousSibling() {
+            const previousSibling = Object.getOwnPropertyDescriptor(Node.prototype, "previousSibling").get.call(this);
+            // check if there is a generated iframe from another video element
+            if (previousSibling && previousSibling.__orb_mediaElementExtension__) {
+               return previousSibling.previousSibling;
+            }
+            return previousSibling;
+         }
+      });
 
       prototype.getStartDate = function() {
          return privates.get(this).videoDummy.startDate;
@@ -133,18 +173,6 @@ hbbtv.objects.MediaElementExtension = (function() {
       prototype.setMediaKeys = function(mediaKeys) {
          mediaKeys.orb_setIFrameProxy(privates.get(this).iframeProxy);
          return privates.get(this).iframeProxy.callAsyncObserverMethod(MEDIA_PROXY_ID, "setMediaKeys", [mediaKeys]);
-      };
-
-      prototype.appendChild = function(node) {
-         privates.get(this).divDummy.appendChild(node);
-      };
-
-      prototype.insertBefore = function(newNode, otherNode) {
-         privates.get(this).divDummy.insertBefore(newNode, otherNode);
-      };
-
-      prototype.removeChild = function(node) {
-         privates.get(this).divDummy.removeChild(node);
       };
 
       function makeMethod(name) {
@@ -384,6 +412,7 @@ hbbtv.objects.MediaElementExtension = (function() {
             p = privates.get(this);
             iframeProxy.registerObserver(MEDIA_PROXY_ID, videoDummy);
 
+            p.iframe.__orb_mediaElementExtension__ = true;
             p.iframe.frameBorder = 0;
             p.iframe.allow = "encrypted-media";
             p.iframe.addEventListener("load", () => {
@@ -431,8 +460,12 @@ hbbtv.objects.MediaElementExtension = (function() {
                childList: true
             });
 
-            while(this.childNodes.length) {
-               divDummy.appendChild(this.childNodes[0]);
+            // childNodes property is overrided at this point, so we need
+            // to get the childNodes from the property descriptor and add
+            // them dynamically to the divDummy
+            const childNodes = Object.getOwnPropertyDescriptor(Node.prototype, "childNodes").get.call(this);
+            while(childNodes.length) {
+               divDummy.appendChild(childNodes[0]);
             }
 
             // update the new prototype with the values stored in initialProps
@@ -441,7 +474,7 @@ hbbtv.objects.MediaElementExtension = (function() {
             }
             console.log("MediaElementExtension: initialised");
          }
-         if (this.parentNode && !p.iframe.parentNode) {
+         if (this.parentNode && p.iframe.parentNode !== this.parentNode) {
             hbbtv.utils.insertAfter(this.parentNode, p.iframe, this);
             hbbtv.utils.matchElementStyle(p.iframe, this);
          }
