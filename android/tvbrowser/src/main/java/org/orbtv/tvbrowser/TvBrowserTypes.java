@@ -11,6 +11,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -761,7 +762,8 @@ public class TvBrowserTypes {
    public static class DRMSystemStatus implements JSONSerializable {
       private static final String TAG = "DRMSystemStatus";
 
-      public String drmSystemID;
+      public String drmSystem;
+      public ArrayList<String> drmSystemIDs;
       public int status;
       public String protectionGateways;
       public String supportedFormats;
@@ -780,9 +782,10 @@ public class TvBrowserTypes {
        * @param supportedFormats space separated list of zero or more supported file and/or
        *                         container formats by the DRM system
        */
-      public DRMSystemStatus(String drmSystemID, int status, String protectionGateways,
-                             String supportedFormats) {
-         this.drmSystemID = drmSystemID;
+      public DRMSystemStatus(String drmSystem, ArrayList<String> drmSystemIDs, int status,
+                             String protectionGateways, String supportedFormats) {
+         this.drmSystem = drmSystem;
+         this.drmSystemIDs = drmSystemIDs;
          this.status = status;
          this.protectionGateways = protectionGateways;
          this.supportedFormats = supportedFormats;
@@ -797,7 +800,8 @@ public class TvBrowserTypes {
       @Override
       public JSONObject toJSONObject() throws JSONException {
          JSONObject o = new JSONObject();
-         o.put("DRMSystemID", drmSystemID);
+         o.put("DRMSystem", drmSystem);
+         o.put("DRMSystemIDs", new JSONArray(drmSystemIDs));
          o.put("status", status);
          o.put("protectionGateways", protectionGateways);
          o.put("supportedFormats", supportedFormats);

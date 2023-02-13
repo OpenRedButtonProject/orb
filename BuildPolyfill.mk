@@ -28,6 +28,7 @@ src/core.js \
 src/bridge.js \
 src/holepuncher.js \
 src/objectmanager.js \
+src/drmmanager.js \
 src/natives/$(3).js \
 src/polyfill/xhr.js \
 src/polyfill/close.js \
@@ -74,6 +75,8 @@ src/objects/mediasync/mediaelementobserver.js \
 src/objects/mediasync/broadcastobserver.js \
 src/objects/mediasync/mediaelementtsclient.js \
 src/objects/csmanager.js \
+src/objects/oipfdrmagent.js \
+src/objects/oipfgatewayinfo.js \
 src/mediaproxies/mediaerror.js \
 src/mediaproxies/timeranges.js \
 src/mediaproxies/eme/mediakeysystemaccess.js \

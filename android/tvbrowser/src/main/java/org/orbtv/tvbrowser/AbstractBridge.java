@@ -60,11 +60,21 @@ public abstract class AbstractBridge {
 
    /**
     * Called when there is a parental rating error.
+    * @param contentID content ID to which the parental rating error applies
+    * @param ratings the parental rating value of the currently playing content
+    * @param DRMSystemID DRM System ID of the DRM system that generated the event
     */
-   public void dispatchParentalRatingErrorEvent() {
-      // TODO Check whether duplicate emit of ParentalRatingChange event is correct
+   public void dispatchParentalRatingErrorEvent(String contentID,
+                                                List<TvBrowserTypes.ParentalRating> ratings,
+                                                String DRMSystemID) {
       JSONObject properties = new JSONObject();
-      mSessionCallback.dispatchEvent("ParentalRatingChange", properties);
+      try {
+         properties.put("contentID", contentID);
+         properties.put("ratings", TvBrowserTypes.toJSONArray(ratings));
+         properties.put("DRMSystemID", DRMSystemID);
+      } catch (JSONException ignored) {
+      }
+      mSessionCallback.dispatchEvent("ParentalRatingError", properties);
    }
 
    /**
@@ -334,7 +344,8 @@ public abstract class AbstractBridge {
    /**
     * Called when the status of a DRM system changes.
     *
-    * @param drmSystemId ID of the DRM System
+    * @param drmSystem ID of the DRM System
+    * @param drmSystemIds List of the DRM System IDs handled by the DRM System
     * @param status status of the indicated DRM system. Possible states:
     *    - 0 READY, fully initialised and ready
     *    - 1 UNKNOWN, no longer available
@@ -345,11 +356,12 @@ public abstract class AbstractBridge {
     * @param supportedFormats space separated list of zero or more supported
     *        file and/or container formats by the DRM system
     */
-   public void dispatchDRMSystemStatusChange(String drmSystemId, int status, String protectionGateways,
-                                       String supportedFormats) {
+   public void dispatchDRMSystemStatusChange(String drmSystem, List<String> drmSystemIds, int status,
+                                             String protectionGateways, String supportedFormats) {
       JSONObject properties = new JSONObject();
       try {
-         properties.put("DRMSystemID", drmSystemId);
+         properties.put("DRMSystem", drmSystem);
+         properties.put("DRMSystemIDs", new JSONArray(drmSystemIds));
          properties.put("status", status);
          properties.put("protectionGateways", protectionGateways);
          properties.put("supportedFormats", supportedFormats);
@@ -1210,17 +1222,20 @@ public abstract class AbstractBridge {
     * Send message to the DRM system.
     *
     * @param params JSONObject {
-    *    "msgID": string,      // unique ID to identify the message, to be passed as
-    *                          // the 'msgID' argument for onDRMMessageResult
-    *    "msgType": string,    // message type as defined by the DRM system
-    *    "msg": string,        // message to be provided to the underlying DRM system
-    *    "DRMSystemID": string // ID of the DRM System
+    *    "msgID": string,       // unique ID to identify the message, to be passed as
+    *                           // the 'msgID' argument for onDRMMessageResult
+    *    "msgType": string,     // message type as defined by the DRM system
+    *    "msg": string,         // message to be provided to the underlying DRM system
+    *    "DRMSystemID": string, // ID of the DRM System
+    *    "block": boolean       // Whether the function needs to block until the reply is received
     * }
     * @return JSONObject {
+    *    "result": string,      // Result message when block is true. Ignored otherwise.
     * }
     * @throws JSONException
     */
-   protected abstract void Drm_sendDRMMessage(Token token, String msgID, String msgType, String msg, String DRMSystemID);
+   protected abstract String Drm_sendDRMMessage(Token token, String msgID, String msgType,
+                                                String msg, String DRMSystemID, boolean block);
 
    /**
     * Checks the availability of a valid license for playing a protected content item.
@@ -1230,7 +1245,7 @@ public abstract class AbstractBridge {
     *    "DRMSystemID": string,    // ID of the DRM System
     * }
     * @return JSONObject {
-    *    "canPlayContent": boolean, // true if the application can be created, false otherwise
+    *    "result": boolean,        // true if the content can be played, false otherwise
     * }
     * @throws JSONException
     */
@@ -1244,7 +1259,7 @@ public abstract class AbstractBridge {
     *    "DRMSystemID": string,    // ID of the DRM System
     * }
     * @return JSONObject {
-    *    "canRecordContent": boolean, // true if the application can be created, false otherwise
+    *    "result": boolean,        // true if the content can be recorded, false otherwise
     * }
     * @throws JSONException
     */
@@ -1257,7 +1272,7 @@ public abstract class AbstractBridge {
     *    "DRMSystemID": string, // ID of the DRM System
     * }
     * @return JSONObject {
-    *    "success": boolean, // true if the application can be created, false otherwise
+    *    "result": boolean,     // true if the call was successful, false otherwise
     * }
     * @throws JSONException
     */
@@ -1974,13 +1989,15 @@ public abstract class AbstractBridge {
             /*if (!isRequestAllowed(token, TvBrowserTypes.SECURITY_LEVEL_NONE)) {
                return makeErrorResponse("SecurityError");
             }*/
-            Drm_sendDRMMessage(
+            String result = Drm_sendDRMMessage(
                token,
                params.getString("msgID"),
                params.getString("msgType"),
                params.getString("msg"),
-               params.getString("DRMSystemID")
+               params.getString("DRMSystemID"),
+               params.getBoolean("block")
             );
+            response.put("result", result);
             break;
          }
 
