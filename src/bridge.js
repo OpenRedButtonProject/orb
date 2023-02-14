@@ -1429,12 +1429,13 @@ hbbtv.bridge.drm = (function() {
         return hbbtv.native.request('Drm.getSupportedDRMSystemIDs').result;
     };
 
-    exported.sendDRMMessage = function(msgID, msgType, msg, DRMSystemID) {
-        hbbtv.native.request('Drm.sendDRMMessage', {
+    exported.sendDRMMessage = function(msgID, msgType, msg, DRMSystemID, block) {
+        return hbbtv.native.request('Drm.sendDRMMessage', {
             msgID: msgID,
             msgType: msgType,
             msg: msg,
             DRMSystemID: DRMSystemID,
+            block: block ? true : false,
         });
     };
 

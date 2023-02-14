@@ -1,23 +1,14 @@
 /**
- * @fileOverview OIPF Gateway Info object.
- * See: {@link https://web.archive.org/web/20200219165053/http://www.oipf.tv/web-spec/volume5.html#application-oipfgatewayinfo}
- * @preserve Copyright (c) Ocean Blue Software Ltd.
- * @license MIT (see LICENSE for full license)
+ * @fileOverview OIPF Gateway Info object
+ * @license ORB Software. Copyright (c) 2022 Ocean Blue Software Limited
+ * Licensed under the ORB License that can be found in the LICENSE file at
+ * the top level of this repository.
  */
-/*jshint esversion: 6 */
 
 hbbtv.objects.OipfGatewayInfo = (function() {
     const prototype = Object.create(HTMLObjectElement.prototype);
     const privates = new WeakMap();
     const gGarbageCollectionBlocked = new Set();
-
-    const Result = Object.freeze({
-        STATUS_READY: 0,
-        STATUS_UNKNOWN: 1,
-        STATUS_INITIALISING: 2,
-        STATUS_ERROR: 3,
-        STATUS_DECODING: 4,
-    });
 
     /* readonly properties */
     hbbtv.utils.defineGetterProperties(prototype, {
@@ -28,7 +19,7 @@ hbbtv.objects.OipfGatewayInfo = (function() {
             return false;
         },
         isCSPGCIPlusDiscovered() {
-            return privates.get(this).isCSPGCIPlusDiscovered;
+            return hbbtv.drmManager.isCSPGCIPlusDiscovered();
         },
         isCSPGDTCPDiscovered() {
             return false;
@@ -58,7 +49,14 @@ hbbtv.objects.OipfGatewayInfo = (function() {
             return false;
         },
         CSPGCIPlusDRMType() {
-            return null;
+            let result = [];
+            const status = hbbtv.drmManager.getCSPGCIPlusStatus();
+            if (status) {
+                status.DRMSystemIDs.forEach((value) => {
+                    result.push(value.DRMSystemID);
+                });
+            }
+            return result;
         },
     });
 
@@ -160,35 +158,6 @@ hbbtv.objects.OipfGatewayInfo = (function() {
         },
     });
 
-    // Internal listeners
-    function addBridgeEventListeners() {
-        const p = privates.get(this);
-
-        p.onDRMSystemStatusChange = (event) => {
-            const p = privates.get(this);
-            if (p.drmSystemIdStatusMap.has(event.DRMSystemID)) {
-                if (event.status === Result.STATUS_UNKNOWN) {
-                    p.drmSystemIdStatusMap.delete(event.DRMSystemID);
-                } else {
-                    p.drmSystemIdStatusMap.set(event.DRMSystemID, event.status);
-                }
-            } else if (event.status !== Result.STATUS_UNKNOWN) {
-                p.drmSystemIdStatusMap.set(event.DRMSystemID, event.status);
-            }
-            if (isCIPlus(event)) {
-                p.isCSPGCIPlusDiscovered =
-                    event.status === Result.STATUS_READY || event.status === Result.STATUS_DECODING;
-                if (
-                    event.status === Result.STATUS_READY ||
-                    event.status === Result.STATUS_UNKNOWN
-                ) {
-                    dispatchDiscoverCSPGCIPlusEvent.call(this);
-                }
-            }
-        };
-        hbbtv.bridge.addWeakEventListener('DRMSystemStatusChange', p.onDRMSystemStatusChange);
-    }
-
     function dispatchDiscoverIGEvent() {
         const event = new Event('DiscoverIG');
         privates.get(this).eventDispatcher.dispatchEvent(event);
@@ -213,30 +182,7 @@ hbbtv.objects.OipfGatewayInfo = (function() {
         privates.set(this, {});
         const p = privates.get(this);
         p.eventDispatcher = new hbbtv.utils.EventDispatcher(this);
-
-        p.isCSPGCIPlusDiscovered = false;
-
-        /* Associates DRMSystemID with status */
-        p.drmSystemIdStatusMap = new Map();
-        let sysIds = hbbtv.bridge.drm.getSupportedDRMSystemIDs();
-        sysIds.forEach((element) => {
-            p.drmSystemIdStatusMap.set(element.DRMSystemID, element.status);
-            if (
-                (element.status === Result.STATUS_READY ||
-                    element.status === Result.STATUS_DECODING) &&
-                isCIPlus(element)
-            )
-                p.isCSPGCIPlusDiscovered = true;
-        });
-
-        addBridgeEventListeners.call(this);
-    }
-
-    function isCIPlus(element) {
-        return (
-            element.DRMSystemID.startsWith('urn:dvb:casystemid:') &&
-            element.protectionGateways.includes('ci+')
-        );
+        hbbtv.drmManager.registerOipfGatewayInfo(this, dispatchDiscoverCSPGCIPlusEvent);
     }
 
     return {

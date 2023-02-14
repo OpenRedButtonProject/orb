@@ -517,8 +517,9 @@ public interface TvBrowserCallback {
      * @param msgType message type as defined by the DRM system
      * @param msg message to be provided to the underlying DRM system
      * @param drmSystemID ID of the DRM System
+     * @param block Whether the function needs to block until the reply is received
      */
-    void sendDRMMessage(String msgId, String msgType, String msg, String drmSystemID);
+    String sendDRMMessage(String msgId, String msgType, String msg, String drmSystemID, boolean block);
 
     /**
      * Set the DRM system, that the terminal shall use for playing protected broadband content.

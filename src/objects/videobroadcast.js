@@ -1592,10 +1592,11 @@ hbbtv.objects.VideoBroadcast = (function() {
             p.onParentalRatingError = (event) => {
                 console.log('Received ParentalRatingError');
                 console.log(event);
+
                 dispatchParentalRatingError.call(
                     this,
                     event.contentID,
-                    event.ratings,
+                    hbbtv.objects.createCollection(event.ratings),
                     event.DRMSystemID
                 );
             };
@@ -1691,21 +1692,6 @@ hbbtv.objects.VideoBroadcast = (function() {
             'TransitionedToBroadcastRelated',
             p.onTransitionedToBroadcastRelated
         );
-
-        if (!p.onDRMRightsError) {
-            p.onDRMRightsError = (event) => {
-                console.log('Received DRMRightsError');
-                console.log(event);
-                dispatchEvent.call(this, 'DRMRightsError', {
-                    errorState: event.errorState,
-                    contentID: event.contentID,
-                    DRMSystemID: event.DRMSystemID,
-                    rightsIssuerURL: event.rightsIssuerURL,
-                });
-            };
-
-            hbbtv.bridge.addWeakEventListener('DRMRightsError', p.onDRMRightsError);
-        }
     }
 
     function removeBridgeEventListeners() {
@@ -1996,6 +1982,19 @@ hbbtv.objects.VideoBroadcast = (function() {
         p.eventDispatcher.dispatchEvent(event);
     }
 
+    function dispatchDRMRightsError(errorState, contentID, DRMSystemID, rightsIssuerURL) {
+        const p = privates.get(this);
+        mandatoryBroadcastRelatedSecurityCheck(p);
+        const event = new Event('DRMRightsError');
+        Object.assign(event, {
+            errorState: errorState,
+            contentID: contentID,
+            DRMSystemID: DRMSystemID,
+            rightsIssuerURL: rightsIssuerURL,
+        });
+        p.eventDispatcher.dispatchEvent(event);
+    }
+
     function dispatchStreamEvent(id, name, data, text, status) {
         const p = privates.get(this);
         mandatoryBroadcastRelatedSecurityCheck(p);
@@ -2050,7 +2049,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                     result[index] = hbbtv.objects.createAVComponent(item);
             }
         }, this);
-        return hbbtv.objects.createCollection(result, this);
+        return hbbtv.objects.createCollection(result);
     }
 
     function getComponentId(component) {
@@ -2136,6 +2135,13 @@ hbbtv.objects.VideoBroadcast = (function() {
                 throw e;
             }
         }
+
+        hbbtv.drmManager.registerVideoBroadcast(
+            this,
+            dispatchParentalRatingChange,
+            dispatchParentalRatingError,
+            dispatchDRMRightsError
+        );
     }
 
     return {
@@ -2155,7 +2161,5 @@ hbbtv.objectManager.registerObject({
     name: 'video/broadcast',
     mimeTypes: ['video/broadcast'],
     oipfObjectFactoryMethodName: 'createVideoBroadcastObject',
-    upgradeObject: function(object) {
-        hbbtv.objects.upgradeToVideoBroadcast(object);
-    },
+    upgradeObject: hbbtv.objects.upgradeToVideoBroadcast,
 });

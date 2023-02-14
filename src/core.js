@@ -11,6 +11,7 @@ hbbtv.core = (function() {
         hbbtv.bridge.initialise();
         hbbtv.objectManager.initialise();
         hbbtv.orbDebug.polyfill();
+        hbbtv.drmManager.initialise();
     }
     return {
         initialise: initialise,

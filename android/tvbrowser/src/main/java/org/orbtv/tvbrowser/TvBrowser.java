@@ -454,10 +454,12 @@ public class TvBrowser {
         }
 
         /**
-         * TODO(comment)
+         * Called when there is a parental rating error.
          */
-        public void onParentalRatingError() {
-            mBridge.dispatchParentalRatingErrorEvent();
+        public void onParentalRatingError(String contentID,
+                                          List<TvBrowserTypes.ParentalRating> ratings,
+                                          String DRMSystemID) {
+            mBridge.dispatchParentalRatingErrorEvent(contentID, ratings, DRMSystemID);
         }
 
         /**
@@ -598,7 +600,8 @@ public class TvBrowser {
         /**
          * Called when the status of a DRM system changes.
          *
-         * @param drmSystemId ID of the DRM System
+         * @param drmSystem ID of the DRM System
+         * @param drmSystemIds List of the DRM System IDs handled by the DRM System
          * @param status status of the indicated DRM system. Possible states:
          *    - 0 READY, fully initialised and ready
          *    - 1 UNKNOWN, no longer available
@@ -609,9 +612,9 @@ public class TvBrowser {
          * @param supportedFormats space separated list of zero or more supported
          *        file and/or container formats by the DRM system
          */
-        public void onDRMSystemStatusChange(String drmSystemId, int status, String protectionGateways,
-                                            String supportedFormats) {
-            mBridge.dispatchDRMSystemStatusChange(drmSystemId, status, protectionGateways, supportedFormats);
+        public void onDRMSystemStatusChange(String drmSystem, List<String> drmSystemIds, int status,
+                                            String protectionGateways, String supportedFormats) {
+            mBridge.dispatchDRMSystemStatusChange(drmSystem, drmSystemIds, status, protectionGateways, supportedFormats);
         }
 
         /**

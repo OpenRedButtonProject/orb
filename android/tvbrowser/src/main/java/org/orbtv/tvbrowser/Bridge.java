@@ -1163,8 +1163,9 @@ class Bridge extends AbstractBridge {
      * @throws JSONException
      */
     @Override
-    protected void Drm_sendDRMMessage(Token token, String msgID, String msgType, String msg, String DRMSystemID) {
-        mTvBrowserCallback.sendDRMMessage(msgID, msgType, msg, DRMSystemID);
+    protected String Drm_sendDRMMessage(Token token, String msgID, String msgType, String msg,
+                                        String DRMSystemID, boolean block) {
+        return mTvBrowserCallback.sendDRMMessage(msgID, msgType, msg, DRMSystemID, block);
     }
 
     /**

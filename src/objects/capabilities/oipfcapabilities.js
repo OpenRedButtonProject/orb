@@ -26,102 +26,247 @@
  */
 hbbtv.objects.OipfCapabilities = (function() {
     const prototype = Object.create(HTMLObjectElement.prototype);
-    const privates = new WeakMap();
-    let gSharedXmlCapabilities = null;
 
-    const Result = Object.freeze({
-        STATUS_READY: 0,
-        STATUS_UNKNOWN: 1,
-        STATUS_INITIALISING: 2,
-        STATUS_ERROR: 3,
-        STATUS_DECODING: 4,
-    });
+    let gSharedProfileNames = null;
 
-    hbbtv.utils.defineGetterProperties(prototype, {
-        xmlCapabilities() {
-            return getXmlCapabilities(privates.get(this));
-        },
-        extraSDVideoDecodes() {
-            return hbbtv.native.getCapabilities().extraSDVideoDecodes;
-        },
-        extraHDVideoDecodes() {
-            return hbbtv.native.getCapabilities().extraHDVideoDecodes;
-        },
-        extraUHDVideoDecodes() {
-            return hbbtv.native.getCapabilities().extraUHDVideoDecodes;
+    /**
+     * Specifications:
+     * HBBTV A.1/OIPF DAE 7.15.3 (The application/oipfCapabilities embedded object);
+     * HBBTV 10.2.4 (HbbTV reported capabilities and option strings);
+     * HBBTV A.2.15 (Extensions to the OIPF-defined capability negotiation mechanism);
+     * OIPF DAE (9.3 Client capability description).
+     * <p>
+     * Security: none.
+     *
+     * @returns {Document}
+     *
+     * @name xmlCapabilities
+     * @readonly
+     * @memberof OipfCapabilities#
+     */
+    Object.defineProperty(prototype, 'xmlCapabilities', {
+        get: function() {
+            return createXmlCapabilities();
         },
     });
 
-    function getXmlCapabilities(p) {
-        function createXmlCapabilities(capabilities) {
-            function appendMediaProfile(type, profile, activeCIPlusDescrambling) {
-                const media = doc.createElementNS(ns, type + '_profile');
-                for (const attribute in profile) {
-                    media.setAttribute(attribute, profile[attribute]);
-                }
-                for (let sys of activeCIPlusDescrambling) {
-                    if (sys.descramblingFormats.includes(profile.name)) {
-                        media.setAttribute('DRMSystemID', sys.DRMSystemID);
-                    }
-                }
-                doc.documentElement.appendChild(media);
-            }
+    /**
+     * Specifications:
+     * HBBTV A.1/OIPF DAE 7.15.3 (The application/oipfCapabilities embedded object);
+     * HBBTV A.2.30 (Extensions and clarifications to the application/oipfCapabilities embedded
+     *    object);
+     * HBBTV A.2.1 (Resource management).
+     * <p>
+     * Security: none.
+     *
+     * @returns {number}
+     *
+     * @name extraSDVideoDecodes
+     * @readonly
+     * @memberof OipfCapabilities#
+     */
+    Object.defineProperty(prototype, 'extraSDVideoDecodes', {
+        get: function() {
+            return hbbtv.bridge.configuration.getExtraSDVideoDecodes();
+        },
+    });
 
-            function appendDrm(value, key) {
-                if (value.status == Result.STATUS_READY || value.status == Result.STATUS_DECODING) {
-                    const drm = doc.createElementNS(ns, 'drm');
-                    drm.setAttribute('DRMSystemID', key);
-                    if (value.protectionGateways) {
-                        drm.setAttribute('protectionGateways', value.protectionGateways);
-                    }
-                    if (value.supportedFormats) {
-                        drm.append(value.supportedFormats);
-                    }
-                    ext.appendChild(drm);
-                }
+    /**
+     * Specifications:
+     * HBBTV A.1/OIPF DAE 7.15.3 (The application/oipfCapabilities embedded object);
+     * HBBTV A.2.30 (Extensions and clarifications to the application/oipfCapabilities embedded
+     *    object);
+     * HBBTV A.2.1 (Resource management).
+     * <p>
+     * Security: none.
+     *
+     * @returns {number}
+     *
+     * @name extraHDVideoDecodes
+     * @readonly
+     * @memberof OipfCapabilities#
+     */
+    Object.defineProperty(prototype, 'extraHDVideoDecodes', {
+        get: function() {
+            return hbbtv.bridge.configuration.getExtraHDVideoDecodes();
+        },
+    });
+
+    /**
+     * Specifications:
+     * HBBTV A.1/OIPF DAE 7.15.3 (The application/oipfCapabilities embedded object);
+     * HBBTV A.2.30 (Extensions and clarifications to the application/oipfCapabilities embedded
+     *    object).
+     * <p>
+     * Security: none.
+     *
+     * @returns {number}
+     *
+     * @name extraUHDVideoDecodes
+     * @readonly
+     * @memberof OipfCapabilities#
+     */
+    Object.defineProperty(prototype, 'extraUHDVideoDecodes', {
+        get: function() {
+            return hbbtv.bridge.configuration.getExtraUHDVideoDecodes();
+        },
+    });
+
+    /**
+     * Specifications:
+     * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+     * HBBTV A.2.4 (Extensions to the video/broadcast object);
+     * OIPF DAE 9.3 (Client capability description).
+     * <p>
+     * Security: none.
+     *
+     * @returns {boolean}
+     *
+     * @method
+     * @memberof OipfCapabilities#
+     */
+    prototype.hasCapability = function(profileName) {
+        if (gSharedProfileNames === null) {
+            const capabilities = hbbtv.bridge.configuration.getCapabilities();
+            gSharedProfileNames = ['OITF_HD_UIPROF'];
+            gSharedProfileNames = gSharedProfileNames.concat(capabilities.optionStrings);
+            gSharedProfileNames = gSharedProfileNames.concat(capabilities.profileNameFragments);
+            Object.freeze(gSharedProfileNames);
+        }
+        return gSharedProfileNames.includes(profileName);
+    };
+
+    function createXmlCapabilities() {
+        const capabilities = hbbtv.bridge.configuration.getCapabilities();
+        const audioProfiles = hbbtv.bridge.configuration.getAudioProfiles();
+        const videoProfiles = hbbtv.bridge.configuration.getVideoProfiles();
+        console.log('createXmlCapabilities videoProfiles');
+        console.log(videoProfiles);
+        console.log(JSON.stringify(videoProfiles));
+
+        const videoDisplayFormats = hbbtv.bridge.configuration.getVideoDisplayFormats();
+
+        const ns = 'urn:hbbtv:config:oitf:oitfCapabilities:2017-1';
+        const doc = document.implementation.createDocument(ns, 'profilelist', null);
+        doc.documentElement.setAttribute('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance');
+        doc.documentElement.setAttribute(
+            'xsi:schemaLocation',
+            'urn:hbbtv:config:oitf:oitfCapabilities:2017-1 ' + 'config-hbbtv-oitfCapabilities.xsd'
+        );
+
+        // ui_profile
+        const uiProfileElement = doc.createElementNS(ns, 'ui_profile');
+
+        let uiProfileNames = ['OITF_HD_UIPROF'];
+        uiProfileNames.push.apply(uiProfileNames, capabilities.optionStrings);
+        uiProfileNames.push.apply(uiProfileNames, capabilities.profileNameFragments);
+        uiProfileElement.setAttribute('name', uiProfileNames.join(''));
+        doc.documentElement.appendChild(uiProfileElement);
+
+        // ext
+        const extElement = doc.createElementNS(ns, 'ext');
+        uiProfileElement.appendChild(extElement);
+
+        // parentalcontrol
+        const parentalcontrolElement = doc.createElementNS(ns, 'parentalcontrol');
+        parentalcontrolElement.setAttribute('schemes', capabilities.parentalSchemes.join(' '));
+        parentalcontrolElement.append('true');
+        extElement.appendChild(parentalcontrolElement);
+
+        // clientMetadata
+        const clientMetadataElement = doc.createElementNS(ns, 'clientMetadata');
+        clientMetadataElement.setAttribute('type', 'dvb-si');
+        clientMetadataElement.append('true');
+        extElement.appendChild(clientMetadataElement);
+
+        // temporalClipping
+        const temporalClippingElement = doc.createElementNS(ns, 'temporalClipping');
+        extElement.appendChild(temporalClippingElement);
+
+        // graphicsPerformance
+        if (typeof capabilities.graphicsLevels === 'object') {
+            const graphicsPerformanceElement = doc.createElementNS(ns, 'graphicsPerformance');
+            graphicsPerformanceElement.setAttribute('level', capabilities.graphicsLevels.join(' '));
+            extElement.appendChild(graphicsPerformanceElement);
+        }
+
+        // audio_profile
+        audioProfiles.forEach(function(profile) {
+            const element = doc.createElementNS(ns, 'audio_profile');
+            element.setAttribute('name', profile.name);
+            element.setAttribute('type', profile.type);
+            if (typeof profile.transport === 'string') {
+                element.setAttribute('transport', profile.transport);
             }
-            const ns = 'urn:hbbtv:config:oitf:oitfCapabilities:2017-1';
-            const doc = document.implementation.createDocument(ns, 'profilelist', null);
-            doc.documentElement.setAttribute(
-                'xmlns:xsi',
-                'http://www.w3.org/2001/XMLSchema-instance'
-            );
-            doc.documentElement.setAttribute(
-                'xsi:schemaLocation',
-                'urn:hbbtv:config:oitf:oitfCapabilities:2017-1 ' +
-                'config-hbbtv-oitfCapabilities.xsd'
-            );
-            const ui = doc.createElementNS(ns, 'ui_profile');
-            const broadcastSystems = capabilities.broadcastSystems.join();
-            const options = capabilities.options.join();
-            ui.setAttribute('name', 'OITF_HD_UIPROF' + broadcastSystems + options + ',+TRICKMODE');
-            doc.documentElement.appendChild(ui);
-            const ext = doc.createElementNS(ns, 'ext');
-            ui.appendChild(ext);
-            const parental = doc.createElementNS(ns, 'parentalcontrol');
-            parental.setAttribute('schemes', capabilities.parentalSchemes);
-            parental.append('true');
-            ext.appendChild(parental);
-            const client = doc.createElementNS(ns, 'clientMetadata');
-            client.setAttribute('type', 'dvb-si');
-            client.append('true');
-            ext.appendChild(client);
-            const temporal = doc.createElementNS(ns, 'temporalClipping');
-            ext.appendChild(temporal);
-            const activeCIPlusDescrambling = [];
-            p.drmSystemIdStatusMap.forEach(function(value, key, map) {
-                if (value.status === Result.STATUS_DECODING) {
-                    activeCIPlusDescrambling.push({
-                        DRMSystemID: key,
-                        descramblingFormats: value.descramblingFormats,
-                    });
+            if (typeof profile.syncTl === 'string') {
+                element.setAttribute('sync_tl', profile.syncTl);
+            }
+            if (typeof profile.drmSystemId === 'string') {
+                element.setAttribute('DRMSystemID', profile.drmSystemId);
+            }
+            doc.documentElement.appendChild(element);
+        });
+
+        // video_profile
+        videoProfiles.forEach(function(profile) {
+            const element = doc.createElementNS(ns, 'video_profile');
+            element.setAttribute('name', profile.name);
+            element.setAttribute('type', profile.type);
+            if (typeof profile.transport === 'string') {
+                element.setAttribute('transport', profile.transport);
+            }
+            if (typeof profile.syncTl === 'string') {
+                element.setAttribute('sync_tl', profile.syncTl);
+            }
+            if (typeof profile.drmSystemId === 'string') {
+                element.setAttribute('DRMSystemID', profile.drmSystemId);
+            }
+            if (typeof profile.hdr === 'string') {
+                element.setAttribute('hdr', profile.hdr);
+            }
+            doc.documentElement.appendChild(element);
+        });
+
+        //drm
+        const status = hbbtv.drmManager.getCSPGCIPlusStatus();
+        if (status) {
+            status.DRMSystemIDs.forEach((value) => {
+                const drm = doc.createElementNS(ns, 'drm');
+                drm.setAttribute('DRMSystemID', value);
+                if (status.protectionGateways) {
+                    drm.setAttribute('protectionGateways', status.protectionGateways);
                 }
+                if (status.supportedFormats) {
+                    drm.append(status.supportedFormats);
+                }
+                extElement.appendChild(drm);
             });
-            capabilities.audioFormats.forEach(function(format) {
-                appendMediaProfile('audio', format, activeCIPlusDescrambling);
+        }
+
+        // html5_media
+        const html5MediaElement = doc.createElementNS(ns, 'html5_media');
+        html5MediaElement.append('true');
+        doc.documentElement.appendChild(html5MediaElement);
+
+        // broadcast
+        if (typeof capabilities.broadcastUrns === 'object') {
+            capabilities.broadcastUrns.forEach(function(urn) {
+                const element = doc.createElementNS(ns, 'broadcast');
+                element.append(urn);
+                doc.documentElement.appendChild(element);
             });
-            capabilities.videoFormats.forEach(function(format) {
-                appendMediaProfile('video', format, activeCIPlusDescrambling);
+        }
+
+        // video_display_format
+        if (typeof capabilities.videoDisplayFormats === 'object') {
+            videoDisplayFormats.forEach(function(format) {
+                const element = doc.createElementNS(ns, 'video_display_format');
+                element.setAttribute('width', format.width);
+                element.setAttribute('height', format.height);
+                element.setAttribute('frame_rate', format.frameRate);
+                element.setAttribute('bit_depth', format.bitDepth);
+                element.setAttribute('colorimetry', format.colorimetry);
+                doc.documentElement.appendChild(element);
             });
         }
 
@@ -156,46 +301,7 @@ hbbtv.objects.OipfCapabilities = (function() {
         return doc;
     }
 
-    // Internal listeners
-    function addBridgeEventListeners() {
-        const p = privates.get(this);
-        p.onDRMSystemStatusChange = (event) => {
-            const p = privates.get(this);
-            if (p.drmSystemIdStatusMap.has(event.DRMSystemID)) {
-                if (event.status === Result.UNKNOWN) {
-                    p.drmSystemIdStatusMap.delete(event.DRMSystemID);
-                } else {
-                    p.drmSystemIdStatusMap.set(event.DRMSystemID, keepRelevantProps(event));
-                }
-            } else if (event.status !== Result.UNKNOWN) {
-                p.drmSystemIdStatusMap.set(event.DRMSystemID, keepRelevantProps(event));
-            }
-            gSharedXmlCapabilities = null;
-        };
-        hbbtv.bridge.addWeakEventListener('DRMSystemStatusChange', p.onDRMSystemStatusChange);
-    }
-
-    function initialise() {
-        // This class is atypical in that all its data is globally shared
-        privates.set(this, {});
-        const p = privates.get(this);
-        addBridgeEventListeners.call(this);
-        /* Associates DRMSystemID with status */
-        p.drmSystemIdStatusMap = new Map();
-        let sysIds = hbbtv.bridge.drm.getSupportedDRMSystemIDs();
-        sysIds.forEach((element) =>
-            p.drmSystemIdStatusMap.set(element.DRMSystemID, keepRelevantProps(element))
-        );
-    }
-
-    function keepRelevantProps(element) {
-        return {
-            status: element.status,
-            protectionGateways: element.protectionGateways,
-            supportedFormats: element.supportedFormats,
-            descramblingFormats: element.descramblingFormats,
-        };
-    }
+    function initialise() {}
 
     return {
         prototype: prototype,

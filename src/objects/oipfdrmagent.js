@@ -1,83 +1,33 @@
 /**
  * @fileOverview OIPF DRM Agent object.
- * See: {@link https://web.archive.org/web/20200219165053/http://www.oipf.tv/web-spec/volume5.html#application-oipfdrmagent}
- * @preserve Copyright (c) Ocean Blue Software Ltd.
- * @license MIT (see LICENSE for full license)
+ * @license ORB Software. Copyright (c) 2022 Ocean Blue Software Limited
+ * Licensed under the ORB License that can be found in the LICENSE file at
+ * the top level of this repository.
  */
-/*jshint esversion: 6 */
 
 hbbtv.objects.OipfDrmAgent = (function() {
     const prototype = Object.create(HTMLObjectElement.prototype);
     const privates = new WeakMap();
     const gGarbageCollectionBlocked = new Set();
-    let gMsgIdCounter = 0;
-
-    const Result = Object.freeze({
-        STATUS_READY: 0,
-        STATUS_UNKNOWN: 1,
-        STATUS_INITIALISING: 2,
-        STATUS_ERROR: 3,
-
-        MSG_SUCCESSFUL: 0,
-        MSG_UNKNOWN_ERROR: 1,
-        MSG_CANNOT_PROCESS_REQUEST: 2,
-        MSG_UNKNOWN_MIME_TYPE: 3,
-        MSG_USER_CONSENT_NEEDED: 4,
-        MSG_UNKNOWN_DRM_SYSTEM: 5,
-        MSG_WRONG_FORMAT: 6,
-    });
-
-    const DrmMimeTypes = Object.freeze([
-        'application/vnd.marlin.drm.actiontoken+xml',
-        'application/vnd.oipf.mippvcontrolmessage+xml',
-        'application/vnd.oipf.cspg-hexbinary',
-        'application/vnd.marlin.drm.actiontoken2+xml',
-    ]);
 
     prototype.sendDRMMessage = function(msgType, msg, DRMSystemID) {
-        const p = privates.get(this);
-        gMsgIdCounter++;
-        let msgId = gMsgIdCounter.toString();
-        if (!DrmMimeTypes.includes(msgType)) {
-            Promise.resolve().then(() =>
-                dispatchDRMMessageResult.call(this, msgId, null, Result.MSG_UNKNOWN_MIME_TYPE)
-            );
-        } else if (p.drmSystemIdStatusMap.has(DRMSystemID)) {
-            hbbtv.bridge.drm.sendDRMMessage(msgId, msgType, msg, DRMSystemID);
-        } else {
-            Promise.resolve().then(() =>
-                dispatchDRMMessageResult.call(this, msgId, null, Result.MSG_UNKNOWN_DRM_SYSTEM)
-            );
-        }
-        return msgId;
+        return hbbtv.drmManager.sendDRMMessage(msgType, msg, DRMSystemID);
     };
 
     prototype.DRMSystemStatus = function(DRMSystemID) {
-        const p = privates.get(this);
-        if (p.drmSystemIdStatusMap.has(DRMSystemID)) {
-            return p.drmSystemIdStatusMap.get(DRMSystemID);
-        }
-        return Result.STATUS_UNKNOWN;
+        return hbbtv.drmManager.getDRMSystemStatus(DRMSystemID);
     };
 
     prototype.canPlayContent = function(DRMPrivateData, DRMSystemID) {
-        const p = privates.get(this);
-        if (p.drmSystemIdStatusMap.has(DRMSystemID)) {
-            return hbbtv.bridge.drm.canPlayContent(DRMPrivateData, DRMSystemID);
-        }
-        return false;
+        return hbbtv.drmManager.canPlayContent(DRMPrivateData, DRMSystemID);
     };
 
     prototype.canRecordContent = function(DRMPrivateData, DRMSystemID) {
-        const p = privates.get(this);
-        if (p.drmSystemIdStatusMap.has(DRMSystemID)) {
-            return hbbtv.bridge.drm.canRecordContent(DRMPrivateData, DRMSystemID);
-        }
-        return false;
+        return hbbtv.drmManager.canRecordContent(DRMPrivateData, DRMSystemID);
     };
 
     prototype.setActiveDRM = function(DRMSystemID) {
-        return hbbtv.bridge.drm.setActiveDRM(DRMSystemID);
+        return hbbtv.drmManager.setActiveDRM(DRMSystemID);
     };
 
     // DOM level 1 event methods
@@ -154,44 +104,6 @@ hbbtv.objects.OipfDrmAgent = (function() {
         },
     });
 
-    // Internal listeners
-    function addBridgeEventListeners() {
-        const p = privates.get(this);
-
-        p.onDRMSystemStatusChange = (event) => {
-            const p = privates.get(this);
-            if (p.drmSystemIdStatusMap.has(event.DRMSystemID)) {
-                if (event.status === Result.STATUS_UNKNOWN) {
-                    p.drmSystemIdStatusMap.delete(event.DRMSystemID);
-                } else {
-                    p.drmSystemIdStatusMap.set(event.DRMSystemID, event.status);
-                }
-            } else if (event.status !== Result.UNKNOWN) {
-                p.drmSystemIdStatusMap.set(event.DRMSystemID, event.status);
-            }
-            dispatchDRMSystemStatusChange.call(this, event.DRMSystemID);
-        };
-        hbbtv.bridge.addWeakEventListener('DRMSystemStatusChange', p.onDRMSystemStatusChange);
-
-        p.onDRMMessageResult = (event) => {
-            if (event.resultCode == 0x03) {
-                event.resultCode = 0x06;
-            }
-            dispatchDRMMessageResult.call(this, event.msgID, event.resultMsg, event.resultCode);
-        };
-        hbbtv.bridge.addWeakEventListener('DRMMessageResult', p.onDRMMessageResult);
-
-        p.onDRMSystemMessage = (event) => {
-            const ev = new Event('DRMSystemMessage');
-            Object.assign(ev, {
-                msg: event.msg,
-                DRMSystemID: event.DRMSystemID,
-            });
-            privates.get(this).eventDispatcher.dispatchEvent(ev);
-        };
-        hbbtv.bridge.addWeakEventListener('DRMSystemMessage', p.onDRMSystemMessage);
-    }
-
     function dispatchDRMSystemStatusChange(DRMSystemID) {
         const event = new Event('DRMSystemStatusChange');
         Object.assign(event, {
@@ -210,19 +122,26 @@ hbbtv.objects.OipfDrmAgent = (function() {
         privates.get(this).eventDispatcher.dispatchEvent(ev);
     }
 
+    function dispatchDRMSystemMessage(msg, DRMSystemID) {
+        const ev = new Event('DRMSystemMessage');
+        Object.assign(ev, {
+            msg: msg,
+            DRMSystemID: DRMSystemID,
+        });
+        privates.get(this).eventDispatcher.dispatchEvent(ev);
+    }
+
     function initialise() {
         privates.set(this, {});
         const p = privates.get(this);
         p.eventDispatcher = new hbbtv.utils.EventDispatcher(this);
 
-        /* Associates DRMSystemID with status */
-        p.drmSystemIdStatusMap = new Map();
-        let sysIds = hbbtv.bridge.drm.getSupportedDRMSystemIDs();
-        sysIds.forEach((element) =>
-            p.drmSystemIdStatusMap.set(element.DRMSystemID, element.status)
+        hbbtv.drmManager.registerOipfDrmAgent(
+            this,
+            dispatchDRMSystemStatusChange,
+            dispatchDRMMessageResult,
+            dispatchDRMSystemMessage
         );
-
-        addBridgeEventListeners.call(this);
     }
 
     return {

@@ -111,7 +111,7 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
 
         List<String> optionStrings = new ArrayList<>();
         //optionStrings.add("+PVR");
-        //optionStrings.add("+DRM");
+        optionStrings.add("+DRM");
 
         List<String> profileNameFragments = new ArrayList<>();
         profileNameFragments.add("+TRICKMODE"); // +ITV_KEYS is inherited from the base profile
@@ -1137,18 +1137,24 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
     @Override
     public List<TvBrowserTypes.DRMSystemStatus> getSupportedDRMSystemIDs() {
         ArrayList<TvBrowserTypes.DRMSystemStatus> result = new ArrayList<>();
-        result.add(new TvBrowserTypes.DRMSystemStatus("test", 2, //INITIALISING
-                "ci+ dtcp-ip", "TS_BBTS TTS_BBTS MP4_PDCF"));
-        Handler handler = new android.os.Handler(Looper.getMainLooper());
-        handler.postDelayed(new Runnable() {
-                                public void run() {
-                                    mSession.onDRMSystemStatusChange("test", 0,// READY
-                                            "ci+ dtcp-ip", "TS_BBTS TTS_BBTS MP4_PDCF");
-                                    mSession.onDRMSystemStatusChange("urn:dvb:casystemid:19188", 0, // READY
-                                            "ci+ dtcp-ip", "TS_BBTS TTS_BBTS MP4_PDCF");
-                                }
-                            },
-                6000);
+        //String drmSystem, ArrayList<String> drmSystemIDs, int status,
+        //String protectionGateways, String supportedFormats
+      /*result.add(new TvBrowserTypes.DRMSystemStatus("test", null, 2, //INITIALISING
+"ci+ dtcp-ip", "TS_BBTS TTS_BBTS MP4_PDCF"));
+      Handler handler = new android.os.Handler(Looper.getMainLooper());
+      handler.postDelayed(new Runnable() {
+                             public void run() {
+                                ArrayList<String> drmSystemIds1 = new ArrayList<>();
+                                ArrayList<String> drmSystemIds2 = new ArrayList<>();
+                                drmSystemIds1.add("urn:dvb:casystemid:4096");
+                                drmSystemIds2.add("urn:dvb:casystemid:19188");
+                                mSession.onDRMSystemStatusChange("test", drmSystemIds1,0 ,// READY
+                                        "ci+ dtcp-ip", "TS_BBTS TTS_BBTS MP4_PDCF");
+                                mSession.onDRMSystemStatusChange("urn:dvb:casystemid:19188", drmSystemIds2,0, // READY
+                                        "ci+ dtcp-ip", "TS_BBTS TTS_BBTS MP4_PDCF");
+                             }
+                          },
+              6000);*/
 
         return result;
     }
@@ -1185,20 +1191,22 @@ public class MockTvBrowserCallback implements TvBrowserCallback {
      * @param msgType message type as defined by the DRM system
      * @param msg message to be provided to the underlying DRM system
      * @param drmSystemID ID of the DRM System
+     * @param block Whether the function needs to block until the reply is received
      */
     @Override
-    public void sendDRMMessage(String msgId, String msgType, String msg, String drmSystemID) {
-        Handler handler = new android.os.Handler(Looper.getMainLooper());
-        handler.postDelayed(new Runnable() {
-            public void run() {
-                mSession.onDRMMessageResult(msgId, msg + "ECHO", 0);
-            }
-        }, 3000);
-        handler.postDelayed(new Runnable() {
-            public void run() {
-                mSession.onDRMSystemMessage(msg + "ECHO2", "test");
-            }
-        }, 6000);
+    public String sendDRMMessage(String msgId, String msgType, String msg, String drmSystemID, boolean block) {
+      /*Handler handler = new android.os.Handler(Looper.getMainLooper());
+      handler.postDelayed(new Runnable() {
+                             public void run() {
+                                mSession.onDRMMessageResult(msgId, msg + "ECHO", 0);
+                             }
+                          }, 3000);
+      handler.postDelayed(new Runnable() {
+                             public void run() {
+                                mSession.onDRMSystemMessage(msg + "ECHO2", "test");
+                             }
+                          }, 6000);*/
+        return null;
     }
 
     /**
