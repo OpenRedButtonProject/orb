@@ -19,7 +19,7 @@ hbbtv.bridge = (function() {
 
    /**
     * Initialise the bridge.
-    * 
+    *
     * @method
     * @memberof bridge#
     */
@@ -39,66 +39,66 @@ hbbtv.bridge = (function() {
    /**
     * Add a "strong" event listener to the bridge that will be called when an event of the given
     * type is received.
-    * 
+    *
     * This method creates a strong reference from the bridge to the listener, which will prevent
     * the listener and its references from being collected.
-    * 
+    *
     * @param {string} type The event type to receive.
     * @param {listenerCallback} callback The callback that is called when the event is received.
-    * 
+    *
     * @method
     * @memberof bridge#
     */
    exported.addStrongEventListener = function(type, callback) {
       gEventDispatcher.addEventListener(type, callback);
-   }
+   };
 
    /**
     * Remove a previously added "strong" event listener.
-    * 
+    *
     * @param {string} type The previously added event type.
     * @param {listenerCallback} callbackThe The previously added callback.
-    * 
+    *
     * @method
     * @memberof bridge#
     */
    exported.removeStrongEventListener = function(type, callback) {
       gEventDispatcher.removeEventListener(type, callback);
-   }
+   };
 
    /**
     * Add a "weak" event listener to the bridge that will be called when an event of the given type
     * is received, until the event listener is collected.
-    * 
+    *
     * This method creates a weak reference from the bridge to the listener, so that the listener
     * and its references can be collected when they become otherwise unreachable.
-    * 
+    *
     * Note: Passing in an anonymous function (for example) will probably result in listener being
     * collected immediately! A reference to listener needs to be held by the caller, for example
     * in an object with an associated lifetime.
-    * 
+    *
     * @param {string} type The event type to subcribe to.
     * @param {listenerCallback} callback The callback that is called when the event is received.
-    * 
+    *
     * @method
     * @memberof bridge#
     */
    exported.addWeakEventListener = function(type, callback) {
       gEventDispatcher.addWeakEventListener(type, callback);
-   }
+   };
 
    /**
     * Remove a previously added "weak" event listener.
-    * 
+    *
     * @param {string} type The previously added event type.
     * @param {listenerCallback} callbackThe The previously added callback.
-    * 
+    *
     * @method
     * @memberof bridge#
     */
    exported.removeWeakEventListener = function(type, callback) {
       gEventDispatcher.removeWeakEventListener(type, callback);
-   }
+   };
 
    return exported;
 })();
@@ -124,7 +124,7 @@ hbbtv.bridge.broadcast = (function() {
     * @param {number} y The Y position in pixels.
     * @param {number} width The width in pixels.
     * @param {number} height The height in pixels.
-    * 
+    *
     * @method
     * @memberof bridge.broadcast#
     */
@@ -135,7 +135,7 @@ hbbtv.bridge.broadcast = (function() {
          width: width,
          height: height
       });
-   }
+   };
 
    /**
     * Get the current broadcast channel.
@@ -144,13 +144,13 @@ hbbtv.bridge.broadcast = (function() {
     *
     * @returns {Channel} A Channel object representing the current broadcast channel; or null if
     *    not available.
-    * 
+    *
     * @method
     * @memberof bridge.broadcast#
     */
    exported.getCurrentChannel = function() {
       return hbbtv.native.request("Broadcast.getCurrentChannel").result;
-   }
+   };
 
    /**
     * Get the current broadcast channel.
@@ -162,13 +162,13 @@ hbbtv.bridge.broadcast = (function() {
     *
     * @returns {Channel} A Channel object representing the current broadcast channel; or null if not
     *    available.
-    * 
+    *
     * @method
     * @memberof bridge.broadcast#
     */
    exported.getCurrentChannelForEvent = function() {
       return hbbtv.native.request("Broadcast.getCurrentChannelForEvent").result;
-   }
+   };
 
    /**
     * Get the broadcast channel list.
@@ -177,13 +177,13 @@ hbbtv.bridge.broadcast = (function() {
     *
     * @returns {Array.<Channel>} A list of Channel objects representing the broadcast channel list;
     *    or an empty list if not available.
-    * 
+    *
     * @method
     * @memberof bridge.broadcast#
     */
    exported.getChannelList = function() {
       return hbbtv.native.request("Broadcast.getChannelList").result;
-   }
+   };
 
    /**
     * Select a logically null broadcast channel (e.g. tune off).
@@ -195,13 +195,13 @@ hbbtv.bridge.broadcast = (function() {
     *
     *
     * @returns {number} A CHANNEL_STATUS_* code (on success, the code has a value less than 0).
-    * 
+    *
     * @method
     * @memberof bridge.broadcast#
     */
-   exported.setChannelToNull = function (quiet) {
+   exported.setChannelToNull = function(quiet) {
       return hbbtv.native.request("Broadcast.setChannelToNull").result;
-   }
+   };
 
    /**
     * Select the broadcast channel (e.g. tune) with the given CCID.
@@ -217,7 +217,7 @@ hbbtv.bridge.broadcast = (function() {
     *    (HbbTV A.2.4.3.2).
     *
     * @returns {number} A CHANNEL_STATUS_* code (on success, the code has a value less than 0).
-    * 
+    *
     * @method
     * @memberof bridge.broadcast#
     */
@@ -228,7 +228,7 @@ hbbtv.bridge.broadcast = (function() {
          contentAccessDescriptorURL: contentAccessDescriptorURL,
          quiet: quiet
       }).result;
-   }
+   };
 
    /**
     * Select the given broadcast channel (e.g. tune) with the given triplet and information.
@@ -251,7 +251,7 @@ hbbtv.bridge.broadcast = (function() {
     *    (HbbTV A.2.4.3.2).
     *
     * @returns {number} A CHANNEL_STATUS_* code (on success, the code has a value less than 0).
-    * 
+    *
     * @method
     * @memberof bridge.broadcast#
     */
@@ -268,7 +268,7 @@ hbbtv.bridge.broadcast = (function() {
          contentAccessDescriptorURL: contentAccessDescriptorURL,
          quiet: quiet
       }).result;
-   }
+   };
 
    /**
     * Select the broadcast channel with the given DSD. 8 Security: FOR_RUNNING_APP_ONLY.
@@ -283,7 +283,7 @@ hbbtv.bridge.broadcast = (function() {
     *    (HbbTV A.2.4.3.2).
     *
     * @returns {number} A CHANNEL_STATUS_* code (on success, the code has a value less than 0).
-    * 
+    *
     * @method
     * @memberof bridge.broadcast#
     */
@@ -295,7 +295,7 @@ hbbtv.bridge.broadcast = (function() {
          contentAccessDescriptorURL: contentAccessDescriptorURL,
          quiet: quiet
       }).result;
-   }
+   };
 
    /**
     * Get the programme list for the given broadcast channel.
@@ -306,7 +306,7 @@ hbbtv.bridge.broadcast = (function() {
     *
     * @returns {Array.<Programme>} A list of Programme objects available for the broadcast channel;
     *    or an empty list if not available.
-    * 
+    *
     * @method
     * @memberof bridge.broadcast#
     */
@@ -314,7 +314,7 @@ hbbtv.bridge.broadcast = (function() {
       return hbbtv.native.request("Broadcast.getProgrammes", {
          ccid: ccid
       }).result;
-   }
+   };
 
    /**
     * Get the component list for the given broadcast channel.
@@ -326,7 +326,7 @@ hbbtv.bridge.broadcast = (function() {
     *
     * @returns {Array.<Component>} A list of Component objects available for the broadcast channel;
     *    or an empty list if not available.
-    * 
+    *
     * @method
     * @memberof bridge.broadcast#
     */
@@ -335,7 +335,7 @@ hbbtv.bridge.broadcast = (function() {
          ccid: ccid,
          type: type
       }).result;
-   }
+   };
 
    /**
     * Get a private audio component in the selected channel.
@@ -347,19 +347,19 @@ hbbtv.bridge.broadcast = (function() {
     * @returns {Component} The private component with the specified component_tag in the PMT of the
     * currently selected broadcast channel; or null if unavailable or the component is not
     * private (i.e. the stream type is audio, video or subtitle).
-    * 
+    *
     * Mandatory properties: id, pid and encrypted. The id property shall be usable with the
     * overrideComponentSelection method to select the component as an audio track. Other Component
     * properties are not required.
-    * 
+    *
     * @method
     * @memberof bridge.broadcast#
     */
-    exported.getPrivateAudioComponent = function(componentTag) {
+   exported.getPrivateAudioComponent = function(componentTag) {
       return hbbtv.native.request("Broadcast.getPrivateAudioComponent", {
          componentTag: componentTag
       }).result;
-   }
+   };
 
    /**
     * Get a private video component in the selected channel.
@@ -371,11 +371,11 @@ hbbtv.bridge.broadcast = (function() {
     * @returns {Component} The private component with the specified component_tag in the PMT of the
     * currently selected broadcast channel; or null if unavailable or the component is not
     * private (i.e. the stream type is audio, video or subtitle).
-    * 
+    *
     * Mandatory properties: id, pid and encrypted. The id property shall be usable with the
     * overrideComponentSelection method to select the component as a video track. Other Component
     * properties are not required.
-    * 
+    *
     * @method
     * @memberof bridge.broadcast#
     */
@@ -383,26 +383,26 @@ hbbtv.bridge.broadcast = (function() {
       return hbbtv.native.request("Broadcast.getPrivateVideoComponent", {
          componentTag: componentTag
       }).result;
-   }
+   };
 
    /**
     * Override the default component selection of the terminal for the specified type.
-    * 
+    *
     * If id is empty, no component shall be selected for presentation (presentation is explicitly
     * disabled). Otherwise, the specified component shall be selected for presentation.
-    * 
+    *
     * If playback has already started, the presented component shall be updated.
-    * 
+    *
     * Default component selection shall be restored (revert back to the control of the terminal)
     * when: (1) the application terminates, (2) the channel is changed, (3) presentation has not
     * been explicitly disabled and the user selects another track in the terminal UI, or (4) the
     * restoreComponentSelection method is called.
-    * 
+    *
     * Security: FOR_BROADCAST_APP_ONLY.
     *
     * @param {number} type Type of component selection to override (COMPONENT_TYPE_* code).
     * @param {string} id A platform-defined component id or an empty string to disable presentation.
-    * 
+    *
     * @method
     * @memberof bridge.broadcast#
     */
@@ -411,17 +411,17 @@ hbbtv.bridge.broadcast = (function() {
          type: type,
          id: id
       });
-   }
-   
+   };
+
    /**
     * Restore the default component selection of the terminal for the specified type.
-    * 
+    *
     * If playback has already started, the presented component shall be updated.
-    * 
+    *
     * Security: FOR_BROADCAST_APP_ONLY.
     *
     * @param {number} type Type of component selection to restore (COMPONENT_TYPE_* code).
-    * 
+    *
     * @method
     * @memberof bridge.broadcast#
     */
@@ -429,7 +429,7 @@ hbbtv.bridge.broadcast = (function() {
       hbbtv.native.request("Broadcast.restoreComponentSelection", {
          type: type
       });
-   }
+   };
 
    /**
     * Start a metadata search.
@@ -443,7 +443,7 @@ hbbtv.bridge.broadcast = (function() {
     * @param {number} count Maximum number of items to include in the result from the offset.
     * @param {Array.<string>} channelConstraintList Optionally, a list of strings describing
     *    constraints the application wants applied to the query; or an empty list otherwise.
-    * 
+    *
     * @method
     * @memberof bridge.broadcast#
     */
@@ -454,7 +454,7 @@ hbbtv.bridge.broadcast = (function() {
          offset: offset,
          query: query
       });
-   }
+   };
 
    /**
     * Abort a started metadata search.
@@ -462,7 +462,7 @@ hbbtv.bridge.broadcast = (function() {
     * Security: FOR_BROADCAST_APP_ONLY.
     *
     * @param {number} queryId The ID from the query string that started the search.
-    * 
+    *
     * @method
     * @memberof bridge.broadcast#
     */
@@ -470,7 +470,7 @@ hbbtv.bridge.broadcast = (function() {
       hbbtv.native.request("Broadcast.abortSearch", {
          queryId: queryId
       });
-   }
+   };
 
    /**
     * Add a stream event listener subscribed to a DSM-CC event.
@@ -484,7 +484,7 @@ hbbtv.bridge.broadcast = (function() {
     * @param {number} streamEventId If no targetURL is provided, the event ID; or -1 otherwise.
     *
     * @returns {number} The listener ID. Associated StreamEvent events shall include this ID.
-    * 
+    *
     * @method
     * @memberof bridge.broadcast#
     */
@@ -495,13 +495,13 @@ hbbtv.bridge.broadcast = (function() {
          componentTag: componentTag,
          streamEventId: streamEventId
       }).result;
-   }
+   };
 
    /**
     * Remove the given stream event listener.
     *
     * @param {number} id The listener ID to remove.
-    * 
+    *
     * @method
     * @memberof bridge.broadcast#
     */
@@ -509,7 +509,7 @@ hbbtv.bridge.broadcast = (function() {
       hbbtv.native.request("Broadcast.removeStreamEventListener", {
          id: id
       });
-   }
+   };
 
    /**
     * Set whether the broadcast presentation should be suspended.
@@ -522,7 +522,7 @@ hbbtv.bridge.broadcast = (function() {
     *
     * @param {boolean} presentationSuspended True if the broadcast presentation should be suspended;
     *    false otherwise.
-    * 
+    *
     * @method
     * @memberof bridge.broadcast#
     */
@@ -530,14 +530,14 @@ hbbtv.bridge.broadcast = (function() {
       hbbtv.native.request("Broadcast.setPresentationSuspended", {
          presentationSuspended: presentationSuspended
       });
-   }
+   };
 
    return exported;
 })();
 
 /**
  * ORB internal interface: system-agnostic bridge to native programme information.
- * 
+ *
  * TODO Move to bridge.broadcast
  *
  * @name bridge.programme
@@ -552,13 +552,13 @@ hbbtv.bridge.programme = (function() {
     *
     * @return {ParentalRating} A ParentalRating object representing the parental rating; or null if
     *    not available.
-    * 
+    *
     * @method
     * @memberof bridge.programme#
     */
    exported.getParentalRating = function() {
       return hbbtv.native.request("Programme.getParentalRating").result;
-   }
+   };
 
    /**
     * Get a list of the raw SI descriptor data for a programme.
@@ -573,7 +573,7 @@ hbbtv.bridge.programme = (function() {
     *
     * @return {Array.<string>} A list of SI descriptor data. If there are multiple descriptors with
     *    the same tag ID, they will all be returned.
-    * 
+    *
     * @method
     * @memberof bridge.programme#
     */
@@ -586,7 +586,7 @@ hbbtv.bridge.programme = (function() {
          descriptorTagExtension: descriptorTagExtension,
          privateDataSpecifier: privateDataSpecifier
       }).result;
-   }
+   };
 
    return exported;
 })();
@@ -616,7 +616,7 @@ hbbtv.bridge.manager = (function() {
     *    for carousel.
     *
     * @return {boolean} True if the application can be created; false otherwise.
-    * 
+    *
     * @method
     * @memberof bridge.manager#
     */
@@ -624,56 +624,56 @@ hbbtv.bridge.manager = (function() {
       return hbbtv.native.request("Manager.createApplication", {
          url: url
       }).result;
-   }
+   };
 
    /**
     * Destroy the calling application.
     *
     * The calling application is identified by the token associated with the request.
-    * 
+    *
     * @method
     * @memberof bridge.manager#
     */
    exported.destroyApplication = function() {
       hbbtv.native.request("Manager.destroyApplication");
-   }
+   };
 
    /**
     * Show the calling application.
     *
     * The calling application is identified by the token associated with the request.
-    * 
+    *
     * @method
     * @memberof bridge.manager#
     */
    exported.showApplication = function() {
       hbbtv.native.request("Manager.showApplication");
-   }
+   };
 
 
    /**
     * Hide the calling application.
     *
     * The calling application is identified by the token associated with the request.
-    * 
+    *
     * @method
     * @memberof bridge.manager#
     */
    exported.hideApplication = function() {
       hbbtv.native.request("Manager.hideApplication");
-   }
+   };
 
    /**
     * Get the free memory available to the application.
-    * 
+    *
     * @returns {number} The free memory in bytes.
-    * 
+    *
     * @method
     * @memberof bridge.manager#
     */
    exported.getFreeMem = function() {
       return hbbtv.native.request("Manager.getFreeMem").result;
-   }
+   };
 
    /**
     * Get the keyset for this application.
@@ -681,25 +681,25 @@ hbbtv.bridge.manager = (function() {
     * The calling application is identified by the token associated with the request.
     *
     * @return {number} The keyset for this application.
-    * 
+    *
     * @method
     * @memberof bridge.manager#
     */
    exported.getKeyValues = function() {
       return hbbtv.native.request("Manager.getKeyValues").result;
-   }
+   };
 
    /**
     * Get the maximum keyset available to applications.
     *
     * @return {number} }he maximum keyset available to applications.
-    * 
+    *
     * @method
     * @memberof bridge.manager#
     */
    exported.getKeyMaximumValue = function() {
       return hbbtv.native.request("Manager.getKeyMaximumValue").result;
-   }
+   };
 
    /**
     * Set the keyset for this application.
@@ -709,7 +709,7 @@ hbbtv.bridge.manager = (function() {
     * @param {number} value The keyset to set for this application.
     *
     * @return {number} The keyset for this application.
-    * 
+    *
     * @method
     * @memberof bridge.manager#
     */
@@ -718,7 +718,7 @@ hbbtv.bridge.manager = (function() {
          value: value,
          otherKeys: otherKeys
       }).result;
-   }
+   };
 
    /**
     * Get the URL of an icon that represents the given key.
@@ -726,7 +726,7 @@ hbbtv.bridge.manager = (function() {
     * @param {number} code The code of the key to get an icon for (VK_ code).
     *
     * @return {string} A URL of an icon that represents the given key; or null if not available.
-    * 
+    *
     * @method
     * @memberof bridge.manager#
     */
@@ -734,14 +734,14 @@ hbbtv.bridge.manager = (function() {
       return hbbtv.native.request("Manager.getKeyIcon", {
          code: code
       }).result;
-   }
+   };
 
    return exported;
 })();
 
 /**
  * ORB internal interface: system-agnostic bridge to native parental control.
- * 
+ *
  * TODO Move to bridge.configuration.
  *
  * @name bridge.parentalControl
@@ -756,13 +756,13 @@ hbbtv.bridge.parentalControl = (function() {
     *
     * @return {Array.<ParentalRatingScheme>} A list of ParentalRatingScheme objects representing the
     *    supported parental rating schemes; or an empty list of not available.
-    * 
+    *
     * @method
     * @memberof bridge.parentalControl#
     */
    exported.getRatingSchemes = function() {
       return hbbtv.native.request("ParentalControl.getRatingSchemes").result;
-   }
+   };
 
    /**
     * Get the parental rating threshold currently set on the system for the given scheme.
@@ -770,7 +770,7 @@ hbbtv.bridge.parentalControl = (function() {
     * @param {string} schemeName The name of the scheme to get the threshold of.
     *
     * @return {ParentalRating} A ParentalRating object representing the threshold.
-    * 
+    *
     * @method
     * @memberof bridge.parentalControl#
     */
@@ -778,7 +778,7 @@ hbbtv.bridge.parentalControl = (function() {
       return hbbtv.native.request("ParentalControl.getThreshold", {
          scheme: schemeName
       }).result;
-   }
+   };
 
    /**
     * Test whether the rating is blocked for the given scheme, region and value.
@@ -788,13 +788,13 @@ hbbtv.bridge.parentalControl = (function() {
     * @param {number} value The value to test.
     *
     * @return {boolean} True if the rating is blocked; or false otherwise.
-    * 
+    *
     * @method
     * @memberof bridge.parentalControl#
     */
    exported.isRatingBlocked = function(rating) {
       return hbbtv.native.request("ParentalControl.isRatingBlocked", rating).result;
-   }
+   };
 
    return exported;
 })();
@@ -812,7 +812,7 @@ hbbtv.bridge.configuration = (function() {
    /**
     * @typedef {Object} Capabilities Create a capabilities type that describes the current
     * capabilities of the terminal.
-    * 
+    *
     * @property {Array.<string>} optionStrings A list of HbbTV option strings supported by the
     * terminal.
     * Valid values as defined by HBBTV 10.2.4.8 table 13.
@@ -852,7 +852,7 @@ hbbtv.bridge.configuration = (function() {
    /**
     * @typedef {Object} AudioProfile Create an AudioProfile type that describes an audio profile,
     * valid combinations are as defined by HBBTV 10.2.4.7 for the audio_profile element.
-    * 
+    *
     * @property {string} name Name of profile (required).
     * Valid values as defined by OIPF DAE 9.3.11 for audio_profile name.
     * @property {string} type MIME type of profile (required).
@@ -871,7 +871,7 @@ hbbtv.bridge.configuration = (function() {
    /**
     * @typedef {Object} VideoProfile Create a VideoProfile type that describes a video profile,
     * valid combinations are as defined by HBBTV 10.2.4.7 for the video_profile element.
-    * 
+    *
     * @property {string} name Name of profile (required).
     * Valid values as defined by OIPF DAE 9.3.11 for video_profile name.
     * @property {string} type MIME type of profile (required).
@@ -893,7 +893,7 @@ hbbtv.bridge.configuration = (function() {
     * @typedef {Object} VideoDisplayFormat Create a VideoDisplayFormat type that describes a video
     * display format, valid combinations are as defined by HBBTV 10.2.4.7 for the
     * video_display_format element.
-    * 
+    *
     * @property {number} width Width of the video content (required).
     * Valid values as defined by HBBTV 10.2.4.7 for video_display_format name.
     * @property {number} height Height of the video content (required).
@@ -910,57 +910,57 @@ hbbtv.bridge.configuration = (function() {
     * Get the current capabilities of the terminal.
     *
     * @return {Capabilities} A Capabilities object.
-    * 
+    *
     * @method
     * @memberof bridge.configuration#
     */
    exported.getCapabilities = function() {
       return hbbtv.native.request("Configuration.getCapabilities", {}).result;
-   }
+   };
 
    /**
     * Get a list of audio profiles supported by the terminal, as defined by HBBTV 10.2.4.7 for
     * the audio_profile element.
-    * 
+    *
     * @return {Array.<AudioProfile>} A list of audio profiles supported by the terminal.
-    * 
+    *
     * @method
     * @memberof bridge.configuration#
     */
    exported.getAudioProfiles = function() {
       return hbbtv.native.request("Configuration.getAudioProfiles", {}).result;
-   }
+   };
 
    /**
     * Get a list of video profiles supported by the terminal, as defined by HBBTV 10.2.4.7 for
     * the video_profile element.
     *
     * @return {Array.<VideoProfile>} A list of video profiles supported by the terminal.
-    * 
+    *
     * @method
     * @memberof bridge.configuration#
     */
    exported.getVideoProfiles = function() {
       return hbbtv.native.request("Configuration.getVideoProfiles", {}).result;
-   }
+   };
 
    /**
     * If the terminal supports UHD, get a list that describes the highest quality video format the
     * terminal supports, as defined by HBBTV 10.2.4.7 for the video_display_format element;
     * otherwise get an empty list.
-    * 
+    *
     * Note: If the terminal changes its display format based on the content being played, multiple
     * elements may be included in the list when multiple frame rate families are usable or the
     * highest resolution does not support each highest quality parameter.
-    * 
+    *
     * @return {Array.<VideoDisplayFormat>} A list that describes the highest quality video format.
-    * 
+    *
     * @method
     * @memberof bridge.configuration#
     */
    exported.getVideoDisplayFormats = function() {
       return hbbtv.native.request("Configuration.getVideoDisplayFormats", {}).result;
-   }
+   };
 
    /**
     * Get the current number of additional media streams containing SD video accompanied by audio
@@ -969,13 +969,13 @@ hbbtv.bridge.configuration = (function() {
     * @return {number} The current number of additional media streams. If the value is non-zero,
     * then a call to play an A/V control object, HTML5 media element or video/broadcast object
     * shall not fail due to lack of resources for SD media.
-    * 
+    *
     * @method
     * @memberof bridge.configuration#
     */
    exported.getExtraSDVideoDecodes = function() {
       return hbbtv.native.request("Configuration.getExtraSDVideoDecodes", {}).result;
-   }
+   };
 
    /**
     * Get the current number of additional media streams containing HD video accompanied by audio
@@ -984,13 +984,13 @@ hbbtv.bridge.configuration = (function() {
     * @return {number} The current number of additional media streams. If the value is non-zero,
     * then a call to play an A/V control object, HTML5 media element or video/broadcast object
     * shall not fail due to lack of resources for HD media.
-    * 
+    *
     * @method
     * @memberof bridge.configuration#
     */
    exported.getExtraHDVideoDecodes = function() {
       return hbbtv.native.request("Configuration.getExtraHDVideoDecodes", {}).result;
-   }
+   };
 
    /**
     * Get the current number of additional media streams containing UHD video accompanied by audio
@@ -999,51 +999,51 @@ hbbtv.bridge.configuration = (function() {
     * @return {number} The current number of additional media streams. If the value is non-zero,
     * then a call to play an A/V control object, HTML5 media element or video/broadcast object
     * shall not fail due to lack of resources for UHD media.
-    * 
+    *
     * @method
     * @memberof bridge.configuration#
     */
    exported.getExtraUHDVideoDecodes = function() {
       return hbbtv.native.request("Configuration.getExtraUHDVideoDecodes", {}).result;
-   }
+   };
 
    /**
     * Get certain immutable information about the system.
     *
     * @return {SystemInformation} A SystemInformation object.
-    * 
+    *
     * @method
     * @memberof bridge.configuration#
     */
    exported.getLocalSystem = function() {
       return hbbtv.native.request("Configuration.getLocalSystem").result;
-   }
+   };
 
    /**
     * Get preferred languages to be used for audio playback on this system.
     *
     * @return {string} Comma separated string of languages (ISO 639-2 codes), in order of
     *    preference.
-    * 
+    *
     * @method
     * @memberof bridge.configuration#
     */
    exported.getPreferredAudioLanguage = function() {
       return hbbtv.native.request("Configuration.getPreferredAudioLanguage").result;
-   }
+   };
 
    /**
     * Get preferred languages to be used for the user-interface on this system.
     *
     * @return {string} Comma separated string of languages (ISO 639-2 codes), in order of
     *    preference.
-    * 
+    *
     * @method
     * @memberof bridge.configuration#
     */
    exported.getPreferredSubtitleLanguage = function() {
       return hbbtv.native.request("Configuration.getPreferredSubtitleLanguage").result;
-   }
+   };
 
    /**
     * Get preferred languages to be used for the user-interface on this system.
@@ -1051,62 +1051,62 @@ hbbtv.bridge.configuration = (function() {
     *
     * @return {string} Comma separated string of languages (ISO 639-2 codes), in order of
     *    preference.
-    * 
+    *
     * @method
     * @memberof bridge.configuration#
     */
    exported.getPreferredUILanguage = function() {
       return hbbtv.native.request("Configuration.getPreferredUILanguage").result;
-   }
+   };
 
    /**
     * Get a string containing the three character country code identifying the country this system
     * is deployed.
-    * 
+    *
     * @return {string} Country code the receiver is deployed (ISO 3166-1 alpha-3 code).
-    * 
+    *
     * @method
     * @memberof bridge.configuration#
     */
    exported.getCountryId = function() {
       return hbbtv.native.request("Configuration.getCountryId").result;
-   }
+   };
 
    /**
     * Get whether subtitles are enabled on this system.
     *
     * @return {boolean} True if subtitles are enabled; or false otherwise.
-    * 
+    *
     * @method
     * @memberof bridge.configuration#
     */
    exported.getSubtitlesEnabled = function() {
       return hbbtv.native.request("Configuration.getSubtitlesEnabled").result;
-   }
+   };
 
    /**
     * Get whether audio description is enabled on this system.
     *
     * @return {boolean} True if audio description is enabled; or false otherwise.
-    * 
+    *
     * @method
     * @memberof bridge.configuration#
     */
    exported.getAudioDescriptionEnabled = function() {
       return hbbtv.native.request("Configuration.getAudioDescriptionEnabled").result;
-   }
+   };
 
    /**
     * Get the DVB network IDs of the channels in the broadcast channel list.
     *
     * @return {Array.<String>} A list of DVB network IDs; or an empty list of not available.
-    * 
+    *
     * @method
     * @memberof bridge.configuration#
     */
    exported.getDttNetworkIds = function() {
       return hbbtv.native.request("Configuration.getDttNetworkIds").result;
-   }
+   };
 
    /**
     * Get a distinctive identifier for this terminal and calling origin; or a status code if not
@@ -1119,13 +1119,13 @@ hbbtv.bridge.configuration = (function() {
     *
     * @return {string} A distinctive identifier, uniquely generated for this terminal and calling
     *    origin; or a status code (DISTINCTIVE_IDENTIFIER_STATUS_ code).
-    * 
+    *
     * @method
     * @memberof bridge.configuration#
     */
    exported.getDeviceId = function() {
       return hbbtv.native.request("Configuration.getDeviceId").result;
-   }
+   };
 
    /**
     * Request distinctive identifier access for this calling origin.
@@ -1134,20 +1134,20 @@ hbbtv.bridge.configuration = (function() {
     *
     * The client application should display a dialog for the user to allow or deny this. When the
     * result is ready, it is dispatched to the bridge as a accesstodistinctiveidentifier event.
-    * 
+    *
     * @method
     * @memberof bridge.configuration#
     */
    exported.requestAccessToDistinctiveIdentifier = function() {
       hbbtv.native.request("Configuration.requestAccessToDistinctiveIdentifier");
-   }
+   };
 
    return exported;
 })();
 
 /**
  * ORB internal interface: system-agnostic bridge to native media sync.
- * 
+ *
  * TODO All these methods need to be commented.
  *
  * @name bridge.mediaSync
@@ -1160,20 +1160,20 @@ hbbtv.bridge.mediaSync = (function() {
    /**
     *
     * @return {number}
-    * 
+    *
     * @method
     * @memberof bridge.mediaSync#
     */
    exported.instantiate = function() {
       return hbbtv.native.request("MediaSynchroniser.instantiate").result;
-   }
+   };
 
    /**
     * @param {number} id
     * @param {boolean} isMasterBroadcast
     *
     * @return {boolean}
-    * 
+    *
     * @method
     * @memberof bridge.mediaSync#
     */
@@ -1182,11 +1182,11 @@ hbbtv.bridge.mediaSync = (function() {
          id: id,
          isMasterBroadcast: isMasterBroadcast
       }).result;
-   }
+   };
 
    /**
     * @param {number} id
-    * 
+    *
     * @method
     * @memberof bridge.mediaSync#
     */
@@ -1194,11 +1194,11 @@ hbbtv.bridge.mediaSync = (function() {
       hbbtv.native.request("MediaSynchroniser.destroy", {
          id: id
       });
-   }
+   };
 
    /**
     * @param {number} id
-    * 
+    *
     * @method
     * @memberof bridge.mediaSync#
     */
@@ -1206,11 +1206,11 @@ hbbtv.bridge.mediaSync = (function() {
       hbbtv.native.request("MediaSynchroniser.enableInterDeviceSync", {
          id: id
       });
-   }
+   };
 
    /**
     * @param {number} id
-    * 
+    *
     * @method
     * @memberof bridge.mediaSync#
     */
@@ -1218,13 +1218,13 @@ hbbtv.bridge.mediaSync = (function() {
       hbbtv.native.request("MediaSynchroniser.disableInterDeviceSync", {
          id: id
       });
-   }
+   };
 
    /**
     * @param {number} id
     *
     * @return {number}
-    * 
+    *
     * @method
     * @memberof bridge.mediaSync#
     */
@@ -1232,13 +1232,13 @@ hbbtv.bridge.mediaSync = (function() {
       return hbbtv.native.request("MediaSynchroniser.nrOfSlaves", {
          id: id
       }).result;
-   }
+   };
 
    /**
     * @param {number} id
     *
     * @return {boolean}
-    * 
+    *
     * @method
     * @memberof bridge.mediaSync#
     */
@@ -1246,13 +1246,13 @@ hbbtv.bridge.mediaSync = (function() {
       return hbbtv.native.request("MediaSynchroniser.interDeviceSyncEnabled", {
          id: id
       }).result;
-   }
+   };
 
    /**
     * @param {number} id
     *
     * @return {string}
-    * 
+    *
     * @method
     * @memberof bridge.mediaSync#
     */
@@ -1260,14 +1260,14 @@ hbbtv.bridge.mediaSync = (function() {
       return hbbtv.native.request("MediaSynchroniser.getContentIdOverride", {
          id: id
       }).result;
-   }
+   };
 
    /**
     * @param {number} id
     * @param {Object} timeline
     *
     * @return {number}
-    * 
+    *
     * @method
     * @memberof bridge.mediaSync#
     */
@@ -1277,12 +1277,12 @@ hbbtv.bridge.mediaSync = (function() {
          timelineSelector: timelineSelector,
          isMaster: isMaster
       }).result;
-   }
+   };
 
    /**
     * @param {number} id
     * @param {number} timelineId
-    * 
+    *
     * @method
     * @memberof bridge.mediaSync#
     */
@@ -1292,24 +1292,24 @@ hbbtv.bridge.mediaSync = (function() {
          timelineSelector: timelineSelector,
          forceStop: forceStop
       });
-   }
+   };
 
    /**
     * @param {number} timelineSelector
-    * 
+    *
     * @method
     * @memberof bridge.mediaSync#
     */
-    exported.getBroadcastCurrentTime = function(timelineSelector) {
+   exported.getBroadcastCurrentTime = function(timelineSelector) {
       return hbbtv.native.request("MediaSynchroniser.getBroadcastCurrentTime", {
          timelineSelector: timelineSelector
       }).result;
-   }
+   };
 
    /**
     * @param {number} id
     * @param {string} contentIdOverride
-    * 
+    *
     * @method
     * @memberof bridge.mediaSync#
     */
@@ -1318,13 +1318,13 @@ hbbtv.bridge.mediaSync = (function() {
          id: id,
          contentIdOverride: contentIdOverride
       });
-   }
+   };
 
    /**
     * @param {number} id
     * @param {number} contentTime
     * @param {number} speed
-    * 
+    *
     * @method
     * @memberof bridge.mediaSync#
     */
@@ -1335,12 +1335,12 @@ hbbtv.bridge.mediaSync = (function() {
          contentTime: contentTime,
          speed: speed
       });
-   }
+   };
 
    /**
     * @param {number} id
     * @param {Object} properties
-    * 
+    *
     * @method
     * @memberof bridge.mediaSync#
     */
@@ -1352,16 +1352,16 @@ hbbtv.bridge.mediaSync = (function() {
          contentIdStatus: contentIdStatus,
          mrsUrl: mrsUrl
       });
-   }
+   };
 
    /**
     * @param {number} id
     * @param {Object} properties
-    * 
+    *
     * @method
     * @memberof bridge.mediaSync#
     */
-    exported.setTimelineAvailability = function(id, timelineSelector, isAvailable, ticks, speed) {
+   exported.setTimelineAvailability = function(id, timelineSelector, isAvailable, ticks, speed) {
       return hbbtv.native.request("MediaSynchroniser.setTimelineAvailability", {
          id: id,
          timelineSelector: timelineSelector,
@@ -1369,7 +1369,7 @@ hbbtv.bridge.mediaSync = (function() {
          ticks: ticks || 0,
          speed: speed || 0
       }).result;
-    }
+   };
 
    return exported;
 })();
@@ -1383,7 +1383,7 @@ hbbtv.bridge.csManager = (function() {
     */
    exported.getApp2AppLocalBaseURL = function() {
       return hbbtv.native.request("CSManager.getApp2AppLocalBaseURL").result;
-   }
+   };
 
    /**
     *
@@ -1391,7 +1391,7 @@ hbbtv.bridge.csManager = (function() {
     */
    exported.getInterDevSyncURL = function() {
       return hbbtv.native.request("CSManager.getInterDevSyncURL").result;
-   }
+   };
 
    /**
     *
@@ -1399,24 +1399,25 @@ hbbtv.bridge.csManager = (function() {
     */
    exported.getApp2AppRemoteBaseURL = function() {
       return hbbtv.native.request("CSManager.getApp2AppRemoteBaseURL").result;
-   }
+   };
 
    return exported;
 })();
 
 hbbtv.bridge.drm = (function() {
    const exported = {};
-   
+
    exported.getSupportedDRMSystemIDs = function() {
       return hbbtv.native.request("Drm.getSupportedDRMSystemIDs").result;
    };
 
-   exported.sendDRMMessage = function(msgID, msgType, msg, DRMSystemID) {
-      hbbtv.native.request("Drm.sendDRMMessage", {
+   exported.sendDRMMessage = function(msgID, msgType, msg, DRMSystemID, block) {
+      return hbbtv.native.request("Drm.sendDRMMessage", {
          msgID: msgID,
          msgType: msgType,
          msg: msg,
-         DRMSystemID: DRMSystemID
+         DRMSystemID: DRMSystemID,
+         block: (block) ? true : false
       });
    };
 
@@ -1457,7 +1458,7 @@ hbbtv.bridge.orbDebug = (function() {
          testSuite: testSuite,
          xml: xml
       });
-   }
+   };
 
    return exported;
 })();

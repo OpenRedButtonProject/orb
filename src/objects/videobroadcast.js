@@ -7,7 +7,7 @@
 
 /**
  * HbbTV programming interface: video/broadcast embedded object.
- * 
+ *
  * Specifiations:
  * HBBTV.
  * <p>
@@ -81,9 +81,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     * Specifications:
     * HBBTV A.1/OIPF DAE 7.13.4 (Extensions to video/broadcast for playback of selected components);
     * HBBTV A.2.17 (Notification of change of components).
-    * 
+    *
     * @returns {number}
-    * 
+    *
     * @name COMPONENT_TYPE_VIDEO
     * @constant
     * @memberof VideoBroadcast#
@@ -96,9 +96,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     * Specifications:
     * HBBTV A.1/OIPF DAE 7.13.4 (Extensions to video/broadcast for playback of selected components);
     * HBBTV A.2.17 (Notification of change of components).
-    * 
+    *
     * @returns {number}
-    * 
+    *
     * @name COMPONENT_TYPE_AUDIO
     * @constant
     * @memberof VideoBroadcast#
@@ -111,9 +111,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     * Specifications:
     * HBBTV A.1/OIPF DAE 7.13.4 (Extensions to video/broadcast for playback of selected components);
     * HBBTV A.2.17 (Notification of change of components).
-    * 
+    *
     * @returns {number}
-    * 
+    *
     * @name COMPONENT_TYPE_SUBTITLE
     * @constant
     * @memberof VideoBroadcast#
@@ -130,9 +130,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.4 (Extensions to the video/broadcast object).
     * <p>
     * Security: none.
-    * 
+    *
     * @returns {boolean}
-    * 
+    *
     * @name fullScreen
     * @readonly
     * @memberof VideoBroadcast#
@@ -149,9 +149,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.4 (Extensions to the video/broadcast object).
     * <p>
     * Security: none.
-    * 
+    *
     * @returns {number}
-    * 
+    *
     * @name playState
     * @readonly
     * @memberof VideoBroadcast#
@@ -168,9 +168,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.4 (Extensions to the video/broadcast object).
     * <p>
     * Security: none.
-    * 
+    *
     * @returns {string}
-    * 
+    *
     * @name data
     * @readonly
     * @memberof VideoBroadcast#
@@ -179,8 +179,7 @@ hbbtv.objects.VideoBroadcast = (function() {
       get: function() {
          return "";
       },
-      set: function() {
-      }
+      set: function() {}
    });
 
    /**
@@ -189,9 +188,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.4 (Extensions to the video/broadcast object).
     * <p>
     * Security: none.
-    * 
+    *
     * @returns {number}
-    * 
+    *
     * @name height
     * @readonly
     * @memberof VideoBroadcast#
@@ -215,9 +214,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.4 (Extensions to the video/broadcast object).
     * <p>
     * Security: none.
-    * 
+    *
     * @returns {number}
-    * 
+    *
     * @name width
     * @readonly
     * @memberof VideoBroadcast#
@@ -241,9 +240,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.4 (Extensions to the video/broadcast object).
     * <p>
     * Security: none.
-    * 
+    *
     * @returns {function}
-    * 
+    *
     * @name onfocus
     * @readonly
     * @memberof VideoBroadcast#
@@ -270,9 +269,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.4 (Extensions to the video/broadcast object).
     * <p>
     * Security: none.
-    * 
+    *
     * @returns {function}
-    * 
+    *
     * @name onblur
     * @readonly
     * @memberof VideoBroadcast#
@@ -299,9 +298,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.4 (Extensions to the video/broadcast object).
     * <p>
     * Security: none.
-    * 
+    *
     * @returns {function}
-    * 
+    *
     * @name onFullScreenChange
     * @readonly
     * @memberof VideoBroadcast#
@@ -328,9 +327,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.4 (Extensions to the video/broadcast object).
     * <p>
     * Security: none.
-    * 
+    *
     * @returns {function}
-    * 
+    *
     * @name onChannelChangeError
     * @readonly
     * @memberof VideoBroadcast#
@@ -361,9 +360,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.4 (Extensions to the video/broadcast object).
     * <p>
     * Security: none.
-    * 
+    *
     * @returns {function}
-    * 
+    *
     * @name onChannelChangeSucceeded
     * @readonly
     * @memberof VideoBroadcast#
@@ -394,9 +393,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.4 (Extensions to the video/broadcast object).
     * <p>
     * Security: none.
-    * 
+    *
     * @returns {function}
-    * 
+    *
     * @name onPlayStateChange
     * @readonly
     * @memberof VideoBroadcast#
@@ -426,14 +425,14 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.1/OIPF DAE 7.13.3 (Extensions to video/broadcast for access to EIT p/f).
     * <p>
     * Security: none.
-    * 
+    *
     * @returns {ProgrammeCollection}
-    * 
+    *
     * @name programmes
     * @readonly
     * @memberof VideoBroadcast#
     */
-    Object.defineProperty(prototype, "programmes", {
+   Object.defineProperty(prototype, "programmes", {
       get: function() {
          const p = privates.get(this);
          mandatoryBroadcastRelatedSecurityCheck(p);
@@ -455,9 +454,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.1/OIPF DAE 7.13.3 (Extensions to video/broadcast for access to EIT p/f).
     * <p>
     * Security: none.
-    * 
+    *
     * @returns {function}
-    * 
+    *
     * @name onProgrammesChanged
     * @readonly
     * @memberof VideoBroadcast#
@@ -484,14 +483,14 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.17 (Notification of change of components).
     * <p>
     * Security: none.
-    * 
+    *
     * @returns {function}
-    * 
+    *
     * @name onSelectedComponentChanged
     * @readonly
     * @memberof VideoBroadcast#
     */
-    Object.defineProperty(prototype, "onSelectedComponentChanged", {
+   Object.defineProperty(prototype, "onSelectedComponentChanged", {
       get() {
          return privates.get(this).onSelectedComponentChangedDomLevel0;
       },
@@ -517,9 +516,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.17 (Notification of change of components).
     * <p>
     * Security: none.
-    * 
+    *
     * @returns {function}
-    * 
+    *
     * @name onComponentChanged
     * @readonly
     * @memberof VideoBroadcast#
@@ -549,9 +548,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.1/OIPF DAE 7.13.5 (Extensions to video/broadcast for parental ratings errors)
     * <p>
     * Security: none.
-    * 
+    *
     * @returns {function}
-    * 
+    *
     * @name onParentalRatingChange
     * @readonly
     * @memberof VideoBroadcast#
@@ -581,9 +580,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.1/OIPF DAE 7.13.5 (Extensions to video/broadcast for parental ratings errors)
     * <p>
     * Security: none.
-    * 
+    *
     * @returns {function}
-    * 
+    *
     * @name onParentalRatingError
     * @readonly
     * @memberof VideoBroadcast#
@@ -613,14 +612,14 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.1/OIPF DAE 7.13.7 (Extensions to video/broadcast for current channel information).
     * <p>
     * Security: none.
-    * 
+    *
     * @returns {Channel}
-    * 
+    *
     * @name currentChannel
     * @readonly
     * @memberof VideoBroadcast#
     */
-    Object.defineProperty(prototype, "currentChannel", {
+   Object.defineProperty(prototype, "currentChannel", {
       get: function() {
          if (!privates.get(this).isBroadcastRelated) {
             return null;
@@ -657,7 +656,7 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.4 (Extensions to the video/broadcast object).
     * <p>
     * Security: broadcast-related.
-    * 
+    *
     * @returns {ChannelConfig}
     *
     * @method
@@ -675,7 +674,7 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.4 (Extensions to the video/broadcast object).
     * <p>
     * Security: broadcast-related.
-    * 
+    *
     * @returns {Channel}
     *
     * @method
@@ -754,14 +753,14 @@ hbbtv.objects.VideoBroadcast = (function() {
     * @param {number} sid
     * @param {number} sourceID
     * @param {string} ipBroadcastID
-    * 
+    *
     * @returns {Channel}
-    * 
+    *
     * @method
     * @memberof VideoBroadcast#
     */
    prototype.createChannelObject = function(idType, dsdOrOnid, sidOrTsid, sid, sourceID,
-         ipBroadcastID) {
+      ipBroadcastID) {
       if (idType == 13) {
          // createChannelObject(idType, dsd, tsid)
          return hbbtv.objects.createChannel({
@@ -796,7 +795,7 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.4 (Extensions to the video/broadcast object).
     * <p>
     * Security: none.
-    * 
+    *
     * @param {Channel} channel
     * @param {boolean} trickplay
     * @param {string} contentAccessDescriptorURL
@@ -850,8 +849,8 @@ hbbtv.objects.VideoBroadcast = (function() {
                contentAccessDescriptorURL,
                quiet);
          } else {
-            if (channel.onid !== undefined && channel.tsid !== undefined
-                  && channel.sid !== undefined) {
+            if (channel.onid !== undefined && channel.tsid !== undefined &&
+               channel.sid !== undefined) {
                errorState = hbbtv.bridge.broadcast.setChannelToTriplet(
                   channel.idType,
                   channel.onid,
@@ -938,7 +937,7 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.4 (Extensions to the video/broadcast object).
     * <p>
     * Security: none.
-    * 
+    *
     * @param {boolean} fullScreen
     *
     * @method
@@ -961,7 +960,7 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.4 (Extensions to the video/broadcast object).
     * <p>
     * Security: none.
-    * 
+    *
     * @returns {integer}
     *
     * @method
@@ -994,7 +993,7 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.4 (Extensions to the video/broadcast object).
     * <p>
     * Security: none.
-    * 
+    *
     * @method
     * @memberof VideoBroadcast#
     */
@@ -1019,11 +1018,11 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.4.6 (Support for creating audio and video components),
     * <p>
     * Security: none.
-    * 
+    *
     * @param {number} componentType
-    * 
+    *
     * @return {AVComponentCollection}
-    * 
+    *
     * @method
     * @memberof VideoBroadcast#
     */
@@ -1045,18 +1044,18 @@ hbbtv.objects.VideoBroadcast = (function() {
          });
       }
       return null;
-   }
-   
+   };
+
    /**
     * Specifications:
     * HBBTV A.2.4.6 (Support for creating audio and video components),
     * <p>
     * Security: none.
-    * 
+    *
     * @param {number} componentType
-    * 
+    *
     * @return {AVComponentCollection}
-    * 
+    *
     * @method
     * @memberof VideoBroadcast#
     */
@@ -1077,7 +1076,7 @@ hbbtv.objects.VideoBroadcast = (function() {
          });
       }
       return null;
-   }
+   };
 
    /**
     * Specifications:
@@ -1085,11 +1084,11 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.17 (Notification of change of components).
     * <p>
     * Security: broadcast-related.
-    * 
+    *
     * @param {number} componentType
-    * 
+    *
     * @return {AVComponentCollection}
-    * 
+    *
     * @method
     * @memberof VideoBroadcast#
     */
@@ -1119,11 +1118,11 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.17 (Notification of change of components).
     * <p>
     * Security: broadcast-related.
-    * 
+    *
     * @param {number} componentType
-    * 
+    *
     * @return {AVComponentCollection}
-    * 
+    *
     * @method
     * @memberof VideoBroadcast#
     */
@@ -1153,9 +1152,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.17 (Notification of change of components).
     * <p>
     * Security: broadcast-related.
-    * 
+    *
     * @param {AVComponent|number} component
-    * 
+    *
     * @method
     * @memberof VideoBroadcast#
     */
@@ -1186,9 +1185,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV A.2.17 (Notification of change of components).
     * <p>
     * Security: broadcast-related.
-    * 
+    *
     * @param {AVComponent|number} component
-    * 
+    *
     * @method
     * @memberof VideoBroadcast#
     */
@@ -1204,7 +1203,7 @@ hbbtv.objects.VideoBroadcast = (function() {
          });
          if (found.active) {
             if (component.type == this.COMPONENT_TYPE_AUDIO ||
-                  component.type == this.COMPONENT_TYPE_SUBTITLE) {
+               component.type == this.COMPONENT_TYPE_SUBTITLE) {
                // Select the default component
                hbbtv.bridge.broadcast.restoreComponentSelection(component.type);
             } else {
@@ -1223,11 +1222,11 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV 8.2.1 (Acquisition of DSM-CC stream events).
     * <p>
     * Security: none.
-    * 
+    *
     * @param {string} targetURL
     * @param {string} eventName
     * @param {EventListener} listener
-    * 
+    *
     * @method
     * @memberof VideoBroadcast#
     */
@@ -1293,11 +1292,11 @@ hbbtv.objects.VideoBroadcast = (function() {
     * HBBTV 8.2.1 (Acquisition of DSM-CC stream events).
     * <p>
     * Security: none.
-    * 
+    *
     * @param {string} targetURL
     * @param {string} eventName
     * @param {EventListener} listener
-    * 
+    *
     * @method
     * @memberof VideoBroadcast#
     */
@@ -1370,7 +1369,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                            if (e.name === 'SecurityError') {
                               console.log('Unexpected condition: app appears broadcast-independent.');
                            }
-                           throw(e);
+                           throw (e);
                         }
                      }
                      if (p.waitingPlayStateConnectingConfirm) {
@@ -1468,7 +1467,9 @@ hbbtv.objects.VideoBroadcast = (function() {
          p.onParentalRatingError = (event) => {
             console.log("Received ParentalRatingError");
             console.log(event);
-            dispatchParentalRatingError.call(this, event.contentID, event.ratings, event.DRMSystemID);
+
+            dispatchParentalRatingError.call(this, event.contentID,
+               hbbtv.objects.createCollection(event.ratings), event.DRMSystemID);
          };
 
          hbbtv.bridge.addWeakEventListener("ParentalRatingError", p.onParentalRatingError);
@@ -1541,16 +1542,6 @@ hbbtv.objects.VideoBroadcast = (function() {
       }
 
       hbbtv.bridge.addWeakEventListener("TransitionedToBroadcastRelated", p.onTransitionedToBroadcastRelated);
-
-      if (!p.onDRMRightsError) {
-         p.onDRMRightsError = (event) => {
-            console.log("Received DRMRightsError");
-            console.log(event);
-            dispatchEvent.call(this, "DRMRightsError", { errorState: event.errorState, contentID: event.contentID, DRMSystemID: event.DRMSystemID, rightsIssuerURL: event.rightsIssuerURL });
-         };
-
-         hbbtv.bridge.addWeakEventListener("DRMRightsError", p.onDRMRightsError);
-      }
    }
 
    function removeBridgeEventListeners() {
@@ -1681,7 +1672,7 @@ hbbtv.objects.VideoBroadcast = (function() {
 
    function acquireActiveState() {
       if (gActiveStateOwner !== null) {
-         const owner = hbbtv.utils.weakDeref(gActiveStateOwner)
+         const owner = hbbtv.utils.weakDeref(gActiveStateOwner);
          if (owner !== this) {
             return false;
          }
@@ -1693,7 +1684,7 @@ hbbtv.objects.VideoBroadcast = (function() {
 
    function releaseActiveState() {
       if (gActiveStateOwner !== null) {
-         const owner = hbbtv.utils.weakDeref(gActiveStateOwner)
+         const owner = hbbtv.utils.weakDeref(gActiveStateOwner);
          if (owner === this) {
             gObjectFinalizedWhileActive.unregister(this);
             hbbtv.bridge.broadcast.setPresentationSuspended(gBroadbandAvInUse);
@@ -1800,6 +1791,19 @@ hbbtv.objects.VideoBroadcast = (function() {
       p.eventDispatcher.dispatchEvent(event);
    }
 
+   function dispatchDRMRightsError(errorState, contentID, DRMSystemID, rightsIssuerURL) {
+      const p = privates.get(this);
+      mandatoryBroadcastRelatedSecurityCheck(p);
+      const event = new Event("DRMRightsError");
+      Object.assign(event, {
+         errorState: errorState,
+         contentID: contentID,
+         DRMSystemID: DRMSystemID,
+         rightsIssuerURL: rightsIssuerURL
+      });
+      p.eventDispatcher.dispatchEvent(event);
+   }
+
    function dispatchStreamEvent(id, name, data, text, status) {
       const p = privates.get(this);
       mandatoryBroadcastRelatedSecurityCheck(p);
@@ -1852,19 +1856,19 @@ hbbtv.objects.VideoBroadcast = (function() {
                result[index] = hbbtv.objects.createAVComponent(item);
          }
       }, this);
-      return hbbtv.objects.createCollection(result, this);
+      return hbbtv.objects.createCollection(result);
    }
 
    function getComponentId(component) {
       let id = null;
       if (component.type == COMPONENT_TYPE_VIDEO &&
-            hbbtv.objects.AVVideoComponent.prototype.isPrototypeOf(component)) {
+         hbbtv.objects.AVVideoComponent.prototype.isPrototypeOf(component)) {
          id = hbbtv.objects.AVVideoComponent.getId.call(component);
       } else if (component.type == COMPONENT_TYPE_AUDIO &&
-            hbbtv.objects.AVAudioComponent.prototype.isPrototypeOf(component)) {
+         hbbtv.objects.AVAudioComponent.prototype.isPrototypeOf(component)) {
          id = hbbtv.objects.AVAudioComponent.getId.call(component);
       } else if (component.type == COMPONENT_TYPE_SUBTITLE &&
-            hbbtv.objects.AVSubtitleComponent.prototype.isPrototypeOf(component)) {
+         hbbtv.objects.AVSubtitleComponent.prototype.isPrototypeOf(component)) {
          id = hbbtv.objects.AVSubtitleComponent.getId.call(component);
       }
       if (id === undefined) {
@@ -1930,6 +1934,9 @@ hbbtv.objects.VideoBroadcast = (function() {
             throw (e);
          }
       }
+
+      hbbtv.drmManager.registerVideoBroadcast(this, dispatchParentalRatingChange,
+         dispatchParentalRatingError, dispatchDRMRightsError);
    }
 
    return {
@@ -1949,7 +1956,5 @@ hbbtv.objectManager.registerObject({
    name: "video/broadcast",
    mimeTypes: ["video/broadcast"],
    oipfObjectFactoryMethodName: "createVideoBroadcastObject",
-   upgradeObject: function(object) {
-      hbbtv.objects.upgradeToVideoBroadcast(object);
-   }
+   upgradeObject: hbbtv.objects.upgradeToVideoBroadcast
 });

@@ -4,6 +4,7 @@
  * Licensed under the ORB License that can be found in the LICENSE file at
  * the top level of this repository.
  */
+
 /*jshint esversion: 6 */
 
 hbbtv.objects.MetadataSearch = (function() {
@@ -33,7 +34,7 @@ hbbtv.objects.MetadataSearch = (function() {
       const p = privates.get(this);
       mandatoryBroadcastRelatedSecurityCheck(p);
       internalSetQuery.call(this, query, p);
-   }
+   };
 
    prototype.addChannelConstraint = function(channel) {
       const p = privates.get(this);
@@ -46,7 +47,7 @@ hbbtv.objects.MetadataSearch = (function() {
          }
       }
       internalSetQuery.call(this, p.currentQuery, p);
-   }
+   };
 
    prototype.createQuery = function(field, comparison, value) {
       const p = privates.get(this);
@@ -62,7 +63,7 @@ hbbtv.objects.MetadataSearch = (function() {
             return null;
       }
       return hbbtv.objects.createQuery(field, comparison, value);
-   }
+   };
 
    prototype.findProgrammesFromStream = function(channel, startTime, count) {
       const p = privates.get(this);
@@ -74,7 +75,7 @@ hbbtv.objects.MetadataSearch = (function() {
       }
       const qEndTime = hbbtv.objects.createQuery("Programme.endTime", 2, startTime);
       internalSetQuery.call(this, qEndTime, p);
-   }
+   };
 
    function initialise(searchManager, searchTarget) {
       privates.set(this, {});
@@ -181,4 +182,4 @@ hbbtv.objects.createMetadataSearch = function(searchManager, searchTarget) {
    const metadataSearch = Object.create(hbbtv.objects.MetadataSearch.prototype);
    hbbtv.objects.MetadataSearch.initialise.call(metadataSearch, searchManager, searchTarget);
    return metadataSearch;
-}
+};
