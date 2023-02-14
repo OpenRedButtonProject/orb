@@ -971,8 +971,9 @@ hbbtv.objects.AVControl = (function() {
          } else {
             priv.onPauseHandler();
          }
-         setMediaSettings.call(this, priv.MediaSettingsConfiguration);
       });
+
+      videoElement.addEventListener("loadedmetadata", () => setMediaSettings.call(this, priv.MediaSettingsConfiguration));
 
       videoElement.addEventListener("waiting", () => {
          transitionToState.call(thiz, PLAY_STATE_BUFFERING);
