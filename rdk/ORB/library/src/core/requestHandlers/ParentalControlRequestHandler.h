@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "RequestHandler.h"
+#include "ORBBridgeRequestHandler.h"
 #include "ParentalRating.h"
 
 #include <map>
@@ -19,7 +19,7 @@ namespace orb {
  *
  * RequestHandler implementation for handling ParentalControl-related requests issued by the WPE bridge.
  */
-class ParentalControlRequestHandler : public RequestHandler {
+class ParentalControlRequestHandler : public ORBBridgeRequestHandler {
 public:
 
     ParentalControlRequestHandler();

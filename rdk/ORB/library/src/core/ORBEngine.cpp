@@ -8,6 +8,7 @@
 #include "ORBPlatformLoader.h"
 #include "SessionCallbackImpl.h"
 #include "ORBLogging.h"
+#include "ORBBridgeRequestHandler.h"
 #include <cstdint>
 #include <nlohmann/json.hpp>
 
@@ -54,11 +55,6 @@ ORBEngine::ORBEngine()
     : m_eventListener(nullptr)
     , m_orbPlatformLoader(std::make_shared<ORBPlatformLoader>())
     , m_tokenManager(std::make_shared<TokenManager>())
-    , m_broadcastRequestHandler(std::make_shared<BroadcastRequestHandler>())
-    , m_configurationRequestHandler(std::make_shared<ConfigurationRequestHandler>())
-    , m_managerRequestHandler(std::make_shared<ManagerRequestHandler>())
-    , m_programmeRequestHandler(std::make_shared<ProgrammeRequestHandler>())
-    , m_parentalControlRequestHandler(std::make_shared<ParentalControlRequestHandler>())
     , m_platformEventHandler(std::make_shared<ORBPlatformEventHandlerImpl>())
     , m_orbPlatform(nullptr)
     , m_currentAppId(UINT16_MAX)
@@ -183,7 +179,7 @@ std::string ORBEngine::ExecuteBridgeRequest(std::string jsonRequest)
     json jsonTokenPayload = GetTokenManager()->GetTokenPayload(jsonToken);
     if (jsonTokenPayload.is_null() || jsonTokenPayload.empty())
     {
-        response = RequestHandler::MakeErrorResponse("Forbidden");
+        response = ORBBridgeRequestHandler::MakeErrorResponse("Forbidden");
         return response.dump();
     }
 
@@ -194,7 +190,7 @@ std::string ORBEngine::ExecuteBridgeRequest(std::string jsonRequest)
     std::string method;
     if (!ResolveObjectAndMethod(request["method"], object, method))
     {
-        response = RequestHandler::MakeErrorResponse("UnknownMethod");
+        response = ORBBridgeRequestHandler::MakeErrorResponse("UnknownMethod");
         return response;
     }
 
@@ -202,29 +198,15 @@ std::string ORBEngine::ExecuteBridgeRequest(std::string jsonRequest)
 
     // Execute requested method
     json params = request["params"];
-    if (object == "Broadcast")
+
+    std::shared_ptr<ORBBridgeRequestHandler> requestHandler = ORBBridgeRequestHandler::Get(object);
+    if (requestHandler != nullptr)
     {
-        GetBroadcastRequestHandler()->Handle(jsonToken, method, params, response);
-    }
-    else if (object == "Configuration")
-    {
-        GetConfigurationRequestHandler()->Handle(jsonToken, method, params, response);
-    }
-    else if (object == "Manager")
-    {
-        GetManagerRequestHandler()->Handle(jsonToken, method, params, response);
-    }
-    else if (object == "Programme")
-    {
-        GetProgrammeRequestHandler()->Handle(jsonToken, method, params, response);
-    }
-    else if (object == "ParentalControl")
-    {
-        GetParentalControlRequestHandler()->Handle(jsonToken, method, params, response);
+        requestHandler->Handle(jsonToken, method, params, response);
     }
     else
     {
-        response = RequestHandler::MakeErrorResponse("UnknownMethod");
+        response = ORBBridgeRequestHandler::MakeErrorResponse("UnknownMethod");
     }
 
     ORB_LOG("response=%s", response.dump().c_str());

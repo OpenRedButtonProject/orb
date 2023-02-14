@@ -29,6 +29,7 @@ set(CORE_DATA_TYPES_SOURCES
 
 # core/requestHandlers sources
 set(CORE_REQUEST_HANDLERS_SOURCES
+   src/core/requestHandlers/ORBBridgeRequestHandler.cpp
    src/core/requestHandlers/BroadcastRequestHandler.cpp
    src/core/requestHandlers/ConfigurationRequestHandler.cpp
    src/core/requestHandlers/ManagerRequestHandler.cpp

@@ -87,7 +87,7 @@ bool ParentalControlRequestHandler::Handle(
     // UnknownMethod
     else
     {
-        response = RequestHandler::MakeErrorResponse("UnknownMethod");
+        response = ORBBridgeRequestHandler::MakeErrorResponse("UnknownMethod");
         ret = false;
     }
 

@@ -7,11 +7,6 @@
 #pragma once
 
 #include "application_manager.h"
-#include "BroadcastRequestHandler.h"
-#include "ConfigurationRequestHandler.h"
-#include "ManagerRequestHandler.h"
-#include "ProgrammeRequestHandler.h"
-#include "ParentalControlRequestHandler.h"
 #include "TokenManager.h"
 #include "ORBPlatform.h"
 #include "ORBPlatformLoader.h"
@@ -198,31 +193,6 @@ public:
         return m_tokenManager;
     }
 
-    std::shared_ptr<BroadcastRequestHandler> GetBroadcastRequestHandler()
-    {
-        return m_broadcastRequestHandler;
-    }
-
-    std::shared_ptr<ConfigurationRequestHandler> GetConfigurationRequestHandler()
-    {
-        return m_configurationRequestHandler;
-    }
-
-    std::shared_ptr<ManagerRequestHandler> GetManagerRequestHandler()
-    {
-        return m_managerRequestHandler;
-    }
-
-    std::shared_ptr<ProgrammeRequestHandler> GetProgrammeRequestHandler()
-    {
-        return m_programmeRequestHandler;
-    }
-
-    std::shared_ptr<ParentalControlRequestHandler> GetParentalControlRequestHandler()
-    {
-        return m_parentalControlRequestHandler;
-    }
-
     std::shared_ptr<ORBPlatformEventHandler> GetPlatformEventHandler()
     {
         return m_platformEventHandler;
@@ -283,11 +253,6 @@ private:
     std::shared_ptr<ORBPlatformLoader> m_orbPlatformLoader;
     std::shared_ptr<ApplicationManager> m_applicationManager;
     std::shared_ptr<TokenManager> m_tokenManager;
-    std::shared_ptr<BroadcastRequestHandler> m_broadcastRequestHandler;
-    std::shared_ptr<ConfigurationRequestHandler> m_configurationRequestHandler;
-    std::shared_ptr<ManagerRequestHandler> m_managerRequestHandler;
-    std::shared_ptr<ProgrammeRequestHandler> m_programmeRequestHandler;
-    std::shared_ptr<ParentalControlRequestHandler> m_parentalControlRequestHandler;
     std::shared_ptr<ORBPlatformEventHandlerImpl> m_platformEventHandler;
     ORBPlatform *m_orbPlatform;
     std::map<int, std::shared_ptr<MetadataSearchTask> > m_metadataSearchTasks;
