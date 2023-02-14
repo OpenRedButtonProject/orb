@@ -15,11 +15,11 @@ namespace orb {
 /**
  * Request handler interface.
  */
-class RequestHandler {
+class ORBBridgeRequestHandler {
 public:
 
    /**
-    * @brief RequestHandler::MakeErrorResponse
+    * @brief ORBBridgeRequestHandler::MakeErrorResponse
     *
     * Prepare an error response with the specified message.
     *
@@ -27,15 +27,21 @@ public:
     *
     * @return A JSON object representing the error message
     */
-   static json MakeErrorResponse(std::string message)
-   {
-      json errorResponse;
-      errorResponse["error"] = message;
-      return errorResponse;
-   }
+   static json MakeErrorResponse(std::string message);
 
    /**
-    * @brief RequestHandler::Handle
+    * @brief ORBBridgeRequestHandler::Get
+    *
+    * Get the request handler implementation that corresponds to the given object.
+    *
+    * @param object The object name
+    *
+    * @return A shared pointer to the corresponding request handler implementation
+    */
+   static std::shared_ptr<ORBBridgeRequestHandler> Get(std::string object);
+
+   /**
+    * @brief ORBBridgeRequestHandler::Handle
     *
     * Handle the specified request issued by the WPE bridge.
     *
@@ -47,5 +53,5 @@ public:
     * @return true in success, otherwise false
     */
    virtual bool Handle(json token, std::string method, json params, json& response) = 0;
-}; // class RequestHandler
+}; // class ORBBridgeRequestHandler
 } // namespace orb

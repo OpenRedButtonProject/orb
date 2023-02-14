@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "RequestHandler.h"
+#include "ORBBridgeRequestHandler.h"
 #include "application_manager.h"
 
 namespace orb {
@@ -16,7 +16,7 @@ namespace orb {
  *
  * RequestHandler implementation for handling Broadcast-related requests issued by the WPE bridge.
  */
-class BroadcastRequestHandler : public RequestHandler {
+class BroadcastRequestHandler : public ORBBridgeRequestHandler {
 public:
 
    BroadcastRequestHandler();
