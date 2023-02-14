@@ -35,6 +35,7 @@ set(CORE_REQUEST_HANDLERS_SOURCES
    src/core/requestHandlers/ManagerRequestHandler.cpp
    src/core/requestHandlers/ParentalControlRequestHandler.cpp
    src/core/requestHandlers/ProgrammeRequestHandler.cpp
+   src/core/requestHandlers/DrmRequestHandler.cpp
 )
 
 # core/utilities sources
@@ -53,6 +54,7 @@ set(ORB_API_HEADERS
    src/platform/dataTypes/Capabilities.h
    src/platform/dataTypes/Channel.h
    src/platform/dataTypes/Component.h
+   src/platform/dataTypes/DrmSystemStatus.h
    src/platform/dataTypes/LocalSystem.h
    src/platform/dataTypes/ParentalRating.h
    src/platform/dataTypes/Programme.h

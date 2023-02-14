@@ -17,6 +17,7 @@
 #include "ParentalRating.h"
 #include "LocalSystem.h"
 #include "Component.h"
+#include "DrmSystemStatus.h"
 
 using json = nlohmann::json;
 
@@ -63,6 +64,10 @@ public:
    // Component
 
    static json ComponentToJsonObject(Component component);
+
+   // DrmSystemStatus
+
+   static json DrmSystemStatusToJsonObject(DrmSystemStatus drmSystemStatus);
 
    // CommonQuery
 }; // class JsonUtil
