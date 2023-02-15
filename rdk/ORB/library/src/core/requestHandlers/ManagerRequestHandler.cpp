@@ -121,9 +121,9 @@ bool ManagerRequestHandler::Handle(
     {
         int value = params["value"];
         int callingAppId = GetAppIdFromToken(token);
-        ORBEngine::GetSharedInstance().GetApplicationManager()->SetKeySetMask(callingAppId, value);
         ORBEngine::GetSharedInstance().GetORBPlatform()->Platform_SetCurrentKeySetMask(value);
-        response["result"] = value;
+        response["result"] = ORBEngine::GetSharedInstance().GetApplicationManager()->SetKeySetMask(
+            callingAppId, value);
     }
     // Manager.getKeyMaximumValue
     else if (method == MANAGER_GET_KEY_MAXIMUM_VALUE)
