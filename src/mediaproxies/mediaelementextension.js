@@ -42,7 +42,7 @@ hbbtv.objects.MediaElementExtension = (function() {
 
    HTMLMediaElement.prototype.orb_unload = function() {};
 
-   // Override default play() for the case where it is being called
+   // Override default play() and load() for the case where it is being called
    // immediatelly after setting its source. Due to the fact
    // that the upgrade is asynchronous, the call is being skipped,
    // so we call it inside setTimeout()
@@ -53,6 +53,10 @@ hbbtv.objects.MediaElementExtension = (function() {
             thiz.play().then(resolve).catch(reject);
          }, 0);
       });
+   };
+   
+   HTMLMediaElement.prototype.load = function() {
+      setTimeout(() => this.load(), 0);
    };
 
    function addSourceSetterIntercept() {
