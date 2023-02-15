@@ -626,6 +626,71 @@ public:
         int descriptorTagExtension,
         int privateDataSpecifier
         ) = 0;
+
+
+
+    /******************************************************************************
+    ** Drm API
+    *****************************************************************************/
+
+
+
+    /**
+     * Get the list of supported DRM System IDs currently available. Once called,
+     * the caller can track the availability changes by listening to OnDrmSystemStatusChanged
+     * events.
+     *
+     * @return A vector containing the supported DRM systems and their statuses
+     */
+    virtual std::vector<DrmSystemStatus> Drm_GetSupportedDrmSystemIds() = 0;
+
+    /**
+     * Send message to the specified DRM system.
+     *
+     * @param messageId   Unique identifier of the message
+     * @param messageType Message type as defined by the DRM system
+     * @param message     Message to be provided to the DRM system
+     * @param drmSystemId ID of the DRM system
+     * @param blocked     Whether the function needs to block until the reply is received
+     *
+     * @return Result message when block is true, ignored otherwise
+     */
+    virtual std::string Drm_SendDrmMessage(
+        std::string messageId,
+        std::string messageType,
+        std::string message,
+        std::string drmSystemId,
+        bool blocked
+        ) = 0;
+
+    /**
+     * Check the availability of a valid license for playing a protected content item.
+     *
+     * @param drmPrivateData DRM proprietary private data
+     * @param drmSystemId    DRM system ID
+     *
+     * @return true if the content can be played, false otherwise
+     */
+    virtual bool Drm_CanPlayContent(std::string drmPrivateData, std::string drmSystemId) = 0;
+
+    /**
+     * Check the availability of a valid license for recording a protected content item.
+     *
+     * @param drmPrivateData DRM proprietary private data
+     * @param drmSystemId    DRM system ID
+     *
+     * @return true if the content can be recorded, false otherwise
+     */
+    virtual bool Drm_CanRecordContent(std::string drmPrivateData, std::string drmSystemId) = 0;
+
+    /**
+     * Set the DRM system that the terminal shall use for playing protected broadband content.
+     *
+     * @param drmSystemId ID of the DRM system
+     *
+     * @return true if the call was successful, false otherwise
+     */
+    virtual bool Drm_SetActiveDrm(std::string drmSystemId) = 0;
 }; // class ORBPlatform
 
 /**

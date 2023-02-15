@@ -325,4 +325,24 @@ json JsonUtil::ComponentToJsonObject(Component component)
     json json_invalidComponent;
     return json_invalidComponent;
 }
+
+json JsonUtil::DrmSystemStatusToJsonObject(DrmSystemStatus drmSystemStatus)
+{
+    json json_drmSystemStatus;
+    json json_drmSystemIds;
+
+    json_drmSystemStatus.emplace("DRMSystem", drmSystemStatus.GetDrmSystem());
+    json_drmSystemStatus.emplace("status", drmSystemStatus.GetStatus());
+
+    for (std::string id : drmSystemStatus.GetDrmSystemIds())
+    {
+        json_drmSystemIds.push_back(id);
+    }
+
+    json_drmSystemStatus.emplace("DRMSystemIDs", json_drmSystemIds);
+    json_drmSystemStatus.emplace("protectionGateways", drmSystemStatus.GetProtectionGateways());
+    json_drmSystemStatus.emplace("supportedFormats", drmSystemStatus.GetSupportedFormats());
+
+    return json_drmSystemStatus;
+}
 } // namespace orb

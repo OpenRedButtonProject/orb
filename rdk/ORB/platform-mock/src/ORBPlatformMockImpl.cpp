@@ -1165,6 +1165,91 @@ std::vector<std::string> ORBPlatformMockImpl::Programme_GetSiDescriptors(
     return siDescriptors;
 }
 
+/******************************************************************************
+** Drm API
+*****************************************************************************/
+
+/**
+ * Get the list of supported DRM System IDs currently available. Once called,
+ * the caller can track the availability changes by listening to OnDrmSystemStatusChanged
+ * events.
+ *
+ * @return A vector containing the supported DRM systems and their statuses
+ */
+std::vector<DrmSystemStatus> ORBPlatformMockImpl::Drm_GetSupportedDrmSystemIds()
+{
+    ORB_LOG_NO_ARGS();
+    std::vector<DrmSystemStatus> result;
+    return result;
+}
+
+/**
+ * Send message to the specified DRM system.
+ *
+ * @param messageId   Unique identifier of the message
+ * @param messageType Message type as defined by the DRM system
+ * @param message     Message to be provided to the DRM system
+ * @param drmSystemId ID of the DRM system
+ * @param blocked     Whether the function needs to block until the reply is received
+ *
+ * @return Result message when block is true, ignored otherwise
+ */
+std::string ORBPlatformMockImpl::Drm_SendDrmMessage(
+    std::string messageId,
+    std::string messageType,
+    std::string message,
+    std::string drmSystemId,
+    bool blocked
+    )
+{
+    ORB_LOG("messageId=%s messageType=%s message=%s drmSystemId=%s blocked=%s",
+        messageId.c_str(), messageType.c_str(), message.c_str(), drmSystemId.c_str(), blocked ?
+        "true" : "false");
+
+    return "";
+}
+
+/**
+ * Check the availability of a valid license for playing a protected content item.
+ *
+ * @param drmPrivateData DRM proprietary private data
+ * @param drmSystemId    DRM system ID
+ *
+ * @return true if the content can be played, false otherwise
+ */
+bool ORBPlatformMockImpl::Drm_CanPlayContent(std::string drmPrivateData, std::string drmSystemId)
+{
+    ORB_LOG("drmPrivateData=%s drmSystemId=%s", drmPrivateData.c_str(), drmSystemId.c_str());
+    return false;
+}
+
+/**
+ * Check the availability of a valid license for recording a protected content item.
+ *
+ * @param drmPrivateData DRM proprietary private data
+ * @param drmSystemId    DRM system ID
+ *
+ * @return true if the content can be recorded, false otherwise
+ */
+bool ORBPlatformMockImpl::Drm_CanRecordContent(std::string drmPrivateData, std::string drmSystemId)
+{
+    ORB_LOG("drmPrivateData=%s drmSystemId=%s", drmPrivateData.c_str(), drmSystemId.c_str());
+    return false;
+}
+
+/**
+ * Set the DRM system that the terminal shall use for playing protected broadband content.
+ *
+ * @param drmSystemId ID of the DRM system
+ *
+ * @return true if the call was successful, false otherwise
+ */
+bool ORBPlatformMockImpl::Drm_SetActiveDrm(std::string drmSystemId)
+{
+    ORB_LOG("drmSystemId=%s", drmSystemId.c_str());
+    return true;
+}
+
 /**
  * @brief Convert the provided string to lowercase
  *
