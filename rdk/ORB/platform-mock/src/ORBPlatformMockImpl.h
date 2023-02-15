@@ -88,6 +88,13 @@ public:
    // Programme api
    virtual std::vector<std::string> Programme_GetSiDescriptors(std::string ccid, std::string programmeId, int descriptorTag, int descriptorTagExtension, int privateDataSpecifier) override;
 
+   // Drm api
+   virtual std::vector<DrmSystemStatus> Drm_GetSupportedDrmSystemIds() override;
+   virtual std::string Drm_SendDrmMessage(std::string messageId, std::string messageType, std::string message, std::string drmSystemId, bool blocked) override;
+   virtual bool Drm_CanPlayContent(std::string drmPrivateData, std::string drmSystemId) override;
+   virtual bool Drm_CanRecordContent(std::string drmPrivateData, std::string drmSystemId) override;
+   virtual bool Drm_SetActiveDrm(std::string drmSystemId) override;
+
 private:
 
    std::string ToLower(const std::string& data);

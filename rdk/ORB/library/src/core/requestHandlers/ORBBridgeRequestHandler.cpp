@@ -10,6 +10,7 @@
 #include "ManagerRequestHandler.h"
 #include "ParentalControlRequestHandler.h"
 #include "ProgrammeRequestHandler.h"
+#include "DrmRequestHandler.h"
 
 namespace orb
 {
@@ -59,6 +60,10 @@ std::shared_ptr<ORBBridgeRequestHandler> ORBBridgeRequestHandler::Get(std::strin
    else if (object == "ParentalControl")
    {
       return std::make_shared<ParentalControlRequestHandler>();
+   }
+   else if (object == "Drm")
+   {
+      return std::make_shared<DrmRequestHandler>();
    }
    return nullptr;
 }

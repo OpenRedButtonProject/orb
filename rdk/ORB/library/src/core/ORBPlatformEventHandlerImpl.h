@@ -59,8 +59,12 @@ public:
 
    /**
     * Dispatch the ParentalRatingError bridge event to the current page's JavaScript context.
+    *
+    * @param contentId   Content ID to which the parental rating error applies
+    * @param ratings     The parental rating value of the currently playing content
+    * @param drmSystemId DRM System ID of the DRM system that generated the event
     */
-   virtual void OnParentalRatingError() override final;
+   virtual void OnParentalRatingError(std::string contentId, std::vector<ParentalRating> ratings, std::string drmSystemId) override final;
 
    /**
     * Dispatch the SelectedComponentChanged bridge event to the current page's JavaScript context.
@@ -134,5 +138,62 @@ public:
     * @param keyAction The key action (0 = keyup , 1 = keydown)
     */
    virtual bool OnInputKeyGenerated(int keyCode, KeyAction keyAction) override final;
+
+   /**
+    * Notify the browser about DRM licensing errors during playback of DRM protected A/V content.
+    *
+    * @param errorState      Details the type of error
+    * @param contentId       Unique identifier of the protected content
+    * @param drmSystemId     ID of the DRM system
+    * @param rightsIssuerUrl Indicates the value of the rightsIssuerURL that can be used to
+    *                        non-silently obtain the rights for the content item
+    */
+   virtual void OnDrmRightsError(
+      DrmRightsError errorState,
+      std::string contentId,
+      std::string drmSystemId,
+      std::string rightsIssuerUrl
+      ) override final;
+
+   /**
+    * Notify the browser about a change in the status of a DRM system.
+    *
+    * @param drmSystem          ID of the DRM system
+    * @param drmSystemIds       List of the DRM System IDs handled by the DRM System
+    * @param status             Status of the indicated DRM system
+    * @param protectionGateways Space-separated list of zero or more CSP Gateway types that are
+    *                           capable of supporting the DRM system
+    * @param supportedFormats   Space separated list of zero or more supported file and/or
+    *                           container formats by the DRM system
+    */
+   virtual void OnDrmSystemStatusChanged(
+      std::string drmSystem,
+      std::vector<std::string> drmSystemIds,
+      DrmSystemStatus::State status,
+      std::string protectionGateways,
+      std::string supportedFormats
+      ) override final;
+
+   /**
+    * Notify the browser that the underlying DRM system has a result message as a consequence
+    * of a call to Drm_SendDrmMessage.
+    *
+    * @param messageId  Identifies the original message which has led to this resulting message
+    * @param result     DRM system specific result message
+    * @param resultCode Result code
+    */
+   virtual void OnSendDrmMessageResult(
+      std::string messageId,
+      std::string result,
+      SendDrmMessageResultCode resultCode
+      ) override final;
+
+   /**
+    * Notify the browser that the underlying DRM system has a message to report.
+    *
+    * @param message     DRM system specific message
+    * @param drmSystemId ID of the DRM System
+    */
+   virtual void OnDrmSystemMessage(std::string message, std::string drmSystemId) override final;
 }; // class ORBPlatformEventHandlerImpl
 } // namespace orb

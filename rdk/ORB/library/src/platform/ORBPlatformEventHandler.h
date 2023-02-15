@@ -8,6 +8,8 @@
 
 #include <string>
 #include <vector>
+#include "ParentalRating.h"
+#include "DrmSystemStatus.h"
 
 namespace orb
 {
@@ -18,6 +20,27 @@ enum KeyAction
 {
    KEY_ACTION_UP   = 0x00,
    KEY_ACTION_DOWN = 0x01
+};
+
+/**
+ * Enumerate the types of DRM errors
+ */
+enum DrmRightsError
+{
+   DRM_NO_LICENSE      = 0x00, // (decimal 0) no license, consumption of the content is blocked
+   DRM_INVALID_LICENSE = 0x01, // (decimal 1) invalid license, consumption of the content is blocked
+   DRM_VALID_LICENSE   = 0x02  // (decimal 2) valid license, consumption of the content is unblocked
+};
+
+enum SendDrmMessageResultCode
+{
+   SEND_DRM_MESSAGE_RESULT_SUCCESSFUL             = 0x00, // (decimal 0) Successful
+   SEND_DRM_MESSAGE_RESULT_UNKNOWN_ERROR          = 0x01, // (decimal 1) Unknown error
+   SEND_DRM_MESSAGE_RESULT_CANNOT_PROCESS_REQUEST = 0x02, // (decimal 2) Cannot process request
+   SEND_DRM_MESSAGE_RESULT_UNKNOWN_MIME_TYPE      = 0x03, // (decimal 3) Unknown MIME type
+   SEND_DRM_MESSAGE_RESULT_USER_CONSENT_NEEDED    = 0x04, // (decimal 4) User consent needed
+   SEND_DRM_MESSAGE_RESULT_UNKNOWN_DRM_SYSTEM     = 0x05, // (decimal 5) Unknown DRM system
+   SEND_DRM_MESSAGE_RESULT_WRONG_FORMAT           = 0x06  // (decimal 6) Wrong format
 };
 
 /**
@@ -76,8 +99,12 @@ public:
 
    /**
     * Dispatch the ParentalRatingError bridge event to the current page's JavaScript context.
+    *
+    * @param contentId   Content ID to which the parental rating error applies
+    * @param ratings     The parental rating value of the currently playing content
+    * @param drmSystemId DRM System ID of the DRM system that generated the event
     */
-   virtual void OnParentalRatingError() = 0;
+   virtual void OnParentalRatingError(std::string contentId, std::vector<ParentalRating> ratings, std::string drmSystemId) = 0;
 
    /**
     * Dispatch the SelectedComponentChanged bridge event to the current page's JavaScript context.
@@ -151,5 +178,62 @@ public:
     * @param keyAction The JavaScript key action (0 = keyup , 1 = keydown)
     */
    virtual bool OnInputKeyGenerated(int keyCode, KeyAction keyAction) = 0;
+
+   /**
+    * Notify the browser about DRM licensing errors during playback of DRM protected A/V content.
+    *
+    * @param errorState      Details the type of error
+    * @param contentId       Unique identifier of the protected content
+    * @param drmSystemId     ID of the DRM system
+    * @param rightsIssuerUrl Indicates the value of the rightsIssuerURL that can be used to
+    *                        non-silently obtain the rights for the content item
+    */
+   virtual void OnDrmRightsError(
+      DrmRightsError errorState,
+      std::string contentId,
+      std::string drmSystemId,
+      std::string rightsIssuerUrl
+      ) = 0;
+
+   /**
+    * Notify the browser about a change in the status of a DRM system.
+    *
+    * @param drmSystem          ID of the DRM system
+    * @param drmSystemIds       List of the DRM System IDs handled by the DRM System
+    * @param status             Status of the indicated DRM system
+    * @param protectionGateways Space-separated list of zero or more CSP Gateway types that are
+    *                           capable of supporting the DRM system
+    * @param supportedFormats   Space separated list of zero or more supported file and/or
+    *                           container formats by the DRM system
+    */
+   virtual void OnDrmSystemStatusChanged(
+      std::string drmSystem,
+      std::vector<std::string> drmSystemIds,
+      DrmSystemStatus::State status,
+      std::string protectionGateways,
+      std::string supportedFormats
+      ) = 0;
+
+   /**
+    * Notify the browser that the underlying DRM system has a result message as a consequence
+    * of a call to Drm_SendDrmMessage.
+    *
+    * @param messageId  Identifies the original message which has led to this resulting message
+    * @param result     DRM system specific result message
+    * @param resultCode Result code
+    */
+   virtual void OnSendDrmMessageResult(
+      std::string messageId,
+      std::string result,
+      SendDrmMessageResultCode resultCode
+      ) = 0;
+
+   /**
+    * Notify the browser that the underlying DRM system has a message to report.
+    *
+    * @param message     DRM system specific message
+    * @param drmSystemId ID of the DRM System
+    */
+   virtual void OnDrmSystemMessage(std::string message, std::string drmSystemId) = 0;
 }; // class ORBPlatformEventHandler
 } // namespace orb

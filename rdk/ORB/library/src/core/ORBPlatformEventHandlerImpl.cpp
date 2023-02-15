@@ -9,6 +9,7 @@
 #include "ORBPlatform.h"
 #include "ORBEngine.h"
 #include "ORBLogging.h"
+#include "JsonUtil.h"
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
@@ -113,13 +114,28 @@ void ORBPlatformEventHandlerImpl::OnParentalRatingChanged(bool blocked)
 
 /**
  * Dispatch the ParentalRatingError bridge event to the current page's JavaScript context.
+ *
+ * @param contentId   Content ID to which the parental rating error applies
+ * @param ratings     The parental rating value of the currently playing content
+ * @param drmSystemId DRM System ID of the DRM system that generated the event
  */
-void ORBPlatformEventHandlerImpl::OnParentalRatingError()
+void ORBPlatformEventHandlerImpl::OnParentalRatingError(std::string contentId, std::vector<ParentalRating> ratings, std::string drmSystemId)
 {
    ORB_LOG_NO_ARGS();
 
    // prepare event properties and request event dispatching
    json properties = "{}"_json;
+   json json_ratings;
+
+   for (ParentalRating rating : ratings)
+   {
+      json_ratings.push_back(JsonUtil::ParentalRatingToJsonObject(rating));
+   }
+
+   properties.emplace("contentID", contentId);
+   properties.emplace("ratings", json_ratings);
+   properties.emplace("DRMSystemID", drmSystemId);
+
    ORBEngine::GetSharedInstance().GetEventListener()->OnJavaScriptEventDispatchRequested(
       "ParentalRatingError", properties.dump(), "", true);
 }
@@ -307,5 +323,120 @@ bool ORBPlatformEventHandlerImpl::OnInputKeyGenerated(int keyCode, KeyAction key
    }
 
    return consumed;
+}
+
+/**
+ * Notify the browser about DRM licensing errors during playback of DRM protected A/V content.
+ *
+ * @param errorState      Details the type of error
+ * @param contentId       Unique identifier of the protected content
+ * @param drmSystemId     ID of the DRM system
+ * @param rightsIssuerUrl Indicates the value of the rightsIssuerURL that can be used to
+ *                        non-silently obtain the rights for the content item
+ */
+void ORBPlatformEventHandlerImpl::OnDrmRightsError(
+   DrmRightsError errorState,
+   std::string contentId,
+   std::string drmSystemId,
+   std::string rightsIssuerUrl
+   )
+{
+   ORB_LOG("errorState=%u contentId=%s drmSystemId=%s rightsIssuerUrl=%s",
+      errorState, contentId.c_str(), drmSystemId.c_str(), rightsIssuerUrl.c_str());
+
+   json properties = "{}"_json;
+
+   properties.emplace("errorState", errorState);
+   properties.emplace("contentID", contentId);
+   properties.emplace("DRMSystemID", drmSystemId);
+   properties.emplace("rightsIssuerURL", rightsIssuerUrl);
+
+   ORBEngine::GetSharedInstance().GetEventListener()->OnJavaScriptEventDispatchRequested(
+      "DRMRightsError", properties.dump(), "", false);
+}
+
+/**
+ * Notify the browser about a change in the status of a DRM system.
+ *
+ * @param drmSystem          ID of the DRM system
+ * @param drmSystemIds       List of the DRM System IDs handled by the DRM System
+ * @param status             Status of the indicated DRM system
+ * @param protectionGateways Space-separated list of zero or more CSP Gateway types that are
+ *                           capable of supporting the DRM system
+ * @param supportedFormats   Space separated list of zero or more supported file and/or
+ *                           container formats by the DRM system
+ */
+void ORBPlatformEventHandlerImpl::OnDrmSystemStatusChanged(
+   std::string drmSystem,
+   std::vector<std::string> drmSystemIds,
+   DrmSystemStatus::State status,
+   std::string protectionGateways,
+   std::string supportedFormats
+   )
+{
+   ORB_LOG("drmSystem=%s status=%u protectionGateways=%s supportedFormats=%s",
+      drmSystem.c_str(), status, protectionGateways.c_str(), supportedFormats.c_str());
+
+   json properties = "{}"_json;
+   json json_drmSystemIds;
+
+   for (std::string drmSystemId : drmSystemIds)
+   {
+      json_drmSystemIds.push_back(drmSystemId);
+   }
+
+   properties.emplace("DRMSystem", drmSystem);
+   properties.emplace("DRMSystemIDs", json_drmSystemIds);
+   properties.emplace("status", status);
+   properties.emplace("protectionGateways", protectionGateways);
+   properties.emplace("supportedFormats", supportedFormats);
+
+   ORBEngine::GetSharedInstance().GetEventListener()->OnJavaScriptEventDispatchRequested(
+      "DRMSystemStatusChange", properties.dump(), "", false);
+}
+
+/**
+ * Notify the browser that the underlying DRM system has a result message as a consequence
+ * of a call to Drm_SendDrmMessage.
+ *
+ * @param messageId  Identifies the original message which has led to this resulting message
+ * @param result     DRM system specific result message
+ * @param resultCode Result code
+ */
+void ORBPlatformEventHandlerImpl::OnSendDrmMessageResult(
+   std::string messageId,
+   std::string result,
+   SendDrmMessageResultCode resultCode
+   )
+{
+   ORB_LOG("messageId=%s result=%s resultCode=%u", messageId.c_str(), result.c_str(), resultCode);
+
+   json properties = "{}"_json;
+
+   properties.emplace("msgID", messageId);
+   properties.emplace("resultMsg", result);
+   properties.emplace("resultCode", resultCode);
+
+   ORBEngine::GetSharedInstance().GetEventListener()->OnJavaScriptEventDispatchRequested(
+      "DRMMessageResult", properties.dump(), "", false);
+}
+
+/**
+ * Notify the browser that the underlying DRM system has a message to report.
+ *
+ * @param message     DRM system specific message
+ * @param drmSystemId ID of the DRM System
+ */
+void ORBPlatformEventHandlerImpl::OnDrmSystemMessage(std::string message, std::string drmSystemId)
+{
+   ORB_LOG("message=%s drmSystemId=%s", message.c_str(), drmSystemId.c_str());
+
+   json properties = "{}"_json;
+
+   properties.emplace("msg", message);
+   properties.emplace("DRMSystemID", drmSystemId);
+
+   ORBEngine::GetSharedInstance().GetEventListener()->OnJavaScriptEventDispatchRequested(
+      "DRMSystemMessage", properties.dump(), "", false);
 }
 } // namespace orb
