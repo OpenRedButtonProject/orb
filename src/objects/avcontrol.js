@@ -547,7 +547,7 @@ hbbtv.objects.AVControl = (function() {
                      encrypted: audioTrack.encrypted,
                      // AVAudioComponent properties
                      language: (audioTrack.language ? audioTrack.language : "und"),
-                     audioDescription: audioTrack.kind === "alternate",
+                     audioDescription: audioTrack.kind === "alternate" || audioTrack.kind === "alternative",
                      audioChannels: audioTrack.numChannels
                   });
                }
