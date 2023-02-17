@@ -168,7 +168,11 @@ void ORBPlatformEventHandlerImpl::OnComponentChanged(int componentType)
 
    // prepare event properties and request event dispatching
    json properties;
-   properties["componentType"] = componentType;
+
+   if (componentType >= 0 && componentType <= 2)
+   {
+      properties["componentType"] = componentType;
+   }
 
    ORBEngine::GetSharedInstance().GetEventListener()->OnJavaScriptEventDispatchRequested(
       "ComponentChanged", properties.dump(), "", true);
