@@ -331,12 +331,13 @@ hbbtv.objects.AVControl = (function() {
 
       if (fullscreen) {
          if (!priv.fullscreen) {
+            const bounds = this.getBoundingClientRect();
             videoWrapper.style.cssText = `
                width: 1280px;
                height: 720px;
-               left: 0px;
-               top: 0px;
-               position: fixed;
+               left: ${this.offsetLeft - bounds.left}px;
+               top: ${this.offsetTop - bounds.top}px;
+               position: absolute;
                z-index: 
             ` + (this.style.zIndex ? this.style.zIndex : 1);
             priv.fullscreen = true;
