@@ -1085,7 +1085,7 @@ hbbtv.objects.AVControl = (function() {
          observer.observe(thiz, {
             childList: true,
             attributes: true,
-            attributeFilter: ["style"]
+            attributeFilter: ["style", "class"]
          });
       })();
 
