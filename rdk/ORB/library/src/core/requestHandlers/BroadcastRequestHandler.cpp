@@ -259,7 +259,7 @@ bool BroadcastRequestHandler::Handle(
             std::vector<Component> components =
                 ORBEngine::GetSharedInstance().GetORBPlatform()->Broadcast_GetComponents(ccid,
                     componentType);
-            json array;
+            json array = json::array();
             for (auto component : components)
             {
                 array.push_back(JsonUtil::ComponentToJsonObject(component));
