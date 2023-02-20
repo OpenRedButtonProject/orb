@@ -89,7 +89,7 @@ hbbtv.objects.MediaElementExtension = (function() {
       const ORB_PLAYER_URL = "orb://player";
       const prototype = Object.create(HTMLMediaElement.prototype);
       const methods = ["pause", "load"];
-      const nodeMethods = ["appendChild", "insertBefore", "removeChild", "replaceChild", "hasChildNodes"];
+      const nodeMethods = ["appendChild", "insertBefore", "removeChild", "replaceChild", "hasChildNodes", "getElementsByTagName", "getElementById"];
       const nodeProps = ["childNodes", "firstChild", "lastChild", "children"];
       const roProps = ["textTracks", "audioTracks", "videoTracks", "paused", "ended", "currentSrc", "error",
          "networkState", "readyState", "seekable", "videoWidth", "videoHeight"
