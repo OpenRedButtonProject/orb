@@ -51,7 +51,7 @@ hbbtv.objects.MediaElementExtension = (function() {
       const thiz = this;
       return new Promise((resolve, reject) => {
          setTimeout(() => {
-            const playPromise = thiz.__orb_mediaElementExtension__ ? thiz.play() : __play.call(thiz);
+            const playPromise = privates.get(thiz) ? thiz.play() : __play.call(thiz);
             playPromise.then(resolve).catch(reject);
          }, 0);
       });
@@ -60,7 +60,7 @@ hbbtv.objects.MediaElementExtension = (function() {
    const __load = HTMLMediaElement.prototype.load;
    HTMLMediaElement.prototype.load = function() {
       setTimeout(() => {
-         this.__orb_mediaElementExtension__ ? this.load() : __load.call(this);
+         privates.get(this) ? this.load() : __load.call(this);
       }, 0);
    };
 
@@ -386,8 +386,8 @@ hbbtv.objects.MediaElementExtension = (function() {
    function initialise(src) {
       if (src && !src.startsWith("blob:") && !this._rdkHolepunch) {
          let p = privates.get(this);
-         if (!this.__orb_mediaElementExtension__) {
-            const thiz = this;
+         const thiz = this;
+         if (!p) {
             const iframeProxy = hbbtv.objects.createIFrameObjectProxy();
             const videoDummy = new VideoDummy(this, iframeProxy);
 
@@ -421,7 +421,8 @@ hbbtv.objects.MediaElementExtension = (function() {
             p = privates.get(this);
             iframeProxy.registerObserver(MEDIA_PROXY_ID, videoDummy);
 
-            this.__orb_mediaElementExtension__ = p.iframe.__orb_mediaElementExtension__ = true;
+            p.styleObservers = [];
+            p.iframe.__orb_mediaElementExtension__ = true;
             p.iframe.frameBorder = 0;
             p.iframe.allow = "encrypted-media";
             p.iframe.addEventListener("load", () => {
@@ -486,6 +487,32 @@ hbbtv.objects.MediaElementExtension = (function() {
          if (this.parentNode && p.iframe.parentNode !== this.parentNode) {
             hbbtv.utils.insertAfter(this.parentNode, p.iframe, this);
             hbbtv.utils.matchElementStyle(p.iframe, this);
+         }
+
+         // whenever there is a change on an ancestor style,
+         // update the iframe style as well
+         const ancestors = [];
+         let parent = this.parentNode;
+         while (parent) {
+            ancestors.push(parent);
+            parent = parent.parentNode;
+         }
+
+         for (const observer of p.styleObservers) {
+            observer.disconnect();
+         }
+         p.styleObservers = [];
+
+         const observerCallback = function() {
+            hbbtv.utils.matchElementStyle(p.iframe, thiz);
+         };
+         for (const ancestor of ancestors) {
+            const styleObserver = new MutationObserver(observerCallback);
+            styleObserver.observe(ancestor, {
+               attributes: true,
+               attributeFilter: ["style", "class"]
+            });
+            p.styleObservers.push(styleObserver);
          }
          return true;
       }
