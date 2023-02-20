@@ -46,17 +46,22 @@ hbbtv.objects.MediaElementExtension = (function() {
    // immediatelly after setting its source. Due to the fact
    // that the upgrade is asynchronous, the call is being skipped,
    // so we call it inside setTimeout()
+   const __play = HTMLMediaElement.prototype.play;
    HTMLMediaElement.prototype.play = function() {
       const thiz = this;
       return new Promise((resolve, reject) => {
          setTimeout(() => {
-            thiz.play().then(resolve).catch(reject);
+            const playPromise = thiz.__orb_mediaElementExtension__ ? thiz.play() : __play.call(thiz);
+            playPromise.then(resolve).catch(reject);
          }, 0);
       });
    };
    
+   const __load = HTMLMediaElement.prototype.load;
    HTMLMediaElement.prototype.load = function() {
-      setTimeout(() => this.load(), 0);
+      setTimeout(() => {
+         this.__orb_mediaElementExtension__ ? this.load() : __load.call(this);
+      }, 0);
    };
 
    function addSourceSetterIntercept() {
@@ -381,7 +386,7 @@ hbbtv.objects.MediaElementExtension = (function() {
    function initialise(src) {
       if (src && !src.startsWith("blob:") && !this._rdkHolepunch) {
          let p = privates.get(this);
-         if (!p) {
+         if (!this.__orb_mediaElementExtension__) {
             const thiz = this;
             const iframeProxy = hbbtv.objects.createIFrameObjectProxy();
             const videoDummy = new VideoDummy(this, iframeProxy);
@@ -416,7 +421,7 @@ hbbtv.objects.MediaElementExtension = (function() {
             p = privates.get(this);
             iframeProxy.registerObserver(MEDIA_PROXY_ID, videoDummy);
 
-            p.iframe.__orb_mediaElementExtension__ = true;
+            this.__orb_mediaElementExtension__ = p.iframe.__orb_mediaElementExtension__ = true;
             p.iframe.frameBorder = 0;
             p.iframe.allow = "encrypted-media";
             p.iframe.addEventListener("load", () => {
