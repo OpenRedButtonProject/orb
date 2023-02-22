@@ -1287,6 +1287,17 @@ public abstract class AbstractBridge {
     */
    protected abstract void OrbDebug_publishTestReport(Token token, String testSuite, String xml);
 
+   /**
+    * Retrieve the public ip address.
+    *
+    * @param token The token associated with this request.
+    *
+    * @return JSONObject {
+    *    "result": String
+    * }
+    */
+   protected abstract String Network_getPublicIpAddress(Token token);
+
    public JSONObject request(String method, Token token, JSONObject params) throws JSONException {
       JSONObject response = new JSONObject();
 
@@ -2045,6 +2056,14 @@ public abstract class AbstractBridge {
                params.getString("testSuite"),
                params.getString("xml")
             );
+            break;
+         }
+
+         case "Network.getPublicIpAddress": {
+            String result = Network_getPublicIpAddress(
+               token
+            );
+            response.put("result", result);
             break;
          }
 
