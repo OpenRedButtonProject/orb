@@ -75,6 +75,13 @@ public:
    void RegisterORBURLSchemeHandler(WebKitWebContext *context);
 
    /**
+    * Register the DASH URL scheme handler.
+    *
+    * @param context Pointer to the WebKit web context
+    */
+   void RegisterDASHURLSchemeHandler(WebKitWebContext *context);
+
+   /**
     * Set custom preferences for the ORB browser.
     *
     * @param preferences        Pointer to the browser's global settings
