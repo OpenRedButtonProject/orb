@@ -9,6 +9,7 @@
 #include "SessionCallbackImpl.h"
 #include "ORBLogging.h"
 #include "ORBBridgeRequestHandler.h"
+#include "URI.h"
 #include <cstdint>
 #include <nlohmann/json.hpp>
 
@@ -242,6 +243,13 @@ std::string ORBEngine::CreateToken(std::string uri)
 void ORBEngine::LoadDvbUrl(std::string url, int requestId)
 {
    ORB_LOG("url=%s requestId=%d", url.c_str(), requestId);
+
+   // Strip query string from the dvb URL
+   std::shared_ptr<URI> uri = URI::Parse(url);
+   std::string port = uri->GetPort();
+   url = uri->GetProtocol() + "://" + uri->GetHost() + ((port == "-1" || port.empty()) ? "" : ":" + port) + uri->GetPath();
+   ORB_LOG("Stripped url=%s", url.c_str());
+
    GetORBPlatform()->Dsmcc_RequestFile(url, requestId);
 }
 
