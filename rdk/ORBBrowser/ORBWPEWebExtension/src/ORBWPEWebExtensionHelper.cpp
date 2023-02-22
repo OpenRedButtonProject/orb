@@ -22,6 +22,7 @@ using namespace orb;
 #include <string>
 #include <fstream>
 #include <streambuf>
+#include <netdb.h>
 
 // JavaScript files to be injected
 #define ORB_HBBTV_JS_PATH  "/usr/share/WPEFramework/ORBBrowser/hbbtv.js"
@@ -230,6 +231,44 @@ static void HandleORBURISchemeRequest(WebKitURISchemeRequest *request, gpointer 
     g_object_unref(stream);
 }
 
+/**
+ * Handle the specified DASH URI scheme request.
+ *
+ * @param request  The DASH URI scheme request
+ * @param userData The user data or nullptr
+ */
+static void HandleDASHURISchemeRequest(WebKitURISchemeRequest *request, gpointer userData)
+{
+    std::string uri(webkit_uri_scheme_request_get_uri(request));
+    std::string prefix = "dash://resolve.host/";
+
+    ORB_LOG("uri=%s", uri.c_str());
+
+    std::string host = "";
+    if (uri.rfind(prefix) != std::string::npos)
+    {
+        host = uri.substr(prefix.length());
+        ORB_LOG("Host=%s\n", host.c_str());
+
+        struct hostent *hp = gethostbyname(host.c_str());
+        std::string response = "";
+        if (hp->h_addr_list[0] != NULL)
+        {
+            response = inet_ntoa( *(struct in_addr *)(hp->h_addr_list[0]));
+        }
+
+        ORB_LOG("Resolved: %s", response.c_str());
+
+        const gchar *mimeType = "text/html";
+        GInputStream *stream = nullptr;
+        char *data = (char *) malloc(sizeof(char) * response.length());
+        memmove(data, response.c_str(), response.length());
+        stream = g_memory_input_stream_new_from_data((const void *)data, response.length(), free);
+
+        webkit_uri_scheme_request_finish(request, stream, response.length(), mimeType);
+    }
+}
+
 namespace orb
 {
 /**
@@ -326,6 +365,22 @@ void ORBWPEWebExtensionHelper::RegisterORBURLSchemeHandler(WebKitWebContext *con
 
     webkit_web_context_register_uri_scheme(context, "orb",
         (WebKitURISchemeRequestCallback) HandleORBURISchemeRequest, nullptr, nullptr);
+}
+
+/**
+ * Register the DASH URL scheme handler.
+ *
+ * @param context Pointer to the WebKit web context
+ */
+void ORBWPEWebExtensionHelper::RegisterDASHURLSchemeHandler(WebKitWebContext *context)
+{
+    ORB_LOG_NO_ARGS();
+
+    WebKitSecurityManager *securityManager = webkit_web_context_get_security_manager(context);
+    webkit_security_manager_register_uri_scheme_as_cors_enabled(securityManager, "dash");
+
+    webkit_web_context_register_uri_scheme(context, "dash",
+        (WebKitURISchemeRequestCallback) HandleDASHURISchemeRequest, nullptr, nullptr);
 }
 
 /**

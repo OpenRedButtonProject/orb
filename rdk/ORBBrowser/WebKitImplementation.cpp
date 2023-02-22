@@ -2418,6 +2418,7 @@ private:
 
         ORBWPEWebExtensionHelper::GetSharedInstance().RegisterDVBURLSchemeHandler(context);
         ORBWPEWebExtensionHelper::GetSharedInstance().RegisterORBURLSchemeHandler(context);
+        ORBWPEWebExtensionHelper::GetSharedInstance().RegisterDASHURLSchemeHandler(context);
 
         if (_config.InjectedBundle.Value().empty() == false)
         {
