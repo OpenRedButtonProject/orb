@@ -9,6 +9,12 @@ hbbtv.mediaManager = (function() {
     let objectHandlers = {};
     let fallbackHandlers = undefined;
     const mediaProxy = hbbtv.objects.createIFrameObjectProxy();
+    window.orbNetwork = {
+        resolveHostAddress: (hostname) =>
+            hbbtv.native.request('Network.resolveHostAddress', {
+                hostname
+            }).result,
+    };
 
     function initialise() {
         addSourceManipulationIntercept();

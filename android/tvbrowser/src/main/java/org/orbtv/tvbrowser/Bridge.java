@@ -7,13 +7,14 @@
 
 package org.orbtv.tvbrowser;
 
+import android.net.Uri;
 import android.util.Log;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 class Bridge extends AbstractBridge {
@@ -1228,5 +1229,35 @@ class Bridge extends AbstractBridge {
     @Override
     protected void OrbDebug_publishTestReport(Token token, String testSuite, String xml) {
         mTvBrowserCallback.publishTestReport(testSuite, xml);
+    }
+
+    /**
+     * Retrieve the public ip address.
+     *
+     * @param token The token associated with this request.
+     *
+     * @return JSONObject {
+     *    "result": String
+     * }
+     */
+    @Override
+    protected String Network_resolveHostAddress(Token token, String hostname) {
+        Log.d(TAG, "Resolve hostname " + hostname);
+        // Must only handle requests with a publicly routable host or HbbTV test URL
+        try {
+            InetAddress addr = InetAddress.getByName(hostname);
+            if (addr.isSiteLocalAddress() || addr.isLoopbackAddress() || addr.isLinkLocalAddress()) {
+                // Is private (10/8, 172.16/12, 192.168/16), loopback (127/8) or link local (169.254/16)
+                if (!hostname.matches("^([a-c]\\.)?hbbtv[1-3].test$")) {
+                    throw new UnknownHostException();
+                }
+            }
+            if (addr != null) {
+                return addr.getHostAddress();
+            }
+        } catch (UnknownHostException e) {
+            Log.d(TAG, "Unknown hostname: " + hostname);
+        }
+        return "";
     }
 }
