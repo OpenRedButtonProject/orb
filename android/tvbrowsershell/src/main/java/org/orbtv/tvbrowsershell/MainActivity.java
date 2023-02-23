@@ -38,7 +38,7 @@ public class MainActivity extends Activity {
    private static final int APP2APP_LOCAL_PORT = 8185;
    private static final int APP2APP_REMOTE_PORT = 8186;
    private static final String MAIN_ACTIVITY_UUID = "abcd-efgh-hijk-lmno";
-   private static final String USER_AGENT = "HbbTV/1.6.1 (+DRM; OBS; Android; v1.0.0-alpha; OBS;)";
+   private static final String USER_AGENT = "HbbTV/1.6.1 (+DRM; OBS; Android; v1.0.0-alpha; ; OBS;)";
    private static final String SANS_SERIF_FONT_FAMILY = "Tiresias Screenfont";
    private static final String FIXED_FONT_FAMILY = "Letter Gothic 12 Pitch";
 
