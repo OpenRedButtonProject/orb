@@ -19,12 +19,9 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,13 +59,11 @@ public abstract class WebResourceClient {
       String scheme = url.getScheme();
       if (request.getMethod().equalsIgnoreCase("GET")) {
          if (url.toString().startsWith(ORB_PLAYER_URI)) {
-            return createPlayerPageResponse();
+            return createPlayerPageResponse(request, appId);
          }  else if (scheme.equals("http") || scheme.equals("https")) {
             return shouldInterceptHttpRequest(request, appId);
          } else if (scheme.equals("dvb")) {
             return shouldInterceptDsmccRequest(request, appId);
-         } else if (scheme.equals("dash") || scheme.equals("dashs")) {
-            return shouldInterceptDashRequest(request, appId);
          }
       }
       return null;
@@ -195,89 +190,6 @@ public abstract class WebResourceClient {
       return response;
    }
 
-   private WebResourceResponse shouldInterceptDashRequest(WebResourceRequest request, int appId) {
-      // IMPORTANT: Ordinarily <video> is backed by a player that executes outside of the page and
-      // is not affected by same-origin policy, other than the embedded content being inaccessible.
-      //
-      // To enable dash.js to access resources on different origins, requests purporting to be from
-      // dash.js are allowed and handled by a "sandbox HTTP client" that must:
-      //
-      // (1) Only handle requests with a GET method
-      // (2) Only handle requests with a publicly routable host or (c.)hbbtvn.test for testing
-      // (3) Be isolated from the browser and not send any site data such as cookies
-
-      // Handle special dash://resolve.host/{hostname} requests
-      if (request.getUrl().getHost().equals("resolve.host")) {
-         String hostname = request.getUrl().getLastPathSegment();
-         Log.d(TAG, "Resolve hostname" + hostname);
-         InetAddress addr = resolvePublicHostname(hostname);
-         String text = "";
-         if (addr != null) {
-            text = addr.getHostAddress();
-         }
-         return createTextResponse(200, "", text,
-            request.getRequestHeaders().getOrDefault("Origin", null));
-      }
-
-      // Handle other dash:// requests
-      String url = "http" + request.getUrl().toString().substring(4); // Replace dash with http
-      // Must only handle requests with a GET method
-      if (!request.getMethod().equalsIgnoreCase("GET")) {
-         return null;
-      }
-      // Must only handle requests with a publicly routable host or (c.)hbbtvn.test for testing
-      String hostname = Uri.parse(url).getHost();
-      if (resolvePublicHostname(hostname) == null) {
-         // Not public host or HbbTV test URL, fail unless NA URL:
-         if (!hostname.equals("server-na.hbbtv1.test")) {
-            return null;
-         }
-      }
-      WebResourceResponse response;
-      try {
-         response = handleDashRequest(request, appId);
-      } catch (IOException e) {
-         return createTextResponse(504, "Gateway Timeout", "",
-            request.getRequestHeaders().getOrDefault("Origin", null));
-      }
-      return response;
-   }
-
-   private WebResourceResponse handleDashRequest(WebResourceRequest request, int appId)
-         throws IOException {
-      Map<String, String> requestHeaders = request.getRequestHeaders();
-      String url = "http" + request.getUrl().toString().substring(4); // Replace dash with http
-
-      // Must be isolated from the browser and not send any site data such as cookies
-      Response httpResponse = mHttpSandboxClient.newCall(new Request.Builder()
-         .url(url)
-         .method(request.getMethod(), null)
-         .headers(Headers.of(requestHeaders))
-         .build()).execute();
-
-      Charset charset = StandardCharsets.UTF_8;
-      if (!httpResponse.isSuccessful()) {
-         return createTextResponse(httpResponse.code(), httpResponse.message(), "",
-            request.getRequestHeaders().getOrDefault("Origin", null));
-      }
-      String mimeType = getMimeType(httpResponse.header("Content-Type", "text/plain"));
-      Map<String, List<String>> httpResponseHeaders = httpResponse.headers().toMultimap();
-      String origin = request.getRequestHeaders().get("Origin");
-      if (origin != null) {
-         httpResponseHeaders.put("Access-Control-Allow-Origin", Collections.singletonList(origin));
-      }
-      ResponseBody body = httpResponse.body();
-      if (body == null) {
-         return null;
-      }
-      InputStream responseStream = createResponseStream(body.byteStream(), body);
-      WebResourceResponse response = new WebResourceResponse(mimeType, charset.name(), responseStream);
-      Map<String, String> responseHeaders = new HashMap<>();
-      httpResponseHeaders.forEach((k, v) -> responseHeaders.put(k, String.join(",", v)));
-      response.setResponseHeaders(responseHeaders);
-      return response;
-   }
-
    private static String getMimeType(String contentType) {
       String mimeType = "text/plain";
       String[] parts = contentType.split(";");
@@ -359,29 +271,15 @@ public abstract class WebResourceClient {
       return response;
    }
 
-   private InetAddress resolvePublicHostname(String hostname) {
-      // Must only handle requests with a publicly routable host or HbbTV test URL
-      InetAddress addr;
-      try {
-         addr = InetAddress.getByName(hostname);
-         if (addr.isSiteLocalAddress() || addr.isLoopbackAddress() || addr.isLinkLocalAddress()) {
-            // Is private (10/8, 172.16/12, 192.168/16), loopback (127/8) or link local (169.254/16)
-            if (!hostname.matches("^([a-c]\\.)?hbbtv[1-3].test$")) {
-               throw new UnknownHostException();
-            }
-         }
-      } catch (UnknownHostException e) {
-         Log.d(TAG, "Unknown hostname: " + hostname);
-         return null;
-      }
-      return addr;
-   }
-
-   WebResourceResponse createPlayerPageResponse() {
+   WebResourceResponse createPlayerPageResponse(WebResourceRequest request, int appId) {
       Charset charset = StandardCharsets.UTF_8;
       ByteArrayInputStream data = new ByteArrayInputStream(mHtmlBuilder.getPlayerPage(charset));
       Vector<InputStream> payload = new Vector<>();
       int payloadLength = 0;
+
+      byte[] tokenInjection = mHtmlBuilder.getTokenInjection(charset, request.getUrl(), appId);
+      payload.add(new ByteArrayInputStream(tokenInjection));
+      payloadLength += tokenInjection.length;
 
       byte[] hbbtvInjection = mHtmlBuilder.getMediaManagerInjection(charset);
       payload.add(new ByteArrayInputStream(hbbtvInjection));
