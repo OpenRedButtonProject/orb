@@ -357,6 +357,7 @@ hbbtv.objects.MediaElementExtension = (function() {
       this.videoTracks = hbbtv.objects.createVideoTrackList(iframeProxy);
       this.textTracks = hbbtv.objects.createTextTrackList(parent, iframeProxy);
       this.readyState = HTMLMediaElement.HAVE_NOTHING;
+      this.paused = true;
       this.dispatchEvent = function(e) {
          if (e.type === "__orb_startDateUpdated__") {
             this.startDate = new Date(e.startDate);
