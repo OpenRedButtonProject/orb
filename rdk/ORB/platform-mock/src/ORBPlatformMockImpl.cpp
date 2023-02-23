@@ -941,7 +941,7 @@ bool ORBPlatformMockImpl::Configuration_RequestAccessToDistinctiveIdentifier(std
 std::string ORBPlatformMockImpl::Configuration_GetUserAgentString()
 {
     ORB_LOG_NO_ARGS();
-    std::string userAgentString = "HbbTV/1.6.1 (; OBS; WPE; v1.0.0-alpha; OBS;)";
+    std::string userAgentString = "HbbTV/1.6.1 (; OBS; WPE; v1.0.0-alpha; ; OBS;)";
     return userAgentString;
 }
 

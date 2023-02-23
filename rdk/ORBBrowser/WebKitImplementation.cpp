@@ -2780,7 +2780,7 @@ private:
         // The user agent for hbttv string is set here and not in the config file.
         // The reason for this is that When WPEFramework (write_config) identifies a semicolon
         // it creates a json array. Currently there is no way to escape the semicolon character
-        auto ua = WKStringCreateWithUTF8CString("HbbTV/1.6.1 (; OBS; WPE; v1.0.0-alpha; OBS;)");
+        auto ua = WKStringCreateWithUTF8CString("HbbTV/1.6.1 (; OBS; WPE; v1.0.0-alpha; ; OBS;)");
         WKPageSetCustomUserAgent(_page, ua);
         WKRelease(ua);
 
