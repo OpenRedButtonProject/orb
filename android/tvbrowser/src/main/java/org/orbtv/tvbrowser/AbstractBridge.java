@@ -1296,7 +1296,7 @@ public abstract class AbstractBridge {
     *    "result": String
     * }
     */
-   protected abstract String Network_getPublicIpAddress(Token token);
+   protected abstract String Network_resolveHostAddress(Token token, String hostname);
 
    public JSONObject request(String method, Token token, JSONObject params) throws JSONException {
       JSONObject response = new JSONObject();
@@ -2059,9 +2059,10 @@ public abstract class AbstractBridge {
             break;
          }
 
-         case "Network.getPublicIpAddress": {
-            String result = Network_getPublicIpAddress(
-               token
+         case "Network.resolveHostAddress": {
+            String result = Network_resolveHostAddress(
+               token,
+               params.getString("hostname")
             );
             response.put("result", result);
             break;

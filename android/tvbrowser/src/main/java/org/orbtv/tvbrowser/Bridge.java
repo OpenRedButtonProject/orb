@@ -1241,16 +1241,8 @@ class Bridge extends AbstractBridge {
     * }
     */
    @Override
-   protected String Network_getPublicIpAddress(Token token) {
-      String uri = token.getUri();
-      final String ORB_URL_PREFIX = "orb://player?base=";
-
-      if (uri.startsWith(ORB_URL_PREFIX)) {
-         uri = uri.substring(ORB_URL_PREFIX.length());
-      }
-      String hostname = Uri.parse(uri).getHost();
+   protected String Network_resolveHostAddress(Token token, String hostname) {
       Log.d(TAG, "Resolve hostname " + hostname);
-
       // Must only handle requests with a publicly routable host or HbbTV test URL
       try {
          InetAddress addr = InetAddress.getByName(hostname);

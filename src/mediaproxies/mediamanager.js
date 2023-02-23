@@ -10,7 +10,7 @@ hbbtv.mediaManager = (function() {
    let fallbackHandlers = undefined;
    const mediaProxy = hbbtv.objects.createIFrameObjectProxy();
    window.orbNetwork = {
-      getPublicIpAddress: () => hbbtv.native.request("Network.getPublicIpAddress").result
+      resolveHostAddress: (hostname) => hbbtv.native.request("Network.resolveHostAddress", { hostname }).result
    }
 
    function initialise() {
