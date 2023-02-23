@@ -48,7 +48,7 @@ std::shared_ptr<URI> URI::Parse(std::string uri)
       protocolEnd = uri.begin();
    }
    iterator_t hostStart = protocolEnd;
-   iterator_t pathStart = std::find(hostStart, uriEnd, L'/');
+   iterator_t pathStart = std::find(hostStart, queryStart, L'/');
    iterator_t hostEnd = std::find(protocolEnd, (pathStart != uriEnd) ? pathStart : queryStart, L':');
    result->SetHost(std::string(hostStart, hostEnd));
    if ((hostEnd != uriEnd) && ((&*(hostEnd))[0] == L':'))
@@ -57,7 +57,7 @@ std::shared_ptr<URI> URI::Parse(std::string uri)
       iterator_t portEnd = (pathStart != uriEnd) ? pathStart : queryStart;
       result->SetPort(std::string(hostEnd, portEnd));
    }
-   if (pathStart != uriEnd)
+   if (pathStart != queryStart)
    {
       result->SetPath(std::string(pathStart, queryStart));
    }
