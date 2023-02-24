@@ -11,6 +11,7 @@ hbbtv.objects.MediaElementExtension = (function() {
    const props = ["autoplay", "controls", "currentTime", "playbackRate", "volume", "muted", "loop", "defaultMuted", "crossOrigin", "controlsList",
       "defaultPlaybackRate", "disableRemotePlayback", "preservesPitch", "srcObject"
    ];
+   const mediaOwnProperties = Object.getOwnPropertyDescriptors(HTMLMediaElement.prototype);
 
    if (location.protocol !== 'http:' && location.hostname !== 'localhost') {
       const _requestMediaKeySystemAccess = Navigator.prototype.requestMediaKeySystemAccess;
@@ -65,14 +66,13 @@ hbbtv.objects.MediaElementExtension = (function() {
    };
 
    function addSourceSetterIntercept() {
-      const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "src");
       const setAttribute = HTMLMediaElement.prototype.setAttribute;
       Object.defineProperty(HTMLMediaElement.prototype, "src", {
          set(val) {
             this.setAttribute("src", val);
          },
          get() {
-            return ownProperty.get.call(this);
+            return mediaOwnProperties.src.get.call(this);
          }
       });
 
@@ -237,7 +237,6 @@ hbbtv.objects.MediaElementExtension = (function() {
       // before setting a value to an attribute, and we need to be able
       // to change the src property that way as well
       props.push("src");
-
       Object.defineProperty(prototype, "src", {
          set(value) {
             const p = privates.get(this);
@@ -256,6 +255,26 @@ hbbtv.objects.MediaElementExtension = (function() {
          },
          get() {
             return privates.get(this).videoDummy.src;
+         }
+      });
+
+      props.push("width");
+      Object.defineProperty(prototype, "width", {
+         set(value) {
+            this.style.width = value + "px";
+         },
+         get() {
+            return this.getBoundingClientRect().width;
+         }
+      });
+
+      props.push("height");
+      Object.defineProperty(prototype, "height", {
+         set(value) {
+            this.style.height = value + "px";
+         },
+         get() {
+            return this.getBoundingClientRect().height;
          }
       });
 
@@ -352,12 +371,13 @@ hbbtv.objects.MediaElementExtension = (function() {
     */
    function VideoDummy(parent, iframeProxy) {
       let _error = null;
+
       this.startDate = new Date(NaN);
       this.audioTracks = hbbtv.objects.createAudioTrackList(iframeProxy);
       this.videoTracks = hbbtv.objects.createVideoTrackList(iframeProxy);
       this.textTracks = hbbtv.objects.createTextTrackList(parent, iframeProxy);
-      this.readyState = HTMLMediaElement.HAVE_NOTHING;
-      this.paused = true;
+      this.readyState = mediaOwnProperties.readyState.get.call(parent);
+      this.paused = mediaOwnProperties.paused.get.call(parent);
       this.dispatchEvent = function(e) {
          if (e.type === "__orb_startDateUpdated__") {
             this.startDate = new Date(e.startDate);
