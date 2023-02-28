@@ -1,7 +1,7 @@
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
-LOCAL_MODULE := liborg.orbtv.tvbrowser.applicationmanager
+LOCAL_MODULE := liborg.orbtv.orblibrary.applicationmanager
 
 LOCAL_SRC_FILES := \
    application_manager.cpp \

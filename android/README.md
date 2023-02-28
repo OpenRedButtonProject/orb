@@ -1,10 +1,10 @@
 ## Android
 
-The Orb project TvBrowser has two Android reference integrations:
+The Orb project has two Android reference integrations:
 
-### A. The mock reference (tvbrowsershell)
+### A. The mock reference (mockorbapp)
 
-In the mock reference the tvbrowser library is integrated with the tvbrowsershell application. The implementation mocks any calls that would normally use other components such as a broadcast stack.
+In the mock reference the orblibrary is integrated with the mockorbapp. The implementation mocks any calls that would normally use other components such as a broadcast stack.
 
 #### Building
 
@@ -12,7 +12,7 @@ Open this repo as your project in Android studio. The mock reference can be buil
 
 ### B. The DTVKit reference
 
-In the DTVKit reference the tvbrowser library is integrated with the DTVKit Tv Input Source. The implementation calls the DTVKit broadcast stack which itself is integrated with the Android Tuner framework.
+In the DTVKit reference the orblibrary is integrated with the DTVKit Tv Input Source. The implementation calls the DTVKit broadcast stack which itself is integrated with the Android Tuner framework.
 
 #### Building
 
