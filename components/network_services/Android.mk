@@ -1,7 +1,7 @@
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
-LOCAL_MODULE := liborg.orbtv.tvbrowser.networkservices
+LOCAL_MODULE := liborg.orbtv.orblibrary.networkservices
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/media_synchroniser \
                     $(LOCAL_PATH)/app2app

@@ -1,0 +1,102 @@
+plugins {
+    id 'com.android.library'
+}
+
+android {
+    compileSdkVersion 30
+    buildToolsVersion "30.0.3"
+
+    defaultConfig {
+        minSdkVersion 28
+        targetSdkVersion 30
+        versionCode 1
+        versionName "1.0"
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_STL=c++_shared"
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            debuggable true
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    buildFeatures {
+        prefab true
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
+        }
+    }
+
+    ndkVersion '21.1.6352462'
+}
+
+task unzipLibxml2(type: Copy) {
+    from zipTree(file("${projectDir}/../../external/libxml2-2.9.9.zip"))
+    into file("${projectDir}/build/prebuilts")
+}
+
+task unzipLibwebsockets(type: Copy) {
+    from zipTree(file("${projectDir}/../../external/libwebsockets.zip"))
+    into file("${projectDir}/build/prebuilts")
+}
+
+task makePolyfill(type: Exec) {
+    workingDir "${projectDir}/../../"
+    environment "ORB_NATIVE", "android"
+    commandLine "make"
+}
+
+task copyPolyfill(type: Copy) {
+    from "${projectDir}/../../out/resources/assets/polyfill"
+    into file("${projectDir}/src/main/assets/polyfill")
+}
+
+task replaceImport1(type: Exec) {
+    workingDir "${projectDir}/src/main/java/org/orbtv/orblibrary/"
+    commandLine "sed", "-i", "s/com.android.okhttp/com.squareup.okhttp/g", "ApplicationManager.java"
+}
+
+task replaceImport2(type: Exec) {
+    workingDir "${projectDir}/src/main/java/org/orbtv/orblibrary/"
+    commandLine "sed", "-i", "s/com.android.okhttp/com.squareup.okhttp/g", "WebResourceClient.java"
+}
+
+task revertImport1(type: Exec) {
+    workingDir "${projectDir}/src/main/java/org/orbtv/orblibrary/"
+    commandLine "sed", "-i", "s/com.squareup.okhttp/com.android.okhttp/g", "ApplicationManager.java"
+}
+
+task revertImport2(type: Exec) {
+    workingDir "${projectDir}/src/main/java/org/orbtv/orblibrary/"
+    commandLine "sed", "-i", "s/com.squareup.okhttp/com.android.okhttp/g", "WebResourceClient.java"
+}
+
+dependencies {
+    implementation project(path: ':orbpolyfill')
+    implementation 'com.squareup.okhttp:okhttp:2.7.4'
+    implementation 'com.android.ndk.thirdparty:openssl:1.1.1d-alpha-1'
+    implementation 'com.android.ndk.thirdparty:jsoncpp:1.8.4-alpha-1'
+}
+
+copyPolyfill.dependsOn(makePolyfill)
+preBuild.dependsOn(copyPolyfill)
+preBuild.dependsOn(unzipLibxml2)
+preBuild.dependsOn(unzipLibwebsockets)
+preBuild.dependsOn(replaceImport1)
+preBuild.dependsOn(replaceImport2)
+build.finalizedBy(revertImport1)
+build.finalizedBy(revertImport2)

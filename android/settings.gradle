@@ -1,4 +1,6 @@
-rootProject.name = "tvbrowser"
-include ':tvbrowser'
-include ':tvbrowsershell'
+rootProject.name = "orb"
+include ':orblibrary'
+include ':mockorbapp'
 include ':mockdialservice'
+include ':orb'
+include ':orbpolyfill'

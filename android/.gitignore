@@ -7,5 +7,5 @@
 /captures
 .externalNativeBuild
 .cxx
-/tvbrowser/src/main/assets/polyfill/
-/tvbrowsershell/src/main/assets/tests/
+/orblibrary/src/main/assets/polyfill/
+/mockorbapp/src/main/assets/tests/
