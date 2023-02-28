@@ -36,6 +36,7 @@ set(CORE_REQUEST_HANDLERS_SOURCES
    src/core/requestHandlers/ParentalControlRequestHandler.cpp
    src/core/requestHandlers/ProgrammeRequestHandler.cpp
    src/core/requestHandlers/DrmRequestHandler.cpp
+   src/core/requestHandlers/NetworkRequestHandler.cpp
 )
 
 # core/utilities sources
