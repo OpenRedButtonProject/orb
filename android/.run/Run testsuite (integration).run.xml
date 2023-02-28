@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Run testsuite (integration)" type="AndroidRunConfigurationType" factoryName="Android App" activateToolWindowBeforeRun="false">
-    <module name="tvbrowser.tvbrowsershell" />
+    <module name="orb.mockorbapp" />
     <option name="DEPLOY" value="true" />
     <option name="DEPLOY_APK_FROM_BUNDLE" value="false" />
     <option name="DEPLOY_AS_INSTANT" value="false" />
@@ -55,7 +55,6 @@
     <option name="SEARCH_ACTIVITY_IN_GLOBAL_SCOPE" value="false" />
     <option name="SKIP_ACTIVITY_VALIDATION" value="false" />
     <method v="2">
-      <option name="RunConfigurationTask" enabled="true" run_configuration_name="mockdialservice" run_configuration_type="AndroidRunConfigurationType" />
       <option name="Android.Gradle.BeforeRunTask" enabled="true" goal="" />
     </method>
   </configuration>
