@@ -293,8 +293,6 @@ static void OnPageUriChanged(WebKitWebPage *webPage, GParamSpec *pspec,
         "http", "", true);
     webkit_web_extension_add_origin_access_whitelist_entry(s_orbWpeWebExtension, originReverse,
         "https", "", true);
-    webkit_web_extension_add_origin_access_whitelist_entry(s_orbWpeWebExtension, originReverse,
-        "dash", "", true);
 
     if (s_orbClient)
     {
