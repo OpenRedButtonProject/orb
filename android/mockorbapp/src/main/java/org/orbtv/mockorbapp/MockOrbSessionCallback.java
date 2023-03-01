@@ -1137,8 +1137,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     * @return List of supported DRM System IDs currently available.
     */
    @Override
-   public List<TvBrowserTypes.DRMSystemStatus> getSupportedDRMSystemIDs() {
-      ArrayList<TvBrowserTypes.DRMSystemStatus> result = new ArrayList<>();
+   public List<BridgeTypes.DRMSystemStatus> getSupportedDRMSystemIDs() {
+      ArrayList<BridgeTypes.DRMSystemStatus> result = new ArrayList<>();
       //String drmSystem, ArrayList<String> drmSystemIDs, int status,
       //String protectionGateways, String supportedFormats
       /*result.add(new TvBrowserTypes.DRMSystemStatus("test", null, 2, //INITIALISING
