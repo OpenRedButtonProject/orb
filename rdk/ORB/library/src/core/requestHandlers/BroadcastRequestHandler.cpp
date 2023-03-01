@@ -184,7 +184,17 @@ bool BroadcastRequestHandler::Handle(
          int sourceID = params.value("sourceID", -1);
          std::string ipBroadcastID = params.value("ipBroadcastID", "");
          bool trickPlay = params.value("trickplay", false);
-         std::string contentAccessDescriptorURL = params.value("contentAccessDescriptorURL", "");
+         std::string contentAccessDescriptorURL;
+
+         if (params["contentAccessDescriptorURL"].is_null())
+         {
+            contentAccessDescriptorURL = "";
+         }
+         else
+         {
+            contentAccessDescriptorURL = params.value("contentAccessDescriptorURL", "");
+         }
+
          bool quiet = params.value("quiet", 0);
 
          response["result"] = ORBEngine::GetSharedInstance().GetORBPlatform()->Broadcast_SetChannelToTriplet(
