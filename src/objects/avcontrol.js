@@ -43,7 +43,7 @@ hbbtv.objects.AVControl = (function() {
          for (const node of mutation.addedNodes) {
             if (node.nodeName && node.nodeName.toLowerCase() === "object") {
                const p = privates.get(node);
-               if (p && !p.videoElement.parentNode) {
+               if (p && p.videoElement.parentNode !== node.parentNode) {
                   hbbtv.utils.insertAfter(node.parentNode, p.videoElement, node);
                   hbbtv.utils.matchElementStyle(p.videoElement, node);
                }
