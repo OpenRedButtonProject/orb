@@ -232,7 +232,7 @@ hbbtv.mediaManager = (function() {
       });;
       const genericEvents = [
          "loadstart", "suspend", "abort", "emptied", "stalled", "canplay",
-         "canplaythrough", "playing", "waiting", "seeking", "seeked", "__orb_onerror__"
+         "canplaythrough", "playing", "seeking", "seeked", "__orb_onerror__"
       ];
       const genericHandler = (e) => {
          mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
@@ -280,6 +280,7 @@ hbbtv.mediaManager = (function() {
          mediaProxy.dispatchEvent(MEDIA_PROXY_ID, evt);
       });
       media.addEventListener("loadeddata", propsUpdateCallback);
+      media.addEventListener("waiting", propsUpdateCallback);
       media.addEventListener("resize", (e) => {
          const widthProperty = Object.getOwnPropertyDescriptor(HTMLVideoElement.prototype, "videoWidth");
          const heightProperty = Object.getOwnPropertyDescriptor(HTMLVideoElement.prototype, "videoHeight");

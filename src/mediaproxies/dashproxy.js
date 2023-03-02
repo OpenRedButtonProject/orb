@@ -242,7 +242,7 @@ hbbtv.objects.DashProxy = (function() {
       return privates.get(this).ciAncillaryData;
    };
 
-   function onLoadedData() {
+   function onLoadedMetaData() {
       const p = privates.get(this);
       if (p) {
          console.log("DashProxy: Loaded data.");
@@ -570,7 +570,7 @@ hbbtv.objects.DashProxy = (function() {
          privates.set(this, {});
          const p = privates.get(this);
          p.error = null;
-         p.onLoadedData = onLoadedData.bind(this);
+         p.onLoadedMetaData = onLoadedMetaData.bind(this);
          p.onManifestLoaded = onManifestLoaded.bind(this);
          p.onTextTrackChange = onTextTrackChange.bind(this);
          p.onAudioTrackChange = onAudioTrackChange.bind(this);
@@ -582,7 +582,7 @@ hbbtv.objects.DashProxy = (function() {
 
          p.onError = onError.bind(this);
          p.onParentalRatingChange = onParentalRatingChange.bind(this);
-         this.addEventListener("loadeddata", p.onLoadedData, true);
+         this.addEventListener("loadedmetadata", p.onLoadedMetaData, true);
          p.player = orb_dashjs.MediaPlayer().create();
          p.player.registerCustomCapabilitiesFilter(filterCapabilities.bind(this));
          p.player.updateSettings({

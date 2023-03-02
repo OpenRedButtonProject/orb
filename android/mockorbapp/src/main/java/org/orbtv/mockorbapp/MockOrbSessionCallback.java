@@ -663,8 +663,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     *              1 - normal tune and no UI displayed
     *              2 - quiet tune (user does not know)
     *
-    * @return negative value (e.g. TvBrowserTypes.CHANNEL_STATUS_CONNECTING) on success, or
-    *         zero/positive value (see TvBrowserTypes.CHANNEL_STATUS_.. error values) on failure
+    * @return negative value (e.g. BridgeTypes.CHANNEL_STATUS_CONNECTING) on success, or
+    *         zero/positive value (see BridgeTypes.CHANNEL_STATUS_.. error values) on failure
     */
    @Override
    public int setChannelByTriplet(int idType, int onid, int tsid, int sid, int sourceID,
@@ -703,8 +703,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     *              1 - normal tune and no UI displayed
     *              2 - quiet tune (user does not know)
     *
-    * @return negative value (e.g. TvBrowserTypes.CHANNEL_STATUS_CONNECTING) on success, or
-    * zero/positive value (see TvBrowserTypes.CHANNEL_STATUS_.. error values) on failure
+    * @return negative value (e.g. BridgeTypes.CHANNEL_STATUS_CONNECTING) on success, or
+    * zero/positive value (see BridgeTypes.CHANNEL_STATUS_.. error values) on failure
     */
    @Override
    public int setChannelByDsd(String dsd, int sid, boolean trickplay,
@@ -961,7 +961,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
 
    /**
     * The distinctive identifier for origin or a distinctive identifier status string (for statuses
-    * see TvBrowserTypes.DISTINCTIVE_IDENTIFIER_STATUS_*).
+    * see BridgeTypes.DISTINCTIVE_IDENTIFIER_STATUS_*).
     *
     * Integrators should check 12.1.5 for requirements about distinctive identifiers.
     *
@@ -1020,10 +1020,10 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
    }
 
    /**
-    * Convert the Android key code to a TV Browser (TvBrowserTypes.VK_*) key code.
+    * Convert the Android key code to a TV Browser (BridgeTypes.VK_*) key code.
     *
     * @param androidKeyCode The Android key code (KeyEvent.KEYCODE_*)
-    * @return The TV Browser (TvBrowserTypes.VK_*) key code.
+    * @return The TV Browser (BridgeTypes.VK_*) key code.
     */
    @Override
    public int getTvBrowserKeyCode(int androidKeyCode) {
@@ -1137,11 +1137,11 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     * @return List of supported DRM System IDs currently available.
     */
    @Override
-   public List<TvBrowserTypes.DRMSystemStatus> getSupportedDRMSystemIDs() {
-      ArrayList<TvBrowserTypes.DRMSystemStatus> result = new ArrayList<>();
+   public List<BridgeTypes.DRMSystemStatus> getSupportedDRMSystemIDs() {
+      ArrayList<BridgeTypes.DRMSystemStatus> result = new ArrayList<>();
       //String drmSystem, ArrayList<String> drmSystemIDs, int status,
       //String protectionGateways, String supportedFormats
-      /*result.add(new TvBrowserTypes.DRMSystemStatus("test", null, 2, //INITIALISING
+      /*result.add(new BridgeTypes.DRMSystemStatus("test", null, 2, //INITIALISING
 "ci+ dtcp-ip", "TS_BBTS TTS_BBTS MP4_PDCF"));
       Handler handler = new android.os.Handler(Looper.getMainLooper());
       handler.postDelayed(new Runnable() {

@@ -43,7 +43,7 @@ hbbtv.objects.AVControl = (function() {
          for (const node of mutation.addedNodes) {
             if (node.nodeName && node.nodeName.toLowerCase() === "object") {
                const p = privates.get(node);
-               if (p && !p.videoElement.parentNode) {
+               if (p && p.videoElement.parentNode !== node.parentNode) {
                   hbbtv.utils.insertAfter(node.parentNode, p.videoElement, node);
                   hbbtv.utils.matchElementStyle(p.videoElement, node);
                }
@@ -331,12 +331,13 @@ hbbtv.objects.AVControl = (function() {
 
       if (fullscreen) {
          if (!priv.fullscreen) {
+            const bounds = this.getBoundingClientRect();
             videoWrapper.style.cssText = `
                width: 1280px;
                height: 720px;
-               left: 0px;
-               top: 0px;
-               position: fixed;
+               left: ${this.offsetLeft - bounds.left}px;
+               top: ${this.offsetTop - bounds.top}px;
+               position: absolute;
                z-index: 
             ` + (this.style.zIndex ? this.style.zIndex : 1);
             priv.fullscreen = true;
@@ -547,7 +548,7 @@ hbbtv.objects.AVControl = (function() {
                      encrypted: audioTrack.encrypted,
                      // AVAudioComponent properties
                      language: (audioTrack.language ? audioTrack.language : "und"),
-                     audioDescription: audioTrack.kind === "alternate",
+                     audioDescription: audioTrack.kind === "alternate" || audioTrack.kind === "alternative",
                      audioChannels: audioTrack.numChannels
                   });
                }
@@ -971,8 +972,9 @@ hbbtv.objects.AVControl = (function() {
          } else {
             priv.onPauseHandler();
          }
-         setMediaSettings.call(this, priv.MediaSettingsConfiguration);
       });
+
+      videoElement.addEventListener("loadedmetadata", () => setMediaSettings.call(this, priv.MediaSettingsConfiguration));
 
       videoElement.addEventListener("waiting", () => {
          transitionToState.call(thiz, PLAY_STATE_BUFFERING);
@@ -1084,7 +1086,7 @@ hbbtv.objects.AVControl = (function() {
          observer.observe(thiz, {
             childList: true,
             attributes: true,
-            attributeFilter: ["style"]
+            attributeFilter: ["style", "class"]
          });
       })();
 
