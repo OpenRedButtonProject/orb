@@ -89,14 +89,50 @@ hbbtv.objects.AVControl = (function() {
       }
    });
 
-   hbbtv.utils.defineGetterProperties(prototype, {
-      fullscreen() {
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {Fullscreen}
+    *
+    * @name fullscreen
+    * @memberof AVControl#
+    */
+   Object.defineProperty(prototype, "fullscreen", {
+      get: function() {
          return privates.get(this).fullscreen;
-      },
-      playState() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {PlayState}
+    *
+    * @name playState
+    * @memberof AVControl#
+    */
+   Object.defineProperty(prototype, "playState", {
+      get: function() {
          return privates.get(this).playState;
-      },
-      playPosition() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {PlayStation}
+    *
+    * @name playStation
+    * @memberof AVControl#
+    */
+   Object.defineProperty(prototype, "playStation", {
+      get: function() {
          const priv = privates.get(this);
          if (priv.seekPos !== undefined) {
             return priv.seekPos;
@@ -105,14 +141,53 @@ hbbtv.objects.AVControl = (function() {
             return 0;
          }
          return Math.floor(priv.videoElement.currentTime * 1000);
-      },
-      playTime() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {PlayTime}
+    *
+    * @name playTime
+    * @memberof AVControl#
+    */
+   Object.defineProperty(prototype, "playTime", {
+      get: function() {
          return privates.get(this).playTime;
-      },
-      speed() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {Speed}
+    *
+    * @name speed
+    * @memberof AVControl#
+    */
+   Object.defineProperty(prototype, "speed", {
+      get: function() {
          return privates.get(this).speed;
-      },
-      error() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {Error}
+    *
+    * @name error
+    * @memberof AVControl#
+    */
+   Object.defineProperty(prototype, "error", {
+      get: function() {
          return privates.get(this).error;
       }
    });

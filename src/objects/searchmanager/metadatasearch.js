@@ -17,13 +17,36 @@ hbbtv.objects.MetadataSearch = (function() {
       FOUND: 2
    });
 
-   hbbtv.utils.defineGetterProperties(prototype, {
-      searchTarget() {
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {SearchTarget}
+    *
+    * @name searchTarget
+    * @memberof MetadataSearch#
+    */
+   Object.defineProperty(prototype, "searchTarget", {
+      get: function() {
          const p = privates.get(this);
          mandatoryBroadcastRelatedSecurityCheck(p);
          return p.searchTarget;
-      },
-      result() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {Result}
+    *
+    * @name result
+    * @memberof MetadataSearch#
+    */
+   Object.defineProperty(prototype, "result", {
+      get: function() {
          const p = privates.get(this);
          mandatoryBroadcastRelatedSecurityCheck(p);
          return p.result;

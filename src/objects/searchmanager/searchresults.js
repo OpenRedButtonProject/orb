@@ -9,14 +9,53 @@ hbbtv.objects.SearchResults = (function() {
    const prototype = {};
    const privates = new WeakMap();
 
-   hbbtv.utils.defineGetterProperties(prototype, {
-      length() {
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Length}
+    *
+    * @name length
+    * @memberof SearchResults#
+    */
+   Object.defineProperty(prototype, "length", {
+      get: function() {
          return privates.get(this).searchResultsData.results.length;
-      },
-      offset() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Offset}
+    *
+    * @name offset
+    * @memberof SearchResults#
+    */
+   Object.defineProperty(prototype, "offset", {
+      get: function() {
          return privates.get(this).searchResultsData.offset;
-      },
-      totalSize() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {TotalSize}
+    *
+    * @name totalSize
+    * @memberof SearchResults#
+    */
+   Object.defineProperty(prototype, "totalSize", {
+      get: function() {
          return privates.get(this).searchResultsData.totalSize;
       }
    });

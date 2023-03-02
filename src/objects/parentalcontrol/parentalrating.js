@@ -10,22 +10,89 @@ hbbtv.objects.ParentalRating = (function() {
    const prototype = {};
    const privates = new WeakMap();
 
-   hbbtv.utils.defineGetterProperties(prototype, {
-      name() {
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Name}
+    *
+    * @name name
+    * @memberof ParentalRating#
+    */
+   Object.defineProperty(prototype, "name", {
+      get: function() {
          return privates.get(this).parentalRatingData.name;
-      },
-      scheme() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Scheme}
+    *
+    * @name scheme
+    * @memberof ParentalRating#
+    */
+   Object.defineProperty(prototype, "scheme", {
+      get: function() {
          return privates.get(this).parentalRatingData.scheme;
-      },
-      value() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Value}
+    *
+    * @name value
+    * @memberof ParentalRating#
+    */
+   Object.defineProperty(prototype, "value", {
+      get: function() {
          return privates.get(this).parentalRatingData.value;
-      },
-      labels() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Labels}
+    *
+    * @name labels
+    * @memberof ParentalRating#
+    */
+   Object.defineProperty(prototype, "labels", {
+      get: function() {
          return privates.get(this).parentalRatingData.labels;
-      },
-      region() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Region}
+    *
+    * @name region
+    * @memberof ParentalRating#
+    */
+   Object.defineProperty(prototype, "region", {
+      get: function() {
          return privates.get(this).parentalRatingData.region;
-      },
+      }
    });
 
    // Initialise an instance of prototype

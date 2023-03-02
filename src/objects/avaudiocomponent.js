@@ -19,39 +19,148 @@ hbbtv.objects.AVAudioComponent = (function() {
       'audioChannels'
    ];
 
-   hbbtv.utils.defineGetterProperties(prototype, {
-      componentTag() {
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {ComponentTag}
+    *
+    * @name componentTag
+    * @memberof AVAudioComponent#
+    */
+   Object.defineProperty(prototype, "componentTag", {
+      get: function() {
          const p = privates.get(this);
          return p.avComponentData.componentTag;
-      },
-      pid() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Pid}
+    *
+    * @name pid
+    * @memberof AVAudioComponent#
+    */
+   Object.defineProperty(prototype, "pid", {
+      get: function() {
          const p = privates.get(this);
          return p.avComponentData.pid;
-      },
-      type() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Type}
+    *
+    * @name type
+    * @memberof AVAudioComponent#
+    */
+   Object.defineProperty(prototype, "type", {
+      get: function() {
          const p = privates.get(this);
          return p.avComponentData.type;
-      },
-      encoding() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Encoding}
+    *
+    * @name encoding
+    * @memberof AVAudioComponent#
+    */
+   Object.defineProperty(prototype, "encoding", {
+      get: function() {
          const p = privates.get(this);
          return p.avComponentData.encoding;
-      },
-      encrypted() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Encrypted}
+    *
+    * @name encrypted
+    * @memberof AVAudioComponent#
+    */
+   Object.defineProperty(prototype, "encrypted", {
+      get: function() {
          const p = privates.get(this);
          return p.avComponentData.encrypted;
-      },
-      language() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Language}
+    *
+    * @name language
+    * @memberof AVAudioComponent#
+    */
+   Object.defineProperty(prototype, "language", {
+      get: function() {
          const p = privates.get(this);
          return p.avComponentData.language;
-      },
-      audioDescription() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {AudioDescription}
+    *
+    * @name audioDescription
+    * @memberof AVAudioComponent#
+    */
+   Object.defineProperty(prototype, "audioDescription", {
+      get: function() {
          const p = privates.get(this);
          return p.avComponentData.audioDescription;
-      },
-      audioChannels() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {AudioChannels}
+    *
+    * @name audioChannels
+    * @memberof AVAudioComponent#
+    */
+   Object.defineProperty(prototype, "audioChannels", {
+      get: function() {
          const p = privates.get(this);
          return p.avComponentData.audioChannels;
-      },
+      }
    });
 
    // Initialise an instance of prototype

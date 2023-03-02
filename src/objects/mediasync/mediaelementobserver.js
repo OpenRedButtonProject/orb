@@ -11,15 +11,51 @@ hbbtv.objects.MediaElementObserver = (function() {
    const MEDIA_ELEMENT_EVENTS = ["seeked", "pause", "play", "abort", "ended", "ratechange", "error", "stalled", "waiting"];
    const ERROR_EVENTS = ["error"];
 
-   hbbtv.utils.defineGetterProperties(prototype, {
-      contentTime() {
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {ContentTime}
+    *
+    * @name contentTime
+    * @memberof MediaElementObserver#
+    */
+   Object.defineProperty(prototype, "contentTime", {
+      get: function() {
          return privates.get(this).mediaObject.currentTime;
-      },
-      timelineSpeedMultiplier() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {TimelineSpeedMultiplier}
+    *
+    * @name timelineSpeedMultiplier
+    * @memberof MediaElementObserver#
+    */
+   Object.defineProperty(prototype, "timelineSpeedMultiplier", {
+      get: function() {
          const mo = privates.get(this).mediaObject;
          return mo.ended || mo.paused ? 0 : mo.playbackRate;
-      },
-      contentTicks() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {ContentTicks}
+    *
+    * @name contentTicks
+    * @memberof MediaElementObserver#
+    */
+   Object.defineProperty(prototype, "contentTicks", {
+      get: function() {
          if (this.timeline) {
             return this.contentTime * this.timeline.timelineProperties.unitsPerSecond;
          } else {

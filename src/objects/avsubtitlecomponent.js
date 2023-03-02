@@ -19,39 +19,148 @@ hbbtv.objects.AVSubtitleComponent = (function() {
       'label'
    ];
 
-   hbbtv.utils.defineGetterProperties(prototype, {
-      componentTag() {
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {ComponentTag}
+    *
+    * @name componentTag
+    * @memberof AVSubtitleComponent#
+    */
+   Object.defineProperty(prototype, "componentTag", {
+      get: function() {
          const p = privates.get(this);
          return p.avComponentData.componentTag;
-      },
-      pid() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Pid}
+    *
+    * @name pid
+    * @memberof AVSubtitleComponent#
+    */
+   Object.defineProperty(prototype, "pid", {
+      get: function() {
          const p = privates.get(this);
          return p.avComponentData.pid;
-      },
-      type() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Type}
+    *
+    * @name type
+    * @memberof AVSubtitleComponent#
+    */
+   Object.defineProperty(prototype, "type", {
+      get: function() {
          const p = privates.get(this);
          return p.avComponentData.type;
-      },
-      encoding() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Encoding}
+    *
+    * @name encoding
+    * @memberof AVSubtitleComponent#
+    */
+   Object.defineProperty(prototype, "encoding", {
+      get: function() {
          const p = privates.get(this);
          return p.avComponentData.encoding;
-      },
-      encrypted() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Encrypted}
+    *
+    * @name encrypted
+    * @memberof AVSubtitleComponent#
+    */
+   Object.defineProperty(prototype, "encrypted", {
+      get: function() {
          const p = privates.get(this);
          return p.avComponentData.encrypted;
-      },
-      language() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Language}
+    *
+    * @name language
+    * @memberof AVSubtitleComponent#
+    */
+   Object.defineProperty(prototype, "language", {
+      get: function() {
          const p = privates.get(this);
          return p.avComponentData.language;
-      },
-      hearingImpaired() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {HearingImpaired}
+    *
+    * @name hearingImpaired
+    * @memberof AVSubtitleComponent#
+    */
+   Object.defineProperty(prototype, "hearingImpaired", {
+      get: function() {
          const p = privates.get(this);
          return p.avComponentData.hearingImpaired;
-      },
-      label() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Label}
+    *
+    * @name label
+    * @memberof AVSubtitleComponent#
+    */
+   Object.defineProperty(prototype, "label", {
+      get: function() {
          const p = privates.get(this);
          return p.avComponentData.label;
-      },
+      }
    });
 
    // Initialise an instance of prototype

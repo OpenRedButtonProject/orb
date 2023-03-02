@@ -16,27 +16,94 @@ hbbtv.objects.AVComponent = (function() {
       'encrypted'
    ];
 
-   hbbtv.utils.defineGetterProperties(prototype, {
-      componentTag() {
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {ComponentTag}
+    *
+    * @name componentTag
+    * @memberof AVComponent#
+    */
+   Object.defineProperty(prototype, "componentTag", {
+      get: function() {
          const p = privates.get(this);
          return p.avComponentData.componentTag;
-      },
-      pid() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Pid}
+    *
+    * @name pid
+    * @memberof AVComponent#
+    */
+   Object.defineProperty(prototype, "pid", {
+      get: function() {
          const p = privates.get(this);
          return p.avComponentData.pid;
-      },
-      type() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Type}
+    *
+    * @name type
+    * @memberof AVComponent#
+    */
+   Object.defineProperty(prototype, "type", {
+      get: function() {
          const p = privates.get(this);
          return p.avComponentData.type;
-      },
-      encoding() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Encoding}
+    *
+    * @name encoding
+    * @memberof AVComponent#
+    */
+   Object.defineProperty(prototype, "encoding", {
+      get: function() {
          const p = privates.get(this);
          return p.avComponentData.encoding;
-      },
-      encrypted() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {Encrypted}
+    *
+    * @name encrypted
+    * @memberof AVComponent#
+    */
+   Object.defineProperty(prototype, "encrypted", {
+      get: function() {
          const p = privates.get(this);
          return p.avComponentData.encrypted;
-      },
+      }
    });
 
    // Initialise an instance of prototype

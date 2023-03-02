@@ -7,9 +7,20 @@
 hbbtv.objects.MediaKeySystemAccess = (function() {
    const privates = new WeakMap();
    const prototype = {};
-   
-   hbbtv.utils.defineGetterProperties(prototype, {
-      keySystem() {
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    * Security: none.
+    *
+    * @returns {KeySystem}
+    *
+    * @name keySystem
+    * @memberof MediaKeySystemAccess#
+    */
+   Object.defineProperty(prototype, "keySystem", {
+      get: function() {
          return privates.get(this).keySystem;
       }
    });

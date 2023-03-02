@@ -23,27 +23,115 @@ hbbtv.objects.MediaSynchroniser = (function() {
       }
    });
 
-   hbbtv.utils.defineGetterProperties(prototype, {
-      lastError() {
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {LastError}
+    *
+    * @name lastError
+    * @memberof MediaSynchroniser#
+    */
+   Object.defineProperty(prototype, "lastError", {
+      get: function() {
          return privates.get(this).lastError;
-      },
-      lastErrorSource() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {LastErrorSource}
+    *
+    * @name lastErrorSource
+    * @memberof MediaSynchroniser#
+    */
+   Object.defineProperty(prototype, "lastErrorSource", {
+      get: function() {
          return privates.get(this).lastErrorSource;
-      },
-      nrOfSlaves() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {NrOfSlaves}
+    *
+    * @name nrOfSlaves
+    * @memberof MediaSynchroniser#
+    */
+   Object.defineProperty(prototype, "nrOfSlaves", {
+      get: function() {
          const nr = hbbtv.bridge.mediaSync.nrOfSlaves(privates.get(this).id);
          return (nr == -1) ? null : nr;
-      },
-      interDeviceSyncEnabled() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {InterDeviceSyncEnabled}
+    *
+    * @name interDeviceSyncEnabled
+    * @memberof MediaSynchroniser#
+    */
+   Object.defineProperty(prototype, "interDeviceSyncEnabled", {
+      get: function() {
          return hbbtv.bridge.mediaSync.interDeviceSyncEnabled(privates.get(this).id);
-      },
-      maxBroadbandStreamsWithBroadcast() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {MaxBroadbandStreamsWithBroadcast}
+    *
+    * @name maxBroadbandStreamsWithBroadcast
+    * @memberof MediaSynchroniser#
+    */
+   Object.defineProperty(prototype, "maxBroadbandStreamsWithBroadcast", {
+      get: function() {
          return 1;
-      },
-      maxBroadbandStreamsNoBroadcast() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {MaxBroadbandStreamsNoBroadcast}
+    *
+    * @name maxBroadbandStreamsNoBroadcast
+    * @memberof MediaSynchroniser#
+    */
+   Object.defineProperty(prototype, "maxBroadbandStreamsNoBroadcast", {
+      get: function() {
          return 1;
-      },
-      currentTime() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {CurrentTime}
+    *
+    * @name currentTime
+    * @memberof MediaSynchroniser#
+    */
+   Object.defineProperty(prototype, "currentTime", {
+      get: function() {
          const p = privates.get(this);
          if (!p.mediaObserver) {
             return NaN;

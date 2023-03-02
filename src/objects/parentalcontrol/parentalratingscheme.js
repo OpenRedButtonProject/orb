@@ -10,19 +10,55 @@ hbbtv.objects.ParentalRatingScheme = (function() {
    const prototype = {};
    const privates = new WeakMap();
 
-   hbbtv.utils.defineGetterProperties(prototype, {
-      length() {
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {Length}
+    *
+    * @name length
+    * @memberof ParentalRatingScheme#
+    */
+   Object.defineProperty(prototype, "length", {
+      get: function() {
          // in case the rating scheme is dvb-si, the returned
          // length should be always 0
          if (this.name.toLowerCase() === "dvb-si") {
             return 0;
          }
          return privates.get(this).ratings.length;
-      },
-      name() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {Name}
+    *
+    * @name name
+    * @memberof ParentalRatingScheme#
+    */
+   Object.defineProperty(prototype, "name", {
+      get: function() {
          return privates.get(this).name;
-      },
-      threshold() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {Threshold}
+    *
+    * @name threshold
+    * @memberof ParentalRatingScheme#
+    */
+   Object.defineProperty(prototype, "threshold", {
+      get: function() {
          return hbbtv.objects.createParentalRating(
             hbbtv.bridge.parentalControl.getThreshold(this.name)
          );
