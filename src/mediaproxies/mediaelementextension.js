@@ -24,6 +24,7 @@ hbbtv.objects.MediaElementExtension = (function() {
         'preservesPitch',
         'srcObject',
     ];
+    const mediaOwnProperties = Object.getOwnPropertyDescriptors(HTMLMediaElement.prototype);
 
     if (location.protocol !== 'http:' && location.hostname !== 'localhost') {
         const _requestMediaKeySystemAccess = Navigator.prototype.requestMediaKeySystemAccess;
@@ -59,28 +60,36 @@ hbbtv.objects.MediaElementExtension = (function() {
 
     HTMLMediaElement.prototype.orb_unload = function() {};
 
-    // Override default play() for the case where it is being called
+    // Override default play() and load() for the case where it is being called
     // immediatelly after setting its source. Due to the fact
     // that the upgrade is asynchronous, the call is being skipped,
     // so we call it inside setTimeout()
+    const __play = HTMLMediaElement.prototype.play;
     HTMLMediaElement.prototype.play = function() {
         const thiz = this;
         return new Promise((resolve, reject) => {
             setTimeout(() => {
-                thiz.play().then(resolve).catch(reject);
+                const playPromise = privates.get(thiz) ? thiz.play() : __play.call(thiz);
+                playPromise.then(resolve).catch(reject);
             }, 0);
         });
     };
 
+    const __load = HTMLMediaElement.prototype.load;
+    HTMLMediaElement.prototype.load = function() {
+        setTimeout(() => {
+            privates.get(this) ? this.load() : __load.call(this);
+        }, 0);
+    };
+
     function addSourceSetterIntercept() {
-        const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'src');
         const setAttribute = HTMLMediaElement.prototype.setAttribute;
         Object.defineProperty(HTMLMediaElement.prototype, 'src', {
             set(val) {
                 this.setAttribute('src', val);
             },
             get() {
-                return ownProperty.get.call(this);
+                return mediaOwnProperties.src.get.call(this);
             },
         });
 
@@ -97,6 +106,16 @@ hbbtv.objects.MediaElementExtension = (function() {
         const ORB_PLAYER_URL = 'orb://player';
         const prototype = Object.create(HTMLMediaElement.prototype);
         const methods = ['pause', 'load'];
+        const nodeMethods = [
+            'appendChild',
+            'insertBefore',
+            'removeChild',
+            'replaceChild',
+            'hasChildNodes',
+            'getElementsByTagName',
+            'getElementById',
+        ];
+        const nodeProps = ['childNodes', 'firstChild', 'lastChild', 'children'];
         const roProps = [
             'textTracks',
             'audioTracks',
@@ -112,6 +131,50 @@ hbbtv.objects.MediaElementExtension = (function() {
             'videoHeight',
         ];
         let lastMediaElement = undefined;
+
+        function makeNodeMethod(name) {
+            return function() {
+                const thiz = privates.get(this).divDummy;
+                return thiz[name].apply(thiz, arguments);
+            };
+        }
+
+        for (const name of nodeMethods) {
+            prototype[name] = makeNodeMethod(name);
+        }
+
+        for (const key of nodeProps) {
+            Object.defineProperty(prototype, key, {
+                get() {
+                    return privates.get(this).divDummy[key];
+                },
+            });
+        }
+
+        hbbtv.utils.defineGetterProperties(prototype, {
+            nextSibling() {
+                const nextSibling = Object.getOwnPropertyDescriptor(
+                    Node.prototype,
+                    'nextSibling'
+                ).get.call(this);
+                // skip the generated iframe
+                if (nextSibling && nextSibling.__orb_mediaElementExtension__) {
+                    return nextSibling.nextSibling;
+                }
+                return nextSibling;
+            },
+            previousSibling() {
+                const previousSibling = Object.getOwnPropertyDescriptor(
+                    Node.prototype,
+                    'previousSibling'
+                ).get.call(this);
+                // check if there is a generated iframe from another video element
+                if (previousSibling && previousSibling.__orb_mediaElementExtension__) {
+                    return previousSibling.previousSibling;
+                }
+                return previousSibling;
+            },
+        });
 
         prototype.getStartDate = function() {
             return privates.get(this).videoDummy.startDate;
@@ -164,18 +227,6 @@ hbbtv.objects.MediaElementExtension = (function() {
             return privates
                 .get(this)
                 .iframeProxy.callAsyncObserverMethod(MEDIA_PROXY_ID, 'setMediaKeys', [mediaKeys]);
-        };
-
-        prototype.appendChild = function(node) {
-            privates.get(this).divDummy.appendChild(node);
-        };
-
-        prototype.insertBefore = function(newNode, otherNode) {
-            privates.get(this).divDummy.insertBefore(newNode, otherNode);
-        };
-
-        prototype.removeChild = function(node) {
-            privates.get(this).divDummy.removeChild(node);
         };
 
         function makeMethod(name) {
@@ -247,7 +298,6 @@ hbbtv.objects.MediaElementExtension = (function() {
         // before setting a value to an attribute, and we need to be able
         // to change the src property that way as well
         props.push('src');
-
         Object.defineProperty(prototype, 'src', {
             set(value) {
                 const p = privates.get(this);
@@ -268,6 +318,26 @@ hbbtv.objects.MediaElementExtension = (function() {
             },
             get() {
                 return privates.get(this).videoDummy.src;
+            },
+        });
+
+        props.push('width');
+        Object.defineProperty(prototype, 'width', {
+            set(value) {
+                this.style.width = value + 'px';
+            },
+            get() {
+                return this.getBoundingClientRect().width;
+            },
+        });
+
+        props.push('height');
+        Object.defineProperty(prototype, 'height', {
+            set(value) {
+                this.style.height = value + 'px';
+            },
+            get() {
+                return this.getBoundingClientRect().height;
             },
         });
 
@@ -380,11 +450,13 @@ hbbtv.objects.MediaElementExtension = (function() {
      */
     function VideoDummy(parent, iframeProxy) {
         let _error = null;
+
         this.startDate = new Date(NaN);
         this.audioTracks = hbbtv.objects.createAudioTrackList(iframeProxy);
         this.videoTracks = hbbtv.objects.createVideoTrackList(iframeProxy);
         this.textTracks = hbbtv.objects.createTextTrackList(parent, iframeProxy);
-        this.readyState = HTMLMediaElement.HAVE_NOTHING;
+        this.readyState = mediaOwnProperties.readyState.get.call(parent);
+        this.paused = mediaOwnProperties.paused.get.call(parent);
         this.dispatchEvent = function(e) {
             if (e.type === '__orb_startDateUpdated__') {
                 this.startDate = new Date(e.startDate);
@@ -414,8 +486,8 @@ hbbtv.objects.MediaElementExtension = (function() {
     function initialise(src) {
         if (src && !src.startsWith('blob:') && !this._rdkHolepunch) {
             let p = privates.get(this);
+            const thiz = this;
             if (!p) {
-                const thiz = this;
                 const iframeProxy = hbbtv.objects.createIFrameObjectProxy();
                 const videoDummy = new VideoDummy(this, iframeProxy);
 
@@ -449,6 +521,8 @@ hbbtv.objects.MediaElementExtension = (function() {
                 p = privates.get(this);
                 iframeProxy.registerObserver(MEDIA_PROXY_ID, videoDummy);
 
+                p.styleObservers = [];
+                p.iframe.__orb_mediaElementExtension__ = true;
                 p.iframe.frameBorder = 0;
                 p.iframe.allow = 'encrypted-media';
                 p.iframe.addEventListener('load', () => {
@@ -504,8 +578,15 @@ hbbtv.objects.MediaElementExtension = (function() {
                     childList: true,
                 });
 
-                while (this.childNodes.length) {
-                    divDummy.appendChild(this.childNodes[0]);
+                // childNodes property is overrided at this point, so we need
+                // to get the childNodes from the property descriptor and add
+                // them dynamically to the divDummy
+                const childNodes = Object.getOwnPropertyDescriptor(
+                    Node.prototype,
+                    'childNodes'
+                ).get.call(this);
+                while (childNodes.length) {
+                    divDummy.appendChild(childNodes[0]);
                 }
 
                 // update the new prototype with the values stored in initialProps
@@ -514,9 +595,35 @@ hbbtv.objects.MediaElementExtension = (function() {
                 }
                 console.log('MediaElementExtension: initialised');
             }
-            if (this.parentNode && !p.iframe.parentNode) {
+            if (this.parentNode && p.iframe.parentNode !== this.parentNode) {
                 hbbtv.utils.insertAfter(this.parentNode, p.iframe, this);
                 hbbtv.utils.matchElementStyle(p.iframe, this);
+            }
+
+            // whenever there is a change on an ancestor style,
+            // update the iframe style as well
+            const ancestors = [];
+            let parent = this.parentNode;
+            while (parent) {
+                ancestors.push(parent);
+                parent = parent.parentNode;
+            }
+
+            for (const observer of p.styleObservers) {
+                observer.disconnect();
+            }
+            p.styleObservers = [];
+
+            const observerCallback = function() {
+                hbbtv.utils.matchElementStyle(p.iframe, thiz);
+            };
+            for (const ancestor of ancestors) {
+                const styleObserver = new MutationObserver(observerCallback);
+                styleObserver.observe(ancestor, {
+                    attributes: true,
+                    attributeFilter: ['style', 'class'],
+                });
+                p.styleObservers.push(styleObserver);
             }
             return true;
         }

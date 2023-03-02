@@ -271,7 +271,6 @@ hbbtv.mediaManager = (function() {
             'canplay',
             'canplaythrough',
             'playing',
-            'waiting',
             'seeking',
             'seeked',
             '__orb_onerror__',
@@ -336,6 +335,7 @@ hbbtv.mediaManager = (function() {
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, evt);
         });
         media.addEventListener('loadeddata', propsUpdateCallback);
+        media.addEventListener('waiting', propsUpdateCallback);
         media.addEventListener('resize', (e) => {
             const widthProperty = Object.getOwnPropertyDescriptor(
                 HTMLVideoElement.prototype,
