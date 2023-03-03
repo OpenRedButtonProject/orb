@@ -99,7 +99,7 @@ hbbtv.objects.IFrameObjectProxy = (function() {
                return;
             }
             if (msg.type === MSG_TYPE_ASYNC_CALL_RESPONSE && msg.data.callId === data.callId && msg.sessionId === privates.get(thiz).sessionId) {
-               console.log("IFrameObjectProxy: received response from async call with callId", data.callId);
+               console.log("IFrameObjectProxy: received response from async call with data", msg.data);
                window.removeEventListener("message", callback);
                clearTimeout(timeoutId);
                if (msg.data.error) {
@@ -198,10 +198,10 @@ hbbtv.objects.IFrameObjectProxy = (function() {
                   case MSG_TYPE_ASYNC_METHOD_REQUEST:
                      if (typeof observer[msg.data.name] === "function") {
                         observer[msg.data.name](...msg.data.args)
-                           .then(() => {
+                           .then((...args) => {
                               postMessage.call(thiz, MSG_TYPE_ASYNC_CALL_RESPONSE, {
                                  callId: msg.data.callId,
-                                 args: Array.from(arguments)
+                                 args: args
                               });
                            })
                            .catch(e => {

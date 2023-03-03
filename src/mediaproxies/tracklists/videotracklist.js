@@ -183,9 +183,7 @@ hbbtv.objects.VideoTrackList = (function() {
             if (typeof target[property] === "function") {
                if (!evtTargetMethods.includes(property)) {
                   return function() {
-                     proxy.callObserverMethod(VIDEO_TRACK_LIST_KEY, property, Array.from(arguments).sort((a, b) => {
-                        return a - b;
-                     }));
+                     proxy.callObserverMethod(VIDEO_TRACK_LIST_KEY, property, Array.from(arguments));
                      return target[property].apply(target, arguments);
                   };
                }

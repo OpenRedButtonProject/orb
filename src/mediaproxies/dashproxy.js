@@ -211,35 +211,31 @@ hbbtv.objects.DashProxy = (function() {
    prototype.orb_unload = function() {
       privates.get(this).player.reset();
       this.load();
-   };
-
-   prototype.getStartDate = function() {
-      return privates.get(this).startDate;
+      return Promise.resolve();
    };
 
    prototype.orb_getMrsUrl = function() {
-      return privates.get(this).mrsUrl;
+      const mrsUrl = privates.get(this).mrsUrl;
+      return Promise.resolve(mrsUrl ? mrsUrl.toString() : undefined);
    };
 
    prototype.orb_getCurrentPeriod = function() {
+      let period;
       try {
-         return this.orb_getPeriods()[privates.get(this).player.getActiveStream().getStreamInfo().index];
+         period = this.orb_getPeriods()[privates.get(this).player.getActiveStream().getStreamInfo().index];
       } catch (e) {
          console.warn("DashProxy: " + e);
       }
-      return undefined;
-   };
-
-   prototype.orb_getSource = function() {
-      return privates.get(this).player.getSource();
+      return Promise.resolve(period);
    };
 
    prototype.orb_getPeriods = function() {
-      return privates.get(this).periods;
+      return Promise.resolve(privates.get(this).periods);
    };
 
    prototype.orb_getCiAncillaryData = function() {
-      return privates.get(this).ciAncillaryData;
+      const ciAncData = privates.get(this).ciAncillaryData;
+      return Promise.resolve(ciAncData ? ciAncData.toString() : undefined);
    };
 
    function onLoadedMetaData() {
@@ -514,13 +510,12 @@ hbbtv.objects.DashProxy = (function() {
    function onManifestLoaded(e) {
       const p = privates.get(this);
       p.profiles = e.data.profiles;
-      p.startDate = e.data.availabilityStartTime;
       p.periods = e.data.Period_asArray;
       p.mrsUrl = e.data.mrsUrl;
       p.ciAncillaryData = e.data.ciAncillaryData;
       const evt = new Event("__orb_startDateUpdated__");
       Object.assign(evt, {
-         startDate: p.startDate
+         startDate: Date.parse(e.data.availabilityStartTime)
       });
       this.dispatchEvent(evt);
    }
@@ -633,7 +628,6 @@ hbbtv.objects.DashProxy = (function() {
          for (const scheme of PARENTAL_CONTROL_EVENT_SCHEMES) {
             p.player.on(scheme, p.onParentalRatingChange);
          }
-         p.startDate = NaN;
          p.player.attachTTMLRenderingDiv(document.getElementById("orb_subsPH"));
          this.textTracks.addEventListener("change", p.onTextTrackChange);
 

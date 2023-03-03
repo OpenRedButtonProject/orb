@@ -41,7 +41,12 @@ hbbtv.objects.MediaElementExtension = (function() {
       }
    }
 
-   HTMLMediaElement.prototype.orb_unload = function() {};
+   HTMLMediaElement.prototype.getStartDate = function() { return new Date(NaN); };
+   HTMLMediaElement.prototype.orb_getPeriods = 
+   HTMLMediaElement.prototype.orb_getMrsUrl = 
+   HTMLMediaElement.prototype.orb_getCurrentPeriod = 
+   HTMLMediaElement.prototype.orb_getCiAncillaryData = 
+   HTMLMediaElement.prototype.orb_unload = function() { return Promise.resolve(); };
 
    // Override default play() and load() for the case where it is being called
    // immediatelly after setting its source. Due to the fact
@@ -89,6 +94,7 @@ hbbtv.objects.MediaElementExtension = (function() {
       const ORB_PLAYER_URL = "orb://player";
       const prototype = Object.create(HTMLMediaElement.prototype);
       const methods = ["pause", "load"];
+      const asyncMethods = ["orb_getPeriods", "orb_getMrsUrl", "orb_getCurrentPeriod", "orb_getCiAncillaryData"];
       const nodeMethods = ["appendChild", "insertBefore", "removeChild", "replaceChild", "hasChildNodes", "getElementsByTagName", "getElementById"];
       const nodeProps = ["childNodes", "firstChild", "lastChild", "children"];
       const roProps = ["textTracks", "audioTracks", "videoTracks", "paused", "ended", "currentSrc", "error",
@@ -165,8 +171,8 @@ hbbtv.objects.MediaElementExtension = (function() {
 
       prototype.orb_unload = function() {
          const p = privates.get(this);
-         p.iframeProxy.callObserverMethod(MEDIA_PROXY_ID, "orb_unload");
          delete p.videoDummy.src;
+         return p.iframeProxy.callAsyncObserverMethod(MEDIA_PROXY_ID, "orb_unload");
       };
 
       prototype.play = function() {
@@ -186,9 +192,13 @@ hbbtv.objects.MediaElementExtension = (function() {
 
       function makeMethod(name) {
          return function() {
-            privates.get(this).iframeProxy.callObserverMethod(MEDIA_PROXY_ID, name, Array.from(arguments).sort((a, b) => {
-               return a - b;
-            }));
+            privates.get(this).iframeProxy.callObserverMethod(MEDIA_PROXY_ID, name, Array.from(arguments));
+         }
+      }
+
+      function makeAsyncMethod(name) {
+         return function() {
+            return privates.get(this).iframeProxy.callAsyncObserverMethod(MEDIA_PROXY_ID, name, Array.from(arguments));
          }
       }
 
@@ -213,6 +223,9 @@ hbbtv.objects.MediaElementExtension = (function() {
       // create the HTMLMediaElement's proxy methods
       for (const key of methods) {
          prototype[key] = makeMethod(key);
+      }
+      for (const key of asyncMethods) {
+         prototype[key] = makeAsyncMethod(key);
       }
 
       // create the HTMLMediaElement's proxy properties
