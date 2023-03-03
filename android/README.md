@@ -31,8 +31,8 @@ external/dtvkit/androidtunerlibrary/src/main/libs/dvbcore/DVBCore
 git -C external/dtvkit/androidtunerlibrary/src/main/libs/dvbcore/DVBCore checkout orb
 
 git clone git@github.com:OceanBlueSoftware/DSMCC \
-external/dtvkit/androidtunerlibrary/src/main/libs/dsmccc/DSMCC
-git -C external/dtvkit/androidtunerlibrary/src/main/libs/dsmccc/DSMCC orb
+external/dtvkit/androidtunerlibrary/src/main/libs/dsmcc/DSMCC
+git -C external/dtvkit/androidtunerlibrary/src/main/libs/dsmcc/DSMCC orb
 
 git clone git@github.com:OceanBlueSoftware/TvBrowser \
 external/dtvkit/TvBrowser
