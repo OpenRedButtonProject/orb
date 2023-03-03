@@ -230,7 +230,7 @@ json JsonUtil::ProgrammeToJsonObject(Programme programme)
     json_programme.emplace("startTime", (int64_t) programme.GetStartTime());
     json_programme.emplace("duration", (int64_t) programme.GetDuration());
     json_programme.emplace("channelID", programme.GetChannelId());
-    json json_parentalRatings;
+    json json_parentalRatings = json::array();
     for (unsigned int i = 0; i < programme.GetParentalRatings().size(); i++)
     {
         json_parentalRatings.push_back(ParentalRatingToJsonObject(

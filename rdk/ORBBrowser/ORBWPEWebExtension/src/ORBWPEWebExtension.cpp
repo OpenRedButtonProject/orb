@@ -158,7 +158,7 @@ static char* ExecuteBridgeRequest(const char *request)
     }
     std::string jsonRequest(request);
     std::string jsonResponse = s_orbClient->ExecuteBridgeRequest(jsonRequest);
-    ORB_LOG("response=%s", jsonResponse);
+    ORB_LOG("response=%s", jsonResponse.c_str());
     response = g_strdup(jsonResponse.c_str());
     return response;
 }
