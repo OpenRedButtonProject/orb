@@ -11,6 +11,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -23,25 +24,37 @@ import org.orbtv.orblibrary.OrbSessionFactory;
 import org.orbtv.orblibrary.IOrbSessionCallback;
 import org.orbtv.orbpolyfill.BridgeTypes;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class MockOrbSessionCallback implements IOrbSessionCallback {
    private static final String TAG = "MockTvBrowserCallback";
 
    private final MainActivity mMainActivity;
-   private final MockDsmcc mMockDsmcc;
    private final String mManifest;
    Context mContext;
    private final Database mDatabase;
+   private String mBasePath;
+   private String mDsmPath = "";
+   private final HashMap<Integer, Handler> mActiveSubscriptionList;
    private final MockHttpServer mServer;
 
    private IOrbSession mSession = null;
@@ -52,10 +65,9 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
 
    static SparseArray<Integer> mKeyMap;
 
-   MockOrbSessionCallback(MainActivity mainActivity, MockDsmcc mockDsmcc, Bundle extras)
+   MockOrbSessionCallback(MainActivity mainActivity, Bundle extras)
          throws Exception {
       mMainActivity = mainActivity;
-      mMockDsmcc = mockDsmcc;
       if (extras != null) {
          mManifest = extras.getString("testsuite_manifest", "");
       } else {
@@ -63,13 +75,19 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
       }
       mContext = mainActivity.getApplicationContext();
       mDatabase = new Database(mContext, 1);
+      mBasePath = mContext.getDataDir().getPath() + "/dsmcc/";
+      File base = new File(mBasePath);
+      if (base.exists()) {
+         Utils.recursiveDelete(base);
+      }
+      mActiveSubscriptionList = new HashMap<>();
       mServer = new MockHttpServer(mContext);
       mTestSuiteRunner = new TestSuiteRunner(mContext, mManifest, mServer.getLocalHost(),
          new TestSuiteRunner.Callback() {
             @Override
             public void onTestSuiteStarted(String name, TestSuiteScenario scenario, String dsmccData, String action) {
                mTestSuiteScenario = scenario;
-               mMockDsmcc.setDsmccData(dsmccData);
+               setDsmccData(dsmccData);
                if (action.equals("simulate_successful_tune")) {
                   simulateSuccessfulTune();
                }
@@ -1224,6 +1242,104 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
    }
 
    /**
+    * Request file from DSM-CC
+    *
+    * @param url DVB Url of requested file
+    * @param requestId ID of request (returned to DsmccClient.receiveContent)
+    */
+   @Override
+   public boolean requestDsmccDvbContent(String url, int requestId) {
+      if (mDsmPath.isEmpty()) {
+         return false;
+      }
+      Uri uri = Uri.parse(url);
+      String path = mDsmPath + "/" + uri.getAuthority() + uri.getPath();
+      Log.d(TAG, "Get mock content: " + path);
+      File file = new File(path);
+      if (file.exists()) {
+         if (file.isDirectory()) {
+            StringBuilder sb = new StringBuilder();
+            File[] files = file.listFiles();
+            if (files != null) {
+               for (File child : files) {
+                  if (sb.length() != 0) sb.append(",");
+                  sb.append(child.getName());
+               }
+            }
+            mSession.onDsmccReceiveContent(requestId, ByteBuffer.wrap(sb.toString().getBytes()));
+            return true;
+         } else {
+            Path p = Paths.get(path);
+            try {
+               FileChannel channel = FileChannel.open(p, StandardOpenOption.READ);
+               ByteBuffer buffer = ByteBuffer.allocate((int) channel.size());
+               channel.read(buffer);
+               buffer.flip();
+               channel.close();
+               mSession.onDsmccReceiveContent(requestId, buffer);
+               return true;
+            } catch (IOException e) {
+               e.printStackTrace();
+            }
+         }
+      }
+      return false;
+   }
+
+   /**
+    * Release resources for DSM-CC file request
+    *
+    * @param requestId ID of request
+    */
+   @Override
+   public void closeDsmccDvbContent(int requestId) {
+
+   }
+
+   /**
+    * Subscribe to DSM-CC Stream Event with URL and event name
+    *
+    * @param url DVB Url of event object
+    * @param name Name of stream event
+    * @param listenId ID of subscriber
+    */
+   @Override
+   public boolean subscribeDsmccStreamEventName(String url, String name, int listenId) {
+      Handler handler = sendStreamEvents(url, name, listenId, -1);
+      mActiveSubscriptionList.put(listenId, handler);
+      return true;
+   }
+
+   /**
+    * Subscribe to DSM-CC Stream Event with component tag and event ID
+    *
+    * @param name Name of stream event
+    * @param componentTag Component tag for stream event
+    * @param eventId Event Id of stream event
+    * @param listenId ID of subscriber
+    */
+   @Override
+   public boolean subscribeDsmccStreamEventId(String name, int componentTag, int eventId, int listenId) {
+      Handler handler = sendStreamEvents("url", name, listenId, componentTag);
+      mActiveSubscriptionList.put(listenId, handler);
+      return true;
+   }
+
+   /**
+    * Subscribe to DSM-CC Stream Event with component tag and event ID
+    *
+    * @param listenId ID of subscriber
+    */
+   @Override
+   public void unsubscribeDsmccStreamEvent(int listenId) {
+      Handler handler = mActiveSubscriptionList.get(listenId);
+      if (handler != null) {
+         handler.removeCallbacksAndMessages(null);
+      }
+      mActiveSubscriptionList.remove(listenId);
+   }
+
+   /**
     * Publish a test report (debug build only).
     *
     * @param testSuite A unique test suite name.
@@ -1284,6 +1400,96 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
       } else {
          // TODO TUNED OFF
       }
+   }
+
+   private Handler sendStreamEvents(String url, String name, int listenId, int componentTag) {
+      Handler handler = new android.os.Handler(Looper.getMainLooper());
+      handler.postDelayed(new Runnable() {
+         private int count = 0;
+
+         public void run() {
+            Handler handler = mActiveSubscriptionList.get(listenId);
+            if (handler != null) {
+               String data, text, status;
+               if (!url.endsWith("/xxx") && (componentTag != 29)) {
+                  status = "trigger";
+                  switch (count) {
+                     case 0:
+                        data = "48656c6c6f204862625456";
+                        text = "Hello HbbTV";
+                        break;
+                     case 1:
+                        data = "54657374206576656e7420c3a4c3b6c3bc21";
+                        text = "Test event äöü!";
+                        break;
+                     case 2:
+                     default:
+                        data = "cafebabe0008090a0d101fff";
+                        text = "\n\r";
+                        break;
+                  }
+                  count++;
+                  if (count != 3) {
+                     handler.postDelayed(this, 2000);
+                  }
+               } else {
+                  data = "";
+                  text = "";
+                  status = "error";
+               }
+               mSession.onDsmccReceiveStreamEvent(listenId, name, data, text, status);
+            }
+         }
+      }, 2000);
+      return handler;
+   }
+
+   private void setDsmccData(String dsmccData) {
+      if (dsmccData.isEmpty()) {
+         return;
+      }
+      mDsmPath = unpackMockDsmcc(mContext, dsmccData);
+      Log.d(TAG, "Using path: " + mDsmPath);
+   }
+
+   private String unpackMockDsmcc(Context context, String dsmccData) {
+      String path = mBasePath + dsmccData.replace("/", "_") + "/";
+      File dsmdir = new File(path);
+      if (!dsmdir.exists()) {
+         Log.i(TAG, "Unpacking Mock Dsmcc to: " + path);
+         try {
+            InputStream is = context.getAssets().open("tests/" + dsmccData);
+            ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
+            String filename;
+            ZipEntry ze;
+            byte[] buffer = new byte[1024];
+            int count;
+            Log.i(TAG, "unpackMockDsmcc zip avail: " + zis.available());
+
+            while ((ze = zis.getNextEntry()) != null) {
+               filename = ze.getName();
+               Log.i(TAG, "Dsmcc file: " + filename);
+               if (ze.isDirectory()) {
+                  File fmd = new File(path + filename);
+                  if (!fmd.mkdirs()) {
+                     Log.e(TAG, "unpackMockDsmcc mkdirs FAILED: " + path + filename);
+                     break;
+                  }
+               } else {
+                  FileOutputStream fout = new FileOutputStream(path + filename);
+                  while ((count = zis.read(buffer)) != -1) {
+                     fout.write(buffer, 0, count);
+                  }
+                  fout.close();
+                  zis.closeEntry();
+               }
+            }
+            zis.close();
+         } catch (IOException e) {
+            e.printStackTrace();
+         }
+      }
+      return dsmdir.getPath();
    }
 
    static {

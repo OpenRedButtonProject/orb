@@ -4,6 +4,7 @@ import android.view.View;
 
 import org.orbtv.orbpolyfill.BridgeTypes;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 
 public interface IOrbSession {
@@ -163,8 +164,6 @@ public interface IOrbSession {
     */
    void onMetadataSearchCompleted(int search, int status, List<BridgeTypes.Programme> programmes, int offset, int totalSize);
 
-   void onReceiveStreamEvent(int id, String name, String data, String text, String status);
-
    /**
     * Notify about DRM licensing errors during playback of DRM protected A/V content.
     *
@@ -222,6 +221,23 @@ public interface IOrbSession {
     * @param DRMSystemID ID of the DRM System
     */
    void onDRMSystemMessage(String msg, String DRMSystemID);
+
+   /**
+    * Called by IDsmcc on receiving content
+    *
+    * @param requestId ID of request
+    * @param buffer ByteBuffer with content for DSMCC file
+    */
+   void onDsmccReceiveContent(int requestId, ByteBuffer buffer);
+
+   /**
+    * Called by IDsmcc on receiving Stream Event
+    *
+    * @param listenId ID of listener
+    * @param name Name of Stream event
+    * @param data Data asssociated with stream event
+    */
+   void onDsmccReceiveStreamEvent(int listenId, String name, String data, String text, String status);
 
    /**
     * TODO(library) What makes sense here?

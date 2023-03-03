@@ -43,11 +43,13 @@ abstract class WebResourceClient {
    );
    private static final String ORB_PLAYER_URI = "orb://player";
 
+   private final DsmccClient mDsmccClient;
    private final HtmlBuilder mHtmlBuilder;
    OkHttpClient mHttpClient;
    OkHttpClient mHttpSandboxClient;
 
-   WebResourceClient(HtmlBuilder htmlBuilder) {
+   WebResourceClient(DsmccClient dsmccClient, HtmlBuilder htmlBuilder) {
+      mDsmccClient = dsmccClient;
       mHtmlBuilder = htmlBuilder;
       mHttpClient = new OkHttpClient();
       mHttpSandboxClient = new OkHttpClient();
@@ -169,7 +171,7 @@ abstract class WebResourceClient {
       String url = request.getUrl().toString();
       Charset charset = StandardCharsets.UTF_8;
       String mimeType = getMimeTypeFromUrl(url);
-      DsmccCallback.DvbInputStream body = DsmccCallback.createDvbInput(url);
+      DvbInputStream body = mDsmccClient.requestContent(url);
 
       InputStream responseStream;
       if (request.isForMainFrame() && HBBTV_MIME_TYPES.contains(mimeType.toLowerCase())) {
@@ -252,23 +254,6 @@ abstract class WebResourceClient {
             }
          }
       };
-   }
-
-   WebResourceResponse createTextResponse(int statusCode, String reasonPhrase, String text,
-         String allowOrigin) {
-      Charset charset = StandardCharsets.UTF_8;
-      ByteArrayInputStream data = new ByteArrayInputStream(text.getBytes(charset));
-      WebResourceResponse response = new WebResourceResponse("text/plain",
-         charset.toString(), data);
-      if (allowOrigin != null) {
-         Map<String, String> headers = new HashMap<>();
-         headers.put("Access-Control-Allow-Origin", allowOrigin);
-         response.setResponseHeaders(headers);
-      }
-      if (statusCode != 200) {
-         response.setStatusCodeAndReasonPhrase(statusCode, reasonPhrase);
-      }
-      return response;
    }
 
    WebResourceResponse createPlayerPageResponse(WebResourceRequest request, int appId) {
