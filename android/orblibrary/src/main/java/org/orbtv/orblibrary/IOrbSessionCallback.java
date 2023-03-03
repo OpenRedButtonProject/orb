@@ -533,6 +533,47 @@ public interface IOrbSessionCallback {
     boolean setActiveDRM(String DRMSystemID);
 
     /**
+     * Request file from DSM-CC
+     *
+     * @param url DVB Url of requested file
+     * @param requestId ID of request (returned to DsmccClient.receiveContent)
+     */
+    boolean requestDsmccDvbContent(String url, int requestId);
+
+    /**
+     * Release resources for DSM-CC file request
+     *
+     * @param requestId ID of request
+     */
+    void closeDsmccDvbContent(int requestId);
+
+    /**
+     * Subscribe to DSM-CC Stream Event with URL and event name
+     *
+     * @param url DVB Url of event object
+     * @param name Name of stream event
+     * @param listenId ID of subscriber
+     */
+    boolean subscribeDsmccStreamEventName(String url, String name, int listenId);
+
+    /**
+     * Subscribe to DSM-CC Stream Event with component tag and event ID
+     *
+     * @param name Name of stream event
+     * @param componentTag Component tag for stream event
+     * @param eventId Event Id of stream event
+     * @param listenId ID of subscriber
+     */
+    boolean subscribeDsmccStreamEventId(String name, int componentTag, int eventId, int listenId);
+
+    /**
+     * Subscribe to DSM-CC Stream Event with component tag and event ID
+     *
+     * @param listenId ID of subscriber
+     */
+    void unsubscribeDsmccStreamEvent(int listenId);
+
+    /**
      * Publish a test report (debug build only).
      *
      * @param testSuite A unique test suite name.

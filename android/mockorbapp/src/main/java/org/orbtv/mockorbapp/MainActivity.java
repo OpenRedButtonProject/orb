@@ -63,9 +63,8 @@ public class MainActivity extends Activity {
 
         setContentView(R.layout.activity_main);
         Bundle extras = getIntent().getExtras();
-        MockDsmcc mockDsmcc = new MockDsmcc(getApplicationContext());
         try {
-            mMockCallback = new MockOrbSessionCallback(this, mockDsmcc, extras);
+            mMockCallback = new MockOrbSessionCallback(this, extras);
         } catch (Exception e) {
             e.printStackTrace();
             Log.d("orb_automation_msg", "finished");
@@ -73,7 +72,7 @@ public class MainActivity extends Activity {
             return;
         }
         FrameLayout frameLayout = findViewById(R.id.frameLayout);
-        mTvBrowserSession = OrbSessionFactory.createSession(getApplicationContext(), mMockCallback, mockDsmcc,
+        mTvBrowserSession = OrbSessionFactory.createSession(getApplicationContext(), mMockCallback,
                 configuration);
         bindDialService();
         frameLayout.addView(mTvBrowserSession.getView());

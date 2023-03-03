@@ -26,11 +26,10 @@ public class OrbSessionFactory {
      * @return A TV browser session.
      */
     public static IOrbSession createSession(Context context, IOrbSessionCallback callback,
-                                            IDsmcc dsmcc, Configuration configuration) {
+                                            Configuration configuration) {
         OrbSession session = new OrbSession(context, callback, configuration);
         Handler handler = new Handler(context.getMainLooper());
         handler.post(() -> callback.onSessionReady(session));
-        DsmccCallback dsmClient = new DsmccCallback(dsmcc, session);
         return session;
     }
 

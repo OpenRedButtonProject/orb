@@ -8,6 +8,7 @@ import android.view.View;
 import org.json.JSONObject;
 import org.orbtv.orbpolyfill.BridgeTypes;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 
 class OrbSession implements IOrbSession {
@@ -19,6 +20,7 @@ class OrbSession implements IOrbSession {
     private MediaSynchroniserManager mMediaSynchroniserManager;
     private Bridge mBridge;
     private BrowserView mBrowserView;
+    private DsmccClient mDsmccClient;
 
     /**
      * TV browser session.
@@ -34,7 +36,8 @@ class OrbSession implements IOrbSession {
         mMediaSynchroniserManager = new MediaSynchroniserManager(configuration);
         mBridge = new Bridge(this, callback, configuration, mApplicationManager,
                 mMediaSynchroniserManager);
-        mBrowserView = new BrowserView(context, mBridge, configuration);
+        mDsmccClient = new DsmccClient(callback);
+        mBrowserView = new BrowserView(context, mBridge, configuration, mDsmccClient);
 
         mApplicationManager.setSessionCallback(new ApplicationManager.SessionCallback() {
             /**
@@ -522,11 +525,6 @@ class OrbSession implements IOrbSession {
         mBridge.dispatchMetadataSearchCompleted(search, status, programmes, offset, totalSize);
     }
 
-    @Override
-    public void onReceiveStreamEvent(int id, String name, String data, String text, String status) {
-        mBridge.dispatchStreamEvent(id, name, data, text, status);
-    }
-
     /**
      * Notify about DRM licensing errors during playback of DRM protected A/V content.
      *
@@ -594,6 +592,29 @@ class OrbSession implements IOrbSession {
     @Override
     public void onDRMSystemMessage(String msg, String DRMSystemID) {
         mBridge.dispatchDRMSystemMessage(msg, DRMSystemID);
+    }
+
+    /**
+     * Called by IDsmcc on receiving content
+     *
+     * @param requestId ID of request
+     * @param buffer    ByteBuffer with content for DSMCC file
+     */
+    @Override
+    public void onDsmccReceiveContent(int requestId, ByteBuffer buffer) {
+        mDsmccClient.onDsmccReceiveContent(requestId, buffer);
+    }
+
+    /**
+     * Called by IDsmcc on receiving Stream Event
+     *
+     * @param listenId ID of listener
+     * @param name     Name of Stream event
+     * @param data     Data asssociated with stream event
+     */
+    @Override
+    public void onDsmccReceiveStreamEvent(int listenId, String name, String data, String text, String status) {
+        mBridge.dispatchStreamEvent(listenId, name, data, text, status);
     }
 
     /**

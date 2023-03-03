@@ -36,10 +36,11 @@ class BrowserView extends WebView {
     private int mAppId = -1;
     private int mLoadAppId = -1;
     private int mHiddenMask = 0;
-    private final WebResourceClient mWebResourceClient;
+    private WebResourceClient mWebResourceClient;
     private SessionCallback mSessionCallback;
 
-    public BrowserView(Context context, Bridge bridge, OrbSessionFactory.Configuration configuration) {
+    public BrowserView(Context context, Bridge bridge,
+                       OrbSessionFactory.Configuration configuration, DsmccClient dsmccClient) {
         super(context);
         mContext = context;
 
@@ -56,7 +57,7 @@ class BrowserView extends WebView {
         getSettings().setFixedFontFamily(configuration.fixedFontFamily);
         addJavascriptInterface(new JavaScriptBridgeInterface(bridge), "androidBridge");
 
-        mWebResourceClient = new WebResourceClient(new HtmlBuilder(mContext.getAssets())) {
+        mWebResourceClient = new WebResourceClient(dsmccClient, new HtmlBuilder(mContext.getAssets())) {
             @Override
             public void onRequestFailed(WebResourceRequest request, int appId) {
                 if (request.isForMainFrame() && appId == mLoadAppId) {

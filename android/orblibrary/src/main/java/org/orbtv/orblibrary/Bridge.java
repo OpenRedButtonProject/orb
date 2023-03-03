@@ -7,7 +7,6 @@
 
 package org.orbtv.orblibrary;
 
-import android.net.Uri;
 import android.util.Log;
 
 import org.orbtv.orbpolyfill.AbstractBridge;
@@ -28,9 +27,11 @@ class Bridge extends AbstractBridge {
     private final OrbSessionFactory.Configuration mConfiguration;
     private final App2AppService mApp2AppService;
     private final MediaSynchroniserManager mMediaSyncManager;
+    private int mNextListenerId = 1;
 
     Bridge(OrbSession tvBrowser, IOrbSessionCallback orbLibraryCallback,
-           OrbSessionFactory.Configuration configuration, ApplicationManager applicationManager, MediaSynchroniserManager mediaSyncManager) {
+           OrbSessionFactory.Configuration configuration, ApplicationManager applicationManager,
+           MediaSynchroniserManager mediaSyncManager) {
         mTvBrowserSession = tvBrowser;
         mOrbLibraryCallback = orbLibraryCallback;
         mConfiguration = configuration;
@@ -415,11 +416,18 @@ class Bridge extends AbstractBridge {
     protected int Broadcast_addStreamEventListener(BridgeToken token, String targetURL, String eventName,
                                                    int componentTag, int streamEventId) {
         // TODO Split this method into 2
+        int id = mNextListenerId++;
         if (targetURL.startsWith("dvb:")) {
-            return DsmccCallback.subscribeStreamEventName(targetURL, eventName);
+            if (!mOrbLibraryCallback.subscribeDsmccStreamEventName(targetURL, eventName, id)) {
+                return -1;
+            }
         } else {
-            return DsmccCallback.subscribeStreamEventId(eventName, componentTag, streamEventId);
+            if (!mOrbLibraryCallback.subscribeDsmccStreamEventId(eventName, componentTag,
+                    streamEventId, id)) {
+                return -1;
+            }
         }
+        return id;
     }
 
     /**
@@ -430,7 +438,7 @@ class Bridge extends AbstractBridge {
      */
     @Override
     protected void Broadcast_removeStreamEventListener(BridgeToken token, int id) {
-        DsmccCallback.unsubscribeStreamEvent(id);
+        mOrbLibraryCallback.unsubscribeDsmccStreamEvent(id);
     }
 
     /**
