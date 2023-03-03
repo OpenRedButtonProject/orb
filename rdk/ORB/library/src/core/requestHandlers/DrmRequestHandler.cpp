@@ -57,7 +57,7 @@ bool DrmRequestHandler::Handle(
    if (method == DRM_GET_SUPPORTED_DRM_SYSTEM_IDS)
    {
       std::vector<DrmSystemStatus> result = orbPlatform->Drm_GetSupportedDrmSystemIds();
-      json json_result;
+      json json_result = json::array();
       for (DrmSystemStatus drmSystemStatus : result)
       {
          json_result.push_back(JsonUtil::DrmSystemStatusToJsonObject(drmSystemStatus));
