@@ -23,7 +23,7 @@ hbbtv.objects.MediaElementExtension = (function() {
       const _setMediaKeys = HTMLMediaElement.prototype.setMediaKeys;
       HTMLMediaElement.prototype.setMediaKeys = function(mediaKeys) {
          const thiz = this;
-         if (!mediaKeys || mediaKeys instanceof MediaKeys) { // should never happen, but just in case...
+         if (!mediaKeys || !mediaKeys.orb_polyfilled) {
             return _setMediaKeys.call(thiz, mediaKeys);
          }
          const conf = mediaKeys.toJSON().mediaKeySystemAccess;
@@ -125,7 +125,7 @@ hbbtv.objects.MediaElementExtension = (function() {
          nextSibling() {
             const nextSibling = Object.getOwnPropertyDescriptor(Node.prototype, "nextSibling").get.call(this);
             // skip the generated iframe
-            if (nextSibling && nextSibling.__orb_mediaElementExtension__) {
+            if (nextSibling && nextSibling.orb_mediaElementExtension) {
                return nextSibling.nextSibling;
             }
             return nextSibling;
@@ -133,7 +133,7 @@ hbbtv.objects.MediaElementExtension = (function() {
          previousSibling() {
             const previousSibling = Object.getOwnPropertyDescriptor(Node.prototype, "previousSibling").get.call(this);
             // check if there is a generated iframe from another video element
-            if (previousSibling && previousSibling.__orb_mediaElementExtension__) {
+            if (previousSibling && previousSibling.orb_mediaElementExtension) {
                return previousSibling.previousSibling;
             }
             return previousSibling;
@@ -456,7 +456,10 @@ hbbtv.objects.MediaElementExtension = (function() {
             iframeProxy.registerObserver(MEDIA_PROXY_ID, videoDummy);
 
             p.styleObservers = [];
-            p.iframe.__orb_mediaElementExtension__ = true;
+
+            hbbtv.utils.defineGetterProperties(p.iframe, {
+               orb_mediaElementExtension() { return true; }
+            });
             p.iframe.frameBorder = 0;
             p.iframe.allow = "encrypted-media";
             p.iframe.addEventListener("load", () => {
