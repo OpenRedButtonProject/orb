@@ -23,7 +23,7 @@ hbbtv.objects.MediaElementExtension = (function() {
       const _setMediaKeys = HTMLMediaElement.prototype.setMediaKeys;
       HTMLMediaElement.prototype.setMediaKeys = function(mediaKeys) {
          const thiz = this;
-         if (mediaKeys instanceof MediaKeys) { // should never happen, but just in case...
+         if (!mediaKeys || mediaKeys instanceof MediaKeys) { // should never happen, but just in case...
             return _setMediaKeys.call(thiz, mediaKeys);
          }
          const conf = mediaKeys.toJSON().mediaKeySystemAccess;
