@@ -140,14 +140,22 @@ hbbtv.objects.MediaSynchroniser = (function() {
       }
    });
 
-   hbbtv.utils.defineGetterSetterProperties(prototype, {
-      contentIdOverride: {
-         get() {
-            return hbbtv.bridge.mediaSync.getContentIdOverride(privates.get(this).id);
-         },
-         set(val) {
-            hbbtv.bridge.mediaSync.setContentIdOverride(privates.get(this).id, val || "")
-         }
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {ContentIdOverride}
+    *
+    * @name contentIdOverride
+    * @memberof MediaSynchroniser#
+    */
+   Object.defineProperty(prototype, "contentIdOverride", {
+      get: function() {
+         return hbbtv.bridge.mediaSync.getContentIdOverride(privates.get(this).id);
+      },
+      set: function(val) {
+         hbbtv.bridge.mediaSync.setContentIdOverride(privates.get(this).id, val || "")
       }
    });
 

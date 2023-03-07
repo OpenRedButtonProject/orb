@@ -16,82 +16,177 @@ hbbtv.objects.Programme = (function() {
       ID_TVA_GROUP_CRID: 2
    });
 
-   /* readonly properties */
-   hbbtv.utils.defineGetterProperties(prototype, {
-      parentalRatings() {
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {ParentalRatings}
+    *
+    * @name parentalRatings
+    * @readonly
+    * @memberof Programme#
+    */
+   Object.defineProperty(prototype, "parentalRatings", {
+      get: function() {
          return privates.get(this).programmeData.parentalRatings;
-      },
+      }
    });
 
-   hbbtv.utils.defineGetterSetterProperties(prototype, {
-      name: {
-         get: function() {
-            return privates.get(this).programmeData.name;
-         },
-         set: function(val) {
-            privates.get(this).programmeData.name = val;
-         }
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {}
+    *
+    * @name name
+    * @memberof Programme#
+    */
+   Object.defineProperty(prototype, "name", {
+      get: function() {
+         return privates.get(this).programmeData.name;
       },
-      description: {
-         get: function() {
+      set: function(val) {
+         privates.get(this).programmeData.name = val;
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {}
+    *
+    * @name description
+    * @memberof Programme#
+    */
+   Object.defineProperty(prototype, "description", {
+      get: function() {
+         return privates.get(this).programmeData.description;
+      },
+      set: function(val) {
+         privates.get(this).programmeData.description = val;
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {}
+    *
+    * @name longDescription
+    * @memberof Programme#
+    */
+   Object.defineProperty(prototype, "longDescription", {
+      get: function() {
+         if (privates.get(this).programmeData.longDescription === undefined) {
             return privates.get(this).programmeData.description;
-         },
-         set: function(val) {
-            privates.get(this).programmeData.description = val;
+         } else {
+            return privates.get(this).programmeData.longDescription;
          }
       },
-      longDescription: {
-         get: function() {
-            if (privates.get(this).programmeData.longDescription === undefined) {
-               return privates.get(this).programmeData.description;
-            } else {
-               return privates.get(this).programmeData.longDescription;
-            }
-         },
-         set: function(val) {
-            privates.get(this).programmeData.longDescription = val;
-         }
+      set: function(val) {
+         privates.get(this).programmeData.longDescription = val;
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {}
+    *
+    * @name startTime
+    * @memberof Programme#
+    */
+   Object.defineProperty(prototype, "startTime", {
+      get: function() {
+         return privates.get(this).programmeData.startTime;
       },
-      startTime: {
-         get: function() {
-            return privates.get(this).programmeData.startTime;
-         },
-         set: function(val) {
-            privates.get(this).programmeData.startTime = val;
-         }
+      set: function(val) {
+         privates.get(this).programmeData.startTime = val;
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {}
+    *
+    * @name duration
+    * @memberof Programme#
+    */
+   Object.defineProperty(prototype, "duration", {
+      get: function() {
+         return privates.get(this).programmeData.duration;
       },
-      duration: {
-         get: function() {
-            return privates.get(this).programmeData.duration;
-         },
-         set: function(val) {
-            privates.get(this).programmeData.duration = val;
-         }
+      set: function(val) {
+         privates.get(this).programmeData.duration = val;
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {}
+    *
+    * @name channelID
+    * @memberof Programme#
+    */
+   Object.defineProperty(prototype, "channelID", {
+      get: function() {
+         return privates.get(this).programmeData.channelID;
       },
-      channelID: {
-         get: function() {
-            return privates.get(this).programmeData.channelID;
-         },
-         set: function(val) {
-            privates.get(this).programmeData.channelID = val;
-         }
+      set: function(val) {
+         privates.get(this).programmeData.channelID = val;
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {}
+    *
+    * @name programmeID
+    * @memberof Programme#
+    */
+   Object.defineProperty(prototype, "programmeID", {
+      get: function() {
+         return privates.get(this).programmeData.programmeID;
       },
-      programmeID: {
-         get: function() {
-            return privates.get(this).programmeData.programmeID;
-         },
-         set: function(val) {
-            privates.get(this).programmeData.programmeID = val;
-         }
+      set: function(val) {
+         privates.get(this).programmeData.programmeID = val;
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {}
+    *
+    * @name programmeIDType
+    * @memberof Programme#
+    */
+   Object.defineProperty(prototype, "programmeIDType", {
+      get: function() {
+         return privates.get(this).programmeData.programmeIDType;
       },
-      programmeIDType: {
-         get: function() {
-            return privates.get(this).programmeData.programmeIDType;
-         },
-         set: function(val) {
-            privates.get(this).programmeData.programmeIDType = val;
-         }
-      },
+      set: function(val) {
+         privates.get(this).programmeData.programmeIDType = val;
+      }
    });
 
    prototype.getSIDescriptors = function(descriptorTag, descriptorTagExtension = -1, privateDataSpecifier = 0) {

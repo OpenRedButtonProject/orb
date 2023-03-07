@@ -199,7 +199,7 @@ hbbtv.objects.VideoBroadcast = (function() {
       get: function() {
          return this.offsetHeight;
       },
-      set: function() {
+      set: function(val) {
          if (this.fullScreen) {
             throw new TypeError('"height" is read-only');
          } else {
@@ -225,7 +225,7 @@ hbbtv.objects.VideoBroadcast = (function() {
       get: function() {
          return this.offsetWidth;
       },
-      set: function() {
+      set: function(val) {
          if (this.fullScreen) {
             throw new TypeError('"width" is read-only');
          } else {

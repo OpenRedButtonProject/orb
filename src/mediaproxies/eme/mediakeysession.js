@@ -44,11 +44,68 @@ hbbtv.objects.MediaKeySession = (function() {
       prototype[func] = makeEventTargetMethod(func);
    }
 
-   hbbtv.utils.defineGetterProperties(prototype, {
-      closed() { return privates.get(this).proxy.callAsyncObserverMethod(MEDIA_KEY_SESSION_ID, "orb_closed"); },
-      expiration() { return NaN; }, // TODO
-      keyStatuses() { return {}; }, // TODO
-      sessionId() { return ""; } // TODO
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {Closed}
+    *
+    * @name closed
+    * @memberof MediaKeySession#
+    */
+   Object.defineProperty(prototype, "closed", {
+      get: function() {
+         return privates.get(this).proxy.callAsyncObserverMethod(MEDIA_KEY_SESSION_ID, "orb_closed");
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {Expiration}
+    *
+    * @name expiration
+    * @memberof MediaKeySession#
+    */
+   Object.defineProperty(prototype, "expiration", {
+      get: function() {
+         return NaN;   // TODO
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {KeyStatuses}
+    *
+    * @name keyStatuses
+    * @memberof MediaKeySession#
+    */
+   Object.defineProperty(prototype, "keyStatuses", {
+      get: function() {
+         return {};   // TODO
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {SessionId}
+    *
+    * @name sessionId
+    * @memberof MediaKeySession#
+    */
+   Object.defineProperty(prototype, "sessionId", {
+      get: function() {
+         return "";   // TODO
+      }
    });
 
    prototype.generateRequest = function(initDataType, initData) {

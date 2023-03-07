@@ -10,18 +10,132 @@ hbbtv.objects.Configuration = (function() {
    const prototype = {};
    let gIsPendingAccessCallback = false;
 
-   hbbtv.utils.defineGetterProperties(prototype, {
-      preferredAudioLanguage: hbbtv.bridge.configuration.getPreferredAudioLanguage,
-      preferredSubtitleLanguage: hbbtv.bridge.configuration.getPreferredSubtitleLanguage,
-      preferredUILanguage: hbbtv.bridge.configuration.getPreferredUILanguage,
-      countryId: hbbtv.bridge.configuration.getCountryId,
-      subtitlesEnabled: hbbtv.bridge.configuration.getSubtitlesEnabled,
-      audioDescriptionEnabled: hbbtv.bridge.configuration.getAudioDescriptionEnabled,
-      timeShiftSynchronized() {
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {}
+    *
+    * @name preferredAudioLanguage
+    * @memberof Configuration#
+    */
+   Object.defineProperty(prototype, "preferredAudioLanguage", {
+      get: hbbtv.bridge.configuration.getPreferredAudioLanguage
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {}
+    *
+    * @name preferredSubtitleLanguage
+    * @memberof Configuration#
+    */
+   Object.defineProperty(prototype, "preferredSubtitleLanguage", {
+      get: hbbtv.bridge.configuration.getPreferredSubtitleLanguage,
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {}
+    *
+    * @name preferredUILanguage
+    * @memberof Configuration#
+    */
+   Object.defineProperty(prototype, "preferredUILanguage", {
+      get: hbbtv.bridge.configuration.getPreferredUILanguage,
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {}
+    *
+    * @name countryId
+    * @memberof Configuration#
+    */
+   Object.defineProperty(prototype, "countryId", {
+      get: hbbtv.bridge.configuration.getCountryId,
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {}
+    *
+    * @name subtitlesEnabled
+    * @memberof Configuration#
+    */
+   Object.defineProperty(prototype, "subtitlesEnabled", {
+      get: hbbtv.bridge.configuration.getSubtitlesEnabled,
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {}
+    *
+    * @name audioDescriptionEnabled
+    * @memberof Configuration#
+    */
+   Object.defineProperty(prototype, "audioDescriptionEnabled", {
+      get: hbbtv.bridge.configuration.getAudioDescriptionEnabled,
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {}
+    *
+    * @name timeShiftSynchronized
+    * @memberof Configuration#
+    */
+   Object.defineProperty(prototype, "timeShiftSynchronized", {
+      get: function() {
          return false; // PVR
-      },
-      dtt_network_ids: hbbtv.bridge.configuration.getDttNetworkIds,
-      deviceId: hbbtv.bridge.configuration.getDeviceId
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {}
+    *
+    * @name dtt_network_ids
+    * @memberof Configuration#
+    */
+   Object.defineProperty(prototype, "dtt_network_ids", {
+      get: hbbtv.bridge.configuration.getDttNetworkIds,
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {}
+    *
+    * @name deviceId
+    * @memberof Configuration#
+    */
+   Object.defineProperty(prototype, "deviceId", {
+      get: hbbtv.bridge.configuration.getDeviceId,
    });
 
    prototype.requestAccessToDistinctiveIdentifier = function(callback) {

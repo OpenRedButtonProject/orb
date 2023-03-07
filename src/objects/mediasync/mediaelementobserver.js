@@ -64,22 +64,41 @@ hbbtv.objects.MediaElementObserver = (function() {
       }
    });
 
-   hbbtv.utils.defineGetterSetterProperties(prototype, {
-      muted: {
-         get() {
-            return privates.get(this).mediaObject.muted;
-         },
-         set(val) {
-            privates.get(this).mediaObject.muted = val;
-         }
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {Muted}
+    *
+    * @name muted
+    * @memberof MediaElementObserver#
+    */
+   Object.defineProperty(prototype, "muted", {
+      get: function() {
+         return privates.get(this).mediaObject.muted;
       },
-      timeline: {
-         get() {
-            return privates.get(this).timeline;
-         },
-         set(val) {
-            privates.get(this).timeline = val;
-         }
+      set: function(val) {
+         privates.get(this).mediaObject.muted = val;
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {Timeline}
+    *
+    * @name timeline
+    * @memberof MediaElementObserver#
+    */
+   Object.defineProperty(prototype, "timeline", {
+      get: function() {
+         return privates.get(this).timeline;
+      },
+      set: function(val) {
+         privates.get(this).timeline = val;
       }
    });
 

@@ -9,20 +9,28 @@ hbbtv.objects.MediaElementTsClient = (function() {
    const prototype = {};
    const privates = new WeakMap();
 
-   hbbtv.utils.defineGetterSetterProperties(prototype, {
-      correlationTimestamp: {
-         get() {
-            return privates.get(this).correlationTimestamp;
-         },
-         set(val) {
-            const p = privates.get(this);
-            p.correlationTimestamp = val;
-            onMasterMediaUpdated.call(this, {
-               data: {
-                  contentTime: p.masterMediaObserver.contentTime
-               }
-            });
-         }
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {}
+    *
+    * @name correlationTimestamp
+    * @memberof MediaElementTsClient#
+    */
+   Object.defineProperty(prototype, "correlationTimestamp", {
+      get: function() {
+         return privates.get(this).correlationTimestamp;
+      },
+      set: function(val) {
+         const p = privates.get(this);
+         p.correlationTimestamp = val;
+         onMasterMediaUpdated.call(this, {
+            data: {
+               contentTime: p.masterMediaObserver.contentTime
+            }
+         });
       }
    });
 
@@ -150,31 +158,51 @@ hbbtv.objects.MediaElementTsClient = (function() {
          setTimeout(dispatchErrorEvent9, 0); // defer the error until play() returns
          return p.moPrototype.play.call(mediaObject);
       };
-      hbbtv.utils.defineGetterSetterProperties(moPrototypeOverride, {
-         currentTime: {
-            get() {
-               const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "currentTime");
-               return ownProperty ? ownProperty.get.call(mediaObject) : undefined;
-            },
-            set(value) {
-               dispatchErrorEvent9();
-               const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "currentTime");
-               if (ownProperty) {
-                  ownProperty.set.call(mediaObject, value);
-               }
-            }
+
+      /**
+       * Specifications:
+       *
+       * <p>
+       *
+       * @returns {}
+       *
+       * @name currentTime
+       * @memberof MediaElementTsClient#
+       */
+      Object.defineProperty(prototype, "currentTime", {
+         get: function() {
+            const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "currentTime");
+            return ownProperty ? ownProperty.get.call(mediaObject) : undefined;
          },
-         playbackRate: {
-            get() {
-               const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
-               return ownProperty ? ownProperty.get.call(mediaObject) : undefined;
-            },
-            set(value) {
-               dispatchErrorEvent9();
-               const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
-               if (ownProperty) {
-                  ownProperty.set.call(mediaObject, value);
-               }
+         set: function(val) {
+            dispatchErrorEvent9();
+            const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "currentTime");
+            if (ownProperty) {
+               ownProperty.set.call(mediaObject, value);
+            }
+         }
+      });
+
+      /**
+       * Specifications:
+       *
+       * <p>
+       *
+       * @returns {}
+       *
+       * @name playbackRate
+       * @memberof MediaElementTsClient#
+       */
+      Object.defineProperty(prototype, "playbackRate", {
+         get: function() {
+            const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
+            return ownProperty ? ownProperty.get.call(mediaObject) : undefined;
+         },
+         set: function(val) {
+            dispatchErrorEvent9();
+            const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
+            if (ownProperty) {
+               ownProperty.set.call(mediaObject, value);
             }
          }
       });

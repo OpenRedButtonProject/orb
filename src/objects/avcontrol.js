@@ -62,30 +62,60 @@ hbbtv.objects.AVControl = (function() {
       "COMPONENT_TYPE_SUBTITLE": 2
    });
 
-   hbbtv.utils.defineGetterSetterProperties(prototype, {
-      data: {
-         set(val) {
-            this.setAttribute("data", val);
-         },
-         get() {
-            return this.getAttribute("data");
-         }
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {}
+    *
+    * @name data
+    * @memberof AVControl#
+    */
+   Object.defineProperty(prototype, "data", {
+      get: function() {
+         return this.getAttribute("data");
       },
-      width: {
-         set(val) {
-            this.setAttribute("width", val);
-         },
-         get() {
-            return this.getAttribute("width");
-         }
+      set: function(val) {
+         this.setAttribute("data", val);
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {}
+    *
+    * @name width
+    * @memberof AVControl#
+    */
+   Object.defineProperty(prototype, "width", {
+      get: function() {
+         return this.getAttribute("width");
       },
-      height: {
-         set(val) {
-            this.setAttribute("height", val);
-         },
-         get() {
-            return this.getAttribute("height");
-         }
+      set: function(val) {
+         this.setAttribute("width", val);
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {}
+    *
+    * @name height
+    * @memberof AVControl#
+    */
+   Object.defineProperty(prototype, "height", {
+      get: function() {
+         return this.getAttribute("height");
+      },
+      set: function(val) {
+         this.setAttribute("height", val);
       }
    });
 
@@ -126,12 +156,12 @@ hbbtv.objects.AVControl = (function() {
     *
     * <p>
     *
-    * @returns {PlayStation}
+    * @returns {}
     *
-    * @name playStation
+    * @name playPosition
     * @memberof AVControl#
     */
-   Object.defineProperty(prototype, "playStation", {
+   Object.defineProperty(prototype, "playPosition", {
       get: function() {
          const priv = privates.get(this);
          if (priv.seekPos !== undefined) {

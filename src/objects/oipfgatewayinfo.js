@@ -10,45 +10,207 @@ hbbtv.objects.OipfGatewayInfo = (function() {
    const privates = new WeakMap();
    const gGarbageCollectionBlocked = new Set();
 
-   /* readonly properties */
-   hbbtv.utils.defineGetterProperties(prototype, {
-      isIGDiscovered() {
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {IsIGDiscovered}
+    *
+    * @name isIGDiscovered
+    * @readonly
+    * @memberof OipfGatewayInfo#
+    */
+   Object.defineProperty(prototype, "isIGDiscovered", {
+      get: function() {
          return false;
-      },
-      isAGDiscovered() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {IsAGDiscovered}
+    *
+    * @name isAGDiscovered
+    * @readonly
+    * @memberof OipfGatewayInfo#
+    */
+   Object.defineProperty(prototype, "isAGDiscovered", {
+      get: function() {
          return false;
-      },
-      isCSPGCIPlusDiscovered() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {IsCSPGCIPlusDiscovered}
+    *
+    * @name isCSPGCIPlusDiscovered
+    * @readonly
+    * @memberof OipfGatewayInfo#
+    */
+   Object.defineProperty(prototype, "isCSPGCIPlusDiscovered", {
+      get: function() {
          return hbbtv.drmManager.isCSPGCIPlusDiscovered();
-      },
-      isCSPGDTCPDiscovered() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {IsCSPGDTCPDiscovered}
+    *
+    * @name isCSPGDTCPDiscovered
+    * @readonly
+    * @memberof OipfGatewayInfo#
+    */
+   Object.defineProperty(prototype, "isCSPGDTCPDiscovered", {
+      get: function() {
          return false;
-      },
-      igURL() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {IgURL}
+    *
+    * @name igURL
+    * @readonly
+    * @memberof OipfGatewayInfo#
+    */
+   Object.defineProperty(prototype, "igURL", {
+      get: function() {
          return "igURL";
-      },
-      agURL() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {AgURL}
+    *
+    * @name agURL
+    * @readonly
+    * @memberof OipfGatewayInfo#
+    */
+   Object.defineProperty(prototype, "agURL", {
+      get: function() {
          return "agURL";
-      },
-      cspgDTCPURL() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {CspgDTCPURL}
+    *
+    * @name cspgDTCPURL
+    * @readonly
+    * @memberof OipfGatewayInfo#
+    */
+   Object.defineProperty(prototype, "cspgDTCPURL", {
+      get: function() {
          return "cspgDTCPURL";
-      },
-      interval() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {Interval}
+    *
+    * @name interval
+    * @readonly
+    * @memberof OipfGatewayInfo#
+    */
+   Object.defineProperty(prototype, "interval", {
+      get: function() {
          return 30;
-      },
-      isIGSupported() {
+      }
+   });
+
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {IsIGSupported}
+    *
+    * @name isIGSupported
+    * @readonly
+    * @memberof OipfGatewayInfo#
+    */
+   Object.defineProperty(prototype, "isIGSupported", {
+      get: function() {
          return false;
-      },
-      isAGSupported() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {IsAGSupported}
+    *
+    * @name isAGSupported
+    * @readonly
+    * @memberof OipfGatewayInfo#
+    */
+   Object.defineProperty(prototype, "isAGSupported", {
+      get: function() {
          return false;
-      },
-      isCSPGCIPlusSupported() {
-         return true;
-      },
-      isCSPGDTCPSupported() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {IsCSPGDTCPSupported}
+    *
+    * @name isCSPGDTCPSupported
+    * @readonly
+    * @memberof OipfGatewayInfo#
+    */
+   Object.defineProperty(prototype, "isCSPGDTCPSupported", {
+      get: function() {
          return false;
-      },
-      CSPGCIPlusDRMType() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {CSPGCIPlusDRMType}
+    *
+    * @name CSPGCIPlusDRMType
+    * @readonly
+    * @memberof OipfGatewayInfo#
+    */
+   Object.defineProperty(prototype, "CSPGCIPlusDRMType", {
+      get: function() {
          let result = [];
          const status = hbbtv.drmManager.getCSPGCIPlusStatus();
          if (status) {
@@ -57,7 +219,7 @@ hbbtv.objects.OipfGatewayInfo = (function() {
             });
          }
          return result;
-      },
+      }
    });
 
    prototype.isIGSupportedMethod = function(methodName) {

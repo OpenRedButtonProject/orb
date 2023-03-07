@@ -9,18 +9,54 @@ hbbtv.objects.BroadcastObserver = (function() {
    const prototype = {};
    const privates = new WeakMap();
 
-   hbbtv.utils.defineGetterProperties(prototype, {
-      contentTime() {
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {ContentTime}
+    *
+    * @name contentTime
+    * @memberof BroadcastObserver#
+    */
+   Object.defineProperty(prototype, "contentTime", {
+      get: function() {
          let ticks = this.contentTicks;
          if (!isNaN(ticks)) {
             return ticks / this.timeline.timelineProperties.unitsPerSecond;
          }
          return NaN;
-      },
-      timelineSpeedMultiplier() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {TimelineSpeedMultiplier}
+    *
+    * @name timelineSpeedMultiplier
+    * @memberof BroadcastObserver#
+    */
+   Object.defineProperty(prototype, "timelineSpeedMultiplier", {
+      get: function() {
          return 1;
-      },
-      contentTicks() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {ContentTicks}
+    *
+    * @name contentTicks
+    * @memberof BroadcastObserver#
+    */
+   Object.defineProperty(prototype, "contentTicks", {
+      get: function() {
          const timeline = this.timeline;
          if (timeline) {
             const ret = hbbtv.bridge.mediaSync.getBroadcastCurrentTime(timeline.timelineSelector);
@@ -32,14 +68,22 @@ hbbtv.objects.BroadcastObserver = (function() {
       }
    });
 
-   hbbtv.utils.defineGetterSetterProperties(prototype, {
-      timeline: {
-         get() {
-            return privates.get(this).timeline;
-         },
-         set(val) {
-            privates.get(this).timeline = val;
-         }
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {Timeline}
+    *
+    * @name timeline
+    * @memberof BroadcastObserver#
+    */
+   Object.defineProperty(prototype, "timeline", {
+      get: function() {
+         return privates.get(this).timeline;
+      },
+      set: function(val) {
+         privates.get(this).timeline = val;
       }
    });
 

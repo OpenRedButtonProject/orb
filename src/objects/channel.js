@@ -32,59 +32,225 @@ hbbtv.objects.Channel = (function() {
       ID_IPTV_URI: 41
    });
 
-   hbbtv.utils.defineGetterProperties(prototype, {
-      channelType() {
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {ChannelType}
+    *
+    * @name channelType
+    * @memberof Channel#
+    */
+   Object.defineProperty(prototype, "channelType", {
+      get: function() {
          const p = privates.get(this);
          return p.channelData.channelType;
-      },
-      ccid() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {CCid}
+    *
+    * @name ccid
+    * @memberof Channel#
+    */
+   Object.defineProperty(prototype, "ccid", {
+      get: function() {
          const p = privates.get(this);
          return p.channelData.ccid;
-      },
-      dsd() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {Dsd}
+    *
+    * @name dsd
+    * @memberof Channel#
+    */
+   Object.defineProperty(prototype, "dsd", {
+      get: function() {
          const p = privates.get(this);
          return p.channelData.dsd;
-      },
-      idType() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {IdType}
+    *
+    * @name idType
+    * @memberof Channel#
+    */
+   Object.defineProperty(prototype, "idType", {
+      get: function() {
          const p = privates.get(this);
          return p.channelData.idType;
-      },
-      nid() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {NId}
+    *
+    * @name nId
+    * @memberof Channel#
+    */
+   Object.defineProperty(prototype, "nid", {
+      get: function() {
          const p = privates.get(this);
          return p.channelData.nid;
-      },
-      onid() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {OnId}
+    *
+    * @name onId
+    * @memberof Channel#
+    */
+   Object.defineProperty(prototype, "onid", {
+      get: function() {
          const p = privates.get(this);
          return p.channelData.onid;
-      },
-      tsid() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {TsId}
+    *
+    * @name tsId
+    * @memberof Channel#
+    */
+   Object.defineProperty(prototype, "tsid", {
+      get: function() {
          const p = privates.get(this);
          return p.channelData.tsid;
-      },
-      sid() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {SId}
+    *
+    * @name SId
+    * @memberof Channel#
+    */
+   Object.defineProperty(prototype, "sid", {
+      get: function() {
          const p = privates.get(this);
          return p.channelData.sid;
-      },
-      name() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {Name}
+    *
+    * @name name
+    * @memberof Channel#
+    */
+   Object.defineProperty(prototype, "name", {
+      get: function() {
          const p = privates.get(this);
          return p.channelData.name;
-      },
-      majorChannel() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {MajorChannel}
+    *
+    * @name majorChannel
+    * @memberof Channel#
+    */
+   Object.defineProperty(prototype, "majorChannel", {
+      get: function() {
          const p = privates.get(this);
          return p.channelData.majorChannel;
-      },
-      terminalChannel() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {TerminalChannel}
+    *
+    * @name terminalChannel
+    * @memberof Channel#
+    */
+   Object.defineProperty(prototype, "terminalChannel", {
+      get: function() {
          const p = privates.get(this);
          return p.channelData.terminalChannel;
-      },
-      sourceID() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {SourceID}
+    *
+    * @name sourceID
+    * @memberof Channel#
+    */
+   Object.defineProperty(prototype, "sourceID", {
+      get: function() {
          const p = privates.get(this);
          return p.channelData.sourceID;
-      },
-      ipBroadcastID() {
+      }
+   });
+
+   /**
+    * Specifications:
+    *
+    * <p>
+    *
+    * @returns {IpBroadcastID}
+    *
+    * @name ipBroadcastID
+    * @memberof Channel#
+    */
+   Object.defineProperty(prototype, "ipBroadcastID", {
+      get: function() {
          const p = privates.get(this);
          return p.channelData.ipBroadcastID;
-      },
+      }
    });
 
    // Initialise an instance of prototype
