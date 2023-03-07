@@ -145,7 +145,17 @@ bool BroadcastRequestHandler::Handle(
         {
             std::string ccid = params.value("ccid", "");
             bool trickPlay = params.value("trickplay", false);
-            std::string contentAccessDescriptorURL = params.value("contentAccessDescriptorURL", "");
+            std::string contentAccessDescriptorURL;
+
+            if (params["contentAccessDescriptorURL"].is_null())
+            {
+                contentAccessDescriptorURL = "";
+            }
+            else
+            {
+                contentAccessDescriptorURL = params.value("contentAccessDescriptorURL", "");
+            }
+
             bool quiet = params.value("quiet", 0);
 
             response["result"] =
@@ -163,7 +173,17 @@ bool BroadcastRequestHandler::Handle(
         else
         {
             bool trickPlay = params.value("trickplay", false);
-            std::string contentAccessDescriptorURL = params.value("contentAccessDescriptorURL", "");
+            std::string contentAccessDescriptorURL;
+
+            if (params["contentAccessDescriptorURL"].is_null())
+            {
+                contentAccessDescriptorURL = "";
+            }
+            else
+            {
+                contentAccessDescriptorURL = params.value("contentAccessDescriptorURL", "");
+            }
+
             bool quiet = params.value("quiet", 0);
 
             response["result"] =
@@ -225,7 +245,16 @@ bool BroadcastRequestHandler::Handle(
             std::string dsd = params.value("dsd", "");
             int sid = params.value("sid", -1);
             bool trickPlay = params.value("trickplay", false);
-            std::string contentAccessDescriptorURL = params.value("contentAccessDescriptorURL", "");
+            std::string contentAccessDescriptorURL;
+
+            if (params["contentAccessDescriptorURL"].is_null())
+            {
+                contentAccessDescriptorURL = "";
+            }
+            else
+            {
+                contentAccessDescriptorURL = params.value("contentAccessDescriptorURL", "");
+            }
             bool quiet = params.value("quiet", 0);
 
             response["result"] =
