@@ -43,23 +43,6 @@ hbbtv.utils = (function() {
       }
    }
 
-   function defineGetterProperties(prototype, getters) {
-      for (const [key, getter] of Object.entries(getters)) {
-         Object.defineProperty(prototype, key, {
-            get: getter
-         });
-      }
-   }
-
-   function defineGetterSetterProperties(prototype, props) {
-      for (const [key, prop] of Object.entries(props)) {
-         Object.defineProperty(prototype, key, {
-            set: prop.set,
-            get: prop.get
-         });
-      }
-   }
-
    function preventDefaultMediaHandling(target) {
       const parent = target.parentNode;
       target.setAttribute("classid", "hbbtv");
@@ -260,8 +243,6 @@ hbbtv.utils = (function() {
       createFinalizationRegistry: createFinalizationRegistry,
       runOnMainLooper: runOnMainLooper,
       defineConstantProperties: defineConstantProperties,
-      defineGetterProperties: defineGetterProperties,
-      defineGetterSetterProperties: defineGetterSetterProperties,
       preventDefaultMediaHandling: preventDefaultMediaHandling,
       base64Encode: base64Encode,
       insertAfter: insertAfter,
