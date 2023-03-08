@@ -39,7 +39,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
       p.masterMediaObserver.removeEventListener("MediaUpdated", p.onMasterMediaUpdated);
       p.masterMediaObserver.removeEventListener("Error", p.onFailureToPresentMedia);
       p.mediaObject.removeEventListener("ended", p.onFailureToPresentMedia);
-      delete mediaObject.__orb_addedToMediaSync__;
+      delete p.mediaObject.__orb_addedToMediaSync__;
       Object.setPrototypeOf(p.mediaObject, p.moPrototype);
       clearInterval(p.pollIntervalId);
       privates.delete(this);
