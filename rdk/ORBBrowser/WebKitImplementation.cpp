@@ -1686,6 +1686,11 @@ public:
       _httpStatusCode = code;
    }
 
+   int32_t GetResponseHTTPStatusCode() const
+   {
+      return _httpStatusCode;
+   }
+
    uint32_t Configure(PluginHost::IShell *service) override
    {
       consoleLogPrefix = service->Callsign();
@@ -2137,8 +2142,24 @@ private:
       browser->OnJavaScript(messageStrings);
    }
 
-   static gboolean decidePolicyCallback(WebKitWebView *, WebKitPolicyDecision *decision, WebKitPolicyDecisionType)
+   static gboolean decidePolicyCallback(WebKitWebView *, WebKitPolicyDecision *decision, WebKitPolicyDecisionType type, WebKitImplementation *browser)
    {
+      if (type == WEBKIT_POLICY_DECISION_TYPE_RESPONSE)
+      {
+         // Get response object and uri
+         auto *response = webkit_response_policy_decision_get_response(WEBKIT_RESPONSE_POLICY_DECISION(decision));
+         std::string responseUri(webkit_uri_response_get_uri(response));
+
+         // Get the current app URL from ORB
+         std::string currentAppUrl = ORBWPEWebExtensionHelper::GetSharedInstance().GetORBClient()->GetCurrentAppUrl();
+
+         // Main frame check
+         if (currentAppUrl == responseUri)
+         {
+            SYSLOG(Trace::Information, (_T("url=%s we are in main frame"), responseUri.c_str()));
+            browser->SetResponseHTTPStatusCode(webkit_uri_response_get_status_code(response));
+         }
+      }
       webkit_policy_decision_use(decision);
       return TRUE;
    }
@@ -2151,7 +2172,21 @@ private:
    static void loadChangedCallback(WebKitWebView *webView, WebKitLoadEvent loadEvent, WebKitImplementation *browser)
    {
       if (loadEvent == WEBKIT_LOAD_FINISHED)
+      {
+         int32_t httpStatusCode = browser->GetResponseHTTPStatusCode();
+         SYSLOG(Trace::Information, (_T("httpStatusCode=%d"), httpStatusCode));
+         if (httpStatusCode >= 400)
+         {
+            std::string responseUri(webkit_web_view_get_uri(webView));
+            std::string currentAppUrl = ORBWPEWebExtensionHelper::GetSharedInstance().GetORBClient()->GetCurrentAppUrl();
+            if (responseUri == currentAppUrl)
+            {
+               SYSLOG(Trace::Information, (_T("url=%s we are in main frame"), responseUri.c_str()));
+               ORBWPEWebExtensionHelper::GetSharedInstance().GetORBClient()->NotifyApplicationLoadFailed(responseUri, "Not Found");
+            }
+         }
          browser->OnLoadFinished();
+      }
    }
 
    static void webProcessTerminatedCallback(WebKitWebView *webView, WebKitWebProcessTerminationReason reason)
@@ -2363,7 +2398,7 @@ private:
       g_signal_connect(userContentManager, "script-message-received::wpeNotifyWPEFramework",
          reinterpret_cast<GCallback>(wpeNotifyWPEFrameworkMessageReceivedCallback), this);
 
-      g_signal_connect(_view, "decide-policy", reinterpret_cast<GCallback>(decidePolicyCallback), nullptr);
+      g_signal_connect(_view, "decide-policy", reinterpret_cast<GCallback>(decidePolicyCallback), this);
       g_signal_connect(_view, "notify::uri", reinterpret_cast<GCallback>(uriChangedCallback), this);
       g_signal_connect(_view, "load-changed", reinterpret_cast<GCallback>(loadChangedCallback), this);
       g_signal_connect(_view, "web-process-terminated", reinterpret_cast<GCallback>(webProcessTerminatedCallback), nullptr);
