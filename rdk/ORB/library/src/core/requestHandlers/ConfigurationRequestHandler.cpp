@@ -120,7 +120,11 @@ bool ConfigurationRequestHandler::Handle(
    // Configuration.getPreferredUILanguage
    else if (method == CONFIGURATION_GET_PREFERRED_UI_LANGUAGE)
    {
-      std::string preferredUILanguage = ORBEngine::GetSharedInstance().GetPreferredUILanguage();
+      std::string preferredUILanguage = ORBEngine::GetSharedInstance().GetORBPlatform()->Configuration_GetPreferredUILanguage();
+      if (preferredUILanguage.empty())
+      {
+         preferredUILanguage = ORBEngine::GetSharedInstance().GetPreferredUILanguage();
+      }
       response["result"] = preferredUILanguage;
    }
    // Configuration.getCountryId
