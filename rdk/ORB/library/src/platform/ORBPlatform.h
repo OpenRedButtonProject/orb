@@ -429,6 +429,13 @@ public:
    virtual std::string Configuration_GetPreferredSubtitleLanguage() = 0;
 
    /**
+    * Get the preferred UI language.
+    *
+    * @return Comma separated string of languages (ISO 639-2 codes), in order of preference.
+    */
+   virtual std::string Configuration_GetPreferredUILanguage() = 0;
+
+   /**
     * Get the id of the country in which the receiver is deployed.
     *
     * @return An ISO-3166 three character country code identifying the country in
