@@ -75,14 +75,14 @@ hbbtv.objects.MediaElementTsClient = (function() {
             if (p.mediaObject.paused) {
                p.moPrototype.play.call(p.mediaObject);
             }
-            const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
+            const ownProperty = Object.getOwnPropertyDescriptor(p.moPrototype, "playbackRate");
             if (ownProperty) {
                ownProperty.set.call(p.mediaObject, p.masterMediaObserver.timelineSpeedMultiplier);
             }
          }
 
          if (Math.abs(contentTime - p.mediaObject.currentTime) > p.tolerance / 1000.0) {
-            const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "currentTime");
+            const ownProperty = Object.getOwnPropertyDescriptor(p.moPrototype, "currentTime");
             if (ownProperty) {
                ownProperty.set.call(p.mediaObject, contentTime + p.tolerance / 1000.0);
                console.log("Synchronised tlvOther with tlvMaster");
@@ -153,12 +153,12 @@ hbbtv.objects.MediaElementTsClient = (function() {
       hbbtv.utils.defineGetterSetterProperties(moPrototypeOverride, {
          currentTime: {
             get() {
-               const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "currentTime");
+               const ownProperty = Object.getOwnPropertyDescriptor(p.moPrototype, "currentTime");
                return ownProperty ? ownProperty.get.call(mediaObject) : undefined;
             },
             set(value) {
                dispatchErrorEvent9();
-               const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "currentTime");
+               const ownProperty = Object.getOwnPropertyDescriptor(p.moPrototype, "currentTime");
                if (ownProperty) {
                   ownProperty.set.call(mediaObject, value);
                }
@@ -166,12 +166,12 @@ hbbtv.objects.MediaElementTsClient = (function() {
          },
          playbackRate: {
             get() {
-               const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
+               const ownProperty = Object.getOwnPropertyDescriptor(p.moPrototype, "playbackRate");
                return ownProperty ? ownProperty.get.call(mediaObject) : undefined;
             },
             set(value) {
                dispatchErrorEvent9();
-               const ownProperty = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
+               const ownProperty = Object.getOwnPropertyDescriptor(p.moPrototype, "playbackRate");
                if (ownProperty) {
                   ownProperty.set.call(mediaObject, value);
                }
