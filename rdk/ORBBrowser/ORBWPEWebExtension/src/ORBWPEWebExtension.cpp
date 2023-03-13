@@ -233,23 +233,27 @@ static void OnWindowObjectCleared(WebKitScriptWorld *world, WebKitWebPage *page,
 {
    ORB_LOG_NO_ARGS();
 
-   if (!webkit_frame_is_main_frame(frame))
-   {
-      ORB_LOG("Not in main frame, return immediately");
-      return;
-   }
-
-   if (s_jsContext)
-   {
-      g_clear_object(&s_jsContext);
-   }
-   s_jsContext = webkit_frame_get_js_context_for_script_world(frame, world);
-
-   ExposeBridge(s_jsContext);
-   ExposeToken(s_jsContext, webkit_frame_get_uri(frame));
-
    const gchar *uri = webkit_frame_get_uri(frame);
    ORB_LOG("uri=%s\n", uri);
+   std::string uriStr(uri);
+   gboolean mainFrame = webkit_frame_is_main_frame(frame);
+
+   // Expose if main frame or farme of orb://player
+   if (mainFrame || uriStr.rfind("orb://player", 0) == 0)
+   {
+      ORB_LOG("Main frame or orb://player. Exposing bridge");
+      if (s_jsContext)
+      {
+         g_clear_object(&s_jsContext);
+      }
+      s_jsContext = webkit_frame_get_js_context_for_script_world(frame, world);
+
+      ExposeBridge(s_jsContext);
+      if (mainFrame)
+      {
+         ExposeToken(s_jsContext, uri);
+      }
+   }
 }
 
 /**
