@@ -67,7 +67,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
 
    function checkMediaSync(contentTime) {
       const p = privates.get(this);
-      if (contentTime >= 0 && !p.mediaObject.ended) {
+      if (contentTime >= 0 && !(p.mediaObject.ended || p.mediaObject.readyState < HTMLMediaElement.HAVE_CURRENT_DATA)) {
          if (p.masterMediaObserver.timelineSpeedMultiplier == 0) {
             p.moPrototype.pause.call(p.mediaObject);
          } else {
