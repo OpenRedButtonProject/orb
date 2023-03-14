@@ -48,7 +48,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
    function onMasterMediaUpdated(e) {
       const p = privates.get(this);
       if (!isNaN(e.data.contentTime)) {
-         const targetTime = e.data.contentTime + (p.correlationTimestamp.tlvOther - p.correlationTimestamp.tlvMaster);
+         const targetTime = e.data.contentTime + (p.correlationTimestamp.tlvOther - p.correlationTimestamp.tlvMaster) / p.masterMediaObserver.tickRate;
          let canSeek = false;
          for (let i = 0; i < p.mediaObject.buffered.length; ++i) {
             if (targetTime >= p.mediaObject.buffered.start(i) && targetTime <= p.mediaObject.buffered.end(i)) {
@@ -58,8 +58,8 @@ hbbtv.objects.MediaElementTsClient = (function() {
          }
          if (canSeek) {
             checkMediaSync.call(this, targetTime);
-         } else if (p.canSyncWithMaster) {
-            p.canSyncWithMaster = false;
+         } else if (p.lastError !== 1) {
+            p.lastError = 1;
             dispatchErrorEvent(p.eventTarget, 1); // insufficient buffer size (transient)
          }
       }
@@ -67,7 +67,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
 
    function checkMediaSync(contentTime) {
       const p = privates.get(this);
-      if (contentTime >= 0 && !(p.mediaObject.ended || p.mediaObject.readyState < HTMLMediaElement.HAVE_CURRENT_DATA)) {
+      if (p.mediaObject.readyState >= HTMLMediaElement.HAVE_METADATA && contentTime >= 0 && contentTime < p.mediaObject.duration) {
          if (p.masterMediaObserver.timelineSpeedMultiplier == 0) {
             p.moPrototype.pause.call(p.mediaObject);
          } else {
@@ -88,14 +88,14 @@ hbbtv.objects.MediaElementTsClient = (function() {
                console.log("Synchronised tlvOther with tlvMaster");
             }
          }
-         if (!p.canSyncWithMaster) {
-            p.canSyncWithMaster = true;
+         if (p.lastError) {
+            p.lastError = 0;
             p.eventTarget.dispatchEvent(new Event("SyncNowAchievable"));
          }
       } else {
          p.moPrototype.pause.call(p.mediaObject);
-         if (p.canSyncWithMaster) {
-            p.canSyncWithMaster = false;
+         if (p.lastError !== 11) {
+            p.lastError = 11;
             dispatchErrorEvent(p.eventTarget, 11); // failed to synchronise media (transient)
          }
       }
@@ -103,8 +103,8 @@ hbbtv.objects.MediaElementTsClient = (function() {
 
    function onFailureToPresentMedia() {
       const p = privates.get(this);
-      if (p.canSyncWithMaster) {
-         p.canSyncWithMaster = false;
+      if (p.lastError !== 2) {
+         p.lastError = 2;
          dispatchErrorEvent(p.eventTarget, 2); // failed to present media (transient)
       }
    }
@@ -121,20 +121,20 @@ hbbtv.objects.MediaElementTsClient = (function() {
          tolerance: tolerance,
          multiDecoderMode: multiDecoderMode,
          masterMediaObserver: masterMediaObserver,
-         canSyncWithMaster: true,
+         lastError: 0,
          correlationTimestamp: correlationTimestamp,
          eventTarget: document.createDocumentFragment(),
          moPrototype: Object.getPrototypeOf(mediaObject),
          onMasterMediaUpdated: onMasterMediaUpdated.bind(this),
          onFailureToPresentMedia: onFailureToPresentMedia.bind(this),
          pollIntervalId: setInterval(() => {
-            checkMediaSync.call(this, masterMediaObserver.contentTime);
+            checkMediaSync.call(this, masterMediaObserver.contentTime + (correlationTimestamp.tlvOther - correlationTimestamp.tlvMaster) / masterMediaObserver.tickRate);
          }, 2000)
       });
 
       function dispatchErrorEvent9() {
-         if (p.canSyncWithMaster) {
-            p.canSyncWithMaster = false;
+         if (p.lastError !== 9) {
+            p.lastError = 9;
             dispatchErrorEvent(p.eventTarget, 9); // not in suitable state to synchronise media (transient)
          }
       }
@@ -185,7 +185,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
       masterMediaObserver.addEventListener("MediaUpdated", p.onMasterMediaUpdated);
       masterMediaObserver.addEventListener("Error", p.onFailureToPresentMedia);
       mediaObject.addEventListener("ended", p.onFailureToPresentMedia);
-      checkMediaSync.call(this, masterMediaObserver.contentTime);
+      checkMediaSync.call(this, masterMediaObserver.contentTime + (correlationTimestamp.tlvOther - correlationTimestamp.tlvMaster) / masterMediaObserver.tickRate);
    }
 
    return {

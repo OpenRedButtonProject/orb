@@ -229,7 +229,7 @@ hbbtv.mediaManager = (function() {
       Object.defineProperty(media, "textTracks", {
          value: textTracks,
          writable: false
-      });;
+      });
       const genericEvents = [
          "loadstart", "suspend", "abort", "emptied", "stalled", "canplay",
          "canplaythrough", "playing", "seeking", "seeked", "__orb_onerror__"

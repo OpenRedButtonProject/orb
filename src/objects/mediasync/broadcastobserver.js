@@ -29,6 +29,13 @@ hbbtv.objects.BroadcastObserver = (function() {
             }
          }
          return NaN;
+      },
+      tickRate() {
+         const timeline = this.timeline;
+         if (timeline) {
+            return this.timeline.timelineProperties.unitsPerSecond;
+         }
+         return NaN;
       }
    });
 
