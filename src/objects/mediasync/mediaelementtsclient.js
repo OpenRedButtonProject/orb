@@ -58,9 +58,8 @@ hbbtv.objects.MediaElementTsClient = (function() {
          }
          if (canSeek) {
             checkMediaSync.call(this, targetTime);
-         } else if (p.lastError !== 1) {
-            p.lastError = 1;
-            dispatchErrorEvent(p.eventTarget, 1); // insufficient buffer size (transient)
+         } else {
+            dispatchErrorEvent.call(this, 1); // insufficient buffer size (transient)
          }
       }
    }
@@ -94,25 +93,21 @@ hbbtv.objects.MediaElementTsClient = (function() {
          }
       } else {
          p.moPrototype.pause.call(p.mediaObject);
-         if (p.lastError !== 11) {
-            p.lastError = 11;
-            dispatchErrorEvent(p.eventTarget, 11); // failed to synchronise media (transient)
-         }
+         dispatchErrorEvent.call(this, 11); // failed to synchronise media (transient)
       }
    }
 
    function onFailureToPresentMedia() {
-      const p = privates.get(this);
-      if (p.lastError !== 2) {
-         p.lastError = 2;
-         dispatchErrorEvent(p.eventTarget, 2); // failed to present media (transient)
-      }
+      dispatchErrorEvent.call(this, 2); // failed to present media (transient)
    }
 
-   function dispatchErrorEvent(eventTarget, errorCode) {
-      let evt = new Event("Error");
-      evt.errorCode = errorCode;
-      eventTarget.dispatchEvent(evt);
+   function dispatchErrorEvent(errorCode) {
+      const p = privates.get(this);
+      if (p.lastError !== errorCode) {
+         let evt = new Event("Error");
+         p.lastError = evt.errorCode = errorCode;
+         setTimeout(() => p.eventTarget.dispatchEvent(evt), 0);
+      }
    }
 
    function initialise(mediaObject, correlationTimestamp, tolerance, multiDecoderMode, masterMediaObserver) {
@@ -132,23 +127,17 @@ hbbtv.objects.MediaElementTsClient = (function() {
          }, 2000)
       });
 
-      function dispatchErrorEvent9() {
-         if (p.lastError !== 9) {
-            p.lastError = 9;
-            dispatchErrorEvent(p.eventTarget, 9); // not in suitable state to synchronise media (transient)
-         }
-      }
-
       const p = privates.get(this);
 
       const moPrototypeOverride = Object.create(p.moPrototype);
       moPrototypeOverride.pause = () => {
-         dispatchErrorEvent9();
+         dispatchErrorEvent.call(this, 9); // not in suitable state to synchronise media (transient)
          p.moPrototype.pause.call(this);
       };
       moPrototypeOverride.play = () => {
-         setTimeout(dispatchErrorEvent9, 0); // defer the error until play() returns
-         return p.moPrototype.play.call(mediaObject);
+         const res = p.moPrototype.play.call(mediaObject);
+         dispatchErrorEvent.call(this, 9); // not in suitable state to synchronise media (transient)
+         return res;
       };
       hbbtv.utils.defineGetterSetterProperties(moPrototypeOverride, {
          currentTime: {
@@ -157,7 +146,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
                return ownProperty ? ownProperty.get.call(mediaObject) : undefined;
             },
             set(value) {
-               dispatchErrorEvent9();
+               dispatchErrorEvent.call(this, 9); // not in suitable state to synchronise media (transient)
                const ownProperty = Object.getOwnPropertyDescriptor(p.moPrototype, "currentTime");
                if (ownProperty) {
                   ownProperty.set.call(mediaObject, value);
@@ -170,7 +159,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
                return ownProperty ? ownProperty.get.call(mediaObject) : undefined;
             },
             set(value) {
-               dispatchErrorEvent9();
+               dispatchErrorEvent.call(this, 9); // not in suitable state to synchronise media (transient)
                const ownProperty = Object.getOwnPropertyDescriptor(p.moPrototype, "playbackRate");
                if (ownProperty) {
                   ownProperty.set.call(mediaObject, value);
