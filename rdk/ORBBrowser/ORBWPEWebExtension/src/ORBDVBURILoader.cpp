@@ -94,10 +94,12 @@ void ORBDVBURILoader::Finish()
         }
 
         ORB_LOG("DVB URI scheme request completed without any data");
-        GError *error = g_error_new(g_quark_from_string(failedUri.c_str()), 0,
-            errorDescription.c_str());
-        webkit_uri_scheme_request_finish_error(m_request, error);
-        g_error_free(error);
+
+        GInputStream *inputStream = g_memory_input_stream_new();
+        WebKitURISchemeResponse *response = webkit_uri_scheme_response_new(inputStream, 0);
+        webkit_uri_scheme_response_set_status(response, 404, "DVB URI scheme request failed");
+        webkit_uri_scheme_request_finish_with_response(m_request, response);
+        g_object_unref(inputStream);
 
         std::string currentAppUrl =
             ORBWPEWebExtensionHelper::GetSharedInstance().GetORBClient()->GetCurrentAppUrl();
