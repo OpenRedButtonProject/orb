@@ -50,7 +50,7 @@ bool NetworkRequestHandler::Handle(
     // Network.resolveHostAddress
     if (method == NETWORK_RESOLVE_HOST_ADDRESS)
     {
-        std::string hostName = params["hostName"];
+        std::string hostName = params["hostname"];
         std::string hostAddress = ResolveHostAddress(hostName);
         response["result"] = hostAddress;
     }
