@@ -593,7 +593,7 @@ hbbtv.objects.DashProxy = (function() {
                //LOG_LEVEL_WARNING  3
                //LOG_LEVEL_INFO     4
                //LOG_LEVEL_DEBUG    5
-               logLevel: 3,
+               logLevel: 5,
                dispatchEvent: false
             },
             streaming: {
