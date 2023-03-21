@@ -167,7 +167,8 @@ bool ConfigurationRequestHandler::Handle(
    {
       json jsonPayload = token["payload"];
       std::string origin = jsonPayload.value("origin", "");
-      ORBEngine::GetSharedInstance().GetORBPlatform()->Configuration_RequestAccessToDistinctiveIdentifier(origin);
+      std::map<std::string, std::string> appNames = ORBEngine::GetSharedInstance().GetApplicationManager()->GetCurrentAppNames();
+      ORBEngine::GetSharedInstance().GetORBPlatform()->Configuration_RequestAccessToDistinctiveIdentifier(origin, appNames);
    }
    // UnknownMethod
    else
