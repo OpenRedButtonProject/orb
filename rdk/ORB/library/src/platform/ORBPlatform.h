@@ -467,11 +467,12 @@ public:
    /**
     * Called when the application at origin requests access to the distinctive identifier.
     *
-    * @param origin The origin of the application
+    * @param origin   The origin of the application
+    * @param appNames The map of <lang,name> entries of the application
     *
     * @return true if access already granted, false otherwise
     */
-   virtual bool Configuration_RequestAccessToDistinctiveIdentifier(std::string origin) = 0;
+   virtual bool Configuration_RequestAccessToDistinctiveIdentifier(std::string origin, std::map<std::string, std::string> appNames) = 0;
 
    /**
     * Get the User-Agent string to be used by the browser.
