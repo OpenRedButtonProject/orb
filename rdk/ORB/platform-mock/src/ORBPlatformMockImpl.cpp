@@ -934,13 +934,21 @@ std::string ORBPlatformMockImpl::Configuration_GetDeviceId()
 /**
  * Called when the application at origin requests access to the distinctive identifier.
  *
- * @param origin The origin of the application
+ * @param origin   The origin of the application
+ * @param appNames The map of <lang,name> entries of the application
  *
  * @return true if access already granted, false otherwise
  */
-bool ORBPlatformMockImpl::Configuration_RequestAccessToDistinctiveIdentifier(std::string origin)
+bool ORBPlatformMockImpl::Configuration_RequestAccessToDistinctiveIdentifier(std::string origin,
+    std::map<std::string, std::string> appNames)
 {
     ORB_LOG("origin=%s", origin.c_str());
+    std::map<std::string, std::string>::iterator it = appNames.begin();
+    while (it != appNames.end())
+    {
+        ORB_LOG("lang=%s name=%s", it->first.c_str(), it->second.c_str());
+        it++;
+    }
     return true;
 }
 

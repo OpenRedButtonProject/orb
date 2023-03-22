@@ -219,6 +219,13 @@ public:
         MethodRequirement method_requirement);
 
     /**
+     * Get the names of the current app.
+     *
+     * @return The current app names as a map of <lang,name> pairs
+     */
+    std::map<std::string, std::string> GetCurrentAppNames();
+
+    /**
      * Called when broadcast is stopped (for example when v/b object setChannel is called with null).
      *
      * If a broadcast-related application is running, it will transition to broadcast-independent or

@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <vector>
+#include <map>
 #include <cstdint>
 
 #include "utils.h"
@@ -53,6 +54,7 @@ public:
     bool is_hidden;
 
     std::vector<std::string> boundaries;
+    std::map<uint32_t, std::string> names;
 
     bool is_running = false;
     /* Activated by default. Deactivate if they are AUTOSTARTED */

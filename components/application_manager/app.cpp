@@ -66,5 +66,10 @@ App App::CreateAppFromAitDesc(const Ait::S_AIT_APP_DESC *desc,
     /* AUTOSTARTED apps are activated when they receive a key event */
     app.is_activated = !(desc->control_code == Ait::APP_CTL_AUTOSTART);
 
+    for (uint8_t i = 0; i < desc->app_name.num_langs; i++)
+    {
+        app.names[desc->app_name.names[i].lang_code] = desc->app_name.names[i].name;
+    }
+
     return app;
 }

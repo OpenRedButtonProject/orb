@@ -519,6 +519,31 @@ bool ApplicationManager::IsRequestAllowed(uint16_t calling_app_id, const
 }
 
 /**
+ * Get the names of the current app.
+ *
+ * @return The current app names as a map of <lang,name> pairs
+ */
+std::map<std::string, std::string> ApplicationManager::GetCurrentAppNames()
+{
+    std::map<std::string, std::string> result;
+    LOG(LOG_DEBUG, "GetCurrentAppNames");
+    std::map<uint32_t, std::string>::iterator it = app_.names.begin();
+    while (it != app_.names.end())
+    {
+        uint32_t lang_code = it->first;
+        std::string name = it->second;
+        std::string lang_code_string("");
+        lang_code_string += static_cast<char>((lang_code >> 16) & 0xff);
+        lang_code_string += static_cast<char>((lang_code >> 8) & 0xff);
+        lang_code_string += static_cast<char>((lang_code & 0xff));
+        result[lang_code_string] = name;
+        LOG(LOG_DEBUG, "lang=%s name=%s", lang_code_string.c_str(), name.c_str());
+        it++;
+    }
+    return result;
+}
+
+/**
  * Called when broadcast is stopped (for example when v/b object setChannel is called with null).
  *
  * If a broadcast-related application is running, it will transition to broadcast-independent or

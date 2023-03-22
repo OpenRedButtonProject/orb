@@ -74,7 +74,8 @@ public:
     virtual bool Configuration_GetSubtitlesEnabled() override;
     virtual bool Configuration_GetAudioDescriptionEnabled() override;
     virtual std::string Configuration_GetDeviceId() override;
-    virtual bool Configuration_RequestAccessToDistinctiveIdentifier(std::string origin) override;
+    virtual bool Configuration_RequestAccessToDistinctiveIdentifier(std::string origin,
+        std::map<std::string, std::string> appNames) override;
     virtual std::string Configuration_GetUserAgentString() override;
 
     // Dsmcc api
