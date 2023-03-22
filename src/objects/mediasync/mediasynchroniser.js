@@ -135,12 +135,14 @@ hbbtv.objects.MediaSynchroniser = (function() {
 
          if (p.mediaObserver.start()) {
             p.timelineUnavailableHandler = (e) => {
+               console.log("MediaSynchroniser: Timeline with selector '" + e.timelineSelector + "' is unavailable.");
                if (e.timelineSelector === timelineSelector && setToPermanentErrorState.call(this)) {
                   dispatchErrorEvent.call(this, 15, mediaObject); // unsupported timeline selector (permanent)
                }
             };
 
             p.timelineAvailableHandler = (e) => {
+               console.log("MediaSynchroniser: Timeline with selector '" + e.timeline.timelineSelector + "' is now available.");
                if (e.timeline.timelineSelector === timelineSelector) {
                   p.mediaObserver.timeline = e.timeline;
                }
@@ -257,7 +259,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
 
          if (mediaObject.getAttribute("__mimeType") !== "video/broadcast") {
             privates.set(mediaObject, {
-               tsClient: hbbtv.objects.createMediaElementTsClient(mediaObject, correlationTimestamp, tolerance, multiDecoderMode, p.mediaObserver),
+               tsClient: hbbtv.objects.createMediaElementTsClient(mediaObject, timelineSelector, correlationTimestamp, tolerance, multiDecoderMode, p.mediaObserver, p.id),
                onAudioTrackChanged: onAudioTrackChanged.bind(mediaObject),
                timelineSelector: timelineSelector
             });
@@ -275,12 +277,6 @@ hbbtv.objects.MediaSynchroniser = (function() {
                this.removeMediaObject(mediaObject);
             }
          });
-         priv.timelineUnavailableHandler = (e) => {
-            if (e.timelineSelector === timelineSelector) {
-               dispatchErrorEvent.call(this, 3, mediaObject);
-            }
-         };
-         hbbtv.bridge.addWeakEventListener("TimelineUnavailable", priv.timelineUnavailableHandler);
          dispatchEvent.call(this, "MediaObjectAdded", {
             mediaObject: mediaObject
          });
@@ -302,7 +298,6 @@ hbbtv.objects.MediaSynchroniser = (function() {
       } else {
          const priv = privates.get(mediaObject);
          mediaObject.audioTracks.removeEventListener("change", priv.onAudioTrackChanged);
-         hbbtv.bridge.removeWeakEventListener("TimelineUnavailable", priv.timelineUnavailableHandler);
          hbbtv.bridge.mediaSync.stopTimelineMonitoring(p.id, priv.timelineSelector, false);
          priv.tsClient.destroy();
          p.mediaObjects.delete(mediaObject);
@@ -450,7 +445,6 @@ hbbtv.objects.MediaSynchroniser = (function() {
             const priv = privates.get(mediaObject);
             priv.tsClient.destroy();
             mediaObject.audioTracks.removeEventListener("change", priv.onAudioTrackChanged);
-            hbbtv.bridge.removeWeakEventListener("TimelineUnavailable", priv.timelineUnavailableHandler);
             privates.delete(mediaObject);
          }
          p.mediaObjects.clear();

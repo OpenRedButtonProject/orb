@@ -21,9 +21,8 @@ hbbtv.objects.BroadcastObserver = (function() {
          return 1;
       },
       contentTicks() {
-         const timeline = this.timeline;
-         if (timeline) {
-            const ret = hbbtv.bridge.mediaSync.getBroadcastCurrentTime(timeline.timelineSelector);
+         if (this.timeline) {
+            const ret = hbbtv.bridge.mediaSync.getBroadcastCurrentTime(this.timeline.timelineSelector);
             if (ret >= 0) {
                return ret;
             }
@@ -31,8 +30,7 @@ hbbtv.objects.BroadcastObserver = (function() {
          return NaN;
       },
       tickRate() {
-         const timeline = this.timeline;
-         if (timeline) {
+         if (this.timeline) {
             return this.timeline.timelineProperties.unitsPerSecond;
          }
          return NaN;

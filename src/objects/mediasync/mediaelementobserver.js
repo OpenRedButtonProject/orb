@@ -27,8 +27,7 @@ hbbtv.objects.MediaElementObserver = (function() {
          }
       },
       tickRate() {
-         const timeline = this.timeline;
-         if (timeline) {
+         if (this.timeline) {
             return this.timeline.timelineProperties.unitsPerSecond;
          }
          return NaN;

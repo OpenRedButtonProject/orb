@@ -36,9 +36,13 @@ hbbtv.objects.MediaElementTsClient = (function() {
 
    prototype.destroy = function() {
       const p = privates.get(this);
+      hbbtv.bridge.removeWeakEventListener("TimelineUnavailable", p.onTimelineUnavailable);
+      hbbtv.bridge.removeWeakEventListener("TimelineAvailable", p.onTimelineAvailable);
       p.masterMediaObserver.removeEventListener("MediaUpdated", p.onMasterMediaUpdated);
       p.masterMediaObserver.removeEventListener("Error", p.onFailureToPresentMedia);
       p.mediaObject.removeEventListener("ended", p.onFailureToPresentMedia);
+      p.mediaObject.addEventListener("__orb_onstreamupdated__", p.onStreamUpdatedHandler);
+      p.mediaObject.addEventListener("__orb_onperiodchanged__", p.onPeriodChangedHandler);
       delete p.mediaObject.__orb_addedToMediaSync__;
       Object.setPrototypeOf(p.mediaObject, p.moPrototype);
       clearInterval(p.pollIntervalId);
@@ -47,8 +51,8 @@ hbbtv.objects.MediaElementTsClient = (function() {
 
    function onMasterMediaUpdated(e) {
       const p = privates.get(this);
-      if (!isNaN(e.data.contentTime)) {
-         const targetTime = e.data.contentTime + (p.correlationTimestamp.tlvOther - p.correlationTimestamp.tlvMaster) / p.masterMediaObserver.tickRate;
+      if (!isNaN(e.data.contentTime) && p.timeline) {
+         const targetTime = e.data.contentTime + ((p.correlationTimestamp.tlvOther / p.timeline.timelineProperties.tickRate) - (p.correlationTimestamp.tlvMaster / p.masterMediaObserver.tickRate));
          let canSeek = false;
          for (let i = 0; i < p.mediaObject.buffered.length; ++i) {
             if (targetTime >= p.mediaObject.buffered.start(i) && targetTime <= p.mediaObject.buffered.end(i)) {
@@ -101,30 +105,55 @@ hbbtv.objects.MediaElementTsClient = (function() {
       dispatchErrorEvent.call(this, 2); // failed to present media (transient)
    }
 
+   function onTimelineAvailable(e) {
+      const p = privates.get(this);
+      if (e.timeline.timelineSelector === p.timelineSelector) {
+         p.timeline = e.timeline;
+         const thiz = this;
+         function pollMediaSync() {
+            checkMediaSync.call(thiz, p.masterMediaObserver.contentTime + ((p.correlationTimestamp.tlvOther / p.timeline.timelineProperties.unitsPerSecond) - (p.correlationTimestamp.tlvMaster / p.masterMediaObserver.tickRate)));
+         }
+         if (!p.pollIntervalId) {
+            p.pollIntervalId = setInterval(pollMediaSync, 2000);
+         }
+         pollMediaSync();
+      }
+   };
+
+   function onTimelineUnavailable(e) {
+      const p = privates.get(this);
+      if (e.timelineSelector === p.timelineSelector) {
+         clearInterval(p.pollIntervalId);
+         p.pollIntervalId = undefined;
+         p.timeline = undefined;
+         dispatchErrorEvent.call(this, 3);
+      }
+   };
+
    function dispatchErrorEvent(errorCode) {
       const p = privates.get(this);
       if (p.lastError !== errorCode) {
          let evt = new Event("Error");
          p.lastError = evt.errorCode = errorCode;
-         setTimeout(() => p.eventTarget.dispatchEvent(evt), 0);
+         p.eventTarget.dispatchEvent(evt);
       }
    }
 
-   function initialise(mediaObject, correlationTimestamp, tolerance, multiDecoderMode, masterMediaObserver) {
+   async function initialise(mediaObject, timelineSelector, correlationTimestamp, tolerance, multiDecoderMode, masterMediaObserver, mediaSyncId) {
       privates.set(this, {
          mediaObject: mediaObject,
          tolerance: tolerance,
          multiDecoderMode: multiDecoderMode,
          masterMediaObserver: masterMediaObserver,
          lastError: 0,
+         timelineSelector: timelineSelector,
          correlationTimestamp: correlationTimestamp,
          eventTarget: document.createDocumentFragment(),
          moPrototype: Object.getPrototypeOf(mediaObject),
          onMasterMediaUpdated: onMasterMediaUpdated.bind(this),
          onFailureToPresentMedia: onFailureToPresentMedia.bind(this),
-         pollIntervalId: setInterval(() => {
-            checkMediaSync.call(this, masterMediaObserver.contentTime + (correlationTimestamp.tlvOther - correlationTimestamp.tlvMaster) / masterMediaObserver.tickRate);
-         }, 2000)
+         onTimelineUnavailable: onTimelineUnavailable.bind(this),
+         onTimelineAvailable: onTimelineAvailable.bind(this)
       });
 
       const p = privates.get(this);
@@ -171,10 +200,77 @@ hbbtv.objects.MediaElementTsClient = (function() {
       Object.setPrototypeOf(mediaObject, moPrototypeOverride);
       mediaObject.__orb_addedToMediaSync__ = true;
 
+      hbbtv.bridge.addWeakEventListener("TimelineUnavailable", p.onTimelineUnavailable);
+      hbbtv.bridge.addWeakEventListener("TimelineAvailable", p.onTimelineAvailable);
       masterMediaObserver.addEventListener("MediaUpdated", p.onMasterMediaUpdated);
       masterMediaObserver.addEventListener("Error", p.onFailureToPresentMedia);
       mediaObject.addEventListener("ended", p.onFailureToPresentMedia);
-      checkMediaSync.call(this, masterMediaObserver.contentTime + (correlationTimestamp.tlvOther - correlationTimestamp.tlvMaster) / masterMediaObserver.tickRate);
+
+      // DASH timelines
+      let relIndex = timelineSelector.indexOf(":rel:");
+      let curPeriod = undefined;
+      let timelines = {};
+
+      p.onPeriodChangedHandler = async (e) => {
+         if (curPeriod && e.data.id !== curPeriod) {
+            //make available timeline based on e.data.id
+            let currentTimelineSelector = timelineSelector.replace(curPeriod, e.data.id);
+            relIndex = currentTimelineSelector.indexOf(":rel:");
+
+            if (relIndex >= 0) {
+               console.warn("MediaElementTSClient: DASH period id changed from " + curPeriod + " to " + e.data.id + ". Stopping timeline monitoring.");
+
+               hbbtv.bridge.mediaSync.setTimelineAvailability(mediaSyncId, timelines[curPeriod], false, 0, 0);
+               curPeriod = currentTimelineSelector.substring(relIndex + 5).split(":")[1];
+               if (curPeriod) {
+                  if (timelines[curPeriod] !== currentTimelineSelector) {
+                     timelines[curPeriod] = currentTimelineSelector;
+                     hbbtv.bridge.mediaSync.startTimelineMonitoring(mediaSyncId, currentTimelineSelector, false);
+                  }
+                  hbbtv.bridge.mediaSync.setTimelineAvailability(mediaSyncId, currentTimelineSelector, true, p.timeline ? mediaObject.currentTime * p.timeline.timelineProperties.unitsPerSecond : NaN, mediaObject.ended || mediaObject.paused ? 0 : mediaObject.playbackRate);
+               }
+            }
+            //await refreshContentId();
+            //const mrsUrl = await extractMrsUrl(p.masterMediaObject);
+            //hbbtv.bridge.mediaSync.updateCssCiiProperties(mediaSyncId, p.contentId, p.masterMediaObject.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA ? "okay" : "transitioning", "final", mrsUrl);
+         }
+      }
+
+      p.onStreamUpdatedHandler = async (e) => {
+         const periods = await mediaObject.orb_getPeriods();
+         if (periods) {
+            let periodIds = Object.keys(timelines);
+            periodIds = periodIds.filter((pid) => {
+               for (const period of periods) {
+                  if (period.id === pid) {
+                     return false;
+                  }
+               }
+               return true;
+            });
+            for (const pid of periodIds) {
+               hbbtv.bridge.mediaSync.stopTimelineMonitoring(mediaSyncId, timelines[pid], false);
+               delete timelines[pid];
+            }
+         }
+      }
+      if (relIndex >= 0) {
+         mediaObject.addEventListener("__orb_onstreamupdated__", p.onStreamUpdatedHandler);
+         mediaObject.addEventListener("__orb_onperiodchanged__", p.onPeriodChangedHandler);
+         curPeriod = timelineSelector.substring(relIndex + 5).split(":")[1];
+         if (curPeriod) {
+            const curPeriodInfo = await mediaObject.orb_getCurrentPeriod();
+            if (curPeriodInfo && curPeriodInfo.id !== curPeriod) {
+               // while starting mediasync, dash is streaming with a different timelineselector
+               hbbtv.bridge.mediaSync.stopTimelineMonitoring(mediaSyncId, timelineSelector, false);
+            } else {
+               timelines[curPeriod] = timelineSelector;
+               hbbtv.bridge.mediaSync.setTimelineAvailability(mediaSyncId, timelineSelector, true, NaN, mediaObject.ended || mediaObject.paused ? 0 : mediaObject.playbackRate);
+            }
+         } else {
+            hbbtv.bridge.mediaSync.setTimelineAvailability(mediaSyncId, timelineSelector, true, NaN, mediaObject.ended || mediaObject.paused ? 0 : mediaObject.playbackRate);
+         }
+      }
    }
 
    return {
@@ -183,8 +279,8 @@ hbbtv.objects.MediaElementTsClient = (function() {
    };
 })();
 
-hbbtv.objects.createMediaElementTsClient = function(mediaObject, timelineSelector, correlationTimestamp, tolerance, multiDecoderMode, masterMediaObserver) {
+hbbtv.objects.createMediaElementTsClient = function() {
    const client = Object.create(hbbtv.objects.MediaElementTsClient.prototype);
-   hbbtv.objects.MediaElementTsClient.initialise.call(client, mediaObject, timelineSelector, correlationTimestamp, tolerance, multiDecoderMode, masterMediaObserver);
+   hbbtv.objects.MediaElementTsClient.initialise.apply(client, arguments);
    return client;
 }
