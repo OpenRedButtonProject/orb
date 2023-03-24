@@ -8,6 +8,7 @@
 hbbtv.objects.MediaElementTsClient = (function() {
    const prototype = {};
    const privates = new WeakMap();
+   const TIME_UPDATE_FREQUENCY = 250;
 
    hbbtv.utils.defineGetterSetterProperties(prototype, {
       correlationTimestamp: {
@@ -140,6 +141,10 @@ hbbtv.objects.MediaElementTsClient = (function() {
    }
 
    async function initialise(mediaObject, timelineSelector, correlationTimestamp, tolerance, multiDecoderMode, masterMediaObserver, mediaSyncId) {
+       // add the time update frequency to tolerance to
+       // prevent hicup effect when checking difference with master media
+      tolerance += TIME_UPDATE_FREQUENCY;
+      
       privates.set(this, {
          mediaObject: mediaObject,
          tolerance: tolerance,
