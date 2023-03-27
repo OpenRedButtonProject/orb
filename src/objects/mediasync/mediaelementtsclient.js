@@ -276,6 +276,9 @@ hbbtv.objects.MediaElementTsClient = (function() {
             hbbtv.bridge.mediaSync.setTimelineAvailability(mediaSyncId, timelineSelector, true, NaN, mediaObject.ended || mediaObject.paused ? 0 : mediaObject.playbackRate);
          }
       }
+      else if (!timelineSelector.includes(":temi:")) {
+         hbbtv.bridge.mediaSync.setTimelineAvailability(mediaSyncId, timelineSelector, true, NaN, mediaObject.ended || mediaObject.paused ? 0 : mediaObject.playbackRate);
+      }
    }
 
    return {
