@@ -23,6 +23,7 @@ external/dash.all.min.js)
 $(eval polyfill_hbbtv_srcs = \
 src/housekeeping/banner.js \
 src/housekeeping/beginiffe.js \
+src/languagecodes.js \
 src/utils.js \
 src/core.js \
 src/bridge.js \

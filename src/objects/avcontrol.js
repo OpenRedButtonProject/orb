@@ -707,7 +707,8 @@ hbbtv.objects.AVControl = (function() {
                for (const lang of languages) {
                   for (let i = 0; i < audioTracks.length; ++i) {
                      const track = audioTracks[i];
-                     if (mediaSettings.audio.id === track.id || track.language === lang &&
+                     if (mediaSettings.audio.id === track.id || 
+                        (track.language === lang || hbbtv.languageCodes.ISO639_1_to_ISO639_2[track.language] === lang || hbbtv.languageCodes.ISO639_1_to_ISO639_2[lang] === track.language) &&
                         (!track.kind || track.kind === (mediaSettings.audio.roles ? mediaSettings.audio.roles : track.kind)) &&
                         track.numChannels === (mediaSettings.audio.audioChannels ? mediaSettings.audio.audioChannels : track.numChannels)) {
 
@@ -741,7 +742,8 @@ hbbtv.objects.AVControl = (function() {
                for (const lang of languages) {
                   for (let i = 0; i < textTracks.length; ++i) {
                      const track = textTracks[i];
-                     if (mediaSettings.subtitles.id === track.id || track.language === lang &&
+                     if (mediaSettings.subtitles.id === track.id || 
+                        (track.language === lang || hbbtv.languageCodes.ISO639_1_to_ISO639_2[track.language] === lang || hbbtv.languageCodes.ISO639_1_to_ISO639_2[lang] === track.language) &&
                         track.kind === (mediaSettings.subtitles.roles ? mediaSettings.subtitles.roles : track.kind)) {
                         index = i;
                         break;
