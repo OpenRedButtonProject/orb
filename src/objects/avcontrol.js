@@ -635,7 +635,7 @@ hbbtv.objects.AVControl = (function() {
 
       if (componentType === undefined || componentType === this.COMPONENT_TYPE_VIDEO) {
          videoSettings.isEnabled = true;
-         videoSettings.kind = "main";
+         videoSettings.kind = ["main", ""];
       }
 
       return {
@@ -675,7 +675,7 @@ hbbtv.objects.AVControl = (function() {
             subSettings.isEnabled = enableComponent;
          } else if (component.type === this.COMPONENT_TYPE_VIDEO) {
             if (enableComponent) {
-               videoSettings.kind = component.kind;
+               videoSettings.kind = [component.kind];
                if (typeof component === 'object') {
                   videoSettings.id = component.componentTag;
                }
@@ -773,7 +773,7 @@ hbbtv.objects.AVControl = (function() {
             let index = -1;
             for (let i = 0; i < videoTracks.length; ++i) {
                const track = videoTracks[i];
-               if (mediaSettings.video.id === track.id || track.kind === mediaSettings.video.kind) {
+               if (mediaSettings.video.id === track.id || mediaSettings.video.kind.includes(track.kind)) {
                   index = i;
                   break;
                }
