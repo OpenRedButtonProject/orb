@@ -518,6 +518,7 @@ hbbtv.objects.DashProxy = (function() {
          startDate: Date.parse(e.data.availabilityStartTime)
       });
       this.dispatchEvent(evt);
+      console.log("manifest availability start time:",e.data.availabilityStartTime," , current time:",new Date().toJSON());
    }
 
    function makeStreamInfoCallback(context, eventName) {
