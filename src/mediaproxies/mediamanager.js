@@ -274,6 +274,8 @@ hbbtv.mediaManager = (function() {
             'seeking',
             'seeked',
             '__orb_onerror__',
+            '__orb_onperiodchanged__',
+            '__orb_onstreamupdated__',
         ];
         const genericHandler = (e) => {
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
@@ -334,8 +336,12 @@ hbbtv.mediaManager = (function() {
             });
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, evt);
         });
-        media.addEventListener('loadeddata', propsUpdateCallback);
-        media.addEventListener('waiting', propsUpdateCallback);
+
+        const propsUpdateEvents = ['loadeddata', 'waiting', 'loadedmetadata', 'ended'];
+        for (const evt of propsUpdateEvents) {
+            media.addEventListener(evt, propsUpdateCallback);
+        }
+
         media.addEventListener('resize', (e) => {
             const widthProperty = Object.getOwnPropertyDescriptor(
                 HTMLVideoElement.prototype,
@@ -354,7 +360,6 @@ hbbtv.mediaManager = (function() {
         media.addEventListener('__orb_startDateUpdated__', (e) =>
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e)
         );
-        media.addEventListener('loadedmetadata', propsUpdateCallback);
         media.addEventListener('play', (e) => {
             let evt = new Event('__orb_onplayspeedchanged__');
             Object.assign(evt, {
@@ -363,7 +368,6 @@ hbbtv.mediaManager = (function() {
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, evt);
             propsUpdateCallback(e);
         });
-        media.addEventListener('ended', propsUpdateCallback);
         media.addEventListener('pause', (e) => {
             let evt = new Event('__orb_onplayspeedchanged__');
             Object.assign(evt, {

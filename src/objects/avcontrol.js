@@ -703,7 +703,7 @@ hbbtv.objects.AVControl = (function() {
 
         if (componentType === undefined || componentType === this.COMPONENT_TYPE_VIDEO) {
             videoSettings.isEnabled = true;
-            videoSettings.kind = 'main';
+            videoSettings.kind = ['main', ''];
         }
 
         return {
@@ -743,7 +743,7 @@ hbbtv.objects.AVControl = (function() {
                 subSettings.isEnabled = enableComponent;
             } else if (component.type === this.COMPONENT_TYPE_VIDEO) {
                 if (enableComponent) {
-                    videoSettings.kind = component.kind;
+                    videoSettings.kind = [component.kind];
                     if (typeof component === 'object') {
                         videoSettings.id = component.componentTag;
                     }
@@ -779,7 +779,11 @@ hbbtv.objects.AVControl = (function() {
                             const track = audioTracks[i];
                             if (
                                 mediaSettings.audio.id === track.id ||
-                                (track.language === lang &&
+                                ((track.language === lang ||
+                                        hbbtv.languageCodes.ISO639_1_to_ISO639_2[track.language] ===
+                                        lang ||
+                                        hbbtv.languageCodes.ISO639_1_to_ISO639_2[lang] ===
+                                        track.language) &&
                                     (!track.kind ||
                                         track.kind ===
                                         (mediaSettings.audio.roles ?
@@ -824,7 +828,11 @@ hbbtv.objects.AVControl = (function() {
                             const track = textTracks[i];
                             if (
                                 mediaSettings.subtitles.id === track.id ||
-                                (track.language === lang &&
+                                ((track.language === lang ||
+                                        hbbtv.languageCodes.ISO639_1_to_ISO639_2[track.language] ===
+                                        lang ||
+                                        hbbtv.languageCodes.ISO639_1_to_ISO639_2[lang] ===
+                                        track.language) &&
                                     track.kind ===
                                     (mediaSettings.subtitles.roles ?
                                         mediaSettings.subtitles.roles :
@@ -863,7 +871,7 @@ hbbtv.objects.AVControl = (function() {
                     const track = videoTracks[i];
                     if (
                         mediaSettings.video.id === track.id ||
-                        track.kind === mediaSettings.video.kind
+                        mediaSettings.video.kind.includes(track.kind)
                     ) {
                         index = i;
                         break;

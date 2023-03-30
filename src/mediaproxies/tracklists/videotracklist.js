@@ -186,9 +186,7 @@ hbbtv.objects.VideoTrackList = (function() {
                             proxy.callObserverMethod(
                                 VIDEO_TRACK_LIST_KEY,
                                 property,
-                                Array.from(arguments).sort((a, b) => {
-                                    return a - b;
-                                })
+                                Array.from(arguments)
                             );
                             return target[property].apply(target, arguments);
                         };

@@ -9,6 +9,12 @@ hbbtv.objects.MediaKeys = (function() {
     const privates = new WeakMap();
     const prototype = {};
 
+    hbbtv.utils.defineGetterProperties(prototype, {
+        orb_polyfilled() {
+            return true;
+        },
+    });
+
     prototype.createSession = function(sessionType) {
         const proxy = privates.get(this).proxy;
         proxy.callObserverMethod(MEDIA_KEYS_ID, 'createSession', [sessionType]);

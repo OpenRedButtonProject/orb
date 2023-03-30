@@ -21,14 +21,19 @@ hbbtv.objects.BroadcastObserver = (function() {
             return 1;
         },
         contentTicks() {
-            const timeline = this.timeline;
-            if (timeline) {
+            if (this.timeline) {
                 const ret = hbbtv.bridge.mediaSync.getBroadcastCurrentTime(
-                    timeline.timelineSelector
+                    this.timeline.timelineSelector
                 );
                 if (ret >= 0) {
                     return ret;
                 }
+            }
+            return NaN;
+        },
+        tickRate() {
+            if (this.timeline) {
+                return this.timeline.timelineProperties.unitsPerSecond;
             }
             return NaN;
         },
