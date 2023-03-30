@@ -232,7 +232,8 @@ hbbtv.mediaManager = (function() {
       });
       const genericEvents = [
          "loadstart", "suspend", "abort", "emptied", "stalled", "canplay",
-         "canplaythrough", "playing", "seeking", "seeked", "__orb_onerror__"
+         "canplaythrough", "playing", "seeking", "seeked", "__orb_onerror__",
+         "__orb_onperiodchanged__","__orb_onstreamupdated__"
       ];
       const genericHandler = (e) => {
          mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
