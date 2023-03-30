@@ -396,6 +396,8 @@ hbbtv.objects.MediaElementExtension = (function() {
       this.dispatchEvent = function(e) {
          if (e.type === "__orb_startDateUpdated__") {
             this.startDate = new Date(e.startDate);
+         } else if(e.type === "play") {
+            _timeUpdateTS = Date.now();
          }
          parent.dispatchEvent(e);
       };
