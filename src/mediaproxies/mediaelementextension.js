@@ -384,6 +384,8 @@ hbbtv.objects.MediaElementExtension = (function() {
     */
    function VideoDummy(parent, iframeProxy) {
       let _error = null;
+      let _timeUpdateTS = Date.now();
+      let _currentTime = 0;
 
       this.startDate = new Date(NaN);
       this.audioTracks = hbbtv.objects.createAudioTrackList(iframeProxy);
@@ -413,6 +415,15 @@ hbbtv.objects.MediaElementExtension = (function() {
          },
          get() {
             return _error;
+         }
+      });
+      Object.defineProperty(this, "currentTime", {
+         set(value) {
+            _currentTime = value;
+            _timeUpdateTS = Date.now();
+         },
+         get() {
+            return this.paused || this.ended ? _currentTime : _currentTime + (Date.now() - _timeUpdateTS) / 1000.0;
          }
       });
    }
