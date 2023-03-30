@@ -152,9 +152,7 @@ hbbtv.objects.TextTrack = (function() {
                   return function() {
                      let args = [];
                      if (property !== "addCue") {
-                        args = Array.from(arguments).sort((a, b) => {
-                           return a - b;
-                        });
+                        args = Array.from(arguments);
                      } else {
                         const cueObj = {};
                         for (const key in arguments[0]) {

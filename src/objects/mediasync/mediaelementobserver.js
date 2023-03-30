@@ -25,6 +25,12 @@ hbbtv.objects.MediaElementObserver = (function() {
          } else {
             return NaN;
          }
+      },
+      tickRate() {
+         if (this.timeline) {
+            return this.timeline.timelineProperties.unitsPerSecond;
+         }
+         return NaN;
       }
    });
 

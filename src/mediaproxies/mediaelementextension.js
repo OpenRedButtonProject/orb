@@ -23,7 +23,7 @@ hbbtv.objects.MediaElementExtension = (function() {
       const _setMediaKeys = HTMLMediaElement.prototype.setMediaKeys;
       HTMLMediaElement.prototype.setMediaKeys = function(mediaKeys) {
          const thiz = this;
-         if (!mediaKeys || mediaKeys instanceof MediaKeys) { // should never happen, but just in case...
+         if (!mediaKeys || !mediaKeys.orb_polyfilled) {
             return _setMediaKeys.call(thiz, mediaKeys);
          }
          const conf = mediaKeys.toJSON().mediaKeySystemAccess;
@@ -41,7 +41,12 @@ hbbtv.objects.MediaElementExtension = (function() {
       }
    }
 
-   HTMLMediaElement.prototype.orb_unload = function() {};
+   HTMLMediaElement.prototype.getStartDate = function() { return new Date(NaN); };
+   HTMLMediaElement.prototype.orb_getPeriods = 
+   HTMLMediaElement.prototype.orb_getMrsUrl = 
+   HTMLMediaElement.prototype.orb_getCurrentPeriod = 
+   HTMLMediaElement.prototype.orb_getCiAncillaryData = 
+   HTMLMediaElement.prototype.orb_unload = function() { return Promise.resolve(); };
 
    // Override default play() and load() for the case where it is being called
    // immediatelly after setting its source. Due to the fact
@@ -89,6 +94,7 @@ hbbtv.objects.MediaElementExtension = (function() {
       const ORB_PLAYER_URL = "orb://player";
       const prototype = Object.create(HTMLMediaElement.prototype);
       const methods = ["pause", "load"];
+      const asyncMethods = ["orb_getPeriods", "orb_getMrsUrl", "orb_getCurrentPeriod", "orb_getCiAncillaryData"];
       const nodeMethods = ["appendChild", "insertBefore", "removeChild", "replaceChild", "hasChildNodes", "getElementsByTagName", "getElementById"];
       const nodeProps = ["childNodes", "firstChild", "lastChild", "children"];
       const roProps = ["textTracks", "audioTracks", "videoTracks", "paused", "ended", "currentSrc", "error",
@@ -119,7 +125,7 @@ hbbtv.objects.MediaElementExtension = (function() {
          nextSibling() {
             const nextSibling = Object.getOwnPropertyDescriptor(Node.prototype, "nextSibling").get.call(this);
             // skip the generated iframe
-            if (nextSibling && nextSibling.__orb_mediaElementExtension__) {
+            if (nextSibling && nextSibling.orb_mediaElementExtension) {
                return nextSibling.nextSibling;
             }
             return nextSibling;
@@ -127,7 +133,7 @@ hbbtv.objects.MediaElementExtension = (function() {
          previousSibling() {
             const previousSibling = Object.getOwnPropertyDescriptor(Node.prototype, "previousSibling").get.call(this);
             // check if there is a generated iframe from another video element
-            if (previousSibling && previousSibling.__orb_mediaElementExtension__) {
+            if (previousSibling && previousSibling.orb_mediaElementExtension) {
                return previousSibling.previousSibling;
             }
             return previousSibling;
@@ -165,8 +171,8 @@ hbbtv.objects.MediaElementExtension = (function() {
 
       prototype.orb_unload = function() {
          const p = privates.get(this);
-         p.iframeProxy.callObserverMethod(MEDIA_PROXY_ID, "orb_unload");
          delete p.videoDummy.src;
+         return p.iframeProxy.callAsyncObserverMethod(MEDIA_PROXY_ID, "orb_unload");
       };
 
       prototype.play = function() {
@@ -186,9 +192,13 @@ hbbtv.objects.MediaElementExtension = (function() {
 
       function makeMethod(name) {
          return function() {
-            privates.get(this).iframeProxy.callObserverMethod(MEDIA_PROXY_ID, name, Array.from(arguments).sort((a, b) => {
-               return a - b;
-            }));
+            privates.get(this).iframeProxy.callObserverMethod(MEDIA_PROXY_ID, name, Array.from(arguments));
+         }
+      }
+
+      function makeAsyncMethod(name) {
+         return function() {
+            return privates.get(this).iframeProxy.callAsyncObserverMethod(MEDIA_PROXY_ID, name, Array.from(arguments));
          }
       }
 
@@ -213,6 +223,9 @@ hbbtv.objects.MediaElementExtension = (function() {
       // create the HTMLMediaElement's proxy methods
       for (const key of methods) {
          prototype[key] = makeMethod(key);
+      }
+      for (const key of asyncMethods) {
+         prototype[key] = makeAsyncMethod(key);
       }
 
       // create the HTMLMediaElement's proxy properties
@@ -371,6 +384,8 @@ hbbtv.objects.MediaElementExtension = (function() {
     */
    function VideoDummy(parent, iframeProxy) {
       let _error = null;
+      let _timeUpdateTS = Date.now();
+      let _currentTime = 0;
 
       this.startDate = new Date(NaN);
       this.audioTracks = hbbtv.objects.createAudioTrackList(iframeProxy);
@@ -381,6 +396,8 @@ hbbtv.objects.MediaElementExtension = (function() {
       this.dispatchEvent = function(e) {
          if (e.type === "__orb_startDateUpdated__") {
             this.startDate = new Date(e.startDate);
+         } else if(e.type === "play") {
+            _timeUpdateTS = Date.now();
          }
          parent.dispatchEvent(e);
       };
@@ -400,6 +417,15 @@ hbbtv.objects.MediaElementExtension = (function() {
          },
          get() {
             return _error;
+         }
+      });
+      Object.defineProperty(this, "currentTime", {
+         set(value) {
+            _currentTime = value;
+            _timeUpdateTS = Date.now();
+         },
+         get() {
+            return this.paused || this.ended ? _currentTime : _currentTime + (Date.now() - _timeUpdateTS) / 1000.0;
          }
       });
    }
@@ -443,7 +469,10 @@ hbbtv.objects.MediaElementExtension = (function() {
             iframeProxy.registerObserver(MEDIA_PROXY_ID, videoDummy);
 
             p.styleObservers = [];
-            p.iframe.__orb_mediaElementExtension__ = true;
+
+            hbbtv.utils.defineGetterProperties(p.iframe, {
+               orb_mediaElementExtension() { return true; }
+            });
             p.iframe.frameBorder = 0;
             p.iframe.allow = "encrypted-media";
             p.iframe.addEventListener("load", () => {

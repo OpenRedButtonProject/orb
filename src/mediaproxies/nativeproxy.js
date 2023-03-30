@@ -24,33 +24,14 @@ hbbtv.objects.NativeProxy = (function() {
       }
    });
 
-   prototype.getStartDate = function() {
-      return new Date(NaN);
-   };
-
-   prototype.orb_getSource = function() {
-      return this.src;
-   };
-
-   prototype.orb_getPeriods = function() {
-      return undefined;
-   };
-
-   prototype.orb_getMrsUrl = function() {
-      return undefined;
-   };
-
-   prototype.orb_getCurrentPeriod = function() {
-      return undefined;
-   };
-
-   prototype.orb_getCiAncillaryData = function() {
-      return undefined;
-   };
-
+   prototype.orb_getPeriods = 
+   prototype.orb_getMrsUrl = 
+   prototype.orb_getCurrentPeriod = 
+   prototype.orb_getCiAncillaryData = function() { return Promise.resolve(); };
    prototype.orb_unload = function() {
       this.removeAttribute("src");
       this.load();
+      return Promise.resolve(); 
    };
 
    function onLoadedMetadata(e) {
