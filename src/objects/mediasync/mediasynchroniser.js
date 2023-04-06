@@ -217,7 +217,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
                } else {
                   hbbtv.bridge.mediaSync.setTimelineAvailability(p.id, timelineSelector, true, p.mediaObserver.contentTicks, p.mediaObserver.timelineSpeedMultiplier);
                }
-            } else if (!timelineSelector.includes(":temi:")) {
+            } else {
                hbbtv.bridge.mediaSync.setTimelineAvailability(p.id, timelineSelector, true, p.mediaObserver.contentTicks, p.mediaObserver.timelineSpeedMultiplier);
             }
          } else {
