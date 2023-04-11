@@ -48,6 +48,13 @@ hbbtv.objects.BroadcastObserver = (function() {
       }
    });
 
+   hbbtv.utils.defineConstantProperties(prototype, {
+      "PLAY_STATE_UNREALIZED": 0,
+      "PLAY_STATE_CONNECTING": 1,
+      "PLAY_STATE_PRESENTING": 2,
+      "PLAY_STATE_STOPPED": 3
+   });
+
    prototype.start = function() {
       const p = privates.get(this);
       let ret = true;
@@ -76,8 +83,7 @@ hbbtv.objects.BroadcastObserver = (function() {
 
    function onMediaObjectEvent(e) {
       const p = privates.get(this);
-
-      if (e.state === p.mediaObject.PLAY_STATE_STOPPED) {
+      if (e.state === this.PLAY_STATE_STOPPED) {
          p.eventTarget.dispatchEvent(new Event("Error"));
       } else {
          const event = new Event("MediaUpdated");
