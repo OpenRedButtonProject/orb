@@ -91,6 +91,11 @@ json GetPayloadFromToken(std::string key, json token)
     json payload;
     std::string claimedSignature;
     std::string signature;
+    if (token["payload"].is_null() || token["payload"].empty() ||
+        token["signature"].is_null() || token["signature"].empty())
+    {
+        return "{}"_json;
+    }
     payload = token["payload"];
     claimedSignature = token["signature"];
     signature = GetHash(key, payload.dump());
@@ -173,7 +178,11 @@ json TokenManager::CreateToken(int appId, std::string uri)
  */
 json TokenManager::GetTokenPayload(json token)
 {
-    json payload = GetPayloadFromToken(m_tokenSecretKey, token);
+    json payload = "{}"_json;
+    if (!token.is_null() && !token.empty())
+    {
+        payload = GetPayloadFromToken(m_tokenSecretKey, token);
+    }
     return payload;
 }
 } // namespace orb
