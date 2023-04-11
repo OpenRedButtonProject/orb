@@ -119,7 +119,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
          lastMediaSync = this;
 
          if (isBroadcast) {
-            if (mediaObject.playState === mediaObject.PLAY_STATE_UNREALIZED) {
+            if (mediaObject.playState === hbbtv.objects.BroadcastObserver.prototype.PLAY_STATE_UNREALIZED) {
                errorHandler();
                return;
             }
