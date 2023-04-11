@@ -48,6 +48,31 @@ bool ResolveObjectAndMethod(std::string input, std::string& object, std::string&
 }
 
 /**
+ * Check if the given JSON request is a valid ORB bridge request.
+ *
+ * @param request The JSON request
+ *
+ * @return true if the request is valid, otherwise false
+ */
+static
+bool IsBridgeRequestValid(json request)
+{
+   if (request["token"].is_null() || request["token"].empty())
+   {
+      return false;
+   }
+   if (request["method"].is_null() || request["method"].empty())
+   {
+      return false;
+   }
+   if (request["params"].is_null())
+   {
+      return false;
+   }
+   return true;
+}
+
+/**
  * Constructor.
  *
  * @param eventListener The event listener
@@ -173,6 +198,14 @@ std::string ORBEngine::ExecuteBridgeRequest(std::string jsonRequest)
 
    json response = "{}"_json;
    json request = json::parse(jsonRequest);
+
+   if (!IsBridgeRequestValid(request))
+   {
+      ORB_LOG("Request is not valid");
+      response = ORBBridgeRequestHandler::MakeErrorResponse("InvalidRequest");
+      return response.dump();
+   }
+
    json jsonToken = request["token"];
 
    // Extract token payload and perform security check
