@@ -131,6 +131,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
             hbbtv.bridge.mediaSync.updateCssCiiProperties(p.id, p.contentId, mediaObject.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA ? "okay" : "transitioning", "final", mrsUrl);
          }
 
+         p.synchroniserInitialised = true;
          dispatchEvent.call(this, "SynchroniserInitialised");
 
          if (p.mediaObserver.start()) {
@@ -332,44 +333,66 @@ hbbtv.objects.MediaSynchroniser = (function() {
    prototype.enableInterDeviceSync = function(callback) {
       const p = privates.get(this);
 
+      const enableInterDeviceSync = function() {
+         if (!p.inPermanentErrorState) {
+            if (typeof callback === "function") {
+               const cb = (e) => {
+                  hbbtv.bridge.removeWeakEventListener("InterDeviceSyncEnabled", cb);
+                  if (e.id == p.id) {
+                     callback();
+                  }
+               };
+               hbbtv.bridge.addWeakEventListener("InterDeviceSyncEnabled", cb);
+            }
+            hbbtv.bridge.mediaSync.enableInterDeviceSync(p.id);
+            console.log("MediaSynchroniser: Enabled inter-device synchronisation.");
+         }
+         this.removeEventListener("SynchroniserInitialised",enableInterDeviceSync);
+      };
+
       if (p.inPermanentErrorState) {
          dispatchErrorEvent.call(this, 13, null); // in permanent error state (transient)
       } else if (lastMediaSync !== this) {
          dispatchErrorEvent.call(this, 7, null); // not yet initialised (transient)
       } else {
-         if (typeof callback === "function") {
-            const cb = (e) => {
-               hbbtv.bridge.removeWeakEventListener("InterDeviceSyncEnabled", cb);
-               if (e.id == p.id) {
-                  callback();
-               }
-            };
-            hbbtv.bridge.addWeakEventListener("InterDeviceSyncEnabled", cb);
+         if (p.synchroniserInitialised) {
+            enableInterDeviceSync();
+         } else {
+            this.addEventListener("SynchroniserInitialised", enableInterDeviceSync);
          }
-         hbbtv.bridge.mediaSync.enableInterDeviceSync(p.id);
-         console.log("MediaSynchroniser: Enabled inter-device synchronisation.");
       }
    };
 
    prototype.disableInterDeviceSync = function(callback) {
       const p = privates.get(this);
 
+      const disableInterDeviceSync = function() {
+         if (!p.inPermanentErrorState) {
+            if (typeof callback === "function") {
+               const cb = (e) => {
+                  hbbtv.bridge.removeWeakEventListener("InterDeviceSyncDisabled", cb);
+                  if (e.id == p.id) {
+                     callback();
+                  }
+               };
+               hbbtv.bridge.addWeakEventListener("InterDeviceSyncDisabled", cb);
+            }
+            hbbtv.bridge.mediaSync.disableInterDeviceSync(p.id);
+            console.log("MediaSynchroniser: Disabled inter-device synchronisation.");
+         }
+         this.removeEventListener("SynchroniserInitialised", disableInterDeviceSync);
+      }
+
       if (p.inPermanentErrorState) {
          dispatchErrorEvent.call(this, 13, null); // in permanent error state (transient)
       } else if (lastMediaSync !== this) {
          dispatchErrorEvent.call(this, 7, null); // not yet initialised (transient)
       } else {
-         if (typeof callback === "function") {
-            const cb = (e) => {
-               hbbtv.bridge.removeWeakEventListener("InterDeviceSyncDisabled", cb);
-               if (e.id == p.id) {
-                  callback();
-               }
-            };
-            hbbtv.bridge.addWeakEventListener("InterDeviceSyncDisabled", cb);
+         if (p.synchroniserInitialised) {
+            disableInterDeviceSync();
+         } else {
+            this.addEventListener("SynchroniserInitialised", disableInterDeviceSync);
          }
-         hbbtv.bridge.mediaSync.disableInterDeviceSync(p.id);
-         console.log("MediaSynchroniser: Disabled inter-device synchronisation.");
       }
    };
 
