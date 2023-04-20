@@ -332,6 +332,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
 
    prototype.enableInterDeviceSync = function(callback) {
       const p = privates.get(this);
+      const thiz = this;
 
       const enableInterDeviceSync = function() {
          if (!p.inPermanentErrorState) {
@@ -347,7 +348,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
             hbbtv.bridge.mediaSync.enableInterDeviceSync(p.id);
             console.log("MediaSynchroniser: Enabled inter-device synchronisation.");
          }
-         this.removeEventListener("SynchroniserInitialised",enableInterDeviceSync);
+         thiz.removeEventListener("SynchroniserInitialised",enableInterDeviceSync);
       };
 
       if (p.inPermanentErrorState) {
@@ -365,6 +366,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
 
    prototype.disableInterDeviceSync = function(callback) {
       const p = privates.get(this);
+      const thiz = this;
 
       const disableInterDeviceSync = function() {
          if (!p.inPermanentErrorState) {
@@ -380,7 +382,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
             hbbtv.bridge.mediaSync.disableInterDeviceSync(p.id);
             console.log("MediaSynchroniser: Disabled inter-device synchronisation.");
          }
-         this.removeEventListener("SynchroniserInitialised", disableInterDeviceSync);
+         thiz.removeEventListener("SynchroniserInitialised", disableInterDeviceSync);
       }
 
       if (p.inPermanentErrorState) {
