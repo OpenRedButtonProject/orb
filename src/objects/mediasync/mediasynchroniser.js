@@ -90,7 +90,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
                      params.push("period=" + curPeriod.id);
                   }
                   if (curPeriod.ciAncillaryData) {
-                     params.push("period_ci_ancillary=" + curPeriod.ciAncillaryData.toString());
+                     params.push("period_ci_ancillary=" + curPeriod.ciAncillaryData.__text);
                   }
                }
                return mediaObject.orb_getCiAncillaryData();
@@ -166,6 +166,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
                      if (curPeriod) {
                         if (timelines[curPeriod] !== currentTimelineSelector) {
                            timelines[curPeriod] = currentTimelineSelector;
+                           // in case timelineSelector of master media changes (i.e. period change)
                            timelineSelector = currentTimelineSelector;
                            hbbtv.bridge.mediaSync.startTimelineMonitoring(p.id, currentTimelineSelector, true);
                         }
