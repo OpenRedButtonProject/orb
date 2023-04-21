@@ -82,7 +82,6 @@ hbbtv.objects.MediaSynchroniser = (function() {
          dispatchErrorEvent.call(this, 15, null); // unavailable/unsupported timeline selector (permanent)
       } else {
          function refreshContentId() {
-            p.contentId = mediaObject.src;
             let params = [];
             return mediaObject.orb_getCurrentPeriod()
             .then(curPeriod => {
@@ -102,6 +101,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
                }
             })
             .finally(() => {
+               p.contentId = mediaObject.src;
                if (params.length > 0) {
                   p.contentId += "#" + params.join("&");
                }
@@ -160,13 +160,13 @@ hbbtv.objects.MediaSynchroniser = (function() {
                   relIndex = currentTimelineSelector.indexOf(":rel:");
 
                   if (relIndex >= 0) {
-                     console.warn("MediaSynchroniser: DASH period id changed from " + curPeriod + " to " + e.data.id + ". Stopping timeline monitoring.");
-
+                     console.warn("MediaSynchroniser: DASH period id changed from " + curPeriod + " to " + e.data.id);
                      hbbtv.bridge.mediaSync.setTimelineAvailability(p.id, timelines[curPeriod], false, 0, 0);
                      curPeriod = currentTimelineSelector.substring(relIndex + 5).split(":")[1];
                      if (curPeriod) {
                         if (timelines[curPeriod] !== currentTimelineSelector) {
                            timelines[curPeriod] = currentTimelineSelector;
+                           timelineSelector = currentTimelineSelector;
                            hbbtv.bridge.mediaSync.startTimelineMonitoring(p.id, currentTimelineSelector, true);
                         }
                         hbbtv.bridge.mediaSync.setTimelineAvailability(p.id, currentTimelineSelector, true, p.mediaObserver.contentTicks, p.mediaObserver.timelineSpeedMultiplier);
