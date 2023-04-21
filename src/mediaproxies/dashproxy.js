@@ -221,8 +221,9 @@ hbbtv.objects.DashProxy = (function() {
 
    prototype.orb_getCurrentPeriod = function() {
       let period;
+      let p = privates.get(this);
       try {
-         period = this.orb_getPeriods()[privates.get(this).player.getActiveStream().getStreamInfo().index];
+         period = p.periods[p.player.getActiveStream().getStreamInfo().index];
       } catch (e) {
          console.warn("DashProxy: " + e);
       }
