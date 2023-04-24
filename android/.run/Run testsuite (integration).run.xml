@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Run testsuite (integration)" type="AndroidRunConfigurationType" factoryName="Android App" activateToolWindowBeforeRun="false">
+  <configuration default="false" name="Launch testsuite (integration)" type="AndroidRunConfigurationType" factoryName="Android App" activateToolWindowBeforeRun="false">
     <module name="orb.mockorbapp" />
     <option name="DEPLOY" value="true" />
     <option name="DEPLOY_APK_FROM_BUNDLE" value="false" />
@@ -56,6 +56,7 @@
     <option name="SKIP_ACTIVITY_VALIDATION" value="false" />
     <method v="2">
       <option name="Android.Gradle.BeforeRunTask" enabled="true" goal="" />
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="mockdialservice" run_configuration_type="AndroidRunConfigurationType" />
     </method>
   </configuration>
 </component>
