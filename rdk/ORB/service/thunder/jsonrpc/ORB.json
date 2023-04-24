@@ -7,10 +7,6 @@
     "class": "ORB",
     "description": "ORB JSON-RPC interface"
   },
-  "common":
-  {
-    "$ref": "common.json"
-  },
   "methods":
   {
     "SendKeyEvent":
@@ -59,7 +55,9 @@
       },
       "result":
       {
-        "$ref": "#/common/results/void"
+        "type": "null",
+        "default": null,
+        "description": "Always null"
       }
     }
   }
