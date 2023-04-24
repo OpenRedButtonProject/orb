@@ -19,7 +19,8 @@
         android:theme="@style/Theme.hbbtv"
         android:usesCleartextTraffic="true"
         >
-        <activity android:name="org.orbtv.mockorbapp.MainActivity">
+        <activity android:name="org.orbtv.mockorbapp.MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
