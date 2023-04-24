@@ -83,7 +83,7 @@ hbbtv.objects.BroadcastObserver = (function() {
 
    function onMediaObjectEvent(e) {
       const p = privates.get(this);
-      if (e.state === this.PLAY_STATE_STOPPED) {
+      if (e.state === this.PLAY_STATE_STOPPED || e.state === this.PLAY_STATE_UNREALIZED) {
          p.eventTarget.dispatchEvent(new Event("Error"));
       } else {
          const event = new Event("MediaUpdated");
