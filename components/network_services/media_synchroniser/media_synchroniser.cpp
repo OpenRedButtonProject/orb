@@ -573,11 +573,16 @@ bool MediaSynchroniser::startTimelineMonitoring(const std::string &timelineSelec
                     }
                     else
                     {
-                        LOG(LOG_INFO,
-                            "Awaiting call to setTimelineAvailability for timeline '%s'.\n",
-                            timelineSelector.c_str());
-                        // addTimeline(timelineSelector);
-                        // m_mediaSyncCallback->dispatchTimelineAvailableEvent(timelineSelector);
+                        if (timelineSelector.compare(timelineSelector.length() - 4, 4, ":pts") == 0)
+                        {
+                            addTimeline(timelineSelector);
+                        }
+                        else
+                        {
+                            LOG(LOG_INFO,
+                                "Awaiting call to setTimelineAvailability for timeline '%s'.\n",
+                                timelineSelector.c_str());
+                        }
                     }
                 }
                 else
@@ -717,6 +722,7 @@ void MediaSynchroniser::addTimeline(const std::string &timelineSelector)
                     {
                         setContentTimeAndSpeed(timelineSelector,
                             m_mediaSyncCallback->getCurrentPtsTime(), 1);
+                        m_mediaSyncCallback->dispatchTimelineAvailableEvent(timelineSelector);
                     }
 
                     updateAllCIIClients();

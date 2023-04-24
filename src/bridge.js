@@ -1341,12 +1341,15 @@ hbbtv.bridge.mediaSync = (function() {
      * @memberof bridge.mediaSync#
      */
     exported.setContentTimeAndSpeed = function(id, timelineSelector, contentTime, speed) {
-        hbbtv.native.request('MediaSynchroniser.setContentTimeAndSpeed', {
-            id: id,
-            timelineSelector: timelineSelector,
-            contentTime: contentTime,
-            speed: speed,
-        });
+        const re = new RegExp(/:temi:|:pts$/);
+        if (!re.test(timelineSelector)) {
+            hbbtv.native.request('MediaSynchroniser.setContentTimeAndSpeed', {
+                id: id,
+                timelineSelector: timelineSelector,
+                contentTime: contentTime,
+                speed: speed,
+            });
+        }
     };
 
     /**
@@ -1380,13 +1383,17 @@ hbbtv.bridge.mediaSync = (function() {
      * @memberof bridge.mediaSync#
      */
     exported.setTimelineAvailability = function(id, timelineSelector, isAvailable, ticks, speed) {
-        return hbbtv.native.request('MediaSynchroniser.setTimelineAvailability', {
-            id: id,
-            timelineSelector: timelineSelector,
-            isAvailable: isAvailable,
-            ticks: ticks || 0,
-            speed: speed || 0,
-        }).result;
+        const re = new RegExp(/:temi:|:pts$/);
+        if (!re.test(timelineSelector)) {
+            return hbbtv.native.request('MediaSynchroniser.setTimelineAvailability', {
+                id: id,
+                timelineSelector: timelineSelector,
+                isAvailable: isAvailable,
+                ticks: ticks || 0,
+                speed: speed || 0,
+            }).result;
+        }
+        return false;
     };
 
     return exported;

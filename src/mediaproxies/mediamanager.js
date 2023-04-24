@@ -337,7 +337,7 @@ hbbtv.mediaManager = (function() {
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, evt);
         });
 
-        const propsUpdateEvents = ['loadeddata', 'waiting', 'loadedmetadata', 'ended'];
+        const propsUpdateEvents = ['loadeddata', 'waiting', 'loadedmetadata', 'ended', 'playing'];
         for (const evt of propsUpdateEvents) {
             media.addEventListener(evt, propsUpdateCallback);
         }

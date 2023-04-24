@@ -85,7 +85,6 @@ hbbtv.objects.MediaSynchroniser = (function() {
             dispatchErrorEvent.call(this, 15, null); // unavailable/unsupported timeline selector (permanent)
         } else {
             function refreshContentId() {
-                p.contentId = mediaObject.src;
                 let params = [];
                 return mediaObject
                     .orb_getCurrentPeriod()
@@ -96,7 +95,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
                             }
                             if (curPeriod.ciAncillaryData) {
                                 params.push(
-                                    'period_ci_ancillary=' + curPeriod.ciAncillaryData.toString()
+                                    'period_ci_ancillary=' + curPeriod.ciAncillaryData.__text
                                 );
                             }
                         }
@@ -108,11 +107,45 @@ hbbtv.objects.MediaSynchroniser = (function() {
                         }
                     })
                     .finally(() => {
+                        p.contentId = mediaObject.src;
                         if (params.length > 0) {
                             p.contentId += '#' + params.join('&');
                         }
                     });
             }
+
+            p.timelineUnavailableHandler = (e) => {
+                console.log(
+                    "MediaSynchroniser: Timeline with selector '" +
+                    e.timelineSelector +
+                    "' is unavailable."
+                );
+                if (
+                    e.timelineSelector === timelineSelector &&
+                    setToPermanentErrorState.call(this)
+                ) {
+                    dispatchErrorEvent.call(this, 15, mediaObject); // unsupported timeline selector (permanent)
+                }
+            };
+
+            p.timelineAvailableHandler = (e) => {
+                console.log(
+                    "MediaSynchroniser: Timeline with selector '" +
+                    e.timeline.timelineSelector +
+                    "' is now available."
+                );
+                if (e.timeline.timelineSelector === timelineSelector) {
+                    if (p.mediaObserver) {
+                        p.mediaObserver.timeline = e.timeline;
+                    }
+                    if (!p.synchroniserInitialised) {
+                        p.synchroniserInitialised = true;
+                        dispatchEvent.call(this, 'SynchroniserInitialised');
+                    }
+                }
+            };
+            hbbtv.bridge.addWeakEventListener('TimelineUnavailable', p.timelineUnavailableHandler);
+            hbbtv.bridge.addWeakEventListener('TimelineAvailable', p.timelineAvailableHandler);
 
             if (lastMediaSync && !privates.get(lastMediaSync).inPermanentErrorState) {
                 // invalidate previously initilised media synchroniser
@@ -125,7 +158,10 @@ hbbtv.objects.MediaSynchroniser = (function() {
             lastMediaSync = this;
 
             if (isBroadcast) {
-                if (mediaObject.playState === mediaObject.PLAY_STATE_UNREALIZED) {
+                if (
+                    mediaObject.playState ===
+                    hbbtv.objects.BroadcastObserver.prototype.PLAY_STATE_UNREALIZED
+                ) {
                     errorHandler();
                     return;
                 }
@@ -145,34 +181,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
                 );
             }
 
-            dispatchEvent.call(this, 'SynchroniserInitialised');
-
             if (p.mediaObserver.start()) {
-                p.timelineUnavailableHandler = (e) => {
-                    console.log(
-                        "MediaSynchroniser: Timeline with selector '" +
-                        e.timelineSelector +
-                        "' is unavailable."
-                    );
-                    if (
-                        e.timelineSelector === timelineSelector &&
-                        setToPermanentErrorState.call(this)
-                    ) {
-                        dispatchErrorEvent.call(this, 15, mediaObject); // unsupported timeline selector (permanent)
-                    }
-                };
-
-                p.timelineAvailableHandler = (e) => {
-                    console.log(
-                        "MediaSynchroniser: Timeline with selector '" +
-                        e.timeline.timelineSelector +
-                        "' is now available."
-                    );
-                    if (e.timeline.timelineSelector === timelineSelector) {
-                        p.mediaObserver.timeline = e.timeline;
-                    }
-                };
-
                 let relIndex = timelineSelector.indexOf(':rel:');
                 let curPeriod = undefined;
                 let timelines = {};
@@ -191,10 +200,8 @@ hbbtv.objects.MediaSynchroniser = (function() {
                                 'MediaSynchroniser: DASH period id changed from ' +
                                 curPeriod +
                                 ' to ' +
-                                e.data.id +
-                                '. Stopping timeline monitoring.'
+                                e.data.id
                             );
-
                             hbbtv.bridge.mediaSync.setTimelineAvailability(
                                 p.id,
                                 timelines[curPeriod],
@@ -208,6 +215,8 @@ hbbtv.objects.MediaSynchroniser = (function() {
                             if (curPeriod) {
                                 if (timelines[curPeriod] !== currentTimelineSelector) {
                                     timelines[curPeriod] = currentTimelineSelector;
+                                    // in case timelineSelector of master media changes (i.e. period change)
+                                    timelineSelector = currentTimelineSelector;
                                     hbbtv.bridge.mediaSync.startTimelineMonitoring(
                                         p.id,
                                         currentTimelineSelector,
@@ -260,11 +269,6 @@ hbbtv.objects.MediaSynchroniser = (function() {
                     }
                 };
 
-                hbbtv.bridge.addWeakEventListener(
-                    'TimelineUnavailable',
-                    p.timelineUnavailableHandler
-                );
-                hbbtv.bridge.addWeakEventListener('TimelineAvailable', p.timelineAvailableHandler);
                 p.mediaObserver.addEventListener('MediaUpdated', mediaUpdatedHandler);
                 p.mediaObserver.addEventListener('Error', errorHandler);
 
@@ -306,7 +310,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
                             p.mediaObserver.timelineSpeedMultiplier
                         );
                     }
-                } else if (!timelineSelector.includes(':temi:')) {
+                } else {
                     hbbtv.bridge.mediaSync.setTimelineAvailability(
                         p.id,
                         timelineSelector,
@@ -451,45 +455,69 @@ hbbtv.objects.MediaSynchroniser = (function() {
 
     prototype.enableInterDeviceSync = function(callback) {
         const p = privates.get(this);
+        const thiz = this;
+
+        const enableInterDeviceSync = function() {
+            if (!p.inPermanentErrorState) {
+                if (typeof callback === 'function') {
+                    const cb = (e) => {
+                        hbbtv.bridge.removeWeakEventListener('InterDeviceSyncEnabled', cb);
+                        if (e.id == p.id) {
+                            callback();
+                        }
+                    };
+                    hbbtv.bridge.addWeakEventListener('InterDeviceSyncEnabled', cb);
+                }
+                hbbtv.bridge.mediaSync.enableInterDeviceSync(p.id);
+                console.log('MediaSynchroniser: Enabled inter-device synchronisation.');
+            }
+            thiz.removeEventListener('SynchroniserInitialised', enableInterDeviceSync);
+        };
 
         if (p.inPermanentErrorState) {
             dispatchErrorEvent.call(this, 13, null); // in permanent error state (transient)
         } else if (lastMediaSync !== this) {
             dispatchErrorEvent.call(this, 7, null); // not yet initialised (transient)
         } else {
-            if (typeof callback === 'function') {
-                const cb = (e) => {
-                    hbbtv.bridge.removeWeakEventListener('InterDeviceSyncEnabled', cb);
-                    if (e.id == p.id) {
-                        callback();
-                    }
-                };
-                hbbtv.bridge.addWeakEventListener('InterDeviceSyncEnabled', cb);
+            if (p.synchroniserInitialised) {
+                enableInterDeviceSync();
+            } else {
+                this.addEventListener('SynchroniserInitialised', enableInterDeviceSync);
             }
-            hbbtv.bridge.mediaSync.enableInterDeviceSync(p.id);
-            console.log('MediaSynchroniser: Enabled inter-device synchronisation.');
         }
     };
 
     prototype.disableInterDeviceSync = function(callback) {
         const p = privates.get(this);
+        const thiz = this;
+
+        const disableInterDeviceSync = function() {
+            if (!p.inPermanentErrorState) {
+                if (typeof callback === 'function') {
+                    const cb = (e) => {
+                        hbbtv.bridge.removeWeakEventListener('InterDeviceSyncDisabled', cb);
+                        if (e.id == p.id) {
+                            callback();
+                        }
+                    };
+                    hbbtv.bridge.addWeakEventListener('InterDeviceSyncDisabled', cb);
+                }
+                hbbtv.bridge.mediaSync.disableInterDeviceSync(p.id);
+                console.log('MediaSynchroniser: Disabled inter-device synchronisation.');
+            }
+            thiz.removeEventListener('SynchroniserInitialised', disableInterDeviceSync);
+        };
 
         if (p.inPermanentErrorState) {
             dispatchErrorEvent.call(this, 13, null); // in permanent error state (transient)
         } else if (lastMediaSync !== this) {
             dispatchErrorEvent.call(this, 7, null); // not yet initialised (transient)
         } else {
-            if (typeof callback === 'function') {
-                const cb = (e) => {
-                    hbbtv.bridge.removeWeakEventListener('InterDeviceSyncDisabled', cb);
-                    if (e.id == p.id) {
-                        callback();
-                    }
-                };
-                hbbtv.bridge.addWeakEventListener('InterDeviceSyncDisabled', cb);
+            if (p.synchroniserInitialised) {
+                disableInterDeviceSync();
+            } else {
+                this.addEventListener('SynchroniserInitialised', disableInterDeviceSync);
             }
-            hbbtv.bridge.mediaSync.disableInterDeviceSync(p.id);
-            console.log('MediaSynchroniser: Disabled inter-device synchronisation.');
         }
     };
 

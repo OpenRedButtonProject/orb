@@ -355,7 +355,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
                     mediaObject.ended || mediaObject.paused ? 0 : mediaObject.playbackRate
                 );
             }
-        } else if (!timelineSelector.includes(':temi:')) {
+        } else {
             hbbtv.bridge.mediaSync.setTimelineAvailability(
                 mediaSyncId,
                 timelineSelector,
