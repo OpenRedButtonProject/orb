@@ -108,6 +108,28 @@ hbbtv.objects.MediaSynchroniser = (function() {
             });
          }
 
+         p.timelineUnavailableHandler = (e) => {
+            console.log("MediaSynchroniser: Timeline with selector '" + e.timelineSelector + "' is unavailable.");
+            if (e.timelineSelector === timelineSelector && setToPermanentErrorState.call(this)) {
+               dispatchErrorEvent.call(this, 15, mediaObject); // unsupported timeline selector (permanent)
+            }
+         };
+
+         p.timelineAvailableHandler = (e) => {
+            console.log("MediaSynchroniser: Timeline with selector '" + e.timeline.timelineSelector + "' is now available.");
+            if (e.timeline.timelineSelector === timelineSelector) {
+               if (p.mediaObserver) {
+                  p.mediaObserver.timeline = e.timeline;
+               }
+               if (!p.synchroniserInitialised) {
+                  p.synchroniserInitialised = true;
+                  dispatchEvent.call(this, "SynchroniserInitialised");
+               }
+            }
+         };
+         hbbtv.bridge.addWeakEventListener("TimelineUnavailable", p.timelineUnavailableHandler);
+         hbbtv.bridge.addWeakEventListener("TimelineAvailable", p.timelineAvailableHandler);
+
          if (lastMediaSync && !privates.get(lastMediaSync).inPermanentErrorState) {
             // invalidate previously initilised media synchroniser
             setToPermanentErrorState.call(lastMediaSync);
@@ -131,23 +153,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
             hbbtv.bridge.mediaSync.updateCssCiiProperties(p.id, p.contentId, mediaObject.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA ? "okay" : "transitioning", "final", mrsUrl);
          }
 
-         p.synchroniserInitialised = true;
-         dispatchEvent.call(this, "SynchroniserInitialised");
-
          if (p.mediaObserver.start()) {
-            p.timelineUnavailableHandler = (e) => {
-               console.log("MediaSynchroniser: Timeline with selector '" + e.timelineSelector + "' is unavailable.");
-               if (e.timelineSelector === timelineSelector && setToPermanentErrorState.call(this)) {
-                  dispatchErrorEvent.call(this, 15, mediaObject); // unsupported timeline selector (permanent)
-               }
-            };
-
-            p.timelineAvailableHandler = (e) => {
-               console.log("MediaSynchroniser: Timeline with selector '" + e.timeline.timelineSelector + "' is now available.");
-               if (e.timeline.timelineSelector === timelineSelector) {
-                  p.mediaObserver.timeline = e.timeline;
-               }
-            };
 
             let relIndex = timelineSelector.indexOf(":rel:");
             let curPeriod = undefined;
@@ -198,8 +204,6 @@ hbbtv.objects.MediaSynchroniser = (function() {
                }
             }
 
-            hbbtv.bridge.addWeakEventListener("TimelineUnavailable", p.timelineUnavailableHandler);
-            hbbtv.bridge.addWeakEventListener("TimelineAvailable", p.timelineAvailableHandler);
             p.mediaObserver.addEventListener("MediaUpdated", mediaUpdatedHandler);
             p.mediaObserver.addEventListener("Error", errorHandler);
 
