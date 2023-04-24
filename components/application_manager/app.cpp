@@ -16,59 +16,59 @@ App App::CreateAppFromUrl(const std::string &url)
 {
     App app;
 
-    app.base_url = url;
-    app.entry_url = url;
-    app.loaded_url = url;
+    app.baseUrl = url;
+    app.entryUrl = url;
+    app.loadedUrl = url;
 
-    app.protocol_id = 0;
-    app.control_code = 0;
-    app.org_id = 0;
-    app.app_id = 0;
+    app.protocolId = 0;
+    app.controlCode = 0;
+    app.orgId = 0;
+    app.appId = 0;
 
-    app.key_set_mask = 0;
+    app.keySetMask = 0;
 
-    app.is_trusted = false;
-    app.is_broadcast = false;
-    app.is_service_bound = false;
-    app.is_hidden = false;
+    app.isTrusted = false;
+    app.isBroadcast = false;
+    app.isServiceBound = false;
+    app.isHidden = false;
 
-    app.is_running = !app.entry_url.empty();
+    app.isRunning = !app.entryUrl.empty();
 
     return app;
 }
 
 App App::CreateAppFromAitDesc(const Ait::S_AIT_APP_DESC *desc,
-    const Utils::S_DVB_TRIPLET current_service,
-    bool is_network_available,
-    const std::string &url_params,
-    bool is_broadcast,
-    bool is_trusted)
+    const Utils::S_DVB_TRIPLET currentService,
+    bool isNetworkAvailable,
+    const std::string &urlParams,
+    bool isBroadcast,
+    bool isTrusted)
 {
     App app;
 
-    app.base_url = Ait::GetBaseURL(desc, current_service, is_network_available, &app.protocol_id);
+    app.baseUrl = Ait::GetBaseURL(desc, currentService, isNetworkAvailable, &app.protocolId);
 
-    app.entry_url = Utils::MergeUrlParams(app.base_url, desc->location, url_params);
-    app.loaded_url = app.entry_url;
+    app.entryUrl = Utils::MergeUrlParams(app.baseUrl, desc->location, urlParams);
+    app.loadedUrl = app.entryUrl;
 
-    app.control_code = desc->control_code;
-    app.org_id = desc->org_id;
-    app.app_id = desc->app_id;
+    app.controlCode = desc->controlCode;
+    app.orgId = desc->orgId;
+    app.appId = desc->appId;
 
-    app.key_set_mask = 0;
+    app.keySetMask = 0;
 
-    app.is_trusted = is_trusted;
-    app.is_broadcast = is_broadcast;
-    app.is_service_bound = desc->app_desc.service_bound;
-    app.is_hidden = is_broadcast; // Broadcast-related applications need to call show.
-    app.parental_ratings = desc->parental_ratings;
+    app.isTrusted = isTrusted;
+    app.isBroadcast = isBroadcast;
+    app.isServiceBound = desc->appDesc.serviceBound;
+    app.isHidden = isBroadcast; // Broadcast-related applications need to call show.
+    app.parentalRatings = desc->parentalRatings;
 
     /* AUTOSTARTED apps are activated when they receive a key event */
-    app.is_activated = !(desc->control_code == Ait::APP_CTL_AUTOSTART);
+    app.isActivated = !(desc->controlCode == Ait::APP_CTL_AUTOSTART);
 
-    for (uint8_t i = 0; i < desc->app_name.num_langs; i++)
+    for (uint8_t i = 0; i < desc->appName.numLangs; i++)
     {
-        app.names[desc->app_name.names[i].lang_code] = desc->app_name.names[i].name;
+        app.names[desc->appName.names[i].langCode] = desc->appName.names[i].name;
     }
 
     return app;

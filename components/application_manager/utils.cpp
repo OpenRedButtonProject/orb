@@ -28,9 +28,9 @@
 Utils::S_DVB_TRIPLET Utils::MakeInvalidDvbTriplet()
 {
     return {
-        .original_network_id = INVALID_ID,
-        .transport_stream_id = INVALID_ID,
-        .service_id = INVALID_ID,
+        .originalNetworkId = INVALID_ID,
+        .transportStreamId = INVALID_ID,
+        .serviceId = INVALID_ID,
     };
 }
 
@@ -41,43 +41,43 @@ Utils::S_DVB_TRIPLET Utils::MakeInvalidDvbTriplet()
  */
 bool Utils::IsInvalidDvbTriplet(const S_DVB_TRIPLET &triplet)
 {
-    return triplet.original_network_id == INVALID_ID ||
-           triplet.transport_stream_id == INVALID_ID ||
-           triplet.service_id == INVALID_ID;
+    return triplet.originalNetworkId == INVALID_ID ||
+           triplet.transportStreamId == INVALID_ID ||
+           triplet.serviceId == INVALID_ID;
 }
 
 /**
  *
  * @param url
- * @param current_service
+ * @param currentService
  * @return
  */
 Utils::CreateLocatorInfo Utils::ParseCreateLocatorInfo(const std::string &url, const
-    Utils::S_DVB_TRIPLET &current_service)
+    Utils::S_DVB_TRIPLET &currentService)
 {
-    Utils::CreateLocatorInfo url_info;
-    url_info.parameters = url;
-    url_info.org_id = 0;
-    url_info.app_id = 0;
-    url_info.type = CreateLocatorType::UNKNOWN_LOCATOR;
+    Utils::CreateLocatorInfo urlInfo;
+    urlInfo.parameters = url;
+    urlInfo.orgId = 0;
+    urlInfo.appId = 0;
+    urlInfo.type = CreateLocatorType::UNKNOWN_LOCATOR;
 
     if (url.substr(0, 6) == "dvb://")
     {
         // Check if the URL is an Application Locator (TS 102 851)
-        bool is_ait_filter_current_service = false;
-        std::string url_parameters;
+        bool isAitFilterCurrentService = false;
+        std::string urlParameters;
         size_t pos = url.find(".ait/");
         if (pos != std::string::npos)
         {
-            url_parameters = url.substr(pos + 5);
+            urlParameters = url.substr(pos + 5);
 
             // Check if the ait filter (the string between dvb:// and .ait/) is the current service
             std::string sub = url.substr(6, pos - 6);
             if (sub == "current")
             {
-                is_ait_filter_current_service = true;
+                isAitFilterCurrentService = true;
             }
-            else if (!IsInvalidDvbTriplet(current_service))
+            else if (!IsInvalidDvbTriplet(currentService))
             {
                 // original_network_id "." [ transport_stream_id ] "." service_id
                 pos = sub.find('.');
@@ -89,60 +89,60 @@ Utils::CreateLocatorInfo Utils::ParseCreateLocatorInfo(const std::string &url, c
                     std::string service_id = sub.substr(pos2 + 1);
                     try
                     {
-                        is_ait_filter_current_service =
+                        isAitFilterCurrentService =
                             (std::stoul(original_network_id, nullptr, 16)
-                             == current_service.original_network_id) &&
+                             == currentService.originalNetworkId) &&
                             ((transport_stream_id.empty()) ||
                              std::stoul(transport_stream_id, nullptr, 16)
-                             == current_service.transport_stream_id) &&
+                             == currentService.transportStreamId) &&
                             (std::stoul(service_id, nullptr, 16)
-                             == current_service.service_id);
+                             == currentService.serviceId);
                     }
                     catch (const std::exception &e)
                     {
-                        is_ait_filter_current_service = false;
+                        isAitFilterCurrentService = false;
                         LOG(LOG_DEBUG, "Could not parse onet/tsid/sid");
                     }
                 }
             }
         }
 
-        if (is_ait_filter_current_service)
+        if (isAitFilterCurrentService)
         {
             // Find query string or fragment remainder
-            pos = url_parameters.find('?');
+            pos = urlParameters.find('?');
             if (pos == std::string::npos)
             {
-                pos = url_parameters.find('#');
+                pos = urlParameters.find('#');
             }
-            url_info.parameters = "";
+            urlInfo.parameters = "";
             if (pos != std::string::npos)
             {
-                url_info.parameters = url_parameters.substr(pos);
-                url_parameters = url_parameters.substr(0, pos);
+                urlInfo.parameters = urlParameters.substr(pos);
+                urlParameters = urlParameters.substr(0, pos);
             }
 
             // Find AIT application parts (org_id "." app_id)
-            pos = url_parameters.find('.');
+            pos = urlParameters.find('.');
             if (pos != std::string::npos)
             {
-                std::string url_org_id = url_parameters.substr(0, pos);
-                std::string url_app_id = url_parameters.substr(pos + 1);
+                std::string url_org_id = urlParameters.substr(0, pos);
+                std::string url_app_id = urlParameters.substr(pos + 1);
                 try
                 {
-                    url_info.org_id = std::stoul(url_org_id, nullptr, 16);
-                    url_info.app_id = std::stoul(url_app_id, nullptr, 16);
-                    url_info.type = CreateLocatorType::AIT_APPLICATION_LOCATOR;
+                    urlInfo.orgId = std::stoul(url_org_id, nullptr, 16);
+                    urlInfo.appId = std::stoul(url_app_id, nullptr, 16);
+                    urlInfo.type = CreateLocatorType::AIT_APPLICATION_LOCATOR;
                 }
                 catch (const std::exception &e)
                 {
-                    url_info.org_id = 0;
-                    url_info.app_id = 0;
-                    url_info.type = CreateLocatorType::UNKNOWN_LOCATOR;
+                    urlInfo.orgId = 0;
+                    urlInfo.appId = 0;
+                    urlInfo.type = CreateLocatorType::UNKNOWN_LOCATOR;
                 }
             }
 
-            if (url_info.type != CreateLocatorType::AIT_APPLICATION_LOCATOR)
+            if (urlInfo.type != CreateLocatorType::AIT_APPLICATION_LOCATOR)
             {
                 LOG(LOG_DEBUG, "Unknown URL: %s (could not parse org_id/app_id)", url.c_str());
             }
@@ -154,15 +154,15 @@ Utils::CreateLocatorInfo Utils::ParseCreateLocatorInfo(const std::string &url, c
     }
     else if (url.substr(0, 7) == "http://" || url.substr(0, 8) == "https://")
     {
-        url_info.type = CreateLocatorType::ENTRY_PAGE_OR_XML_AIT_LOCATOR;
+        urlInfo.type = CreateLocatorType::ENTRY_PAGE_OR_XML_AIT_LOCATOR;
     }
     else
     {
-        url_info.type = CreateLocatorType::UNKNOWN_LOCATOR;
+        urlInfo.type = CreateLocatorType::UNKNOWN_LOCATOR;
         LOG(LOG_DEBUG, "Unknown URL: %s (unknown scheme)", url.c_str());
     }
 
-    return url_info;
+    return urlInfo;
 }
 
 /**
@@ -193,15 +193,15 @@ bool Utils::CompareUrls(const std::string &url1, const std::string &url2)
 
 /**
  * Returns true if the specified document is contained in the specified application base URL
- * @param document_url
- * @param app_base_url
+ * @param documentUrl
+ * @param appBaseUrl
  * @return
  */
-bool Utils::IsPartOf(const std::string &document_url, const std::string &app_base_url)
+bool Utils::IsPartOf(const std::string &documentUrl, const std::string &appBaseUrl)
 {
     uint32_t len2;
-    std::string str1 = document_url;
-    std::string str2 = app_base_url;
+    std::string str1 = documentUrl;
+    std::string str2 = appBaseUrl;
 
     str1.erase(str1.find_last_not_of(" \t\n\r\f\v/") + 1);
     str2.erase(str2.find_last_not_of(" \t\n\r\f\v/") + 1);
@@ -225,16 +225,16 @@ std::string Utils::StrGetUrlOrigin(const std::string &url)
 {
     // TODO(C++-ize) This seems overly complex? We do something similar in Java
     uint8_t state = 0; // 0: scheme, 1: '://', 2: domain, 3: port, 4: end, 5: error
-    uint32_t count_chars = 0;
+    uint32_t countChars = 0;
     const char *ptr;
     std::string retval;
-    uint8_t port_str[6] = {0, 0, 0, 0, 0, 0};
-    uint8_t scheme_str[6] = {0, 0, 0, 0, 0, 0};
-    uint8_t port_str_index = 0, scheme_str_index = 0;
+    uint8_t portStr[6] = {0, 0, 0, 0, 0, 0};
+    uint8_t schemeStr[6] = {0, 0, 0, 0, 0, 0};
+    uint8_t portStrIndex = 0, scheme_str_index = 0;
 
     ptr = url.c_str();
     int length = url.length();
-    while ((count_chars < length) && (state < 4))
+    while ((countChars < length) && (state < 4))
     {
         switch (state)
         {
@@ -247,7 +247,7 @@ std::string Utils::StrGetUrlOrigin(const std::string &url)
                 {
                     if (scheme_str_index < 6)
                     {
-                        scheme_str[scheme_str_index++] = *ptr;
+                        schemeStr[scheme_str_index++] = *ptr;
                     }
                     else
                     {
@@ -255,7 +255,7 @@ std::string Utils::StrGetUrlOrigin(const std::string &url)
                         LOG(LOG_DEBUG, "Error parsing URL %s", url.c_str());
                     }
                 }
-                count_chars++;
+                countChars++;
                 ptr++;
                 break;
             }
@@ -264,7 +264,7 @@ std::string Utils::StrGetUrlOrigin(const std::string &url)
                 {
                     state = 2;
                     ptr += 2;
-                    count_chars += 2;
+                    countChars += 2;
                 }
                 else
                 {
@@ -277,7 +277,7 @@ std::string Utils::StrGetUrlOrigin(const std::string &url)
                 if (*ptr == ':')
                 {
                     state = 3;
-                    count_chars++;
+                    countChars++;
                     ptr++;
                 }
                 else if (*ptr == '/')
@@ -287,7 +287,7 @@ std::string Utils::StrGetUrlOrigin(const std::string &url)
                 }
                 else
                 {
-                    count_chars++;
+                    countChars++;
                     ptr++;
                 }
                 break;
@@ -297,15 +297,15 @@ std::string Utils::StrGetUrlOrigin(const std::string &url)
                 {
                     state = 4;
                 }
-                else if (port_str_index > 5)
+                else if (portStrIndex > 5)
                 {
                     state = 5;
                     LOG(LOG_DEBUG, "Error parsing URL %s", url.c_str());
                 }
                 else
                 {
-                    port_str[port_str_index++] = *ptr;
-                    count_chars++;
+                    portStr[portStrIndex++] = *ptr;
+                    countChars++;
                     ptr++;
                 }
 
@@ -314,25 +314,25 @@ std::string Utils::StrGetUrlOrigin(const std::string &url)
         }
     }
 
-    if (port_str_index == 0)
+    if (portStrIndex == 0)
     {
-        if (strncmp((char *)scheme_str, "https", 5) == 0)
+        if (strncmp((char *)schemeStr, "https", 5) == 0)
         {
-            strcpy((char *)port_str, "443");
+            strcpy((char *)portStr, "443");
         }
         else
         {
-            strcpy((char *)port_str, "80");
+            strcpy((char *)portStr, "80");
         }
     }
 
-    if ((count_chars > 0) && (count_chars <= length) && (state != 5))
+    if ((countChars > 0) && (countChars <= length) && (state != 5))
     {
-        retval = url.substr(0, count_chars);
-        if (port_str_index == 0)
+        retval = url.substr(0, countChars);
+        if (portStrIndex == 0)
         {
             char buffer[50];
-            sprintf(buffer, ":%s", (char *)port_str);
+            sprintf(buffer, ":%s", (char *)portStr);
             retval += buffer;
         }
     }
@@ -343,21 +343,21 @@ std::string Utils::StrGetUrlOrigin(const std::string &url)
 /**
  * Returns true if url is within app boundaries
  * @param url
- * @param app_uri
- * @param app_boundaries
+ * @param appUri
+ * @param appBoundaries
  * @param num_boundaries
  * @return
  */
-bool Utils::CheckBoundaries(const std::string &url, const std::string &app_uri,
-    const std::vector<std::string> &app_boundaries)
+bool Utils::CheckBoundaries(const std::string &url, const std::string &appUri,
+    const std::vector<std::string> &appBoundaries)
 {
     bool retval;
     std::string origin1 = Utils::StrGetUrlOrigin(url);
-    std::string origin2 = Utils::StrGetUrlOrigin(app_uri);
+    std::string origin2 = Utils::StrGetUrlOrigin(appUri);
     retval = Utils::CompareUrls(origin1, origin2);
     if (!retval)
     {
-        for (const auto & app_boundary : app_boundaries)
+        for (const auto & app_boundary : appBoundaries)
         {
             origin2 = Utils::StrGetUrlOrigin(app_boundary);
             retval = Utils::CompareUrls(origin1, origin2);

@@ -34,16 +34,16 @@ public:
 
     typedef struct
     {
-        uint16_t original_network_id;
-        uint16_t transport_stream_id;
-        uint16_t service_id;
+        uint16_t originalNetworkId;
+        uint16_t transportStreamId;
+        uint16_t serviceId;
     } S_DVB_TRIPLET;
 
     struct CreateLocatorInfo
     {
         CreateLocatorType type;
-        uint32_t org_id;
-        uint16_t app_id;
+        uint32_t orgId;
+        uint16_t appId;
         std::string parameters;
     };
 
@@ -73,11 +73,11 @@ public:
     /**
      *
      * @param url
-     * @param current_service
+     * @param currentService
      * @return
      */
     static Utils::CreateLocatorInfo ParseCreateLocatorInfo(const std::string &url, const
-        Utils::S_DVB_TRIPLET &current_service);
+        Utils::S_DVB_TRIPLET &currentService);
 
     /**
      * Compares two URLs ignoring trailing '/' or string terminators
@@ -89,21 +89,21 @@ public:
 
     /**
      * Returns true if the specified document is contained in the specified application base URL
-     * @param document_url
-     * @param app_base_url
+     * @param documentUrl
+     * @param appBaseUrl
      * @return
      */
-    static bool IsPartOf(const std::string &document_url, const std::string &app_base_url);
+    static bool IsPartOf(const std::string &documentUrl, const std::string &appBaseUrl);
 
     /**
      * Returns true if url is within app boundaries
      * @param url
-     * @param app_uri
-     * @param app_boundaries
+     * @param appUri
+     * @param appBoundaries
      * @return
      */
-    static bool CheckBoundaries(const std::string &url, const std::string& app_uri, const
-        std::vector<std::string>& app_boundaries);
+    static bool CheckBoundaries(const std::string &url, const std::string& appUri, const
+        std::vector<std::string>& appBoundaries);
 
     /**
      *
@@ -118,9 +118,9 @@ public:
     class Timeout {
 public:
         Timeout(std::function<void(void)> callback, std::chrono::milliseconds timeout) :
-            callback_(callback),
-            timeout_(timeout),
-            stopped_(true)
+            m_callback(callback),
+            m_timeout(timeout),
+            m_stopped(true)
         {
         }
 
@@ -136,40 +136,40 @@ public:
         void start()
         {
             stop();
-            stopped_ = false;
-            thread_ = std::thread([&]
+            m_stopped = false;
+            m_thread = std::thread([&]
             {
-                std::unique_lock<std::mutex> lock(cvm_);
-                if (!cv_.wait_for(lock, timeout_, [&] {
-                    return stopped_;
+                std::unique_lock<std::mutex> lock(m_cvm);
+                if (!m_cv.wait_for(lock, m_timeout, [&] {
+                    return m_stopped;
                 }))
                 {
-                    callback_();
+                    m_callback();
                 }
             });
         }
 
         void stop()
         {
-            if (thread_.joinable())
+            if (m_thread.joinable())
             {
-                if (!stopped_)
+                if (!m_stopped)
                 {
-                    std::lock_guard<std::mutex> lock(cvm_);
-                    stopped_ = true;
+                    std::lock_guard<std::mutex> lock(m_cvm);
+                    m_stopped = true;
                 }
-                cv_.notify_all();
-                thread_.join();
+                m_cv.notify_all();
+                m_thread.join();
             }
         }
 
 private:
-        std::function<void(void)> callback_;
-        std::chrono::milliseconds timeout_;
-        bool stopped_;
-        std::thread thread_;
-        std::condition_variable cv_;
-        std::mutex cvm_;
+        std::function<void(void)> m_callback;
+        std::chrono::milliseconds m_timeout;
+        bool m_stopped;
+        std::thread m_thread;
+        std::condition_variable m_cv;
+        std::mutex m_cvm;
     };
 };
 

@@ -185,10 +185,10 @@ static xmlChar* XmlGetPropertyContent(xmlNodePtr node, const xmlChar *property)
 static void XmlAllocApplication(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
 {
     uint32_t length = 0;
-    uint8_t num_langs = 0, num_transports = 0;
+    uint8_t num_langs = 0, numTransports = 0;
     const xmlChar *cptr;
     xmlChar *dptr;
-    Ait::S_LANG_STRING *lang_ptr;
+    Ait::S_LANG_STRING *langPtr;
 
     while (node != nullptr)
     {
@@ -211,15 +211,15 @@ static void XmlAllocApplication(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
                 cptr += 11;
                 if (xmlStrEqual(cptr, (const xmlChar *)"Transport"))
                 {
-                    num_transports++;
+                    numTransports++;
                 }
             }
         }
         node = node->next;
     }
-    app_ptr->app_name.num_langs = num_langs;
-    app_ptr->app_name.names.resize(num_langs);
-    app_ptr->num_transports = num_transports;
+    app_ptr->appName.numLangs = num_langs;
+    app_ptr->appName.names.resize(num_langs);
+    app_ptr->numTransports = numTransports;
 }
 
 /**
@@ -231,19 +231,19 @@ static void XmlParseAppName(xmlNodePtr node, Ait::S_APP_NAME_DESC *app_name)
 {
     xmlChar *dptr;
     uint8_t index = 0;
-    for (; index < app_name->num_langs; index++)
+    for (; index < app_name->numLangs; index++)
     {
-        if (!app_name->names[index].lang_code)
+        if (!app_name->names[index].langCode)
         {
             break;
         }
     }
-    if (index < app_name->num_langs)
+    if (index < app_name->numLangs)
     {
         dptr = NODE_PROPERTY(node, (const xmlChar *)"Language");
         if (dptr)
         {
-            app_name->names[index].lang_code = (*dptr << 16u) + (*(dptr + 1) << 8u) + *(dptr + 2);
+            app_name->names[index].langCode = (*dptr << 16u) + (*(dptr + 1) << 8u) + *(dptr + 2);
             NODE_PROP_FREE(dptr)
         }
         NODE_CONTENT_GET(node, dptr);
@@ -265,7 +265,6 @@ static void XmlParseAppId(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
 {
     const xmlChar *cptr;
 
-
     node = node->xmlChildrenNode;
     while (node != nullptr)
     {
@@ -274,11 +273,11 @@ static void XmlParseAppId(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
             cptr = node->name;
             if (xmlStrEqual(cptr, (const xmlChar *)"orgId"))
             {
-                app_ptr->org_id = XmlGetContentInt(node);
+                app_ptr->orgId = XmlGetContentInt(node);
             }
             else if (xmlStrEqual(cptr, (const xmlChar *)"appId"))
             {
-                app_ptr->app_id = (uint16_t)XmlGetContentInt(node);
+                app_ptr->appId = (uint16_t)XmlGetContentInt(node);
             }
         }
         node = node->next;
@@ -391,7 +390,7 @@ static void XmlParseAppDescType(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
                     /* Only recognise mime type for hbbtv ... */
                     if (xmlStrEqual(cptr, (const xmlChar *)"application/vnd.hbbtv.xhtml+xml"))
                     {
-                        app_ptr->xml_type = Ait::XML_TYP_OTHER;
+                        app_ptr->xmlType = Ait::XML_TYP_OTHER;
                     }
                     NODE_CONTENT_RELEASE();
                 }
@@ -403,11 +402,11 @@ static void XmlParseAppDescType(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
                 {
                     if (xmlStrEqual(cptr, (const xmlChar *)"DVB-J"))
                     {
-                        app_ptr->xml_type = Ait::XML_TYP_DVB_J;
+                        app_ptr->xmlType = Ait::XML_TYP_DVB_J;
                     }
                     else if (xmlStrEqual(cptr, (const xmlChar *)"DVB-HTML"))
                     {
-                        app_ptr->xml_type = Ait::XML_TYP_DVB_HTML;
+                        app_ptr->xmlType = Ait::XML_TYP_DVB_HTML;
                     }
                     NODE_CONTENT_RELEASE();
                 }
@@ -425,7 +424,7 @@ static void XmlParseAppDescType(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
 static void XmlParseAppDescProfile(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
 {
     const xmlChar *cptr;
-    Ait::S_APP_PROFILE app_profile;
+    Ait::S_APP_PROFILE appProfile;
 
     node = node->xmlChildrenNode;
     while (node != nullptr)
@@ -435,28 +434,28 @@ static void XmlParseAppDescProfile(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr
             cptr = node->name;
             if (xmlStrEqual(cptr, (const xmlChar *)"profile"))
             {
-                app_profile.app_profile = (uint16_t)XmlGetContentHex(node, 4);
+                appProfile.appProfile = (uint16_t)XmlGetContentHex(node, 4);
             }
             else if (!xmlStrncmp(cptr, (const xmlChar *)"versionM", 8))
             {
                 cptr += 8;
                 if (xmlStrEqual(cptr, (const xmlChar *)"ajor"))
                 {
-                    app_profile.version_major = (uint8_t)XmlGetContentHex(node, 2);
+                    appProfile.versionMajor = (uint8_t)XmlGetContentHex(node, 2);
                 }
                 else if (xmlStrEqual(cptr, (const xmlChar *)"inor"))
                 {
-                    app_profile.version_minor = (uint8_t)XmlGetContentHex(node, 2);
+                    appProfile.versionMinor = (uint8_t)XmlGetContentHex(node, 2);
                 }
                 else if (xmlStrEqual(cptr, (const xmlChar *)"icro"))
                 {
-                    app_profile.version_micro = (uint8_t)XmlGetContentHex(node, 2);
+                    appProfile.versionMicro = (uint8_t)XmlGetContentHex(node, 2);
                 }
             }
         }
         node = node->next;
     }
-    app_ptr->app_desc.app_profiles.push_back(app_profile);
+    app_ptr->appDesc.appProfiles.push_back(appProfile);
 }
 
 /**
@@ -469,7 +468,7 @@ static void XmlParseAppDesc(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
     const xmlChar *cptr;
     xmlChar *dptr;
     /* TS 102809, sec 5.4.4.4 states that service_bound default is true */
-    app_ptr->app_desc.service_bound = true;
+    app_ptr->appDesc.serviceBound = true;
 
     node = node->xmlChildrenNode;
     while (node != nullptr)
@@ -483,23 +482,23 @@ static void XmlParseAppDesc(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
             }
             else if (xmlStrEqual(cptr, (const xmlChar *)"controlCode"))
             {
-                app_ptr->control_code = (uint8_t)XmlGetContentEnumControl(node);
+                app_ptr->controlCode = (uint8_t)XmlGetContentEnumControl(node);
             }
             else if (xmlStrEqual(cptr, (const xmlChar *)"visibility"))
             {
-                app_ptr->app_desc.visibility = XmlGetContentVisibility(node);
+                app_ptr->appDesc.visibility = XmlGetContentVisibility(node);
             }
             else if (xmlStrEqual(cptr, (const xmlChar *)"serviceBound"))
             {
-                app_ptr->app_desc.service_bound = XmlGetContentBool(node);
+                app_ptr->appDesc.serviceBound = XmlGetContentBool(node);
             }
             else if (xmlStrEqual(cptr, (const xmlChar *)"priority"))
             {
-                app_ptr->app_desc.priority = (uint8_t)XmlGetContentHex(node, 2);
+                app_ptr->appDesc.priority = (uint8_t)XmlGetContentHex(node, 2);
             }
             else if (xmlStrEqual(cptr, (const xmlChar *)"version"))
             {
-                app_ptr->xml_version = (uint8_t)XmlGetContentInt(node);
+                app_ptr->xmlVersion = (uint8_t)XmlGetContentInt(node);
             }
             else if (xmlStrEqual(cptr, (const xmlChar *)"mhpVersion"))
             {
@@ -528,7 +527,7 @@ static void XmlParseAppDesc(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
                     NODE_PROP_FREE(dptr)
                 }
                 pr.value = (uint8_t)XmlGetContentInt(node);
-                app_ptr->parental_ratings.push_back(pr);
+                app_ptr->parentalRatings.push_back(pr);
             }
         }
         node = node->next;
@@ -584,19 +583,19 @@ static void XmlParseDvbTriplet(xmlNodePtr node, Utils::S_DVB_TRIPLET *dvb)
     dptr = NODE_PROPERTY(node, (const xmlChar *)"OrigNetId");
     if (dptr)
     {
-        dvb->original_network_id = (uint16_t)XmlParseInt(dptr);
+        dvb->originalNetworkId = (uint16_t)XmlParseInt(dptr);
         NODE_PROP_FREE(dptr)
     }
     dptr = NODE_PROPERTY(node, (const xmlChar *)"TSId");
     if (dptr)
     {
-        dvb->transport_stream_id = (uint16_t)XmlParseInt(dptr);
+        dvb->transportStreamId = (uint16_t)XmlParseInt(dptr);
         NODE_PROP_FREE(dptr)
     }
     dptr = NODE_PROPERTY(node, (const xmlChar *)"ServiceId");
     if (dptr)
     {
-        dvb->service_id = (uint16_t)XmlParseInt(dptr);
+        dvb->serviceId = (uint16_t)XmlParseInt(dptr);
         NODE_PROP_FREE(dptr)
     }
 }
@@ -610,8 +609,8 @@ static void XmlParseAppTransport(xmlNodePtr node, Ait::S_TRANSPORT_PROTOCOL_DESC
 {
     const xmlChar *cptr;
     xmlChar *dptr;
-    uint16_t protocol_id = 0;
-    uint8_t i, free_index;
+    uint16_t protocolId = 0;
+    uint8_t i, freeIndex;
     Ait::S_TRANSPORT_PROTOCOL_DESC *trns_ptr;
 
     dptr = NODE_PROPERTY(node, (const xmlChar *)"type");
@@ -619,41 +618,41 @@ static void XmlParseAppTransport(xmlNodePtr node, Ait::S_TRANSPORT_PROTOCOL_DESC
     {
         if (xmlStrEqual(dptr, (const xmlChar *)"mhp:HTTPTransportType"))
         {
-            protocol_id = AIT_PROTOCOL_HTTP;
+            protocolId = AIT_PROTOCOL_HTTP;
         }
         else if (xmlStrEqual(dptr, (const xmlChar *)"mhp:OCTransportType"))
         {
-            protocol_id = AIT_PROTOCOL_OBJECT_CAROUSEL;
+            protocolId = AIT_PROTOCOL_OBJECT_CAROUSEL;
         }
         NODE_PROP_FREE(dptr)
     }
 
-    free_index = AIT_MAX_NUM_PROTOCOLS;
+    freeIndex = AIT_MAX_NUM_PROTOCOLS;
     for (i = 0; i < AIT_MAX_NUM_PROTOCOLS; i++)
     {
-        if (protocol_id == trns[i].protocol_id)
+        if (protocolId == trns[i].protocolId)
         {
             break;
         }
-        if ((trns[i].protocol_id == 0) && (free_index == AIT_MAX_NUM_PROTOCOLS))
+        if ((trns[i].protocolId == 0) && (freeIndex == AIT_MAX_NUM_PROTOCOLS))
         {
             /* Save the first free index to be used for the new protocol */
-            free_index = i;
+            freeIndex = i;
         }
     }
-    if (free_index == AIT_MAX_NUM_PROTOCOLS)
+    if (freeIndex == AIT_MAX_NUM_PROTOCOLS)
     {
-        LOG(LOG_ERROR, "No free slots for this protocol: %d", protocol_id);
+        LOG(LOG_ERROR, "No free slots for this protocol: %d", protocolId);
         i = AIT_MAX_NUM_PROTOCOLS;
     }
 
     if (i >= AIT_MAX_NUM_PROTOCOLS)
     {
-        trns_ptr = &(trns[free_index]);
-        trns_ptr->protocol_id = protocol_id;
+        trns_ptr = &(trns[freeIndex]);
+        trns_ptr->protocolId = protocolId;
 
         node = node->xmlChildrenNode;
-        switch (protocol_id)
+        switch (protocolId)
         {
             case AIT_PROTOCOL_HTTP:
                 // See TS 102 809, section 5.4.4.20
@@ -668,7 +667,7 @@ static void XmlParseAppTransport(xmlNodePtr node, Ait::S_TRANSPORT_PROTOCOL_DESC
                             NODE_CONTENT_GET(node, dptr);
                             if (dptr)
                             {
-                                trns_ptr->url.base_url = std::string(reinterpret_cast<char *>(dptr),
+                                trns_ptr->url.baseUrl = std::string(reinterpret_cast<char *>(dptr),
                                     xmlStrlen(dptr));
                                 NODE_CONTENT_RELEASE();
                             }
@@ -678,7 +677,7 @@ static void XmlParseAppTransport(xmlNodePtr node, Ait::S_TRANSPORT_PROTOCOL_DESC
                             NODE_CONTENT_GET(node, dptr);
                             if (dptr)
                             {
-                                trns_ptr->url.extension_urls.emplace_back(
+                                trns_ptr->url.extensionUrls.emplace_back(
                                     reinterpret_cast<char *>(dptr),
                                     xmlStrlen(dptr));
                                 NODE_CONTENT_RELEASE();
@@ -700,7 +699,7 @@ static void XmlParseAppTransport(xmlNodePtr node, Ait::S_TRANSPORT_PROTOCOL_DESC
                         if (xmlStrEqual(cptr, (const xmlChar *)"DvbTriplet"))
                         {
                             XmlParseDvbTriplet(node, &trns_ptr->oc.dvb);
-                            trns_ptr->oc.remote_connection = true;
+                            trns_ptr->oc.remoteConnection = true;
                         }
                         else if (xmlStrEqual(cptr, (const xmlChar *)"TextualId"))
                         {
@@ -711,8 +710,8 @@ static void XmlParseAppTransport(xmlNodePtr node, Ait::S_TRANSPORT_PROTOCOL_DESC
                             dptr = NODE_PROPERTY(node, (const xmlChar *)"ComponentTag");
                             if (dptr)
                             {
-                                trns_ptr->oc.component_tag = (uint8_t)XmlParseHex(dptr, 2);
-                                LOG(LOG_DEBUG, "ComponentTag=%x", trns_ptr->oc.component_tag);
+                                trns_ptr->oc.componentTag = (uint8_t)XmlParseHex(dptr, 2);
+                                LOG(LOG_DEBUG, "ComponentTag=%x", trns_ptr->oc.componentTag);
                                 NODE_PROP_FREE(dptr)
                             }
                             else
@@ -728,11 +727,11 @@ static void XmlParseAppTransport(xmlNodePtr node, Ait::S_TRANSPORT_PROTOCOL_DESC
             default:;
         }
 
-        trns_ptr->failed_to_load = false;
+        trns_ptr->failedToLoad = false;
     }
     else
     {
-        LOG(LOG_DEBUG, "protocol %d already parsed for this app, skipping", protocol_id);
+        LOG(LOG_DEBUG, "protocol %d already parsed for this app, skipping", protocolId);
     }
 }
 
@@ -771,7 +770,7 @@ static void XmlParseApplication(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
             LOG(LOG_DEBUG, "node name=%s", cptr);
             if (xmlStrEqual(cptr, (const xmlChar *)"appName"))
             {
-                XmlParseAppName(node, &app_ptr->app_name);
+                XmlParseAppName(node, &app_ptr->appName);
             }
             else if (!xmlStrncmp(cptr, (const xmlChar *)"application", 11))
             {
@@ -790,7 +789,7 @@ static void XmlParseApplication(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
                 }
                 else if (xmlStrEqual(cptr, (const xmlChar *)"Transport"))
                 {
-                    XmlParseAppTransport(node, app_ptr->transport_array);
+                    XmlParseAppTransport(node, app_ptr->transportArray);
                 }
                 else if (xmlStrEqual(cptr, (const xmlChar *)"Location"))
                 {
@@ -830,9 +829,9 @@ static void XmlParseApplications(xmlNodePtr node, Ait::S_AIT_TABLE *ait_table)
                         {
                             /* Gather required malloc sizes for this application */
                             XmlAllocApplication(lnode->xmlChildrenNode,
-                                &ait_table->app_array[index]);
+                                &ait_table->appArray[index]);
                             XmlParseApplication(lnode->xmlChildrenNode,
-                                &ait_table->app_array[index]);
+                                &ait_table->appArray[index]);
                             index++;
                         }
                         lnode = lnode->next;
@@ -893,11 +892,11 @@ static uint32_t XmlCountApplications(xmlNodePtr node)
  */
 std::unique_ptr<Ait::S_AIT_TABLE> XmlParser::ParseAit(const char *content, uint32_t length)
 {
-    std::unique_ptr<Ait::S_AIT_TABLE> ait_table = nullptr;
+    std::unique_ptr<Ait::S_AIT_TABLE> aitTable = nullptr;
     xmlDocPtr doc;
     xmlNodePtr node;
-    uint32_t num_apps;
-    Ait::S_AIT_APP_DESC *app_ptr;
+    uint32_t numApps;
+    Ait::S_AIT_APP_DESC *appPtr;
     int options = 0;
 
 #ifdef RDK
@@ -921,20 +920,20 @@ std::unique_ptr<Ait::S_AIT_TABLE> XmlParser::ParseAit(const char *content, uint3
         else
         {
             node = node->xmlChildrenNode;
-            num_apps = XmlCountApplications(node);
-            ait_table = std::make_unique<Ait::S_AIT_TABLE>();
-            if (ait_table != nullptr)
+            numApps = XmlCountApplications(node);
+            aitTable = std::make_unique<Ait::S_AIT_TABLE>();
+            if (aitTable != nullptr)
             {
-                ait_table->app_type = Ait::APP_TYP_XML;
-                ait_table->num_apps = (uint8_t)num_apps;
-                ait_table->app_array.resize(ait_table->num_apps);
-                XmlParseApplications(node, ait_table.get());
+                aitTable->appType = Ait::APP_TYP_XML;
+                aitTable->numApps = (uint8_t)numApps;
+                aitTable->appArray.resize(aitTable->numApps);
+                XmlParseApplications(node, aitTable.get());
             }
         }
         xmlFreeDoc(doc);
     }
 
-    return ait_table;
+    return aitTable;
 }
 
 #if 0 // TODO(C++-ize)

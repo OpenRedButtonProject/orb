@@ -66,54 +66,54 @@ public:
 
     typedef struct
     {
-        uint32_t lang_code;
+        uint32_t langCode;
         std::string name;
     } S_LANG_STRING;
 
     typedef struct
     {
-        uint8_t num_langs;
+        uint8_t numLangs;
         std::vector<S_LANG_STRING> names;
     } S_APP_NAME_DESC;
 
     typedef struct
     {
         Utils::S_DVB_TRIPLET dvb;
-        uint8_t component_tag;
-        bool remote_connection;
+        uint8_t componentTag;
+        bool remoteConnection;
     } S_OC_SELECTOR_BYTES;
 
     typedef struct
     {
-        std::string base_url;
-        std::vector<std::string> extension_urls;
+        std::string baseUrl;
+        std::vector<std::string> extensionUrls;
     } S_URL_SELECTOR_BYTES;
 
     typedef struct
     {
-        uint16_t protocol_id;
-        uint8_t transport_protocol_label;
+        uint16_t protocolId;
+        uint8_t transportProtocolLabel;
         S_OC_SELECTOR_BYTES oc;
         S_URL_SELECTOR_BYTES url;
-        bool failed_to_load;
+        bool failedToLoad;
     } S_TRANSPORT_PROTOCOL_DESC;
 
     typedef struct
     {
-        uint16_t app_profile;
-        uint8_t version_major;
-        uint8_t version_minor;
-        uint8_t version_micro;
+        uint16_t appProfile;
+        uint8_t versionMajor;
+        uint8_t versionMinor;
+        uint8_t versionMicro;
     } S_APP_PROFILE;
 
     typedef struct
     {
         uint8_t visibility;
         uint8_t priority;
-        uint8_t num_labels;
-        std::vector<S_APP_PROFILE> app_profiles;
-        std::vector<uint8_t> transport_protocol_labels;
-        bool service_bound;
+        uint8_t numLabels;
+        std::vector<S_APP_PROFILE> appProfiles;
+        std::vector<uint8_t> transportProtocolLabels;
+        bool serviceBound;
     } S_APP_DESC;
 
     typedef struct
@@ -125,28 +125,28 @@ public:
 
     typedef struct
     {
-        uint32_t org_id;
-        uint16_t app_id;
-        uint8_t control_code;
-        uint8_t num_transports;
-        S_TRANSPORT_PROTOCOL_DESC transport_array[AIT_MAX_NUM_PROTOCOLS];
+        uint32_t orgId;
+        uint16_t appId;
+        uint8_t controlCode;
+        uint8_t numTransports;
+        S_TRANSPORT_PROTOCOL_DESC transportArray[AIT_MAX_NUM_PROTOCOLS];
         std::string location;
-        S_APP_NAME_DESC app_name;
-        S_APP_DESC app_desc;
-        uint8_t xml_type;
-        uint8_t xml_version;
-        uint8_t usage_type;
+        S_APP_NAME_DESC appName;
+        S_APP_DESC appDesc;
+        uint8_t xmlType;
+        uint8_t xmlVersion;
+        uint8_t usageType;
         std::vector<std::string> boundaries;
-        std::vector<S_APP_PARENTAL_RATING> parental_ratings;
+        std::vector<S_APP_PARENTAL_RATING> parentalRatings;
     } S_AIT_APP_DESC;
 
     typedef struct
     {
-        uint8_t section_data[AIT_NUM_RECEIVED_SECTION_MASK_BYTES];
-        uint16_t app_type;
+        uint8_t sectionData[AIT_NUM_RECEIVED_SECTION_MASK_BYTES];
+        uint16_t appType;
         uint8_t version;
-        uint8_t num_apps;
-        std::vector<S_AIT_APP_DESC> app_array;
+        uint8_t numApps;
+        std::vector<S_AIT_APP_DESC> appArray;
         bool complete;
     } S_AIT_TABLE;
 
@@ -174,153 +174,152 @@ public:
 
     /**
      *
-     * @param ait_table AIT table.
-     * @param parental_control_age PC age set in the device.
-     * @param parental_control_region 2 letter ISO 3166 region code.
-     * @param parental_control_region3 3 letter ISO 3166 region code.
+     * @param aitTable AIT table.
+     * @param parentalControlAge PC age set in the device.
+     * @param parentalControlRegion 2 letter ISO 3166 region code.
+     * @param parentalControlRegion3 3 letter ISO 3166 region code.
      * @return App to auto start
      */
-    static const S_AIT_APP_DESC* AutoStartApp(const S_AIT_TABLE *ait_table, int
-        parental_control_age,
-        std::string &parental_control_region, std::string &parental_control_region3);
+    static const S_AIT_APP_DESC* AutoStartApp(const S_AIT_TABLE *aitTable, int parentalControlAge,
+        std::string &parentalControlRegion, std::string &parentalControlRegion3);
 
     /**
      *
-     * @param ait_table
+     * @param aitTable
      * @return
      */
-    static const S_AIT_APP_DESC* TeletextApp(const S_AIT_TABLE *ait_table);
+    static const S_AIT_APP_DESC* TeletextApp(const S_AIT_TABLE *aitTable);
 
     /**
      *
-     * @param ait_table
-     * @param org_id
-     * @param app_id
+     * @param aitTable
+     * @param orgId
+     * @param appId
      * @return
      */
-    static S_AIT_APP_DESC* FindApp(S_AIT_TABLE *ait_table, uint32_t org_id, uint16_t app_id);
+    static S_AIT_APP_DESC* FindApp(S_AIT_TABLE *aitTable, uint32_t orgId, uint16_t appId);
 
     /**
      *
-     * @param parsed_ait
+     * @param parsedAit
      * @return
      */
-    static bool PrintInfo(const S_AIT_TABLE *parsed_ait);
+    static bool PrintInfo(const S_AIT_TABLE *parsedAit);
 
     /**
      *
-     * @param app_description
+     * @param appDescription
      * @return
      */
-    static std::string GetBaseURL(const Ait::S_AIT_APP_DESC *app_description,
-        const Utils::S_DVB_TRIPLET current_service, const bool is_network_available,
-        uint16_t *protocol_id_selected);
+    static std::string GetBaseURL(const Ait::S_AIT_APP_DESC *appDescription,
+        const Utils::S_DVB_TRIPLET currentService, const bool isNetworkAvailable,
+        uint16_t *protocolIdSelected);
 
 /**
  * Determine whether the application has a transport with a certain protocol.
- * @param app_description The application description.
- * @param protocol_id The protocol to check for.
+ * @param appDescription The application description.
+ * @param protocolId The protocol to check for.
  * @return True if the application has a transport with the protocol, false otherwise.
  */
-    static bool AppHasTransport(const Ait::S_AIT_APP_DESC *app_description, uint16_t protocol_id);
+    static bool AppHasTransport(const Ait::S_AIT_APP_DESC *appDescription, uint16_t protocolId);
 
     /**
      * Set that the protocol for this app failed to load.
-     * @param app_description The application description.
-     * @param protocol_id The protocol that failed to load.
+     * @param appDescription The application description.
+     * @param protocolId The protocol that failed to load.
      */
-    static void AppSetTransportFailedToLoad(Ait::S_AIT_APP_DESC *app_description, uint16_t
-        protocol_id);
+    static void AppSetTransportFailedToLoad(Ait::S_AIT_APP_DESC *appDescription, uint16_t
+        protocolId);
 
     /**
      * Checks whether an App has parental restrictions.
-     * @param parental_ratings List of parental ratings included in the AIT.
-     * @param parental_control_age PC age set in the device.
-     * @param parental_control_region 2 letter ISO 3166 region code.
-     * @param parental_control_region3 3 letter ISO 3166 region code.
+     * @param parentalRatings List of parental ratings included in the AIT.
+     * @param parentalControlAge PC age set in the device.
+     * @param parentalControlRegion 2 letter ISO 3166 region code.
+     * @param parentalControlRegion3 3 letter ISO 3166 region code.
      */
-    static bool IsAgeRestricted(const std::vector<Ait::S_APP_PARENTAL_RATING> parental_ratings, int
-        parental_control_age,
-        std::string &parental_control_region, std::string &parental_control_region3);
+    static bool IsAgeRestricted(const std::vector<Ait::S_APP_PARENTAL_RATING> parentalRatings,
+        int parentalControlAge, std::string &parentalControlRegion,
+        std::string &parentalControlRegion3);
 
 private:
 
     /**
      *
-     * @param data_ptr
+     * @param dataPtr
      * @param desc
      */
-    static void ParseAppDesc(const uint8_t *data_ptr, S_APP_DESC *desc);
+    static void ParseAppDesc(const uint8_t *dataPtr, S_APP_DESC *desc);
 
     /**
      *
-     * @param data_ptr
-     * @param app_name
+     * @param dataPtr
+     * @param appName
      */
-    static void ParseAppNameDesc(const uint8_t *data_ptr, S_APP_NAME_DESC *app_name);
+    static void ParseAppNameDesc(const uint8_t *dataPtr, S_APP_NAME_DESC *appName);
 
     /**
      *
-     * @param data_ptr
+     * @param dataPtr
      * @param trns
      * @return true if the descriptor is a new valid one.
      */
-    static bool ParseTransportProtocolDesc(const uint8_t *data_ptr,
+    static bool ParseTransportProtocolDesc(const uint8_t *dataPtr,
         S_TRANSPORT_PROTOCOL_DESC *trns);
 
     /**
      *
-     * @param data_ptr
+     * @param dataPtr
      * @param str
      */
-    static void ParseSimpleAppLocationDesc(const uint8_t *data_ptr, std::string &str);
+    static void ParseSimpleAppLocationDesc(const uint8_t *dataPtr, std::string &str);
 
     /**
      * Parses the Simple Application Boundary Descriptor and updates the boundary list.
-     * @param data_ptr
+     * @param dataPtr
      * @param boundaries
      * @param num_boundaries
      */
-    static void ParseSimpleAppBoundaryDesc(const uint8_t *data_ptr, S_AIT_APP_DESC *app_ptr);
+    static void ParseSimpleAppBoundaryDesc(const uint8_t *dataPtr, S_AIT_APP_DESC *appPtr);
 
-    static void ParseParentalRatingDesc(const uint8_t *data_ptr, S_AIT_APP_DESC *app_ptr);
+    static void ParseParentalRatingDesc(const uint8_t *dataPtr, S_AIT_APP_DESC *appPtr);
 
     /**
      *
      * @param data
      * @param len
-     * @param app_ptr
+     * @param appPtr
      */
-    static void ParseApplication(const uint8_t *data, uint16_t len, S_AIT_APP_DESC *app_ptr);
+    static void ParseApplication(const uint8_t *data, uint16_t len, S_AIT_APP_DESC *appPtr);
 
     /**
      * Returns true if the specified section has already been received
      * @param ait AIT structure
-     * @param section_number Section number
+     * @param sectionNumber Section number
      * @return true if the specified section has already been received
      */
-    static bool SectionReceived(const S_AIT_TABLE *ait, uint8_t section_number);
+    static bool SectionReceived(const S_AIT_TABLE *ait, uint8_t sectionNumber);
 
     /**
      * Marks the bit representing the specified section number and returns true if all the sections
      * have been received
      * @param ait AIT structure
-     * @param section_number Section number
-     * @param last_section_number Last section number
+     * @param sectionNumber Section number
+     * @param lastSectionNumber Last section number
      * @return true if all the sections have been received, false otherwise
      */
-    static bool MarkSectionReceived(S_AIT_TABLE *ait, uint8_t section_number, uint8_t
-        last_section_number);
+    static bool MarkSectionReceived(S_AIT_TABLE *ait, uint8_t sectionNumber, uint8_t
+        lastSectionNumber);
 
     /**
      * Parses a section of the AIT table and updates the table structure
-     * @param data_ptr Pointer to the first section byte
+     * @param dataPtr Pointer to the first section byte
      * @return true if the table structure has changed
      */
-    bool ParseSection(const uint8_t *data_ptr);
+    bool ParseSection(const uint8_t *dataPtr);
 
-    std::shared_ptr<S_AIT_TABLE> ait_;
-    std::shared_ptr<S_AIT_TABLE> ait_completed_;
+    std::shared_ptr<S_AIT_TABLE> m_ait;
+    std::shared_ptr<S_AIT_TABLE> m_aitCompleted;
 };
 
 #endif /* AIT_PARSE_H */

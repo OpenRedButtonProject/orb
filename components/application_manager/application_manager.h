@@ -42,10 +42,10 @@ public:
          * Tell the browser to load an application. If the entry page fails to load, the browser
          * should call ApplicationManager::OnLoadApplicationFailed.
          *
-         * @param app_id The application ID.
-         * @param entry_url The entry page URL.
+         * @param appId The application ID.
+         * @param entryUrl The entry page URL.
          */
-        virtual void LoadApplication(uint16_t app_id, const char *entry_url) = 0;
+        virtual void LoadApplication(uint16_t appId, const char *entryUrl) = 0;
 
         /**
          * Tell the browser to show the loaded application.
@@ -113,7 +113,7 @@ public:
     /**
      * Create and run a new application. If called by an application, check it is allowed.
      *
-     * @param calling_app_id The calling app ID or INVALID_APP_ID if not called by an app.
+     * @param callingAppId The calling app ID or INVALID_APP_ID if not called by an app.
      * @param url A HTTP/HTTPS or DVB URL.
      *
      * A HTTP/HTTPS URL may refer to the entry page or XML AIT of a broadcast-independent app.
@@ -124,74 +124,74 @@ public:
      *
      * @return true if the application can be created, otherwise false
      */
-    bool CreateApplication(uint16_t calling_app_id, const std::string &url);
+    bool CreateApplication(uint16_t callingAppId, const std::string &url);
 
     /**
      * Destroy the calling application.
      *
-     * @param calling_app_id The calling app ID.
+     * @param callingAppId The calling app ID.
      */
-    void DestroyApplication(uint16_t calling_app_id);
+    void DestroyApplication(uint16_t callingAppId);
 
     /**
      * Show the calling application.
      *
-     * @param calling_app_id The calling app ID.
+     * @param callingAppId The calling app ID.
      */
-    void ShowApplication(uint16_t calling_app_id);
+    void ShowApplication(uint16_t callingAppId);
 
     /**
      * Hide the calling application.
      *
-     * @param calling_app_id The calling app ID.
+     * @param callingAppId The calling app ID.
      */
-    void HideApplication(uint16_t calling_app_id);
+    void HideApplication(uint16_t callingAppId);
 
     /**
      * Set the key set mask for an application.
      *
-     * @param app_id The application.
-     * @param key_set_mask The key set mask.
+     * @param appId The application.
+     * @param keySetMask The key set mask.
      * @return The key set mask for the application.
      */
-    uint16_t SetKeySetMask(uint16_t app_id, uint16_t key_set_mask);
+    uint16_t SetKeySetMask(uint16_t appId, uint16_t keySetMask);
 
     /**
      * Get the key set mask for an application.
      *
-     * @param app_id The application.
+     * @param appId The application.
      * @return The key set mask for the application.
      */
-    uint16_t GetKeySetMask(uint16_t app_id);
+    uint16_t GetKeySetMask(uint16_t appId);
 
     /**
      * Check the key code is accepted by the current key mask. Activate the app as a result if the
      * key is accepted.
      *
-     * @param app_id The application.
-     * @param key_code The key code to check.
+     * @param appId The application.
+     * @param keyCode The key code to check.
      * @return The supplied key_code is accepted by the current app's key set.
      */
-    bool InKeySet(uint16_t app_id, uint16_t key_code);
+    bool InKeySet(uint16_t appId, uint16_t keyCode);
 
     /**
      * Process an AIT section. The table will be processed when it is completed or updated.
      *
-     * @param ait_pid The PID of this section.
-     * @param service_id The service this section was received for.
-     * @param section_data The section section_data.
-     * @param section_data_bytes The size of section_data in bytes.
+     * @param aitPid The PID of this section.
+     * @param serviceId The service this section was received for.
+     * @param sectionData The section section_data.
+     * @param sectionDataBytes The size of section_data in bytes.
      */
-    void ProcessAitSection(uint16_t ait_pid, uint16_t service_id, uint8_t *section_data, uint32_t
-        section_data_bytes);
+    void ProcessAitSection(uint16_t aitPid, uint16_t serviceId, uint8_t *sectionData, uint32_t
+        sectionDataBytes);
 
     /**
      * Process an XML AIT and create and run a new broadcast-independent application.
      *
-     * @param xml_ait The XML AIT contents.
+     * @param xmlAit The XML AIT contents.
      * @return true if the application can be created, otherwise false
      */
-    bool ProcessXmlAit(const std::string &xml_ait);
+    bool ProcessXmlAit(const std::string &xmlAit);
 
     /**
      * Check whether a Teletext application is signalled.
@@ -210,13 +210,13 @@ public:
     /**
      * Check whether a request from the polyfill is allowed.
      *
-     * @param calling_app_id The app ID making the request.
-     * @param calling_page_url The page URL making the request.
-     * @param method_requirement Any additional requirement of the method.
+     * @param callingAppId The app ID making the request.
+     * @param callingPageUrl The page URL making the request.
+     * @param methodRequirement Any additional requirement of the method.
      * @return true if the request is allowed, otherwise false
      */
-    bool IsRequestAllowed(uint16_t calling_app_id, const std::string &calling_page_url,
-        MethodRequirement method_requirement);
+    bool IsRequestAllowed(uint16_t callingAppId, const std::string &callingPageUrl,
+        MethodRequirement methodRequirement);
 
     /**
      * Get the names of the current app.
@@ -244,8 +244,8 @@ public:
      * If a broadcast-independent application is running, it will transition to broadcast-related or
      * be killed depending on the signalling.
      */
-    void OnChannelChanged(uint16_t original_network_id, uint16_t transport_stream_id, uint16_t
-        service_id);
+    void OnChannelChanged(uint16_t originalNetworkId, uint16_t transportStreamId, uint16_t
+        serviceId);
 
     /**
      * Called when the network availability has changed.
@@ -257,18 +257,18 @@ public:
     /**
      * Notify the application manager that a call to loadApplication failed.
      *
-     * @param app_id The application ID of the application that failed to load.
+     * @param appId The application ID of the application that failed to load.
      */
-    void OnLoadApplicationFailed(uint16_t app_id);
+    void OnLoadApplicationFailed(uint16_t appId);
 
     /**
      * Notify the application manager of application page changed, before the new page is
      * loaded. For example, when the user follows a link.
      *
-     * @param app_id The application ID.
+     * @param appId The application ID.
      * @param url The URL of the new page.
      */
-    void OnApplicationPageChanged(uint16_t app_id, const std::string &url);
+    void OnApplicationPageChanged(uint16_t appId, const std::string &url);
 
 private:
     /**
@@ -334,30 +334,30 @@ private:
     /**
      * Call to Ait::AutoStartApp() passing the parental restrictions.
      *
-     * @param ait_table AIT table.
+     * @param aitTable AIT table.
      * @return The App to auto start.
      */
-    const Ait::S_AIT_APP_DESC* GetAutoStartApp(const Ait::S_AIT_TABLE *ait_table);
+    const Ait::S_AIT_APP_DESC* GetAutoStartApp(const Ait::S_AIT_TABLE *aitTable);
 
     /**
      * Return the KeySet a key code belongs to.
      *
-     * @param key_code The key code.
+     * @param keyCode The key code.
      * @return The key set.
      */
-    uint16_t GetKeySet(const uint16_t key_code);
+    uint16_t GetKeySet(const uint16_t keyCode);
 
-    std::unique_ptr<SessionCallback> session_callback_;
-    uint16_t next_app_id_;
-    Ait ait_;
-    std::unique_ptr<Ait::S_AIT_TABLE> xml_ait_;
-    App app_;
-    Utils::S_DVB_TRIPLET current_service_ = Utils::MakeInvalidDvbTriplet();
-    uint16_t current_service_received_first_ait_ = false;
-    uint16_t current_service_ait_pid_ = 0;
-    bool is_network_available_ = false;
-    std::recursive_mutex lock_;
-    Utils::Timeout ait_timeout_;
+    std::unique_ptr<SessionCallback> m_sessionCallback;
+    uint16_t m_nextAppId;
+    Ait m_ait;
+    std::unique_ptr<Ait::S_AIT_TABLE> m_xmlAit;
+    App m_app;
+    Utils::S_DVB_TRIPLET m_currentService = Utils::MakeInvalidDvbTriplet();
+    uint16_t m_currentServiceReceivedFirstAit = false;
+    uint16_t m_currentServiceAitPid = 0;
+    bool m_isNetworkAvailable = false;
+    std::recursive_mutex m_lock;
+    Utils::Timeout m_aitTimeout;
 };
 
 #endif // HBBTV_SERVICE_MANAGER_H

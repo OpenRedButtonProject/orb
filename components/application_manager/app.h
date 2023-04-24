@@ -31,36 +31,36 @@ public:
     static App CreateAppFromUrl(const std::string &url);
 
     static App CreateAppFromAitDesc(const Ait::S_AIT_APP_DESC *desc,
-        const Utils::S_DVB_TRIPLET current_service,
-        bool is_network_available,
-        const std::string &url_params,
-        bool is_broadcast,
-        bool is_trusted);
+        const Utils::S_DVB_TRIPLET currentService,
+        bool isNetworkAvailable,
+        const std::string &urlParams,
+        bool isBroadcast,
+        bool isTrusted);
 
-    std::string entry_url;
-    std::string loaded_url;
-    std::string base_url;
+    std::string entryUrl;
+    std::string loadedUrl;
+    std::string baseUrl;
 
-    uint16_t protocol_id;
-    uint8_t control_code;
-    uint32_t org_id;
-    uint16_t app_id;
+    uint16_t protocolId;
+    uint8_t controlCode;
+    uint32_t orgId;
+    uint16_t appId;
 
-    uint16_t key_set_mask;
+    uint16_t keySetMask;
 
-    bool is_trusted;
-    bool is_broadcast;
-    bool is_service_bound;
-    bool is_hidden;
+    bool isTrusted;
+    bool isBroadcast;
+    bool isServiceBound;
+    bool isHidden;
 
     std::vector<std::string> boundaries;
     std::map<uint32_t, std::string> names;
 
-    bool is_running = false;
+    bool isRunning = false;
     /* Activated by default. Deactivate if they are AUTOSTARTED */
-    bool is_activated = true;
+    bool isActivated = true;
     uint16_t id;
-    std::vector<Ait::S_APP_PARENTAL_RATING> parental_ratings;
+    std::vector<Ait::S_APP_PARENTAL_RATING> parentalRatings;
 };
 
 #endif // HBBTV_SERVICE_APP_H
