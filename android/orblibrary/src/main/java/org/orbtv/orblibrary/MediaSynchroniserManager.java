@@ -126,6 +126,20 @@ class MediaSynchroniserManager {
         switch (statusCode) {
             case BridgeTypes.CHANNEL_STATUS_PRESENTING:
             case BridgeTypes.CHANNEL_STATUS_CONNECTING:
+            case BridgeTypes.CHANNEL_STATUS_NOT_SUPPORTED:
+            case BridgeTypes.CHANNEL_STATUS_NO_SIGNAL:
+            case BridgeTypes.CHANNEL_STATUS_TUNER_IN_USE:
+            case BridgeTypes.CHANNEL_STATUS_PARENTAL_LOCKED:
+            case BridgeTypes.CHANNEL_STATUS_ENCRYPTED:
+            case BridgeTypes.CHANNEL_STATUS_UNKNOWN_CHANNEL:
+            case BridgeTypes.CHANNEL_STATUS_INTERRUPTED:
+            case BridgeTypes.CHANNEL_STATUS_RECORDING_IN_PROGRESS:
+            case BridgeTypes.CHANNEL_STATUS_CANNOT_RESOLVE_URI:
+            case BridgeTypes.CHANNEL_STATUS_INSUFFICIENT_BANDWIDTH:
+            case BridgeTypes.CHANNEL_STATUS_CANNOT_BE_CHANGED:
+            case BridgeTypes.CHANNEL_STATUS_INSUFFICIENT_RESOURCES:
+            case BridgeTypes.CHANNEL_STATUS_CHANNEL_NOT_IN_TS:
+            case BridgeTypes.CHANNEL_STATUS_UNKNOWN_ERROR:
                 jniUpdateDvbInfo(dvbUri,
                         pError,
                         statusCode == BridgeTypes.CHANNEL_STATUS_PRESENTING);
