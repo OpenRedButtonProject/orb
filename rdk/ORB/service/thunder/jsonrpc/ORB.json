@@ -59,6 +59,22 @@
         "default": null,
         "description": "Always null"
       }
+    },
+    "LaunchApplication":
+    {
+      "summary": "Used to launch a Broadcast-INDEPENDENT application, the url could be an XML-AIT file",
+      "params":
+      {
+        "description": "The url for the broadcast independent application",
+        "type": "string",
+        "example": "http://cdn.hbbtv.kika.de/player/index.php?html5=1"
+      },
+      "result":
+      {
+        "description": "True for successful launch, false otherwise",
+        "type": "boolean",
+        "example": true
+      }
     }
   }
 }

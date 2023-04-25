@@ -349,5 +349,20 @@ void ORBImplementation::EventInputKeyGenerated(int keyCode, uint8_t keyAction)
         client->EventInputKeyGenerated(keyCode, keyAction);
     }
 }
+
+/**
+ * @brief ORBImplementation::LaunchApplication
+ *
+ * Used to launch a Broadcast-INDEPENDENT application, the url could be an XML-AIT file
+ *
+ * @param url The url for the broadcast independent application
+ * @return true Successful application creation
+ * @return false Unsuccessful application creation
+ */
+bool ORBImplementation::LaunchApplication(std::string url)
+{
+    ORB_LOG_NO_ARGS();
+    return ORBEngine::GetSharedInstance().GetApplicationManager()->CreateApplication(0, url);
+}
 }  // namespace Plugin
 }  // namespace WPEFramework

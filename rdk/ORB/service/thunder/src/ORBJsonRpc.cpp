@@ -25,6 +25,8 @@ void ORB::RegisterAll()
         &ORB::SendKeyEvent, this);
     JSONRPC::Register<Core::JSON::String, void>(_T("SetPreferredUILanguage"),
         &ORB::SetPreferredUILanguage, this);
+    JSONRPC::Register<Core::JSON::String, Core::JSON::Boolean>(_T("LaunchApplication"),
+        &ORB::LaunchApplication, this);
 }
 
 /**
@@ -37,6 +39,7 @@ void ORB::UnregisterAll()
     ORB_LOG("PID=%d", getpid());
     JSONRPC::Unregister(_T("SendKeyEvent"));
     JSONRPC::Unregister(_T("SetPreferredUILanguage"));
+    JSONRPC::Unregister(_T("LaunchApplication"));
 }
 
 /**
@@ -91,6 +94,24 @@ uint32_t ORB::SetPreferredUILanguage(Core::JSON::String preferredUiLanguage)
                                    preferredUiLanguage.Value().c_str()));
     uint32_t result = Core::ERROR_NONE;
     _orb->SetPreferredUILanguage(preferredUiLanguage.Value());
+    return result;
+}
+
+/**
+ * @brief ORB::LaunchApplication
+ *
+ * Used to launch a Broadcast-INDEPENDENT application, the url could be an XML-AIT file
+ *
+ * @param url The url for the broadcast independent application
+ * @return true Successful application creation
+ * @return false Unsuccessful application creation
+ */
+uint32_t ORB::LaunchApplication(Core::JSON::String url, Core::JSON::Boolean& response)
+{
+    SYSLOG(Logging::Notification, (_T("[ORB::SetPreferredUILanguage] preferredUiLanguage=%s"),
+                                   url.Value().c_str()));
+    uint32_t result = Core::ERROR_NONE;
+    response = _orb->LaunchApplication(url.Value());
     return result;
 }
 } // namespace Plugin

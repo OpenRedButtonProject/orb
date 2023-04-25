@@ -64,6 +64,7 @@ public:
     void SetPreferredUILanguage(std::string preferredUiLanguage) override;
     std::string GetUserAgentString() override;
     std::string GetCurrentAppUrl() override;
+    virtual bool LaunchApplication(std::string url) override;
 
     // methods to be called when events need to fire
 
