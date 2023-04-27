@@ -289,17 +289,29 @@ extern "C"
 JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_MediaSynchroniserManager_jniUpdateDvbInfo(
     JNIEnv *env,
     jobject thiz,
-    jstring dvbUri,
+    int onetId,
+    int transId,
+    int servId,
     jboolean permanentError,
-    jboolean presenting)
+    jboolean presenting,
+    jstring programmeJson)
 {
-    jboolean valueIsCopy;
-    const char *valueString = env->GetStringUTFChars(dvbUri, &valueIsCopy);
     NetworkServices::MediaSynchroniserManager *ms = GetMediaSyncManagerHandle(env, thiz);
-    ms->updateDvbInfo(valueString, permanentError, presenting);
+    jboolean valueIsCopy;
+    const char *valueString = env->GetStringUTFChars(programmeJson, &valueIsCopy);
+    Json::Value programme;
+    if (NetworkServices::CSSUtilities::unpack(valueString, programme))
+    {
+        ms->updateDvbInfo(onetId, transId, servId, permanentError, presenting,
+                          std::move(programme));
+    }
+    else
+    {
+        LOG(LOG_ERROR, "jniUpdateDvbInfo: Failed to parse Json string '%s'", valueString);
+    }
     if (valueIsCopy == JNI_TRUE)
     {
-        env->ReleaseStringUTFChars(dvbUri, valueString);
+        env->ReleaseStringUTFChars(programmeJson, valueString);
     }
 }
 

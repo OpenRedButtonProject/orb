@@ -916,12 +916,21 @@ bool MediaSynchroniserManager::initMediaSynchroniser(const int &id, bool isMaste
     return result;
 }
 
-void MediaSynchroniserManager::updateDvbInfo(const std::string &dvbUri, bool permanentError, bool
-    presenting)
+void MediaSynchroniserManager::updateDvbInfo(int onetId, int transId, int servId, bool
+    permanentError, bool presenting, const Json::Value &programme)
 {
-    LOG(LOG_DEBUG, "MediaSynchroniserManager::updateDvbInfo(%s,%d,%d).\n", dvbUri.c_str(),
+    char uriBuffer[32];
+    std::string ciString;
+    if (!programme.isNull() && !programme["programmeId"].isNull() && !programme["programmeId"].asString().empty())
+    {
+        char ciBuffer[512];
+        sprintf(ciBuffer, ";%s~%s--PT%02lldH%02lldM", programme["programmeId"].asString().c_str(), MediaSynchroniser::GetDvbDateFromTimestamp(programme["startTime"].asUInt64()).c_str(), programme["duration"].asInt64() / 3600, (programme["duration"].asInt64() % 3600) / 60);
+        ciString = ciBuffer;
+    }
+    sprintf(uriBuffer, "dvb://%04x.%04x.%04x", onetId, transId, servId);
+    m_dvbUri = uriBuffer + ciString;
+    LOG(LOG_DEBUG, "MediaSynchroniserManager::updateDvbInfo(%s,%d,%d).\n", m_dvbUri.c_str(),
         permanentError, presenting);
-    m_dvbUri = dvbUri;
     m_dvbPermanentError = permanentError;
     m_dvbPresenting = presenting;
 
@@ -1001,4 +1010,17 @@ bool MediaSynchroniser::ParseTimelineSelector(const std::string &timelineSelecto
         }
     }
     return result;
+}
+
+std::string MediaSynchroniser::GetDvbDateFromTimestamp(const std::time_t &timestamp)
+{
+    std::tm* timeinfo = std::localtime(&timestamp);
+    int year = timeinfo->tm_year + 1900;
+    int month = timeinfo->tm_mon + 1;
+    int day = timeinfo->tm_mday;
+    int hour = timeinfo->tm_hour;
+    int minute = timeinfo->tm_min;
+    char buffer[24];
+    sprintf(buffer, "%04d%02d%02dT%02d%02dZ", year, month, day, hour, minute);
+    return buffer;
 }
