@@ -423,10 +423,12 @@ bool BroadcastRequestHandler::Handle(
         else
         {
             int queryId = params.value("queryId", 0);
+            int offset = params.value("offset", -1);
+            int totalSize = params.value("totalSize", -1);
             CancelSearch(queryId);
             std::vector<std::string> searchResults;
             MetadataSearchTask::OnMetadataSearchCompleted(queryId, SEARCH_STATUS_ABORTED,
-                searchResults);
+                searchResults, offset, totalSize);
         }
     }
     // Broadcast.addStreamEventListener
