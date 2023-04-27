@@ -141,6 +141,7 @@ private:
 
     static bool ParseTimelineSelector(const std::string &timelineSelector,
         TimelineWrapper &timelineWrapper);
+    static std::string GetDvbDateFromTimestamp(const std::time_t &timestamp);
 
     std::shared_ptr<MediaSyncCallback> m_mediaSyncCallback;
     std::unordered_map<std::string, TimelineWrapper> m_timelines;
@@ -181,7 +182,10 @@ public:
     MediaSynchroniser* getActiveMediaSynchroniser();
 
     bool initMediaSynchroniser(const int &id, bool isMasterBroadcast);
-    void updateDvbInfo(const std::string &dvbUri, bool permanentError, bool presenting);
+    void updateDvbInfo(const int &onetId, const int &transId, const int &servId,
+                       const bool &permanentError, const bool &presenting, const std::string
+                       &programmeId = "", const std::time_t &startTime = 0, const std::time_t
+                       &duration = 0);
     void releaseResources();
 
 private:

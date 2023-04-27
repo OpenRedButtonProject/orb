@@ -11,8 +11,6 @@ import org.json.JSONException;
 import org.orbtv.orbpolyfill.BridgeTypes;
 
 import java.util.List;
-import java.util.Date;
-import java.text.SimpleDateFormat;
 
 class MediaSynchroniserManager {
     private static final String TAG = MediaSynchroniserManager.class.getSimpleName();
@@ -102,20 +100,16 @@ class MediaSynchroniserManager {
     public void updateBroadcastContentStatus(int onetId, int transId, int servId, int statusCode,
                                              boolean permanentError, List<BridgeTypes.Programme> programmes) {
 
-        String ciString = null;
         boolean pError = false;
-        String dvbUri = "dvb://" + String.format("%04x", onetId) + "." + String.format("%04x", transId) + "." + String.format("%04x", servId);
-
+        long startTime = 0;
+        long duration = 0;
+        String programmeId = "";
         if (programmes != null && programmes.size() > 0) {
             BridgeTypes.Programme programme = programmes.get(0);
-            if (programme != null && programme.programmeId != null && !programme.programmeId.trim().isEmpty()) {
-                Date date = new Date(programme.startTime);
-                String formattedDate = new SimpleDateFormat("yyyyMMdd").format(date) + "T" + new SimpleDateFormat("HHmm").format(date) + "Z";
-                ciString = String.format("%s~%s--PT%02dH%02dM", programme.programmeId.trim().toLowerCase(), formattedDate, programme.duration / 3600, (programme.duration % 3600) / 60);
-            }
-
-            if (ciString != null) {
-                dvbUri += ";" + ciString;
+            if (programme != null && programme.programmeId != null && !programme.programmeId.isEmpty()) {
+                programmeId = programme.programmeId.trim();
+                startTime = programme.startTime;
+                duration = programme.duration;
             }
         }
 
@@ -140,9 +134,14 @@ class MediaSynchroniserManager {
             case BridgeTypes.CHANNEL_STATUS_INSUFFICIENT_RESOURCES:
             case BridgeTypes.CHANNEL_STATUS_CHANNEL_NOT_IN_TS:
             case BridgeTypes.CHANNEL_STATUS_UNKNOWN_ERROR:
-                jniUpdateDvbInfo(dvbUri,
+                jniUpdateDvbInfo(onetId,
+                        transId,
+                        servId,
                         pError,
-                        statusCode == BridgeTypes.CHANNEL_STATUS_PRESENTING);
+                        statusCode == BridgeTypes.CHANNEL_STATUS_PRESENTING,
+                        programmeId,
+                        startTime,
+                        duration);
                 break;
             default:
                 break;
@@ -331,7 +330,7 @@ class MediaSynchroniserManager {
 
     private native boolean jniSetTimelineAvailability(int id, String timelineSelector, boolean isAvailable, long ticks, double speed);
 
-    private native void jniUpdateDvbInfo(String dvbUri, boolean permanentError, boolean presenting);
+    private native void jniUpdateDvbInfo(int onetId, int transId, int servId, boolean permanentError, boolean presenting, String progarammeId, long startTime, long duration);
 
     private native void jniReleaseResources();
 }
