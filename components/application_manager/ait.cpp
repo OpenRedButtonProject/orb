@@ -146,7 +146,7 @@ const Ait::S_AIT_APP_DESC * Ait::AutoStartApp(const S_AIT_TABLE *aitTable, int
 
                 // Check parental restrictions
                 if (IsAgeRestricted(candidate->parentalRatings, parentalControlAge,
-                                    parentalControlRegion, parentalControlRegion3))
+                    parentalControlRegion, parentalControlRegion3))
                 {
                     LOG(LOG_DEBUG,
                         "Parental Control Age RESTRICTED for %s: only %d content accepted",

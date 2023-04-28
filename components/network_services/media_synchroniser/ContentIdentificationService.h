@@ -88,7 +88,7 @@ private:
     std::stringstream m_pattern;
 
     std::string pack(const Json::Value &currentMessage, bool onlydiff, bool alwaysSendTimelines =
-            true);
+        true);
 };
 }
 #endif //WIP_DVBCSS_HBBTV_CONTENTIDENTIFICATIONSERVICE_H

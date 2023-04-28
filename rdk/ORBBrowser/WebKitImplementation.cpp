@@ -3088,7 +3088,7 @@ SERVICE_REGISTRATION(WebKitImplementation, 1, 0);
     {
         // Unexpected message name.
         std::cerr << "WebBridge received synchronous message (" << name <<
-                "), but didn't process it." << std::endl;
+            "), but didn't process it." << std::endl;
     }
 }
 

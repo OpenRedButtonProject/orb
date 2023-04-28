@@ -283,8 +283,9 @@ void ORBEngine::LoadDvbUrl(std::string url, int requestId)
     {
         std::shared_ptr<URI> uri = URI::Parse(url);
         std::string port = uri->GetPort();
-        url = uri->GetProtocol() + "://" + uri->GetHost() + ((port == "-1" || port.empty()) ? "" : ":" +
-                                                            port) + uri->GetPath();
+        url = uri->GetProtocol() + "://" + uri->GetHost() + ((port == "-1" || port.empty()) ? "" :
+                                                             ":" +
+                                                             port) + uri->GetPath();
         ORB_LOG("Stripped url=%s", url.c_str());
     }
 
