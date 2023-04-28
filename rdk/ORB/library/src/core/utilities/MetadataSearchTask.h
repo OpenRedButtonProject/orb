@@ -51,9 +51,11 @@ public:
      * @param search        The search id
      * @param status        0 (Completed) or 3 (Aborted) or 4 (No resource found)
      * @param searchResults The list of JSON programme objects that match the search criteria
+     * @param offset	    Offset value
+     * @param totalSize 	The total size of search
      */
     static void OnMetadataSearchCompleted(int search, int status,
-        std::vector<std::string> searchResults);
+        std::vector<std::string> searchResults, int offset, int totalSize);
 
     /**
      * @brief MetadataSearch::Worker

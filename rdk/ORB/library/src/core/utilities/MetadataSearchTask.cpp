@@ -57,9 +57,11 @@ MetadataSearchTask::~MetadataSearchTask()
  * @param search        The search id
  * @param status        0 (Completed) or 3 (Aborted) or 4 (No resource found)
  * @param searchResults The list of JSON programme objects that match the search criteria
+ * @param offset        Offset value
+ * @param totalSize     The total size of search
  */
 void MetadataSearchTask::OnMetadataSearchCompleted(int search, int status,
-    std::vector<std::string> searchResults)
+    std::vector<std::string> searchResults, int offset, int totalSize)
 {
     ORB_LOG("search=%d status=%d", search, status);
 
@@ -67,6 +69,8 @@ void MetadataSearchTask::OnMetadataSearchCompleted(int search, int status,
     json properties;
     properties["search"] = search;
     properties["status"] = status;
+    properties["offset"] = offset; 
+    properties["totalSize"] = totalSize;
 
     // use emplace to set programmeList attribute as array
     properties.emplace("programmeList", json::array());
@@ -123,6 +127,14 @@ void MetadataSearchTask::Worker()
     ORB_LOG("Getting channels for query");
     std::vector<Channel> channelList = platform->Broadcast_GetChannelList();
 
+    int initialOffset = m_offset;
+    int totalSize;
+
+    if(totalSize != 0)
+    {
+        totalSize = 0;
+    }
+
     // For each channel, if searchable, get programmes
     for (auto channel : channelList)
     {
@@ -149,18 +161,19 @@ void MetadataSearchTask::Worker()
             // If programme matches add it to search results
             if (Match(m_query, programme, channel.GetCcid()))
             {
+                totalSize++;
                 if (m_offset > 0)
                 {
                     m_offset--;
                 }
                 else
                 {
-                    // Add programme to search results
-                    json jsonProgramme = JsonUtil::ProgrammeToJsonObject(programme);
-                    m_searchResults.push_back(jsonProgramme.dump());
-                    m_count--;
-                    if (m_count == 0)
+                    while (m_count != 0)
                     {
+                        // Add programme to search results
+                        json jsonProgramme = JsonUtil::ProgrammeToJsonObject(programme);
+                        m_searchResults.push_back(jsonProgramme.dump());
+                        m_count--;
                         break;
                     }
                 }
@@ -168,8 +181,10 @@ void MetadataSearchTask::Worker()
         }
     }
 
+    m_offset = initialOffset;
+
     // Trigger notification
-    OnMetadataSearchCompleted(m_query->GetQueryId(), SEARCH_STATUS_COMPLETED, m_searchResults);
+    OnMetadataSearchCompleted(m_query->GetQueryId(), SEARCH_STATUS_COMPLETED, m_searchResults, m_offset, totalSize);
 
     // Remove search task
     ORBEngine::GetSharedInstance().RemoveMetadataSearchTask(m_query->GetQueryId());
