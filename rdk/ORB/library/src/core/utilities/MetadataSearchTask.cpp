@@ -69,7 +69,7 @@ void MetadataSearchTask::OnMetadataSearchCompleted(int search, int status,
     json properties;
     properties["search"] = search;
     properties["status"] = status;
-    properties["offset"] = offset; 
+    properties["offset"] = offset;
     properties["totalSize"] = totalSize;
 
     // use emplace to set programmeList attribute as array
@@ -130,7 +130,7 @@ void MetadataSearchTask::Worker()
     int initialOffset = m_offset;
     int totalSize;
 
-    if(totalSize != 0)
+    if (totalSize != 0)
     {
         totalSize = 0;
     }
@@ -184,7 +184,8 @@ void MetadataSearchTask::Worker()
     m_offset = initialOffset;
 
     // Trigger notification
-    OnMetadataSearchCompleted(m_query->GetQueryId(), SEARCH_STATUS_COMPLETED, m_searchResults, m_offset, totalSize);
+    OnMetadataSearchCompleted(m_query->GetQueryId(), SEARCH_STATUS_COMPLETED, m_searchResults,
+        m_offset, totalSize);
 
     // Remove search task
     ORBEngine::GetSharedInstance().RemoveMetadataSearchTask(m_query->GetQueryId());

@@ -131,7 +131,7 @@ private:
     void removeTimeline(const std::string &timelineSelector);
 
     void initialise(const bool &isMasterBroadcast, std::string dvbUri = "", bool permanentError =
-            false, bool presenting = true);
+        false, bool presenting = true);
     void updateBroadcastContentStatus(std::string dvbUri = "", bool permanentError = false, bool
         presenting = true);
     void updateAllCIIClients();

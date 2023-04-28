@@ -155,7 +155,7 @@ void WhiteListedOriginDomainsList::AddWhiteListToWebKit(WKBundleRef bundle)
             WKRelease(protocol);
 
             cerr << "Added origin->domain pair to WebKit white list: " << index->first << " -> " <<
-                    domain.second << endl;
+                domain.second << endl;
         }
 
         WKRelease(wkOrigin);
