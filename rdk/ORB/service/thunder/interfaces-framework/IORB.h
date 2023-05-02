@@ -80,6 +80,7 @@ struct EXTERNAL IORB : virtual public Core::IUnknown
     virtual void SetPreferredUILanguage(std::string preferredUiLanguage) = 0;
     virtual std::string GetUserAgentString() = 0;
     virtual std::string GetCurrentAppUrl() = 0;
+    virtual bool LaunchApplication(std::string url) = 0;
 
     // methods to trigger notifications
     virtual void JavaScriptEventDispatchRequest(
