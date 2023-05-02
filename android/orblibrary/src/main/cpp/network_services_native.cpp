@@ -289,17 +289,22 @@ extern "C"
 JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_MediaSynchroniserManager_jniUpdateDvbInfo(
     JNIEnv *env,
     jobject thiz,
-    jstring dvbUri,
+    jint onetId,
+    jint transId,
+    jint servId,
     jboolean permanentError,
-    jboolean presenting)
+    jboolean presenting,
+    jstring programmeId,
+    jlong startTime,
+    jlong duration)
 {
-    jboolean valueIsCopy;
-    const char *valueString = env->GetStringUTFChars(dvbUri, &valueIsCopy);
     NetworkServices::MediaSynchroniserManager *ms = GetMediaSyncManagerHandle(env, thiz);
-    ms->updateDvbInfo(valueString, permanentError, presenting);
-    if (valueIsCopy == JNI_TRUE)
+    jboolean isCopy;
+    const char *nativeString = env->GetStringUTFChars(programmeId, &isCopy);
+    ms->updateDvbInfo(onetId, transId, servId, permanentError, presenting, nativeString, startTime, duration);
+    if (isCopy == JNI_TRUE)
     {
-        env->ReleaseStringUTFChars(dvbUri, valueString);
+        env->ReleaseStringUTFChars(programmeId, nativeString);
     }
 }
 

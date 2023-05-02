@@ -838,8 +838,7 @@ TimelineSource * MediaSynchroniser::_getTimelineSource(std::string timelineSelec
 
 MediaSynchroniserManager::MediaSynchroniserManager(
     std::shared_ptr<MediaSyncCallback> mediaSyncCallback, const int &ciiPort, const int &wcPort,
-    const
-    int &tsPort) :
+    const int &tsPort) :
     m_mediaSyncCallback(mediaSyncCallback),
     m_idCounter(0),
     m_activeMediaSync(-1),
@@ -916,12 +915,23 @@ bool MediaSynchroniserManager::initMediaSynchroniser(const int &id, bool isMaste
     return result;
 }
 
-void MediaSynchroniserManager::updateDvbInfo(const std::string &dvbUri, bool permanentError, bool
-    presenting)
+void MediaSynchroniserManager::updateDvbInfo(const int &onetId, const int &transId,
+                                             const int &servId, const bool &permanentError,
+                                             const bool &presenting, const std::string &programmeId,
+                                             const std::time_t &startTime, const std::time_t &duration)
 {
-    LOG(LOG_DEBUG, "MediaSynchroniserManager::updateDvbInfo(%s,%d,%d).\n", dvbUri.c_str(),
+    char uriBuffer[32];
+    std::string ciString;
+    if (!programmeId.empty())
+    {
+        char ciBuffer[512];
+        sprintf(ciBuffer, ";%s~%s--PT%02ldH%02ldM", programmeId.c_str(), MediaSynchroniser::GetDvbDateFromTimestamp(startTime).c_str(), duration / 3600, (duration % 3600) / 60);
+        ciString = ciBuffer;
+    }
+    sprintf(uriBuffer, "dvb://%04x.%04x.%04x", onetId, transId, servId);
+    m_dvbUri = uriBuffer + ciString;
+    LOG(LOG_DEBUG, "MediaSynchroniserManager::updateDvbInfo(%s,%d,%d).\n", m_dvbUri.c_str(),
         permanentError, presenting);
-    m_dvbUri = dvbUri;
     m_dvbPermanentError = permanentError;
     m_dvbPresenting = presenting;
 
@@ -1001,4 +1011,17 @@ bool MediaSynchroniser::ParseTimelineSelector(const std::string &timelineSelecto
         }
     }
     return result;
+}
+
+std::string MediaSynchroniser::GetDvbDateFromTimestamp(const std::time_t &timestamp)
+{
+    std::tm* timeinfo = std::localtime(&timestamp);
+    int year = timeinfo->tm_year + 1900;
+    int month = timeinfo->tm_mon + 1;
+    int day = timeinfo->tm_mday;
+    int hour = timeinfo->tm_hour;
+    int minute = timeinfo->tm_min;
+    char buffer[24];
+    sprintf(buffer, "%04d%02d%02dT%02d%02dZ", year, month, day, hour, minute);
+    return buffer;
 }
