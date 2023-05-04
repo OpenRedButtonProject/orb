@@ -158,11 +158,12 @@ hbbtv.objects.TextTrack = (function() {
                             } else {
                                 const cueObj = {};
                                 for (const key in arguments[0]) {
-                                    if (typeof arguments[0][key] !== 'function') {
-                                        if (key === 'data' && arguments[0][key]) {
-                                            arguments[0][key] = [...Object.keys(arguments[0][key]).map(k => arguments[0][key][k])];
+                                    let cueProp = arguments[0][key];
+                                    if (typeof cueProp !== 'function') {
+                                        if (key === 'data' && cueProp) {
+                                            cueProp = [...Object.keys(cueProp).map(k => cueProp[k])];
                                         }
-                                        cueObj[key] = arguments[0][key];
+                                        cueObj[key] = cueProp;
                                     }
                                 }
                                 args.push(cueObj);
