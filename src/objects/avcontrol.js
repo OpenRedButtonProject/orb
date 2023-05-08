@@ -28,6 +28,8 @@ hbbtv.objects.AVControl = (function() {
     const prototype = Object.create(HTMLObjectElement.prototype);
     const privates = new WeakMap();
     const avsInUse = new Set();
+    const __bindToCurrentChannel = hbbtv.objects.VideoBroadcast.prototype.bindToCurrentChannel;
+    const NONIFY_BROADBAND_TIMEOUT = 250;
 
     const observer = new MutationObserver(function(mutationsList) {
         for (const mutation of mutationsList) {
@@ -930,11 +932,24 @@ hbbtv.objects.AVControl = (function() {
 
     function notifyBroadbandAvInUse(broadbandAvInUse) {
         //let priv = privates.get(this);
+        let timeoutId = -1;
         if (broadbandAvInUse) {
             console.log('A/V control: AV in use');
             avsInUse.add(this);
             try {
                 hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(true);
+                // we override bindToCurrentChannel to compensate the case where the
+                // user calls it immediately after broacast is stopped, and as a result
+                // the call to notifyBroadbandAvInUse(false) is missed
+                hbbtv.objects.VideoBroadcast.prototype.bindToCurrentChannel = () => {
+                    if (avsInUse.size <= 0 && timeoutId === -1) {
+                        hbbtv.objects.VideoBroadcast.prototype.bindToCurrentChannel = __bindToCurrentChannel;
+                        __bindToCurrentChannel.apply(this, arguments);
+                    }
+                    else {
+                        setTimeout(hbbtv.objects.VideoBroadcast.prototype.bindToCurrentChannel.bind(this), NONIFY_BROADBAND_TIMEOUT);
+                    }
+                };
                 //priv.videoElement.hidden = false;
             } catch (e) {
                 console.warn('A/V Control: ' + e);
@@ -942,7 +957,8 @@ hbbtv.objects.AVControl = (function() {
         } else {
             console.log('A/V control: AV NOT in use (notification waiting 0.25s)');
             avsInUse.delete(this);
-            setTimeout(() => {
+            timeoutId = setTimeout(() => {
+                timeoutId = -1;
                 if (avsInUse.size <= 0) {
                     console.log('A/V control: AV NOT in use (notification dispatched)');
                     try {
@@ -954,7 +970,7 @@ hbbtv.objects.AVControl = (function() {
                 } else {
                     console.log('A/V control: Another AV is in use.');
                 }
-            }, 250);
+            }, NONIFY_BROADBAND_TIMEOUT);
         }
     }
 
