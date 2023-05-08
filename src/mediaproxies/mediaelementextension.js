@@ -333,7 +333,7 @@ hbbtv.objects.MediaElementExtension = (function() {
             Object.defineProperty(prototype, key, {
                 set(value) {
                     const p = privates.get(this);
-                    if (p.videoDummy[key] !== value) {
+                    if (key === "playbackRate" || p.videoDummy[key] !== value) {
                         p.videoDummy[key] = value;
                         p.iframeProxy.updateObserverProperties(MEDIA_PROXY_ID, {
                             [key]: value,
