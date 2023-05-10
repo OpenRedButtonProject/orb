@@ -39,6 +39,7 @@ hbbtv.objects.AVControl = (function() {
                     const p = privates.get(node);
                     if (p && p.videoElement.parentNode) {
                         p.videoElement.parentNode.removeChild(p.videoElement);
+                        updateMutationObservers.call(node);
                     }
                 }
             }
@@ -48,6 +49,7 @@ hbbtv.objects.AVControl = (function() {
                     if (p && p.videoElement.parentNode !== node.parentNode) {
                         hbbtv.utils.insertAfter(node.parentNode, p.videoElement, node);
                         hbbtv.utils.matchElementStyle(p.videoElement, node);
+                        updateMutationObservers.call(node);
                     }
                 }
             }
@@ -984,6 +986,36 @@ hbbtv.objects.AVControl = (function() {
         priv.videoElement.orb_unload();
     }
 
+    function updateMutationObservers() {
+        console.log("A/V Control: Updating ancestors' mutation observers...");
+        const p = privates.get(this);
+        // whenever there is a change on an ancestor style,
+        // update the iframe style as well
+        const ancestors = [];
+        let parent = this.parentNode;
+        while (parent) {
+            ancestors.push(parent);
+            parent = parent.parentNode;
+        }
+
+        for (const observer of p.styleObservers) {
+            observer.disconnect();
+        }
+        p.styleObservers = [];
+
+        const observerCallback = () => {
+            hbbtv.utils.matchElementStyle(p.videoElement, this);
+        };
+        for (const ancestor of ancestors) {
+            const styleObserver = new MutationObserver(observerCallback);
+            styleObserver.observe(ancestor, {
+                attributes: true,
+                attributeFilter: ['style', 'class'],
+            });
+            p.styleObservers.push(styleObserver);
+        }
+    }
+
     function initialise() {
         let priv = privates.get(this);
         if (priv) {
@@ -991,6 +1023,7 @@ hbbtv.objects.AVControl = (function() {
         }
         privates.set(this, {});
         priv = privates.get(this);
+        priv.styleObservers = [];
         priv.playState = PLAY_STATE_STOPPED;
         priv.xhr = new XMLHttpRequest();
         const thiz = this;
@@ -1026,6 +1059,7 @@ hbbtv.objects.AVControl = (function() {
         if (this.parentNode) {
             hbbtv.utils.insertAfter(this.parentNode, videoElement, this);
             hbbtv.utils.matchElementStyle(videoElement, this);
+            updateMutationObservers.call(this);
         }
 
         // parse param nodes and store their values
