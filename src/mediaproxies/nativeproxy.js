@@ -195,7 +195,8 @@ hbbtv.objects.NativeProxy = (function() {
                         data.code = 1; // cannot connect to server or connection lost
                         break;
                     case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                        if (this.error.message === 'R1: Could not connect: Connection timed out') {
+                        let regex = /R1: Could not connect(.*): Connection timed out/;
+                        if (this.error.message.match(regex)) {
                             data.code = 1; // cannot connect to server or connection lost
                         } else {
                             data.code = 0; // A/V format not supported
