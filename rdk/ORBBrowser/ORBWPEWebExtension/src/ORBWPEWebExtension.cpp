@@ -306,6 +306,7 @@ static void OnPageUriChanged(WebKitWebPage *webPage, GParamSpec *pspec,
         s_orbClient->NotifyApplicationPageChanged(pageUri);
     }
 
+    webkit_security_origin_unref(originReverse);
     webkit_security_origin_unref(origin);
 }
 
