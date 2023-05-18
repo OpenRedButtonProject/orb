@@ -28,6 +28,9 @@ hbbtv.objects.AVControl = (function() {
     const prototype = Object.create(HTMLObjectElement.prototype);
     const privates = new WeakMap();
     const avsInUse = new Set();
+    const __bindToCurrentChannel = hbbtv.objects.VideoBroadcast.prototype.bindToCurrentChannel;
+    const NONIFY_BROADBAND_TIMEOUT = 250;
+    let bindtoCurrentChannelTimeoutId = -1;
 
     const observer = new MutationObserver(function(mutationsList) {
         for (const mutation of mutationsList) {
@@ -36,6 +39,7 @@ hbbtv.objects.AVControl = (function() {
                     const p = privates.get(node);
                     if (p && p.videoElement.parentNode) {
                         p.videoElement.parentNode.removeChild(p.videoElement);
+                        updateMutationObservers.call(node);
                     }
                 }
             }
@@ -45,6 +49,7 @@ hbbtv.objects.AVControl = (function() {
                     if (p && p.videoElement.parentNode !== node.parentNode) {
                         hbbtv.utils.insertAfter(node.parentNode, p.videoElement, node);
                         hbbtv.utils.matchElementStyle(p.videoElement, node);
+                        updateMutationObservers.call(node);
                     }
                 }
             }
@@ -928,6 +933,16 @@ hbbtv.objects.AVControl = (function() {
         return false;
     }
 
+    function bindToCurrentChannel() {
+        if (avsInUse.size <= 0 && bindtoCurrentChannelTimeoutId === -1) {
+            hbbtv.objects.VideoBroadcast.prototype.bindToCurrentChannel = __bindToCurrentChannel;
+            return __bindToCurrentChannel.apply(this, arguments);
+        }
+        else {
+            setTimeout(hbbtv.objects.VideoBroadcast.prototype.bindToCurrentChannel.bind(this, ...Array.from(arguments)), NONIFY_BROADBAND_TIMEOUT);
+        }
+    }
+
     function notifyBroadbandAvInUse(broadbandAvInUse) {
         //let priv = privates.get(this);
         if (broadbandAvInUse) {
@@ -935,6 +950,10 @@ hbbtv.objects.AVControl = (function() {
             avsInUse.add(this);
             try {
                 hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(true);
+                // we override bindToCurrentChannel to compensate the case where the
+                // user calls it immediately after broacast is stopped, and as a result
+                // the call to notifyBroadbandAvInUse(false) is missed
+                hbbtv.objects.VideoBroadcast.prototype.bindToCurrentChannel = bindToCurrentChannel;
                 //priv.videoElement.hidden = false;
             } catch (e) {
                 console.warn('A/V Control: ' + e);
@@ -942,8 +961,9 @@ hbbtv.objects.AVControl = (function() {
         } else {
             console.log('A/V control: AV NOT in use (notification waiting 0.25s)');
             avsInUse.delete(this);
-            setTimeout(() => {
+            bindtoCurrentChannelTimeoutId = setTimeout(() => {
                 if (avsInUse.size <= 0) {
+                    bindtoCurrentChannelTimeoutId = -1;
                     console.log('A/V control: AV NOT in use (notification dispatched)');
                     try {
                         hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
@@ -954,7 +974,7 @@ hbbtv.objects.AVControl = (function() {
                 } else {
                     console.log('A/V control: Another AV is in use.');
                 }
-            }, 250);
+            }, NONIFY_BROADBAND_TIMEOUT);
         }
     }
 
@@ -966,6 +986,36 @@ hbbtv.objects.AVControl = (function() {
         priv.videoElement.orb_unload();
     }
 
+    function updateMutationObservers() {
+        console.log("A/V Control: Updating ancestors' mutation observers...");
+        const p = privates.get(this);
+        // whenever there is a change on an ancestor style,
+        // update the iframe style as well
+        const ancestors = [];
+        let parent = this.parentNode;
+        while (parent) {
+            ancestors.push(parent);
+            parent = parent.parentNode;
+        }
+
+        for (const observer of p.styleObservers) {
+            observer.disconnect();
+        }
+        p.styleObservers = [];
+
+        const observerCallback = () => {
+            hbbtv.utils.matchElementStyle(p.videoElement, this);
+        };
+        for (const ancestor of ancestors) {
+            const styleObserver = new MutationObserver(observerCallback);
+            styleObserver.observe(ancestor, {
+                attributes: true,
+                attributeFilter: ['style', 'class'],
+            });
+            p.styleObservers.push(styleObserver);
+        }
+    }
+
     function initialise() {
         let priv = privates.get(this);
         if (priv) {
@@ -973,6 +1023,7 @@ hbbtv.objects.AVControl = (function() {
         }
         privates.set(this, {});
         priv = privates.get(this);
+        priv.styleObservers = [];
         priv.playState = PLAY_STATE_STOPPED;
         priv.xhr = new XMLHttpRequest();
         const thiz = this;
@@ -1008,6 +1059,7 @@ hbbtv.objects.AVControl = (function() {
         if (this.parentNode) {
             hbbtv.utils.insertAfter(this.parentNode, videoElement, this);
             hbbtv.utils.matchElementStyle(videoElement, this);
+            updateMutationObservers.call(this);
         }
 
         // parse param nodes and store their values
