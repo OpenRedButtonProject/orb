@@ -73,9 +73,9 @@ bool NetworkRequestHandler::Handle(
  */
 std::string NetworkRequestHandler::ResolveHostAddress(std::string hostName)
 {
-    std::string hostAddress;
+    std::string hostAddress = "";
     struct hostent *hp = gethostbyname(hostName.c_str());
-    if (hp->h_addr_list[0] != NULL)
+    if (hp != NULL && hp->h_addr_list[0] != NULL)
     {
         hostAddress = inet_ntoa(*(struct in_addr *)(hp->h_addr_list[0]));
     }

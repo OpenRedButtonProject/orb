@@ -2458,6 +2458,8 @@ private:
             g_object_unref(websiteDataManager);
         }
 
+        webkit_web_context_set_cache_model(context, WebKitCacheModel::WEBKIT_CACHE_MODEL_DOCUMENT_VIEWER);
+
         ORBWPEWebExtensionHelper::GetSharedInstance().RegisterDVBURLSchemeHandler(context);
         ORBWPEWebExtensionHelper::GetSharedInstance().RegisterORBURLSchemeHandler(context);
 
