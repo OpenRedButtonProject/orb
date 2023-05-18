@@ -91,6 +91,32 @@ hbbtv.objects.MediaElementExtension = (function() {
         }, 0);
     };
 
+    // Override default addEventListener and removeEventListener for HTMLMediaElement's
+    // textTracks, so that callbacks are stored and will be registered once it is upgraded
+    const __addTextTracksEventListener = TextTrackList.prototype.addEventListener;
+    TextTrackList.prototype.addEventListener = function(type, callback) {
+        let callbacks = privates.get(this);
+        if (!callbacks) {
+            callbacks = {};
+            privates.set(this, callbacks);
+        }
+        if (!callbacks[type]) {
+            callbacks[type] = new Set();
+        }
+        callbacks[type].add(callback);
+        __addTextTracksEventListener.apply(this, arguments);
+    }
+
+    const __removeTextTracksEventListener = TextTrackList.prototype.removeEventListener;
+    TextTrackList.prototype.removeEventListener = function(type, callback) {
+        const callbacks = privates.get(this);
+        if (callbacks && !callbacks[type]) {
+            callbacks[type].delete(callback);
+        }
+        __removeTextTracksEventListener.apply(this, arguments);
+    }
+
+
     function addSourceSetterIntercept() {
         const setAttribute = HTMLMediaElement.prototype.setAttribute;
         Object.defineProperty(HTMLMediaElement.prototype, 'src', {
@@ -478,6 +504,7 @@ hbbtv.objects.MediaElementExtension = (function() {
         let _error = null;
         let _timeUpdateTS = Date.now();
         let _currentTime = 0;
+        const thiz = this;
 
         this.startDate = new Date(NaN);
         this.audioTracks = hbbtv.objects.createAudioTrackList(iframeProxy);
@@ -499,6 +526,34 @@ hbbtv.objects.MediaElementExtension = (function() {
         this.setSeekable = function(ranges) {
             this.seekable = hbbtv.objects.createTimeRanges(ranges);
         };
+
+        // Add the textTracks callbacks that were registered before the
+        // upgrade of the video element to VideoDummy's textTracks
+        const textCallbacks = privates.get(parent.textTracks);
+        if (textCallbacks) {
+            for (const type in textCallbacks) {
+                textCallbacks[type].forEach((value1, value2, set) => {
+                    this.textTracks.addEventListener(type, value2);
+                    parent.textTracks.removeEventListener(type, value2);
+                }, this);
+            }
+        }
+        this.textTracks.onaddtrack = parent.textTracks.onaddtrack;
+        hbbtv.utils.defineGetterSetterProperties(parent.textTracks, {
+            onaddtrack: {
+                set(val) {
+                    thiz.textTracks.onaddtrack = val;
+                },
+                get() {
+                    return thiz.textTracks.onaddtrack;
+                },
+            }
+        });
+
+        parent.textTracks.addEventListener = this.textTracks.addEventListener.bind(this.textTracks);
+        parent.textTracks.removeEventListener = this.textTracks.removeEventListener.bind(this.textTracks);
+        parent.textTracks.dispatchEvent = this.textTracks.dispatchEvent.bind(this.textTracks);
+
         Object.defineProperty(this, 'error', {
             set(value) {
                 if (value) {
