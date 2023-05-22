@@ -425,6 +425,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
             p.mediaObjects.delete(mediaObject);
             privates.delete(mediaObject);
             p.mediaObserver.muted = false;
+            mediaObject.pause();
             console.log('MediaSynchroniser: Removed media object from media synchroniser.');
         }
     };
