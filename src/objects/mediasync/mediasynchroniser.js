@@ -160,7 +160,9 @@ hbbtv.objects.MediaSynchroniser = (function() {
             if (isBroadcast) {
                 if (
                     mediaObject.playState ===
-                    hbbtv.objects.BroadcastObserver.prototype.PLAY_STATE_UNREALIZED
+                    hbbtv.objects.BroadcastObserver.prototype.PLAY_STATE_UNREALIZED ||
+                    mediaObject.playState ===
+                    hbbtv.objects.BroadcastObserver.prototype.PLAY_STATE_STOPPED
                 ) {
                     errorHandler();
                     return;
