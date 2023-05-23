@@ -185,6 +185,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
         });
 
         const p = privates.get(this);
+        const thiz = this;
 
         const moPrototypeOverride = Object.create(p.moPrototype);
         moPrototypeOverride.pause = () => {
@@ -206,7 +207,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
                     return ownProperty ? ownProperty.get.call(mediaObject) : undefined;
                 },
                 set(value) {
-                    dispatchErrorEvent.call(this, 9); // not in suitable state to synchronise media (transient)
+                    dispatchErrorEvent.call(thiz, 9); // not in suitable state to synchronise media (transient)
                     const ownProperty = Object.getOwnPropertyDescriptor(
                         p.moPrototype,
                         'currentTime'
@@ -225,7 +226,7 @@ hbbtv.objects.MediaElementTsClient = (function() {
                     return ownProperty ? ownProperty.get.call(mediaObject) : undefined;
                 },
                 set(value) {
-                    dispatchErrorEvent.call(this, 9); // not in suitable state to synchronise media (transient)
+                    dispatchErrorEvent.call(thiz, 9); // not in suitable state to synchronise media (transient)
                     const ownProperty = Object.getOwnPropertyDescriptor(
                         p.moPrototype,
                         'playbackRate'
