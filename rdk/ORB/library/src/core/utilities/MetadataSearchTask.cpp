@@ -225,7 +225,7 @@ bool MetadataSearchTask::Match(
             else if (field == "Programme.startTime")
             {
                 result = CompareLongValues(query->GetComparison(),
-                    programme.GetStartTime() / 1000,
+                    programme.GetStartTime(),
                     std::stol(query->GetValue()));
                 break;
             }

@@ -267,7 +267,7 @@ void Query::CommonQuery(json in)
     }
 
     json arguments = {};
-    if (in.contains("arguments") && in["arguments"].is_object())
+    if (in.contains("arguments") && in["arguments"].is_array())
     {
         arguments = in["arguments"];
     }
