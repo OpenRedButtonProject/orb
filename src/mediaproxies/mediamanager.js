@@ -138,13 +138,13 @@ hbbtv.mediaManager = (function() {
         });
     }
 
-    function upgradeToFallback(node, err) {
+    function upgradeToFallback(node, src, err) {
         console.warn(
             'MediaManager: Failed to upgrade object. Fallback to native proxy. Error: ' + err
         );
         if (fallbackHandlers) {
             node.__objectType = fallbackHandlers.getName();
-            fallbackHandlers.initialise(node, node.src);
+            fallbackHandlers.initialise(node, src);
         }
     }
 
@@ -170,7 +170,7 @@ hbbtv.mediaManager = (function() {
                             document.baseURI.lastIndexOf('/') + 1
                         ) + value;
                 }
-                upgradeObject.call(this, value).catch((e) => upgradeToFallback(thiz, e));
+                upgradeObject.call(this, value).catch((e) => upgradeToFallback(thiz, value, e));
                 return;
             }
             Element.prototype.setAttribute.call(this, name, value);
