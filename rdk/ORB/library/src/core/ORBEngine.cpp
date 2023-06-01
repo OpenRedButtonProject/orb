@@ -321,7 +321,6 @@ void ORBEngine::NotifyApplicationPageChanged(std::string url)
 
     m_currentAppUrl = url;
     GetApplicationManager()->OnApplicationPageChanged(m_currentAppId, url);
-    GetORBPlatform()->Platform_SetCurrentKeySetMask(0);
 }
 
 /**
