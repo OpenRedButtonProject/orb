@@ -2416,8 +2416,9 @@ private:
 
         bool automationEnabled = _config.Automation.Value();
 
-        // Set the HBBTV_ENABLED environment variable, which is needed in WPE 2.28
+        // Set the environment variables needed by WPE 2.28
         setenv("HBBTV_ENABLED", "1", 1);
+        setenv("WPE_DISABLE_XHR_RESPONSE_CACHING_FOR_PROTOCOLS", "dvb", 1);
 
         WebKitWebContext *context;
         if (automationEnabled)
@@ -2458,7 +2459,6 @@ private:
             g_object_unref(websiteDataManager);
         }
 
-        webkit_web_context_set_cache_model(context, WebKitCacheModel::WEBKIT_CACHE_MODEL_DOCUMENT_VIEWER);
 
         ORBWPEWebExtensionHelper::GetSharedInstance().RegisterDVBURLSchemeHandler(context);
         ORBWPEWebExtensionHelper::GetSharedInstance().RegisterORBURLSchemeHandler(context);
