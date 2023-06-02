@@ -137,6 +137,36 @@ hbbtv.objects.MediaElementExtension = (function() {
         };
     }
 
+    function resetProxySession() {
+        const persistentProps = [
+            'src',
+            'autoplay',
+            'controls',
+            'playbackRate',
+            'volume',
+            'muted',
+            'loop',
+            'defaultMuted',
+            'crossOrigin',
+            'controlsList',
+            'defaultPlaybackRate',
+            'disableRemotePlayback',
+            'preservesPitch',
+        ];
+        const p = privates.get(this);
+        const properties = {};
+        p.iframeProxy.invalidate();
+        p.videoDummy.readyState = HTMLMediaElement.HAVE_NOTHING;
+        p.videoDummy.error = null;
+        p.videoDummy.startDate = new Date(NaN);
+        for (const key in p.videoDummy) {
+            if (persistentProps.includes(key)) {
+                properties[key] = p.videoDummy[key];
+            }
+        }
+        p.iframeProxy.updateObserverProperties(MEDIA_PROXY_ID, properties);
+    }
+
     function createPrototype() {
         const ORB_PLAYER_URL = 'orb://player';
         const prototype = Object.create(HTMLMediaElement.prototype);
@@ -299,36 +329,6 @@ hbbtv.objects.MediaElementExtension = (function() {
             };
         }
 
-        function resetProxySession() {
-            const persistentProps = [
-                'src',
-                'autoplay',
-                'controls',
-                'playbackRate',
-                'volume',
-                'muted',
-                'loop',
-                'defaultMuted',
-                'crossOrigin',
-                'controlsList',
-                'defaultPlaybackRate',
-                'disableRemotePlayback',
-                'preservesPitch',
-            ];
-            const p = privates.get(this);
-            const properties = {};
-            p.iframeProxy.invalidate();
-            p.videoDummy.readyState = HTMLMediaElement.HAVE_NOTHING;
-            p.videoDummy.error = null;
-            p.videoDummy.startDate = new Date(NaN);
-            for (const key in p.videoDummy) {
-                if (persistentProps.includes(key)) {
-                    properties[key] = p.videoDummy[key];
-                }
-            }
-            p.iframeProxy.updateObserverProperties(MEDIA_PROXY_ID, properties);
-        }
-
         // create the HTMLMediaElement's proxy methods
         for (const key of methods) {
             prototype[key] = makeMethod(key);
@@ -368,7 +368,6 @@ hbbtv.objects.MediaElementExtension = (function() {
                         console.log(
                             "MediaElementExtension: Setting iframe src property to '" + value + "'."
                         );
-                        resetProxySession.call(this);
                         p.iframe.src = ORB_PLAYER_URL + '?base=' + document.baseURI;
                     } else {
                         p.iframeProxy.updateObserverProperties(MEDIA_PROXY_ID, {
@@ -636,6 +635,7 @@ hbbtv.objects.MediaElementExtension = (function() {
                 p.iframe.frameBorder = 0;
                 p.iframe.allow = 'encrypted-media';
                 p.iframe.addEventListener('load', () => {
+                    resetProxySession.call(thiz);
                     if (thiz.src) {
                         console.log(
                             'MediaElementExtension: initialising iframe with src',
