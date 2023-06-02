@@ -921,10 +921,12 @@ hbbtv.objects.AVControl = (function() {
             console.log(
                 'A/V Control: Transitioned from state ' + priv.playState + ' to ' + targetState
             );
+            if (priv.playState !== targetState) {
+                dispatchEvent.call(this, 'PlayStateChange', {
+                    state: targetState,
+                });
+            }
             priv.playState = targetState;
-            dispatchEvent.call(this, 'PlayStateChange', {
-                state: targetState,
-            });
             return true;
         }
         console.warn(
