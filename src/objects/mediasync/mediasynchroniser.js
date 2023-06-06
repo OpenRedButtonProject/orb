@@ -160,7 +160,9 @@ hbbtv.objects.MediaSynchroniser = (function() {
             if (isBroadcast) {
                 if (
                     mediaObject.playState ===
-                    hbbtv.objects.BroadcastObserver.prototype.PLAY_STATE_UNREALIZED
+                    hbbtv.objects.BroadcastObserver.prototype.PLAY_STATE_UNREALIZED ||
+                    mediaObject.playState ===
+                    hbbtv.objects.BroadcastObserver.prototype.PLAY_STATE_STOPPED
                 ) {
                     errorHandler();
                     return;
@@ -423,6 +425,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
             p.mediaObjects.delete(mediaObject);
             privates.delete(mediaObject);
             p.mediaObserver.muted = false;
+            mediaObject.pause();
             console.log('MediaSynchroniser: Removed media object from media synchroniser.');
         }
     };

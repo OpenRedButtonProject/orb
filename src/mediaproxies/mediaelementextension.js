@@ -140,7 +140,7 @@ hbbtv.objects.MediaElementExtension = (function() {
     function createPrototype() {
         const ORB_PLAYER_URL = 'orb://player';
         const prototype = Object.create(HTMLMediaElement.prototype);
-        const methods = ['pause', 'load'];
+        const methods = ['load'];
         const asyncMethods = [
             'orb_getPeriods',
             'orb_getMrsUrl',
@@ -260,7 +260,16 @@ hbbtv.objects.MediaElementExtension = (function() {
                 }
                 lastMediaElement = this;
             }
-            return privates.get(this).iframeProxy.callAsyncObserverMethod(MEDIA_PROXY_ID, 'play');
+
+            const p = privates.get(this);
+            p.videoDummy.paused = false;
+            return p.iframeProxy.callAsyncObserverMethod(MEDIA_PROXY_ID, 'play');
+        };
+
+        prototype.pause = function() {
+            const p = privates.get(this);
+            p.videoDummy.paused = true;
+            p.iframeProxy.callObserverMethod(MEDIA_PROXY_ID, 'pause', Array.from(arguments));
         };
 
         prototype.setMediaKeys = function(mediaKeys) {
@@ -514,7 +523,7 @@ hbbtv.objects.MediaElementExtension = (function() {
         this.paused = mediaOwnProperties.paused.get.call(parent);
         this.dispatchEvent = function(e) {
             if (e.type === '__orb_startDateUpdated__') {
-                this.startDate = new Date(e.startDate);
+                this.startDate = new Date(typeof e.startDate === 'number'? e.startDate: NaN);
             } else if (e.type === 'play') {
                 _timeUpdateTS = Date.now();
             }
