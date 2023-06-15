@@ -1,10 +1,17 @@
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
+include $(LOCAL_PATH)/../../Features.mk
+
 LOCAL_MODULE := liborg.orbtv.orblibrary.networkservices
 
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/media_synchroniser \
-                    $(LOCAL_PATH)/app2app
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/ \
+    $(LOCAL_PATH)/media_synchroniser \
+    $(LOCAL_PATH)/app2app
+
+ifeq ($(ORB_204_ENABLE),yes)
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/json_rpc_server
+endif
 
 LOCAL_SRC_FILES := \
    app2app/app2app_local_service.cpp \
@@ -23,6 +30,11 @@ LOCAL_SRC_FILES := \
    media_synchroniser/CSSUtilities.cpp \
    media_synchroniser/TimelineSyncService.cpp
 
+ifeq ($(ORB_204_ENABLE),yes)
+LOCAL_SRC_FILES += \
+    json_rpc/JsonRpcService.cpp
+endif
+
 LOCAL_CFLAGS := \
    -Wno-unused-variable \
    -Wno-unused-function \
@@ -30,7 +42,10 @@ LOCAL_CFLAGS := \
    -Wno-unused-parameter \
    -Wno-non-virtual-dtor \
    -Wno-unused-private-field
-   
+
+ifeq ($(ORB_204_ENABLE),yes)
+LOCAL_CFLAGS += -DORB_204_ENABLE
+endif
 
 LOCAL_CPPFLAGS += -fexceptions \
                   -frtti

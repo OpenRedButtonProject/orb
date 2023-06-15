@@ -14,6 +14,7 @@ include_directories(
    src/main/symlink.network_services
    src/main/symlink.network_services/media_synchroniser
    src/main/symlink.network_services/app2app
+   src/main/symlink.network_services/json_rpc
    src/main/symlink.application_manager
 )
 
@@ -67,6 +68,8 @@ add_library(
    src/main/symlink.network_services/media_synchroniser/ContentIdentificationService.cpp
    src/main/symlink.network_services/media_synchroniser/CSSUtilities.cpp
    src/main/symlink.network_services/media_synchroniser/TimelineSyncService.cpp
+   src/main/symlink.network_services/json_rpc/JsonRpcService.h
+   src/main/symlink.network_services/json_rpc/JsonRpcService.cpp
 )
 target_link_libraries(
    org.orbtv.orblibrary.networkservices
@@ -82,6 +85,7 @@ add_library(
    src/main/cpp/jni_utils.cpp
    src/main/cpp/application_manager_native.cpp
    src/main/cpp/network_services_native.cpp
+   src/main/cpp/json_rpc_native.cpp
    src/main/cpp/native.cpp
 )
 target_link_libraries(
