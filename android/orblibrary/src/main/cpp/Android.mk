@@ -36,13 +36,15 @@ LOCAL_SRC_FILES := \
    jni_utils.cpp \
    application_manager_native.cpp \
    network_services_native.cpp \
+   json_rpc_native.cpp \
    native.cpp
 
 LOCAL_C_INCLUDES := \
    $(LOCAL_PATH)/../symlink.application_manager/ \
    $(LOCAL_PATH)/../symlink.network_services/ \
    $(LOCAL_PATH)/../symlink.network_services/media_synchroniser/ \
-   $(LOCAL_PATH)/../symlink.network_services/app2app/
+   $(LOCAL_PATH)/../symlink.network_services/app2app/ \
+   $(LOCAL_PATH)/../symlink.network_services/json_rpc/
 
 LOCAL_STATIC_LIBRARIES += libxml2
 LOCAL_STATIC_LIBRARIES += libwebsockets
