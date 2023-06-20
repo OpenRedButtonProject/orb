@@ -4,44 +4,51 @@
  * Licensed under the ORB License that can be found in the LICENSE file at
  * the top level of this repository.
  */
+#define LOG_TAG "JsonRpcService"
 
 #include "JsonRpcService.h"
 #include "log.h"
 
 #include <iostream>
+#include <sstream>
 
 namespace NetworkServices {
 
-JsonRpcService::JsonRpcService(int port, const std::string &endpoint,
+JsonRpcService::JsonRpcService(
+    int port,
+    const std::string &endpoint,
     std::unique_ptr<SessionCallback> sessionCallback) :
     WebSocketService("JsonRpcService", port, false, "lo"), 
     m_endpoint(endpoint),
     m_sessionCallback(std::move(sessionCallback))
 {
-    LOG(LOG_INFO, "RPC Ctor");
+    LOG(LOG_INFO, "Start");
+    Start();
 }
 
 bool JsonRpcService::OnConnection(WebSocketConnection *connection)
 {
     if (connection->Uri() != m_endpoint) {
-        LOG(LOG_INFO, "RPC Unknown endpoint received");
+        LOG(LOG_INFO, "Unknown endpoint received. Got: %s, expected: %s",
+            connection->Uri().c_str(), m_endpoint.c_str());
         return false;
     }
-
-    LOG(LOG_INFO, "RPC OnConnection");
-
+    LOG(LOG_INFO, "Connected: connectionId=%d", connection->Id());
     return true;
 }
 
 void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const std::string &text)
 {
-    if (text == "Hello Terminal")
+    LOG(LOG_INFO, "Message received: connection=%d, text=%s", connection->Id(), text.c_str());
+    // TODO Use JSON library to parse JSON request
+    if (text == "request=dialogueEnhancementOverride")
     {
-        m_sessionCallback->HelloTerminal(connection->UniqueId(), "Testing 1234");
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call sesssion callback...");
+        m_sessionCallback->RequestDialogueEnhancementOverride(connection->Id(), 1, 2);
     }
     else
     {
-        LOG(LOG_INFO, "RPC Unknown message received: %s", text.c_str());
+        LOG(LOG_INFO, "Message not handled");
     }
 }
 
@@ -55,13 +62,21 @@ void JsonRpcService::OnServiceStopped()
 
 }
 
-void JsonRpcService::HelloApp(int id)
+void JsonRpcService::RespondDialogueEnhancementOverride(
+    int connectionId,
+    int id,
+    int dialogueEnhancementGain)
 {
+    LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
+
     connections_mutex_.lock();
-    WebSocketConnection *connection = GetConnection(id);
+    WebSocketConnection *connection = GetConnection(connectionId);
     if (connection != nullptr)
     {
-        connection->SendMessage("Hello App");
+        // TODO Use JSON library to create JSON response
+        std::ostringstream oss;
+        oss << "response=dialogueEnhancementOverride|" << id << "|" << dialogueEnhancementGain;
+        connection->SendMessage(oss.str());
     }
     connections_mutex_.unlock();
 }

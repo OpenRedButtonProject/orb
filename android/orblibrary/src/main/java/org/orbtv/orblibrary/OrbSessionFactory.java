@@ -74,6 +74,7 @@ public class OrbSessionFactory {
         public final int mediaSyncTsPort;
         public final int app2appLocalPort;
         public final int app2appRemotePort;
+        public final int jsonRpcPort;
         public final String mainActivityUuid;
         public final String userAgent;
         public final String sansSerifFontFamily;
@@ -88,6 +89,7 @@ public class OrbSessionFactory {
          * @param mediaSyncTsPort
          * @param app2appLocalPort
          * @param app2appRemotePort
+         * @param jsonRpcPort
          * @param mainActivityUuid
          * @param userAgent
          * @param sansSerifFontFamily
@@ -95,15 +97,24 @@ public class OrbSessionFactory {
          * @param doNotTrackEnabled If the user has enabled Do Not Track (DNT).
          * @param cleanAudioEnabled If the user has enabled clean audio tracks
          */
-        public Configuration(int mediaSyncWcPort, int mediaSyncCiiPort, int mediaSyncTsPort,
-                             int app2appLocalPort, int app2appRemotePort, String mainActivityUuid, String userAgent,
-                             String sansSerifFontFamily, String fixedFontFamily,
-                             boolean doNotTrackEnabled, boolean cleanAudioEnabled) {
+        public Configuration(int mediaSyncWcPort,
+                int mediaSyncCiiPort,
+                int mediaSyncTsPort,
+                int app2appLocalPort,
+                int app2appRemotePort,
+                int jsonRpcPort,
+                String mainActivityUuid,
+                String userAgent,
+                String sansSerifFontFamily,
+                String fixedFontFamily,
+                boolean doNotTrackEnabled,
+                boolean cleanAudioEnabled) {
             this.mediaSyncWcPort = mediaSyncWcPort;
             this.mediaSyncCiiPort = mediaSyncCiiPort;
             this.mediaSyncTsPort = mediaSyncTsPort;
             this.app2appLocalPort = app2appLocalPort;
             this.app2appRemotePort = app2appRemotePort;
+            this.jsonRpcPort = jsonRpcPort;
             this.mainActivityUuid = mainActivityUuid;
             this.userAgent = userAgent;
             this.sansSerifFontFamily = sansSerifFontFamily;
