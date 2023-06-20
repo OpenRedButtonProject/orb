@@ -1382,6 +1382,19 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         mTestSuiteRunner.onTestReportPublished(testSuite, xml);
     }
 
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param dialogueEnhancementGain TODO
+     */
+    @Override
+    public void onRequestDialogueEnhancementOverride(int connection, int id, int dialogueEnhancementGain) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #5: Mock ORB session callback called with request. Call ORB session with response...");
+        mSession.onRespondDialogueEnhancementOverride(connection, id, dialogueEnhancementGain);
+    }
+
     private static byte[] getAssetBytes(Context context, String asset) {
         byte[] buffer;
         try {

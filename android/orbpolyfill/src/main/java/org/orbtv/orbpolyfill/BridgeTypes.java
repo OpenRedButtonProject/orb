@@ -847,6 +847,8 @@ public class BridgeTypes {
         public String audioOutputFormat; // Optional
         public String html5MediaVariableRateMin; // Optional
         public String html5MediaVariableRateMax; // Optional
+        public String jsonRpcServerUrl; // Auto populated by ORB bridge
+        public String jsonRpcServerVersion; // Auto populated by ORB bridge
 
         /**
          * Create a capabilities type that describes the current capabilities of the terminal.
@@ -950,6 +952,12 @@ public class BridgeTypes {
             }
             if (html5MediaVariableRateMax != null) {
                 o.put("html5MediaVariableRateMax", html5MediaVariableRateMax);
+            }
+            if (jsonRpcServerUrl != null) {
+                o.put("jsonRpcServerUrl", jsonRpcServerUrl);
+            }
+            if (jsonRpcServerVersion != null) {
+                o.put("jsonRpcServerVersion", jsonRpcServerVersion);
             }
             return o;
         }

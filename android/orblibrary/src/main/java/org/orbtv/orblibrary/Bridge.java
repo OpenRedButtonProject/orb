@@ -36,16 +36,18 @@ class Bridge extends AbstractBridge {
     private final OrbSessionFactory.Configuration mConfiguration;
     private final App2AppService mApp2AppService;
     private final MediaSynchroniserManager mMediaSyncManager;
+    private final JsonRpc mJsonRpc;
     private int mNextListenerId = 1;
 
     Bridge(OrbSession tvBrowser, IOrbSessionCallback orbLibraryCallback,
            OrbSessionFactory.Configuration configuration, ApplicationManager applicationManager,
-           MediaSynchroniserManager mediaSyncManager) {
+           MediaSynchroniserManager mediaSyncManager, JsonRpc jsonRpc) {
         mTvBrowserSession = tvBrowser;
         mOrbLibraryCallback = orbLibraryCallback;
         mConfiguration = configuration;
         mApplicationManager = applicationManager;
         mMediaSyncManager = mediaSyncManager;
+        mJsonRpc = jsonRpc;
         mApp2AppService = App2AppService.GetInstance();
         if (!mApp2AppService.Start(mConfiguration.app2appLocalPort, mConfiguration.app2appRemotePort)) {
             Log.w(TAG, "Failed to start App2App service.");
@@ -718,7 +720,10 @@ class Bridge extends AbstractBridge {
      */
     @Override
     protected BridgeTypes.Capabilities Configuration_getCapabilities(BridgeToken token) {
-        return mOrbLibraryCallback.getCapabilities();
+        BridgeTypes.Capabilities capabilities = mOrbLibraryCallback.getCapabilities();
+        capabilities.jsonRpcServerUrl = mJsonRpc.getUrl();
+        capabilities.jsonRpcServerVersion =mJsonRpc.getVersion();
+        return capabilities;
     }
 
     /**

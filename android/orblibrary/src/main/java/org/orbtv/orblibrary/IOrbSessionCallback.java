@@ -615,4 +615,13 @@ public interface IOrbSessionCallback {
      * @param xml The XML test report.
      */
     void publishTestReport(String testSuite, String xml);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param dialogueEnhancementGain TODO
+     */
+    void onRequestDialogueEnhancementOverride(int connection, int id, int dialogueEnhancementGain);
 }
