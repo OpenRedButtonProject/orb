@@ -18,6 +18,7 @@ class OrbSession implements IOrbSession {
     private ApplicationManager mApplicationManager;
     private OrbSessionFactory.Configuration mConfiguration;
     private MediaSynchroniserManager mMediaSynchroniserManager;
+    private JsonRpc mJsonRpc;
     private Bridge mBridge;
     private BrowserView mBrowserView;
     private DsmccClient mDsmccClient;
@@ -34,8 +35,9 @@ class OrbSession implements IOrbSession {
         mConfiguration = configuration;
         mApplicationManager = new ApplicationManager(mOrbSessionCallback);
         mMediaSynchroniserManager = new MediaSynchroniserManager(configuration);
+        mJsonRpc = new JsonRpc(configuration.jsonRpcPort, mOrbSessionCallback);
         mBridge = new Bridge(this, callback, configuration, mApplicationManager,
-                mMediaSynchroniserManager);
+                mMediaSynchroniserManager, mJsonRpc);
         mDsmccClient = new DsmccClient(callback);
         mBrowserView = new BrowserView(context, mBridge, configuration, mDsmccClient);
 
@@ -624,6 +626,20 @@ class OrbSession implements IOrbSession {
     public void close() {
         mApplicationManager.close();
         mBridge.releaseResources();
+        mJsonRpc.close();
         //mOrbSessionCallback.finaliseTEMITimelineMonitoring();
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param dialogueEnhancementGain
+     */
+    @Override
+    public void onRespondDialogueEnhancementOverride(int connection, int id, int dialogueEnhancementGain) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #6: ORB session called with response. Call JsonRpc Java...");
+        mJsonRpc.onRespondDialogueEnhancementOverride(connection, id, dialogueEnhancementGain);
     }
 }

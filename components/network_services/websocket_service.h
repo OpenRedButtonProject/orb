@@ -30,9 +30,9 @@ public:
             return uri_;
         }
 
-        int UniqueId() const
+        int Id() const
         {
-            return unique_id_;
+            return id_;
         }
 
         void SendMessage(const std::string &text);
@@ -55,7 +55,7 @@ protected:
         std::string uri_;
         std::string text_buffer_;
         std::queue<struct FragmentWriteInfo> write_queue_;
-        int unique_id_;
+        int id_;
 
         // Disallow copy and assign
         WebSocketConnection(const WebSocketConnection&) = delete;
@@ -76,11 +76,11 @@ protected:
 protected:
     std::recursive_mutex connections_mutex_;
     std::unordered_map<void *, std::unique_ptr<WebSocketConnection> > connections_;
-    WebSocketConnection * GetConnection(int unique_id)
+    WebSocketConnection * GetConnection(int id)
     {
         for (auto &connection : connections_)
         {
-            if (connection.second->unique_id_ == unique_id)
+            if (connection.second->id_ == id)
             {
                 return connection.second.get();
             }

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//HbbTV//1.1.1//EN" "http://www.hbbtv.org/dtd/HbbTV-1.1.1.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>JSON RPC</title>
+<meta http-equiv="content-type" content="Content-Type: application/vnd.hbbtv.xhtml+xml; charset=UTF-8" />
+<style type="text/css">
+body {
+   margin: 2em;
+   padding: 0;
+   width: 1280px;
+   height: 720px;
+   background-color: #ffffff;
+}
+</style>
+</head>
+<body>
+<h2>JSON RPC</h2>
+<object type="application/oipfapplicationmanager" id="app-manager"></object>
+<object type="application/oipfcapabilities" id="capabilities"></object>
+<script>
+//<![CDATA[
+function showApp() {
+   document.getElementById('app-manager').getOwnerApplication().show();
+}
+
+function getJsonRpcUrl() {
+   const xml = document.getElementById('capabilities').xmlCapabilities
+   const elements = xml.getElementsByTagName('json_rpc_server');
+   if (elements.length > 0 && elements[0].hasAttribute('url')) {
+      return elements[0].getAttribute('url');
+   }
+   return null;
+}
+
+function init() {
+   console.log('JSON-RPC-EXAMPLE #1: Open connection and send dummy request to service');
+   
+   const url = getJsonRpcUrl();
+   if (!url) {
+      console.log('Could not get URL');
+      return;
+   }
+   
+   const ws = new WebSocket(url);
+   ws.onopen = function(e) {
+      ws.send('request=dialogueEnhancementOverride');
+   };
+   
+   ws.onmessage = function(e) {
+      console.log('JSON-RPC-EXAMPLE #10: Client received response ' + e.data);
+   };
+   
+   ws.onclose = function(e) {
+      console.log('onclose');
+   };
+   
+   ws.onerror = function(error) {
+      console.log('onerror');
+   };
+}
+
+window.onload = () => {
+   showApp();
+   init();
+}
+//]]>
+</script>
+</body>
+</html>
+

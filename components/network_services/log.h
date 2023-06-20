@@ -10,10 +10,13 @@
 #if 1
 #include <android/log.h>
 #include <assert.h>
+#ifndef LOG_TAG
+#define LOG_TAG "ORBNATIVE"
+#endif
 #define LOG_ERROR ANDROID_LOG_ERROR
 #define LOG_INFO ANDROID_LOG_INFO
 #define LOG_DEBUG ANDROID_LOG_DEBUG
-#define LOG(level, args ...) __android_log_print(level, "Orb/ApplicationManager", args)
+#define LOG(level, args ...) __android_log_print(level, LOG_TAG, args)
 #define ASSERT(condition) assert(condition)
 #else
 #define LOG_ERROR 0

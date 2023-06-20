@@ -298,6 +298,17 @@ hbbtv.objects.OipfCapabilities = (function() {
             doc.documentElement.appendChild(element);
         }
 
+        // json_rpc_server
+        if (
+            typeof capabilities.jsonRpcServerUrl === 'string' &&
+            typeof capabilities.jsonRpcServerVersion === 'string'
+        ) {
+            const element = doc.createElementNS(ns, 'json_rpc_server');
+            element.setAttribute('url', capabilities.jsonRpcServerUrl);
+            element.setAttribute('version', capabilities.jsonRpcServerVersion);
+            doc.documentElement.appendChild(element);
+        }
+
         return doc;
     }
 

@@ -16,7 +16,7 @@
 
 #include "jni_utils.h"
 
-#define CB_HELLO_TERMINAL 0
+#define CB_REQUEST_DIALOGUE_ENHANCEMENT_OVERRIDE 0
 #define CB_NUMBER_OF_ITEMS 1
 
 static jfieldID g_service;
@@ -24,8 +24,16 @@ static jmethodID g_cb[CB_NUMBER_OF_ITEMS];
 
 static NetworkServices::JsonRpcService* GetService(JNIEnv *env, jobject object);
 
+// Convert std::string to jstring using:
+// 1. jstring jstr = env->NewStringUTF(str.c_str());
+// 2. use jstr
+// 3. env->DeleteLocalRef(jstr); // always do this, otherwise we will leak memory!
+// and, convert jstring to std::string using:
+// 1. std::string str = JniUtils::MakeStdString(env, str)
+
 class JsonRpcCallback : public NetworkServices::JsonRpcService::SessionCallback {
 public:
+
     explicit JsonRpcCallback(jobject callbackObject)
     {
         JNIEnv *env = JniUtils::GetEnv();
@@ -38,18 +46,18 @@ public:
         env->DeleteGlobalRef(mCallbackObject);
     }
 
-    void HelloTerminal(int id, const std::string &message) override
+    void RequestDialogueEnhancementOverride(
+        int connection,
+        int id,
+        int dialogueEnhancementGain) override
     {
-        // id is the id of the WebSocket connection -- we should probably reply to the connection
-        // that sends the message? need to check hbbtv spec. also note, that the JSON RPC
-        // protocol has a call ID... this needs to be included in the response, but is not currently
-        // provided here... might need connectionId, callId, or a change ID to be a string:
-        // connection-id:call-id
-
+        __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
+            "JSON-RPC-EXAMPLE #3: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
-        jstring j_message = env->NewStringUTF(message.c_str());
-        env->CallVoidMethod(mCallbackObject, g_cb[CB_HELLO_TERMINAL]);
-        env->DeleteLocalRef(j_message);
+        env->CallVoidMethod(
+            mCallbackObject,
+            g_cb[CB_REQUEST_DIALOGUE_ENHANCEMENT_OVERRIDE],
+            connection, id, dialogueEnhancementGain);
     }
 private:
     jobject mCallbackObject;
@@ -62,34 +70,46 @@ void InitialiseJsonRpcNative()
     g_service = env->GetFieldID(managerClass, "mServicePointerField", "J");
 
     // Callback methods
-    g_cb[CB_HELLO_TERMINAL] = env->GetMethodID(managerClass,
-        "onHelloTerminalCallback", "(Ljava/lang/String;)V");
+    g_cb[CB_REQUEST_DIALOGUE_ENHANCEMENT_OVERRIDE] = env->GetMethodID(managerClass,
+        "onRequestDialogueEnhancementOverride", "(III)V");
 }
 
 extern "C"
-JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_JsonRpc_nativeInit(
-    JNIEnv *env, jobject object)
+JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_JsonRpc_nativeOpen(
+    JNIEnv *env,
+    jobject object,
+    jint port,
+    jstring endpoint)
 {
     // We use a raw pointer here, as the common way to associate native objects with a Java object
-    // is to store the pointer in a long. Java is responsible for calling nativeUninit
+    // is to store the pointer in a long. Java is responsible for calling nativeClose
     auto sessionCallback = std::make_unique<JsonRpcCallback>(object);
     auto *service = new NetworkServices::JsonRpcService(
-        8190, "/hbbtv/random", std::move(sessionCallback));
+        port, JniUtils::MakeStdString(env, endpoint),
+        std::move(sessionCallback));
     env->SetLongField(object, g_service, jlong(service));
 }
 
 extern "C"
-JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_JsonRpc_nativeUninit(
-        JNIEnv *env, jobject object)
+JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_JsonRpc_nativeClose(
+    JNIEnv *env,
+    jobject object)
 {
     delete GetService(env, object);
 }
 
 extern "C"
-JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_JsonRpc_nativeHelloApp(
-    JNIEnv *env, jobject object)
+JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondDialogueEnhancementOverride(
+    JNIEnv *env,
+    jobject object,
+    jint connection,
+    jint id,
+    jint dialogueEnhancementGain)
 {
-    GetService(env, object)->HelloApp(1);
+    __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
+        "JSON-RPC-EXAMPLE #8: Android native called with response. Call service...");
+    GetService(env, object)->RespondDialogueEnhancementOverride(
+        connection, id, dialogueEnhancementGain);
 }
 
 static NetworkServices::JsonRpcService* GetService(JNIEnv *env, jobject object)

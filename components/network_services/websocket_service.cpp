@@ -18,7 +18,7 @@ namespace NetworkServices {
 #define SECS_SINCE_VALID_HANGUP 10
 #define RX_BUFFER_SIZE 4096
 
-static int next_unique_id_ = 0;
+static int next_connection_id_ = 0;
 
 void WebSocketService::WebSocketConnection::SendMessage(const std::string &text)
 {
@@ -322,7 +322,7 @@ std::string WebSocketService::Header(struct lws *wsi, enum lws_token_indexes hea
 WebSocketService::WebSocketConnection::WebSocketConnection(struct lws *wsi, const std::string &uri)
     : wsi_(wsi), uri_(uri), paired_connection_(nullptr)
 {
-    unique_id_ = next_unique_id_++;
+    id_ = next_connection_id_++;
 }
 
 } // namespace NetworkServices

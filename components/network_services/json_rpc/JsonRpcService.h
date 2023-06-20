@@ -19,7 +19,10 @@ class JsonRpcService : public WebSocketService {
 public:
     class SessionCallback {
 public:
-        virtual void HelloTerminal(int id, const std::string &message) = 0;
+        virtual void RequestDialogueEnhancementOverride(
+            int connectionId,
+            int id,
+            int dialogueEnhancementGain) = 0;
 
         virtual ~SessionCallback() = default;
     };
@@ -35,7 +38,10 @@ public:
 
     void OnServiceStopped() override;
 
-    void HelloApp(int id);
+    void RespondDialogueEnhancementOverride(
+        int connectionId,
+        int id,
+        int dialogueEnhancementGain);
 
 private:
     std::string m_endpoint;

@@ -242,4 +242,13 @@ public interface IOrbSession {
      * TODO(library) What makes sense here?
      */
     void close();
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param dialogueEnhancementGain
+     */
+    void onRespondDialogueEnhancementOverride(int connection, int id, int dialogueEnhancementGain);
 }

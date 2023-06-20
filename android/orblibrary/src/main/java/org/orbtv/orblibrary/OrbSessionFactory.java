@@ -65,19 +65,28 @@ public class OrbSessionFactory {
         public final int mediaSyncTsPort;
         public final int app2appLocalPort;
         public final int app2appRemotePort;
+        public final int jsonRpcPort;
         public final String mainActivityUuid;
         public final String userAgent;
         public final String sansSerifFontFamily;
         public final String fixedFontFamily;
 
-        public Configuration(int mediaSyncWcPort, int mediaSyncCiiPort, int mediaSyncTsPort,
-                             int app2appLocalPort, int app2appRemotePort, String mainActivityUuid, String userAgent,
-                             String sansSerifFontFamily, String fixedFontFamily) {
+        public Configuration(int mediaSyncWcPort,
+                             int mediaSyncCiiPort,
+                             int mediaSyncTsPort,
+                             int app2appLocalPort,
+                             int app2appRemotePort,
+                             int jsonRpcPort,
+                             String mainActivityUuid,
+                             String userAgent,
+                             String sansSerifFontFamily,
+                             String fixedFontFamily) {
             this.mediaSyncWcPort = mediaSyncWcPort;
             this.mediaSyncCiiPort = mediaSyncCiiPort;
             this.mediaSyncTsPort = mediaSyncTsPort;
             this.app2appLocalPort = app2appLocalPort;
             this.app2appRemotePort = app2appRemotePort;
+            this.jsonRpcPort = jsonRpcPort;
             this.mainActivityUuid = mainActivityUuid;
             this.userAgent = userAgent;
             this.sansSerifFontFamily = sansSerifFontFamily;

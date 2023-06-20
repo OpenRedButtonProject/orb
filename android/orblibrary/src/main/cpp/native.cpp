@@ -12,6 +12,7 @@
 #include "jni_utils.h"
 #include "application_manager_native.h"
 #include "network_services_native.h"
+#include "json_rpc_native.h"
 
 extern "C"
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *)
@@ -19,5 +20,6 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *)
     JniUtils::Init(vm, JNI_VERSION_1_6);
     InitialiseApplicationManagerNative();
     InitialiseNetworkServicesNative();
+    InitialiseJsonRpcNative();
     return JNI_VERSION_1_6;
 }

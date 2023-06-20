@@ -1,0 +1,11 @@
+{
+   "testSuites": [
+      {
+         "name": "Json-RPC",
+         "scenario": "debug/json_rpc/scenario.json",
+         "dsmccData": "",
+         "action": "simulate_successful_tune",
+         "timeout": 0
+      }
+   ]
+}

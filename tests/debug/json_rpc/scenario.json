@@ -1,0 +1,18 @@
+{
+   "channels": [
+      {
+         "channel": "debug/json_rpc/mock/channel1.json",
+         "programmes": "debug/json_rpc/mock/programmes.json",
+         "components": "debug/json_rpc/mock/components.json",
+         "applications": [
+            {
+               "id": 1,
+               "orgId": 1,
+               "name": "example",
+               "baseUrl": "$LOCALHOST/debug/json_rpc/",
+               "initialPath": "index.html"
+            }
+         ]
+      }
+   ]
+}
