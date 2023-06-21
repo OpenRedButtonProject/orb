@@ -253,7 +253,7 @@ hbbtv.objects.OipfCapabilities = (function() {
             capabilities.broadcastUrns.forEach(function(urn) {
                 const element = doc.createElementNS(ns, 'broadcast');
                 element.append(urn);
-                doc.documentElement.appendChild(element);
+                extElement.appendChild(element);
             });
         }
 
