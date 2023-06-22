@@ -36,5 +36,15 @@
     } \
     while (0)
 
+/**
+ * Produce a log entry for errors. The entry will contain a message and id.
+ */
+#define ORB_ERROR(msg, id) do \
+    { \
+        fprintf(stderr, "ORB-ERROR [%s]::[%s]::[%d] ", SIMPLE_FILE_NAME, __FUNCTION__, __LINE__); \
+        fprintf(stderr, msg, id); \
+        fprintf(stderr, "\n"); \
+    } \
+    while (0)
 
 #endif // __ORB_LOGGING__

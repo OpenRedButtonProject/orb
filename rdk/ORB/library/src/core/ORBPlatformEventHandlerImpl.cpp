@@ -270,8 +270,17 @@ void ORBPlatformEventHandlerImpl::OnStreamEvent(int id, std::string name, std::s
     properties["text"] = text;
     properties["status"] = status;
 
-    ORBEngine::GetSharedInstance().GetEventListener()->OnJavaScriptEventDispatchRequested(
-        "StreamEvent", properties.dump(), "", true);
+    std::string eventProperties = "";
+    try
+    {
+        eventProperties = properties.dump();
+        ORBEngine::GetSharedInstance().GetEventListener()->OnJavaScriptEventDispatchRequested(
+            "StreamEvent", eventProperties, "", true);
+    }
+    catch (json::type_error& e)
+    {
+        ORB_ERROR(e.what(), e.id);
+    }
 }
 
 /**
