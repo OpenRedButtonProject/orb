@@ -1864,7 +1864,7 @@ hbbtv.objects.VideoBroadcast = (function() {
     function acquireActiveState() {
         if (gActiveStateOwner !== null) {
             const owner = hbbtv.utils.weakDeref(gActiveStateOwner);
-            if (owner !== this) {
+            if (JSON.stringify(owner) !== JSON.stringify(this)) {
                 return false;
             }
         }
