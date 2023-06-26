@@ -690,6 +690,26 @@ class OrbSession implements IOrbSession {
     /**
      * TODO
      *
+     * @param isSubscribe
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param subtitles
+     */
+    @Override
+    public void onRespondSubscribe(boolean isSubscribe, int connection, int id,
+                                   boolean subtitles, boolean dialogueEnhancement,
+                                   boolean uiMagnifier, boolean highContrastUI,
+                                   boolean screenReader, boolean responseToUserAction,
+                                   boolean audioDescription, boolean inVisionSigning) {
+
+        mJsonRpc.onRespondSubscribe(isSubscribe, connection, id,
+                subtitles, dialogueEnhancement, uiMagnifier, highContrastUI,
+                screenReader, responseToUserAction, audioDescription, inVisionSigning);
+    }
+
+    /**
+     * TODO
+     *
      * @param connection The request and response should have the same value
      * @param id The request and response should have the same value
      * @param dialogueEnhancementGain
@@ -698,5 +718,46 @@ class OrbSession implements IOrbSession {
     public void onRespondDialogueEnhancementOverride(int connection, int id, int dialogueEnhancementGain) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #6: ORB session called with response. Call JsonRpc Java...");
         mJsonRpc.onRespondDialogueEnhancementOverride(connection, id, dialogueEnhancementGain);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param feature
+     * @param value
+     */
+    @Override
+    public void onRespondFeatureSupportInfo(int connection, int id, int feature, String value) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+        mJsonRpc.onRespondFeatureSupportInfo(connection, id, feature, value);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param feature
+     */
+    @Override
+    public void onRespondFeatureSettingsQuery(int connection, int id, int feature) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+        mJsonRpc.onRespondFeatureSettingsQuery(connection, id, feature);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param feature
+     * @param value
+     */
+    @Override
+    public void onRespondFeatureSuppress(int connection, int id, int feature, String value) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+        mJsonRpc.onRespondFeatureSuppress(connection, id, feature, value);
     }
 }
