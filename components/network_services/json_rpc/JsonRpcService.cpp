@@ -1780,4 +1780,23 @@ void JsonRpcService::RespondFeatureSuppress(
     connections_mutex_.unlock();
 }
 
+void JsonRpcService::RespondError(
+    int connectionId,
+    int id,
+    int code,
+    const std::string& message)
+{
+    LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9a: Service called with response. Send response to client...");
+}
+
+void JsonRpcService::RespondError(
+    int connectionId,
+    int id,
+    int code,
+    const std::string& message,
+    const std::string& method)
+{
+    LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9a: Service called with response. Send response to client...");
+}
+
 } // namespace NetworkServices

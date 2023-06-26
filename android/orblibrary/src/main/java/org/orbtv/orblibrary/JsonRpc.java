@@ -34,6 +34,13 @@ public class JsonRpc {
         return JSON_RPC_SERVER_VERSION;
     }
 
+
+    public void onRespondNegotiateMethods(int connection, int id,
+                                          String terminalToApp, String appToTerminal) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7: onRespondNegotiateMethods...");
+        nativeOnRespondNegotiateMethods(connection, id, terminalToApp, appToTerminal);
+    }
+
     public void onRespondSubscribe(
         boolean isSubscribe,
         int connection,
@@ -82,7 +89,35 @@ public class JsonRpc {
         nativeOnRespondFeatureSuppress(connection, id, feature, value);
     }
 
+    public void onRespondError(
+        int connection,
+        int id,
+        int code,
+        String message) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onRespondError...");
+        nativeOnRespondError(connection, id, code, message);
+    }
+
+    public void onRespondError(
+        int connection,
+        int id,
+        int code,
+        String message,
+        String method) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onRespondError...");
+        nativeOnRespondErrorWithMethod(connection, id, code, message, method);
+    }
+
     // Called by native
+
+    private void onRequestNegotiateMethods(
+            int connection,
+            int id,
+            String terminalToApp,
+            String appToTerminal) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #4a: onRequestNegotiateMethods...");
+        mOrbSessionCallback.onRequestNegotiateMethods(connection, id, terminalToApp, appToTerminal);
+    }
 
     private void onRequestSubscribe(
         boolean isSubscribe,
@@ -185,6 +220,12 @@ public class JsonRpc {
 
     private native void nativeClose();
 
+    private native void nativeOnRespondNegotiateMethods(
+        int connection,
+        int id,
+        String terminalToApp,
+        String appToTerminal);
+
     private native void nativeOnRespondSubscribe(
         boolean isSubscribe,
         int connection,
@@ -215,4 +256,17 @@ public class JsonRpc {
         int id,
         int feature,
         String value);
+
+    private native void nativeOnRespondError(
+            int connection,
+            int id,
+            int code,
+            String message);
+
+    private native void nativeOnRespondErrorWithMethod(
+            int connection,
+            int id,
+            int code,
+            String message,
+            String method);
 }
