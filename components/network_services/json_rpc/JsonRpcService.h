@@ -20,6 +20,12 @@ class JsonRpcService : public WebSocketService {
 public:
     class SessionCallback {
 public:
+        virtual void RequestNegotiateMethods(
+                int connectionId,
+                int id,
+                std::string terminalToApp,
+                std::string appToTerminal) = 0;
+
         virtual void RequestSubscribe(
                 int connectionId,
                 int id,
