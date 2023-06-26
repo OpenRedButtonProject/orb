@@ -586,7 +586,129 @@ public interface IOrbSessionCallback {
      *
      * @param connection The request and response should have the same value
      * @param id The request and response should have the same value
+     * @param subtitles TODO
+     */
+    void onRequestSubscribe(boolean isSubscribe, int connection, int id,
+                            boolean subtitles, boolean dialogueEnhancement,
+                            boolean uiMagnifier, boolean highContrastUI,
+                            boolean screenReader, boolean responseToUserAction,
+                            boolean audioDescription, boolean inVisionSigning);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
      * @param dialogueEnhancementGain TODO
      */
     void onRequestDialogueEnhancementOverride(int connection, int id, int dialogueEnhancementGain);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param feature TODO
+     */
+    void onRequestFeatureSupportInfo(int connection, int id, int feature);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param feature TODO
+     */
+    void onRequestFeatureSettingsQuery(int connection, int id, int feature);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param feature TODO
+     */
+    void onRequestFeatureSuppress(int connection, int id, int feature);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param isReady TODO
+     */
+    void onNotifyVoiceReady(int connection, boolean isReady);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param state
+     * @param actPause
+     * @param actPlay
+     * @param actFastForward
+     * @param actFastReverse
+     * @param actStop
+     * @param actSeekContent
+     * @param actSeekRelative
+     * @param actSeekLive
+     * @param actWallclock
+     */
+    void onNotifyStateMedia(int connection,
+                            String state,
+                            boolean actPause, boolean actPlay, boolean actFastForward,
+                            boolean actFastReverse, boolean actStop,
+                            boolean actSeekContent, boolean actSeekRelative,
+                            boolean actSeekLive, boolean actWallclock);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param state
+     * @param kind
+     * @param type
+     * @param currentTime
+     * @param rangeStart
+     * @param rangeEnd
+     * @param actPause
+     * @param actPlay
+     * @param actFastForward
+     * @param actFastReverse
+     * @param actStop
+     * @param actSeekContent
+     * @param actSeekRelative
+     * @param actSeekLive
+     * @param actWallclock
+     * @param mediaId
+     * @param title
+     * @param secTitle
+     * @param synopsis
+     * @param subtitlesEnabled
+     * @param subtitlesAvailable
+     * @param audioDescripEnabled
+     * @param audioDescripAvailable
+     * @param signLangEnabled
+     * @param signLangAvailable
+     */
+    void onNotifyStateMedia(int connection,
+                            String state, String kind, String type, String currentTime,
+                            String rangeStart, String rangeEnd,
+                            boolean actPause, boolean actPlay, boolean actFastForward, 
+                            boolean actFastReverse, boolean actStop,
+                            boolean actSeekContent, boolean actSeekRelative, 
+                            boolean actSeekLive, boolean actWallclock,
+                            String mediaId, String title, String secTitle, String synopsis,
+                            boolean subtitlesEnabled, boolean subtitlesAvailable,
+                            boolean audioDescripEnabled, boolean audioDescripAvailable,
+                            boolean signLangEnabled, boolean signLangAvailable);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param code TODO
+     * @param message
+     */
+    void onReceiveError(int connection, int id, int code, String message);
 }

@@ -1357,6 +1357,41 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      *
      * @param connection The request and response should have the same value
      * @param id The request and response should have the same value
+     * @param subtitles
+     * @param dialogueEnhancement
+     * @param
+     */
+    @Override
+    public void onRequestSubscribe(boolean isSubscribe, int connection, int id,
+                                   boolean subtitles, boolean dialogueEnhancement,
+                                   boolean uiMagnifier, boolean highContrastUI,
+                                   boolean screenReader, boolean responseToUserAction,
+                                   boolean audioDescription, boolean inVisionSigning) {
+
+        mSession.onRespondSubscribe(isSubscribe, connection, id,
+                subtitles, dialogueEnhancement, uiMagnifier, highContrastUI,
+                screenReader, responseToUserAction, audioDescription, inVisionSigning);
+
+    }
+
+//    private Subscriptions subscriptions;
+//
+//    private class Subscriptions {
+//        boolean subtitles;
+//        boolean dialogueEnhancement;
+//        boolean uiMagnifier;
+//        boolean highContrastUI;
+//        boolean screenReader;
+//        boolean responseToUserAction;
+//        boolean audioDescription;
+//        boolean inVisionSigning;
+//    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
      * @param dialogueEnhancementGain TODO
      */
     @Override
@@ -1364,6 +1399,79 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         Log.d(TAG, "JSON-RPC-EXAMPLE #5: Mock ORB session callback called with request. Call ORB session with response...");
         mSession.onRespondDialogueEnhancementOverride(connection, id, dialogueEnhancementGain);
     }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param feature TODO
+     */
+    @Override
+    public void onRequestFeatureSupportInfo(int connection, int id, int feature) {
+        // TODO These are mock values
+        Log.d(TAG, "JSON-RPC-EXAMPLE #5a: Mock ORB session callback called with request. Call ORB session with response...");
+        String value = "tvosOnly";
+        mSession.onRespondFeatureSupportInfo(connection, id, feature, value);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param feature TODO
+     */
+    @Override
+    public void onRequestFeatureSettingsQuery(int connection, int id, int feature) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #5a: Mock ORB session callback called with request. Call ORB session with response...");
+        mSession.onRespondFeatureSettingsQuery(connection, id, feature);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param feature TODO
+     */
+    @Override
+    public void onRequestFeatureSuppress(int connection, int id, int feature) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #5a: Mock ORB session callback called with request. Call ORB session with response...");
+        String value = "suppressing";
+        mSession.onRespondFeatureSuppress(connection, id, feature, value);
+    }
+
+    @Override
+    public void onNotifyVoiceReady(int connection, boolean isReady) {
+
+    }
+
+    @Override
+    public void onNotifyStateMedia(int connection,
+                                   String state,
+                                   boolean actPause, boolean actPlay, boolean actFastForward, boolean actFastReverse,
+                                   boolean actStop, boolean actSeekContent, boolean actSeekRelative, boolean actSeekLive, boolean actWallclock) {
+    }
+
+    @Override
+    public void onNotifyStateMedia(int connection,
+                                   String state, String kind, String type, String currentTime,
+                                   String rangeStart, String rangeEnd,
+                                   boolean actPause, boolean actPlay, boolean actFastForward, boolean actFastReverse,
+                                   boolean actStop, boolean actSeekContent, boolean actSeekRelative, boolean actSeekLive, boolean actWallclock,
+                                   String mediaId, String title, String secTitle, String synopsis,
+                                   boolean subtitlesEnabled, boolean subtitlesAvailable,
+                                   boolean audioDescripEnabled, boolean audioDescripAvailable,
+                                   boolean signLangEnabled, boolean signLangAvailable) {
+
+    }
+
+    @Override
+    public void onReceiveError(int connection, int id, int code, String message) {
+
+    }
+
 
     private static byte[] getAssetBytes(Context context, String asset) {
         byte[] buffer;

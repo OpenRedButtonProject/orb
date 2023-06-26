@@ -246,9 +246,52 @@ public interface IOrbSession {
     /**
      * TODO
      *
+     * @param isSubscribe
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param subtitles
+     */
+    void onRespondSubscribe(boolean isSubscribe, int connection, int id,
+                            boolean subtitles, boolean dialogueEnhancement,
+                            boolean uiMagnifier, boolean highContrastUI,
+                            boolean screenReader, boolean responseToUserAction,
+                            boolean audioDescription, boolean inVisionSigning);
+
+    /**
+     * TODO
+     *
      * @param connection The request and response should have the same value
      * @param id The request and response should have the same value
      * @param dialogueEnhancementGain
      */
     void onRespondDialogueEnhancementOverride(int connection, int id, int dialogueEnhancementGain);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param feature
+     * @param value
+     */
+    void onRespondFeatureSupportInfo(int connection, int id, int feature, String value);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param feature
+     */
+    void onRespondFeatureSettingsQuery(int connection, int id, int feature);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param feature
+     * @param value
+     */
+    void onRespondFeatureSuppress(int connection, int id, int feature, String value);
 }

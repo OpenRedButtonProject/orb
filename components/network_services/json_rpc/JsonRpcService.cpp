@@ -1721,4 +1721,63 @@ JsonRpcService::JsonRpcService(
         connections_mutex_.unlock();
     }
 
+void JsonRpcService::RespondFeatureSupportInfo(
+    int connectionId,
+    int id,
+    int feature,
+    const std::string& value)
+{
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9a: Service called with response. Send response to client...");
+
+    connections_mutex_.lock();
+    WebSocketConnection *connection = GetConnection(connectionId);
+    if (connection != nullptr)
+    {
+        // TODO Use JSON library to create JSON response
+        std::ostringstream oss;
+        oss << "response=dialogueEnhancementOverride|" << id << "|" << feature << "|" << value;
+        connection->SendMessage(oss.str());
+    }
+    connections_mutex_.unlock();
+}
+
+void JsonRpcService::RespondFeatureSettingsQuery(
+    int connectionId,
+    int id,
+    int feature)
+{
+    LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9a: Service called with response. Send response to client...");
+
+    connections_mutex_.lock();
+    WebSocketConnection *connection = GetConnection(connectionId);
+    if (connection != nullptr)
+    {
+        // TODO Use JSON library to create JSON response
+        std::ostringstream oss;
+        oss << "response=dialogueEnhancementOverride|" << id << "|" << feature;
+        connection->SendMessage(oss.str());
+    }
+    connections_mutex_.unlock();
+    }
+
+void JsonRpcService::RespondFeatureSuppress(
+    int connectionId,
+    int id,
+    int feature,
+    const std::string& value)
+{
+    LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9a: Service called with response. Send response to client...");
+
+    connections_mutex_.lock();
+    WebSocketConnection *connection = GetConnection(connectionId);
+    if (connection != nullptr)
+    {
+        // TODO Use JSON library to create JSON response
+        std::ostringstream oss;
+        oss << "response=dialogueEnhancementOverride|" << id << "|" << feature << "|" << value;
+        connection->SendMessage(oss.str());
+    }
+    connections_mutex_.unlock();
+}
+
 } // namespace NetworkServices
