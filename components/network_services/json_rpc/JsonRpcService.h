@@ -16,17 +16,59 @@
 #include <json/json.h>
 
 namespace NetworkServices {
-    class JsonRpcService : public WebSocketService {
-    public:
-        class SessionCallback {
-    public:
+class JsonRpcService : public WebSocketService {
+public:
+    class SessionCallback {
+public:
+        virtual void RequestSubscribe(
+                int connectionId,
+                int id,
+                bool subtitles, bool dialogueEnhancement,
+                bool uiMagnifier, bool highContrastUI,
+                bool screenReader, bool responseToUserAction,
+                bool audioDescription, bool inVisionSigning) = 0;
+
+        virtual void RequestUnsubscribe(
+                int connectionId,
+                int id,
+                bool subtitles, bool dialogueEnhancement,
+                bool uiMagnifier, bool highContrastUI,
+                bool screenReader, bool responseToUserAction,
+                bool audioDescription, bool inVisionSigning) = 0;
+
         virtual void RequestDialogueEnhancementOverride(
             int connectionId,
             int id,
             int dialogueEnhancementGain) = 0;
 
-            virtual ~SessionCallback() = default;
-        };
+        virtual void RequestFeatureSupportInfo(
+            int connectionId,
+            int id,
+            int feature) = 0;
+
+        virtual void RequestFeatureSettingsQuery(
+            int connectionId,
+            int id,
+            int feature) = 0;
+
+        virtual void RequestFeatureSuppress(
+            int connectionId,
+            int id,
+            int feature) = 0;
+
+        virtual void NotifyVoiceReady(
+            int connectionId,
+            bool isReady) = 0;
+
+        virtual void ReceiveError(
+            int connectionId,
+            int id,
+            int code,
+            std::string message) = 0;
+
+        virtual ~SessionCallback() = default;
+    };
+
 
         JsonRpcService(int port, const std::string &endpoint,
             std::unique_ptr<SessionCallback> m_sessionCallback);
