@@ -261,6 +261,16 @@ public interface IOrbSession {
     /**
      * TODO
      *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param terminalToApp
+     * @param appToTerminal
+     */
+    void onRespondNegotiateMethods(int connection, int id, String terminalToApp, String appToTerminal);
+
+    /**
+     * TODO
+     *
      * @param isSubscribe
      * @param connection The request and response should have the same value
      * @param id The request and response should have the same value
@@ -309,4 +319,25 @@ public interface IOrbSession {
      * @param value
      */
     void onRespondFeatureSuppress(int connection, int id, int feature, String value);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param code
+     * @param message
+     */
+    void onRespondError(int connection, int id, int code, String message);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param code
+     * @param message
+     * @param method
+     */
+    void onRespondError(int connection, int id, int code, String message, String method);
 }

@@ -1387,6 +1387,29 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      *
      * @param connection The request and response should have the same value
      * @param id The request and response should have the same value
+     * @param terminalToApp
+     * @param appToTerminal
+     */
+    @Override
+    public void onRequestNegotiateMethods(int connection, int id,
+                                   String terminalToApp, String appToTerminal) {
+//        mSession
+        Log.d(TAG, "Requested terminalToApp: " + terminalToApp);
+        Log.d(TAG, "Requested appToTerminal: " + appToTerminal);
+
+
+        String approvedTerminalToApp = terminalToApp;
+        String approvedAppToTerminal = appToTerminal;
+
+        mSession.onRespondNegotiateMethods(connection, id,
+                approvedTerminalToApp, approvedAppToTerminal);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
      * @param subtitles
      * @param dialogueEnhancement
      * @param
@@ -1474,7 +1497,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
 
     @Override
     public void onNotifyVoiceReady(int connection, boolean isReady) {
-
+        Log.d(TAG, "JSON-RPC-EXAMPLE #5a: Mock ORB session callback called with request. Call ORB session with response...");
     }
 
     @Override
@@ -1482,6 +1505,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                                    String state,
                                    boolean actPause, boolean actPlay, boolean actFastForward, boolean actFastReverse,
                                    boolean actStop, boolean actSeekContent, boolean actSeekRelative, boolean actSeekLive, boolean actWallclock) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #5a: Mock ORB session callback called with request. Call ORB session with response...");
     }
 
     @Override
@@ -1494,12 +1518,15 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                                    boolean subtitlesEnabled, boolean subtitlesAvailable,
                                    boolean audioDescripEnabled, boolean audioDescripAvailable,
                                    boolean signLangEnabled, boolean signLangAvailable) {
-
+        Log.d(TAG, "JSON-RPC-EXAMPLE #5a: Mock ORB session callback called with request. Call ORB session with response...");
     }
 
     @Override
     public void onReceiveError(int connection, int id, int code, String message) {
-
+        Log.d(TAG, "JSON-RPC-EXAMPLE #5a: Mock ORB session callback called with request. Call ORB session with response...");
+        // JUST FOR TEST
+        mSession.onRespondError(connection, id, code, message);
+        mSession.onRespondError(connection, id, code, message, "Error Method");
     }
 
 

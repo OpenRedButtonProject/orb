@@ -690,6 +690,20 @@ class OrbSession implements IOrbSession {
     /**
      * TODO
      *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param terminalToApp
+     * @param appToTerminal
+     */
+    @Override
+    public void onRespondNegotiateMethods(int connection, int id,
+                                          String terminalToApp, String appToTerminal) {
+        mJsonRpc.onRespondNegotiateMethods(connection, id, terminalToApp, appToTerminal);
+    }
+
+    /**
+     * TODO
+     *
      * @param isSubscribe
      * @param connection The request and response should have the same value
      * @param id The request and response should have the same value
@@ -759,5 +773,33 @@ class OrbSession implements IOrbSession {
     public void onRespondFeatureSuppress(int connection, int id, int feature, String value) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
         mJsonRpc.onRespondFeatureSuppress(connection, id, feature, value);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param code
+     * @param message
+     */
+    @Override
+    public void onRespondError(int connection, int id, int code, String message) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+        mJsonRpc.onRespondError(connection, id, code, message);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param code
+     * @param message
+     * @param method
+     */
+    public void onRespondError(int connection, int id, int code, String message, String method) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+        mJsonRpc.onRespondError(connection, id, code, message, method);
     }
 }

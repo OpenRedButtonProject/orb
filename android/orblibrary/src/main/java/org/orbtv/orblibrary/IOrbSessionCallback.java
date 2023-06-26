@@ -621,7 +621,19 @@ public interface IOrbSessionCallback {
      *
      * @param connection The request and response should have the same value
      * @param id The request and response should have the same value
+     * @param terminalToApp
+     * @param appToTerminal
+     */
+    void onRequestNegotiateMethods(int connection, int id,
+                                   String terminalToApp, String appToTerminal);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
      * @param subtitles TODO
+     * @param
      */
     void onRequestSubscribe(boolean isSubscribe, int connection, int id,
                             boolean subtitles, boolean dialogueEnhancement,
