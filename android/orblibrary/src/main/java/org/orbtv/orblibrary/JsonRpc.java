@@ -35,7 +35,7 @@ public class JsonRpc {
     }
 
 
-    public void onRespondNegotiateMethods(int connection, int id,
+    public void onRespondNegotiateMethods(int connection, String id,
                                           String terminalToApp, String appToTerminal) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #7: onRespondNegotiateMethods...");
         nativeOnRespondNegotiateMethods(connection, id, terminalToApp, appToTerminal);
@@ -44,7 +44,7 @@ public class JsonRpc {
     public void onRespondSubscribe(
         boolean isSubscribe,
         int connection,
-        int id,
+        String id,
         boolean subtitles, boolean dialogueEnhancement,
         boolean uiMagnifier, boolean highContrastUI,
         boolean screenReader, boolean responseToUserAction,
@@ -57,7 +57,7 @@ public class JsonRpc {
 
     public void onRespondDialogueEnhancementOverride(
         int connection,
-        int id,
+        String id,
         int dialogueEnhancementGain) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #7: JsonRpc Java called with response. Call native...");
         nativeOnRespondDialogueEnhancementOverride(connection, id, dialogueEnhancementGain);
@@ -65,7 +65,7 @@ public class JsonRpc {
 
     public void onRespondFeatureSupportInfo(
         int connection,
-        int id,
+        String id,
         int feature,
         String value) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #7a: JsonRpc Java called with response. Call native...");
@@ -74,7 +74,7 @@ public class JsonRpc {
 
     public void onRespondFeatureSettingsQuery(
         int connection,
-        int id,
+        String id,
         int feature) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #7a: JsonRpc Java called with response. Call native...");
         nativeOnRespondFeatureSettingsQuery(connection, id, feature);
@@ -82,7 +82,7 @@ public class JsonRpc {
 
     public void onRespondFeatureSuppress(
         int connection,
-        int id,
+        String id,
         int feature,
         String value) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #7a: JsonRpc Java called with response. Call native...");
@@ -91,7 +91,7 @@ public class JsonRpc {
 
     public void onRespondError(
         int connection,
-        int id,
+        String id,
         int code,
         String message) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onRespondError...");
@@ -100,7 +100,7 @@ public class JsonRpc {
 
     public void onRespondError(
         int connection,
-        int id,
+        String id,
         int code,
         String message,
         String method) {
@@ -108,13 +108,180 @@ public class JsonRpc {
         nativeOnRespondErrorWithMethod(connection, id, code, message, method);
     }
 
+    public void onQuerySubtitles(
+        int connection,
+        String id,
+        boolean enabled,
+        int size,
+        String fontFamily,
+        String textColour,
+        int textOpacity,
+        String edgeType,
+        String edgeColour,
+        String backgroundColour,
+        int backgroundOpacity,
+        String windowColour,
+        int windowOpacity,
+        String language) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onQuerySubtitles...");
+        nativeOnQuerySubtitles(connection, id,
+                enabled, size, fontFamily, textColour, textOpacity,
+                edgeType, edgeColour, backgroundColour, backgroundOpacity,
+                windowColour, windowOpacity, language);
+    }
+
+    public void onQueryDialogueEnhancement(
+        int connection,
+        String id,
+        int gainPreference,
+        int gain,
+        int limitMin,
+        int limitMax) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onQueryDialogueEnhancement...");
+        nativeOnQueryDialogueEnhancement(connection, id,
+                gainPreference, gain, limitMin, limitMax);
+    }
+
+    public void onQueryUIMagnifier(
+        int connection,
+        String id,
+        boolean enabled,
+        String magType) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onQueryUIMagnifier...");
+        nativeOnQueryUIMagnifier(connection, id, enabled, magType);
+    }
+
+    public void onQueryHighContrastUI(
+        int connection,
+        String id,
+        boolean enabled,
+        String hcType) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onQueryHighContrastUI...");
+        nativeOnQueryHighContrastUI(connection, id, enabled, hcType);
+    }
+
+    public void onQueryScreenReader(
+        int connection,
+        String id,
+        boolean enabled,
+        int speed,
+        String voice,
+        String language) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onQueryScreenReader...");
+        nativeOnQueryScreenReader(connection, id,
+                enabled, speed, voice, language);
+    }
+
+    public void onQueryResponseToUserAction(
+        int connection,
+        String id,
+        boolean enabled,
+        String type) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onQueryResponseToUserAction...");
+        nativeOnQueryResponseToUserAction(connection, id, enabled, type);
+    }
+
+    public void onQueryAudioDescription(
+        int connection,
+        String id,
+        boolean enabled,
+        int gainPreference,
+        int panAzimuthPreference) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onQueryAudioDescription...");
+        nativeOnQueryAudioDescription(connection, id,
+                enabled, gainPreference, panAzimuthPreference);
+    }
+
+    public void onQueryInVisionSigning(
+        int connection,
+        String id,
+        boolean enabled) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onQueryInVisionSigning...");
+        nativeOnQueryInVisionSigning(connection, id, enabled);
+    }
+
+    public void onSendIntentMediaBasics(
+        int cmd,
+        int connection,
+        String id,
+        String origin) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onSendIntentMediaBasics...");
+        nativeOnSendIntentMediaBasics(cmd, connection, id, origin);
+    }
+
+    public void onSendIntentMediaSeekContent(
+        int connection,
+        String id,
+        String origin,
+        String anchor,
+        int offset) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onSendIntentMediaSeekContent...");
+        nativeOnSendIntentMediaSeekContent(connection, id, origin, anchor, offset);
+    }
+
+    public void onSendIntentMediaSeekRelative(
+        int connection,
+        String id,
+        String origin,
+        int offset) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onSendIntentMediaSeekRelative...");
+        nativeOnSendIntentMediaSeekRelative(connection, id, origin, offset);
+    }
+
+    public void onSendIntentMediaSeekLive(
+        int connection,
+        String id,
+        String origin,
+        int offset) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onSendIntentMediaSeekLive...");
+        nativeOnSendIntentMediaSeekLive(connection, id, origin, offset);
+    }
+
+    public void onSendIntentMediaSeekWallclock(
+        int connection,
+        String id,
+        String origin,
+        String dateTime) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onSendIntentMediaSeekWallclock...");
+        nativeOnSendIntentMediaSeekWallclock(connection, id, origin, dateTime);
+    }
+
+    public void onSendIntentSearch(
+        int connection,
+        String id,
+        String origin,
+        String query) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onSendIntentSearch...");
+        nativeOnSendIntentSearch(connection, id, origin, query);
+    }
+
+    public void onSendIntentDisplay(
+        int connection,
+        String id,
+        String origin,
+        String mediaId) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onSendIntentDisplay...");
+        nativeOnSendIntentDisplay(connection, id, origin, mediaId);
+    }
+
+    public void onSendIntentPlayback(
+        int connection,
+        String id,
+        String origin,
+        String mediaId,
+        String anchor,
+        int offset) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onSendIntentPlayback...");
+        nativeOnSendIntentPlayback(connection, id, origin, mediaId, anchor, offset);
+    }
+
     // Called by native
 
     private void onRequestNegotiateMethods(
-            int connection,
-            int id,
-            String terminalToApp,
-            String appToTerminal) {
+        int connection,
+        String id,
+        String terminalToApp,
+        String appToTerminal) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #4a: onRequestNegotiateMethods...");
         mOrbSessionCallback.onRequestNegotiateMethods(connection, id, terminalToApp, appToTerminal);
     }
@@ -122,7 +289,7 @@ public class JsonRpc {
     private void onRequestSubscribe(
         boolean isSubscribe,
         int connection,
-        int id,
+        String id,
         boolean subtitles, boolean dialogueEnhancement,
         boolean uiMagnifier, boolean highContrastUI,
         boolean screenReader, boolean responseToUserAction,
@@ -135,7 +302,7 @@ public class JsonRpc {
 
     private void onRequestDialogueEnhancementOverride(
         int connection,
-        int id,
+        String id,
         int dialogueEnhancementGain) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #4: Java called with request. Call ORB session callback...");
         mOrbSessionCallback.onRequestDialogueEnhancementOverride(connection, id, dialogueEnhancementGain);
@@ -143,7 +310,7 @@ public class JsonRpc {
 
     private void onRequestFeatureSupportInfo(
             int connection,
-            int id,
+            String id,
             int feature) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #4a: onRequestFeatureSupportInfo...");
         mOrbSessionCallback.onRequestFeatureSupportInfo(connection, id, feature);
@@ -151,7 +318,7 @@ public class JsonRpc {
 
     private void onRequestFeatureSettingsQuery(
             int connection,
-            int id,
+            String id,
             int feature) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #4a: onRequestFeatureSettingsQuery...");
         mOrbSessionCallback.onRequestFeatureSettingsQuery(connection, id, feature);
@@ -159,7 +326,7 @@ public class JsonRpc {
 
     private void onRequestFeatureSuppress(
             int connection,
-            int id,
+            String id,
             int feature) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #4a: onRequestFeatureSuppress...");
         mOrbSessionCallback.onRequestFeatureSuppress(connection, id, feature);
@@ -207,7 +374,7 @@ public class JsonRpc {
 
     private void onReceiveError(
             int connection,
-            int id,
+            String id,
             int code,
             String message) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #4a: onReceiveError...");
@@ -222,14 +389,14 @@ public class JsonRpc {
 
     private native void nativeOnRespondNegotiateMethods(
         int connection,
-        int id,
+        String id,
         String terminalToApp,
         String appToTerminal);
 
     private native void nativeOnRespondSubscribe(
         boolean isSubscribe,
         int connection,
-        int id,
+        String id,
         boolean subtitles, boolean dialogueEnhancement,
         boolean uiMagnifier, boolean highContrastUI,
         boolean screenReader, boolean responseToUserAction,
@@ -237,36 +404,150 @@ public class JsonRpc {
 
     private native void nativeOnRespondDialogueEnhancementOverride(
         int connection,
-        int id,
+        String id,
         int dialogueEnhancementGain);
 
     private native void nativeOnRespondFeatureSupportInfo(
         int connection,
-        int id,
+        String id,
         int feature,
         String value);
 
     private native void nativeOnRespondFeatureSettingsQuery(
         int connection,
-        int id,
+        String id,
         int feature);
 
     private native void nativeOnRespondFeatureSuppress(
         int connection,
-        int id,
+        String id,
         int feature,
         String value);
 
     private native void nativeOnRespondError(
-            int connection,
-            int id,
-            int code,
-            String message);
+        int connection,
+        String id,
+        int code,
+        String message);
 
     private native void nativeOnRespondErrorWithMethod(
+        int connection,
+        String id,
+        int code,
+        String message,
+        String method);
+
+
+    private native void nativeOnQuerySubtitles(
             int connection,
-            int id,
-            int code,
-            String message,
-            String method);
+            String id,
+            boolean enabled,
+            int size,
+            String fontFamily,
+            String textColour,
+            int textOpacity,
+            String edgeType,
+            String edgeColour,
+            String backgroundColour,
+            int backgroundOpacity,
+            String windowColour,
+            int windowOpacity,
+            String language);
+
+    private native void nativeOnQueryDialogueEnhancement(
+            int connection,
+            String id,
+            int gainPreference,
+            int gain,
+            int limitMin,
+            int limitMax);
+
+    private native void nativeOnQueryUIMagnifier(
+            int connection,
+            String id,
+            boolean enabled,
+            String magType);
+
+    private native void nativeOnQueryHighContrastUI(
+            int connection,
+            String id,
+            boolean enabled,
+            String hcType);
+
+    private native void nativeOnQueryScreenReader(
+            int connection,
+            String id,
+            boolean enabled,
+            int speed,
+            String voice,
+            String language);
+
+    private native void nativeOnQueryResponseToUserAction(
+            int connection,
+            String id,
+            boolean enabled,
+            String type);
+
+    private native void nativeOnQueryAudioDescription(
+            int connection,
+            String id,
+            boolean enabled,
+            int gainPreference,
+            int panAzimuthPreference);
+
+    private native void nativeOnQueryInVisionSigning(
+            int connection,
+            String id,
+            boolean enabled);
+
+    private native void nativeOnSendIntentMediaBasics(
+            int cmd,
+            int connection,
+            String id,
+            String origin);
+
+    private native void nativeOnSendIntentMediaSeekContent(
+            int connection,
+            String id,
+            String origin,
+            String anchor,
+            int offset);
+
+    private native void nativeOnSendIntentMediaSeekRelative(
+            int connection,
+            String id,
+            String origin,
+            int offset);
+
+    private native void nativeOnSendIntentMediaSeekLive(
+            int connection,
+            String id,
+            String origin,
+            int offset);
+
+    private native void nativeOnSendIntentMediaSeekWallclock(
+            int connection,
+            String id,
+            String origin,
+            String dateTime);
+
+    private native void nativeOnSendIntentSearch(
+            int connection,
+            String id,
+            String origin,
+            String query);
+
+    private native void nativeOnSendIntentDisplay(
+            int connection,
+            String id,
+            String origin,
+            String mediaId);
+
+    private native void nativeOnSendIntentPlayback(
+            int connection,
+            String id,
+            String origin,
+            String mediaId,
+            String anchor,
+            int offset);
 }
