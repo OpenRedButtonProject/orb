@@ -589,7 +589,7 @@ public interface IOrbSessionCallback {
      * @param terminalToApp
      * @param appToTerminal
      */
-    void onRequestNegotiateMethods(int connection, int id,
+    void onRequestNegotiateMethods(int connection, String id,
                                    String terminalToApp, String appToTerminal);
 
     /**
@@ -600,7 +600,7 @@ public interface IOrbSessionCallback {
      * @param subtitles TODO
      * @param
      */
-    void onRequestSubscribe(boolean isSubscribe, int connection, int id,
+    void onRequestSubscribe(boolean isSubscribe, int connection, String id,
                             boolean subtitles, boolean dialogueEnhancement,
                             boolean uiMagnifier, boolean highContrastUI,
                             boolean screenReader, boolean responseToUserAction,
@@ -613,7 +613,7 @@ public interface IOrbSessionCallback {
      * @param id The request and response should have the same value
      * @param dialogueEnhancementGain TODO
      */
-    void onRequestDialogueEnhancementOverride(int connection, int id, int dialogueEnhancementGain);
+    void onRequestDialogueEnhancementOverride(int connection, String id, int dialogueEnhancementGain);
 
     /**
      * TODO
@@ -622,7 +622,7 @@ public interface IOrbSessionCallback {
      * @param id The request and response should have the same value
      * @param feature TODO
      */
-    void onRequestFeatureSupportInfo(int connection, int id, int feature);
+    void onRequestFeatureSupportInfo(int connection, String id, int feature);
 
     /**
      * TODO
@@ -631,7 +631,7 @@ public interface IOrbSessionCallback {
      * @param id The request and response should have the same value
      * @param feature TODO
      */
-    void onRequestFeatureSettingsQuery(int connection, int id, int feature);
+    void onRequestFeatureSettingsQuery(int connection, String id, int feature);
 
     /**
      * TODO
@@ -640,7 +640,7 @@ public interface IOrbSessionCallback {
      * @param id The request and response should have the same value
      * @param feature TODO
      */
-    void onRequestFeatureSuppress(int connection, int id, int feature);
+    void onRequestFeatureSuppress(int connection, String id, int feature);
 
     /**
      * TODO
@@ -722,5 +722,5 @@ public interface IOrbSessionCallback {
      * @param code TODO
      * @param message
      */
-    void onReceiveError(int connection, int id, int code, String message);
+    void onReceiveError(int connection, String id, int code, String message);
 }

@@ -29,6 +29,13 @@
 
 #define CB_NUMBER_OF_ITEMS 10
 
+#define LENGTH_OF_EMPTY_ID 0
+#define CMD_INTENT_PAUSE 0
+#define CMD_INTENT_PLAY 1
+#define CMD_INTENT_FAST_FORWARD 2
+#define CMD_INTENT_FAST_REVERSE 3
+#define CMD_INTENT_STOP 4
+
 static jfieldID g_service;
 static jmethodID g_cb[CB_NUMBER_OF_ITEMS];
 
@@ -58,26 +65,28 @@ public:
 
     void RequestNegotiateMethods(
         int connection,
-        int id,
+        std::string id,
         std::string terminalToApp,
         std::string appToTerminal) override
     {
         __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
                             "JSON-RPC-EXAMPLE #3: RequestNegotiateMethods...");
         JNIEnv *env = JniUtils::GetEnv();
+        jstring j_id = env->NewStringUTF(id.c_str());
         jstring j_terminalToApp = env->NewStringUTF(terminalToApp.c_str());
         jstring j_appToTerminal = env->NewStringUTF(appToTerminal.c_str());
         env->CallVoidMethod(
                 mCallbackObject,
                 g_cb[CB_REQUEST_NEGOTIATE_METHODS],
-                connection, id, j_terminalToApp, j_appToTerminal);
+                connection, j_id, j_terminalToApp, j_appToTerminal);
+        env->DeleteLocalRef(j_id);
         env->DeleteLocalRef(j_terminalToApp);
         env->DeleteLocalRef(j_appToTerminal);
     }
 
     void RequestSubscribe(
         int connection,
-        int id,
+        std::string id,
         bool subtitles, bool dialogueEnhancement,
         bool uiMagnifier, bool highContrastUI,
         bool screenReader, bool responseToUserAction,
@@ -86,17 +95,19 @@ public:
         __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
                             "JSON-RPC-EXAMPLE #3: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
+        jstring j_id = env->NewStringUTF(id.c_str());
         env->CallVoidMethod(
                 mCallbackObject,
                 g_cb[CB_REQUEST_SUBSCRIBE_UNSUBSCRIBE],
-                true, connection, id,
+                true, connection, j_id,
                 subtitles, dialogueEnhancement, uiMagnifier, highContrastUI,
                 screenReader, responseToUserAction, audioDescription, inVisionSigning);
+        env->DeleteLocalRef(j_id);
     }
 
     void RequestUnsubscribe(
         int connection,
-        int id,
+        std::string id,
         bool subtitles, bool dialogueEnhancement,
         bool uiMagnifier, bool highContrastUI,
         bool screenReader, bool responseToUserAction,
@@ -105,68 +116,78 @@ public:
         __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
                             "JSON-RPC-EXAMPLE #3: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
+        jstring j_id = env->NewStringUTF(id.c_str());
         env->CallVoidMethod(
                 mCallbackObject,
                 g_cb[CB_REQUEST_SUBSCRIBE_UNSUBSCRIBE],
-                false, connection, id,
+                false, connection, j_id,
                 subtitles, dialogueEnhancement, uiMagnifier, highContrastUI,
                 screenReader, responseToUserAction, audioDescription, inVisionSigning);
+        env->DeleteLocalRef(j_id);
     }
 
     void RequestDialogueEnhancementOverride(
         int connection,
-        int id,
+        std::string id,
         int dialogueEnhancementGain) override
     {
         __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
             "JSON-RPC-EXAMPLE #3: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
+        jstring j_id = env->NewStringUTF(id.c_str());
         env->CallVoidMethod(
             mCallbackObject,
             g_cb[CB_REQUEST_DIALOGUE_ENHANCEMENT_OVERRIDE],
-            connection, id, dialogueEnhancementGain);
+            connection, j_id, dialogueEnhancementGain);
+        env->DeleteLocalRef(j_id);
     }
 
     void RequestFeatureSupportInfo(
         int connection,
-        int id,
+        std::string id,
         int feature) override
     {
         __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
                             "JSON-RPC-EXAMPLE #3a: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
+        jstring j_id = env->NewStringUTF(id.c_str());
         env->CallVoidMethod(
                 mCallbackObject,
                 g_cb[CB_REQUEST_FEATURE_SUPPORT_INFO],
-                connection, id, feature);
+                connection, j_id, feature);
+        env->DeleteLocalRef(j_id);
     }
 
     void RequestFeatureSettingsQuery(
         int connection,
-        int id,
+        std::string id,
         int feature) override
     {
         __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
                             "JSON-RPC-EXAMPLE #3a: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
+        jstring j_id = env->NewStringUTF(id.c_str());
         env->CallVoidMethod(
                 mCallbackObject,
                 g_cb[CB_REQUEST_FEATURE_SETTINGS_QUERY],
-                connection, id, feature);
+                connection, j_id, feature);
+        env->DeleteLocalRef(j_id);
     }
 
     void RequestFeatureSuppress(
         int connection,
-        int id,
+        std::string id,
         int feature) override
     {
         __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
                             "JSON-RPC-EXAMPLE #3a: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
+        jstring j_id = env->NewStringUTF(id.c_str());
         env->CallVoidMethod(
                 mCallbackObject,
                 g_cb[CB_REQUEST_FEATURE_SUPPRESS],
-                connection, id, feature);
+                connection, j_id, feature);
+        env->DeleteLocalRef(j_id);
     }
 
     void NotifyVoiceReady(
@@ -258,18 +279,20 @@ public:
 // 1. std::string str = JniUtils::MakeStdString(env, str)
     void ReceiveError(
         int connection,
-        int id,
+        std::string id,
         int code,
         std::string message) override
     {
         __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
                             "JSON-RPC-EXAMPLE #3a: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
+        jstring j_id = env->NewStringUTF(id.c_str());
         jstring j_message = env->NewStringUTF(message.c_str());
         env->CallVoidMethod(
                 mCallbackObject,
                 g_cb[CB_RECEIVE_ERROR],
-                connection, id, code, j_message);
+                connection, j_id, code, j_message);
+        env->DeleteLocalRef(j_id);
         env->DeleteLocalRef(j_message);
     }
 
@@ -285,17 +308,17 @@ void InitialiseJsonRpcNative()
 
     // Callback methods
     g_cb[CB_REQUEST_DIALOGUE_ENHANCEMENT_OVERRIDE] = env->GetMethodID(managerClass,
-        "onRequestDialogueEnhancementOverride", "(III)V");
+        "onRequestDialogueEnhancementOverride", "(ILjava/lang/String;I)V");
     g_cb[CB_REQUEST_NEGOTIATE_METHODS] = env->GetMethodID(managerClass,
-        "onRequestNegotiateMethods", "(IILjava/lang/String;Ljava/lang/String;)V");
+        "onRequestNegotiateMethods", "(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
     g_cb[CB_REQUEST_SUBSCRIBE_UNSUBSCRIBE] = env->GetMethodID(managerClass,
-        "onRequestSubscribe", "(ZIIZZZZZZZZ)V");
+        "onRequestSubscribe", "(ZILjava/lang/String;ZZZZZZZZ)V");
     g_cb[CB_REQUEST_FEATURE_SUPPORT_INFO] = env->GetMethodID(managerClass,
-         "onRequestFeatureSupportInfo", "(III)V");
+         "onRequestFeatureSupportInfo", "(ILjava/lang/String;I)V");
     g_cb[CB_REQUEST_FEATURE_SETTINGS_QUERY] = env->GetMethodID(managerClass,
-         "onRequestFeatureSettingsQuery", "(III)V");
+         "onRequestFeatureSettingsQuery", "(ILjava/lang/String;I)V");
     g_cb[CB_REQUEST_FEATURE_SUPPRESS] = env->GetMethodID(managerClass,
-         "onRequestFeatureSuppress", "(III)V");
+         "onRequestFeatureSuppress", "(ILjava/lang/String;I)V");
     g_cb[CB_NOTIFY_VOICE_READY] = env->GetMethodID(managerClass,
          "onNotifyVoiceReady", "(IZ)V");
     g_cb[CB_NOTIFY_STATE_MEDIA] = env->GetMethodID(managerClass,
@@ -307,7 +330,7 @@ void InitialiseJsonRpcNative()
                "Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;"
                "ZZZZZZ)V");
     g_cb[CB_RECEIVE_ERROR] = env->GetMethodID(managerClass,
-         "onReceiveError", "(IIILjava/lang/String;)V");
+         "onReceiveError", "(ILjava/lang/String;ILjava/lang/String;)V");
 }
 
 extern "C"
@@ -341,16 +364,17 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondNegotiateMethods(
     JNIEnv *env,
     jobject object,
     jint connection,
-    jint id,
+    jstring id,
     jstring terminalToApp,
     jstring appToTerminal)
 {
     __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
                         "JSON-RPC-EXAMPLE #8: Android native called with response. Call service...");
+    std::string idStr = JniUtils::MakeStdString(env, id);
     std::string terminalToAppStr = JniUtils::MakeStdString(env, terminalToApp);
     std::string appToTerminalStr = JniUtils::MakeStdString(env, appToTerminal);
     GetService(env, object)->RespondNegotiateMethods(
-            connection, id, terminalToAppStr, appToTerminalStr);
+            connection, idStr, terminalToAppStr, appToTerminalStr);
 }
 
 extern "C"
@@ -360,7 +384,7 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondSubscribe(
     jobject object,
     jboolean isSubscribe,
     jint connection,
-    jint id,
+    jstring id,
     jboolean subtitles,
     jboolean dialogueEnhancement,
     jboolean uiMagnifier,
@@ -372,15 +396,16 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondSubscribe(
 {
     __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
                         "JSON-RPC-EXAMPLE #8: Android native called with response. Call service...");
+    std::string idStr = JniUtils::MakeStdString(env, id);
 
     if (isSubscribe) {
         GetService(env, object)->RespondSubscribe(
-                connection, id,
+                connection, idStr,
                 subtitles, dialogueEnhancement, uiMagnifier, highContrastUI,
                 screenReader, responseToUserAction, audioDescription, inVisionSigning);
     } else {
         GetService(env, object)->RespondUnsubscribe(
-                connection, id,
+                connection, idStr,
                 subtitles, dialogueEnhancement, uiMagnifier, highContrastUI,
                 screenReader, responseToUserAction, audioDescription, inVisionSigning);
     }
@@ -391,13 +416,14 @@ JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondDialogue
     JNIEnv *env,
     jobject object,
     jint connection,
-    jint id,
+    jstring id,
     jint dialogueEnhancementGain)
 {
     __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
         "JSON-RPC-EXAMPLE #8: Android native called with response. Call service...");
+    std::string idStr = JniUtils::MakeStdString(env, id);
     GetService(env, object)->RespondDialogueEnhancementOverride(
-        connection, id, dialogueEnhancementGain);
+        connection, idStr, dialogueEnhancementGain);
 }
 // and, convert jstring to std::string using:
 // 1. std::string str = JniUtils::MakeStdString(env, str)
@@ -407,15 +433,16 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondFeatureSupportInfo(
     JNIEnv *env,
     jobject object,
     jint connection,
-    jint id,
+    jstring id,
     jint feature,
     jstring value)
 {
     __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
                         "JSON-RPC-EXAMPLE #8a: Android native called with response. Call service...");
+    std::string idStr = JniUtils::MakeStdString(env, id);
     std::string valueStr = JniUtils::MakeStdString(env, value);
     GetService(env, object)->RespondFeatureSupportInfo(
-            connection, id, feature, valueStr);
+            connection, idStr, feature, valueStr);
 }
 
 
@@ -425,13 +452,14 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondFeatureSettingsQuery(
     JNIEnv *env,
     jobject object,
     jint connection,
-    jint id,
+    jstring id,
     jint feature)
 {
     __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
                         "JSON-RPC-EXAMPLE #8a: Android native called with response. Call service...");
+    std::string idStr = JniUtils::MakeStdString(env, id);
     GetService(env, object)->RespondFeatureSettingsQuery(
-            connection, id, feature);
+            connection, idStr, feature);
 }
 
 extern "C"
@@ -440,15 +468,16 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondFeatureSuppress(
     JNIEnv *env,
     jobject object,
     jint connection,
-    jint id,
+    jstring id,
     jint feature,
     jstring value)
 {
     __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
                         "JSON-RPC-EXAMPLE #8a: Android native called with response. Call service...");
+    std::string idStr = JniUtils::MakeStdString(env, id);
     std::string valueStr = JniUtils::MakeStdString(env, value);
     GetService(env, object)->RespondFeatureSuppress(
-            connection, id, feature, valueStr);
+            connection, idStr, feature, valueStr);
 }
 
 extern "C"
@@ -457,15 +486,16 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondError(
     JNIEnv *env,
     jobject object,
     jint connection,
-    jint id,
+    jstring id,
     jint code,
     jstring message)
 {
     __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
                         "JSON-RPC-EXAMPLE #8a: Android native called with response. Call service...");
+    std::string idStr = JniUtils::MakeStdString(env, id);
     std::string messageStr = JniUtils::MakeStdString(env, message);
     GetService(env, object)->RespondError(
-            connection, id, code, messageStr);
+            connection, idStr, code, messageStr);
 }
 
 extern "C"
@@ -474,17 +504,370 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondErrorWithMethod(
     JNIEnv *env,
     jobject object,
     jint connection,
-    jint id,
+    jstring id,
     jint code,
     jstring message,
     jstring method)
 {
     __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
                         "JSON-RPC-EXAMPLE #8a: Android native called with response. Call service...");
+    std::string idStr = JniUtils::MakeStdString(env, id);
     std::string messageStr = JniUtils::MakeStdString(env, message);
     std::string methodStr = JniUtils::MakeStdString(env, method);
     GetService(env, object)->RespondError(
-            connection, id, code, messageStr, methodStr);
+            connection, idStr, code, messageStr, methodStr);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_orbtv_orblibrary_JsonRpc_nativeOnQuerySubtitles(
+    JNIEnv *env,
+    jobject object,
+    jint connection,
+    jstring id,
+    jboolean enabled,
+    jint size,
+    jstring fontFamily,
+    jstring textColour,
+    jint textOpacity,
+    jstring edgeType,
+    jstring edgeColour,
+    jstring backgroundColour,
+    jint backgroundOpacity,
+    jstring windowColour,
+    jint windowOpacity,
+    jstring language)
+{
+    std::string idStr = JniUtils::MakeStdString(env, id);
+    std::string fontFamilyStr = JniUtils::MakeStdString(env, fontFamily);
+    std::string textColourStr = JniUtils::MakeStdString(env, textColour);
+    std::string edgeTypeStr = JniUtils::MakeStdString(env, edgeType);
+    std::string edgeColourStr = JniUtils::MakeStdString(env, edgeColour);
+    std::string backgroundColourStr = JniUtils::MakeStdString(env, backgroundColour);
+    std::string windowColourStr = JniUtils::MakeStdString(env, windowColour);
+    std::string languageStr = JniUtils::MakeStdString(env, language);
+    if (idStr.length() == LENGTH_OF_EMPTY_ID) {
+        GetService(env, object)->RespondFeatureSettingsSubtitles(
+                connection, idStr,
+                enabled, size, fontFamilyStr, textColourStr, textOpacity,
+                edgeTypeStr, edgeColourStr, backgroundColourStr, backgroundOpacity,
+                windowColourStr, windowOpacity, languageStr);
+    }
+    else {
+        GetService(env, object)->NotifySubtitles(
+                connection,
+                enabled, size, fontFamilyStr, textColourStr, textOpacity,
+                edgeTypeStr, edgeColourStr, backgroundColourStr, backgroundOpacity,
+                windowColourStr, windowOpacity, languageStr);
+    }
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_orbtv_orblibrary_JsonRpc_nativeOnQueryDialogueEnhancement(
+    JNIEnv *env,
+    jobject object,
+    jint connection,
+    jstring id,
+    jint gainPreference,
+    jint gain,
+    jint limitMin,
+    jint limitMax)
+{
+    std::string idStr = JniUtils::MakeStdString(env, id);
+    if (idStr.length() == LENGTH_OF_EMPTY_ID) {
+        GetService(env, object)->RespondFeatureSettingsDialogueEnhancement(
+                connection, idStr,
+                gainPreference, gain, limitMin, limitMax);
+    }
+    else {
+        GetService(env, object)->NotifyDialogueEnhancement(
+                connection,
+                gainPreference, gain, limitMin, limitMax);
+    }
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_orbtv_orblibrary_JsonRpc_nativeOnQueryUIMagnifier(
+    JNIEnv *env,
+    jobject object,
+    jint connection,
+    jstring id,
+    jboolean enabled,
+    jstring magType)
+{
+    std::string idStr = JniUtils::MakeStdString(env, id);
+    std::string magTypeStr = JniUtils::MakeStdString(env, magType);
+    if (idStr.length() == LENGTH_OF_EMPTY_ID) {
+        GetService(env, object)->RespondFeatureSettingsUIMagnifier(
+                connection, idStr, enabled, magTypeStr);
+    }
+    else {
+        GetService(env, object)->NotifyUIMagnifier(
+                connection, enabled, magTypeStr);
+    }
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_orbtv_orblibrary_JsonRpc_nativeOnQueryHighContrastUI(
+    JNIEnv *env,
+    jobject object,
+    jint connection,
+    jstring id,
+    jboolean enabled,
+    jstring hcType)
+{
+    std::string idStr = JniUtils::MakeStdString(env, id);
+    std::string hcTypeStr = JniUtils::MakeStdString(env, hcType);
+    if (idStr.length() == LENGTH_OF_EMPTY_ID) {
+        GetService(env, object)->RespondFeatureSettingsHighContrastUI(
+                connection, idStr, enabled, hcTypeStr);
+    }
+    else {
+        GetService(env, object)->NotifyHighContrastUI(
+                connection, enabled, hcTypeStr);
+    }
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_orbtv_orblibrary_JsonRpc_nativeOnQueryScreenReader(
+    JNIEnv *env,
+    jobject object,
+    jint connection,
+    jstring id,
+    jboolean enabled,
+    jint speed,
+    jstring voice,
+    jstring language)
+{
+    std::string idStr = JniUtils::MakeStdString(env, id);
+    std::string voiceStr = JniUtils::MakeStdString(env, voice);
+    std::string languageStr = JniUtils::MakeStdString(env, language);
+    if (idStr.length() == LENGTH_OF_EMPTY_ID) {
+        GetService(env, object)->RespondFeatureSettingsScreenReader(
+                connection, idStr,
+                enabled, speed, voiceStr, languageStr);
+    }
+    else {
+        GetService(env, object)->NotifyScreenReader(
+                connection,
+                enabled, speed, voiceStr, languageStr);
+    }
+
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_orbtv_orblibrary_JsonRpc_nativeOnQueryResponseToUserAction(
+    JNIEnv *env,
+    jobject object,
+    jint connection,
+    jstring id,
+    jboolean enabled,
+    jstring type)
+{
+    std::string idStr = JniUtils::MakeStdString(env, id);
+    std::string typeStr = JniUtils::MakeStdString(env, type);
+    if (idStr.length() == LENGTH_OF_EMPTY_ID) {
+        GetService(env, object)->RespondFeatureSettingsResponseToUserAction(
+                connection, idStr, enabled, typeStr);
+    }
+    else {
+        GetService(env, object)->NotifyResponseToUserAction(
+                connection, enabled, typeStr);
+    }
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_orbtv_orblibrary_JsonRpc_nativeOnQueryAudioDescription(
+    JNIEnv *env,
+    jobject object,
+    jint connection,
+    jstring id,
+    jboolean enabled,
+    jint gainPreference,
+    jint panAzimuthPreference)
+{
+    std::string idStr = JniUtils::MakeStdString(env, id);
+    if (idStr.length() == LENGTH_OF_EMPTY_ID) {
+        GetService(env, object)->RespondFeatureSettingsAudioDescription(
+                connection, idStr,
+                enabled, gainPreference, panAzimuthPreference);
+    }
+    else {
+        GetService(env, object)->NotifyAudioDescription(
+                connection,
+                enabled, gainPreference, panAzimuthPreference);
+    }
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_orbtv_orblibrary_JsonRpc_nativeOnQueryInVisionSigning(
+    JNIEnv *env,
+    jobject object,
+    jint connection,
+    jstring id,
+    jboolean enabled)
+{
+    std::string idStr = JniUtils::MakeStdString(env, id);
+    if (idStr.length() == LENGTH_OF_EMPTY_ID) {
+        GetService(env, object)->RespondFeatureSettingsInVisionSigning(
+                connection, idStr, enabled);
+    }
+    else {
+        GetService(env, object)->NotifyInVisionSigning(
+                connection, enabled);
+    }
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_orbtv_orblibrary_JsonRpc_nativeOnSendIntentMediaBasics(
+    JNIEnv *env,
+    jobject object,
+    jint cmd,
+    jint connection,
+    jstring id,
+    jstring origin)
+{
+    std::string idStr = JniUtils::MakeStdString(env, id);
+    std::string originStr = JniUtils::MakeStdString(env, origin);
+    switch(cmd) {
+        case CMD_INTENT_PAUSE:
+            GetService(env, object)->SendIntentMediaPause(connection, idStr, originStr);
+            break;
+        case CMD_INTENT_PLAY:
+            GetService(env, object)->SendIntentMediaPlay(connection, idStr, originStr);
+            break;
+        case CMD_INTENT_FAST_FORWARD:
+            GetService(env, object)->SendIntentMediaFastForward(connection, idStr, originStr);
+            break;
+        case CMD_INTENT_FAST_REVERSE:
+            GetService(env, object)->SendIntentMediaFastReverse(connection, idStr, originStr);
+            break;
+        case CMD_INTENT_STOP:
+            GetService(env, object)->SendIntentMediaStop(connection, idStr, originStr);
+            break;
+    }
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_orbtv_orblibrary_JsonRpc_nativeOnSendIntentMediaSeekContent(
+    JNIEnv *env,
+    jobject object,
+    jint connection,
+    jstring id,
+    jstring origin,
+    jstring anchor,
+    int offset)
+{
+    std::string idStr = JniUtils::MakeStdString(env, id);
+    std::string originStr = JniUtils::MakeStdString(env, origin);
+    std::string anchorStr = JniUtils::MakeStdString(env, anchor);
+    GetService(env, object)->SendIntentMediaSeekContent(connection, idStr, originStr, anchorStr, offset);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_orbtv_orblibrary_JsonRpc_nativeOnSendIntentMediaSeekRelative(
+    JNIEnv *env,
+    jobject object,
+    jint connection,
+    jstring id,
+    jstring origin,
+    int offset)
+{
+    std::string idStr = JniUtils::MakeStdString(env, id);
+    std::string originStr = JniUtils::MakeStdString(env, origin);
+    GetService(env, object)->SendIntentMediaSeekRelative(connection, idStr, originStr, offset);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_orbtv_orblibrary_JsonRpc_nativeOnSendIntentMediaSeekLive(
+    JNIEnv *env,
+    jobject object,
+    jint connection,
+    jstring id,
+    jstring origin,
+    int offset)
+{
+    std::string idStr = JniUtils::MakeStdString(env, id);
+    std::string originStr = JniUtils::MakeStdString(env, origin);
+    GetService(env, object)->SendIntentMediaSeekLive(connection, idStr, originStr, offset);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_orbtv_orblibrary_JsonRpc_nativeOnSendIntentMediaSeekWallclock(
+    JNIEnv *env,
+    jobject object,
+    jint connection,
+    jstring id,
+    jstring origin,
+    jstring dateTime)
+{
+    std::string idStr = JniUtils::MakeStdString(env, id);
+    std::string originStr = JniUtils::MakeStdString(env, origin);
+    std::string dateTimeStr = JniUtils::MakeStdString(env, dateTime);
+    GetService(env, object)->SendIntentMediaSeekWallclock(connection, idStr, originStr, dateTimeStr);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_orbtv_orblibrary_JsonRpc_nativeOnSendIntentSearch(
+    JNIEnv *env,
+    jobject object,
+    jint connection,
+    jstring id,
+    jstring origin,
+    jstring query)
+{
+    std::string idStr = JniUtils::MakeStdString(env, id);
+    std::string originStr = JniUtils::MakeStdString(env, origin);
+    std::string queryStr = JniUtils::MakeStdString(env, query);
+    GetService(env, object)->SendIntentSearch(connection, idStr, originStr, queryStr);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_orbtv_orblibrary_JsonRpc_nativeOnSendIntentDisplay(
+    JNIEnv *env,
+    jobject object,
+    jint connection,
+    jstring id,
+    jstring origin,
+    jstring mediaId)
+{
+    std::string idStr = JniUtils::MakeStdString(env, id);
+    std::string originStr = JniUtils::MakeStdString(env, origin);
+    std::string mediaIdStr = JniUtils::MakeStdString(env, mediaId);
+    GetService(env, object)->SendIntentDisplay(connection, idStr, originStr, mediaIdStr);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_orbtv_orblibrary_JsonRpc_nativeOnSendIntentPlayback(
+    JNIEnv *env,
+    jobject object,
+    jint connection,
+    jstring id,
+    jstring origin,
+    jstring mediaId,
+    jstring anchor,
+    jint offset)
+{
+    std::string idStr = JniUtils::MakeStdString(env, id);
+    std::string originStr = JniUtils::MakeStdString(env, origin);
+    std::string mediaIdStr = JniUtils::MakeStdString(env, mediaId);
+    std::string anchorStr = JniUtils::MakeStdString(env, anchor);
+    GetService(env, object)->SendIntentPlayback(connection, idStr, originStr, mediaIdStr, anchorStr, offset);
 }
 
 static NetworkServices::JsonRpcService* GetService(JNIEnv *env, jobject object)

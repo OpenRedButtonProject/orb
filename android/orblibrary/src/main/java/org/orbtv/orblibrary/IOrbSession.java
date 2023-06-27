@@ -251,7 +251,7 @@ public interface IOrbSession {
      * @param terminalToApp
      * @param appToTerminal
      */
-    void onRespondNegotiateMethods(int connection, int id, String terminalToApp, String appToTerminal);
+    void onRespondNegotiateMethods(int connection, String id, String terminalToApp, String appToTerminal);
 
     /**
      * TODO
@@ -261,7 +261,7 @@ public interface IOrbSession {
      * @param id The request and response should have the same value
      * @param subtitles
      */
-    void onRespondSubscribe(boolean isSubscribe, int connection, int id,
+    void onRespondSubscribe(boolean isSubscribe, int connection, String id,
                             boolean subtitles, boolean dialogueEnhancement,
                             boolean uiMagnifier, boolean highContrastUI,
                             boolean screenReader, boolean responseToUserAction,
@@ -274,7 +274,7 @@ public interface IOrbSession {
      * @param id The request and response should have the same value
      * @param dialogueEnhancementGain
      */
-    void onRespondDialogueEnhancementOverride(int connection, int id, int dialogueEnhancementGain);
+    void onRespondDialogueEnhancementOverride(int connection, String id, int dialogueEnhancementGain);
 
     /**
      * TODO
@@ -284,7 +284,7 @@ public interface IOrbSession {
      * @param feature
      * @param value
      */
-    void onRespondFeatureSupportInfo(int connection, int id, int feature, String value);
+    void onRespondFeatureSupportInfo(int connection, String id, int feature, String value);
 
     /**
      * TODO
@@ -293,7 +293,7 @@ public interface IOrbSession {
      * @param id The request and response should have the same value
      * @param feature
      */
-    void onRespondFeatureSettingsQuery(int connection, int id, int feature);
+    void onRespondFeatureSettingsQuery(int connection, String id, int feature);
 
     /**
      * TODO
@@ -303,7 +303,7 @@ public interface IOrbSession {
      * @param feature
      * @param value
      */
-    void onRespondFeatureSuppress(int connection, int id, int feature, String value);
+    void onRespondFeatureSuppress(int connection, String id, int feature, String value);
 
     /**
      * TODO
@@ -313,7 +313,7 @@ public interface IOrbSession {
      * @param code
      * @param message
      */
-    void onRespondError(int connection, int id, int code, String message);
+    void onRespondError(int connection, String id, int code, String message);
 
     /**
      * TODO
@@ -324,5 +324,239 @@ public interface IOrbSession {
      * @param message
      * @param method
      */
-    void onRespondError(int connection, int id, int code, String message, String method);
+    void onRespondError(int connection, String id, int code, String message, String method);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param enabled
+     * @param size
+     * @param fontFamily
+     * @param textColour
+     * @param textOpacity
+     * @param edgeType
+     * @param edgeColour
+     * @param backgroundColour
+     * @param backgroundOpacity
+     * @param windowColour
+     * @param windowOpacity
+     * @param language
+     */
+    void onQuerySubtitles(int connection, String id,
+                            boolean enabled,
+                            int size,
+                            String fontFamily,
+                            String textColour,
+                            int textOpacity,
+                            String edgeType,
+                            String edgeColour,
+                            String backgroundColour,
+                            int backgroundOpacity,
+                            String windowColour,
+                            int windowOpacity,
+                            String language);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param gainPreference
+     * @param gain
+     * @param limitMin
+     * @param limitMax
+     */
+    void onQueryDialogueEnhancement(int connection, String id,
+                          int gainPreference,
+                          int gain,
+                          int limitMin,
+                          int limitMax);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param enabled
+     * @param magType
+     */
+    void onQueryUIMagnifier(int connection, String id,
+                            boolean enabled,
+                            String magType);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param enabled
+     * @param hcType
+     */
+    void onQueryHighContrastUI(int connection, String id,
+                            boolean enabled,
+                            String hcType);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param enabled
+     * @param speed
+     * @param voice
+     * @param language
+     */
+    void onQueryScreenReader(int connection, String id,
+                             boolean enabled,
+                             int speed,
+                             String voice,
+                             String language);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param enabled
+     * @param type
+     */
+    void onQueryResponseToUserAction(int connection, String id,
+                               boolean enabled,
+                               String type);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param enabled
+     * @param gainPreference
+     * @param panAzimuthPreference
+     */
+    void onQueryAudioDescription(int connection, String id,
+                             boolean enabled,
+                             int gainPreference,
+                             int panAzimuthPreference);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param enabled
+     */
+    void onQueryInVisionSigning(int connection, String id,
+                                 boolean enabled);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param origin
+     */
+    void onSendIntentMediaBasics(
+            int cmd,
+            int connection, String id,
+            String origin);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param origin
+     * @param anchor
+     * @param offset
+     */
+    void onSendIntentMediaSeekContent(
+            int connection, String id,
+            String origin,
+            String anchor,
+            int offset);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param origin
+     * @param offset
+     */
+    void onSendIntentMediaSeekRelative(
+            int connection, String id,
+            String origin,
+            int offset);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param origin
+     * @param offset
+     */
+    void onSendIntentMediaSeekLive(
+            int connection, String id,
+            String origin,
+            int offset);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param origin
+     * @param dayTime
+     */
+    void onSendIntentMediaSeekWallclock(
+            int connection, String id,
+            String origin,
+            String dayTime);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param origin
+     * @param query
+     */
+    void onSendIntentSearch(
+            int connection, String id,
+            String origin,
+            String query);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param origin
+     * @param mediaId
+     */
+    void onSendIntentDisplay(
+            int connection, String id,
+            String origin,
+            String mediaId);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param origin
+     * @param mediaId
+     * @param anchor
+     * @param offset
+     */
+    void onSendIntentPlayback(
+            int connection, String id,
+            String origin,
+            String mediaId,
+            String anchor,
+            int offset);
+
 }

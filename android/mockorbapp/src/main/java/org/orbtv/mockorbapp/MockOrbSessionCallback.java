@@ -1361,7 +1361,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * @param appToTerminal
      */
     @Override
-    public void onRequestNegotiateMethods(int connection, int id,
+    public void onRequestNegotiateMethods(int connection, String id,
                                    String terminalToApp, String appToTerminal) {
 //        mSession
         Log.d(TAG, "Requested terminalToApp: " + terminalToApp);
@@ -1385,7 +1385,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * @param
      */
     @Override
-    public void onRequestSubscribe(boolean isSubscribe, int connection, int id,
+    public void onRequestSubscribe(boolean isSubscribe, int connection, String id,
                                    boolean subtitles, boolean dialogueEnhancement,
                                    boolean uiMagnifier, boolean highContrastUI,
                                    boolean screenReader, boolean responseToUserAction,
@@ -1418,7 +1418,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * @param dialogueEnhancementGain TODO
      */
     @Override
-    public void onRequestDialogueEnhancementOverride(int connection, int id, int dialogueEnhancementGain) {
+    public void onRequestDialogueEnhancementOverride(int connection, String id, int dialogueEnhancementGain) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #5: Mock ORB session callback called with request. Call ORB session with response...");
         mSession.onRespondDialogueEnhancementOverride(connection, id, dialogueEnhancementGain);
     }
@@ -1431,7 +1431,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * @param feature TODO
      */
     @Override
-    public void onRequestFeatureSupportInfo(int connection, int id, int feature) {
+    public void onRequestFeatureSupportInfo(int connection, String id, int feature) {
         // TODO These are mock values
         Log.d(TAG, "JSON-RPC-EXAMPLE #5a: Mock ORB session callback called with request. Call ORB session with response...");
         String value = "tvosOnly";
@@ -1446,10 +1446,100 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * @param feature TODO
      */
     @Override
-    public void onRequestFeatureSettingsQuery(int connection, int id, int feature) {
+    public void onRequestFeatureSettingsQuery(int connection, String id, int feature) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #5a: Mock ORB session callback called with request. Call ORB session with response...");
-        mSession.onRespondFeatureSettingsQuery(connection, id, feature);
+//        mSession.onRespondFeatureSettingsQuery(connection, id, feature);
+
+        switch (feature) {
+            case F_SUBTITLES:
+                mSession.onQuerySubtitles(connection, id,
+                        true, 150, "Arial", "#AA0066", 100,
+                        "outline", "#FFFFFF", "#00DD00", EMPTY_INTEGER,
+                        EMPTY_STRING, EMPTY_INTEGER, EMPTY_STRING);
+                break;
+            case F_DIALOGUE_ENHANCEMENT:
+                mSession.onQueryDialogueEnhancement(connection, id,
+                        6, 6, 0, 12);
+                break;
+            case F_MAGNIFICATION_UI:
+                mSession.onQueryUIMagnifier(connection, id,
+                        true, "textMagnification");
+                break;
+            case F_HIGH_CONTRAST_UI:
+                mSession.onQueryHighContrastUI(connection, id,
+                        true, "monochrome");
+                break;
+            case F_SCREEN_READER:
+                mSession.onQueryScreenReader(connection, id,
+                        true, 120, "male", EMPTY_STRING);
+                break;
+            case F_RESPONSE_TO_A_USER_ACTION:
+                mSession.onQueryResponseToUserAction(connection, id,
+                        true, "audio");
+                break;
+            case F_AUDIO_DESCRIPTION:
+                mSession.onQueryAudioDescription(connection, id,
+                        true, 0, 90);
+                break;
+            case F_IN_VISION_SIGN_LANGUAGE:
+                mSession.onQueryInVisionSigning(connection, id,
+                        true);
+                break;
+            default:
+        }
+
+        // TEST for Notifications
+        // id: EMPTY_STRING
+
+        switch (feature) {
+            case F_SUBTITLES:
+                mSession.onQuerySubtitles(connection, EMPTY_STRING,
+                        true, 150, "Arial", "#AA0066", 100,
+                        "outline", "#FFFFFF", "#00DD00", EMPTY_INTEGER,
+                        EMPTY_STRING, EMPTY_INTEGER, EMPTY_STRING);
+                break;
+            case F_DIALOGUE_ENHANCEMENT:
+                mSession.onQueryDialogueEnhancement(connection, EMPTY_STRING,
+                        6, 6, 0, 12);
+                break;
+            case F_MAGNIFICATION_UI:
+                mSession.onQueryUIMagnifier(connection, EMPTY_STRING,
+                        true, "textMagnification");
+                break;
+            case F_HIGH_CONTRAST_UI:
+                mSession.onQueryHighContrastUI(connection, EMPTY_STRING,
+                        true, "monochrome");
+                break;
+            case F_SCREEN_READER:
+                mSession.onQueryScreenReader(connection, EMPTY_STRING,
+                        true, 120, "male", EMPTY_STRING);
+                break;
+            case F_RESPONSE_TO_A_USER_ACTION:
+                mSession.onQueryResponseToUserAction(connection, EMPTY_STRING,
+                        true, "audio");
+                break;
+            case F_AUDIO_DESCRIPTION:
+                mSession.onQueryAudioDescription(connection, EMPTY_STRING,
+                        true, 0, 90);
+                break;
+            case F_IN_VISION_SIGN_LANGUAGE:
+                mSession.onQueryInVisionSigning(connection, EMPTY_STRING,
+                        true);
+                break;
+            default:
+        }
     }
+
+    private final int F_SUBTITLES = 0;
+    private final int F_DIALOGUE_ENHANCEMENT = 1;
+    private final int F_MAGNIFICATION_UI = 2;
+    private final int F_HIGH_CONTRAST_UI = 3;
+    private final int F_SCREEN_READER = 4;
+    private final int F_RESPONSE_TO_A_USER_ACTION = 5;
+    private final int F_AUDIO_DESCRIPTION = 6;
+    private final int F_IN_VISION_SIGN_LANGUAGE = 7;
+    private final int EMPTY_INTEGER = -999999;
+    private final String EMPTY_STRING = "";
 
     /**
      * TODO
@@ -1459,17 +1549,38 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * @param feature TODO
      */
     @Override
-    public void onRequestFeatureSuppress(int connection, int id, int feature) {
+    public void onRequestFeatureSuppress(int connection, String id, int feature) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #5a: Mock ORB session callback called with request. Call ORB session with response...");
         String value = "suppressing";
         mSession.onRespondFeatureSuppress(connection, id, feature, value);
     }
 
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param isReady
+     */
     @Override
     public void onNotifyVoiceReady(int connection, boolean isReady) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #5a: Mock ORB session callback called with request. Call ORB session with response...");
     }
 
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param state
+     * @param actPause
+     * @param actPlay
+     * @param actFastForward
+     * @param actFastReverse
+     * @param actStop
+     * @param actSeekContent
+     * @param actSeekRelative
+     * @param actSeekLive
+     * @param actWallclock
+     */
     @Override
     public void onNotifyStateMedia(int connection,
                                    String state,
@@ -1478,6 +1589,36 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         Log.d(TAG, "JSON-RPC-EXAMPLE #5a: Mock ORB session callback called with request. Call ORB session with response...");
     }
 
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param state
+     * @param kind
+     * @param type
+     * @param currentTime
+     * @param rangeStart
+     * @param rangeEnd
+     * @param actPause
+     * @param actPlay
+     * @param actFastForward
+     * @param actFastReverse
+     * @param actStop
+     * @param actSeekContent
+     * @param actSeekRelative
+     * @param actSeekLive
+     * @param actWallclock
+     * @param mediaId
+     * @param title
+     * @param secTitle
+     * @param synopsis
+     * @param subtitlesEnabled
+     * @param subtitlesAvailable
+     * @param audioDescripEnabled
+     * @param audioDescripAvailable
+     * @param signLangEnabled
+     * @param signLangAvailable
+     */
     @Override
     public void onNotifyStateMedia(int connection,
                                    String state, String kind, String type, String currentTime,
@@ -1489,15 +1630,54 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                                    boolean audioDescripEnabled, boolean audioDescripAvailable,
                                    boolean signLangEnabled, boolean signLangAvailable) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #5a: Mock ORB session callback called with request. Call ORB session with response...");
+
+        // TEST for intent.Media
+        mSession.onSendIntentMediaBasics(INTENT_PAUSE, connection, "STR123-0", "voice");
+        mSession.onSendIntentMediaBasics(INTENT_PLAY, connection, "STR123-1", "voice");
+        mSession.onSendIntentMediaBasics(INTENT_FAST_FORWARD, connection, "STR123-2", "voice");
+        mSession.onSendIntentMediaBasics(INTENT_FAST_REVERSE, connection, "STR123-3", "voice");
+        mSession.onSendIntentMediaBasics(INTENT_STOP, connection, "STR123-4", "voice");
+
+        mSession.onSendIntentMediaSeekContent(connection, "STR123-4","voice",
+                                        "start", 30);
+        mSession.onSendIntentMediaSeekRelative(connection, "STR123-4","voice",
+                                        -60);
+        mSession.onSendIntentMediaSeekLive(connection, "STR123-4","voice", -30);
+        mSession.onSendIntentMediaSeekWallclock(connection, "STR123-4","voice",
+                                        "2020-02-12T10:00:00.000Z");
+        mSession.onSendIntentSearch(connection, "STR123-4", "voice",
+                                        "DOCTOR WHO");
+        mSession.onSendIntentDisplay(connection, "STR123-4", "voice",
+                                         "urn:broadcaster:programme:1249863457643");
+        mSession.onSendIntentPlayback(connection, "STR123-4", "voice",
+                                          "urn:broadcaster:programme:1249863457643",
+                                                    EMPTY_STRING, EMPTY_INTEGER);
     }
 
+    private final int INTENT_PAUSE = 0;
+    private final int INTENT_PLAY = 1;
+    private final int INTENT_FAST_FORWARD = 2;
+    private final int INTENT_FAST_REVERSE = 3;
+    private final int INTENT_STOP = 4;
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param code TODO
+     * @param message
+     */
     @Override
-    public void onReceiveError(int connection, int id, int code, String message) {
+    public void onReceiveError(int connection, String id, int code, String message) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #5a: Mock ORB session callback called with request. Call ORB session with response...");
         // JUST FOR TEST
         mSession.onRespondError(connection, id, code, message);
         mSession.onRespondError(connection, id, code, message, "Error Method");
     }
+
+
+
 
 
     private static byte[] getAssetBytes(Context context, String asset) {

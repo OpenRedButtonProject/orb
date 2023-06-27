@@ -639,7 +639,7 @@ class OrbSession implements IOrbSession {
      * @param appToTerminal
      */
     @Override
-    public void onRespondNegotiateMethods(int connection, int id,
+    public void onRespondNegotiateMethods(int connection, String id,
                                           String terminalToApp, String appToTerminal) {
         mJsonRpc.onRespondNegotiateMethods(connection, id, terminalToApp, appToTerminal);
     }
@@ -653,7 +653,7 @@ class OrbSession implements IOrbSession {
      * @param subtitles
      */
     @Override
-    public void onRespondSubscribe(boolean isSubscribe, int connection, int id,
+    public void onRespondSubscribe(boolean isSubscribe, int connection, String id,
                                    boolean subtitles, boolean dialogueEnhancement,
                                    boolean uiMagnifier, boolean highContrastUI,
                                    boolean screenReader, boolean responseToUserAction,
@@ -672,7 +672,7 @@ class OrbSession implements IOrbSession {
      * @param dialogueEnhancementGain
      */
     @Override
-    public void onRespondDialogueEnhancementOverride(int connection, int id, int dialogueEnhancementGain) {
+    public void onRespondDialogueEnhancementOverride(int connection, String id, int dialogueEnhancementGain) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #6: ORB session called with response. Call JsonRpc Java...");
         mJsonRpc.onRespondDialogueEnhancementOverride(connection, id, dialogueEnhancementGain);
     }
@@ -686,7 +686,7 @@ class OrbSession implements IOrbSession {
      * @param value
      */
     @Override
-    public void onRespondFeatureSupportInfo(int connection, int id, int feature, String value) {
+    public void onRespondFeatureSupportInfo(int connection, String id, int feature, String value) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
         mJsonRpc.onRespondFeatureSupportInfo(connection, id, feature, value);
     }
@@ -699,7 +699,7 @@ class OrbSession implements IOrbSession {
      * @param feature
      */
     @Override
-    public void onRespondFeatureSettingsQuery(int connection, int id, int feature) {
+    public void onRespondFeatureSettingsQuery(int connection, String id, int feature) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
         mJsonRpc.onRespondFeatureSettingsQuery(connection, id, feature);
     }
@@ -713,7 +713,7 @@ class OrbSession implements IOrbSession {
      * @param value
      */
     @Override
-    public void onRespondFeatureSuppress(int connection, int id, int feature, String value) {
+    public void onRespondFeatureSuppress(int connection, String id, int feature, String value) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
         mJsonRpc.onRespondFeatureSuppress(connection, id, feature, value);
     }
@@ -727,7 +727,7 @@ class OrbSession implements IOrbSession {
      * @param message
      */
     @Override
-    public void onRespondError(int connection, int id, int code, String message) {
+    public void onRespondError(int connection, String id, int code, String message) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
         mJsonRpc.onRespondError(connection, id, code, message);
     }
@@ -741,8 +741,321 @@ class OrbSession implements IOrbSession {
      * @param message
      * @param method
      */
-    public void onRespondError(int connection, int id, int code, String message, String method) {
+    public void onRespondError(int connection, String id, int code, String message, String method) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
         mJsonRpc.onRespondError(connection, id, code, message, method);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param enabled
+     * @param size
+     * @param fontFamily
+     * @param textColour
+     * @param textOpacity
+     * @param edgeType
+     * @param edgeColour
+     * @param backgroundColour
+     * @param backgroundOpacity
+     * @param windowColour
+     * @param windowOpacity
+     * @param language
+     */
+    @Override
+    public void onQuerySubtitles(int connection, String id,
+                          boolean enabled,
+                          int size,
+                          String fontFamily,
+                          String textColour,
+                          int textOpacity,
+                          String edgeType,
+                          String edgeColour,
+                          String backgroundColour,
+                          int backgroundOpacity,
+                          String windowColour,
+                          int windowOpacity,
+                          String language) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+        mJsonRpc.onQuerySubtitles(connection, id,
+                enabled, size, fontFamily, textColour, textOpacity,
+                edgeType, edgeColour, backgroundColour, backgroundOpacity,
+                windowColour, windowOpacity, language);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param gainPreference
+     * @param gain
+     * @param limitMin
+     * @param limitMax
+     */
+    @Override
+    public void onQueryDialogueEnhancement(int connection, String id,
+                                    int gainPreference,
+                                    int gain,
+                                    int limitMin,
+                                    int limitMax) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+        mJsonRpc.onQueryDialogueEnhancement(connection, id,
+                gainPreference, gain, limitMin, limitMax);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param enabled
+     * @param magType
+     */
+    @Override
+    public void onQueryUIMagnifier(int connection, String id,
+                            boolean enabled,
+                            String magType) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+        mJsonRpc.onQueryUIMagnifier(connection, id, enabled, magType);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param enabled
+     * @param hcType
+     */
+    @Override
+    public void onQueryHighContrastUI(int connection, String id,
+                               boolean enabled,
+                               String hcType) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+        mJsonRpc.onQueryHighContrastUI(connection, id, enabled, hcType);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param enabled
+     * @param speed
+     * @param voice
+     * @param language
+     */
+    @Override
+    public void onQueryScreenReader(int connection, String id,
+                             boolean enabled,
+                             int speed,
+                             String voice,
+                             String language) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+        mJsonRpc.onQueryScreenReader(connection, id,
+                enabled, speed, voice, language);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param enabled
+     * @param type
+     */
+    @Override
+    public void onQueryResponseToUserAction(int connection, String id,
+                                     boolean enabled,
+                                     String type) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+        mJsonRpc.onQueryResponseToUserAction(connection, id, enabled, type);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param enabled
+     * @param gainPreference
+     * @param panAzimuthPreference
+     */
+    @Override
+    public void onQueryAudioDescription(int connection, String id,
+                                 boolean enabled,
+                                 int gainPreference,
+                                 int panAzimuthPreference) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+        mJsonRpc.onQueryAudioDescription(connection, id,
+                enabled, gainPreference, panAzimuthPreference);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param enabled
+     */
+    @Override
+    public void onQueryInVisionSigning(int connection, String id,
+                                boolean enabled) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+        mJsonRpc.onQueryInVisionSigning(connection, id, enabled);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param origin
+     */
+    @Override
+    public void onSendIntentMediaBasics(
+            int cmd,
+            int connection, String id,
+            String origin) {
+        mJsonRpc.onSendIntentMediaBasics(cmd, connection, id,
+                origin);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param origin
+     * @param anchor
+     * @param offset
+     */
+    @Override
+    public void onSendIntentMediaSeekContent(
+            int connection, String id,
+            String origin,
+            String anchor,
+            int offset) {
+        mJsonRpc.onSendIntentMediaSeekContent(connection, id,
+                origin,
+                anchor,
+                offset);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param origin
+     * @param offset
+     */
+    @Override
+    public void onSendIntentMediaSeekRelative(
+            int connection, String id,
+            String origin,
+            int offset) {
+        mJsonRpc.onSendIntentMediaSeekRelative(connection, id,
+                origin,
+                offset);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param origin
+     * @param offset
+     */
+    @Override
+    public void onSendIntentMediaSeekLive(
+            int connection, String id,
+            String origin,
+            int offset) {
+        mJsonRpc.onSendIntentMediaSeekLive(connection, id,
+                origin,
+                offset);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param origin
+     * @param dateTime
+     */
+    @Override
+    public void onSendIntentMediaSeekWallclock(
+            int connection, String id,
+            String origin,
+            String dateTime) {
+        mJsonRpc.onSendIntentMediaSeekWallclock(connection, id,
+                origin,
+                dateTime);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param origin
+     * @param query
+     */
+    @Override
+    public void onSendIntentSearch(
+            int connection, String id,
+            String origin,
+            String query) {
+        mJsonRpc.onSendIntentSearch(connection, id,
+                origin,
+                query);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param origin
+     * @param mediaId
+     */
+    @Override
+    public void onSendIntentDisplay(
+            int connection, String id,
+            String origin,
+            String mediaId) {
+        mJsonRpc.onSendIntentDisplay(connection, id,
+                origin,
+                mediaId);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param origin
+     * @param mediaId
+     * @param anchor
+     * @param offset
+     */
+    @Override
+    public void onSendIntentPlayback(
+            int connection, String id,
+            String origin,
+            String mediaId,
+            String anchor,
+            int offset) {
+        mJsonRpc.onSendIntentPlayback(connection, id,
+                origin,
+                mediaId,
+                anchor,
+                offset);
     }
 }
