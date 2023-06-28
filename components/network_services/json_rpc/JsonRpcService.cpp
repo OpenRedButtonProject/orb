@@ -93,7 +93,7 @@ JsonRpcService::JsonRpcService(
             else{
                 id = "NUM" + id;
             }
-//            m_sessionCallback->ReceiveError(connection->Id(), id, code, message);
+            m_sessionCallback->ReceiveError(connection->Id(), id, code, message);
             //call return
         }
         if (!obj.isMember("method")){
@@ -121,7 +121,7 @@ JsonRpcService::JsonRpcService(
                 id = "NUM" + id;
             }
             LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
-//            m_sessionCallback->ResquestDialogueEnhancementOverride(connection->Id(), id, dialogueEnhancementGain);
+            m_sessionCallback->RequestDialogueEnhancementOverride(connection->Id(), id, dialogueEnhancementGain);
         }
 
 
@@ -145,7 +145,7 @@ JsonRpcService::JsonRpcService(
                 id = "NUM" + id;
             }
             LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
-//            m_sessionCallback->ResquestFeatureSupportInfo(connection->Id(), id, mapOfFeatures[feature]);
+            m_sessionCallback->RequestFeatureSupportInfo(connection->Id(), id, mapOfFeatures[feature]);
         }
         else if (method == "org.hbbtv.af.featureSettingsQuery"){
             //CASE A2
@@ -166,7 +166,7 @@ JsonRpcService::JsonRpcService(
                 id = "NUM" + id;
             }
             LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
-//            m_sessionCallback->ResquestFeatureSettingsQuery(connection->Id(), id, mapOfFeatures[feature]);
+            m_sessionCallback->RequestFeatureSettingsQuery(connection->Id(), id, mapOfFeatures[feature]);
         }
         else if (method == "org.hbbtv.af.featureSuppress"){
             //CASE A3
@@ -187,7 +187,7 @@ JsonRpcService::JsonRpcService(
                 id = "NUM" + id;
             }
             LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
-//            m_sessionCallback->ResquestFeatureSuppress(connection->Id(), id, mapOfFeatures[feature]);
+            m_sessionCallback->RequestFeatureSuppress(connection->Id(), id, mapOfFeatures[feature]);
         }
         else if (method == "org.hbbtv.subscribe"){
             //CASE B1
@@ -220,7 +220,7 @@ JsonRpcService::JsonRpcService(
                     LOG(LOG_INFO, "Cannot find msgType");
                 }
             }
-//            m_sessionCallback->RequestSubscribe(connection->Id(), id, msgTypeBoolList[0], msgTypeBoolList[1],msgTypeBoolList[2],msgTypeBoolList[3],msgTypeBoolList[4],msgTypeBoolList[5],msgTypeBoolList[6],msgTypeBoolList[7]);
+            m_sessionCallback->RequestSubscribe(connection->Id(), id, msgTypeBoolList[0], msgTypeBoolList[1],msgTypeBoolList[2],msgTypeBoolList[3],msgTypeBoolList[4],msgTypeBoolList[5],msgTypeBoolList[6],msgTypeBoolList[7]);
         }
         else if (method == "org.hbbtv.unsubscribe"){
             //CASE B2
@@ -251,7 +251,7 @@ JsonRpcService::JsonRpcService(
                     LOG(LOG_INFO, "Cannot find msgType");
                 }
             }
-//            m_sessionCallback->RequestUnsubscribe(connection->Id(), id, msgTypeBoolList[0], msgTypeBoolList[1],msgTypeBoolList[2],msgTypeBoolList[3],msgTypeBoolList[4],msgTypeBoolList[5],msgTypeBoolList[6],msgTypeBoolList[7]);
+            m_sessionCallback->RequestUnsubscribe(connection->Id(), id, msgTypeBoolList[0], msgTypeBoolList[1],msgTypeBoolList[2],msgTypeBoolList[3],msgTypeBoolList[4],msgTypeBoolList[5],msgTypeBoolList[6],msgTypeBoolList[7]);
         }
         else if (method == "org.hbbtv.app.voice.ready"){
             //CASE D1
@@ -398,7 +398,16 @@ JsonRpcService::JsonRpcService(
                 signLangEnabled = params["accessibility"]["signLanguage"]["enabled"].asBool();
                 signLangAvailable = params["accessibility"]["signLanguage"]["available"].asBool();
             }
-//            m_sessionCallback->NotifyStateMedia(connection->Id(), state, kind, type, currentTime, rangeStart, rangeEnd, actPause, actPlay, actFastForward, actFastReverse, actStop, actSeekContent, actSeekRelative, actSeekLive, actWallclock, mediaId, title, secTitle, synopsis, subtitlesEnabled, subtitlesAvailable, audioDescripEnabled, audioDescripAvailable, signLangEnabled, signLangAvailable);
+            m_sessionCallback->NotifyStateMedia(connection->Id(),
+                                                state, kind, type, currentTime,
+                                                rangeStart, rangeEnd,
+                                                actPause, actPlay, actFastForward,
+                                                actFastReverse, actStop, actSeekContent,
+                                                actSeekRelative, actSeekLive, actWallclock,
+                                                mediaId, title, secTitle, synopsis,
+                                                subtitlesEnabled, subtitlesAvailable,
+                                                audioDescripEnabled, audioDescripAvailable,
+                                                signLangEnabled, signLangAvailable);
 
         }
         else if (method == "org.hbbtv.negotiateMethods"){
@@ -448,7 +457,7 @@ JsonRpcService::JsonRpcService(
             else{
                 id = "NUM" + id;
             }
-//            m_sessionCallback->RequestNegotiateMethods(connection->Id(), id, terminalToApp, appToTerminal);
+            m_sessionCallback->RequestNegotiateMethods(connection->Id(), id, terminalToApp, appToTerminal);
         }
         else if (method == "org.hbbtv.af.triggerResponseToUserAction"){
             //CASE F 2
@@ -468,7 +477,7 @@ JsonRpcService::JsonRpcService(
             else{
                 id = "NUM" + id;
             }
-//            m_sessionCallback->RequestTriggerResponseToUserAction(connection->Id(), id, magnitude);
+            m_sessionCallback->RequestTriggerResponseToUserAction(connection->Id(), id, magnitude);
         }
     }
 
