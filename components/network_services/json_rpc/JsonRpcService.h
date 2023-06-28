@@ -103,9 +103,14 @@ public:
         void RespondSubscribe(int connectionId, const std::string &id, bool msgType0, bool msgType1,
                               bool msgType2, bool msgType3, bool msgType4, bool msgType5, bool msgType6,
                               bool msgType7);
+        void RespondUnsubscribe(int connectionId, const std::string &id, bool msgType0, bool msgType1,
+                                bool msgType2, bool msgType3, bool msgType4, bool msgType5,
+                                bool msgType6,
+                                bool msgType7);
 
-        void RespondFeatureSuppress(int connectionId, const std::string &id, const std::string &feature,
-                                    const std::string &value);
+        void RespondFeatureSuppress(int connectionId, const std::string &id, int feature,
+                                const std::string &value);
+
 
         void RespondFeatureSettingsInVisionSigning(int connectionId, const std::string &id, bool enabled);
 
@@ -123,16 +128,16 @@ public:
         void RespondFeatureSettingsHighContrastUI(int connectionId, const std::string &id, bool enabled,
                                                   const std::string &hcType);
 
-        void RespondFeatureSettingsUiMagnifier(int connectionId, const std::string &id, bool enabled,
+        void RespondFeatureSettingsUIMagnifier(int connectionId, const std::string &id, bool enabled,
                                                const std::string &magType);
 
-        void RespondFeatureSettingsQueryDialogueEnhancement(int connectionId, const std::string &id,
+        void RespondFeatureSettingsDialogueEnhancement(int connectionId, const std::string &id,
                                                             int dialogueEnhancementGainPreference,
                                                             int dialogueEnhancementGain,
                                                             int dialogueEnhancementLimitMin,
                                                             int dialogueEnhancementLimitMax);
 
-        void RespondFeatureSettingsQuerySubtitles(int connectionId, const std::string &id, bool enabled,
+        void RespondFeatureSettingsSubtitles(int connectionId, const std::string &id, bool enabled,
                                                   int size, const std::string &fontFamily,
                                                   const std::string &textColour, int textOpacity,
                                                   const std::string &edgeType,
@@ -142,8 +147,8 @@ public:
                                                   const std::string &windowColour,
                                                   int windowOpacity, const std::string &language);
 
-        void RespondFeatureSupportInfo(int connectionId, const std::string &id, const std::string &feature,
-                                  const std::string &value);
+        void RespondFeatureSupportInfo(int connectionId, const std::string &id, int feature,
+                                   const std::string &value);
 
         void
         SendIntentMediaPause(int connectionId, const std::string &id, const std::string &origin);
@@ -164,9 +169,9 @@ public:
                                         const std::string &origin,
                                         const std::string &anchor, int offset);
 
-        void SendIntentMediaSeekRelative(int connectionId, const std::string &id,
-                                         const std::string &origin,
-                                         const std::string &anchor, int offset);
+        void
+        SendIntentMediaSeekRelative(int connectionId, const std::string &id, const std::string &origin,
+                                    int offset);
 
         void
         SendIntentMediaSeekLive(int connectionId, const std::string &id, const std::string &origin,
@@ -186,38 +191,30 @@ public:
         void SendIntentPlayback(int connectionId, const std::string &id, const std::string &origin,
                                 const std::string &mediaId, const std::string &anchor, int offset);
 
-        void NotifyInVisionSigning(int connectionId, const std::string &id, bool enabled);
+        void NotifySubtitles(int connectionId, bool enabled, int size, const std::string &fontFamily,
+                             const std::string &textColour, int textOpacity,
+                             const std::string &edgeType,
+                             const std::string &edgeColour, const std::string &backgroundColour,
+                             int backgroundOpacity, const std::string &windowColour, int windowOpacity,
+                             const std::string &language);
 
-        void
-        NotifyAudioDescription(int connectionId, const std::string &id, bool enabled,
-                               int gainPreference,
-                               int panAzimuthPreference);
-
-        void NotifyResponseToUserAction(int connectionId, const std::string &id, bool enabled,
-                                        const std::string &type);
-
-        void NotifyScreenReader(int connectionId, const std::string &id, bool enabled, int speed,
-                                const std::string &voice, const std::string &language);
-
-        void NotifyHighContrastUI(int connectionId, const std::string &id, bool enabled,
-                                  const std::string &hcType);
-
-        void NotifyUIMagnifier(int connectionId, const std::string &id, bool enabled,
-                               const std::string &magType);
-
-        void NotifyDialogueEnhancement(int connectionId, const std::string &id,
-                                       int dialogueEnhancementGainPreference,
-                                       int dialogueEnhancementGain,
-                                       int dialogueEnhancementLimitMin,
+        void NotifyDialogueEnhancement(int connectionId, int dialogueEnhancementGainPreference,
+                                       int dialogueEnhancementGain, int dialogueEnhancementLimitMin,
                                        int dialogueEnhancementLimitMax);
 
-        void NotifySubtitles(int connectionId, const std::string &id, bool enabled, int size,
-                             const std::string &fontFamily, const std::string &textColour,
-                             int textOpacity,
-                             const std::string &edgeType, const std::string &edgeColour,
-                             const std::string &backgroundColour, int backgroundOpacity,
-                             const std::string &windowColour, int windowOpacity,
-                             const std::string &language);
+        void NotifyUIMagnifier(int connectionId, bool enabled, const std::string &magType);
+
+        void NotifyHighContrastUI(int connectionId, bool enabled, const std::string &hcType);
+
+        void NotifyScreenReader(int connectionId, bool enabled, int speed, const std::string &voice,
+                                const std::string &language);
+
+        void NotifyResponseToUserAction(int connectionId, bool enabled, const std::string &type);
+
+        void NotifyAudioDescription(int connectionId, bool enabled, int gainPreference,
+                                    int panAzimuthPreference);
+
+        void NotifyInVisionSigning(int connectionId, bool enabled);
         void RespondDialogueEnhancementOverride(int connectionId, const std::string &id,
                                                 int dialogueEnhancementGain);
 
@@ -227,7 +224,12 @@ public:
         std::string m_endpoint;
         std::unique_ptr<SessionCallback> m_sessionCallback;
 
-    };
+
+
+
+
+
+};
 } // namespace NetworkServices
 
 #endif // OBS_NS_JSONRPCSERVICE_
