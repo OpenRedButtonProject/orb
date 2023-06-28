@@ -485,7 +485,7 @@ JsonRpcService::JsonRpcService(
     void JsonRpcService::RespondFeatureSupportInfo(
             int connectionId,
             const std::string& id,
-            const std::string& feature,
+            int feature,
             const std::string& value
             ){
         LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
@@ -498,7 +498,8 @@ JsonRpcService::JsonRpcService(
             jsonResponse["jsonrpc"] = "2.0";
             Json::Value result;
             result["method"] = "org.hbbtv.af.featureSupportInfo";
-            result["feature"] = feature;
+            std::vector<std::string> resultStringVector = {"subtitles", "dialogueEnhancement", "uiMagnifier", "highContrastUI", "screenReader", "responseToUserAction", "audioDescription", "inVisionSigning"};
+            result["feature"] = resultStringVector[feature];
             result["value"] = value;
             jsonResponse["result"] = result;
             if (id.substr(0,3)=="STR"){
@@ -511,7 +512,7 @@ JsonRpcService::JsonRpcService(
         }
         connections_mutex_.unlock();
     }
-    void JsonRpcService::RespondFeatureSettingsQuerySubtitles(
+    void JsonRpcService::RespondFeatureSettingsSubtitles(
             int connectionId,
             const std::string& id,
             bool enabled,
@@ -568,7 +569,7 @@ JsonRpcService::JsonRpcService(
         connections_mutex_.unlock();
     }
 
-    void JsonRpcService::RespondFeatureSettingsQueryDialogueEnhancement(
+    void JsonRpcService::RespondFeatureSettingsDialogueEnhancement(
             int connectionId,
             const std::string& id,
             int dialogueEnhancementGainPreference,
@@ -610,7 +611,7 @@ JsonRpcService::JsonRpcService(
         connections_mutex_.unlock();
     }
 
-    void JsonRpcService::RespondFeatureSettingsUiMagnifier(
+    void JsonRpcService::RespondFeatureSettingsUIMagnifier(
             int connectionId,
             const std::string& id,
             bool enabled,
@@ -832,7 +833,7 @@ JsonRpcService::JsonRpcService(
     void JsonRpcService::RespondFeatureSuppress(
             int connectionId,
             const std::string& id,
-            const std::string& feature,
+            int feature,
             const std::string& value
     ){
         LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
@@ -845,7 +846,8 @@ JsonRpcService::JsonRpcService(
             jsonResponse["jsonrpc"] = "2.0";
             Json::Value result;
             result["method"] = "org.hbbtv.af.featureSuppress";
-            result["feature"] = feature;
+            std::vector<std::string> resultStringVector = {"subtitles", "dialogueEnhancement", "uiMagnifier", "highContrastUI", "screenReader", "responseToUserAction", "audioDescription", "inVisionSigning"};
+            result["feature"] = resultStringVector[feature];
             result["value"] = value;
             jsonResponse["result"] = result;
             if (id.substr(0,3)=="STR"){
@@ -903,7 +905,51 @@ JsonRpcService::JsonRpcService(
         }
         connections_mutex_.unlock();
     }
+    void JsonRpcService::RespondUnsubscribe(
+            int connectionId,
+            const std::string& id,
+            bool msgType0,
+            bool msgType1,
+            bool msgType2,
+            bool msgType3,
+            bool msgType4,
+            bool msgType5,
+            bool msgType6,
+            bool msgType7
+    ){
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
+        //Case Br
+        connections_mutex_.lock();
+        WebSocketConnection *connection = GetConnection(connectionId);
+        if (connection != nullptr)
+        {
+            Json::Value jsonResponse;
+            jsonResponse["jsonrpc"] = "2.0";
+            Json::Value result;
+            Json::Value msgTypeList(Json::arrayValue);
 
+            if (msgType0) msgTypeList.append("subtitlesPrefChange");
+            if (msgType1) msgTypeList.append("dialogueEnhancementPrefChange");
+            if (msgType2) msgTypeList.append("uiMagnifierPrefChange");
+            if (msgType3) msgTypeList.append("highContrastUIPrefChange");
+            if (msgType4) msgTypeList.append("screenReaderPrefChange");
+            if (msgType5) msgTypeList.append("responseToUserActionPrefChange");
+            if (msgType6) msgTypeList.append("audioDescriptionPrefChange");
+            if (msgType7) msgTypeList.append("inVisionSigningPrefChange");
+
+            result["msgType"] = msgTypeList;
+            jsonResponse["result"] = result;
+
+            if (id.substr(0,3)=="STR"){
+                jsonResponse["id"] = id.substr(3, id.length()-3);
+            }
+            else{
+                jsonResponse["id"] =  std::stoll(id.substr(3, id.length()-3));
+            }
+            connection->SendMessage(jsonResponse.asString());
+        }
+        connections_mutex_.unlock();
+    }
     void JsonRpcService::RespondNegotiateMethods(
             int connectionId,
             const std::string& id,
@@ -1202,7 +1248,6 @@ JsonRpcService::JsonRpcService(
             int connectionId,
             const std::string& id,
             const std::string& origin,
-            const std::string& anchor,
             int offset
     ){
         LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
@@ -1216,7 +1261,6 @@ JsonRpcService::JsonRpcService(
             jsonResponse["method"] = "org.hbbtv.app.intent.media.seek-relative";
             Json::Value params;
             params["origin"] = origin;
-            params["anchor"] = anchor;
             params["offset"] = offset;
             jsonResponse["params"] = params;
             if (id.substr(0,3)=="STR"){
@@ -1384,7 +1428,6 @@ JsonRpcService::JsonRpcService(
 
     void JsonRpcService::NotifySubtitles(
             int connectionId,
-            const std::string& id,
             bool enabled,
             int size,
             const std::string& fontFamily,
@@ -1436,7 +1479,6 @@ JsonRpcService::JsonRpcService(
 
     void JsonRpcService::NotifyDialogueEnhancement(
             int connectionId,
-            const std::string& id,
             int dialogueEnhancementGainPreference,
             int dialogueEnhancementGain,
             int dialogueEnhancementLimitMin,
@@ -1473,7 +1515,6 @@ JsonRpcService::JsonRpcService(
 
     void JsonRpcService::NotifyUIMagnifier(
             int connectionId,
-            const std::string& id,
             bool enabled,
             const std::string& magType
     ){
@@ -1505,7 +1546,6 @@ JsonRpcService::JsonRpcService(
 
     void JsonRpcService::NotifyHighContrastUI(
             int connectionId,
-            const std::string& id,
             bool enabled,
             const std::string& hcType
     ){
@@ -1535,7 +1575,6 @@ JsonRpcService::JsonRpcService(
 
     void JsonRpcService::NotifyScreenReader(
             int connectionId,
-            const std::string& id,
             bool enabled,
             int speed,
             const std::string& voice,
@@ -1569,7 +1608,6 @@ JsonRpcService::JsonRpcService(
     }
     void JsonRpcService::NotifyResponseToUserAction(
             int connectionId,
-            const std::string& id,
             bool enabled,
             const std::string& type
     ){
@@ -1601,7 +1639,6 @@ JsonRpcService::JsonRpcService(
 
     void JsonRpcService::NotifyAudioDescription(
             int connectionId,
-            const std::string& id,
             bool enabled,
             int gainPreference,
             int panAzimuthPreference
@@ -1634,7 +1671,6 @@ JsonRpcService::JsonRpcService(
 
     void JsonRpcService::NotifyInVisionSigning(
             int connectionId,
-            const std::string& id,
             bool enabled
     ){
         //case D 8
