@@ -59,8 +59,14 @@ public class JsonRpc {
         int connection,
         String id,
         int dialogueEnhancementGain) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7: JsonRpc Java called with response. Call native...");
         nativeOnRespondDialogueEnhancementOverride(connection, id, dialogueEnhancementGain);
+    }
+
+    public void onRespondTriggerResponseToUserAction(
+            int connection,
+            String id,
+            boolean actioned) {
+        nativeOnRespondTriggerResponseToUserAction(connection, id, actioned);
     }
 
     public void onRespondFeatureSupportInfo(
@@ -308,6 +314,14 @@ public class JsonRpc {
         mOrbSessionCallback.onRequestDialogueEnhancementOverride(connection, id, dialogueEnhancementGain);
     }
 
+    private void onRequestTriggerResponseToUserAction(
+            int connection,
+            String id,
+            boolean actioned) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #4: Java called with request. Call ORB session callback...");
+        mOrbSessionCallback.onRequestTriggerResponseToUserAction(connection, id, actioned);
+    }
+
     private void onRequestFeatureSupportInfo(
             int connection,
             String id,
@@ -407,6 +421,11 @@ public class JsonRpc {
         String id,
         int dialogueEnhancementGain);
 
+    private native void nativeOnRespondTriggerResponseToUserAction(
+        int connection,
+        String id,
+        boolean actioned);
+
     private native void nativeOnRespondFeatureSupportInfo(
         int connection,
         String id,
@@ -439,115 +458,115 @@ public class JsonRpc {
 
 
     private native void nativeOnQuerySubtitles(
-            int connection,
-            String id,
-            boolean enabled,
-            int size,
-            String fontFamily,
-            String textColour,
-            int textOpacity,
-            String edgeType,
-            String edgeColour,
-            String backgroundColour,
-            int backgroundOpacity,
-            String windowColour,
-            int windowOpacity,
-            String language);
+        int connection,
+        String id,
+        boolean enabled,
+        int size,
+        String fontFamily,
+        String textColour,
+        int textOpacity,
+        String edgeType,
+        String edgeColour,
+        String backgroundColour,
+        int backgroundOpacity,
+        String windowColour,
+        int windowOpacity,
+        String language);
 
     private native void nativeOnQueryDialogueEnhancement(
-            int connection,
-            String id,
-            int gainPreference,
-            int gain,
-            int limitMin,
-            int limitMax);
+        int connection,
+        String id,
+        int gainPreference,
+        int gain,
+        int limitMin,
+        int limitMax);
 
     private native void nativeOnQueryUIMagnifier(
-            int connection,
-            String id,
-            boolean enabled,
-            String magType);
+        int connection,
+        String id,
+        boolean enabled,
+        String magType);
 
     private native void nativeOnQueryHighContrastUI(
-            int connection,
-            String id,
-            boolean enabled,
-            String hcType);
+        int connection,
+        String id,
+        boolean enabled,
+        String hcType);
 
     private native void nativeOnQueryScreenReader(
-            int connection,
-            String id,
-            boolean enabled,
-            int speed,
-            String voice,
-            String language);
+        int connection,
+        String id,
+        boolean enabled,
+        int speed,
+        String voice,
+        String language);
 
     private native void nativeOnQueryResponseToUserAction(
-            int connection,
-            String id,
-            boolean enabled,
-            String type);
+        int connection,
+        String id,
+        boolean enabled,
+        String type);
 
     private native void nativeOnQueryAudioDescription(
-            int connection,
-            String id,
-            boolean enabled,
-            int gainPreference,
-            int panAzimuthPreference);
+        int connection,
+        String id,
+        boolean enabled,
+        int gainPreference,
+        int panAzimuthPreference);
 
     private native void nativeOnQueryInVisionSigning(
-            int connection,
-            String id,
-            boolean enabled);
+        int connection,
+        String id,
+        boolean enabled);
 
     private native void nativeOnSendIntentMediaBasics(
-            int cmd,
-            int connection,
-            String id,
-            String origin);
+        int cmd,
+        int connection,
+        String id,
+        String origin);
 
     private native void nativeOnSendIntentMediaSeekContent(
-            int connection,
-            String id,
-            String origin,
-            String anchor,
-            int offset);
+        int connection,
+        String id,
+        String origin,
+        String anchor,
+        int offset);
 
     private native void nativeOnSendIntentMediaSeekRelative(
-            int connection,
-            String id,
-            String origin,
-            int offset);
+        int connection,
+        String id,
+        String origin,
+        int offset);
 
     private native void nativeOnSendIntentMediaSeekLive(
-            int connection,
-            String id,
-            String origin,
-            int offset);
+        int connection,
+        String id,
+        String origin,
+        int offset);
 
     private native void nativeOnSendIntentMediaSeekWallclock(
-            int connection,
-            String id,
-            String origin,
-            String dateTime);
+        int connection,
+        String id,
+        String origin,
+        String dateTime);
 
     private native void nativeOnSendIntentSearch(
-            int connection,
-            String id,
-            String origin,
-            String query);
+        int connection,
+        String id,
+        String origin,
+        String query);
 
     private native void nativeOnSendIntentDisplay(
-            int connection,
-            String id,
-            String origin,
-            String mediaId);
+        int connection,
+        String id,
+        String origin,
+        String mediaId);
 
     private native void nativeOnSendIntentPlayback(
-            int connection,
-            String id,
-            String origin,
-            String mediaId,
-            String anchor,
-            int offset);
+        int connection,
+        String id,
+        String origin,
+        String mediaId,
+        String anchor,
+        int offset);
 }

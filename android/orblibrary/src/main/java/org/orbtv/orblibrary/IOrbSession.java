@@ -1,5 +1,6 @@
 package org.orbtv.orblibrary;
 
+import android.util.Log;
 import android.view.View;
 
 import org.orbtv.orbpolyfill.BridgeTypes;
@@ -290,6 +291,15 @@ public interface IOrbSession {
      * @param dialogueEnhancementGain
      */
     void onRespondDialogueEnhancementOverride(int connection, String id, int dialogueEnhancementGain);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param actioned
+     */
+    public void onRespondTriggerResponseToUserAction(int connection, String id, boolean actioned);
 
     /**
      * TODO
