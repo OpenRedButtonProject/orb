@@ -1458,6 +1458,19 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      *
      * @param connection The request and response should have the same value
      * @param id The request and response should have the same value
+     * @param actioned
+     */
+    @Override
+    public void onRequestTriggerResponseToUserAction(int connection, String id, boolean actioned) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #5: Mock ORB session callback called with request. Call ORB session with response...");
+        mSession.onRespondTriggerResponseToUserAction(connection, id, actioned);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
      * @param feature TODO
      */
     @Override
