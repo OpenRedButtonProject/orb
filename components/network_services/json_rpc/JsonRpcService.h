@@ -80,7 +80,6 @@ public:
         virtual ~SessionCallback() = default;
     };
 
-
         JsonRpcService(int port, const std::string &endpoint,
             std::unique_ptr<SessionCallback> m_sessionCallback);
 

@@ -708,19 +708,6 @@ class OrbSession implements IOrbSession {
      * @param connection The request and response should have the same value
      * @param id The request and response should have the same value
      * @param feature
-     */
-    @Override
-    public void onRespondFeatureSettingsQuery(int connection, String id, int feature) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
-        mJsonRpc.onRespondFeatureSettingsQuery(connection, id, feature);
-    }
-
-    /**
-     * TODO
-     *
-     * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param feature
      * @param value
      */
     @Override
