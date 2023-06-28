@@ -22,13 +22,13 @@ public:
 public:
         virtual void RequestNegotiateMethods(
             int connectionId,
-            std::string,
+            std::string id,
             std::string terminalToApp,
             std::string appToTerminal) = 0;
 
         virtual void RequestSubscribe(
             int connectionId,
-            std::string,
+            std::string id,
             bool subtitles, bool dialogueEnhancement,
             bool uiMagnifier, bool highContrastUI,
             bool screenReader, bool responseToUserAction,
@@ -36,7 +36,7 @@ public:
 
         virtual void RequestUnsubscribe(
             int connectionId,
-            std::string,
+            std::string id,
             bool subtitles, bool dialogueEnhancement,
             bool uiMagnifier, bool highContrastUI,
             bool screenReader, bool responseToUserAction,
@@ -44,36 +44,53 @@ public:
 
         virtual void RequestDialogueEnhancementOverride(
             int connectionId,
-            std::string,
+            std::string id,
             int dialogueEnhancementGain) = 0;
 
         virtual void RequestTriggerResponseToUserAction(
             int connectionId,
             std::string id,
-            bool actioned) = 0;
+            std::string magnitude) = 0;
 
         virtual void RequestFeatureSupportInfo(
             int connectionId,
-            std::string,
+            std::string id,
             int feature) = 0;
 
         virtual void RequestFeatureSettingsQuery(
             int connectionId,
-            std::string,
+            std::string id,
             int feature) = 0;
 
         virtual void RequestFeatureSuppress(
             int connectionId,
-            std::string,
+            std::string id,
             int feature) = 0;
 
         virtual void NotifyVoiceReady(
             int connectionId,
             bool isReady) = 0;
 
+        virtual void NotifyStateMedia(
+                int connectionId,
+                std::string state,
+                bool actPause, bool actPlay, bool actFastForward, bool actFastReverse, bool actStop,
+                bool actSeekContent, bool actSeekRelative, bool actSeekLive, bool actWallclock) = 0;
+
+        virtual void NotifyStateMedia(
+                int connectionId,
+                std::string state, std::string kind, std::string type, std::string currentTime,
+                std::string rangeStart, std::string rangeEnd,
+                bool actPause, bool actPlay, bool actFastForward, bool actFastReverse, bool actStop,
+                bool actSeekContent, bool actSeekRelative, bool actSeekLive, bool actWallclock,
+                std::string mediaId, std::string title, std::string secTitle, std::string synopsis,
+                bool subtitlesEnabled, bool subtitlesAvailable,
+                bool audioDescripEnabled, bool audioDescripAvailable,
+                bool signLangEnabled, bool signLangAvailable) = 0;
+
         virtual void ReceiveError(
             int connectionId,
-            std::string,
+            std::string id,
             int code,
             std::string message) = 0;
 
