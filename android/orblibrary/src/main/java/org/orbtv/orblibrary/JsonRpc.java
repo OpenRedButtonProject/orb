@@ -78,14 +78,6 @@ public class JsonRpc {
         nativeOnRespondFeatureSupportInfo(connection, id, feature, value);
     }
 
-    public void onRespondFeatureSettingsQuery(
-        int connection,
-        String id,
-        int feature) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: JsonRpc Java called with response. Call native...");
-        nativeOnRespondFeatureSettingsQuery(connection, id, feature);
-    }
-
     public void onRespondFeatureSuppress(
         int connection,
         String id,
@@ -431,11 +423,6 @@ public class JsonRpc {
         String id,
         int feature,
         String value);
-
-    private native void nativeOnRespondFeatureSettingsQuery(
-        int connection,
-        String id,
-        int feature);
 
     private native void nativeOnRespondFeatureSuppress(
         int connection,

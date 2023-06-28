@@ -28,7 +28,6 @@
 #define CB_NOTIFY_VOICE_READY 8
 #define CB_NOTIFY_STATE_MEDIA 9
 #define CB_NOTIFY_STATE_MEDIA_ALL_VALUES 10
-
 #define CB_NUMBER_OF_ITEMS 11
 
 #define LENGTH_OF_EMPTY_ID 0
@@ -472,23 +471,6 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondFeatureSupportInfo(
     std::string valueStr = JniUtils::MakeStdString(env, value);
     GetService(env, object)->RespondFeatureSupportInfo(
             connection, idStr, feature, valueStr);
-}
-
-
-extern "C"
-JNIEXPORT void JNICALL
-Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondFeatureSettingsQuery(
-    JNIEnv *env,
-    jobject object,
-    jint connection,
-    jstring id,
-    jint feature)
-{
-    __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-                        "JSON-RPC-EXAMPLE #8a: Android native called with response. Call service...");
-    std::string idStr = JniUtils::MakeStdString(env, id);
-    GetService(env, object)->RespondFeatureSettingsQuery(
-            connection, idStr, feature);
 }
 
 extern "C"

@@ -317,15 +317,6 @@ public interface IOrbSession {
      * @param connection The request and response should have the same value
      * @param id The request and response should have the same value
      * @param feature
-     */
-    void onRespondFeatureSettingsQuery(int connection, String id, int feature);
-
-    /**
-     * TODO
-     *
-     * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param feature
      * @param value
      */
     void onRespondFeatureSuppress(int connection, String id, int feature, String value);
