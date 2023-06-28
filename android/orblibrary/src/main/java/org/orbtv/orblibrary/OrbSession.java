@@ -673,8 +673,19 @@ class OrbSession implements IOrbSession {
      */
     @Override
     public void onRespondDialogueEnhancementOverride(int connection, String id, int dialogueEnhancementGain) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #6: ORB session called with response. Call JsonRpc Java...");
         mJsonRpc.onRespondDialogueEnhancementOverride(connection, id, dialogueEnhancementGain);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param actioned
+     */
+    @Override
+    public void onRespondTriggerResponseToUserAction(int connection, String id, boolean actioned) {
+        mJsonRpc.onRespondTriggerResponseToUserAction(connection, id, actioned);
     }
 
     /**

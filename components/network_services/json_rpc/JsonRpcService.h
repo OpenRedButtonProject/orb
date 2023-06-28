@@ -47,6 +47,11 @@ public:
             std::string,
             int dialogueEnhancementGain) = 0;
 
+        virtual void RequestTriggerResponseToUserAction(
+            int connectionId,
+            std::string id,
+            bool actioned) = 0;
+
         virtual void RequestFeatureSupportInfo(
             int connectionId,
             std::string,

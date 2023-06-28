@@ -16,18 +16,20 @@
 
 #include "jni_utils.h"
 
-#define CB_REQUEST_DIALOGUE_ENHANCEMENT_OVERRIDE 0
-#define CB_REQUEST_NEGOTIATE_METHODS 1
-#define CB_REQUEST_SUBSCRIBE_UNSUBSCRIBE 2
-#define CB_RECEIVE_ERROR 3
-#define CB_REQUEST_FEATURE_SUPPORT_INFO 4
-#define CB_REQUEST_FEATURE_SETTINGS_QUERY 5
-#define CB_REQUEST_FEATURE_SUPPRESS 6
-#define CB_NOTIFY_VOICE_READY 7
-#define CB_NOTIFY_STATE_MEDIA 8
-#define CB_NOTIFY_STATE_MEDIA_ALL_VALUES 9
 
-#define CB_NUMBER_OF_ITEMS 10
+#define CB_REQUEST_NEGOTIATE_METHODS 0
+#define CB_REQUEST_SUBSCRIBE_UNSUBSCRIBE 1
+#define CB_RECEIVE_ERROR 2
+#define CB_REQUEST_FEATURE_SUPPORT_INFO 3
+#define CB_REQUEST_FEATURE_SETTINGS_QUERY 4
+#define CB_REQUEST_FEATURE_SUPPRESS 5
+#define CB_REQUEST_DIALOGUE_ENHANCEMENT_OVERRIDE 6
+#define CB_REQUEST_TRIGGER_RESPONSE_TO_USER_ACTION 7
+#define CB_NOTIFY_VOICE_READY 8
+#define CB_NOTIFY_STATE_MEDIA 9
+#define CB_NOTIFY_STATE_MEDIA_ALL_VALUES 10
+
+#define CB_NUMBER_OF_ITEMS 11
 
 #define LENGTH_OF_EMPTY_ID 0
 #define CMD_INTENT_PAUSE 0
@@ -142,6 +144,22 @@ public:
         env->DeleteLocalRef(j_id);
     }
 
+    void RequestTriggerResponseToUserAction(
+            int connection,
+            std::string id,
+            bool actioned) override
+    {
+        __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
+                            "JSON-RPC-EXAMPLE #3: Android native called with request. Call Java...");
+        JNIEnv *env = JniUtils::GetEnv();
+        jstring j_id = env->NewStringUTF(id.c_str());
+        env->CallVoidMethod(
+                mCallbackObject,
+                g_cb[CB_REQUEST_TRIGGER_RESPONSE_TO_USER_ACTION],
+                connection, j_id, actioned);
+        env->DeleteLocalRef(j_id);
+    }
+
     void RequestFeatureSupportInfo(
         int connection,
         std::string id,
@@ -243,10 +261,10 @@ public:
         jstring j_currentTime = env->NewStringUTF(currentTime.c_str());
         jstring j_rangeStart = env->NewStringUTF(rangeStart.c_str());
         jstring j_rangeEnd = env->NewStringUTF(rangeEnd.c_str());
-        jstring j_mediaId = env->NewStringUTF(state.c_str());   // can be null
+        jstring j_mediaId = env->NewStringUTF(state.c_str());
         jstring j_title = env->NewStringUTF(kind.c_str());
-        jstring j_secTitle = env->NewStringUTF( type.c_str());   // can be null
-        jstring j_synopsis = env->NewStringUTF(synopsis.c_str());   // can be null
+        jstring j_secTitle = env->NewStringUTF( type.c_str());
+        jstring j_synopsis = env->NewStringUTF(synopsis.c_str());
         env->CallVoidMethod(
                 mCallbackObject,
                 g_cb[CB_NOTIFY_STATE_MEDIA_ALL_VALUES],
@@ -271,12 +289,6 @@ public:
         env->DeleteLocalRef(j_synopsis);
     }
 
-// Convert std::string to jstring using:
-// 1. jstring jstr = env->NewStringUTF(str.c_str());
-// 2. use jstr
-// 3. env->DeleteLocalRef(jstr); // always do this, otherwise we will leak memory!
-// and, convert jstring to std::string using:
-// 1. std::string str = JniUtils::MakeStdString(env, str)
     void ReceiveError(
         int connection,
         std::string id,
@@ -307,8 +319,7 @@ void InitialiseJsonRpcNative()
     g_service = env->GetFieldID(managerClass, "mServicePointerField", "J");
 
     // Callback methods
-    g_cb[CB_REQUEST_DIALOGUE_ENHANCEMENT_OVERRIDE] = env->GetMethodID(managerClass,
-        "onRequestDialogueEnhancementOverride", "(ILjava/lang/String;I)V");
+
     g_cb[CB_REQUEST_NEGOTIATE_METHODS] = env->GetMethodID(managerClass,
         "onRequestNegotiateMethods", "(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
     g_cb[CB_REQUEST_SUBSCRIBE_UNSUBSCRIBE] = env->GetMethodID(managerClass,
@@ -319,6 +330,10 @@ void InitialiseJsonRpcNative()
          "onRequestFeatureSettingsQuery", "(ILjava/lang/String;I)V");
     g_cb[CB_REQUEST_FEATURE_SUPPRESS] = env->GetMethodID(managerClass,
          "onRequestFeatureSuppress", "(ILjava/lang/String;I)V");
+    g_cb[CB_REQUEST_DIALOGUE_ENHANCEMENT_OVERRIDE] = env->GetMethodID(managerClass,
+         "onRequestDialogueEnhancementOverride", "(ILjava/lang/String;I)V");
+    g_cb[CB_REQUEST_TRIGGER_RESPONSE_TO_USER_ACTION] = env->GetMethodID(managerClass,
+         "onRequestTriggerResponseToUserAction", "(ILjava/lang/String;Z)V");
     g_cb[CB_NOTIFY_VOICE_READY] = env->GetMethodID(managerClass,
          "onNotifyVoiceReady", "(IZ)V");
     g_cb[CB_NOTIFY_STATE_MEDIA] = env->GetMethodID(managerClass,
@@ -425,8 +440,22 @@ JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondDialogue
     GetService(env, object)->RespondDialogueEnhancementOverride(
         connection, idStr, dialogueEnhancementGain);
 }
-// and, convert jstring to std::string using:
-// 1. std::string str = JniUtils::MakeStdString(env, str)
+
+extern "C"
+JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondTriggerResponseToUserAction(
+        JNIEnv *env,
+        jobject object,
+        jint connection,
+        jstring id,
+        jboolean actioned)
+{
+    __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
+                        "JSON-RPC-EXAMPLE #8: Android native called with response. Call service...");
+    std::string idStr = JniUtils::MakeStdString(env, id);
+    GetService(env, object)->RespondTriggerResponseToUserAction(
+            connection, idStr, actioned);
+}
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondFeatureSupportInfo(
