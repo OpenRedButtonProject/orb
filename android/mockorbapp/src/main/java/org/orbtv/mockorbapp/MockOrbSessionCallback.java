@@ -1397,19 +1397,6 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
 
     }
 
-//    private Subscriptions subscriptions;
-//
-//    private class Subscriptions {
-//        boolean subtitles;
-//        boolean dialogueEnhancement;
-//        boolean uiMagnifier;
-//        boolean highContrastUI;
-//        boolean screenReader;
-//        boolean responseToUserAction;
-//        boolean audioDescription;
-//        boolean inVisionSigning;
-//    }
-
     /**
      * TODO
      *
@@ -1418,8 +1405,9 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * @param dialogueEnhancementGain TODO
      */
     @Override
-    public void onRequestDialogueEnhancementOverride(int connection, String id, int dialogueEnhancementGain) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #5: Mock ORB session callback called with request. Call ORB session with response...");
+    public void onRequestDialogueEnhancementOverride(int connection, String id,
+                                                     int dialogueEnhancementGain) {
+
         mSession.onRespondDialogueEnhancementOverride(connection, id, dialogueEnhancementGain);
     }
 
@@ -1428,12 +1416,12 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      *
      * @param connection The request and response should have the same value
      * @param id The request and response should have the same value
-     * @param actioned
+     * @param magnitude
      */
     @Override
-    public void onRequestTriggerResponseToUserAction(int connection, String id, boolean actioned) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #5: Mock ORB session callback called with request. Call ORB session with response...");
-        mSession.onRespondTriggerResponseToUserAction(connection, id, actioned);
+    public void onRequestTriggerResponseToUserAction(int connection, String id, String magnitude) {
+
+        mSession.onRespondTriggerResponseToUserAction(connection, id, magnitude);
     }
 
     /**
@@ -1446,8 +1434,9 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     @Override
     public void onRequestFeatureSupportInfo(int connection, String id, int feature) {
         // TODO These are mock values
-        Log.d(TAG, "JSON-RPC-EXAMPLE #5a: Mock ORB session callback called with request. Call ORB session with response...");
+
         String value = "tvosOnly";
+        Log.d(TAG, "onRequestFeatureSupportInfo" + connection + "|" + id + "|" + feature);
         mSession.onRespondFeatureSupportInfo(connection, id, feature, value);
     }
 
@@ -1460,8 +1449,6 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void onRequestFeatureSettingsQuery(int connection, String id, int feature) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #5a: Mock ORB session callback called with request. Call ORB session with response...");
-//        mSession.onRespondFeatureSettingsQuery(connection, id, feature);
 
         switch (feature) {
             case F_SUBTITLES:
@@ -1563,9 +1550,21 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void onRequestFeatureSuppress(int connection, String id, int feature) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #5a: Mock ORB session callback called with request. Call ORB session with response...");
+
         String value = "suppressing";
         mSession.onRespondFeatureSuppress(connection, id, feature, value);
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param method
+     */
+    @Override
+    public void onReceiveIntentConfirm(int connection, String id, String method) {
+        Log.d(TAG, "\"onReceiveIntentConfirm\" is received by MockOrbSessionCallback...");
     }
 
     /**
@@ -1576,7 +1575,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void onNotifyVoiceReady(int connection, boolean isReady) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #5a: Mock ORB session callback called with request. Call ORB session with response...");
+        Log.d(TAG, "\"onNotifyVoiceReady\" is received by MockOrbSessionCallback...");
     }
 
     /**
@@ -1599,7 +1598,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                                    String state,
                                    boolean actPause, boolean actPlay, boolean actFastForward, boolean actFastReverse,
                                    boolean actStop, boolean actSeekContent, boolean actSeekRelative, boolean actSeekLive, boolean actWallclock) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #5a: Mock ORB session callback called with request. Call ORB session with response...");
+        Log.d(TAG, "\"onNotifyStateMedia\" is received by MockOrbSessionCallback...");
     }
 
     /**
@@ -1642,7 +1641,6 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                                    boolean subtitlesEnabled, boolean subtitlesAvailable,
                                    boolean audioDescripEnabled, boolean audioDescripAvailable,
                                    boolean signLangEnabled, boolean signLangAvailable) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #5a: Mock ORB session callback called with request. Call ORB session with response...");
 
         // TEST for intent.Media
         mSession.onSendIntentMediaBasics(INTENT_PAUSE, connection, "STR123-0", "voice");
@@ -1683,15 +1681,11 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void onReceiveError(int connection, String id, int code, String message) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #5a: Mock ORB session callback called with request. Call ORB session with response...");
-        // JUST FOR TEST
+
+        // TEST for response.Error
         mSession.onRespondError(connection, id, code, message);
         mSession.onRespondError(connection, id, code, message, "Error Method");
     }
-
-
-
-
 
     private static byte[] getAssetBytes(Context context, String asset) {
         byte[] buffer;

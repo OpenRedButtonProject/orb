@@ -25,10 +25,11 @@
 #define CB_REQUEST_FEATURE_SUPPRESS 5
 #define CB_REQUEST_DIALOGUE_ENHANCEMENT_OVERRIDE 6
 #define CB_REQUEST_TRIGGER_RESPONSE_TO_USER_ACTION 7
-#define CB_NOTIFY_VOICE_READY 8
-#define CB_NOTIFY_STATE_MEDIA 9
-#define CB_NOTIFY_STATE_MEDIA_ALL_VALUES 10
-#define CB_NUMBER_OF_ITEMS 11
+#define CB_RECEIVE_INTENT_CONFIRM 8
+#define CB_NOTIFY_VOICE_READY 9
+#define CB_NOTIFY_STATE_MEDIA 10
+#define CB_NOTIFY_STATE_MEDIA_ALL_VALUES 11
+#define CB_NUMBER_OF_ITEMS 12
 
 #define LENGTH_OF_EMPTY_ID 0
 #define CMD_INTENT_PAUSE 0
@@ -146,17 +147,19 @@ public:
     void RequestTriggerResponseToUserAction(
             int connection,
             std::string id,
-            bool actioned) override
+            std::string magnitude) override
     {
         __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
                             "JSON-RPC-EXAMPLE #3: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_id = env->NewStringUTF(id.c_str());
+        jstring j_magnitude = env->NewStringUTF(magnitude.c_str());
         env->CallVoidMethod(
                 mCallbackObject,
                 g_cb[CB_REQUEST_TRIGGER_RESPONSE_TO_USER_ACTION],
-                connection, j_id, actioned);
+                connection, j_id, j_magnitude);
         env->DeleteLocalRef(j_id);
+        env->DeleteLocalRef(j_magnitude);
     }
 
     void RequestFeatureSupportInfo(
@@ -204,6 +207,23 @@ public:
                 mCallbackObject,
                 g_cb[CB_REQUEST_FEATURE_SUPPRESS],
                 connection, j_id, feature);
+        env->DeleteLocalRef(j_id);
+    }
+
+    void ReceiveIntentConfirm(
+            int connection,
+            std::string id,
+            std::string method) override
+    {
+        __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
+                            "JSON-RPC-EXAMPLE #3a: Android native called with request. Call Java...");
+        JNIEnv *env = JniUtils::GetEnv();
+        jstring j_id = env->NewStringUTF(id.c_str());
+        jstring j_method = env->NewStringUTF(method.c_str());
+        env->CallVoidMethod(
+                mCallbackObject,
+                g_cb[CB_RECEIVE_INTENT_CONFIRM],
+                connection, j_id, j_method);
         env->DeleteLocalRef(j_id);
     }
 
@@ -332,7 +352,9 @@ void InitialiseJsonRpcNative()
     g_cb[CB_REQUEST_DIALOGUE_ENHANCEMENT_OVERRIDE] = env->GetMethodID(managerClass,
          "onRequestDialogueEnhancementOverride", "(ILjava/lang/String;I)V");
     g_cb[CB_REQUEST_TRIGGER_RESPONSE_TO_USER_ACTION] = env->GetMethodID(managerClass,
-         "onRequestTriggerResponseToUserAction", "(ILjava/lang/String;Z)V");
+         "onRequestTriggerResponseToUserAction", "(ILjava/lang/String;Ljava/lang/String;)V");
+    g_cb[CB_RECEIVE_INTENT_CONFIRM] = env->GetMethodID(managerClass,
+         "onReceiveIntentConfirm", "(ILjava/lang/String;Ljava/lang/String;)V");
     g_cb[CB_NOTIFY_VOICE_READY] = env->GetMethodID(managerClass,
          "onNotifyVoiceReady", "(IZ)V");
     g_cb[CB_NOTIFY_STATE_MEDIA] = env->GetMethodID(managerClass,

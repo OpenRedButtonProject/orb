@@ -615,16 +615,17 @@ public interface IOrbSessionCallback {
      * @param id The request and response should have the same value
      * @param dialogueEnhancementGain TODO
      */
-    void onRequestDialogueEnhancementOverride(int connection, String id, int dialogueEnhancementGain);
+    void onRequestDialogueEnhancementOverride(int connection, String id,
+                                              int dialogueEnhancementGain);
 
     /**
      * TODO
      *
      * @param connection The request and response should have the same value
      * @param id The request and response should have the same value
-     * @param actioned
+     * @param magnitude
      */
-    void onRequestTriggerResponseToUserAction(int connection, String id, boolean actioned);
+    void onRequestTriggerResponseToUserAction(int connection, String id, String magnitude);
 
     /**
      * TODO
@@ -652,6 +653,15 @@ public interface IOrbSessionCallback {
      * @param feature TODO
      */
     void onRequestFeatureSuppress(int connection, String id, int feature);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param method
+     */
+    void onReceiveIntentConfirm(int connection, String id, String method);
 
     /**
      * TODO
