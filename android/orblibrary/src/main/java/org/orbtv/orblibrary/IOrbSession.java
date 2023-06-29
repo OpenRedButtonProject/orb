@@ -267,7 +267,8 @@ public interface IOrbSession {
      * @param terminalToApp
      * @param appToTerminal
      */
-    void onRespondNegotiateMethods(int connection, String id, String terminalToApp, String appToTerminal);
+    void onRespondNegotiateMethods(int connection, String id,
+                                   String terminalToApp, String appToTerminal);
 
     /**
      * TODO
@@ -290,16 +291,17 @@ public interface IOrbSession {
      * @param id The request and response should have the same value
      * @param dialogueEnhancementGain
      */
-    void onRespondDialogueEnhancementOverride(int connection, String id, int dialogueEnhancementGain);
+    void onRespondDialogueEnhancementOverride(int connection, String id,
+                                              int dialogueEnhancementGain);
 
     /**
      * TODO
      *
      * @param connection The request and response should have the same value
      * @param id The request and response should have the same value
-     * @param actioned
+     * @param magnitude
      */
-    public void onRespondTriggerResponseToUserAction(int connection, String id, boolean actioned);
+    public void onRespondTriggerResponseToUserAction(int connection, String id, String magnitude);
 
     /**
      * TODO
