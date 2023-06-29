@@ -698,6 +698,7 @@ class OrbSession implements IOrbSession {
     @Override
     public void onRespondNegotiateMethods(int connection, String id,
                                           String terminalToApp, String appToTerminal) {
+
         mJsonRpc.onRespondNegotiateMethods(connection, id, terminalToApp, appToTerminal);
     }
 
@@ -729,8 +730,11 @@ class OrbSession implements IOrbSession {
      * @param dialogueEnhancementGain
      */
     @Override
-    public void onRespondDialogueEnhancementOverride(int connection, String id, int dialogueEnhancementGain) {
-        mJsonRpc.onRespondDialogueEnhancementOverride(connection, id, dialogueEnhancementGain);
+    public void onRespondDialogueEnhancementOverride(int connection, String id,
+                                                     int dialogueEnhancementGain) {
+
+        mJsonRpc.onRespondDialogueEnhancementOverride(connection, id,
+                dialogueEnhancementGain);
     }
 
     /**
@@ -738,11 +742,12 @@ class OrbSession implements IOrbSession {
      *
      * @param connection The request and response should have the same value
      * @param id The request and response should have the same value
-     * @param actioned
+     * @param magnitude
      */
     @Override
-    public void onRespondTriggerResponseToUserAction(int connection, String id, boolean actioned) {
-        mJsonRpc.onRespondTriggerResponseToUserAction(connection, id, actioned);
+    public void onRespondTriggerResponseToUserAction(int connection, String id, String magnitude) {
+
+        mJsonRpc.onRespondTriggerResponseToUserAction(connection, id, true);
     }
 
     /**
@@ -755,7 +760,7 @@ class OrbSession implements IOrbSession {
      */
     @Override
     public void onRespondFeatureSupportInfo(int connection, String id, int feature, String value) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+
         mJsonRpc.onRespondFeatureSupportInfo(connection, id, feature, value);
     }
 
@@ -769,7 +774,7 @@ class OrbSession implements IOrbSession {
      */
     @Override
     public void onRespondFeatureSuppress(int connection, String id, int feature, String value) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+
         mJsonRpc.onRespondFeatureSuppress(connection, id, feature, value);
     }
 
@@ -783,7 +788,7 @@ class OrbSession implements IOrbSession {
      */
     @Override
     public void onRespondError(int connection, String id, int code, String message) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+
         mJsonRpc.onRespondError(connection, id, code, message);
     }
 
@@ -797,7 +802,7 @@ class OrbSession implements IOrbSession {
      * @param method
      */
     public void onRespondError(int connection, String id, int code, String message, String method) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+
         mJsonRpc.onRespondError(connection, id, code, message, method);
     }
 
@@ -833,7 +838,7 @@ class OrbSession implements IOrbSession {
                           String windowColour,
                           int windowOpacity,
                           String language) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+
         mJsonRpc.onQuerySubtitles(connection, id,
                 enabled, size, fontFamily, textColour, textOpacity,
                 edgeType, edgeColour, backgroundColour, backgroundOpacity,
@@ -856,7 +861,7 @@ class OrbSession implements IOrbSession {
                                     int gain,
                                     int limitMin,
                                     int limitMax) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+
         mJsonRpc.onQueryDialogueEnhancement(connection, id,
                 gainPreference, gain, limitMin, limitMax);
     }
@@ -873,7 +878,7 @@ class OrbSession implements IOrbSession {
     public void onQueryUIMagnifier(int connection, String id,
                             boolean enabled,
                             String magType) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+
         mJsonRpc.onQueryUIMagnifier(connection, id, enabled, magType);
     }
 
@@ -889,7 +894,7 @@ class OrbSession implements IOrbSession {
     public void onQueryHighContrastUI(int connection, String id,
                                boolean enabled,
                                String hcType) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+
         mJsonRpc.onQueryHighContrastUI(connection, id, enabled, hcType);
     }
 
@@ -909,7 +914,7 @@ class OrbSession implements IOrbSession {
                              int speed,
                              String voice,
                              String language) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+
         mJsonRpc.onQueryScreenReader(connection, id,
                 enabled, speed, voice, language);
     }
@@ -926,7 +931,7 @@ class OrbSession implements IOrbSession {
     public void onQueryResponseToUserAction(int connection, String id,
                                      boolean enabled,
                                      String type) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+
         mJsonRpc.onQueryResponseToUserAction(connection, id, enabled, type);
     }
 
@@ -944,7 +949,7 @@ class OrbSession implements IOrbSession {
                                  boolean enabled,
                                  int gainPreference,
                                  int panAzimuthPreference) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+
         mJsonRpc.onQueryAudioDescription(connection, id,
                 enabled, gainPreference, panAzimuthPreference);
     }
@@ -959,7 +964,7 @@ class OrbSession implements IOrbSession {
     @Override
     public void onQueryInVisionSigning(int connection, String id,
                                 boolean enabled) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #6a: ORB session called with response. Call JsonRpc Java...");
+
         mJsonRpc.onQueryInVisionSigning(connection, id, enabled);
     }
 
@@ -975,6 +980,7 @@ class OrbSession implements IOrbSession {
             int cmd,
             int connection, String id,
             String origin) {
+
         mJsonRpc.onSendIntentMediaBasics(cmd, connection, id,
                 origin);
     }
@@ -994,6 +1000,7 @@ class OrbSession implements IOrbSession {
             String origin,
             String anchor,
             int offset) {
+
         mJsonRpc.onSendIntentMediaSeekContent(connection, id,
                 origin,
                 anchor,
@@ -1013,6 +1020,7 @@ class OrbSession implements IOrbSession {
             int connection, String id,
             String origin,
             int offset) {
+
         mJsonRpc.onSendIntentMediaSeekRelative(connection, id,
                 origin,
                 offset);
@@ -1031,6 +1039,7 @@ class OrbSession implements IOrbSession {
             int connection, String id,
             String origin,
             int offset) {
+
         mJsonRpc.onSendIntentMediaSeekLive(connection, id,
                 origin,
                 offset);
@@ -1049,6 +1058,7 @@ class OrbSession implements IOrbSession {
             int connection, String id,
             String origin,
             String dateTime) {
+
         mJsonRpc.onSendIntentMediaSeekWallclock(connection, id,
                 origin,
                 dateTime);
@@ -1067,6 +1077,7 @@ class OrbSession implements IOrbSession {
             int connection, String id,
             String origin,
             String query) {
+
         mJsonRpc.onSendIntentSearch(connection, id,
                 origin,
                 query);
@@ -1085,6 +1096,7 @@ class OrbSession implements IOrbSession {
             int connection, String id,
             String origin,
             String mediaId) {
+
         mJsonRpc.onSendIntentDisplay(connection, id,
                 origin,
                 mediaId);
@@ -1107,6 +1119,7 @@ class OrbSession implements IOrbSession {
             String mediaId,
             String anchor,
             int offset) {
+
         mJsonRpc.onSendIntentPlayback(connection, id,
                 origin,
                 mediaId,

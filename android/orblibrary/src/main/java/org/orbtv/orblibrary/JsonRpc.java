@@ -37,7 +37,7 @@ public class JsonRpc {
 
     public void onRespondNegotiateMethods(int connection, String id,
                                           String terminalToApp, String appToTerminal) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7: onRespondNegotiateMethods...");
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onRespondNegotiateMethods...");
         nativeOnRespondNegotiateMethods(connection, id, terminalToApp, appToTerminal);
     }
 
@@ -49,7 +49,7 @@ public class JsonRpc {
         boolean uiMagnifier, boolean highContrastUI,
         boolean screenReader, boolean responseToUserAction,
         boolean audioDescription, boolean inVisionSigning) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7: onRespondSubscribe...");
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onRespondSubscribe...");
         nativeOnRespondSubscribe(isSubscribe, connection, id,
                 subtitles, dialogueEnhancement, uiMagnifier, highContrastUI,
                 screenReader, responseToUserAction, audioDescription, inVisionSigning);
@@ -59,6 +59,7 @@ public class JsonRpc {
         int connection,
         String id,
         int dialogueEnhancementGain) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onRespondDialogueEnhancementOverride...");
         nativeOnRespondDialogueEnhancementOverride(connection, id, dialogueEnhancementGain);
     }
 
@@ -66,6 +67,7 @@ public class JsonRpc {
             int connection,
             String id,
             boolean actioned) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onRespondTriggerResponseToUserAction...");
         nativeOnRespondTriggerResponseToUserAction(connection, id, actioned);
     }
 
@@ -74,7 +76,7 @@ public class JsonRpc {
         String id,
         int feature,
         String value) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: JsonRpc Java called with response. Call native...");
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onRespondFeatureSupportInfo...");
         nativeOnRespondFeatureSupportInfo(connection, id, feature, value);
     }
 
@@ -83,7 +85,7 @@ public class JsonRpc {
         String id,
         int feature,
         String value) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: JsonRpc Java called with response. Call native...");
+        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onRespondFeatureSuppress...");
         nativeOnRespondFeatureSuppress(connection, id, feature, value);
     }
 
@@ -292,7 +294,7 @@ public class JsonRpc {
         boolean uiMagnifier, boolean highContrastUI,
         boolean screenReader, boolean responseToUserAction,
         boolean audioDescription, boolean inVisionSigning) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #4: Java called with request. Call ORB session callback...");
+        Log.d(TAG, "JSON-RPC-EXAMPLE #4: onRequestSubscribe...");
         mOrbSessionCallback.onRequestSubscribe(isSubscribe, connection, id,
                 subtitles, dialogueEnhancement, uiMagnifier, highContrastUI,
                 screenReader, responseToUserAction, audioDescription, inVisionSigning);
@@ -302,16 +304,16 @@ public class JsonRpc {
         int connection,
         String id,
         int dialogueEnhancementGain) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #4: Java called with request. Call ORB session callback...");
+        Log.d(TAG, "JSON-RPC-EXAMPLE #4: onRequestDialogueEnhancementOverride...");
         mOrbSessionCallback.onRequestDialogueEnhancementOverride(connection, id, dialogueEnhancementGain);
     }
 
     private void onRequestTriggerResponseToUserAction(
             int connection,
             String id,
-            boolean actioned) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #4: Java called with request. Call ORB session callback...");
-        mOrbSessionCallback.onRequestTriggerResponseToUserAction(connection, id, actioned);
+            String magnitude){
+        Log.d(TAG, "JSON-RPC-EXAMPLE #4: onRequestTriggerResponseToUserAction...");
+        mOrbSessionCallback.onRequestTriggerResponseToUserAction(connection, id, magnitude);
     }
 
     private void onRequestFeatureSupportInfo(
@@ -336,6 +338,14 @@ public class JsonRpc {
             int feature) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #4a: onRequestFeatureSuppress...");
         mOrbSessionCallback.onRequestFeatureSuppress(connection, id, feature);
+    }
+
+    private void onReceiveIntentConfirm(
+            int connection,
+            String id,
+            String method) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #4a: onRequestFeatureSuppress...");
+        mOrbSessionCallback.onReceiveIntentConfirm(connection, id, method);
     }
 
     private void onNotifyVoiceReady(
