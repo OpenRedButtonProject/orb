@@ -20,16 +20,17 @@
 #define CB_REQUEST_NEGOTIATE_METHODS 0
 #define CB_REQUEST_SUBSCRIBE_UNSUBSCRIBE 1
 #define CB_RECEIVE_ERROR 2
-#define CB_REQUEST_FEATURE_SUPPORT_INFO 3
-#define CB_REQUEST_FEATURE_SETTINGS_QUERY 4
-#define CB_REQUEST_FEATURE_SUPPRESS 5
-#define CB_REQUEST_DIALOGUE_ENHANCEMENT_OVERRIDE 6
-#define CB_REQUEST_TRIGGER_RESPONSE_TO_USER_ACTION 7
-#define CB_RECEIVE_INTENT_CONFIRM 8
-#define CB_NOTIFY_VOICE_READY 9
-#define CB_NOTIFY_STATE_MEDIA 10
-#define CB_NOTIFY_STATE_MEDIA_ALL_VALUES 11
-#define CB_NUMBER_OF_ITEMS 12
+#define CB_RECEIVE_ERROR_ALL_PARAMS 3
+#define CB_REQUEST_FEATURE_SUPPORT_INFO 4
+#define CB_REQUEST_FEATURE_SETTINGS_QUERY 5
+#define CB_REQUEST_FEATURE_SUPPRESS 6
+#define CB_REQUEST_DIALOGUE_ENHANCEMENT_OVERRIDE 7
+#define CB_REQUEST_TRIGGER_RESPONSE_TO_USER_ACTION 8
+#define CB_RECEIVE_INTENT_CONFIRM 9
+#define CB_NOTIFY_VOICE_READY 10
+#define CB_NOTIFY_STATE_MEDIA 11
+#define CB_NOTIFY_STATE_MEDIA_ALL_VALUES 12
+#define CB_NUMBER_OF_ITEMS 13
 
 #define LENGTH_OF_EMPTY_ID 0
 #define CMD_INTENT_PAUSE 0
@@ -327,6 +328,31 @@ public:
         env->DeleteLocalRef(j_message);
     }
 
+    void ReceiveError(
+            int connection,
+            std::string id,
+            int code,
+            std::string message,
+            std::string method,
+            std::string data) override
+    {
+        __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
+                            "JSON-RPC-EXAMPLE #3a: Android native called with request. Call Java...");
+        JNIEnv *env = JniUtils::GetEnv();
+        jstring j_id = env->NewStringUTF(id.c_str());
+        jstring j_message = env->NewStringUTF(message.c_str());
+        jstring j_method = env->NewStringUTF(method.c_str());
+        jstring j_data = env->NewStringUTF(data.c_str());
+        env->CallVoidMethod(
+                mCallbackObject,
+                g_cb[CB_RECEIVE_ERROR_ALL_PARAMS],
+                connection, j_id, code, j_message, j_method, j_data);
+        env->DeleteLocalRef(j_id);
+        env->DeleteLocalRef(j_message);
+        env->DeleteLocalRef(j_method);
+        env->DeleteLocalRef(j_data);
+    }
+
 private:
     jobject mCallbackObject;
 };
@@ -367,6 +393,8 @@ void InitialiseJsonRpcNative()
                "ZZZZZZ)V");
     g_cb[CB_RECEIVE_ERROR] = env->GetMethodID(managerClass,
          "onReceiveError", "(ILjava/lang/String;ILjava/lang/String;)V");
+    g_cb[CB_RECEIVE_ERROR_ALL_PARAMS] = env->GetMethodID(managerClass,
+               "onReceiveError", "(ILjava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
 }
 
 extern "C"
@@ -533,22 +561,22 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondError(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondErrorWithMethod(
+Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondErrorWithData(
     JNIEnv *env,
     jobject object,
     jint connection,
     jstring id,
     jint code,
     jstring message,
-    jstring method)
+    jstring data)
 {
     __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
                         "JSON-RPC-EXAMPLE #8a: Android native called with response. Call service...");
     std::string idStr = JniUtils::MakeStdString(env, id);
     std::string messageStr = JniUtils::MakeStdString(env, message);
-    std::string methodStr = JniUtils::MakeStdString(env, method);
+    std::string dataStr = JniUtils::MakeStdString(env, data);
     GetService(env, object)->RespondError(
-            connection, idStr, code, messageStr, methodStr);
+            connection, idStr, code, messageStr, dataStr);
 }
 
 extern "C"
@@ -580,15 +608,16 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnQuerySubtitles(
     std::string windowColourStr = JniUtils::MakeStdString(env, windowColour);
     std::string languageStr = JniUtils::MakeStdString(env, language);
     if (idStr.length() == LENGTH_OF_EMPTY_ID) {
-        GetService(env, object)->RespondFeatureSettingsSubtitles(
-                connection, idStr,
+
+        GetService(env, object)->NotifySubtitles(
+                connection,
                 enabled, size, fontFamilyStr, textColourStr, textOpacity,
                 edgeTypeStr, edgeColourStr, backgroundColourStr, backgroundOpacity,
                 windowColourStr, windowOpacity, languageStr);
     }
     else {
-        GetService(env, object)->NotifySubtitles(
-                connection,
+        GetService(env, object)->RespondFeatureSettingsSubtitles(
+                connection, idStr,
                 enabled, size, fontFamilyStr, textColourStr, textOpacity,
                 edgeTypeStr, edgeColourStr, backgroundColourStr, backgroundOpacity,
                 windowColourStr, windowOpacity, languageStr);
@@ -609,13 +638,13 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnQueryDialogueEnhancement(
 {
     std::string idStr = JniUtils::MakeStdString(env, id);
     if (idStr.length() == LENGTH_OF_EMPTY_ID) {
-        GetService(env, object)->RespondFeatureSettingsDialogueEnhancement(
-                connection, idStr,
+        GetService(env, object)->NotifyDialogueEnhancement(
+                connection,
                 gainPreference, gain, limitMin, limitMax);
     }
     else {
-        GetService(env, object)->NotifyDialogueEnhancement(
-                connection,
+        GetService(env, object)->RespondFeatureSettingsDialogueEnhancement(
+                connection, idStr,
                 gainPreference, gain, limitMin, limitMax);
     }
 }
@@ -633,12 +662,12 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnQueryUIMagnifier(
     std::string idStr = JniUtils::MakeStdString(env, id);
     std::string magTypeStr = JniUtils::MakeStdString(env, magType);
     if (idStr.length() == LENGTH_OF_EMPTY_ID) {
-        GetService(env, object)->RespondFeatureSettingsUIMagnifier(
-                connection, idStr, enabled, magTypeStr);
-    }
-    else {
         GetService(env, object)->NotifyUIMagnifier(
                 connection, enabled, magTypeStr);
+    }
+    else {
+        GetService(env, object)->RespondFeatureSettingsUIMagnifier(
+                connection, idStr, enabled, magTypeStr);
     }
 }
 
@@ -655,12 +684,12 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnQueryHighContrastUI(
     std::string idStr = JniUtils::MakeStdString(env, id);
     std::string hcTypeStr = JniUtils::MakeStdString(env, hcType);
     if (idStr.length() == LENGTH_OF_EMPTY_ID) {
-        GetService(env, object)->RespondFeatureSettingsHighContrastUI(
-                connection, idStr, enabled, hcTypeStr);
-    }
-    else {
         GetService(env, object)->NotifyHighContrastUI(
                 connection, enabled, hcTypeStr);
+    }
+    else {
+        GetService(env, object)->RespondFeatureSettingsHighContrastUI(
+                connection, idStr, enabled, hcTypeStr);
     }
 }
 
@@ -680,13 +709,13 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnQueryScreenReader(
     std::string voiceStr = JniUtils::MakeStdString(env, voice);
     std::string languageStr = JniUtils::MakeStdString(env, language);
     if (idStr.length() == LENGTH_OF_EMPTY_ID) {
-        GetService(env, object)->RespondFeatureSettingsScreenReader(
-                connection, idStr,
+        GetService(env, object)->NotifyScreenReader(
+                connection,
                 enabled, speed, voiceStr, languageStr);
     }
     else {
-        GetService(env, object)->NotifyScreenReader(
-                connection,
+        GetService(env, object)->RespondFeatureSettingsScreenReader(
+                connection, idStr,
                 enabled, speed, voiceStr, languageStr);
     }
 
@@ -705,12 +734,12 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnQueryResponseToUserAction(
     std::string idStr = JniUtils::MakeStdString(env, id);
     std::string typeStr = JniUtils::MakeStdString(env, type);
     if (idStr.length() == LENGTH_OF_EMPTY_ID) {
-        GetService(env, object)->RespondFeatureSettingsResponseToUserAction(
-                connection, idStr, enabled, typeStr);
-    }
-    else {
         GetService(env, object)->NotifyResponseToUserAction(
                 connection, enabled, typeStr);
+    }
+    else {
+        GetService(env, object)->RespondFeatureSettingsResponseToUserAction(
+                connection, idStr, enabled, typeStr);
     }
 }
 
@@ -727,13 +756,13 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnQueryAudioDescription(
 {
     std::string idStr = JniUtils::MakeStdString(env, id);
     if (idStr.length() == LENGTH_OF_EMPTY_ID) {
-        GetService(env, object)->RespondFeatureSettingsAudioDescription(
-                connection, idStr,
+        GetService(env, object)->NotifyAudioDescription(
+                connection,
                 enabled, gainPreference, panAzimuthPreference);
     }
     else {
-        GetService(env, object)->NotifyAudioDescription(
-                connection,
+        GetService(env, object)->RespondFeatureSettingsAudioDescription(
+                connection, idStr,
                 enabled, gainPreference, panAzimuthPreference);
     }
 }
@@ -749,12 +778,12 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnQueryInVisionSigning(
 {
     std::string idStr = JniUtils::MakeStdString(env, id);
     if (idStr.length() == LENGTH_OF_EMPTY_ID) {
-        GetService(env, object)->RespondFeatureSettingsInVisionSigning(
-                connection, idStr, enabled);
-    }
-    else {
         GetService(env, object)->NotifyInVisionSigning(
                 connection, enabled);
+    }
+    else {
+        GetService(env, object)->RespondFeatureSettingsInVisionSigning(
+                connection, idStr, enabled);
     }
 }
 
