@@ -325,9 +325,9 @@ public interface IOrbSession {
      * @param id The request and response should have the same value
      * @param code
      * @param message
-     * @param method
+     * @param data
      */
-    void onRespondError(int connection, String id, int code, String message, String method);
+    void onRespondError(int connection, String id, int code, String message, String data);
 
     /**
      * TODO

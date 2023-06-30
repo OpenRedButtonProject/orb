@@ -743,5 +743,19 @@ public interface IOrbSessionCallback {
      * @param code TODO
      * @param message
      */
-    void onReceiveError(int connection, String id, int code, String message);
+    void onReceiveError(int connection, String id,
+                        int code, String message);
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param code TODO
+     * @param message
+     * @param method
+     * @param data
+     */
+    void onReceiveError(int connection, String id,
+                        int code, String message, String method, String data);
 }

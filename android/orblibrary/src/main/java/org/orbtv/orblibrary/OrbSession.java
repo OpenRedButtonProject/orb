@@ -742,11 +742,11 @@ class OrbSession implements IOrbSession {
      * @param id The request and response should have the same value
      * @param code
      * @param message
-     * @param method
+     * @param data
      */
-    public void onRespondError(int connection, String id, int code, String message, String method) {
+    public void onRespondError(int connection, String id, int code, String message, String data) {
 
-        mJsonRpc.onRespondError(connection, id, code, message, method);
+        mJsonRpc.onRespondError(connection, id, code, message, data);
     }
 
     /**

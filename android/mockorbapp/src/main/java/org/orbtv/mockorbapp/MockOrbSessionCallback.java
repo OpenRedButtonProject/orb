@@ -1408,6 +1408,9 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     public void onRequestDialogueEnhancementOverride(int connection, String id,
                                                      int dialogueEnhancementGain) {
 
+        if (dialogueEnhancementGain == EMPTY_INTEGER) {
+            dialogueEnhancementGain = 0;
+        }
         mSession.onRespondDialogueEnhancementOverride(connection, id, dialogueEnhancementGain);
     }
 
@@ -1454,8 +1457,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
             case F_SUBTITLES:
                 mSession.onQuerySubtitles(connection, id,
                         true, 150, "Arial", "#AA0066", 100,
-                        "outline", "#FFFFFF", "#00DD00", EMPTY_INTEGER,
-                        EMPTY_STRING, EMPTY_INTEGER, EMPTY_STRING);
+                        "outline", "#FFFFFF", EMPTY_STRING, EMPTY_INTEGER,
+                        "#00DD00", EMPTY_INTEGER, EMPTY_STRING);
                 break;
             case F_DIALOGUE_ENHANCEMENT:
                 mSession.onQueryDialogueEnhancement(connection, id,
@@ -1491,20 +1494,22 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         // TEST for Notifications
         // id: EMPTY_STRING
 
+        // done
+
         switch (feature) {
             case F_SUBTITLES:
                 mSession.onQuerySubtitles(connection, EMPTY_STRING,
-                        true, 150, "Arial", "#AA0066", 100,
-                        "outline", "#FFFFFF", "#00DD00", EMPTY_INTEGER,
+                        false, EMPTY_INTEGER, EMPTY_STRING, EMPTY_STRING, EMPTY_INTEGER,
+                        EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, EMPTY_INTEGER,
                         EMPTY_STRING, EMPTY_INTEGER, EMPTY_STRING);
                 break;
             case F_DIALOGUE_ENHANCEMENT:
                 mSession.onQueryDialogueEnhancement(connection, EMPTY_STRING,
-                        6, 6, 0, 12);
+                        3, 3, 0, 9);
                 break;
             case F_MAGNIFICATION_UI:
                 mSession.onQueryUIMagnifier(connection, EMPTY_STRING,
-                        true, "textMagnification");
+                        true, "screenZoom");
                 break;
             case F_HIGH_CONTRAST_UI:
                 mSession.onQueryHighContrastUI(connection, EMPTY_STRING,
@@ -1512,19 +1517,19 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 break;
             case F_SCREEN_READER:
                 mSession.onQueryScreenReader(connection, EMPTY_STRING,
-                        true, 120, "male", EMPTY_STRING);
+                        false, EMPTY_INTEGER, EMPTY_STRING, EMPTY_STRING);
                 break;
             case F_RESPONSE_TO_A_USER_ACTION:
                 mSession.onQueryResponseToUserAction(connection, EMPTY_STRING,
-                        true, "audio");
+                        false, EMPTY_STRING);
                 break;
             case F_AUDIO_DESCRIPTION:
                 mSession.onQueryAudioDescription(connection, EMPTY_STRING,
-                        true, 0, 90);
+                        true, 3, 90);
                 break;
             case F_IN_VISION_SIGN_LANGUAGE:
                 mSession.onQueryInVisionSigning(connection, EMPTY_STRING,
-                        true);
+                        false);
                 break;
             default:
         }
@@ -1649,18 +1654,18 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         mSession.onSendIntentMediaBasics(INTENT_FAST_REVERSE, connection, "STR123-3", "voice");
         mSession.onSendIntentMediaBasics(INTENT_STOP, connection, "STR123-4", "voice");
 
-        mSession.onSendIntentMediaSeekContent(connection, "STR123-4","voice",
+        mSession.onSendIntentMediaSeekContent(connection, "STR123-5","voice",
                                         "start", 30);
-        mSession.onSendIntentMediaSeekRelative(connection, "STR123-4","voice",
+        mSession.onSendIntentMediaSeekRelative(connection, "STR123-6","voice",
                                         -60);
-        mSession.onSendIntentMediaSeekLive(connection, "STR123-4","voice", -30);
-        mSession.onSendIntentMediaSeekWallclock(connection, "STR123-4","voice",
+        mSession.onSendIntentMediaSeekLive(connection, "STR123-7","voice", -30);
+        mSession.onSendIntentMediaSeekWallclock(connection, "STR123-8","voice",
                                         "2020-02-12T10:00:00.000Z");
-        mSession.onSendIntentSearch(connection, "STR123-4", "voice",
+        mSession.onSendIntentSearch(connection, "STR123-9", "voice",
                                         "DOCTOR WHO");
-        mSession.onSendIntentDisplay(connection, "STR123-4", "voice",
+        mSession.onSendIntentDisplay(connection, "STR123-10", "voice",
                                          "urn:broadcaster:programme:1249863457643");
-        mSession.onSendIntentPlayback(connection, "STR123-4", "voice",
+        mSession.onSendIntentPlayback(connection, "STR123-11", "voice",
                                           "urn:broadcaster:programme:1249863457643",
                                                     EMPTY_STRING, EMPTY_INTEGER);
     }
@@ -1683,8 +1688,37 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     public void onReceiveError(int connection, String id, int code, String message) {
 
         // TEST for response.Error
+        Log.d(TAG, "\"onReceiveError\" is received by MockOrbSessionCallback{" +
+                "\n\"id\":" + id +", " +
+                "\n\"code\":" + code + ", " +
+                "\n\"message\":\"" + message +
+                "\n\"}");
+
         mSession.onRespondError(connection, id, code, message);
-        mSession.onRespondError(connection, id, code, message, "Error Method");
+        mSession.onRespondError(connection, "STR"+EMPTY_STRING, code, message, "this is data");
+    }
+
+    /**
+     * TODO
+     *
+     * @param connection The request and response should have the same value
+     * @param id The request and response should have the same value
+     * @param code TODO
+     * @param message
+     * @param method
+     * @param data
+     */
+    @Override
+    public void onReceiveError(int connection, String id, int code, String message, String method, String data) {
+
+        // TEST for response.Error
+        Log.d(TAG, "\"onReceiveError\" is received by MockOrbSessionCallback{" +
+                                            "\n\"id\":" + id +", " +
+                                            "\n\"code\":" + code + ", " +
+                                            "\n\"message\":\"" + message + "\", " +
+                                            "\n\"method\":\"" + method + "\", " +
+                                            "\n\"data\":\"" + data +
+                                            "\n\"}");
     }
 
     private static byte[] getAssetBytes(Context context, String asset) {
