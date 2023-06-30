@@ -42,6 +42,84 @@ JsonRpcService::JsonRpcService(
 
     void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const std::string &text)
     {
+
+        LOG(LOG_INFO, "Message received: connection=%d, text=%s", connection->Id(), text.c_str());
+
+        if (text == "request=dialogueEnhancementOverride")
+        {
+            // done
+            LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
+//            // done
+//            m_sessionCallback->RequestNegotiateMethods(connection->Id(), "NUM1",
+//                                                       "org.hbbtv.app.intent.media.play,"
+//                                                       "org.hbbtv.app.intent.media.pause,"
+//                                                       "org.hbbtv.app.intent.media.stop,"
+//                                                       "org.hbbtv.app.intent.media.fast-reverse,"
+//                                                       "org.hbbtv.notify",
+//                                                       "org.hbbtv.negotiateMethods,org.hbbtv.subscribe,"
+//                                                       "org.hbbtv.unsubscribe,"
+//                                                       "org.hbbtv.app.voice.ready,"
+//                                                       "org.hbbtv.app.state.media,"
+//                                                       "org.hbbtv.app.state.media.2");
+
+            // done
+//            m_sessionCallback->RequestSubscribe(connection->Id(), "NUM1", true, true, true, true, false, false, false, false);
+            // done
+//            m_sessionCallback->RequestUnsubscribe(connection->Id(), "NUM1", false, false, true, true, true, true, false, false);
+            // done
+//            m_sessionCallback->RequestFeatureSupportInfo(connection->Id(), "NUM1", 3);
+            // done
+//            m_sessionCallback->RequestFeatureSettingsQuery(connection->Id(), "NUM1", 0);
+//            m_sessionCallback->RequestFeatureSettingsQuery(connection->Id(), "NUM1", 1);
+//            m_sessionCallback->RequestFeatureSettingsQuery(connection->Id(), "NUM1", 2);
+//            m_sessionCallback->RequestFeatureSettingsQuery(connection->Id(), "NUM1", 3);
+//            m_sessionCallback->RequestFeatureSettingsQuery(connection->Id(), "NUM1", 4);
+//            m_sessionCallback->RequestFeatureSettingsQuery(connection->Id(), "NUM1", 5);
+//            m_sessionCallback->RequestFeatureSettingsQuery(connection->Id(), "NUM1", 6);
+//            m_sessionCallback->RequestFeatureSettingsQuery(connection->Id(), "NUM1", 7);
+//
+//            // done
+//            m_sessionCallback->RequestFeatureSuppress(connection->Id(), "NUM1", 3);
+//            // test in Session callback
+//            m_sessionCallback->NotifyVoiceReady(connection->Id(), true);
+//            // test in Session callback
+//            m_sessionCallback->NotifyStateMedia(connection->Id(), "state",
+//                                                true, true, true, true, true, true, true, true, true);
+//            // test in Session callback
+            m_sessionCallback->NotifyStateMedia(connection->Id(), "state", "kind", "type", "currentTime",
+                                                "rangeStart", "rangeEnd",
+                                                true, true, true, true, true, true, true, true, true,
+                                                "mediaId", "title", "secTitle", "synopsis",
+                                                true, true, true, true, true, true);
+
+//            // test in Session callback
+//            m_sessionCallback->ReceiveIntentConfirm(connection->Id(), "NUM1", "org.hbbtv.app.intent.media.pause");
+
+//            // done
+//            m_sessionCallback->ReceiveError(connection->Id(), "NUM1", -32600, "Invalid Request");
+//            // done
+//            m_sessionCallback->ReceiveError(connection->Id(),
+//                                            "2021-04-28T18:50:00Z - 485628",
+//                                            -1,
+//                                            "not available action for presenting media",
+//                                            "org.hbbtv.app.intent.media.seek-content",
+//                                            "d8a0c98fs08-d9df0809s");
+//            // done
+//            m_sessionCallback->RequestDialogueEnhancementOverride(connection->Id(), "NUM1", 2);
+//            m_sessionCallback->RequestDialogueEnhancementOverride(connection->Id(), "NUM1", -999999);
+//          // done
+//            m_sessionCallback->RequestTriggerResponseToUserAction(connection->Id(), "NUM1", "triggerPrimary");
+        }
+        else
+        {
+            LOG(LOG_INFO, "Message not handled");
+        }
+
+    }
+
+/*
+    void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const std::string &text)
+    {
         LOG(LOG_INFO, "Message received: connection=%d, text=%s", connection->Id(), text.c_str());
 
         Json::Value obj;
@@ -480,6 +558,7 @@ JsonRpcService::JsonRpcService(
             m_sessionCallback->RequestTriggerResponseToUserAction(connection->Id(), id, magnitude);
         }
     }
+    */
 
     void JsonRpcService::OnDisconnected(WebSocketConnection *connection)
     {
@@ -495,32 +574,40 @@ JsonRpcService::JsonRpcService(
             int connectionId,
             const std::string& id,
             int feature,
-            const std::string& value
-            ){
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
-        //Case Ar 1
+            const std::string& value){
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
             Json::Value result;
             result["method"] = "org.hbbtv.af.featureSupportInfo";
-            std::vector<std::string> resultStringVector = {"subtitles", "dialogueEnhancement", "uiMagnifier", "highContrastUI", "screenReader", "responseToUserAction", "audioDescription", "inVisionSigning"};
+            std::vector<std::string> resultStringVector = {
+                    "subtitles", "dialogueEnhancement",
+                    "uiMagnifier", "highContrastUI",
+                    "screenReader", "responseToUserAction",
+                    "audioDescription", "inVisionSigning"};
             result["feature"] = resultStringVector[feature];
             result["value"] = value;
-            jsonResponse["result"] = result;
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] =  std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+
+            std::string out_string = writeJson(id, result);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
+
+    void JsonRpcService::writeFeatureSettingsQuery(
+            Json::Value& result,
+            const std::string feature,
+            Json::Value value
+    ) {
+            result["method"] = "org.hbbtv.af.featureSettingsQuery";
+            result["feature"] = feature;
+            result["value"] = value;
+    }
+
+
+
     void JsonRpcService::RespondFeatureSettingsSubtitles(
             int connectionId,
             const std::string& id,
@@ -537,21 +624,19 @@ JsonRpcService::JsonRpcService(
             int windowOpacity,
             const std::string& language
     ){
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
-        //case Arc 1
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: RespondFeatureSettingsSubtitles...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            Json::Value result;
-            result["method"] = "org.hbbtv.af.featureSettingsQuery";
-            result["feature"] = "subtitles";
-
             Json::Value value;
             value["enabled"] = enabled;
             if (size != NullIntValue) value["size"] = size;
+
+//            addOptionalProp(value, "size", size);
+//            addOptionalProp(value, "fontFamily", fontFamily);
+
             if (fontFamily != NullStrValue) value["fontFamily"] = fontFamily;
             if (textColour != NullStrValue) value["textColour"] = textColour;
             if (textOpacity != NullIntValue) value["textOpacity"] = textOpacity;
@@ -563,17 +648,11 @@ JsonRpcService::JsonRpcService(
             if (windowOpacity != NullIntValue) value["windowOpacity"] = windowOpacity;
             if (language != NullStrValue) value["language"] = language;
 
+            Json::Value result;
+            writeFeatureSettingsQuery(result, "subtitles", value);
 
-            result["value"] = value;
-            jsonResponse["result"] = result;
-
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] =  std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeJson(id, result);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -586,36 +665,25 @@ JsonRpcService::JsonRpcService(
             int dialogueEnhancementLimitMin,
             int dialogueEnhancementLimitMax
     ){
-        //case Arc 2
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: RespondFeatureSettingsDialogueEnhancement...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            Json::Value result;
-            result["method"] = "org.hbbtv.af.featureSettingsQuery";
-            result["feature"] = "dialogueEnhancement";
-
             Json::Value value;
             value["dialogueEnhancementGainPreference"] = dialogueEnhancementGainPreference;
             value["dialogueEnhancementGain"] = dialogueEnhancementGain;
             Json::Value dialogueEnhancementLimit;
             dialogueEnhancementLimit["min"] = dialogueEnhancementLimitMin;
             dialogueEnhancementLimit["max"] = dialogueEnhancementLimitMax;
-
             value["dialogueEnhancementLimit"] = dialogueEnhancementLimit;
-            result["value"] = value;
-            jsonResponse["result"] = result;
 
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] =  std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+            Json::Value result;
+            writeFeatureSettingsQuery(result, "dialogueEnhancement", value);
+
+            std::string out_string = writeJson(id, result);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -626,32 +694,21 @@ JsonRpcService::JsonRpcService(
             bool enabled,
             const std::string& magType
     ){
-        //case Arc 3
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: RespondFeatureSettingsUIMagnifier...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            Json::Value result;
-            result["method"] = "org.hbbtv.af.featureSettingsQuery";
-            result["feature"] = "uiMagnifier";
-
             Json::Value value;
             value["enabled"] = enabled;
             if (magType != NullStrValue) value["magType"] = magType;
 
-            result["value"] = value;
-            jsonResponse["result"] = result;
+            Json::Value result;
+            writeFeatureSettingsQuery(result, "uiMagnifier", value);
 
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] =  std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeJson(id, result);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -662,32 +719,21 @@ JsonRpcService::JsonRpcService(
             bool enabled,
             const std::string& hcType
     ){
-        //case Arc 4
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: RespondFeatureSettingsHighContrastUI...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            Json::Value result;
-            result["method"] = "org.hbbtv.af.featureSettingsQuery";
-            result["feature"] = "highContrastUI";
-
             Json::Value value;
             value["enabled"] = enabled;
             if (hcType != NullStrValue) value["hcType"] = hcType;
 
-            result["value"] = value;
-            jsonResponse["result"] = result;
+            Json::Value result;
+            writeFeatureSettingsQuery(result, "highContrastUI", value);
 
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] =  std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeJson(id, result);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -700,34 +746,23 @@ JsonRpcService::JsonRpcService(
             const std::string& voice,
             const std::string& language
     ){
-        //case Arc 5
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: RespondFeatureSettingsScreenReader...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            Json::Value result;
-            result["method"] = "org.hbbtv.af.featureSettingsQuery";
-            result["feature"] = "screenReader";
-
             Json::Value value;
             value["enabled"] = enabled;
             if (speed != NullIntValue) value["speed"] = speed;
             if (voice != NullStrValue) value["voice"] = voice;
             if (language != NullStrValue) value["language"] = language;
 
-            result["value"] = value;
-            jsonResponse["result"] = result;
+            Json::Value result;
+            writeFeatureSettingsQuery(result, "screenReader", value);
 
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] =  std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeJson(id, result);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -737,32 +772,21 @@ JsonRpcService::JsonRpcService(
             bool enabled,
             const std::string& type
     ){
-        //case Arc 6
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: RespondFeatureSettingsResponseToUserAction...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            Json::Value result;
-            result["method"] = "org.hbbtv.af.featureSettingsQuery";
-            result["feature"] = "responseToUserAction";
-
             Json::Value value;
             value["enabled"] = enabled;
             if (type != NullStrValue) value["hcType"] = type;
 
-            result["value"] = value;
-            jsonResponse["result"] = result;
+            Json::Value result;
+            writeFeatureSettingsQuery(result, "responseToUserAction", value);
 
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] =  std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeJson(id, result);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -774,33 +798,22 @@ JsonRpcService::JsonRpcService(
             int gainPreference,
             int panAzimuthPreference
     ){
-        //case Arc 7
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: RespondFeatureSettingsAudioDescription...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            Json::Value result;
-            result["method"] = "org.hbbtv.af.featureSettingsQuery";
-            result["feature"] = "audioDescription";
-
             Json::Value value;
             value["enabled"] = enabled;
             if (gainPreference != NullIntValue) value["gainPreference"] = gainPreference;
             if (panAzimuthPreference != NullIntValue) value["panAzimuthPreference"] = panAzimuthPreference;
 
-            result["value"] = value;
-            jsonResponse["result"] = result;
+            Json::Value result;
+            writeFeatureSettingsQuery(result, "audioDescription", value);
 
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] =  std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeJson(id, result);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -810,31 +823,20 @@ JsonRpcService::JsonRpcService(
             const std::string& id,
             bool enabled
     ){
-        //case Arc 8
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: RespondFeatureSettingsInVisionSigning...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            Json::Value result;
-            result["method"] = "org.hbbtv.af.featureSettingsQuery";
-            result["feature"] = "inVisionSigning";
-
             Json::Value value;
             value["enabled"] = enabled;
 
-            result["value"] = value;
-            jsonResponse["result"] = result;
+            Json::Value result;
+            writeFeatureSettingsQuery(result, "inVisionSigning", value);
 
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] =  std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeJson(id, result);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -845,177 +847,222 @@ JsonRpcService::JsonRpcService(
             int feature,
             const std::string& value
     ){
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
-        //Case Ar 2
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: RespondFeatureSuppress...");
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
             Json::Value result;
             result["method"] = "org.hbbtv.af.featureSuppress";
-            std::vector<std::string> resultStringVector = {"subtitles", "dialogueEnhancement", "uiMagnifier", "highContrastUI", "screenReader", "responseToUserAction", "audioDescription", "inVisionSigning"};
+            std::vector<std::string> resultStringVector = {
+                    "subtitles", "dialogueEnhancement",
+                    "uiMagnifier", "highContrastUI",
+                    "screenReader", "responseToUserAction",
+                    "audioDescription", "inVisionSigning"};
             result["feature"] = resultStringVector[feature];
             result["value"] = value;
-            jsonResponse["result"] = result;
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] =  std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+
+            std::string out_string = writeJson(id, result);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
+
+    std::string JsonRpcService::writeJsonForNotify(Json::Value params)
+    {
+        Json::Value jsonResponse;
+        jsonResponse["jsonrpc"] = "2.0";
+        jsonResponse["method"] = "org.hbbtv.notify";
+        jsonResponse["params"] = params;
+
+        Json::StyledWriter writer;
+        return writer.write(jsonResponse);
+    }
+
+    std::string JsonRpcService::writeJson(const std::string& id, const std::string& method, Json::Value params)
+    {
+        Json::Value jsonResponse;
+        int labelStart = 0;
+        int labelEnd = 3;
+        jsonResponse["jsonrpc"] = "2.0";
+        if (id.substr(labelStart,labelEnd)=="STR"){
+            jsonResponse["id"] = id.substr(labelEnd, id.length()-labelEnd);
+        }
+        else {
+            jsonResponse["id"] =  std::stoll(id.substr(labelEnd, id.length()-labelEnd));
+        }
+//        if (method != "\"org.hbbtv.notify\"") {
+//            params["origin"] = "voice";
+//        }
+        jsonResponse["params"] = params;
+
+        Json::StyledWriter writer;
+        return writer.write(jsonResponse);
+    }
+
+    std::string JsonRpcService::writeJson(const std::string& id, Json::Value result)
+    {
+        Json::Value jsonResponse;
+        int labelStart = 0;
+        int labelEnd = 3;
+        jsonResponse["jsonrpc"] = "2.0";
+        if (id.substr(labelStart,labelEnd)=="STR"){
+            jsonResponse["id"] = id.substr(labelEnd, id.length()-labelEnd);
+        }
+        else {
+            jsonResponse["id"] =  std::stoll(id.substr(labelEnd, id.length()-labelEnd));
+        }
+        jsonResponse["result"] = result;
+        Json::StyledWriter writer;
+        return writer.write(jsonResponse);
+    }
+
+    std::string JsonRpcService::writeError(const std::string& id, Json::Value error)
+    {
+        Json::Value jsonResponse;
+        int labelStart = 0;
+        int labelEnd = 3;
+        jsonResponse["jsonrpc"] = "2.0";
+        if (id.substr(labelStart,labelEnd)=="STR"){
+            if (labelEnd != id.length()) {
+                jsonResponse["id"] = id.substr(labelEnd, id.length()-labelEnd);
+            }
+        }
+        else {
+            jsonResponse["id"] =  std::stoll(id.substr(labelEnd, id.length()-labelEnd));
+        }
+        jsonResponse["error"] = error;
+        Json::StyledWriter writer;
+        return writer.write(jsonResponse);
+    }
+
+    void JsonRpcService::sendMessageTo(WebSocketConnection *connection, std::string responseName, std::string out_string) {
+
+        std::ostringstream oss;
+        oss << "response=" << responseName << "|" << out_string;
+        connection->SendMessage(oss.str());
+    }
+
     void JsonRpcService::RespondSubscribe(
             int connectionId,
             const std::string& id,
-            bool msgType0,
-            bool msgType1,
-            bool msgType2,
-            bool msgType3,
-            bool msgType4,
-            bool msgType5,
-            bool msgType6,
-            bool msgType7
+            bool subtitles, bool dialogueEnhancement,
+            bool uiMagnifier, bool highContrastUI,
+            bool screenReader, bool responseToUserAction,
+            bool audioDescription, bool inVisionSigning
     ){
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
-        //Case Br
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: RespondSubscribe...");
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
             Json::Value result;
             Json::Value msgTypeList(Json::arrayValue);
-
-            if (msgType0) msgTypeList.append("subtitlesPrefChange");
-            if (msgType1) msgTypeList.append("dialogueEnhancementPrefChange");
-            if (msgType2) msgTypeList.append("uiMagnifierPrefChange");
-            if (msgType3) msgTypeList.append("highContrastUIPrefChange");
-            if (msgType4) msgTypeList.append("screenReaderPrefChange");
-            if (msgType5) msgTypeList.append("responseToUserActionPrefChange");
-            if (msgType6) msgTypeList.append("audioDescriptionPrefChange");
-            if (msgType7) msgTypeList.append("inVisionSigningPrefChange");
+            if (subtitles)
+                msgTypeList.append("subtitlesPrefChange");
+            if (dialogueEnhancement)
+                msgTypeList.append("dialogueEnhancementPrefChange");
+            if (uiMagnifier)
+                msgTypeList.append("uiMagnifierPrefChange");
+            if (highContrastUI)
+                msgTypeList.append("highContrastUIPrefChange");
+            if (screenReader)
+                msgTypeList.append("screenReaderPrefChange");
+            if (responseToUserAction)
+                msgTypeList.append("responseToUserActionPrefChange");
+            if (audioDescription)
+                msgTypeList.append("audioDescriptionPrefChange");
+            if (inVisionSigning)
+                msgTypeList.append("inVisionSigningPrefChange");
 
             result["msgType"] = msgTypeList;
-            jsonResponse["result"] = result;
 
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] =  std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeJson(id, result);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
+
     void JsonRpcService::RespondUnsubscribe(
             int connectionId,
             const std::string& id,
-            bool msgType0,
-            bool msgType1,
-            bool msgType2,
-            bool msgType3,
-            bool msgType4,
-            bool msgType5,
-            bool msgType6,
-            bool msgType7
+            bool subtitles, bool dialogueEnhancement,
+            bool uiMagnifier, bool highContrastUI,
+            bool screenReader, bool responseToUserAction,
+            bool audioDescription, bool inVisionSigning
     ){
         LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
-        //Case Br
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
             Json::Value result;
             Json::Value msgTypeList(Json::arrayValue);
-
-            if (msgType0) msgTypeList.append("subtitlesPrefChange");
-            if (msgType1) msgTypeList.append("dialogueEnhancementPrefChange");
-            if (msgType2) msgTypeList.append("uiMagnifierPrefChange");
-            if (msgType3) msgTypeList.append("highContrastUIPrefChange");
-            if (msgType4) msgTypeList.append("screenReaderPrefChange");
-            if (msgType5) msgTypeList.append("responseToUserActionPrefChange");
-            if (msgType6) msgTypeList.append("audioDescriptionPrefChange");
-            if (msgType7) msgTypeList.append("inVisionSigningPrefChange");
+            if (subtitles)
+                msgTypeList.append("subtitlesPrefChange");
+            if (dialogueEnhancement)
+                msgTypeList.append("dialogueEnhancementPrefChange");
+            if (uiMagnifier)
+                msgTypeList.append("uiMagnifierPrefChange");
+            if (highContrastUI)
+                msgTypeList.append("highContrastUIPrefChange");
+            if (screenReader)
+                msgTypeList.append("screenReaderPrefChange");
+            if (responseToUserAction)
+                msgTypeList.append("responseToUserActionPrefChange");
+            if (audioDescription)
+                msgTypeList.append("audioDescriptionPrefChange");
+            if (inVisionSigning)
+                msgTypeList.append("inVisionSigningPrefChange");
 
             result["msgType"] = msgTypeList;
-            jsonResponse["result"] = result;
 
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] =  std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeJson(id, result);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
+
+    void JsonRpcService::addMethodsToJsonArray(Json::Value& jsonArray, const std::string stringList
+    ){
+        // Parse the input string
+        size_t startPos = 0;
+        size_t endPos = stringList.find(',');
+        while (endPos != std::string::npos) {
+            std::string element = stringList.substr(startPos, endPos - startPos);
+            jsonArray.append(element);
+            startPos = endPos + 2;  // Move past the comma and space
+            endPos = stringList.find(',', startPos);
+        }
+        // Append the last element
+        std::string lastElement = stringList.substr(startPos);
+        jsonArray.append(lastElement);
+    }
+
     void JsonRpcService::RespondNegotiateMethods(
             int connectionId,
             const std::string& id,
             const std::string& terminalToApp,
             const std::string& appToTerminal
     ){
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: RespondNegotiateMethods...");
         //Case N
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
             Json::Value result;
 
-            result["method"] = "org.hbbtv.negotiateMethods";
-
             Json::Value terminalToAppJsonArray(Json::arrayValue);
-            // Parse the input string
-            size_t startPos = 0;
-            size_t endPos = terminalToApp.find(',');
-            while (endPos != std::string::npos) {
-                std::string element = terminalToApp.substr(startPos, endPos - startPos);
-                terminalToAppJsonArray.append(element);
-                startPos = endPos + 2;  // Move past the comma and space
-                endPos = terminalToApp.find(',', startPos);
-            }
-            // Append the last element
-            std::string lastElement = terminalToApp.substr(startPos);
-            terminalToAppJsonArray.append(lastElement);
+            addMethodsToJsonArray(terminalToAppJsonArray, terminalToApp);
             result["terminalToApp"] = terminalToAppJsonArray;
-            Json::Value appToTerminalJsonArray(Json::arrayValue);
 
-            // Parse the input string
-            startPos = 0;
-            endPos = appToTerminal.find(',');
-            while (endPos != std::string::npos) {
-                std::string element = appToTerminal.substr(startPos, endPos - startPos);
-                appToTerminalJsonArray.append(element);
-                startPos = endPos + 2;  // Move past the comma and space
-                endPos = appToTerminal.find(',', startPos);
-            }
-            // Append the last element
-            lastElement = appToTerminal.substr(startPos);
-            appToTerminalJsonArray.append(lastElement);
+            Json::Value appToTerminalJsonArray(Json::arrayValue);
+            addMethodsToJsonArray(appToTerminalJsonArray, appToTerminal);
             result["appToTerminal"] = appToTerminalJsonArray;
 
-            jsonResponse["result"] = result;
-
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] =  std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeJson(id, "org.hbbtv.negotiateMethods", result);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1026,26 +1073,18 @@ JsonRpcService::JsonRpcService(
             int code,
             const std::string& message
     ){
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
-        //Case E1
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: RespondError...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
             Json::Value error;
             error["code"] = code;
             error["message"] = message;
-            jsonResponse["error"] = error;
 
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] =  std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeError(id, error);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1055,29 +1094,21 @@ JsonRpcService::JsonRpcService(
             const std::string& id,
             int code,
             const std::string& message,
-            const std::string& method
+            const std::string& data
     ){
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
-        //Case E2
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: RespondError with method...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
             Json::Value error;
             error["code"] = code;
             error["message"] = message;
-            error["method"] = method;
-            jsonResponse["error"] = error;
+            if (data != NullStrValue) error["data"] = data;
 
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] =  std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeError(id, error);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1087,25 +1118,17 @@ JsonRpcService::JsonRpcService(
             const std::string& id,
             const std::string& origin
     ){
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
-        //Case c1
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: SendIntentMediaPause...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            jsonResponse["method"] = "org.hbbtv.app.intent.media.pause";
             Json::Value params;
             params["origin"] = origin;
-            jsonResponse["params"] = params;
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] = std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+
+            std::string out_string = writeJson(id, MD_INTENT_MEDIA_PAUSE, params);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1115,25 +1138,17 @@ JsonRpcService::JsonRpcService(
             const std::string& id,
             const std::string& origin
     ){
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
-        //Case c2
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: SendIntentMediaPlay...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            jsonResponse["method"] = "org.hbbtv.app.intent.media.play";
             Json::Value params;
             params["origin"] = origin;
-            jsonResponse["params"] = params;
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] = std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+
+            std::string out_string = writeJson(id, "org.hbbtv.app.intent.media.play", params);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1143,25 +1158,17 @@ JsonRpcService::JsonRpcService(
             const std::string& id,
             const std::string& origin
     ){
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
-        //Case c3
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: SendIntentMediaFastForward...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            jsonResponse["method"] = "org.hbbtv.app.intent.media.fast-forward";
             Json::Value params;
             params["origin"] = origin;
-            jsonResponse["params"] = params;
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] = std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+
+            std::string out_string = writeJson(id, "org.hbbtv.app.intent.media.fast-forward", params);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1171,25 +1178,17 @@ JsonRpcService::JsonRpcService(
             const std::string& id,
             const std::string& origin
     ){
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
-        //Case c4
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: SendIntentMediaFastReverse...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            jsonResponse["method"] = "org.hbbtv.app.intent.media.fast-reverse";
             Json::Value params;
             params["origin"] = origin;
-            jsonResponse["params"] = params;
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] = std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+
+            std::string out_string = writeJson(id, "org.hbbtv.app.intent.media.fast-reverse", params);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1199,25 +1198,17 @@ JsonRpcService::JsonRpcService(
             const std::string& id,
             const std::string& origin
     ){
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
-        //Case c5
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: SendIntentMediaStop...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            jsonResponse["method"] = "org.hbbtv.app.intent.media.stop";
             Json::Value params;
             params["origin"] = origin;
-            jsonResponse["params"] = params;
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] = std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+
+            std::string out_string = writeJson(id, "org.hbbtv.app.intent.media.stop", params);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1229,27 +1220,19 @@ JsonRpcService::JsonRpcService(
             const std::string& anchor,
             int offset
     ){
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
-        //Case c6
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: SendIntentMediaSeekContent...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            jsonResponse["method"] = "org.hbbtv.app.intent.media.seek-content";
             Json::Value params;
             params["origin"] = origin;
             params["anchor"] = anchor;
             params["offset"] = offset;
-            jsonResponse["params"] = params;
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] = std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+
+            std::string out_string = writeJson(id, "org.hbbtv.app.intent.media.seek-content", params);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1259,26 +1242,18 @@ JsonRpcService::JsonRpcService(
             const std::string& origin,
             int offset
     ){
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
-        //Case c7
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: SendIntentMediaSeekRelative...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            jsonResponse["method"] = "org.hbbtv.app.intent.media.seek-relative";
             Json::Value params;
             params["origin"] = origin;
             params["offset"] = offset;
-            jsonResponse["params"] = params;
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] = std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+
+            std::string out_string = writeJson(id, "org.hbbtv.app.intent.media.seek-relative", params);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1289,26 +1264,18 @@ JsonRpcService::JsonRpcService(
             const std::string& origin,
             int offset
     ){
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
-        //Case c8
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: SendIntentMediaSeekLive...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            jsonResponse["method"] = "org.hbbtv.app.intent.media.seek-live";
             Json::Value params;
             params["origin"] = origin;
             params["offset"] = offset;
-            jsonResponse["params"] = params;
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] = std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+
+            std::string out_string = writeJson(id, "org.hbbtv.app.intent.media.seek-live", params);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1318,26 +1285,18 @@ JsonRpcService::JsonRpcService(
             const std::string& origin,
             const std::string& dateTime
     ){
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
-        //Case c9
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: SendIntentMediaSeekWallclock...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            jsonResponse["method"] = "org.hbbtv.app.intent.media.seek-wallclock";
             Json::Value params;
             params["origin"] = origin;
             params["date-time"] = dateTime;
-            jsonResponse["params"] = params;
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] = std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+
+            std::string out_string = writeJson(id, "org.hbbtv.app.intent.media.seek-wallclock", params);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1347,26 +1306,18 @@ JsonRpcService::JsonRpcService(
             const std::string& origin,
             const std::string& query
     ){
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
-        //Case c10
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: SendIntentSearch...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            jsonResponse["method"] = "org.hbbtv.app.intent.search";
             Json::Value params;
             params["origin"] = origin;
             params["query"] = query;
-            jsonResponse["params"] = params;
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] = std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+
+            std::string out_string = writeJson(id, "org.hbbtv.app.intent.search", params);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1376,26 +1327,18 @@ JsonRpcService::JsonRpcService(
             const std::string& origin,
             const std::string& mediaId
     ){
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
-        //Case c11
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: SendIntentDisplay...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            jsonResponse["method"] = "org.hbbtv.app.intent.display";
             Json::Value params;
             params["origin"] = origin;
             params["mediaId"] = mediaId;
-            jsonResponse["params"] = params;
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] = std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+
+            std::string out_string = writeJson(id, "org.hbbtv.app.intent.display", params);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1408,29 +1351,20 @@ JsonRpcService::JsonRpcService(
             const std::string& anchor,
             int offset
     ){
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
-        //Case c12
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: SendIntentPlayback...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            jsonResponse["method"] = "org.hbbtv.app.intent.playback";
             Json::Value params;
             params["origin"] = origin;
             params["mediaId"] = mediaId;
             if (anchor != NullStrValue) params["anchor"] = anchor;
             if (offset != NullIntValue) params["offset"] = offset;
 
-            jsonResponse["params"] = params;
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] = std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeJson(id, "org.hbbtv.app.intent.playback", params);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1450,19 +1384,14 @@ JsonRpcService::JsonRpcService(
             int windowOpacity,
             const std::string& language
     ){
-        //case D 1
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: NotifySubtitles...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            jsonResponse["method"] = "org.hbbtv.notify";
-
             Json::Value params;
-
             params["msgType"] = "subtitlesPrefChange";
-
             Json::Value value;
             value["enabled"] = enabled;
             if (size != NullIntValue) value["size"] = size;
@@ -1476,12 +1405,10 @@ JsonRpcService::JsonRpcService(
             if (windowColour != NullStrValue) value["windowColour"] = windowColour;
             if (windowOpacity != NullIntValue) value["windowOpacity"] = windowOpacity;
             if (language != NullStrValue) value["language"] = language;
-
-
             params["value"] = value;
-            jsonResponse["params"] = params;
 
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeJsonForNotify(params);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1493,17 +1420,13 @@ JsonRpcService::JsonRpcService(
             int dialogueEnhancementLimitMin,
             int dialogueEnhancementLimitMax
     ){
-        //case D 2
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: NotifyDialogueEnhancement...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            jsonResponse["method"] = "org.hbbtv.notify";
-
             Json::Value params;
-
             params["msgType"] = "dialogueEnhancementPrefChange";
 
             Json::Value value;
@@ -1512,12 +1435,11 @@ JsonRpcService::JsonRpcService(
             Json::Value dialogueEnhancementLimit;
             dialogueEnhancementLimit["min"] = dialogueEnhancementLimitMin;
             dialogueEnhancementLimit["max"] = dialogueEnhancementLimitMax;
-
             value["dialogueEnhancementLimit"] = dialogueEnhancementLimit;
             params["value"] = value;
-            jsonResponse["params"] = params;
 
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeJsonForNotify(params);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1527,28 +1449,21 @@ JsonRpcService::JsonRpcService(
             bool enabled,
             const std::string& magType
     ){
-        //case D 3
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: NotifyUIMagnifier...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            jsonResponse["method"] = "org.hbbtv.notify";
-
             Json::Value params;
-
             params["msgType"] = "uiMagnifierPrefChange";
-
             Json::Value value;
             value["enabled"] = enabled;
             if (magType != NullStrValue) value["magType"] = magType;
-
             params["value"] = value;
-            jsonResponse["params"] = params;
 
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeJsonForNotify(params);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1558,26 +1473,21 @@ JsonRpcService::JsonRpcService(
             bool enabled,
             const std::string& hcType
     ){
-        //case D 4
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: NotifyHighContrastUI...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            jsonResponse["method"] = "org.hbbtv.notify";
-
             Json::Value params;
             params["msgType"] = "highContrastUIPrefChange";
-
             Json::Value value;
             value["enabled"] = enabled;
             if (hcType != NullStrValue) value["hcType"] = hcType;
-
             params["value"] = value;
-            jsonResponse["params"] = params;
-            connection->SendMessage(jsonResponse.asString());
+
+            std::string out_string = writeJsonForNotify(params);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1589,16 +1499,12 @@ JsonRpcService::JsonRpcService(
             const std::string& voice,
             const std::string& language
     ){
-        //case D 5
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: NotifyScreenReader...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            jsonResponse["method"] = "org.hbbtv.notify";
-
             Json::Value params;
             params["msgType"] = "screenReaderPrefChange";
 
@@ -1607,11 +1513,10 @@ JsonRpcService::JsonRpcService(
             if (speed != NullIntValue) value["speed"] = speed;
             if (voice != NullStrValue) value["voice"] = voice;
             if (language != NullStrValue) value["language"] = language;
-
             params["value"] = value;
-            jsonResponse["params"] = params;
 
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeJsonForNotify(params);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1620,16 +1525,12 @@ JsonRpcService::JsonRpcService(
             bool enabled,
             const std::string& type
     ){
-        //case D 6
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: NotifyResponseToUserAction...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            jsonResponse["method"] = "org.hbbtv.notify";
-
             Json::Value params;
             params["msgType"] = "responseToUserActionPrefChange";
 
@@ -1638,10 +1539,9 @@ JsonRpcService::JsonRpcService(
             if (type != NullStrValue) value["hcType"] = type;
 
             params["value"] = value;
-            jsonResponse["params"] = params;
 
-
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeJsonForNotify(params);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1652,16 +1552,12 @@ JsonRpcService::JsonRpcService(
             int gainPreference,
             int panAzimuthPreference
     ){
-        //case D 7
-        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: Service called with response. Send response to client...");
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: NotifyAudioDescription...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            jsonResponse["method"] = "org.hbbtv.notify";
-
             Json::Value params;
             params["msgType"] = "audioDescriptionPrefChange";
 
@@ -1671,9 +1567,9 @@ JsonRpcService::JsonRpcService(
             if (panAzimuthPreference != NullIntValue) value["panAzimuthPreference"] = panAzimuthPreference;
 
             params["value"] = value;
-            jsonResponse["params"] = params;
 
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeJsonForNotify(params);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1682,15 +1578,12 @@ JsonRpcService::JsonRpcService(
             int connectionId,
             bool enabled
     ){
-        //case D 8
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: NotifyInVisionSigning...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-            jsonResponse["method"] = "org.hbbtv.notify";
-
             Json::Value params;
             params["msgType"] = "inVisionSigningPrefChange";
 
@@ -1698,9 +1591,9 @@ JsonRpcService::JsonRpcService(
             value["enabled"] = enabled;
 
             params["value"] = value;
-            jsonResponse["params"] = params;
 
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeJsonForNotify(params);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1711,27 +1604,18 @@ JsonRpcService::JsonRpcService(
             const std::string& id,
             int dialogueEnhancementGain
     ){
-        //case Fr 1
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: RespondDialogueEnhancementOverride...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-
             Json::Value result;
             result["method"] = "org.hbbtv.af.dialogueEnhancementOverride";
             result["dialogueEnhancementGain"] = dialogueEnhancementGain;
 
-            jsonResponse["result"] = result;
-
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] =  std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeJson(id, result);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }
@@ -1740,27 +1624,18 @@ JsonRpcService::JsonRpcService(
             const std::string& id,
             bool actioned
     ){
-        //case Fr 2
+        LOG(LOG_INFO, "JSON-RPC-EXAMPLE #9: RespondTriggerResponseToUserAction...");
+
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
         {
-            Json::Value jsonResponse;
-            jsonResponse["jsonrpc"] = "2.0";
-
             Json::Value result;
             result["method"] = "org.hbbtv.af.triggerResponseToUserAction";
             result["actioned"] = actioned;
 
-            jsonResponse["result"] = result;
-
-            if (id.substr(0,3)=="STR"){
-                jsonResponse["id"] = id.substr(3, id.length()-3);
-            }
-            else{
-                jsonResponse["id"] =  std::stoll(id.substr(3, id.length()-3));
-            }
-            connection->SendMessage(jsonResponse.asString());
+            std::string out_string = writeJson(id, result);
+            sendMessageTo(connection, __func__ , out_string);
         }
         connections_mutex_.unlock();
     }

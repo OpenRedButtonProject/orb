@@ -103,9 +103,9 @@ public class JsonRpc {
         String id,
         int code,
         String message,
-        String method) {
+        String data) {
         Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onRespondError...");
-        nativeOnRespondErrorWithMethod(connection, id, code, message, method);
+        nativeOnRespondErrorWithData(connection, id, code, message, data);
     }
 
     public void onQuerySubtitles(
@@ -397,6 +397,17 @@ public class JsonRpc {
         mOrbSessionCallback.onReceiveError(connection, id, code, message);
     }
 
+    private void onReceiveError(
+            int connection,
+            String id,
+            int code,
+            String message,
+            String method,
+            String data) {
+        Log.d(TAG, "JSON-RPC-EXAMPLE #4a: onReceiveError with all params...");
+        mOrbSessionCallback.onReceiveError(connection, id, code, message, method, data);
+    }
+
     // Native
 
     private native void nativeOpen(int port, String endpoint);
@@ -446,12 +457,12 @@ public class JsonRpc {
         int code,
         String message);
 
-    private native void nativeOnRespondErrorWithMethod(
+    private native void nativeOnRespondErrorWithData(
         int connection,
         String id,
         int code,
         String message,
-        String method);
+        String data);
 
 
     private native void nativeOnQuerySubtitles(

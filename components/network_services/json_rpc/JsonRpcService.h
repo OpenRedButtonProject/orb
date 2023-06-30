@@ -88,11 +88,24 @@ public:
                 bool audioDescripEnabled, bool audioDescripAvailable,
                 bool signLangEnabled, bool signLangAvailable) = 0;
 
+        virtual void ReceiveIntentConfirm(
+                int connectionId,
+                std::string id,
+                std::string method) = 0;
+
         virtual void ReceiveError(
             int connectionId,
             std::string id,
             int code,
             std::string message) = 0;
+
+        virtual void ReceiveError(
+                int connectionId,
+                std::string id,
+                int code,
+                std::string message,
+                std::string method,
+                std::string data) = 0;
 
         virtual ~SessionCallback() = default;
     };
@@ -109,7 +122,7 @@ public:
         void OnServiceStopped() override;
 
         void RespondError(int connectionId, const std::string &id, int code, const std::string &message,
-                          const std::string &method);
+                          const std::string &data);
 
         void RespondError(int connectionId, const std::string &id, int code, const std::string &message);
 
@@ -241,11 +254,44 @@ public:
         std::string m_endpoint;
         std::unique_ptr<SessionCallback> m_sessionCallback;
 
+        const std::string MD_INTENT_MEDIA_PAUSE = "org.hbbtv.app.intent.media.pause";
+//        const std::string MD_INTENT_MEDIA_ = "org.hbbtv.app.intent.media.";
+//        const std::string MD_INTENT_MEDIA_ = "org.hbbtv.app.intent.media.";
+//        const std::string MD_INTENT_MEDIA_ = "org.hbbtv.app.intent.media.";
+//        const std::string MD_INTENT_MEDIA_ = "org.hbbtv.app.intent.media.";
+//        const std::string MD_INTENT_MEDIA_ = "org.hbbtv.app.intent.media.";
+//        const std::string MD_INTENT_MEDIA_ = "org.hbbtv.app.intent.media.";
+//        const std::string MD_INTENT_MEDIA_ = "org.hbbtv.app.intent.media.";
 
+        void addMethodsToJsonArray(
+                Json::Value& jsonArray,
+                const std::string stringList);
 
+        void writeFeatureSettingsQuery(
+                Json::Value& result,
+                const std::string feature,
+                Json::Value value);
 
+        std::string writeJson(
+                const std::string& id,
+                Json::Value result);
 
+        std::string writeError(
+                const std::string& id,
+                Json::Value error);
 
+        std::string writeJsonForNotify(
+                Json::Value params);
+
+        std::string writeJson(
+                const std::string& id,
+                const std::string& method,
+                Json::Value params);
+
+        void sendMessageTo(
+                WebSocketConnection *connection,
+                std::string responseName,
+                std::string out_string);
 };
 } // namespace NetworkServices
 
