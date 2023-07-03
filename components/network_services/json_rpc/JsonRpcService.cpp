@@ -17,13 +17,13 @@
 
 namespace NetworkServices {
 
-JsonRpcService::JsonRpcService(
-    int port,
-    const std::string &endpoint,
-    std::unique_ptr<SessionCallback> sessionCallback) :
-    WebSocketService("JsonRpcService", port, false, "lo"), 
-    m_endpoint(endpoint),
-    m_sessionCallback(std::move(sessionCallback))
+    JsonRpcService::JsonRpcService(
+            int port,
+            const std::string &endpoint,
+            std::unique_ptr<SessionCallback> sessionCallback) :
+            WebSocketService("JsonRpcService", port, false, "lo"),
+            m_endpoint(endpoint),
+            m_sessionCallback(std::move(sessionCallback))
     {
         LOG(LOG_INFO, "Start");
         Start();
@@ -39,82 +39,31 @@ JsonRpcService::JsonRpcService(
         LOG(LOG_INFO, "Connected: connectionId=%d", connection->Id());
         return true;
     }
-
-//    void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const std::string &text)
-//    {
-//
-//        LOG(LOG_INFO, "Message received: connection=%d, text=%s", connection->Id(), text.c_str());
-//
-//        if (text == "request=dialogueEnhancementOverride")
-//        {
-////            // done
-//            m_sessionCallback->RequestNegotiateMethods(connection->Id(), "NUM1",
-//                                                       "org.hbbtv.app.intent.media.play,"
-//                                                       "org.hbbtv.app.intent.media.pause,"
-//                                                       "org.hbbtv.app.intent.media.stop,"
-//                                                       "org.hbbtv.app.intent.media.fast-reverse,"
-//                                                       "org.hbbtv.notify",
-//                                                       "org.hbbtv.negotiateMethods,org.hbbtv.subscribe,"
-//                                                       "org.hbbtv.unsubscribe,"
-//                                                       "org.hbbtv.app.voice.ready,"
-//                                                       "org.hbbtv.app.state.media,"
-//                                                       "org.hbbtv.app.state.media.2");
-//
-//            // done
-//            m_sessionCallback->RequestSubscribe(connection->Id(), "NUM1", true, true, true, true, false, false, false, false);
-//            // done
-//            m_sessionCallback->RequestUnsubscribe(connection->Id(), "NUM1", false, false, true, true, true, true, false, false);
-//            // done
-//            m_sessionCallback->RequestFeatureSupportInfo(connection->Id(), "NUM1", 3);
-//            // done
-//            m_sessionCallback->RequestFeatureSettingsQuery(connection->Id(), "NUM1", 0);
-//            m_sessionCallback->RequestFeatureSettingsQuery(connection->Id(), "NUM1", 1);
-//            m_sessionCallback->RequestFeatureSettingsQuery(connection->Id(), "NUM1", 2);
-//            m_sessionCallback->RequestFeatureSettingsQuery(connection->Id(), "NUM1", 3);
-//            m_sessionCallback->RequestFeatureSettingsQuery(connection->Id(), "NUM1", 4);
-//            m_sessionCallback->RequestFeatureSettingsQuery(connection->Id(), "NUM1", 5);
-//            m_sessionCallback->RequestFeatureSettingsQuery(connection->Id(), "NUM1", 6);
-//            m_sessionCallback->RequestFeatureSettingsQuery(connection->Id(), "NUM1", 7);
-////
-////            // done
-//            m_sessionCallback->RequestFeatureSuppress(connection->Id(), "NUM1", 3);
-////            // test in Session callback
-//            m_sessionCallback->NotifyVoiceReady(connection->Id(), true);
-////            // test in Session callback
-//            m_sessionCallback->NotifyStateMedia(connection->Id(), "state",
-//                                                true, true, true, true, true, true, true, true, true);
-////            // test in Session callback
-//            m_sessionCallback->NotifyStateMedia(connection->Id(), "playing", "kind", "type", "currentTime",
-//                                                "rangeStart", "rangeEnd",
-//                                                true, true, true, true, true, true, true, true, true,
-//                                                "mediaId", "title", "secTitle", "synopsis",
-//                                                true, true, true, true, true, true);
-//
-////            // test in Session callback
-//            m_sessionCallback->ReceiveIntentConfirm(connection->Id(), "NUM1", "org.hbbtv.app.intent.media.pause");
-//
-////            // done
-//            m_sessionCallback->ReceiveError(connection->Id(), "NUM1", -32600, "Invalid Request");
-////            // done
-//            m_sessionCallback->ReceiveError(connection->Id(),
-//                                            "2021-04-28T18:50:00Z - 485628",
-//                                            -1,
-//                                            "not available action for presenting media",
-//                                            "org.hbbtv.app.intent.media.seek-content",
-//                                            "d8a0c98fs08-d9df0809s");
-////            // done
-//            m_sessionCallback->RequestDialogueEnhancementOverride(connection->Id(), "NUM1", 2);
-//            m_sessionCallback->RequestDialogueEnhancementOverride(connection->Id(), "NUM1", -999999);
-////          // done
-//            m_sessionCallback->RequestTriggerResponseToUserAction(connection->Id(), "NUM1", "triggerPrimary");
-//        }
-//        else
-//        {
-//            LOG(LOG_INFO, "Message not handled");
-//        }
-//
-//    }
-
+    bool JsonRpcService::checkIDIsMemberAndType(int connectionID, Json::Value json, std::string variable, int errorCode, const std::string& errorMessage){
+        if (!json.isMember(variable)){
+            LOG(LOG_INFO, "Error, missing parameter %s.", variable.c_str());
+            const std::string& id = "STR";
+            RespondError(connectionID, id, errorCode, errorMessage);
+            return false;
+        }
+        return true;
+    }
+    bool JsonRpcService::checkVariableIsMemberAndType(int connectionID, std::string id, Json::Value json, std::string variable, Json::ValueType type, int errorCode, const std::string& errorMessage){
+        if (!json.isMember(variable) or json[variable].type()!=type){
+            LOG(LOG_INFO, "Error, missing parameter ' %s ', or wrong type.", variable.c_str());
+            RespondError(connectionID, id, errorCode, errorMessage);
+            return false;
+        }
+        return true;
+    }
+    bool JsonRpcService::checkVariableIsMemberAndIsJson(int connectionID, std::string id, Json::Value json, std::string variable, int errorCode, const std::string& errorMessage){
+        if (!json.isMember(variable) or !json[variable].isObject()){
+            LOG(LOG_INFO, "Error, missing parameter ' %s ', or wrong type.", variable.c_str());
+            RespondError(connectionID, id, errorCode, errorMessage);
+            return false;
+        }
+        return true;
+    }
 
     void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const std::string &text)
     {
@@ -123,199 +72,161 @@ JsonRpcService::JsonRpcService(
         Json::Value obj;
         Json::Reader reader;
         bool b = reader.parse(text, obj);
-        std::map<std::string, int> mapOfFeatures;
-        mapOfFeatures["subtitles"]            = 0;
-        mapOfFeatures["dialogueEnhancement"]  = 1;
-        mapOfFeatures["uiMagnifier"]          = 2;
-        mapOfFeatures["highContrastUI"]       = 3;
-        mapOfFeatures["screenReader"]         = 4;
-        mapOfFeatures["responseToUserAction"] = 5;
-        mapOfFeatures["audioDescription"]     = 6;
-        mapOfFeatures["inVisionSigning"]      = 7;
 
         if (!b){
             LOG(LOG_INFO, "Error, json rpc parse wrong");
-            //call return
+            //call return -32700 Error
+            RespondError(connection->Id(), "STR", -32700, "Parse Error");
+            return;
         }
-        if (obj["jsonrpc"]!="2.0"){
+        if (!obj.isMember("jsonrpc") or obj["jsonrpc"]!="2.0"){
             LOG(LOG_INFO, "Error, json rpc version not 2.0");
-            //call RespondDialogueEnhancementOverride to return
+            if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32600, "Invalid request")) return;
+            std::string id = AddIDIdentify(obj["id"]);
+            RespondError(connection->Id(), id, -32600, "Invalid request");
+            return;
         }
-        if (!obj.isMember("result")){
-            LOG(LOG_INFO, "It is a request");
-        }
-        else{
-            //case Cr
+        if (obj.isMember("result")){
             Json::Value result = obj["result"];
+            if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
+            std::string id = AddIDIdentify(obj["id"]);
+
+            if (!checkVariableIsMemberAndType(connection->Id(), id, result, "method", Json::stringValue, -32602, "Invalid params")) return;
             std::string method = result["method"].asString();
-            std::string id = obj["method"].asString();
-            if (obj["id"].type()==Json::stringValue){
-                id = "STR" + id;
+
+            if (method == MD_INTENT_MEDIA_PAUSE
+                or	method == MD_INTENT_MEDIA_PLAY
+                or	method == MD_INTENT_MEDIA_FAST_FORWARD
+                or	method == MD_INTENT_MEDIA_FAST_REVERSE
+                or	method == MD_INTENT_MEDIA_STOP
+                or	method == MD_INTENT_MEDIA_SEEK_CONTENT
+                or	method == MD_INTENT_MEDIA_SEEK_RELATIVE
+                or	method == MD_INTENT_MEDIA_SEEK_WALLCLOCK
+                or	method == MD_INTENT_MEDIA_SEARCH
+                or	method == MD_INTENT_MEDIA_DISPLAY
+                or	method == MD_INTENT_MEDIA_PLAYBACK
+            ){
+                m_sessionCallback->ReceiveIntentConfirm(connection->Id(), id, method);
+                return;
             }
-            else{
-                id = "NUM" + id;
-            }
-//            m_sessionCallback->ReceiveIntentConfirm(connection->Id(), id, method);
         }
 
-        if (!obj.isMember("error")) {
+        if (obj.isMember("error")) {
             Json::Value error = obj["error"];
+            if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
+            std::string id = AddIDIdentify(obj["id"]);
+            if (!checkVariableIsMemberAndType(connection->Id(), id, error, "code", Json::intValue, -32602, "Invalid params")) return;
             int code = error["code"].asInt();
-            std::string message = error["message"].asString();
-            std::string id = obj["id"].asString();
-            if (obj["id"].type()==Json::stringValue){
-                id = "STR" + id;
-            }
-            else{
-                id = "NUM" + id;
-            }
+            std::string message = NullStrValue;
+            if (!error.isMember("message") or error["message"].type()!=Json::stringValue)
+                message = error["message"].asString();
+
+            std::string data = NullStrValue;
+            if (!error.isMember("data") or error["data"].type()!=Json::stringValue)
+                message = error["data"].asString();
+
             m_sessionCallback->ReceiveError(connection->Id(), id, code, message);
-            //call return
+            return;
         }
-        if (!obj.isMember("method")){
+        if (!obj.isMember("method") or obj["method"].type()!=Json::stringValue){
             LOG(LOG_INFO, "Cannot find method");
-            //call return
+            if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32600, "Invalid request")) return;
+            std::string id = AddIDIdentify(obj["id"]);
+            RespondError(connection->Id(), id, -32600, "Invalid request");
+            return;
         }
         std::string method = obj["method"].asString();
 
-        if (method == "org.hbbtv.af.dialogueEnhancementOverride"){
-            //CASE F 1
+        LOG(LOG_INFO, "Method = %s",method.c_str());
 
-            int dialogueEnhancementGain;
-            if (obj.isMember("dialogueEnhancementGain")) dialogueEnhancementGain = obj["dialogueEnhancementGain"].asInt();
-
-            if (!obj.isMember("id")){
-                LOG(LOG_INFO, "Cannot find id");
+        if (method == MD_AF_DIALOGUE_ENHANCEMENT_OVERRIDE){
+            if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
+            std::string id = AddIDIdentify(obj["id"]);
+            int dialogueEnhancementGain = NullIntValue;
+            if (obj.isMember("params")){
+                Json::Value params = obj["params"];
+                if (params.isMember("dialogueEnhancementGain")
+                and params["dialogueEnhancementGain"].type()==Json::intValue)
+                    dialogueEnhancementGain = params["dialogueEnhancementGain"].asInt();
             }
 
-            std::string id = obj["id"].asString();
-
-            if (obj["id"].type()==Json::stringValue){
-                id = "STR" + id;
-            }
-            else{
-                id = "NUM" + id;
-            }
             LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
-            m_sessionCallback->RequestDialogueEnhancementOverride(connection->Id(), id, dialogueEnhancementGain);
+            m_sessionCallback->RequestDialogueEnhancementOverride(connection->Id(), id,
+                                                                  dialogueEnhancementGain);
         }
-
-
+        if (!obj.isMember("params")){
+            LOG(LOG_INFO, "Error, missing parameter 'params'.");
+            if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
+            std::string id = AddIDIdentify(obj["id"]);
+            //call return -32602 Error
+            RespondError(connection->Id(), id, -32602, "Invalid params");
+            return;
+        }
         Json::Value params = obj["params"];
-        if (method == "org.hbbtv.af.featureSupportInfo"){
-            //CASE A1
-            if (!params.isMember("feature")){
-                LOG(LOG_INFO, "Cannot find feature");
-                //call return
-            }
-            std::string feature = params["feature"].asString();
-            if (!obj.isMember("id")){
-                LOG(LOG_INFO, "Cannot find id");
-            }
-            std::string id = obj["id"].asString();
 
-            if (obj["id"].type()==Json::stringValue){
-                id = "STR" + id;
-            }
-            else{
-                id = "NUM" + id;
+        std::map<std::string, int> mapOfFeatures;
+        mapOfFeatures[F_SUBTITLES]               = 0;
+        mapOfFeatures[F_DIALOGUE_ENHANCEMENT]    = 1;
+        mapOfFeatures[F_UI_MAGNIFIER]            = 2;
+        mapOfFeatures[F_HIGH_CONTRAST_UI]        = 3;
+        mapOfFeatures[F_SCREEN_READER]           = 4;
+        mapOfFeatures[F_RESPONSE_TO_USER_ACTION] = 5;
+        mapOfFeatures[F_AUDIO_DESCRIPTION]       = 6;
+        mapOfFeatures[F_IN_VISION_SIGNING]       = 7;
+
+
+        if (method == MD_AF_FEATURE_SUPPORT_INFO){
+            if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
+            std::string id = AddIDIdentify(obj["id"]);
+            if (!checkVariableIsMemberAndType(connection->Id(), id, params, "feature", Json::stringValue, -32602, "Invalid params")) return;
+            std::string feature = params["feature"].asString();
+            if (mapOfFeatures.find(feature)==mapOfFeatures.end()){
+                LOG(LOG_INFO, "Error, this feature is not recognized.");
+                //call return -32602 Error
+                RespondError(connection->Id(), id, -32602, "Invalid params");
+                return;
             }
             LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
-            m_sessionCallback->RequestFeatureSupportInfo(connection->Id(), id, mapOfFeatures[feature]);
+            m_sessionCallback->RequestFeatureSupportInfo(connection->Id(), id,
+                                                         mapOfFeatures[feature]);
         }
-        else if (method == "org.hbbtv.af.featureSettingsQuery"){
-            //CASE A2
-            if (!params.isMember("feature") ){
-                LOG(LOG_INFO, "Cannot find feature");
-                //call return
-            }
+        else if (method == MD_AF_FEATURE_SETTINGS_QUERY){
+            if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
+            std::string id = AddIDIdentify(obj["id"]);
+            if (!checkVariableIsMemberAndType(connection->Id(), id, params, "feature", Json::stringValue, -32602, "Invalid params")) return;
             std::string feature = params["feature"].asString();
-            if (!obj.isMember("id")){
-                LOG(LOG_INFO, "Cannot find id");
-            }
-            std::string id = obj["id"].asString();
-
-            if (obj["id"].type()==Json::stringValue){
-                id = "STR" + id;
-            }
-            else{
-                id = "NUM" + id;
+            if (mapOfFeatures.find(feature)==mapOfFeatures.end()){
+                LOG(LOG_INFO, "Error, this feature is not recognized.");
+                //call return -32602 Error
+                RespondError(connection->Id(), id, -32602, "Invalid params");
+                return;
             }
             LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
-            m_sessionCallback->RequestFeatureSettingsQuery(connection->Id(), id, mapOfFeatures[feature]);
+            m_sessionCallback->RequestFeatureSettingsQuery(connection->Id(), id,
+                                                           mapOfFeatures[feature]);
         }
-        else if (method == "org.hbbtv.af.featureSuppress"){
-            //CASE A3
-            if (!params.isMember("feature")){
-                LOG(LOG_INFO, "Cannot find feature");
-                //call return
-            }
+        else if (method == MD_AF_FEATURE_SUPPRESS){
+            if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
+            std::string id = AddIDIdentify(obj["id"]);
+            if (!checkVariableIsMemberAndType(connection->Id(), id, params, "feature", Json::stringValue, -32602, "Invalid params")) return;
             std::string feature = params["feature"].asString();
-            if (!obj.isMember("id")){
-                LOG(LOG_INFO, "Cannot find id");
-            }
-            std::string id = obj["id"].asString();
-
-            if (obj["id"].type()==Json::stringValue){
-                id = "STR" + id;
-            }
-            else{
-                id = "NUM" + id;
+            if (mapOfFeatures.find(feature)==mapOfFeatures.end()){
+                LOG(LOG_INFO, "Error, this feature is not recognized.");
+                //call return -32602 Error
+                RespondError(connection->Id(), id, -32602, "Invalid params");
+                return;
             }
             LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
-            m_sessionCallback->RequestFeatureSuppress(connection->Id(), id, mapOfFeatures[feature]);
+            m_sessionCallback->RequestFeatureSuppress(connection->Id(), id,
+                                                      mapOfFeatures[feature]);
         }
-        else if (method == "org.hbbtv.subscribe"){
-            //CASE B1
-            if (!params.isMember("msgType")){
-                LOG(LOG_INFO, "Cannot find msgType");
-                //call return
-            }
+        else if (method == MD_SUBSCRIBE){
+            if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
+            std::string id = AddIDIdentify(obj["id"]);
+
+            if (!checkVariableIsMemberAndType(connection->Id(), id, params, "msgType", Json::arrayValue, -32602, "Invalid params")) return;
             Json::Value msgType = params["msgType"];
-            if (!obj.isMember("id")){
-                LOG(LOG_INFO, "Cannot find id");
-            }
-            std::string id = obj["id"].asString();
 
-            if (obj["id"].type()==Json::stringValue){
-                id = "STR" + id;
-            }
-            else{
-                id = "NUM" + id;
-            }
-
-            bool msgTypeBoolList[8]={false};
-            for (auto msg : msgType){
-                int length = msg.asString().length();
-                std::string s = msg.asString().substr(0,length - 10);  //remove the PrefChange
-                if (mapOfFeatures.find(s)!=mapOfFeatures.end()){
-                    msgTypeBoolList[mapOfFeatures[s]]=true;
-                    LOG(LOG_INFO, "Changed one to true");
-                }
-                else{
-                    LOG(LOG_INFO, "Cannot find msgType");
-                }
-            }
-            m_sessionCallback->RequestSubscribe(connection->Id(), id, msgTypeBoolList[0], msgTypeBoolList[1],msgTypeBoolList[2],msgTypeBoolList[3],msgTypeBoolList[4],msgTypeBoolList[5],msgTypeBoolList[6],msgTypeBoolList[7]);
-        }
-        else if (method == "org.hbbtv.unsubscribe"){
-            //CASE B2
-            if (!params.isMember("msgType")){
-                LOG(LOG_INFO, "Cannot find msgType");
-                //call return
-            }
-            Json::Value msgType = params["msgType"];
-            if (!obj.isMember("id")){
-                LOG(LOG_INFO, "Cannot find id");
-            }
-            std::string id = obj["id"].asString();
-
-            if (obj["id"].type()==Json::stringValue){
-                id = "STR" + id;
-            }
-            else{
-                id = "NUM" + id;
-            }
             bool msgTypeBoolList[8]={false};
             for (auto msg : msgType){
                 int length = msg.asString().length();
@@ -324,78 +235,110 @@ JsonRpcService::JsonRpcService(
                     msgTypeBoolList[mapOfFeatures[s]]=true;
                 }
                 else{
-                    LOG(LOG_INFO, "Cannot find msgType");
+                    LOG(LOG_INFO, "Error, One of msgType parameter is not recognized.");
+                    //call return -32602 Error
+                    RespondError(connection->Id(), id, -32602, "Invalid params");
+                    return;
                 }
             }
-            m_sessionCallback->RequestUnsubscribe(connection->Id(), id, msgTypeBoolList[0], msgTypeBoolList[1],msgTypeBoolList[2],msgTypeBoolList[3],msgTypeBoolList[4],msgTypeBoolList[5],msgTypeBoolList[6],msgTypeBoolList[7]);
+            m_sessionCallback->RequestSubscribe(connection->Id(), id, msgTypeBoolList[0],
+                                                msgTypeBoolList[1],msgTypeBoolList[2],
+                                                msgTypeBoolList[3],msgTypeBoolList[4],
+                                                msgTypeBoolList[5],msgTypeBoolList[6],
+                                                msgTypeBoolList[7]);
         }
-        else if (method == "org.hbbtv.app.voice.ready"){
-            //CASE D1
-            if (!params.isMember("ready")){
-                LOG(LOG_INFO, "Cannot find ready");
-                //call return
-            }
-            std::string ready = params["ready"].asString();
-            LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
-    //        m_sessionCallback->NotifyVoiceReady(connection->Id(), ready);
+        else if (method == MD_UNSUBSCRIBE){
+            if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
+            std::string id = AddIDIdentify(obj["id"]);
 
-        }
-        else if (method == "org.hbbtv.app.state.media"){
-            //CASE D2
-            if (!params.isMember("state")){
-                LOG(LOG_INFO, "Cannot find state");
-                //call return
+            if (!checkVariableIsMemberAndType(connection->Id(), id, params, "msgType", Json::stringValue, -32602, "Invalid params")) return;
+            Json::Value msgType = params["msgType"];
+
+            bool msgTypeBoolList[8]={false};
+            for (auto msg : msgType){
+                int length = msg.asString().length();
+                std::string s = msg.asString().substr(0,length - 10);  //remove the PrefChange
+                if (mapOfFeatures.find(s)!=mapOfFeatures.end()){
+                    msgTypeBoolList[mapOfFeatures[s]]=true;
+                }
+                else{
+                    LOG(LOG_INFO, "Error, One of msgType parameter is not recognized.");
+                    //call return -32602 Error
+                    RespondError(connection->Id(), id, -32602, "Invalid params");
+                    return;
+                }
             }
+            m_sessionCallback->RequestUnsubscribe(connection->Id(), id, msgTypeBoolList[0],
+                                                  msgTypeBoolList[1],msgTypeBoolList[2],
+                                                  msgTypeBoolList[3],msgTypeBoolList[4],
+                                                  msgTypeBoolList[5],msgTypeBoolList[6],
+                                                  msgTypeBoolList[7]);
+        }
+        else if (method == MD_VOICE_READY){
+            if (!checkVariableIsMemberAndType(connection->Id(), "STR", params, "ready", Json::booleanValue, -32602, "Invalid params")) return;
+            bool ready = params["ready"].asBool();
+            LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
+            m_sessionCallback->NotifyVoiceReady(connection->Id(), ready);
+            return;
+        }
+        else if (method == MD_STATE_MEDIA){
+            if (!checkVariableIsMemberAndType(connection->Id(), "STR", params, "state", Json::stringValue, -32602, "Invalid params")) return;
             std::string state = params["state"].asString();
-
-            std::string kind = "";
-            if (!params.isMember("kind")){
-                LOG(LOG_INFO, "Cannot find kind");
-                if (state=="buffering" or state=="paused" or state=="playing" or state=="stopped"){
-                    //call return
-                }
+            if (state!="no-media"
+                and state!="error"
+                and state!="buffering"
+                and state!="paused"
+                and state!="playing"
+                and state!="stopped"){
+                LOG(LOG_INFO, "Error, state - %s - not recognized.", state.c_str());
+                //call return -32602 Error
+                RespondError(connection->Id(), "STR", -32602, "Invalid params");
+                return;
             }
-            else{
+            std::string kind = NullStrValue;
+            if (state=="buffering" or state=="paused" or state=="playing" or state=="stopped"){
+                if (!checkVariableIsMemberAndType(connection->Id(), "STR", params, "kind", Json::stringValue, -32602, "Invalid params")) return;
                 kind = params["kind"].asString();
-            }
-
-            std::string type = "";
-            if (!params.isMember("type")){
-                LOG(LOG_INFO, "Cannot find type");
-                if (state=="buffering" or state=="paused" or state=="playing" or state=="stopped"){
-                    //call return
+                if (kind != "audio" and kind != "audio-video"){
+                    LOG(LOG_INFO, "Error, kind - %s - not recognized.", kind.c_str());
+                    //call return -32602 Error
+                    RespondError(connection->Id(), "STR", -32602, "Invalid params");
+                    return;
                 }
             }
-            else{
+
+            std::string type = NullStrValue;
+            if (state=="buffering" or state=="paused" or state=="playing" or state=="stopped"){
+                if (!checkVariableIsMemberAndType(connection->Id(), "STR", params, "type", Json::stringValue, -32602, "Invalid params")) return;
                 type = params["type"].asString();
-            }
-
-            std::string currentTime = "";
-            if (!params.isMember("currentTime")){
-                LOG(LOG_INFO, "Cannot find currentTime");
-                if (state=="buffering" or state=="paused" or state=="playing"){
-                    //call return
+                if (type != "live" and type != "on-demand"){
+                    LOG(LOG_INFO, "Error, type - %s - not recognized.", type.c_str());
+                    //call return -32602 Error
+                    RespondError(connection->Id(), "STR", -32602, "Invalid params");
+                    return;
                 }
             }
-            else{
-                currentTime = params["currentTime"].asString();
-            }
 
-            std::string rangeStart = "";
-            std::string rangeEnd = "";
+            std::string currentTimeStr = NullStrValue;
+            int currentTimeInt = NullIntValue;
             if (state=="buffering" or state=="paused" or state=="playing"){
-                if (!params.isMember("range")){
-                    LOG(LOG_INFO, "Cannot find range");
-                    //call return
+                if (!checkVariableIsMemberAndType(connection->Id(), "STR", params, "currentTime", Json::stringValue, -32602, "Invalid params")) return;
+                //CHANGE HERE!! current time can be string or int !!!
+                if (params["currentTime"].type()==Json::stringValue){
+                    currentTimeStr = params["currentTime"].asString();
                 }
-                if (!params["range"].isMember("rangeStart")){
-                    LOG(LOG_INFO, "Cannot find rangeStart");
-                    //call return
+                else if (params["currentTime"].type()==Json::intValue){
+                    currentTimeInt = params["currentTime"].asInt();
                 }
-                if (!params["range"].isMember("rangeEnd")){
-                    LOG(LOG_INFO, "Cannot find rangeEnd");
-                    //call return
-                }
+            }
+
+
+            std::string rangeStart = NullStrValue;
+            std::string rangeEnd = NullStrValue;
+            if (state=="buffering" or state=="paused" or state=="playing"){
+                if (!checkVariableIsMemberAndIsJson(connection->Id(), "STR", params, "range", -32602, "Invalid params")) return;
+                if (!checkVariableIsMemberAndType(connection->Id(), "STR", params["range"], "start", Json::stringValue, -32602, "Invalid params")) return;
+                if (!checkVariableIsMemberAndType(connection->Id(), "STR", params["range"], "end", Json::stringValue, -32602, "Invalid params")) return;
                 rangeStart = params["range"]["start"].asString();
                 rangeEnd = params["range"]["end"].asString();
             }
@@ -409,18 +352,49 @@ JsonRpcService::JsonRpcService(
             bool actSeekRelative = false;
             bool actSeekLive = false;
             bool actWallclock = false;
-
-
+            if (!checkVariableIsMemberAndIsJson(connection->Id(), "STR", params, "availableActions", -32602, "Invalid params")) return;
+            if (!params.isMember("availableActions")){
+                LOG(LOG_INFO, "Error, missing parameter 'availableActions'. ");
+                //call return -32602 Error
+                RespondError(connection->Id(), "STR", -32602, "Invalid params");
+                return;
+            }
             Json::Value actions =  params["availableActions"];
-            if (actions.isMember("pause") and actions["pause"]==true) actPause=true;
-            if (actions.isMember("play") and actions["play"]==true) actPlay=true;
-            if (actions.isMember("fast-forward") and actions["fast-forward"]==true) actFastForward=true;
-            if (actions.isMember("fast-reverse") and actions["fast-reverse"]==true) actFastReverse=true;
-            if (actions.isMember("stop") and actions["stop"]==true) actStop=true;
-            if (actions.isMember("seek-content") and actions["seek-content"]==true) actSeekContent=true;
-            if (actions.isMember("seek-relative") and actions["seek-relative"]==true) actSeekRelative=true;
-            if (actions.isMember("seek-live") and actions["seek-live"]==true) actSeekLive=true;
-            if (actions.isMember("seek-wallclock") and actions["seek-wallclock"]==true) actWallclock=true;
+            if (actions.isMember("pause")
+                and actions["pause"].type() == Json::booleanValue
+                and actions["pause"]==true) actPause=true;
+
+            if (actions.isMember("play")
+                and actions["play"].type() == Json::booleanValue
+                and actions["play"]==true) actPlay=true;
+
+            if (actions.isMember("fast-forward")
+                and actions["fast-forward"].type() == Json::booleanValue
+                and actions["fast-forward"]==true) actFastForward=true;
+
+            if (actions.isMember("fast-reverse")
+                and actions["fast-reverse"].type() == Json::booleanValue
+                and actions["fast-reverse"]==true) actFastReverse=true;
+
+            if (actions.isMember("stop")
+                and actions["stop"].type() == Json::booleanValue
+                and actions["stop"]==true) actStop=true;
+
+            if (actions.isMember("seek-content")
+                and actions["seek-content"].type() == Json::booleanValue
+                and actions["seek-content"]==true) actSeekContent=true;
+
+            if (actions.isMember("seek-relative")
+                and actions["seek-relative"].type() == Json::booleanValue
+                and actions["seek-relative"]==true) actSeekRelative=true;
+
+            if (actions.isMember("seek-live")
+                and actions["seek-live"].type() == Json::booleanValue
+                and actions["seek-live"]==true) actSeekLive=true;
+
+            if (actions.isMember("seek-wallclock")
+                and actions["seek-wallclock"].type() == Json::booleanValue
+                and actions["seek-wallclock"]==true) actWallclock=true;
 
             std::string mediaId = NullStrValue;
             std::string title = NullStrValue;
@@ -428,18 +402,19 @@ JsonRpcService::JsonRpcService(
             std::string synopsis = NullStrValue;
 
             if (state=="buffering" or state=="paused" or state=="playing" or state=="stopped"){
-                if (!params.isMember("metadata")){
-                    LOG(LOG_INFO, "Cannot find metadata");
-                    //call return
-                }
-                if (!params["metadata"].isMember("title")){
-                    LOG(LOG_INFO, "Cannot find title");
-                    //call return
-                }
-                if (params["metadata"].isMember("mediaId")) mediaId = params["metadata"]["mediaId"].asString();
+                if (!checkVariableIsMemberAndIsJson(connection->Id(), "STR", params, "metadata", -32602, "Invalid params")) return;
+                if (!checkVariableIsMemberAndType(connection->Id(), "STR", params["metadata"], "title", Json::stringValue, -32602, "Invalid params")) return;
                 title = params["metadata"]["title"].asString();
-                if (params["metadata"].isMember("secTitle")) secTitle = params["metadata"]["secTitle"].asString();
-                if (params["metadata"].isMember("synopsis")) synopsis = params["metadata"]["synopsis"].asString();
+
+                if (params["metadata"].isMember("mediaId")
+                    and params["metadata"]["mediaId"].type() == Json::stringValue)
+                    mediaId = params["metadata"]["mediaId"].asString();
+                if (params["metadata"].isMember("secTitle")
+                    and params["metadata"]["secTitle"].type() == Json::stringValue)
+                    secTitle = params["metadata"]["secTitle"].asString();
+                if (params["metadata"].isMember("synopsis")
+                    and params["metadata"]["synopsis"].type() == Json::stringValue)
+                    synopsis = params["metadata"]["synopsis"].asString();
             }
 
 
@@ -451,31 +426,28 @@ JsonRpcService::JsonRpcService(
             bool signLangAvailable = false;
 
             if (state=="buffering" or state=="paused" or state=="playing"){
-                if (!params.isMember("accessibility")){
-                    LOG(LOG_INFO, "Cannot find accessibility");
-                    //call return
-                }
-                if (!params["accessibility"].isMember("subtitles")){
-                    LOG(LOG_INFO, "Cannot find subtitles");
-                    //call return
-                }
-                if (!params["accessibility"].isMember("audioDescription")){
-                    LOG(LOG_INFO, "Cannot find audioDescription");
-                    //call return
-                }
-                if (!params["accessibility"].isMember("signLanguage")){
-                    LOG(LOG_INFO, "Cannot find signLanguage");
-                    //call return
-                }
-                subtitlesEnabled = params["accessibility"]["subtitles"]["enabled"].asBool();
-                subtitlesAvailable = params["accessibility"]["subtitles"]["available"].asBool();
-                audioDescripEnabled = params["accessibility"]["audioDescription"]["enabled"].asBool();
-                audioDescripAvailable = params["accessibility"]["audioDescription"]["available"].asBool();
-                signLangEnabled = params["accessibility"]["signLanguage"]["enabled"].asBool();
-                signLangAvailable = params["accessibility"]["signLanguage"]["available"].asBool();
+                if (!checkVariableIsMemberAndIsJson(connection->Id(), "STR", params, "accessibility", -32602, "Invalid params")) return;
+                if (!checkVariableIsMemberAndIsJson(connection->Id(), "STR", params["accessibility"], "subtitles", -32602, "Invalid params")) return;
+                Json::Value subtitles = params["accessibility"]["subtitles"];
+                if (!checkVariableIsMemberAndIsJson(connection->Id(), "STR", params["accessibility"], "audioDescription", -32602, "Invalid params")) return;
+                Json::Value audioDescription = params["accessibility"]["audioDescription"];
+                if (!checkVariableIsMemberAndIsJson(connection->Id(), "STR", params["accessibility"], "signLanguage", -32602, "Invalid params")) return;
+                Json::Value signLanguage = params["accessibility"]["signLanguage"];
+                if (!checkVariableIsMemberAndType(connection->Id(), "STR", subtitles, "enabled", Json::booleanValue, -32602, "Invalid params")) return;
+                subtitlesEnabled = subtitles["enabled"].asBool();
+                if (!checkVariableIsMemberAndType(connection->Id(), "STR", subtitles, "available", Json::booleanValue, -32602, "Invalid params")) return;
+                subtitlesAvailable = subtitles["available"].asBool();
+                if (!checkVariableIsMemberAndType(connection->Id(), "STR", audioDescription, "enabled", Json::booleanValue, -32602, "Invalid params")) return;
+                audioDescripEnabled = audioDescription["enabled"].asBool();
+                if (!checkVariableIsMemberAndType(connection->Id(), "STR", audioDescription, "available", Json::booleanValue, -32602, "Invalid params")) return;
+                audioDescripAvailable = audioDescription["available"].asBool();
+                if (!checkVariableIsMemberAndType(connection->Id(), "STR", signLanguage, "enabled", Json::booleanValue, -32602, "Invalid params")) return;
+                signLangEnabled = signLanguage["enabled"].asBool();
+                if (!checkVariableIsMemberAndType(connection->Id(), "STR", signLanguage, "available", Json::booleanValue, -32602, "Invalid params")) return;
+                signLangAvailable = signLanguage["available"].asBool();
             }
             m_sessionCallback->NotifyStateMedia(connection->Id(),
-                                                state, kind, type, currentTime,
+                                                state, kind, type, currentTimeStr,
                                                 rangeStart, rangeEnd,
                                                 actPause, actPlay, actFastForward,
                                                 actFastReverse, actStop, actSeekContent,
@@ -484,77 +456,66 @@ JsonRpcService::JsonRpcService(
                                                 subtitlesEnabled, subtitlesAvailable,
                                                 audioDescripEnabled, audioDescripAvailable,
                                                 signLangEnabled, signLangAvailable);
-
         }
-        else if (method == "org.hbbtv.negotiateMethods"){
-            //CASE N negotiateMethods
+        else if (method == MD_NEGOTIATE_METHODS){
+            if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
+            std::string id = AddIDIdentify(obj["id"]);
             std::string terminalToApp = NullStrValue;
-
-            if (!params.isMember("terminalToApp")){
-                LOG(LOG_INFO, "Cannot find terminalToApp");
-            }
-            else{
-                terminalToApp = params["terminalToApp"].asString();
-            }
+            if (!checkVariableIsMemberAndType(connection->Id(), id, params, "terminalToApp", Json::arrayValue, -32602, "Invalid params")) return;
+            terminalToApp = params["terminalToApp"].toStyledString();
             std::string appToTerminal = NullStrValue;
-            if (!params.isMember("appToTerminal")){
-                LOG(LOG_INFO, "Cannot find appToTerminal");
-            }
-            else{
-                appToTerminal = params["appToTerminal"].asString();
-            }
+            if (!checkVariableIsMemberAndType(connection->Id(), id, params, "appToTerminal", Json::arrayValue, -32602, "Invalid params")) return;
+            appToTerminal = params["appToTerminal"].toStyledString();
 
-            // Remove square brackets
-            appToTerminal.erase(appToTerminal.begin(), appToTerminal.begin() + 1);
-            appToTerminal.erase(appToTerminal.end() - 1, appToTerminal.end());
 
             // Remove newline characters
             size_t pos;
             while ((pos = appToTerminal.find('\n')) != std::string::npos) {
-                appToTerminal.erase(pos, 1);
+                appToTerminal.erase(pos, 2);
             }
-
-            // Remove square brackets
-            terminalToApp.erase(terminalToApp.begin(), terminalToApp.begin() + 1);
-            terminalToApp.erase(terminalToApp.end() - 1, terminalToApp.end());
-
             // Remove newline characters
             while ((pos = terminalToApp.find('\n')) != std::string::npos) {
-                terminalToApp.erase(pos, 1);
+                terminalToApp.erase(pos, 2);
             }
+            LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: %s \n %s", terminalToApp.c_str(), appToTerminal.c_str());
+
+            // Remove square brackets
+            appToTerminal.erase(appToTerminal.begin(), appToTerminal.begin() + 1);
+            // Remove square brackets
+            terminalToApp.erase(terminalToApp.begin(), terminalToApp.begin() + 1);
 
             LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
 
-            std::string id = obj["id"].asString();
-
-            if (obj["id"].type()==Json::stringValue){
-                id = "STR" + id;
-            }
-            else{
-                id = "NUM" + id;
-            }
             m_sessionCallback->RequestNegotiateMethods(connection->Id(), id, terminalToApp, appToTerminal);
         }
-        else if (method == "org.hbbtv.af.triggerResponseToUserAction"){
-            //CASE F 2
-
-            if (!params.isMember("magnitude")){
-                LOG(LOG_INFO, "Cannot find magnitude");
-            }
+        else if (method == MD_AF_TRIGGER_RESPONSE_TO_USER_ACTION){
+            if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
+            std::string id = AddIDIdentify(obj["id"]);
+            if (!checkVariableIsMemberAndType(connection->Id(), id, params, "magnitude", Json::stringValue, -32602, "Invalid params")) return;
             std::string magnitude = params["magnitude"].asString();
-
             LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
-
-            std::string id = obj["id"].asString();
-
-            if (obj["id"].type()==Json::stringValue){
-                id = "STR" + id;
-            }
-            else{
-                id = "NUM" + id;
-            }
             m_sessionCallback->RequestTriggerResponseToUserAction(connection->Id(), id, magnitude);
         }
+        else{
+            LOG(LOG_INFO, "Error, The terminal cannot recognize the method name.");
+            if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
+            std::string id = AddIDIdentify(obj["id"]);
+            RespondError(connection->Id(), id, -32601, "Method not found");
+            return;
+        }
+    }
+
+    std::string JsonRpcService::AddIDIdentify(Json::Value id)
+    {
+        std::string newID;
+        LOG(LOG_INFO, "ADDED ID : %u", id.type());
+        if (id.type()==Json::stringValue){
+            newID = "STR" + id.asString();
+        }
+        else if (id.type()==Json::intValue or id.type()==Json::uintValue){
+            newID = "NUM" + id.asString();
+        }
+        return newID;
     }
 
     void JsonRpcService::OnDisconnected(WebSocketConnection *connection)
@@ -652,8 +613,8 @@ JsonRpcService::JsonRpcService(
     void JsonRpcService::RespondMessageTo(
             int connectionId,
             const std::string responseName,
-            const std::string out_string){
-
+            const std::string out_string
+    ){
         connections_mutex_.lock();
         WebSocketConnection *connection = GetConnection(connectionId);
         if (connection != nullptr)
@@ -911,8 +872,6 @@ JsonRpcService::JsonRpcService(
             msgTypeList.append(PC_AUDIO_DESCRIPTION);
         if (inVisionSigning)
             msgTypeList.append(PC_IN_VISION_SIGNING);
-
-        result["msgType"] = msgTypeList;
 
         std::string out_string = writeJson(id, result);
         RespondMessageTo(connectionId, __func__, out_string);
@@ -1293,6 +1252,7 @@ JsonRpcService::JsonRpcService(
         std::string out_string = writeJsonForNotify(params);
         RespondMessageTo(connectionId, __func__, out_string);
     }
+
     void JsonRpcService::NotifyResponseToUserAction(
             int connectionId,
             bool enabled,

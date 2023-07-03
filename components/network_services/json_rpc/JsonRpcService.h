@@ -250,6 +250,8 @@ public:
 
         void
         RespondTriggerResponseToUserAction(int connectionId, const std::string &id, bool actioned);
+
+
     private:
         std::string m_endpoint;
         std::unique_ptr<SessionCallback> m_sessionCallback;
@@ -299,6 +301,23 @@ public:
         const std::string MD_INTENT_MEDIA_SEARCH = "org.hbbtv.app.intent.media.search";
         const std::string MD_INTENT_MEDIA_DISPLAY = "org.hbbtv.app.intent.media.display";
         const std::string MD_INTENT_MEDIA_PLAYBACK = "org.hbbtv.app.intent.media.playback";
+
+        std::string AddIDIdentify(
+                Json::Value id);
+
+        bool checkIDIsMemberAndType(
+                int connectionID, Json::Value json, std::string variable, int errorCode,
+                const std::string &errorMessage);
+
+        bool checkVariableIsMemberAndType(
+                int connectionID, std::string id, Json::Value json,
+                std::string variable, Json::ValueType type, int errorCode,
+                const std::string &errorMessage);
+
+        bool checkVariableIsMemberAndIsJson(
+                int connectionID, std::string id, Json::Value json,
+                std::string variable, int errorCode,
+                const std::string &errorMessage);
 
         void addOptionalProp(
                 Json::Value& json,
