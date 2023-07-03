@@ -43,8 +43,49 @@ function init() {
    }
    
    const ws = new WebSocket(url);
+const data = {
+"jsonrpc": "2.0",
+"method": "org.hbbtv.app.state.media",
+"params": {
+"state": "playing",
+"kind": "audio",
+"type": "on-demand",
+"currentTime": 342.6,
+"range": {
+"start": 0,
+"end": 356.12
+},
+"availableActions": {
+"seek-content": true,
+"seek-relative": true,
+"seek-live": false,
+"seek-wallclock": false,
+"pause": true,
+"play": true,
+"stop": true,
+"fast-forward": true,
+"fast-reverse": true
+},
+"metadata": {
+ 
+"title": "The Sketch Show"
+ 
+ 
+},
+"accessibility": {
+"subtitles": { "enabled": false, "available": true },
+
+"audioDescription": { "enabled": false, "available": false },
+
+"signLanguage": { "enabled": false, "available": false }
+}
+}
+};
+
+const jsonString = JSON.stringify(data);
+   
    ws.onopen = function(e) {
-      ws.send('request=dialogueEnhancementOverride');
+      ws.send(jsonString);
    };
    
    ws.onmessage = function(e) {
