@@ -254,14 +254,61 @@ public:
         std::string m_endpoint;
         std::unique_ptr<SessionCallback> m_sessionCallback;
 
+        const std::string F_SUBTITLES = "subtitles";
+        const std::string F_DIALOGUE_ENHANCEMENT = "dialogueEnhancement";
+        const std::string F_UI_MAGNIFIER = "uiMagnifier";
+        const std::string F_HIGH_CONTRAST_UI = "highContrastUI";
+        const std::string F_SCREEN_READER = "screenReader";
+        const std::string F_RESPONSE_TO_USER_ACTION = "responseToUserAction";
+        const std::string F_AUDIO_DESCRIPTION = "audioDescription";
+        const std::string F_IN_VISION_SIGNING = "inVisionSigning";
+
+        const std::string PC_SUBTITLES = "subtitlesPrefChange";
+        const std::string PC_DIALOGUE_ENHANCEMENT = "dialogueEnhancementPrefChange";
+        const std::string PC_UI_MAGNIFIER = "uiMagnifierPrefChange";
+        const std::string PC_HIGH_CONTRAST_UI = "highContrastUIPrefChange";
+        const std::string PC_SCREEN_READER = "screenReaderPrefChange";
+        const std::string PC_RESPONSE_TO_USER_ACTION = "responseToUserActionPrefChange";
+        const std::string PC_AUDIO_DESCRIPTION = "audioDescriptionPrefChange";
+        const std::string PC_IN_VISION_SIGNING = "inVisionSigningPrefChange";
+
+        const std::string MD_NEGOTIATE_METHODS = "org.hbbtv.negotiateMethods";
+        const std::string MD_SUBSCRIBE = "org.hbbtv.subscribe";
+        const std::string MD_UNSUBSCRIBE = "org.hbbtv.unsubscribe";
+        const std::string MD_NOTIFY = "org.hbbtv.notify";
+
+        const std::string MD_AF_FEATURE_SUPPORT_INFO = "org.hbbtv.af.featureSupportInfo";
+        const std::string MD_AF_FEATURE_SETTINGS_QUERY = "org.hbbtv.af.featureSettingsQuery";
+        const std::string MD_AF_FEATURE_SUPPRESS = "org.hbbtv.af.featureSuppress";
+
+        const std::string MD_AF_DIALOGUE_ENHANCEMENT_OVERRIDE = "org.hbbtv.af.dialogueEnhancementOverride";
+        const std::string MD_AF_TRIGGER_RESPONSE_TO_USER_ACTION = "org.hbbtv.af.triggerResponseToUserAction";
+
+        const std::string MD_VOICE_READY = "org.hbbtv.app.voice.ready";
+        const std::string MD_STATE_MEDIA = "org.hbbtv.app.state.media";
+
         const std::string MD_INTENT_MEDIA_PAUSE = "org.hbbtv.app.intent.media.pause";
-//        const std::string MD_INTENT_MEDIA_ = "org.hbbtv.app.intent.media.";
-//        const std::string MD_INTENT_MEDIA_ = "org.hbbtv.app.intent.media.";
-//        const std::string MD_INTENT_MEDIA_ = "org.hbbtv.app.intent.media.";
-//        const std::string MD_INTENT_MEDIA_ = "org.hbbtv.app.intent.media.";
-//        const std::string MD_INTENT_MEDIA_ = "org.hbbtv.app.intent.media.";
-//        const std::string MD_INTENT_MEDIA_ = "org.hbbtv.app.intent.media.";
-//        const std::string MD_INTENT_MEDIA_ = "org.hbbtv.app.intent.media.";
+        const std::string MD_INTENT_MEDIA_PLAY = "org.hbbtv.app.intent.media.play";
+        const std::string MD_INTENT_MEDIA_FAST_FORWARD = "org.hbbtv.app.intent.media.fast-forward";
+        const std::string MD_INTENT_MEDIA_FAST_REVERSE = "org.hbbtv.app.intent.media.fast-reverse";
+        const std::string MD_INTENT_MEDIA_STOP = "org.hbbtv.app.intent.media.stop";
+        const std::string MD_INTENT_MEDIA_SEEK_CONTENT = "org.hbbtv.app.intent.media.seek-content";
+        const std::string MD_INTENT_MEDIA_SEEK_RELATIVE = "org.hbbtv.app.intent.media.seek-relative";
+        const std::string MD_INTENT_MEDIA_SEEK_LIVE = "org.hbbtv.app.intent.media.seek-live";
+        const std::string MD_INTENT_MEDIA_SEEK_WALLCLOCK = "org.hbbtv.app.intent.media.seek-wallclock";
+        const std::string MD_INTENT_MEDIA_SEARCH = "org.hbbtv.app.intent.media.search";
+        const std::string MD_INTENT_MEDIA_DISPLAY = "org.hbbtv.app.intent.media.display";
+        const std::string MD_INTENT_MEDIA_PLAYBACK = "org.hbbtv.app.intent.media.playback";
+
+        void addOptionalProp(
+                Json::Value& json,
+                const std::string key,
+                const int value);
+
+        void addOptionalProp(
+                Json::Value& json,
+                const std::string key,
+                const std::string value);
 
         void addMethodsToJsonArray(
                 Json::Value& jsonArray,
@@ -292,6 +339,11 @@ public:
                 WebSocketConnection *connection,
                 std::string responseName,
                 std::string out_string);
+
+        void RespondMessageTo(
+                int connectionId,
+                const std::string responseName,
+                const std::string out_string);
 };
 } // namespace NetworkServices
 

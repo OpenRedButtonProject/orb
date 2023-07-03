@@ -1439,7 +1439,6 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         // TODO These are mock values
 
         String value = "tvosOnly";
-        Log.d(TAG, "onRequestFeatureSupportInfo" + connection + "|" + id + "|" + feature);
         mSession.onRespondFeatureSupportInfo(connection, id, feature, value);
     }
 
@@ -1569,7 +1568,9 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void onReceiveIntentConfirm(int connection, String id, String method) {
-        Log.d(TAG, "\"onReceiveIntentConfirm\" is received by MockOrbSessionCallback...");
+        Log.d(TAG, "\"onReceiveIntentConfirm\" is received by MockOrbSessionCallback{" +
+                "\n\"method\":\"" + method + "\"" +
+                "\n\"}");
     }
 
     /**
@@ -1580,7 +1581,9 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void onNotifyVoiceReady(int connection, boolean isReady) {
-        Log.d(TAG, "\"onNotifyVoiceReady\" is received by MockOrbSessionCallback...");
+        Log.d(TAG, "\"onNotifyVoiceReady\" is received by MockOrbSessionCallback{" +
+                "\n\"ready\":" + isReady +
+                "\n\"}");
     }
 
     /**
@@ -1603,7 +1606,19 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                                    String state,
                                    boolean actPause, boolean actPlay, boolean actFastForward, boolean actFastReverse,
                                    boolean actStop, boolean actSeekContent, boolean actSeekRelative, boolean actSeekLive, boolean actWallclock) {
-        Log.d(TAG, "\"onNotifyStateMedia\" is received by MockOrbSessionCallback...");
+
+        Log.d(TAG, "\"onNotifyStateMedia\" is received by MockOrbSessionCallback{" +
+                "\n\"state\":\"" + state + "\"," +
+                "\n\"actPause\":" + actPause + "," +
+                "\n\"actPlay\":" + actPlay + "," +
+                "\n\"actFastForward\":" + actFastForward + "," +
+                "\n\"actFastReverse\":" + actFastReverse + "," +
+                "\n\"actStop\":" + actStop + "," +
+                "\n\"actSeekContent\":" + actSeekContent + "," +
+                "\n\"actSeekRelative\":" + actSeekRelative + "," +
+                "\n\"actSeekLive\":" + actSeekLive + "," +
+                "\n\"actWallclock\":" + actWallclock +
+                "\n\"}");
     }
 
     /**
@@ -1689,9 +1704,9 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
 
         // TEST for response.Error
         Log.d(TAG, "\"onReceiveError\" is received by MockOrbSessionCallback{" +
-                "\n\"id\":" + id +", " +
+                "\n\"id\":\"" + id + "\", " +
                 "\n\"code\":" + code + ", " +
-                "\n\"message\":\"" + message +
+                "\n\"message\":\"" + message + "\"" +
                 "\n\"}");
 
         mSession.onRespondError(connection, id, code, message);
@@ -1713,11 +1728,11 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
 
         // TEST for response.Error
         Log.d(TAG, "\"onReceiveError\" is received by MockOrbSessionCallback{" +
-                                            "\n\"id\":" + id +", " +
+                                            "\n\"id\":" + id +"\"," +
                                             "\n\"code\":" + code + ", " +
                                             "\n\"message\":\"" + message + "\", " +
                                             "\n\"method\":\"" + method + "\", " +
-                                            "\n\"data\":\"" + data +
+                                            "\n\"data\":\"" + data + "\"" +
                                             "\n\"}");
     }
 
