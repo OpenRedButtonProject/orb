@@ -72,8 +72,6 @@ public:
         std::string terminalToApp,
         std::string appToTerminal) override
     {
-        __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-                            "JSON-RPC-EXAMPLE #3: RequestNegotiateMethods...");
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_id = env->NewStringUTF(id.c_str());
         jstring j_terminalToApp = env->NewStringUTF(terminalToApp.c_str());
@@ -95,8 +93,6 @@ public:
         bool screenReader, bool responseToUserAction,
         bool audioDescription, bool inVisionSigning) override
     {
-        __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-                            "JSON-RPC-EXAMPLE #3: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_id = env->NewStringUTF(id.c_str());
         env->CallVoidMethod(
@@ -116,8 +112,6 @@ public:
         bool screenReader, bool responseToUserAction,
         bool audioDescription, bool inVisionSigning) override
     {
-        __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-                            "JSON-RPC-EXAMPLE #3: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_id = env->NewStringUTF(id.c_str());
         env->CallVoidMethod(
@@ -134,8 +128,6 @@ public:
         std::string id,
         int dialogueEnhancementGain) override
     {
-        __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-            "JSON-RPC-EXAMPLE #3: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_id = env->NewStringUTF(id.c_str());
         env->CallVoidMethod(
@@ -150,8 +142,6 @@ public:
             std::string id,
             std::string magnitude) override
     {
-        __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-                            "JSON-RPC-EXAMPLE #3: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_id = env->NewStringUTF(id.c_str());
         jstring j_magnitude = env->NewStringUTF(magnitude.c_str());
@@ -168,8 +158,6 @@ public:
         std::string id,
         int feature) override
     {
-        __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-                            "JSON-RPC-EXAMPLE #3a: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_id = env->NewStringUTF(id.c_str());
         env->CallVoidMethod(
@@ -184,8 +172,6 @@ public:
         std::string id,
         int feature) override
     {
-        __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-                            "JSON-RPC-EXAMPLE #3a: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_id = env->NewStringUTF(id.c_str());
         env->CallVoidMethod(
@@ -200,8 +186,6 @@ public:
         std::string id,
         int feature) override
     {
-        __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-                            "JSON-RPC-EXAMPLE #3a: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_id = env->NewStringUTF(id.c_str());
         env->CallVoidMethod(
@@ -216,8 +200,6 @@ public:
             std::string id,
             std::string method) override
     {
-        __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-                            "JSON-RPC-EXAMPLE #3a: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_id = env->NewStringUTF(id.c_str());
         jstring j_method = env->NewStringUTF(method.c_str());
@@ -232,8 +214,6 @@ public:
         int connection,
         bool isReady) override
     {
-        __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-                            "JSON-RPC-EXAMPLE #3a: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
         env->CallVoidMethod(
                 mCallbackObject,
@@ -247,8 +227,6 @@ public:
         bool actPause, bool actPlay, bool actFastForward, bool actFastReverse, bool actStop,
         bool actSeekContent, bool actSeekRelative, bool actSeekLive, bool actWallclock)
     {
-        __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-                            "JSON-RPC-EXAMPLE #3a: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_state = env->NewStringUTF(state.c_str());
         env->CallVoidMethod(
@@ -272,8 +250,6 @@ public:
         bool audioDescripEnabled, bool audioDescripAvailable,
         bool signLangEnabled, bool signLangAvailable)
     {
-        __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-                            "JSON-RPC-EXAMPLE #3a: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_state = env->NewStringUTF(state.c_str());
         jstring j_kind = env->NewStringUTF(kind.c_str());
@@ -315,8 +291,6 @@ public:
         int code,
         std::string message) override
     {
-        __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-                            "JSON-RPC-EXAMPLE #3a: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_id = env->NewStringUTF(id.c_str());
         jstring j_message = env->NewStringUTF(message.c_str());
@@ -336,8 +310,6 @@ public:
             std::string method,
             std::string data) override
     {
-        __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-                            "JSON-RPC-EXAMPLE #3a: Android native called with request. Call Java...");
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_id = env->NewStringUTF(id.c_str());
         jstring j_message = env->NewStringUTF(message.c_str());
@@ -432,8 +404,6 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondNegotiateMethods(
     jstring terminalToApp,
     jstring appToTerminal)
 {
-    __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-                        "JSON-RPC-EXAMPLE #8: Android native called with response. Call service...");
     std::string idStr = JniUtils::MakeStdString(env, id);
     std::string terminalToAppStr = JniUtils::MakeStdString(env, terminalToApp);
     std::string appToTerminalStr = JniUtils::MakeStdString(env, appToTerminal);
@@ -458,8 +428,6 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondSubscribe(
     jboolean audioDescription,
     jboolean inVisionSigning)
 {
-    __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-                        "JSON-RPC-EXAMPLE #8: Android native called with response. Call service...");
     std::string idStr = JniUtils::MakeStdString(env, id);
 
     if (isSubscribe) {
@@ -483,8 +451,6 @@ JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondDialogue
     jstring id,
     jint dialogueEnhancementGain)
 {
-    __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-        "JSON-RPC-EXAMPLE #8: Android native called with response. Call service...");
     std::string idStr = JniUtils::MakeStdString(env, id);
     GetService(env, object)->RespondDialogueEnhancementOverride(
         connection, idStr, dialogueEnhancementGain);
@@ -498,8 +464,6 @@ JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondTriggerR
         jstring id,
         jboolean actioned)
 {
-    __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-                        "JSON-RPC-EXAMPLE #8: Android native called with response. Call service...");
     std::string idStr = JniUtils::MakeStdString(env, id);
     GetService(env, object)->RespondTriggerResponseToUserAction(
             connection, idStr, actioned);
@@ -515,8 +479,6 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondFeatureSupportInfo(
     jint feature,
     jstring value)
 {
-    __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-                        "JSON-RPC-EXAMPLE #8a: Android native called with response. Call service...");
     std::string idStr = JniUtils::MakeStdString(env, id);
     std::string valueStr = JniUtils::MakeStdString(env, value);
     GetService(env, object)->RespondFeatureSupportInfo(
@@ -533,8 +495,6 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondFeatureSuppress(
     jint feature,
     jstring value)
 {
-    __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-                        "JSON-RPC-EXAMPLE #8a: Android native called with response. Call service...");
     std::string idStr = JniUtils::MakeStdString(env, id);
     std::string valueStr = JniUtils::MakeStdString(env, value);
     GetService(env, object)->RespondFeatureSuppress(
@@ -551,8 +511,6 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondError(
     jint code,
     jstring message)
 {
-    __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-                        "JSON-RPC-EXAMPLE #8a: Android native called with response. Call service...");
     std::string idStr = JniUtils::MakeStdString(env, id);
     std::string messageStr = JniUtils::MakeStdString(env, message);
     GetService(env, object)->RespondError(
@@ -570,8 +528,6 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondErrorWithData(
     jstring message,
     jstring data)
 {
-    __android_log_print(ANDROID_LOG_INFO, "JsonRpcCallback",
-                        "JSON-RPC-EXAMPLE #8a: Android native called with response. Call service...");
     std::string idStr = JniUtils::MakeStdString(env, id);
     std::string messageStr = JniUtils::MakeStdString(env, message);
     std::string dataStr = JniUtils::MakeStdString(env, data);

@@ -344,7 +344,7 @@ public class JsonRpc {
             int connection,
             String id,
             String method) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #4a: onRequestFeatureSuppress...");
+        Log.d(TAG, "JSON-RPC-EXAMPLE #4a: onReceiveIntentConfirm...");
         mOrbSessionCallback.onReceiveIntentConfirm(connection, id, method);
     }
 
