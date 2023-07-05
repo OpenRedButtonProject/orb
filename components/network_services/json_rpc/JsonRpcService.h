@@ -298,11 +298,11 @@ public:
         const std::string MD_INTENT_MEDIA_SEEK_RELATIVE = "org.hbbtv.app.intent.media.seek-relative";
         const std::string MD_INTENT_MEDIA_SEEK_LIVE = "org.hbbtv.app.intent.media.seek-live";
         const std::string MD_INTENT_MEDIA_SEEK_WALLCLOCK = "org.hbbtv.app.intent.media.seek-wallclock";
-        const std::string MD_INTENT_MEDIA_SEARCH = "org.hbbtv.app.intent.media.search";
-        const std::string MD_INTENT_MEDIA_DISPLAY = "org.hbbtv.app.intent.media.display";
-        const std::string MD_INTENT_MEDIA_PLAYBACK = "org.hbbtv.app.intent.media.playback";
+        const std::string MD_INTENT_SEARCH = "org.hbbtv.app.intent.search";
+        const std::string MD_INTENT_DISPLAY = "org.hbbtv.app.intent.display";
+        const std::string MD_INTENT_PLAYBACK = "org.hbbtv.app.intent.playback";
 
-        std::string AddIDIdentify(
+        std::string AddIdentify(
                 Json::Value id);
 
         bool checkIDIsMemberAndType(
@@ -313,7 +313,10 @@ public:
                 int connectionID, std::string id, Json::Value json,
                 std::string variable, Json::ValueType type, int errorCode,
                 const std::string &errorMessage);
-
+        bool checkTimeVariableIsMemberAndType(
+            int connectionID, std::string id, Json::Value json,
+            std::string variable, int errorCode,
+            const std::string &errorMessage);
         bool checkVariableIsMemberAndIsJson(
                 int connectionID, std::string id, Json::Value json,
                 std::string variable, int errorCode,
