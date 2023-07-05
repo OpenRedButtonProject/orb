@@ -13,7 +13,6 @@
 
 #include <iostream>
 #include <sstream>
-#include <list>
 
 namespace NetworkServices {
 
@@ -43,6 +42,26 @@ namespace NetworkServices {
         if (!json.isMember(variable)){
             LOG(LOG_INFO, "Error, missing parameter %s.", variable.c_str());
             const std::string& id = "STR";
+            RespondError(connectionID, id, errorCode, errorMessage);
+            return false;
+        }
+        if (json[variable].type() != Json::stringValue
+              and json[variable].type() != Json::intValue
+              and json[variable].type() != Json::uintValue){
+            LOG(LOG_INFO, "Error, %s has wrong type.", variable.c_str());
+            const std::string& id = "STR";
+            RespondError(connectionID, id, errorCode, errorMessage);
+            return false;
+        }
+        return true;
+    }
+    bool JsonRpcService::checkTimeVariableIsMemberAndType(int connectionID, std::string id, Json::Value json, std::string variable, int errorCode, const std::string& errorMessage){
+        if (!json.isMember(variable)){
+            if (json[variable].type()!=Json::intValue
+                and json[variable].type()!=Json::uintValue
+                and json[variable].type()!=Json::realValue
+                and json[variable].type()!=Json::stringValue)
+            LOG(LOG_INFO, "Error, missing parameter ' %s ', or wrong type.", variable.c_str());
             RespondError(connectionID, id, errorCode, errorMessage);
             return false;
         }
@@ -82,14 +101,14 @@ namespace NetworkServices {
         if (!obj.isMember("jsonrpc") or obj["jsonrpc"]!="2.0"){
             LOG(LOG_INFO, "Error, json rpc version not 2.0");
             if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32600, "Invalid request")) return;
-            std::string id = AddIDIdentify(obj["id"]);
+            std::string id = AddIdentify(obj["id"]);
             RespondError(connection->Id(), id, -32600, "Invalid request");
             return;
         }
         if (obj.isMember("result")){
             Json::Value result = obj["result"];
             if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
-            std::string id = AddIDIdentify(obj["id"]);
+            std::string id = AddIdentify(obj["id"]);
 
             if (!checkVariableIsMemberAndType(connection->Id(), id, result, "method", Json::stringValue, -32602, "Invalid params")) return;
             std::string method = result["method"].asString();
@@ -100,11 +119,12 @@ namespace NetworkServices {
                 or	method == MD_INTENT_MEDIA_FAST_REVERSE
                 or	method == MD_INTENT_MEDIA_STOP
                 or	method == MD_INTENT_MEDIA_SEEK_CONTENT
+                or  method == MD_INTENT_MEDIA_SEEK_LIVE
                 or	method == MD_INTENT_MEDIA_SEEK_RELATIVE
                 or	method == MD_INTENT_MEDIA_SEEK_WALLCLOCK
-                or	method == MD_INTENT_MEDIA_SEARCH
-                or	method == MD_INTENT_MEDIA_DISPLAY
-                or	method == MD_INTENT_MEDIA_PLAYBACK
+                or	method == MD_INTENT_SEARCH
+                or	method == MD_INTENT_DISPLAY
+                or	method == MD_INTENT_PLAYBACK
             ){
                 m_sessionCallback->ReceiveIntentConfirm(connection->Id(), id, method);
                 return;
@@ -114,15 +134,15 @@ namespace NetworkServices {
         if (obj.isMember("error")) {
             Json::Value error = obj["error"];
             if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
-            std::string id = AddIDIdentify(obj["id"]);
+            std::string id = AddIdentify(obj["id"]);
             if (!checkVariableIsMemberAndType(connection->Id(), id, error, "code", Json::intValue, -32602, "Invalid params")) return;
             int code = error["code"].asInt();
             std::string message = NullStrValue;
-            if (!error.isMember("message") or error["message"].type()!=Json::stringValue)
+            if (error.isMember("message") or error["message"].type()==Json::stringValue)
                 message = error["message"].asString();
 
             std::string data = NullStrValue;
-            if (!error.isMember("data") or error["data"].type()!=Json::stringValue)
+            if (error.isMember("data") or error["data"].type()==Json::stringValue)
                 message = error["data"].asString();
 
             m_sessionCallback->ReceiveError(connection->Id(), id, code, message);
@@ -131,7 +151,7 @@ namespace NetworkServices {
         if (!obj.isMember("method") or obj["method"].type()!=Json::stringValue){
             LOG(LOG_INFO, "Cannot find method");
             if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32600, "Invalid request")) return;
-            std::string id = AddIDIdentify(obj["id"]);
+            std::string id = AddIdentify(obj["id"]);
             RespondError(connection->Id(), id, -32600, "Invalid request");
             return;
         }
@@ -141,7 +161,7 @@ namespace NetworkServices {
 
         if (method == MD_AF_DIALOGUE_ENHANCEMENT_OVERRIDE){
             if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
-            std::string id = AddIDIdentify(obj["id"]);
+            std::string id = AddIdentify(obj["id"]);
             int dialogueEnhancementGain = NullIntValue;
             if (obj.isMember("params")){
                 Json::Value params = obj["params"];
@@ -153,11 +173,12 @@ namespace NetworkServices {
             LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
             m_sessionCallback->RequestDialogueEnhancementOverride(connection->Id(), id,
                                                                   dialogueEnhancementGain);
+            return;
         }
         if (!obj.isMember("params")){
             LOG(LOG_INFO, "Error, missing parameter 'params'.");
             if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
-            std::string id = AddIDIdentify(obj["id"]);
+            std::string id = AddIdentify(obj["id"]);
             //call return -32602 Error
             RespondError(connection->Id(), id, -32602, "Invalid params");
             return;
@@ -177,7 +198,7 @@ namespace NetworkServices {
 
         if (method == MD_AF_FEATURE_SUPPORT_INFO){
             if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
-            std::string id = AddIDIdentify(obj["id"]);
+            std::string id = AddIdentify(obj["id"]);
             if (!checkVariableIsMemberAndType(connection->Id(), id, params, "feature", Json::stringValue, -32602, "Invalid params")) return;
             std::string feature = params["feature"].asString();
             if (mapOfFeatures.find(feature)==mapOfFeatures.end()){
@@ -192,7 +213,7 @@ namespace NetworkServices {
         }
         else if (method == MD_AF_FEATURE_SETTINGS_QUERY){
             if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
-            std::string id = AddIDIdentify(obj["id"]);
+            std::string id = AddIdentify(obj["id"]);
             if (!checkVariableIsMemberAndType(connection->Id(), id, params, "feature", Json::stringValue, -32602, "Invalid params")) return;
             std::string feature = params["feature"].asString();
             if (mapOfFeatures.find(feature)==mapOfFeatures.end()){
@@ -207,7 +228,7 @@ namespace NetworkServices {
         }
         else if (method == MD_AF_FEATURE_SUPPRESS){
             if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
-            std::string id = AddIDIdentify(obj["id"]);
+            std::string id = AddIdentify(obj["id"]);
             if (!checkVariableIsMemberAndType(connection->Id(), id, params, "feature", Json::stringValue, -32602, "Invalid params")) return;
             std::string feature = params["feature"].asString();
             if (mapOfFeatures.find(feature)==mapOfFeatures.end()){
@@ -222,7 +243,7 @@ namespace NetworkServices {
         }
         else if (method == MD_SUBSCRIBE){
             if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
-            std::string id = AddIDIdentify(obj["id"]);
+            std::string id = AddIdentify(obj["id"]);
 
             if (!checkVariableIsMemberAndType(connection->Id(), id, params, "msgType", Json::arrayValue, -32602, "Invalid params")) return;
             Json::Value msgType = params["msgType"];
@@ -233,6 +254,7 @@ namespace NetworkServices {
                 std::string s = msg.asString().substr(0,length - 10);  //remove the PrefChange
                 if (mapOfFeatures.find(s)!=mapOfFeatures.end()){
                     msgTypeBoolList[mapOfFeatures[s]]=true;
+                    LOG(LOG_INFO, "One added");
                 }
                 else{
                     LOG(LOG_INFO, "Error, One of msgType parameter is not recognized.");
@@ -249,9 +271,9 @@ namespace NetworkServices {
         }
         else if (method == MD_UNSUBSCRIBE){
             if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
-            std::string id = AddIDIdentify(obj["id"]);
+            std::string id = AddIdentify(obj["id"]);
 
-            if (!checkVariableIsMemberAndType(connection->Id(), id, params, "msgType", Json::stringValue, -32602, "Invalid params")) return;
+            if (!checkVariableIsMemberAndType(connection->Id(), id, params, "msgType", Json::arrayValue, -32602, "Invalid params")) return;
             Json::Value msgType = params["msgType"];
 
             bool msgTypeBoolList[8]={false};
@@ -320,16 +342,9 @@ namespace NetworkServices {
             }
 
             std::string currentTimeStr = NullStrValue;
-            int currentTimeInt = NullIntValue;
             if (state=="buffering" or state=="paused" or state=="playing"){
-                if (!checkVariableIsMemberAndType(connection->Id(), "STR", params, "currentTime", Json::stringValue, -32602, "Invalid params")) return;
-                //CHANGE HERE!! current time can be string or int !!!
-                if (params["currentTime"].type()==Json::stringValue){
-                    currentTimeStr = params["currentTime"].asString();
-                }
-                else if (params["currentTime"].type()==Json::intValue){
-                    currentTimeInt = params["currentTime"].asInt();
-                }
+                if (!checkTimeVariableIsMemberAndType(connection->Id(), "STR", params, "currentTime", -32602, "Invalid params")) return;
+                currentTimeStr = AddIdentify(params["currentTime"]);
             }
 
 
@@ -337,10 +352,10 @@ namespace NetworkServices {
             std::string rangeEnd = NullStrValue;
             if (state=="buffering" or state=="paused" or state=="playing"){
                 if (!checkVariableIsMemberAndIsJson(connection->Id(), "STR", params, "range", -32602, "Invalid params")) return;
-                if (!checkVariableIsMemberAndType(connection->Id(), "STR", params["range"], "start", Json::stringValue, -32602, "Invalid params")) return;
-                if (!checkVariableIsMemberAndType(connection->Id(), "STR", params["range"], "end", Json::stringValue, -32602, "Invalid params")) return;
-                rangeStart = params["range"]["start"].asString();
-                rangeEnd = params["range"]["end"].asString();
+                if (!checkTimeVariableIsMemberAndType(connection->Id(), "STR", params["range"], "start", -32602, "Invalid params")) return;
+                if (!checkTimeVariableIsMemberAndType(connection->Id(), "STR", params["range"], "end", -32602, "Invalid params")) return;
+                rangeStart = AddIdentify(params["range"]["start"]);
+                rangeEnd = AddIdentify(params["range"]["end"]);
             }
 
             bool actPause = false;
@@ -459,7 +474,7 @@ namespace NetworkServices {
         }
         else if (method == MD_NEGOTIATE_METHODS){
             if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
-            std::string id = AddIDIdentify(obj["id"]);
+            std::string id = AddIdentify(obj["id"]);
             std::string terminalToApp = NullStrValue;
             if (!checkVariableIsMemberAndType(connection->Id(), id, params, "terminalToApp", Json::arrayValue, -32602, "Invalid params")) return;
             terminalToApp = params["terminalToApp"].toStyledString();
@@ -490,7 +505,7 @@ namespace NetworkServices {
         }
         else if (method == MD_AF_TRIGGER_RESPONSE_TO_USER_ACTION){
             if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
-            std::string id = AddIDIdentify(obj["id"]);
+            std::string id = AddIdentify(obj["id"]);
             if (!checkVariableIsMemberAndType(connection->Id(), id, params, "magnitude", Json::stringValue, -32602, "Invalid params")) return;
             std::string magnitude = params["magnitude"].asString();
             LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
@@ -499,23 +514,28 @@ namespace NetworkServices {
         else{
             LOG(LOG_INFO, "Error, The terminal cannot recognize the method name.");
             if (!checkIDIsMemberAndType(connection->Id(), obj, "id", -32602, "Invalid params")) return;
-            std::string id = AddIDIdentify(obj["id"]);
+            std::string id = AddIdentify(obj["id"]);
             RespondError(connection->Id(), id, -32601, "Method not found");
             return;
         }
     }
 
-    std::string JsonRpcService::AddIDIdentify(Json::Value id)
+    std::string JsonRpcService::AddIdentify(Json::Value value)
     {
-        std::string newID;
-        LOG(LOG_INFO, "ADDED ID : %u", id.type());
-        if (id.type()==Json::stringValue){
-            newID = "STR" + id.asString();
+        std::string newValue;
+        if (value.type()==Json::stringValue){
+            newValue = "STR" + value.asString();
         }
-        else if (id.type()==Json::intValue or id.type()==Json::uintValue){
-            newID = "NUM" + id.asString();
+        else if (value.type() == Json::realValue){
+            std::ostringstream oss;
+            oss << std::noshowpoint << value.asDouble();
+            newValue = "NUM" + oss.str();
         }
-        return newID;
+        else if (value.type()==Json::intValue or value.type()==Json::uintValue ){
+            newValue = "NUM" + value.asString();
+        }
+        LOG(LOG_INFO,"new Value = %s", newValue.c_str());
+        return newValue;
     }
 
     void JsonRpcService::OnDisconnected(WebSocketConnection *connection)
@@ -562,7 +582,7 @@ namespace NetworkServices {
             jsonResponse["id"] =  std::stoll(id.substr(labelEnd, id.length()-labelEnd));
         }
         jsonResponse["params"] = params;
-
+        jsonResponse["method"] = method;
         Json::StyledWriter writer;
         return writer.write(jsonResponse);
     }
@@ -873,6 +893,7 @@ namespace NetworkServices {
         if (inVisionSigning)
             msgTypeList.append(PC_IN_VISION_SIGNING);
 
+        result["msgType"] = msgTypeList;
         std::string out_string = writeJson(id, result);
         RespondMessageTo(connectionId, __func__, out_string);
     }
@@ -913,16 +934,17 @@ namespace NetworkServices {
     void JsonRpcService::addMethodsToJsonArray(Json::Value& jsonArray, const std::string stringList
     ){
         // Parse the input string
+        LOG(LOG_INFO,"%s",stringList.c_str());
         size_t startPos = 0;
         size_t endPos = stringList.find(',');
         while (endPos != std::string::npos) {
-            std::string element = stringList.substr(startPos, endPos - startPos);
+            std::string element = stringList.substr(startPos + 1, endPos - startPos - 2);
             jsonArray.append(element);
-            startPos = endPos + 2;  // Move past the comma and space
+            startPos = endPos + 1;  // Move past the comma and space
             endPos = stringList.find(',', startPos);
         }
         // Append the last element
-        std::string lastElement = stringList.substr(startPos);
+        std::string lastElement = stringList.substr(startPos + 1, stringList.length() - startPos - 2);
         jsonArray.append(lastElement);
     }
 
@@ -1105,7 +1127,7 @@ namespace NetworkServices {
         params["origin"] = origin;
         params["query"] = query;
 
-        std::string out_string = writeJson(id, MD_INTENT_MEDIA_SEARCH, params);
+        std::string out_string = writeJson(id, MD_INTENT_SEARCH, params);
         RespondMessageTo(connectionId, __func__, out_string);
     }
 
@@ -1119,7 +1141,7 @@ namespace NetworkServices {
         params["origin"] = origin;
         params["mediaId"] = mediaId;
 
-        std::string out_string = writeJson(id, MD_INTENT_MEDIA_DISPLAY, params);
+        std::string out_string = writeJson(id, MD_INTENT_DISPLAY, params);
         RespondMessageTo(connectionId, __func__, out_string);
     }
 
@@ -1137,7 +1159,7 @@ namespace NetworkServices {
         addOptionalProp(params, "anchor", anchor);
         addOptionalProp(params, "offset", offset);
 
-        std::string out_string = writeJson(id, MD_INTENT_MEDIA_PLAYBACK, params);
+        std::string out_string = writeJson(id, MD_INTENT_PLAYBACK, params);
         RespondMessageTo(connectionId, __func__, out_string);
     }
 
