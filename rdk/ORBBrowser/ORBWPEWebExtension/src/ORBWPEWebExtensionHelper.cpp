@@ -80,6 +80,8 @@ static unsigned char* ReadDsmccFileFromSharedMemory(int requestId, int fileSize)
     munmap(ptr, fileSize);
     shm_unlink(name.c_str());
 
+    close(shm_fd);
+
     return buffer;
 }
 
