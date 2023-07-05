@@ -257,9 +257,9 @@ public:
         jstring j_currentTime = env->NewStringUTF(currentTime.c_str());
         jstring j_rangeStart = env->NewStringUTF(rangeStart.c_str());
         jstring j_rangeEnd = env->NewStringUTF(rangeEnd.c_str());
-        jstring j_mediaId = env->NewStringUTF(state.c_str());
-        jstring j_title = env->NewStringUTF(kind.c_str());
-        jstring j_secTitle = env->NewStringUTF( type.c_str());
+        jstring j_mediaId = env->NewStringUTF(mediaId.c_str());
+        jstring j_title = env->NewStringUTF(title.c_str());
+        jstring j_secTitle = env->NewStringUTF( secTitle.c_str());
         jstring j_synopsis = env->NewStringUTF(synopsis.c_str());
         env->CallVoidMethod(
                 mCallbackObject,

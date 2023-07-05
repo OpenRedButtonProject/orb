@@ -1621,6 +1621,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 "\n\"}");
     }
 
+
     /**
      * TODO
      *
@@ -1661,6 +1662,29 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                                    boolean subtitlesEnabled, boolean subtitlesAvailable,
                                    boolean audioDescripEnabled, boolean audioDescripAvailable,
                                    boolean signLangEnabled, boolean signLangAvailable) {
+
+        Log.d(TAG, "\"onNotifyStateMedia\" is received by MockOrbSessionCallback{" +
+                "\n\"state\":\"" + state + "\"," +
+                "\n\"actPause\":" + actPause + "," +
+                "\n\"actPlay\":" + actPlay + "," +
+                "\n\"actFastForward\":" + actFastForward + "," +
+                "\n\"actFastReverse\":" + actFastReverse + "," +
+                "\n\"actStop\":" + actStop + "," +
+                "\n\"actSeekContent\":" + actSeekContent + "," +
+                "\n\"actSeekRelative\":" + actSeekRelative + "," +
+                "\n\"actSeekLive\":" + actSeekLive + "," +
+                "\n\"actWallclock\":" + actWallclock + "," +
+                "\n\"mediaId\":" + mediaId + "," +
+                "\n\"title\":" + title + "," +
+                "\n\"secTitle\":" + secTitle + "," +
+                "\n\"synopsis\":" + synopsis + "," +
+                "\n\"subtitlesEnabled\":" + subtitlesEnabled + "," +
+                "\n\"subtitlesAvailable\":" + subtitlesAvailable + "," +
+                "\n\"audioDescripEnabled\":" + audioDescripEnabled + "," +
+                "\n\"audioDescripAvailable\":" + audioDescripAvailable + "," +
+                "\n\"signLangEnabled\":" + signLangEnabled + "," +
+                "\n\"signLangAvailable\":" + signLangAvailable + "," +
+                "\n\"}");
 
         // TEST for intent.Media
         mSession.onSendIntentMediaBasics(INTENT_PAUSE, connection, "STR123-0", "voice");
