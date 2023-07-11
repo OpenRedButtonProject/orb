@@ -6,4 +6,21 @@
     android:gravity="center"
     android:orientation="vertical"
     android:weightSum="1">
+    <TableLayout
+        android:id="@+id/log_table"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/background_dark"
+        android:divider="@android:color/secondary_text_dark"
+        android:showDividers="middle"
+        android:layout_gravity="bottom">
+        <include layout="@layout/log_row" />
+        <include layout="@layout/log_row" />
+        <include layout="@layout/log_row" />
+        <include layout="@layout/log_row" />
+        <include layout="@layout/log_row" />
+        <include layout="@layout/log_row" />
+        <include layout="@layout/log_row" />
+        <include layout="@layout/log_row" />
+    </TableLayout>
 </FrameLayout>
