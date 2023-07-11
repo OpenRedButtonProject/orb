@@ -16,13 +16,25 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
+import android.util.Pair;
 import android.widget.FrameLayout;
+import android.widget.TableLayout;
+import android.widget.TableRow;
+import android.widget.TextView;
 
 import org.orbtv.orblibrary.OrbSessionFactory;
 import org.orbtv.orblibrary.IOrbSession;
 
 import org.orbtv.mockdialservice.IMockDialService;
 import org.orbtv.mockdialservice.IMockDialServiceCallback;
+
+import java.sql.Time;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Vector;
 
 public class MainActivity extends Activity {
     private static final String TAG = "MainActivity";
@@ -45,6 +57,30 @@ public class MainActivity extends Activity {
     private MockOrbSessionCallback mMockCallback;
     private IMockDialService mDialService = null;
     private int mDialAppId = -1;
+
+    private List<Pair<String, String>> mLogLines = new ArrayList<>();
+    private void log(String message) {
+        SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss:SSS",
+                Locale.getDefault());
+        mLogLines.add(new Pair<>(formatter.format(new Date()), message));
+        if (mLogLines.size() > 8) {
+            mLogLines.remove(0);
+        }
+        TableLayout table = findViewById(R.id.log_table);
+        for (int i = 7; i >= 0; i--) {
+            TableRow row = (TableRow) table.getChildAt(i);
+            TextView time = (TextView) row.getChildAt(0);
+            TextView log = (TextView) row.getChildAt(1);
+            if (mLogLines.size() > i) {
+                Pair<String, String> pair = mLogLines.get(i);
+                time.setText(pair.first);
+                log.setText(pair.second);
+            } else {
+                time.setText("");
+                log.setText("");
+            }
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,8 +113,19 @@ public class MainActivity extends Activity {
         mTvBrowserSession = OrbSessionFactory.createSession(getApplicationContext(), mMockCallback,
                 configuration);
         bindDialService();
-        frameLayout.addView(mTvBrowserSession.getView());
+        //frameLayout.addView(mTvBrowserSession.getView());
         mTvBrowserSession.onNetworkStatusEvent(true); // TODO(library) Is this good?
+
+        log("one");
+        log("two");
+        log("three");
+        log("four");
+        log("five");
+        log("six");
+        log("seven");
+        log("eight");
+        log("nine");
+
     }
 
     @Override
