@@ -155,117 +155,117 @@ public:
 
     JsonRpcService::JsonRpcStatus ReceiveError(int connectionId, const Json::Value &obj);
 
-    void RespondFeatureSupportInfo(int connectionId, const std::string id, int featureId,
-        const std::string value);
+    void RespondFeatureSupportInfo(int connectionId, const std::string &id, int featureId,
+        const std::string &value);
 
-    void RespondFeatureSettingsSubtitles(int connectionId, const std::string id, bool enabled,
+    void RespondFeatureSettingsSubtitles(int connectionId, const std::string &id, bool enabled,
         int size, const std::string fontFamily, const std::string textColour, int textOpacity,
         const std::string edgeType, const std::string edgeColour,
         const std::string backgroundColour, int backgroundOpacity,
         const std::string windowColour, int windowOpacity, const std::string language);
 
-    void RespondFeatureSettingsDialogueEnhancement(int connectionId, const std::string id,
+    void RespondFeatureSettingsDialogueEnhancement(int connectionId, const std::string &id,
         int dialogueEnhancementGainPreference, int dialogueEnhancementGain,
         int dialogueEnhancementLimitMin, int dialogueEnhancementLimitMax);
 
-    void RespondFeatureSettingsUIMagnifier(int connectionId, const std::string id,
-        bool enabled, const std::string magType);
+    void RespondFeatureSettingsUIMagnifier(int connectionId, const std::string &id,
+        bool enabled, const std::string &magType);
 
-    void RespondFeatureSettingsHighContrastUI(int connectionId, const std::string id,
-        bool enabled, const std::string hcType);
+    void RespondFeatureSettingsHighContrastUI(int connectionId, const std::string &id,
+        bool enabled, const std::string &hcType);
 
-    void RespondFeatureSettingsScreenReader(int connectionId, const std::string id,
-        bool enabled, int speed, const std::string voice, const std::string language);
+    void RespondFeatureSettingsScreenReader(int connectionId, const std::string &id,
+        bool enabled, int speed, const std::string &voice, const std::string &language);
 
-    void RespondFeatureSettingsResponseToUserAction(int connectionId, const std::string id,
-        bool enabled, const std::string type);
+    void RespondFeatureSettingsResponseToUserAction(int connectionId, const std::string &id,
+        bool enabled, const std::string &type);
 
-    void RespondFeatureSettingsAudioDescription(int connectionId, const std::string id,
+    void RespondFeatureSettingsAudioDescription(int connectionId, const std::string &id,
         bool enabled, int gainPreference, int panAzimuthPreference);
 
-    void RespondFeatureSettingsInVisionSigning(int connectionId, const std::string id,
+    void RespondFeatureSettingsInVisionSigning(int connectionId, const std::string &id,
         bool enabled);
 
-    void RespondFeatureSuppress(int connectionId, const std::string id, int featureId,
-        const std::string value);
+    void RespondFeatureSuppress(int connectionId, const std::string &id, int featureId,
+        const std::string &value);
 
-    void RespondSubscribe(int connectionId, const std::string id,
+    void RespondSubscribe(int connectionId, const std::string &id,
         bool subtitles, bool dialogueEnhancement, bool uiMagnifier, bool highContrastUI,
         bool screenReader, bool responseToUserAction, bool audioDescription, bool inVisionSigning);
 
-    void RespondUnsubscribe(int connectionId, const std::string id,
+    void RespondUnsubscribe(int connectionId, const std::string &id,
         bool subtitles, bool dialogueEnhancement, bool uiMagnifier, bool highContrastUI,
         bool screenReader, bool responseToUserAction, bool audioDescription, bool inVisionSigning);
 
-    void RespondNegotiateMethods(int connectionId, const std::string id,
-        const std::string terminalToApp, const std::string appToTerminal);
+    void RespondNegotiateMethods(int connectionId, const std::string &id,
+        const std::string &terminalToApp, const std::string &appToTerminal);
 
-    void RespondError(int connectionId, const std::string id, int code,
-        const std::string message);
+    void RespondError(int connectionId, const std::string &id, int code,
+        const std::string &message);
 
-    void RespondError(int connectionId, const std::string id, int code,
-        const std::string message, const std::string data);
+    void RespondError(int connectionId, const std::string &id, int code,
+        const std::string &message, const std::string &data);
 
-    void SendIntentMediaPause(int connectionId, const std::string id, const std::string origin);
+    void SendIntentMediaPause(int connectionId, const std::string &id, const std::string &origin);
 
-    void SendIntentMediaPlay(int connectionId, const std::string id, const std::string origin);
+    void SendIntentMediaPlay(int connectionId, const std::string &id, const std::string &origin);
 
-    void SendIntentMediaFastForward(int connectionId, const std::string id,
-        const std::string origin);
+    void SendIntentMediaFastForward(int connectionId, const std::string &id,
+        const std::string &origin);
 
-    void SendIntentMediaFastReverse(int connectionId, const std::string id,
-        const std::string origin);
+    void SendIntentMediaFastReverse(int connectionId, const std::string &id,
+        const std::string &origin);
 
-    void SendIntentMediaStop(int connectionId, const std::string id, const std::string origin);
+    void SendIntentMediaStop(int connectionId, const std::string &id, const std::string &origin);
 
-    void SendIntentMediaSeekContent(int connectionId, const std::string id,
-        const std::string origin, const std::string anchor, int offset);
+    void SendIntentMediaSeekContent(int connectionId, const std::string &id,
+        const std::string &origin, const std::string &anchor, int offset);
 
-    void SendIntentMediaSeekRelative(int connectionId, const std::string id,
-        const std::string origin, int offset);
+    void SendIntentMediaSeekRelative(int connectionId, const std::string &id,
+        const std::string &origin, int offset);
 
-    void SendIntentMediaSeekLive(int connectionId, const std::string id,
-        const std::string origin, int offset);
+    void SendIntentMediaSeekLive(int connectionId, const std::string &id,
+        const std::string &origin, int offset);
 
-    void SendIntentMediaSeekWallclock(int connectionId, const std::string id,
-        const std::string origin, const std::string dateTime);
+    void SendIntentMediaSeekWallclock(int connectionId, const std::string &id,
+        const std::string &origin, const std::string &dateTime);
 
-    void SendIntentSearch(int connectionId, const std::string id, const std::string origin,
-        const std::string query);
+    void SendIntentSearch(int connectionId, const std::string &id, const std::string &origin,
+        const std::string &query);
 
-    void SendIntentDisplay(int connectionId, const std::string id, const std::string origin,
-        const std::string mediaId);
+    void SendIntentDisplay(int connectionId, const std::string &id, const std::string &origin,
+        const std::string &mediaId);
 
-    void SendIntentPlayback(int connectionId, const std::string id, const std::string origin,
-        const std::string mediaId, const std::string anchor, int offset);
+    void SendIntentPlayback(int connectionId, const std::string &id, const std::string &origin,
+        const std::string &mediaId, const std::string &anchor, int offset);
 
-    void NotifySubtitles(int connectionId, bool enabled, int size, const std::string fontFamily,
-        const std::string textColour, int textOpacity, const std::string edgeType,
-        const std::string edgeColour, const std::string backgroundColour, int backgroundOpacity,
-        const std::string windowColour, int windowOpacity, const std::string language);
+    void NotifySubtitles(int connectionId, bool enabled, int size, const std::string &fontFamily,
+        const std::string &textColour, int textOpacity, const std::string &edgeType,
+        const std::string &edgeColour, const std::string &backgroundColour, int backgroundOpacity,
+        const std::string &windowColour, int windowOpacity, const std::string &language);
 
     void NotifyDialogueEnhancement(int connectionId, int dialogueEnhancementGainPreference,
         int dialogueEnhancementGain, int dialogueEnhancementLimitMin,
         int dialogueEnhancementLimitMax);
 
-    void NotifyUIMagnifier(int connectionId, bool enabled, const std::string magType);
+    void NotifyUIMagnifier(int connectionId, bool enabled, const std::string &magType);
 
-    void NotifyHighContrastUI(int connectionId, bool enabled, const std::string hcType);
+    void NotifyHighContrastUI(int connectionId, bool enabled, const std::string &hcType);
 
-    void NotifyScreenReader(int connectionId, bool enabled, int speed, const std::string voice,
-        const std::string language);
+    void NotifyScreenReader(int connectionId, bool enabled, int speed, const std::string &voice,
+        const std::string &language);
 
-    void NotifyResponseToUserAction(int connectionId, bool enabled, const std::string type);
+    void NotifyResponseToUserAction(int connectionId, bool enabled, const std::string &type);
 
     void NotifyAudioDescription(int connectionId, bool enabled, int gainPreference,
         int panAzimuthPreference);
 
     void NotifyInVisionSigning(int connectionId, bool enabled);
 
-    void RespondDialogueEnhancementOverride(int connectionId, const std::string id,
+    void RespondDialogueEnhancementOverride(int connectionId, const std::string &id,
         int dialogueEnhancementGain);
 
-    void RespondTriggerResponseToUserAction(int connectionId, const std::string id,
+    void RespondTriggerResponseToUserAction(int connectionId, const std::string &id,
         bool actioned);
 
 private:
@@ -277,8 +277,8 @@ private:
     // Helper functions
     void registerMethod(const std::string& name, JsonRpcMethod method);
 
-    void SendJsonMessageToClient(int connectionId, const std::string responseName,
-        Json::Value jsonResponse);
+    void SendJsonMessageToClient(int connectionId, const std::string &responseName,
+        const Json::Value &jsonResponse);
 };
 } // namespace NetworkServices
 
