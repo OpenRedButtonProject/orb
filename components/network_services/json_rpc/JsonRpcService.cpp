@@ -852,7 +852,7 @@ Json::Value JsonRpcService::CreateJsonResponse(const std::string id, const std::
     }
     else
     {
-        jsonResponse["id"] = std::stoll(id.substr(labelEnd, id.length() - labelEnd));
+        jsonResponse["id"] = Json::Value::Int64(std::stoll(id.substr(labelEnd, id.length() - labelEnd)));
     }
     jsonResponse["params"] = params;
     jsonResponse["method"] = method;
@@ -871,7 +871,7 @@ Json::Value JsonRpcService::CreateJsonResponse(const std::string id, Json::Value
     }
     else
     {
-        jsonResponse["id"] = std::stoll(id.substr(labelEnd, id.length() - labelEnd));
+        jsonResponse["id"] = Json::Value::Int64(std::stoll(id.substr(labelEnd, id.length() - labelEnd)));
     }
     jsonResponse["result"] = result;
     return jsonResponse;
@@ -894,7 +894,7 @@ Json::Value JsonRpcService::CreateJsonErrorResponse(const std::string id, Json::
         }
         else
         {
-            jsonResponse["id"] = std::stoll(id.substr(labelEnd, id.length() - labelEnd));
+            jsonResponse["id"] = Json::Value::Int64(std::stoll(id.substr(labelEnd, id.length() - labelEnd)));
         }
     }
     jsonResponse["error"] = error;
