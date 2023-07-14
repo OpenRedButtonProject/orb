@@ -1676,7 +1676,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 "\n\"actWallclock\":" + actWallclock + "," +
                 "\n\"mediaId\":" + mediaId + "," +
                 "\n\"title\":" + title + "," +
-                "\n\"secTitle\":" + secTitle + "," +
+                "\n\"secondaryTitle\":" + secTitle + "," +
                 "\n\"synopsis\":" + synopsis + "," +
                 "\n\"subtitlesEnabled\":" + subtitlesEnabled + "," +
                 "\n\"subtitlesAvailable\":" + subtitlesAvailable + "," +
