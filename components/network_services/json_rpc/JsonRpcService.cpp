@@ -148,8 +148,7 @@ void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const st
             }
             else
             {
-                bool hasMethod = true;
-                std::string method = "";
+                std::string method;
                 if (HasParam(obj, "method", Json::stringValue))
                 {
                     method = obj["method"].asString();
@@ -212,11 +211,11 @@ JsonRpcService::JsonRpcStatus JsonRpcService::ReceiveError(int connectionId, con
         return JsonRpcStatus::INVALID_PARAMS;
 
     int code = error["code"].asInt();
-    std::string message = OPTIONAL_STR_NOT_SET;
+    std::string message;
     if (HasParam(error, "message", Json::stringValue))
         message = error["message"].asString();
 
-    std::string data = OPTIONAL_STR_NOT_SET;
+    std::string data;
     if (HasParam(error, "data", Json::stringValue))
         message = error["data"].asString();
 
@@ -241,9 +240,9 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestNegotiateMethods(int connec
     if (!HasParam(obj["params"], "appToTerminal", Json::arrayValue))
         return JsonRpcStatus::INVALID_PARAMS;
 
-    std::string terminalToApp = OPTIONAL_STR_NOT_SET;
+    std::string terminalToApp;
     terminalToApp = obj["params"]["terminalToApp"].toStyledString();
-    std::string appToTerminal = OPTIONAL_STR_NOT_SET;
+    std::string appToTerminal;
     appToTerminal = obj["params"]["appToTerminal"].toStyledString();
 
 
@@ -501,7 +500,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
     {
         return JsonRpcStatus::INVALID_PARAMS;
     }
-    std::string kind = OPTIONAL_STR_NOT_SET;
+    std::string kind;
     if (state == "buffering" || state == "paused" || state == "playing" ||
         state == "stopped")
     {
@@ -514,7 +513,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
         }
     }
 
-    std::string type = OPTIONAL_STR_NOT_SET;
+    std::string type;
     if (state == "buffering" || state == "paused" || state == "playing" ||
         state == "stopped")
     {
@@ -527,7 +526,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
         }
     }
 
-    std::string currentTimeStr = OPTIONAL_STR_NOT_SET;
+    std::string currentTimeStr;
     if (state == "buffering" || state == "paused" || state == "playing")
     {
         if (!HasParam(params, "currentTime", Json::stringValue) &&
@@ -539,8 +538,8 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
     }
 
 
-    std::string rangeStart = OPTIONAL_STR_NOT_SET;
-    std::string rangeEnd = OPTIONAL_STR_NOT_SET;
+    std::string rangeStart;
+    std::string rangeEnd;
     if (state == "buffering" || state == "paused" || state == "playing")
     {
         if (!HasJsonParam(params, "range"))
@@ -607,10 +606,10 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
         actions["seek-wallclock"] == true)
         actWallclock = true;
 
-    std::string mediaId = OPTIONAL_STR_NOT_SET;
-    std::string title = OPTIONAL_STR_NOT_SET;
-    std::string secTitle = OPTIONAL_STR_NOT_SET;
-    std::string synopsis = OPTIONAL_STR_NOT_SET;
+    std::string mediaId;
+    std::string title;
+    std::string secTitle;
+    std::string synopsis;
 
     if (state == "buffering" || state == "paused" || state == "playing" ||
         state == "stopped")
@@ -739,7 +738,7 @@ void JsonRpcService::CreateJsonRpcErrorObject(int connectionId, const Json::Valu
     }
 
     int code = static_cast<int>(status);
-    std::string message = "";
+    std::string message;
     if (status == JsonRpcStatus::METHOD_NOT_FOUND)
     {
         message = "Method not found";
