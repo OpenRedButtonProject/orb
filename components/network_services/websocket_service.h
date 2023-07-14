@@ -85,7 +85,7 @@ protected:
 protected:
     std::recursive_mutex connections_mutex_;
     std::unordered_map<void *, std::unique_ptr<WebSocketConnection> > connections_;
-    WebSocketConnection * GetConnection(int id)
+    WebSocketConnection* GetConnection(int id)
     {
         for (auto &connection : connections_)
         {
