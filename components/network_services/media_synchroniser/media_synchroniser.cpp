@@ -916,16 +916,20 @@ bool MediaSynchroniserManager::initMediaSynchroniser(const int &id, bool isMaste
 }
 
 void MediaSynchroniserManager::updateDvbInfo(const int &onetId, const int &transId,
-                                             const int &servId, const bool &permanentError,
-                                             const bool &presenting, const std::string &programmeId,
-                                             const std::time_t &startTime, const std::time_t &duration)
+    const int &servId, const bool &permanentError,
+    const bool &presenting, const std::string &programmeId,
+    const std::time_t &startTime, const std::time_t &duration)
 {
     char uriBuffer[32];
     std::string ciString;
     if (!programmeId.empty())
     {
         char ciBuffer[512];
-        sprintf(ciBuffer, ";%s~%s--PT%02ldH%02ldM", programmeId.c_str(), MediaSynchroniser::GetDvbDateFromTimestamp(startTime).c_str(), duration / 3600, (duration % 3600) / 60);
+        sprintf(ciBuffer, ";%s~%s--PT%02ldH%02ldM", programmeId.c_str(),
+            MediaSynchroniser::GetDvbDateFromTimestamp(startTime).c_str(), duration / 3600,
+            (duration %
+             3600) /
+            60);
         ciString = ciBuffer;
     }
     sprintf(uriBuffer, "dvb://%04x.%04x.%04x", onetId, transId, servId);
@@ -1015,7 +1019,7 @@ bool MediaSynchroniser::ParseTimelineSelector(const std::string &timelineSelecto
 
 std::string MediaSynchroniser::GetDvbDateFromTimestamp(const std::time_t &timestamp)
 {
-    std::tm* timeinfo = std::localtime(&timestamp);
+    std::tm *timeinfo = std::localtime(&timestamp);
     int year = timeinfo->tm_year + 1900;
     int month = timeinfo->tm_mon + 1;
     int day = timeinfo->tm_mday;
