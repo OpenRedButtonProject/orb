@@ -87,26 +87,26 @@ const static std::map<int, std::string> ACCESSIBILITY_FEATURE_NAMES = {
     {7, F_IN_VISION_SIGNING},
 };
 
-static bool HasParam(const Json::Value &object, const std::string &name, Json::ValueType type);
+static bool HasParam(const Json::Value &json, const std::string &name, const Json::ValueType& type);
 
 static bool HasJsonParam(const Json::Value &json, const std::string &param);
 
-static std::string AddDataTypeIdentify(Json::Value value);
+static std::string AddDataTypeIdentify(const Json::Value& value);
 
-static Json::Value CreateFeatureSettingsQuery(const std::string feature, Json::Value value);
+static Json::Value CreateFeatureSettingsQuery(const std::string& feature, const Json::Value& value);
 
-static Json::Value CreateNotifyRequest(Json::Value params);
+static Json::Value CreateNotifyRequest(const Json::Value& params);
 
-static Json::Value CreateJsonResponse(const std::string id, const std::string method, Json::Value
-    params);
+static Json::Value CreateJsonResponse(const std::string& id, const std::string& method, const
+    Json::Value& params);
 
-static Json::Value CreateJsonResponse(const std::string id, Json::Value result);
+static Json::Value CreateJsonResponse(const std::string& id, const Json::Value& result);
 
-static Json::Value CreateJsonErrorResponse(const std::string id, Json::Value error);
+static Json::Value CreateJsonErrorResponse(const std::string& id, const Json::Value& error);
 
 static std::string GetErrorMessage(JsonRpcService::JsonRpcStatus status);
 
-static Json::Value CreateNegotiatedMethods(const std::string stringList);
+static Json::Value CreateNegotiatedMethods(const std::string& stringList);
 
 static std::string GetAccessibilityFeatureName(int id);
 
@@ -309,7 +309,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestSubscribe(int connectionId,
     Json::Value msgType = obj["params"]["msgType"];
 
     bool msgTypeBoolList[8] = {false}; // TODO Don't use C-style arrays! And, are we meant to have a fixed size of 8?
-    for (auto msg: msgType)
+    for (const auto& msg: msgType)
     {
         int length = msg.asString().length();
         std::string feature = msg.asString().substr(0, length - 10); // Remove PrefChange
@@ -350,7 +350,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestUnsubscribe(int connectionI
     Json::Value msgType = obj["params"]["msgType"];
 
     bool msgTypeBoolList[8] = {false}; // TODO Don't use C-style arrays! And, are we meant to have a fixed size of 8?
-    for (auto msg: msgType)
+    for (const auto& msg: msgType)
     {
         int length = msg.asString().length();
         std::string feature = msg.asString().substr(0, length - 10); // Remove PrefChange
@@ -745,6 +745,10 @@ JsonRpcService::JsonRpcStatus JsonRpcService::ReceiveIntentConfirm(int connectio
         m_sessionCallback->ReceiveIntentConfirm(connectionId, id, method);
         return JsonRpcStatus::SUCCESS;
     }
+    else
+    {
+        // TODO No return value!!
+    }
 }
 
 JsonRpcService::JsonRpcStatus JsonRpcService::ReceiveError(int connectionId, const Json::Value &obj)
@@ -773,8 +777,8 @@ JsonRpcService::JsonRpcStatus JsonRpcService::ReceiveError(int connectionId, con
     return JsonRpcStatus::SUCCESS;
 }
 
-void JsonRpcService::RespondFeatureSupportInfo(int connectionId, const std::string id,
-    int featureId, const std::string value)
+void JsonRpcService::RespondFeatureSupportInfo(int connectionId, const std::string& id,
+    int featureId, const std::string& value)
 {
     Json::Value result;
 
@@ -785,7 +789,7 @@ void JsonRpcService::RespondFeatureSupportInfo(int connectionId, const std::stri
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::RespondFeatureSettingsSubtitles(int connectionId, const std::string id,
+void JsonRpcService::RespondFeatureSettingsSubtitles(int connectionId, const std::string &id,
     bool enabled,
     int size, const std::string fontFamily,
     const std::string textColour,
@@ -850,7 +854,7 @@ void JsonRpcService::RespondFeatureSettingsSubtitles(int connectionId, const std
 }
 
 void JsonRpcService::RespondFeatureSettingsDialogueEnhancement(int connectionId,
-    const std::string id,
+    const std::string &id,
     int dialogueEnhancementGainPreference,
     int dialogueEnhancementGain,
     int dialogueEnhancementLimitMin,
@@ -868,9 +872,9 @@ void JsonRpcService::RespondFeatureSettingsDialogueEnhancement(int connectionId,
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::RespondFeatureSettingsUIMagnifier(int connectionId, const std::string id,
+void JsonRpcService::RespondFeatureSettingsUIMagnifier(int connectionId, const std::string &id,
     bool enabled,
-    const std::string magType)
+    const std::string &magType)
 {
     Json::Value value;
     value["enabled"] = enabled;
@@ -883,8 +887,8 @@ void JsonRpcService::RespondFeatureSettingsUIMagnifier(int connectionId, const s
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::RespondFeatureSettingsHighContrastUI(int connectionId, const std::string id,
-    bool enabled, const std::string hcType)
+void JsonRpcService::RespondFeatureSettingsHighContrastUI(int connectionId, const std::string &id,
+    bool enabled, const std::string &hcType)
 {
     Json::Value value;
     value["enabled"] = enabled;
@@ -897,10 +901,10 @@ void JsonRpcService::RespondFeatureSettingsHighContrastUI(int connectionId, cons
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::RespondFeatureSettingsScreenReader(int connectionId, const std::string id,
+void JsonRpcService::RespondFeatureSettingsScreenReader(int connectionId, const std::string &id,
     bool enabled, int speed,
-    const std::string voice,
-    const std::string language)
+    const std::string &voice,
+    const std::string &language)
 {
     Json::Value value;
     value["enabled"] = enabled;
@@ -922,9 +926,9 @@ void JsonRpcService::RespondFeatureSettingsScreenReader(int connectionId, const 
 }
 
 void JsonRpcService::RespondFeatureSettingsResponseToUserAction(int connectionId,
-    const std::string id,
+    const std::string &id,
     bool enabled,
-    const std::string type)
+    const std::string &type)
 {
     Json::Value value;
     value["enabled"] = enabled;
@@ -937,7 +941,7 @@ void JsonRpcService::RespondFeatureSettingsResponseToUserAction(int connectionId
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::RespondFeatureSettingsAudioDescription(int connectionId, const std::string id,
+void JsonRpcService::RespondFeatureSettingsAudioDescription(int connectionId, const std::string &id,
     bool enabled, int gainPreference,
     int panAzimuthPreference)
 {
@@ -956,7 +960,7 @@ void JsonRpcService::RespondFeatureSettingsAudioDescription(int connectionId, co
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::RespondFeatureSettingsInVisionSigning(int connectionId, const std::string id,
+void JsonRpcService::RespondFeatureSettingsInVisionSigning(int connectionId, const std::string &id,
     bool enabled)
 {
     Json::Value value;
@@ -966,8 +970,8 @@ void JsonRpcService::RespondFeatureSettingsInVisionSigning(int connectionId, con
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::RespondFeatureSuppress(int connectionId, const std::string id,
-    int featureId, const std::string value)
+void JsonRpcService::RespondFeatureSuppress(int connectionId, const std::string &id,
+    int featureId, const std::string &value)
 {
     Json::Value result;
     result["method"] = MD_AF_FEATURE_SUPPRESS;
@@ -977,7 +981,7 @@ void JsonRpcService::RespondFeatureSuppress(int connectionId, const std::string 
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::RespondSubscribe(int connectionId, const std::string id,
+void JsonRpcService::RespondSubscribe(int connectionId, const std::string &id,
     bool subtitles, bool dialogueEnhancement,
     bool uiMagnifier, bool highContrastUI,
     bool screenReader, bool responseToUserAction,
@@ -1022,7 +1026,7 @@ void JsonRpcService::RespondSubscribe(int connectionId, const std::string id,
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::RespondUnsubscribe(int connectionId, const std::string id,
+void JsonRpcService::RespondUnsubscribe(int connectionId, const std::string &id,
     bool subtitles, bool dialogueEnhancement,
     bool uiMagnifier, bool highContrastUI,
     bool screenReader, bool responseToUserAction,
@@ -1033,9 +1037,9 @@ void JsonRpcService::RespondUnsubscribe(int connectionId, const std::string id,
         screenReader, responseToUserAction, audioDescription, inVisionSigning);
 }
 
-void JsonRpcService::RespondNegotiateMethods(int connectionId, const std::string id,
-    const std::string terminalToApp,
-    const std::string appToTerminal)
+void JsonRpcService::RespondNegotiateMethods(int connectionId, const std::string &id,
+    const std::string &terminalToApp,
+    const std::string &appToTerminal)
 {
     Json::Value result;
     result["method"] = MD_NEGOTIATE_METHODS;
@@ -1051,8 +1055,8 @@ void JsonRpcService::RespondNegotiateMethods(int connectionId, const std::string
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::RespondError(int connectionId, const std::string id,
-    int code, const std::string message)
+void JsonRpcService::RespondError(int connectionId, const std::string &id,
+    int code, const std::string &message)
 {
     Json::Value error;
     error["code"] = code;
@@ -1061,8 +1065,8 @@ void JsonRpcService::RespondError(int connectionId, const std::string id,
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::RespondError(int connectionId, const std::string id,
-    int code, const std::string message, const std::string data)
+void JsonRpcService::RespondError(int connectionId, const std::string &id,
+    int code, const std::string &message, const std::string &data)
 {
     Json::Value error;
     error["code"] = code;
@@ -1075,8 +1079,8 @@ void JsonRpcService::RespondError(int connectionId, const std::string id,
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::SendIntentMediaPause(int connectionId, const std::string id,
-    const std::string origin)
+void JsonRpcService::SendIntentMediaPause(int connectionId, const std::string &id,
+    const std::string &origin)
 {
     Json::Value params;
     params["origin"] = origin;
@@ -1084,8 +1088,8 @@ void JsonRpcService::SendIntentMediaPause(int connectionId, const std::string id
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::SendIntentMediaPlay(int connectionId, const std::string id,
-    const std::string origin)
+void JsonRpcService::SendIntentMediaPlay(int connectionId, const std::string &id,
+    const std::string &origin)
 {
     Json::Value params;
     params["origin"] = origin;
@@ -1093,8 +1097,8 @@ void JsonRpcService::SendIntentMediaPlay(int connectionId, const std::string id,
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::SendIntentMediaFastForward(int connectionId, const std::string id,
-    const std::string origin)
+void JsonRpcService::SendIntentMediaFastForward(int connectionId, const std::string &id,
+    const std::string &origin)
 {
     Json::Value params;
     params["origin"] = origin;
@@ -1102,8 +1106,8 @@ void JsonRpcService::SendIntentMediaFastForward(int connectionId, const std::str
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::SendIntentMediaFastReverse(int connectionId, const std::string id,
-    const std::string origin)
+void JsonRpcService::SendIntentMediaFastReverse(int connectionId, const std::string &id,
+    const std::string &origin)
 {
     Json::Value params;
     params["origin"] = origin;
@@ -1111,8 +1115,8 @@ void JsonRpcService::SendIntentMediaFastReverse(int connectionId, const std::str
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::SendIntentMediaStop(int connectionId, const std::string id,
-    const std::string origin)
+void JsonRpcService::SendIntentMediaStop(int connectionId, const std::string &id,
+    const std::string &origin)
 {
     Json::Value params;
     params["origin"] = origin;
@@ -1120,9 +1124,9 @@ void JsonRpcService::SendIntentMediaStop(int connectionId, const std::string id,
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::SendIntentMediaSeekContent(int connectionId, const std::string id,
-    const std::string origin,
-    const std::string anchor, int offset)
+void JsonRpcService::SendIntentMediaSeekContent(int connectionId, const std::string &id,
+    const std::string &origin,
+    const std::string &anchor, int offset)
 {
     Json::Value params;
     params["origin"] = origin;
@@ -1132,8 +1136,8 @@ void JsonRpcService::SendIntentMediaSeekContent(int connectionId, const std::str
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::SendIntentMediaSeekRelative(int connectionId, const std::string id,
-    const std::string origin, int offset)
+void JsonRpcService::SendIntentMediaSeekRelative(int connectionId, const std::string &id,
+    const std::string &origin, int offset)
 {
     Json::Value params;
     params["origin"] = origin;
@@ -1142,8 +1146,8 @@ void JsonRpcService::SendIntentMediaSeekRelative(int connectionId, const std::st
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::SendIntentMediaSeekLive(int connectionId, const std::string id,
-    const std::string origin, int offset)
+void JsonRpcService::SendIntentMediaSeekLive(int connectionId, const std::string &id,
+    const std::string &origin, int offset)
 {
     Json::Value params;
     params["origin"] = origin;
@@ -1152,9 +1156,9 @@ void JsonRpcService::SendIntentMediaSeekLive(int connectionId, const std::string
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::SendIntentMediaSeekWallclock(int connectionId, const std::string id,
-    const std::string origin,
-    const std::string dateTime)
+void JsonRpcService::SendIntentMediaSeekWallclock(int connectionId, const std::string &id,
+    const std::string &origin,
+    const std::string &dateTime)
 {
     Json::Value params;
     params["origin"] = origin;
@@ -1163,8 +1167,8 @@ void JsonRpcService::SendIntentMediaSeekWallclock(int connectionId, const std::s
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::SendIntentSearch(int connectionId, const std::string id,
-    const std::string origin, const std::string query)
+void JsonRpcService::SendIntentSearch(int connectionId, const std::string &id,
+    const std::string &origin, const std::string &query)
 {
     Json::Value params;
     params["origin"] = origin;
@@ -1173,8 +1177,8 @@ void JsonRpcService::SendIntentSearch(int connectionId, const std::string id,
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::SendIntentDisplay(int connectionId, const std::string id,
-    const std::string origin, const std::string mediaId)
+void JsonRpcService::SendIntentDisplay(int connectionId, const std::string &id,
+    const std::string &origin, const std::string &mediaId)
 {
     Json::Value params;
     params["origin"] = origin;
@@ -1183,9 +1187,9 @@ void JsonRpcService::SendIntentDisplay(int connectionId, const std::string id,
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::SendIntentPlayback(int connectionId, const std::string id,
-    const std::string origin, const std::string mediaId,
-    const std::string anchor, int offset)
+void JsonRpcService::SendIntentPlayback(int connectionId, const std::string &id,
+    const std::string &origin, const std::string &mediaId,
+    const std::string &anchor, int offset)
 {
     Json::Value params;
     params["origin"] = origin;
@@ -1203,12 +1207,12 @@ void JsonRpcService::SendIntentPlayback(int connectionId, const std::string id,
 }
 
 void JsonRpcService::NotifySubtitles(int connectionId, bool enabled,
-    int size, const std::string fontFamily,
-    const std::string textColour, int textOpacity,
-    const std::string edgeType, const std::string edgeColour,
-    const std::string backgroundColour, int backgroundOpacity,
-    const std::string windowColour, int windowOpacity,
-    const std::string language)
+    int size, const std::string &fontFamily,
+    const std::string &textColour, int textOpacity,
+    const std::string &edgeType, const std::string &edgeColour,
+    const std::string &backgroundColour, int backgroundOpacity,
+    const std::string &windowColour, int windowOpacity,
+    const std::string &language)
 {
     Json::Value params;
     params["msgType"] = PC_SUBTITLES;
@@ -1283,7 +1287,7 @@ void JsonRpcService::NotifyDialogueEnhancement(int connectionId,
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::NotifyUIMagnifier(int connectionId, bool enabled, const std::string magType)
+void JsonRpcService::NotifyUIMagnifier(int connectionId, bool enabled, const std::string &magType)
 {
     Json::Value params;
     params["msgType"] = PC_UI_MAGNIFIER;
@@ -1299,7 +1303,7 @@ void JsonRpcService::NotifyUIMagnifier(int connectionId, bool enabled, const std
 }
 
 void JsonRpcService::NotifyHighContrastUI(int connectionId, bool enabled,
-    const std::string hcType)
+    const std::string &hcType)
 {
     Json::Value params;
     params["msgType"] = PC_HIGH_CONTRAST_UI;
@@ -1315,8 +1319,8 @@ void JsonRpcService::NotifyHighContrastUI(int connectionId, bool enabled,
 }
 
 void JsonRpcService::NotifyScreenReader(int connectionId, bool enabled,
-    int speed, const std::string voice,
-    const std::string language)
+    int speed, const std::string &voice,
+    const std::string &language)
 {
     Json::Value params;
     params["msgType"] = PC_SCREEN_READER;
@@ -1340,7 +1344,7 @@ void JsonRpcService::NotifyScreenReader(int connectionId, bool enabled,
 }
 
 void JsonRpcService::NotifyResponseToUserAction(int connectionId, bool enabled,
-    const std::string type)
+    const std::string &type)
 {
     Json::Value params;
     params["msgType"] = PC_RESPONSE_TO_USER_ACTION;
@@ -1386,7 +1390,7 @@ void JsonRpcService::NotifyInVisionSigning(int connectionId, bool enabled)
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::RespondDialogueEnhancementOverride(int connectionId, const std::string id,
+void JsonRpcService::RespondDialogueEnhancementOverride(int connectionId, const std::string &id,
     int dialogueEnhancementGain)
 {
     Json::Value result;
@@ -1399,7 +1403,7 @@ void JsonRpcService::RespondDialogueEnhancementOverride(int connectionId, const 
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::RespondTriggerResponseToUserAction(int connectionId, const std::string id,
+void JsonRpcService::RespondTriggerResponseToUserAction(int connectionId, const std::string &id,
     bool actioned)
 {
     Json::Value result;
@@ -1416,8 +1420,8 @@ void JsonRpcService::registerMethod(const std::string &name, JsonRpcMethod metho
         std::placeholders::_2);
 }
 
-void JsonRpcService::SendJsonMessageToClient(int connectionId, const std::string responseName,
-    Json::Value jsonResponse)
+void JsonRpcService::SendJsonMessageToClient(int connectionId, const std::string &responseName,
+    const Json::Value &jsonResponse)
 {
     Json::FastWriter writer;
     std::string message = writer.write(jsonResponse);
@@ -1433,7 +1437,7 @@ void JsonRpcService::SendJsonMessageToClient(int connectionId, const std::string
 }
 
 bool HasParam(const Json::Value &json, const std::string &param,
-    Json::ValueType type)
+    const Json::ValueType& type)
 {
     if (!json.isMember(param))
     {
@@ -1460,7 +1464,7 @@ bool HasJsonParam(const Json::Value &json, const std::string &param)
     return true;
 }
 
-std::string AddDataTypeIdentify(Json::Value value)
+std::string AddDataTypeIdentify(const Json::Value& value)
 {
     std::string newValue;
     if (value.type() == Json::stringValue)
@@ -1480,7 +1484,7 @@ std::string AddDataTypeIdentify(Json::Value value)
     return newValue;
 }
 
-Json::Value CreateFeatureSettingsQuery(const std::string feature, Json::Value value)
+Json::Value CreateFeatureSettingsQuery(const std::string& feature, const Json::Value& value)
 {
     Json::Value result;
     result["method"] = MD_AF_FEATURE_SETTINGS_QUERY;
@@ -1489,7 +1493,7 @@ Json::Value CreateFeatureSettingsQuery(const std::string feature, Json::Value va
     return result;
 }
 
-Json::Value CreateNotifyRequest(Json::Value params)
+Json::Value CreateNotifyRequest(const Json::Value& params)
 {
     Json::Value jsonResponse;
     jsonResponse["jsonrpc"] = "2.0";
@@ -1498,8 +1502,8 @@ Json::Value CreateNotifyRequest(Json::Value params)
     return jsonResponse;
 }
 
-Json::Value CreateJsonResponse(const std::string id, const std::string method,
-    Json::Value params)
+Json::Value CreateJsonResponse(const std::string& id, const std::string& method, const
+    Json::Value& params)
 {
     Json::Value jsonResponse;
     int labelStart = 0;
@@ -1519,7 +1523,7 @@ Json::Value CreateJsonResponse(const std::string id, const std::string method,
     return jsonResponse;
 }
 
-Json::Value CreateJsonResponse(const std::string id, Json::Value result)
+Json::Value CreateJsonResponse(const std::string& id, const Json::Value& result)
 {
     Json::Value jsonResponse;
     int labelStart = 0;
@@ -1538,7 +1542,7 @@ Json::Value CreateJsonResponse(const std::string id, Json::Value result)
     return jsonResponse;
 }
 
-Json::Value CreateJsonErrorResponse(const std::string id, Json::Value error)
+Json::Value CreateJsonErrorResponse(const std::string& id, const Json::Value& error)
 {
     Json::Value jsonResponse;
     int labelStart = 0;
@@ -1585,7 +1589,7 @@ std::string GetErrorMessage(JsonRpcService::JsonRpcStatus status)
     return message;
 }
 
-Json::Value CreateNegotiatedMethods(const std::string stringList)
+Json::Value CreateNegotiatedMethods(const std::string& stringList)
 {
     // Parse the input string
     Json::Value jsonArray(Json::arrayValue);
