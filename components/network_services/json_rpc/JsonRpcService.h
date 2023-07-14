@@ -153,6 +153,8 @@ public:
 
     JsonRpcStatus ReceiveIntentConfirm(int connectionId, const Json::Value &obj);
 
+    JsonRpcService::JsonRpcStatus ReceiveError(int connectionId, const Json::Value &obj);
+
     void RespondFeatureSupportInfo(int connectionId, const std::string id, int featureId,
         const std::string value);
 
@@ -266,47 +268,17 @@ public:
     void RespondTriggerResponseToUserAction(int connectionId, const std::string id,
         bool actioned);
 
-
 private:
     std::string m_endpoint;
     std::unique_ptr<SessionCallback> m_sessionCallback;
     std::map<std::string, std::function<JsonRpcStatus(int connectionId, const
         Json::Value&)> > m_json_rpc_methods;
-    std::map<std::string, int> m_mapOfFeatures;
-
-    static const std::string accessibilityFeatures[8];
-
 
     // Helper functions
-    std::string AddDataTypeIdentify(Json::Value value);
-
     void registerMethod(const std::string& name, JsonRpcMethod method);
-
-
-    JsonRpcService::JsonRpcStatus ReceiveError(int connectionId, const Json::Value &obj);
-
-    bool HasParam(const Json::Value &object, const std::string &name, Json::ValueType type);
-
-    bool HasJsonParam(const Json::Value &json, const std::string &param);
-
-
-    Json::Value CreateFeatureSettingsQuery(const std::string feature, Json::Value value);
-
-    Json::Value CreateNotifyRequest(Json::Value params);
-
-    Json::Value CreateJsonResponse(const std::string id, const std::string method,
-        Json::Value params);
-
-    Json::Value CreateJsonResponse(const std::string id, Json::Value result);
-
-    Json::Value CreateJsonErrorResponse(const std::string id, Json::Value error);
 
     void SendJsonMessageToClient(int connectionId, const std::string responseName,
         Json::Value jsonResponse);
-
-    void CreateJsonRpcErrorObject(int connectionId, const Json::Value &obj, JsonRpcStatus status);
-
-    Json::Value CreateNegotiatedMethods(const std::string stringList);
 };
 } // namespace NetworkServices
 
