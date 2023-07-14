@@ -91,7 +91,9 @@ static bool HasParam(const Json::Value &json, const std::string &name, const Jso
 
 static bool HasJsonParam(const Json::Value &json, const std::string &param);
 
-static std::string AddDataTypeIdentify(const Json::Value& value);
+static std::string EncodeJsonId(const Json::Value& id);
+
+static Json::Value DecodeJsonId(const std::string& id);
 
 static Json::Value CreateFeatureSettingsQuery(const std::string& feature, const Json::Value& value);
 
@@ -231,7 +233,7 @@ void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const st
             HasParam(obj, "id", Json::intValue) ||
             HasParam(obj, "id", Json::uintValue))
         {
-            id = AddDataTypeIdentify(obj["id"]);
+            id = EncodeJsonId(obj["id"]);
         }
         RespondError(connection->Id(), id, code, message);
     }
@@ -254,7 +256,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestNegotiateMethods(int connec
     {
         return JsonRpcStatus::INVALID_PARAMS;
     }
-    std::string id = AddDataTypeIdentify(obj["id"]);
+    std::string id = EncodeJsonId(obj["id"]);
 
     if (!HasJsonParam(obj, "params"))
     {
@@ -308,7 +310,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestSubscribe(int connectionId,
     {
         return JsonRpcStatus::INVALID_PARAMS;
     }
-    std::string id = AddDataTypeIdentify(obj["id"]);
+    std::string id = EncodeJsonId(obj["id"]);
 
     if (!HasJsonParam(obj, "params"))
     {
@@ -353,7 +355,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestUnsubscribe(int connectionI
     {
         return JsonRpcStatus::INVALID_PARAMS;
     }
-    std::string id = AddDataTypeIdentify(obj["id"]);
+    std::string id = EncodeJsonId(obj["id"]);
 
     if (!HasJsonParam(obj, "params"))
     {
@@ -398,7 +400,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestFeatureSupportInfo(int conn
     {
         return JsonRpcStatus::INVALID_PARAMS;
     }
-    std::string id = AddDataTypeIdentify(obj["id"]);
+    std::string id = EncodeJsonId(obj["id"]);
     if (!HasJsonParam(obj, "params"))
     {
         return JsonRpcStatus::INVALID_PARAMS;
@@ -428,7 +430,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestFeatureSettingsQuery(int co
     {
         return JsonRpcStatus::INVALID_PARAMS;
     }
-    std::string id = AddDataTypeIdentify(obj["id"]);
+    std::string id = EncodeJsonId(obj["id"]);
     if (!HasJsonParam(obj, "params"))
     {
         return JsonRpcStatus::INVALID_PARAMS;
@@ -458,7 +460,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestFeatureSuppress(int connect
     {
         return JsonRpcStatus::INVALID_PARAMS;
     }
-    std::string id = AddDataTypeIdentify(obj["id"]);
+    std::string id = EncodeJsonId(obj["id"]);
     if (!HasJsonParam(obj, "params"))
     {
         return JsonRpcStatus::INVALID_PARAMS;
@@ -488,7 +490,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestDialogueEnhancementOverride
     {
         return JsonRpcStatus::INVALID_PARAMS;
     }
-    std::string id = AddDataTypeIdentify(obj["id"]);
+    std::string id = EncodeJsonId(obj["id"]);
 
     int dialogueEnhancementGain = OPTIONAL_INT_NOT_SET;
     if (HasJsonParam(obj, "params"))
@@ -514,7 +516,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestTriggerResponseToUserAction
     {
         return JsonRpcStatus::INVALID_PARAMS;
     }
-    std::string id = AddDataTypeIdentify(obj["id"]);
+    std::string id = EncodeJsonId(obj["id"]);
     if (!HasJsonParam(obj, "params"))
     {
         return JsonRpcStatus::INVALID_PARAMS;
@@ -609,7 +611,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
         {
             return JsonRpcStatus::INVALID_PARAMS;
         }
-        currentTimeStr = AddDataTypeIdentify(params["currentTime"]);
+        currentTimeStr = EncodeJsonId(params["currentTime"]);
     }
 
     std::string rangeStart;
@@ -634,8 +636,8 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
         {
             return JsonRpcStatus::INVALID_PARAMS;
         }
-        rangeStart = AddDataTypeIdentify(params["range"]["start"]);
-        rangeEnd = AddDataTypeIdentify(params["range"]["end"]);
+        rangeStart = EncodeJsonId(params["range"]["start"]);
+        rangeEnd = EncodeJsonId(params["range"]["end"]);
     }
 
     bool actPause = false;
@@ -742,7 +744,6 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
         }
     }
 
-
     bool subtitlesEnabled = false;
     bool subtitlesAvailable = false;
     bool audioDescripEnabled = false;
@@ -832,7 +833,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::ReceiveIntentConfirm(int connectio
     {
         return JsonRpcStatus::INVALID_PARAMS;
     }
-    std::string id = AddDataTypeIdentify(obj["id"]);
+    std::string id = EncodeJsonId(obj["id"]);
 
     if (!HasParam(result, "method", Json::stringValue))
     {
@@ -872,7 +873,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::ReceiveError(int connectionId, con
     {
         return JsonRpcStatus::INVALID_PARAMS;
     }
-    std::string id = AddDataTypeIdentify(obj["id"]);
+    std::string id = EncodeJsonId(obj["id"]);
 
     if (!HasParam(error, "code", Json::intValue))
     {
@@ -1584,24 +1585,23 @@ bool HasJsonParam(const Json::Value &json, const std::string &param)
     return true;
 }
 
-std::string AddDataTypeIdentify(const Json::Value& value)
+std::string EncodeJsonId(const Json::Value& id)
 {
-    std::string newValue;
-    if (value.type() == Json::stringValue)
-    {
-        newValue = "STR" + value.asString();
+    Json::StreamWriterBuilder writerBuilder;
+    writerBuilder["indentation"] = "";
+    return Json::writeString(writerBuilder, id);
+}
+
+Json::Value DecodeJsonId(const std::string& id)
+{
+    Json::CharReaderBuilder builder;
+    Json::Value jsonId;
+    std::string errs;
+    std::istringstream ss(id);
+    if (!Json::parseFromStream(builder, ss, &jsonId, &errs)) {
+        return Json::nullValue;
     }
-    else if (value.type() == Json::realValue)
-    {
-        std::ostringstream oss;
-        oss << std::noshowpoint << value.asDouble();
-        newValue = "NUM" + oss.str();
-    }
-    else if (value.type() == Json::intValue || value.type() == Json::uintValue)
-    {
-        newValue = "NUM" + value.asString();
-    }
-    return newValue;
+    return jsonId;
 }
 
 Json::Value CreateFeatureSettingsQuery(const std::string& feature, const Json::Value& value)
@@ -1626,18 +1626,8 @@ Json::Value CreateJsonResponse(const std::string& id, const std::string& method,
     Json::Value& params)
 {
     Json::Value jsonResponse;
-    int labelStart = 0;
-    int labelEnd = 3;
     jsonResponse["jsonrpc"] = "2.0";
-    if (id.substr(labelStart, labelEnd) == "STR")
-    {
-        jsonResponse["id"] = id.substr(labelEnd, id.length() - labelEnd);
-    }
-    else
-    {
-        jsonResponse["id"] = Json::Value::Int64(std::stoll(id.substr(labelEnd, id.length() -
-            labelEnd)));
-    }
+    jsonResponse["id"] = DecodeJsonId(id);
     jsonResponse["params"] = params;
     jsonResponse["method"] = method;
     return jsonResponse;
@@ -1646,18 +1636,8 @@ Json::Value CreateJsonResponse(const std::string& id, const std::string& method,
 Json::Value CreateJsonResponse(const std::string& id, const Json::Value& result)
 {
     Json::Value jsonResponse;
-    int labelStart = 0;
-    int labelEnd = 3;
     jsonResponse["jsonrpc"] = "2.0";
-    if (id.substr(labelStart, labelEnd) == "STR")
-    {
-        jsonResponse["id"] = id.substr(labelEnd, id.length() - labelEnd);
-    }
-    else
-    {
-        jsonResponse["id"] = Json::Value::Int64(std::stoll(id.substr(labelEnd, id.length() -
-            labelEnd)));
-    }
+    jsonResponse["id"] = DecodeJsonId(id);
     jsonResponse["result"] = result;
     return jsonResponse;
 }
@@ -1665,24 +1645,8 @@ Json::Value CreateJsonResponse(const std::string& id, const Json::Value& result)
 Json::Value CreateJsonErrorResponse(const std::string& id, const Json::Value& error)
 {
     Json::Value jsonResponse;
-    int labelStart = 0;
-    int labelEnd = 3;
     jsonResponse["jsonrpc"] = "2.0";
-    if (id != OPTIONAL_STR_NOT_SET)
-    {
-        if (id.substr(labelStart, labelEnd) == "STR")
-        {
-            if (labelEnd != id.length())
-            {
-                jsonResponse["id"] = id.substr(labelEnd, id.length() - labelEnd);
-            }
-        }
-        else
-        {
-            jsonResponse["id"] = Json::Value::Int64(std::stoll(id.substr(labelEnd, id.length() -
-                labelEnd)));
-        }
-    }
+    jsonResponse["id"] = DecodeJsonId(id);
     jsonResponse["error"] = error;
     return jsonResponse;
 }
