@@ -324,5 +324,4 @@ WebSocketService::WebSocketConnection::WebSocketConnection(struct lws *wsi, cons
 {
     id_ = next_connection_id_++;
 }
-
 } // namespace NetworkServices
