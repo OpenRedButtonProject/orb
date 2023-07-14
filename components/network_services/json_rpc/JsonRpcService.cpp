@@ -251,15 +251,23 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestNegotiateMethods(int connec
     if (!HasParam(obj, "id", Json::stringValue) &&
         !HasParam(obj, "id", Json::intValue) &&
         !HasParam(obj, "id", Json::uintValue))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     std::string id = AddDataTypeIdentify(obj["id"]);
 
     if (!HasJsonParam(obj, "params"))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     if (!HasParam(obj["params"], "terminalToApp", Json::arrayValue))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     if (!HasParam(obj["params"], "appToTerminal", Json::arrayValue))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
 
     std::string terminalToApp;
     terminalToApp = obj["params"]["terminalToApp"].toStyledString();
@@ -297,11 +305,15 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestSubscribe(int connectionId,
     if (!HasParam(obj, "id", Json::stringValue) &&
         !HasParam(obj, "id", Json::intValue) &&
         !HasParam(obj, "id", Json::uintValue))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     std::string id = AddDataTypeIdentify(obj["id"]);
 
     if (!HasJsonParam(obj, "params"))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     if (!HasParam(obj["params"], "msgType", Json::arrayValue))
     {
         return JsonRpcStatus::INVALID_PARAMS;
@@ -338,11 +350,15 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestUnsubscribe(int connectionI
     if (!HasParam(obj, "id", Json::stringValue) &&
         !HasParam(obj, "id", Json::intValue) &&
         !HasParam(obj, "id", Json::uintValue))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     std::string id = AddDataTypeIdentify(obj["id"]);
 
     if (!HasJsonParam(obj, "params"))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     if (!HasParam(obj["params"], "msgType", Json::arrayValue))
     {
         return JsonRpcStatus::INVALID_PARAMS;
@@ -379,10 +395,14 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestFeatureSupportInfo(int conn
     if (!HasParam(obj, "id", Json::stringValue) &&
         !HasParam(obj, "id", Json::intValue) &&
         !HasParam(obj, "id", Json::uintValue))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     std::string id = AddDataTypeIdentify(obj["id"]);
     if (!HasJsonParam(obj, "params"))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     if (!HasParam(obj["params"], "feature", Json::stringValue))
     {
         return JsonRpcStatus::INVALID_PARAMS;
@@ -405,10 +425,14 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestFeatureSettingsQuery(int co
     if (!HasParam(obj, "id", Json::stringValue) &&
         !HasParam(obj, "id", Json::intValue) &&
         !HasParam(obj, "id", Json::uintValue))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     std::string id = AddDataTypeIdentify(obj["id"]);
     if (!HasJsonParam(obj, "params"))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     if (!HasParam(obj["params"], "feature", Json::stringValue))
     {
         return JsonRpcStatus::INVALID_PARAMS;
@@ -431,10 +455,14 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestFeatureSuppress(int connect
     if (!HasParam(obj, "id", Json::stringValue) &&
         !HasParam(obj, "id", Json::intValue) &&
         !HasParam(obj, "id", Json::uintValue))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     std::string id = AddDataTypeIdentify(obj["id"]);
     if (!HasJsonParam(obj, "params"))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     if (!HasParam(obj["params"], "feature", Json::stringValue))
     {
         return JsonRpcStatus::INVALID_PARAMS;
@@ -457,7 +485,9 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestDialogueEnhancementOverride
     if (!HasParam(obj, "id", Json::stringValue) &&
         !HasParam(obj, "id", Json::intValue) &&
         !HasParam(obj, "id", Json::uintValue))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     std::string id = AddDataTypeIdentify(obj["id"]);
 
     int dialogueEnhancementGain = OPTIONAL_INT_NOT_SET;
@@ -465,7 +495,9 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestDialogueEnhancementOverride
     {
         Json::Value params = obj["params"];
         if (HasParam(params, "dialogueEnhancementGain", Json::intValue))
+        {
             dialogueEnhancementGain = params["dialogueEnhancementGain"].asInt();
+        }
     }
     LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
     m_sessionCallback->RequestDialogueEnhancementOverride(connectionId, id,
@@ -479,12 +511,18 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestTriggerResponseToUserAction
     if (!HasParam(obj, "id", Json::stringValue) &&
         !HasParam(obj, "id", Json::intValue) &&
         !HasParam(obj, "id", Json::uintValue))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     std::string id = AddDataTypeIdentify(obj["id"]);
     if (!HasJsonParam(obj, "params"))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     if (!HasParam(obj["params"], "magnitude", Json::stringValue))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     std::string magnitude = obj["params"]["magnitude"].asString();
     LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
     m_sessionCallback->RequestTriggerResponseToUserAction(connectionId, id, magnitude);
@@ -495,9 +533,13 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyVoiceReady(int connectionId,
     Json::Value &obj)
 {
     if (!HasJsonParam(obj, "params"))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     if (!HasParam(obj["params"], "ready", Json::booleanValue))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     bool ready = obj["params"]["ready"].asBool();
     LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
     m_sessionCallback->NotifyVoiceReady(connectionId, ready);
@@ -508,10 +550,14 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
     Json::Value &obj)
 {
     if (!HasJsonParam(obj, "params"))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     Json::Value params = obj["params"];
     if (!HasParam(params, "state", Json::stringValue))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
 
     std::string state = params["state"].asString();
     if (state != "no-media" &&
@@ -528,7 +574,9 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
         state == "stopped")
     {
         if (!HasParam(params, "kind", Json::stringValue))
+        {
             return JsonRpcStatus::INVALID_PARAMS;
+        }
         kind = params["kind"].asString();
         if (kind != "audio" && kind != "audio-video")
         {
@@ -541,7 +589,9 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
         state == "stopped")
     {
         if (!HasParam(params, "type", Json::stringValue))
+        {
             return JsonRpcStatus::INVALID_PARAMS;
+        }
         type = params["type"].asString();
         if (type != "live" && type != "on-demand")
         {
@@ -556,7 +606,9 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
             !HasParam(params, "currentTime", Json::intValue) &&
             !HasParam(params, "currentTime", Json::uintValue) &&
             !HasParam(params, "currentTime", Json::realValue))
+        {
             return JsonRpcStatus::INVALID_PARAMS;
+        }
         currentTimeStr = AddDataTypeIdentify(params["currentTime"]);
     }
 
@@ -565,17 +617,23 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
     if (state == "buffering" || state == "paused" || state == "playing")
     {
         if (!HasJsonParam(params, "range"))
+        {
             return JsonRpcStatus::INVALID_PARAMS;
+        }
         if (!HasParam(params["range"], "start", Json::stringValue) &&
             !HasParam(params["range"], "start", Json::intValue) &&
             !HasParam(params["range"], "start", Json::uintValue) &&
             !HasParam(params["range"], "start", Json::realValue))
+        {
             return JsonRpcStatus::INVALID_PARAMS;
+        }
         if (!HasParam(params["range"], "end", Json::stringValue) &&
             !HasParam(params["range"], "end", Json::intValue) &&
             !HasParam(params["range"], "end", Json::uintValue) &&
             !HasParam(params["range"], "end", Json::realValue))
+        {
             return JsonRpcStatus::INVALID_PARAMS;
+        }
         rangeStart = AddDataTypeIdentify(params["range"]["start"]);
         rangeEnd = AddDataTypeIdentify(params["range"]["end"]);
     }
@@ -590,43 +648,63 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
     bool actSeekLive = false;
     bool actWallclock = false;
     if (!HasJsonParam(params, "availableActions"))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
 
     Json::Value actions = params["availableActions"];
     if (HasParam(actions, "pause", Json::booleanValue) &&
         actions["pause"] == true)
+    {
         actPause = true;
+    }
 
     if (HasParam(actions, "play", Json::booleanValue) &&
         actions["play"] == true)
+    {
         actPlay = true;
+    }
 
     if (HasParam(actions, "fast-forward", Json::booleanValue) &&
         actions["fast-forward"] == true)
+    {
         actFastForward = true;
+    }
 
     if (HasParam(actions, "fast-reverse", Json::booleanValue) &&
         actions["fast-reverse"] == true)
+    {
         actFastReverse = true;
+    }
     if (HasParam(actions, "stop", Json::booleanValue) &&
         actions["stop"] == true)
+    {
         actStop = true;
+    }
 
     if (HasParam(actions, "seek-content", Json::booleanValue) &&
         actions["seek-content"] == true)
+    {
         actSeekContent = true;
+    }
 
     if (HasParam(actions, "seek-relative", Json::booleanValue) &&
         actions["seek-relative"] == true)
+    {
         actSeekRelative = true;
+    }
 
     if (HasParam(actions, "seek-live", Json::booleanValue) &&
         actions["seek-live"] == true)
+    {
         actSeekLive = true;
+    }
 
     if (HasParam(actions, "seek-wallclock", Json::booleanValue) &&
         actions["seek-wallclock"] == true)
+    {
         actWallclock = true;
+    }
 
     std::string mediaId;
     std::string title;
@@ -637,21 +715,31 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
         state == "stopped")
     {
         if (!HasJsonParam(params, "metadata"))
+        {
             return JsonRpcStatus::INVALID_PARAMS;
+        }
         Json::Value metadata = params["metadata"];
 
         if (!HasParam(metadata, "title", Json::stringValue))
+        {
             return JsonRpcStatus::INVALID_PARAMS;
+        }
         title = metadata["title"].asString();
 
         if (HasParam(metadata, "mediaId", Json::stringValue))
+        {
             mediaId = metadata["mediaId"].asString();
+        }
 
         if (HasParam(metadata, "secondaryTitle", Json::stringValue))
+        {
             secTitle = metadata["secondaryTitle"].asString();
+        }
 
         if (HasParam(metadata, "synopsis", Json::stringValue))
+        {
             synopsis = metadata["synopsis"].asString();
+        }
     }
 
 
@@ -665,38 +753,58 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
     if (state == "buffering" || state == "paused" || state == "playing")
     {
         if (!HasJsonParam(params, "accessibility"))
+        {
             return JsonRpcStatus::INVALID_PARAMS;
+        }
         if (!HasJsonParam(params["accessibility"], "subtitles"))
+        {
             return JsonRpcStatus::INVALID_PARAMS;
+        }
         if (!HasJsonParam(params["accessibility"], "audioDescription"))
+        {
             return JsonRpcStatus::INVALID_PARAMS;
+        }
         if (!HasJsonParam(params["accessibility"], "signLanguage"))
+        {
             return JsonRpcStatus::INVALID_PARAMS;
+        }
 
         Json::Value subtitles = params["accessibility"]["subtitles"];
         Json::Value audioDescription = params["accessibility"]["audioDescription"];
         Json::Value signLanguage = params["accessibility"]["signLanguage"];
 
         if (!HasParam(subtitles, "enabled", Json::booleanValue))
+        {
             return JsonRpcStatus::INVALID_PARAMS;
+        }
         if (!HasParam(subtitles, "available", Json::booleanValue))
+        {
             return JsonRpcStatus::INVALID_PARAMS;
+        }
 
         subtitlesEnabled = subtitles["enabled"].asBool();
         subtitlesAvailable = subtitles["available"].asBool();
 
         if (!HasParam(audioDescription, "enabled", Json::booleanValue))
+        {
             return JsonRpcStatus::INVALID_PARAMS;
+        }
         if (!HasParam(audioDescription, "available", Json::booleanValue))
+        {
             return JsonRpcStatus::INVALID_PARAMS;
+        }
 
         audioDescripEnabled = audioDescription["enabled"].asBool();
         audioDescripAvailable = audioDescription["available"].asBool();
 
         if (!HasParam(signLanguage, "enabled", Json::booleanValue))
+        {
             return JsonRpcStatus::INVALID_PARAMS;
+        }
         if (!HasParam(signLanguage, "available", Json::booleanValue))
+        {
             return JsonRpcStatus::INVALID_PARAMS;
+        }
 
         signLangEnabled = signLanguage["enabled"].asBool();
         signLangAvailable = signLanguage["available"].asBool();
@@ -721,11 +829,15 @@ JsonRpcService::JsonRpcStatus JsonRpcService::ReceiveIntentConfirm(int connectio
     if (!HasParam(obj, "id", Json::stringValue) &&
         !HasParam(obj, "id", Json::intValue) &&
         !HasParam(obj, "id", Json::uintValue))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     std::string id = AddDataTypeIdentify(obj["id"]);
 
     if (!HasParam(result, "method", Json::stringValue))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     std::string method = result["method"].asString();
 
     if (method == MD_INTENT_MEDIA_PAUSE ||
@@ -757,20 +869,28 @@ JsonRpcService::JsonRpcStatus JsonRpcService::ReceiveError(int connectionId, con
     if (!HasParam(obj, "id", Json::stringValue) &&
         !HasParam(obj, "id", Json::intValue) &&
         !HasParam(obj, "id", Json::uintValue))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
     std::string id = AddDataTypeIdentify(obj["id"]);
 
     if (!HasParam(error, "code", Json::intValue))
+    {
         return JsonRpcStatus::INVALID_PARAMS;
+    }
 
     int code = error["code"].asInt();
     std::string message;
     if (HasParam(error, "message", Json::stringValue))
+    {
         message = error["message"].asString();
+    }
 
     std::string data;
     if (HasParam(error, "data", Json::stringValue))
+    {
         message = error["data"].asString();
+    }
 
     LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
     m_sessionCallback->ReceiveError(connectionId, id, code, message);
