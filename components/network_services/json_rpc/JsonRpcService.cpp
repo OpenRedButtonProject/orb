@@ -115,9 +115,6 @@ JsonRpcService::JsonRpcService(
     registerMethod(MD_INTENT_SEARCH, &JsonRpcService::ReceiveIntentConfirm);
     registerMethod(MD_INTENT_DISPLAY, &JsonRpcService::ReceiveIntentConfirm);
     registerMethod(MD_INTENT_PLAYBACK, &JsonRpcService::ReceiveIntentConfirm);
-
-    LOG(LOG_INFO, "Start");
-    Start();
 }
 
 bool JsonRpcService::OnConnection(WebSocketConnection *connection)
