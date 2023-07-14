@@ -272,6 +272,7 @@ private:
     std::unique_ptr<SessionCallback> m_sessionCallback;
     std::map<std::string, std::function<JsonRpcStatus(int connectionId, const
         Json::Value&)> > m_json_rpc_methods;
+    std::map<std::string, int> m_mapOfFeatures;
 
     static const std::string accessibilityFeatures[8];
 
