@@ -131,7 +131,7 @@ private:
     void removeTimeline(const std::string &timelineSelector);
 
     void initialise(const bool &isMasterBroadcast, std::string dvbUri = "", bool permanentError =
-        false, bool presenting = true);
+            false, bool presenting = true);
     void updateBroadcastContentStatus(std::string dvbUri = "", bool permanentError = false, bool
         presenting = true);
     void updateAllCIIClients();
@@ -183,9 +183,9 @@ public:
 
     bool initMediaSynchroniser(const int &id, bool isMasterBroadcast);
     void updateDvbInfo(const int &onetId, const int &transId, const int &servId,
-                       const bool &permanentError, const bool &presenting, const std::string
-                       &programmeId = "", const std::time_t &startTime = 0, const std::time_t
-                       &duration = 0);
+        const bool &permanentError, const bool &presenting, const std::string
+        &programmeId = "", const std::time_t &startTime = 0, const std::time_t
+        &duration = 0);
     void releaseResources();
 
 private:
