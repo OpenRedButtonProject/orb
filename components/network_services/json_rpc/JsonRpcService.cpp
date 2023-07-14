@@ -18,7 +18,6 @@
 #define OPTIONAL_INT_NOT_SET -999999
 #define OPTIONAL_STR_NOT_SET ""
 
-
 #define F_SUBTITLES "subtitles"
 #define F_DIALOGUE_ENHANCEMENT "dialogueEnhancement"
 #define F_UI_MAGNIFIER "uiMagnifier"
@@ -72,8 +71,6 @@ void JsonRpcService::registerMethod(const std::string &name, JsonRpcMethod metho
         std::placeholders::_2);
 }
 
-std::map<std::string, int> mapOfFeatures;
-
 JsonRpcService::JsonRpcService(
     int port,
     const std::string &endpoint,
@@ -82,14 +79,14 @@ JsonRpcService::JsonRpcService(
     m_endpoint(endpoint),
     m_sessionCallback(std::move(sessionCallback))
 {
-    mapOfFeatures[F_SUBTITLES] = 0;
-    mapOfFeatures[F_DIALOGUE_ENHANCEMENT] = 1;
-    mapOfFeatures[F_UI_MAGNIFIER] = 2;
-    mapOfFeatures[F_HIGH_CONTRAST_UI] = 3;
-    mapOfFeatures[F_SCREEN_READER] = 4;
-    mapOfFeatures[F_RESPONSE_TO_USER_ACTION] = 5;
-    mapOfFeatures[F_AUDIO_DESCRIPTION] = 6;
-    mapOfFeatures[F_IN_VISION_SIGNING] = 7;
+    m_mapOfFeatures[F_SUBTITLES] = 0;
+    m_mapOfFeatures[F_DIALOGUE_ENHANCEMENT] = 1;
+    m_mapOfFeatures[F_UI_MAGNIFIER] = 2;
+    m_mapOfFeatures[F_HIGH_CONTRAST_UI] = 3;
+    m_mapOfFeatures[F_SCREEN_READER] = 4;
+    m_mapOfFeatures[F_RESPONSE_TO_USER_ACTION] = 5;
+    m_mapOfFeatures[F_AUDIO_DESCRIPTION] = 6;
+    m_mapOfFeatures[F_IN_VISION_SIGNING] = 7;
 
     registerMethod(MD_NEGOTIATE_METHODS, &JsonRpcService::RequestNegotiateMethods);
     registerMethod(MD_SUBSCRIBE, &JsonRpcService::RequestSubscribe);
@@ -299,9 +296,9 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestSubscribe(int connectionId,
     {
         int length = msg.asString().length();
         std::string s = msg.asString().substr(0, length - 10);      //remove the PrefChange
-        if (mapOfFeatures.find(s) != mapOfFeatures.end())
+        if (m_mapOfFeatures.find(s) != m_mapOfFeatures.end())
         {
-            msgTypeBoolList[mapOfFeatures[s]] = true;
+            msgTypeBoolList[m_mapOfFeatures[s]] = true;
         }
         else
         {
@@ -339,9 +336,9 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestUnsubscribe(int connectionI
     {
         int length = msg.asString().length();
         std::string s = msg.asString().substr(0, length - 10);      //remove the PrefChange
-        if (mapOfFeatures.find(s) != mapOfFeatures.end())
+        if (m_mapOfFeatures.find(s) != m_mapOfFeatures.end())
         {
-            msgTypeBoolList[mapOfFeatures[s]] = true;
+            msgTypeBoolList[m_mapOfFeatures[s]] = true;
         }
         else
         {
@@ -373,13 +370,13 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestFeatureSupportInfo(int conn
     }
 
     std::string feature = obj["params"]["feature"].asString();
-    if (mapOfFeatures.find(feature) == mapOfFeatures.end())
+    if (m_mapOfFeatures.find(feature) == m_mapOfFeatures.end())
     {
         return JsonRpcStatus::INVALID_PARAMS;
     }
     LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
     m_sessionCallback->RequestFeatureSupportInfo(connectionId, id,
-        mapOfFeatures[feature]);
+                                                 m_mapOfFeatures[feature]);
     return JsonRpcStatus::SUCCESS;
 }
 
@@ -399,13 +396,13 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestFeatureSettingsQuery(int co
     }
 
     std::string feature = obj["params"]["feature"].asString();
-    if (mapOfFeatures.find(feature) == mapOfFeatures.end())
+    if (m_mapOfFeatures.find(feature) == m_mapOfFeatures.end())
     {
         return JsonRpcStatus::INVALID_PARAMS;
     }
     LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
     m_sessionCallback->RequestFeatureSettingsQuery(connectionId, id,
-        mapOfFeatures[feature]);
+                                                   m_mapOfFeatures[feature]);
     return JsonRpcStatus::SUCCESS;
 }
 
@@ -425,13 +422,13 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestFeatureSuppress(int connect
     }
 
     std::string feature = obj["params"]["feature"].asString();
-    if (mapOfFeatures.find(feature) == mapOfFeatures.end())
+    if (m_mapOfFeatures.find(feature) == m_mapOfFeatures.end())
     {
         return JsonRpcStatus::INVALID_PARAMS;
     }
     LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
     m_sessionCallback->RequestFeatureSuppress(connectionId, id,
-        mapOfFeatures[feature]);
+                                              m_mapOfFeatures[feature]);
     return JsonRpcStatus::SUCCESS;
 }
 
