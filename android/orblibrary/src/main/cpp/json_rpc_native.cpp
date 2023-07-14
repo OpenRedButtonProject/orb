@@ -382,6 +382,7 @@ JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_JsonRpc_nativeOpen(
     auto *service = new NetworkServices::JsonRpcService(
         port, JniUtils::MakeStdString(env, endpoint),
         std::move(sessionCallback));
+    service->Start();
     env->SetLongField(object, g_service, jlong(service));
 }
 
