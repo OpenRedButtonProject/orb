@@ -1597,7 +1597,8 @@ Json::Value DecodeJsonId(const std::string& id)
     Json::CharReaderBuilder builder;
     Json::Value jsonId;
     std::string errs;
-    std::istringstream ss(id);
+    std::string str = "\"" + id + "\"";
+    std::istringstream ss(str.c_str());
     if (!Json::parseFromStream(builder, ss, &jsonId, &errs)) {
         return Json::nullValue;
     }
