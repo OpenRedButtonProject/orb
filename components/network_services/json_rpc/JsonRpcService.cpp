@@ -194,8 +194,8 @@ void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const st
                 }
                 else
                 {
-                    LOG(LOG_INFO, "Error, Invalid params");
-                    status = JsonRpcStatus::INVALID_PARAMS;
+                    LOG(LOG_INFO, "Error, Invalid Request");
+                    status = JsonRpcStatus::INVALID_REQUEST;
                 }
                 if (method != "")
                 {
@@ -860,7 +860,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::ReceiveIntentConfirm(int connectio
     }
     else
     {
-        // TODO No return value!!
+        return JsonRpcStatus::METHOD_NOT_FOUND;
     }
 }
 
@@ -887,14 +887,27 @@ JsonRpcService::JsonRpcStatus JsonRpcService::ReceiveError(int connectionId, con
         message = error["message"].asString();
     }
 
+    std::string method;
+    if (HasParam(error, "method", Json::stringValue))
+    {
+        method = error["method"].asString();
+    }
+
     std::string data;
     if (HasParam(error, "data", Json::stringValue))
     {
-        message = error["data"].asString();
+        data = error["data"].asString();
     }
 
     LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
-    m_sessionCallback->ReceiveError(connectionId, id, code, message);
+    if (method != OPTIONAL_STR_NOT_SET || data != OPTIONAL_STR_NOT_SET)
+    {
+        m_sessionCallback->ReceiveError(connectionId, id, code, message, method, data);
+    }
+    else
+    {
+        m_sessionCallback->ReceiveError(connectionId, id, code, message);
+    }
     return JsonRpcStatus::SUCCESS;
 }
 
