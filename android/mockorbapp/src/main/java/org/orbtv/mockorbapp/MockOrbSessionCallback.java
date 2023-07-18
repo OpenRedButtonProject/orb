@@ -1564,7 +1564,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     public void onReceiveIntentConfirm(int connection, String id, String method) {
         Log.d(TAG, "\"onReceiveIntentConfirm\" is received by MockOrbSessionCallback{" +
                 "\n\"method\":\"" + method + "\"" +
-                "\n\"}");
+                "\n}");
     }
 
     /**
@@ -1577,7 +1577,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     public void onNotifyVoiceReady(int connection, boolean isReady) {
         Log.d(TAG, "\"onNotifyVoiceReady\" is received by MockOrbSessionCallback{" +
                 "\n\"ready\":" + isReady +
-                "\n\"}");
+                "\n}");
     }
 
     /**
@@ -1612,7 +1612,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 "\n\"actSeekRelative\":" + actSeekRelative + "," +
                 "\n\"actSeekLive\":" + actSeekLive + "," +
                 "\n\"actWallclock\":" + actWallclock +
-                "\n\"}");
+                "\n}");
     }
 
     /**
@@ -1658,6 +1658,11 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
 
         Log.d(TAG, "\"onNotifyStateMedia\" is received by MockOrbSessionCallback{" +
                 "\n\"state\":\"" + state + "\"," +
+                "\n\"kind\":\"" + kind + "\"," +
+                "\n\"type\":\"" + type + "\"," +
+                "\n\"currentTime\":" + currentTime + "," +
+                "\n\"rangeStart\":" + rangeStart + "," +
+                "\n\"rangeEnd\":" + rangeEnd + "," +
                 "\n\"actPause\":" + actPause + "," +
                 "\n\"actPlay\":" + actPlay + "," +
                 "\n\"actFastForward\":" + actFastForward + "," +
@@ -1667,37 +1672,37 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 "\n\"actSeekRelative\":" + actSeekRelative + "," +
                 "\n\"actSeekLive\":" + actSeekLive + "," +
                 "\n\"actWallclock\":" + actWallclock + "," +
-                "\n\"mediaId\":" + mediaId + "," +
-                "\n\"title\":" + title + "," +
-                "\n\"secondaryTitle\":" + secTitle + "," +
-                "\n\"synopsis\":" + synopsis + "," +
+                "\n\"mediaId\":\"" + mediaId + "\"," +
+                "\n\"title\":\"" + title + "\"," +
+                "\n\"secondaryTitle\":\"" + secTitle + "\"," +
+                "\n\"synopsis\":\"" + synopsis + "\"," +
                 "\n\"subtitlesEnabled\":" + subtitlesEnabled + "," +
                 "\n\"subtitlesAvailable\":" + subtitlesAvailable + "," +
                 "\n\"audioDescripEnabled\":" + audioDescripEnabled + "," +
                 "\n\"audioDescripAvailable\":" + audioDescripAvailable + "," +
                 "\n\"signLangEnabled\":" + signLangEnabled + "," +
                 "\n\"signLangAvailable\":" + signLangAvailable + "," +
-                "\n\"}");
+                "\n}");
 
         // TEST for intent.Media
-        mSession.onSendIntentMediaBasics(INTENT_PAUSE, connection, "STR123-0", "voice");
-        mSession.onSendIntentMediaBasics(INTENT_PLAY, connection, "STR123-1", "voice");
-        mSession.onSendIntentMediaBasics(INTENT_FAST_FORWARD, connection, "STR123-2", "voice");
-        mSession.onSendIntentMediaBasics(INTENT_FAST_REVERSE, connection, "STR123-3", "voice");
-        mSession.onSendIntentMediaBasics(INTENT_STOP, connection, "STR123-4", "voice");
+        mSession.onSendIntentMediaBasics(INTENT_PAUSE, connection, "\"STR123-0\"", "voice");
+        mSession.onSendIntentMediaBasics(INTENT_PLAY, connection, "\"STR123-1\"", "voice");
+        mSession.onSendIntentMediaBasics(INTENT_FAST_FORWARD, connection, "\"STR123-2\"", "voice");
+        mSession.onSendIntentMediaBasics(INTENT_FAST_REVERSE, connection, "\"STR123-3\"", "voice");
+        mSession.onSendIntentMediaBasics(INTENT_STOP, connection, "\"STR123-4\"", "voice");
 
-        mSession.onSendIntentMediaSeekContent(connection, "STR123-5","voice",
+        mSession.onSendIntentMediaSeekContent(connection, "\"STR123-5\"","voice",
                                         "start", 30);
-        mSession.onSendIntentMediaSeekRelative(connection, "STR123-6","voice",
+        mSession.onSendIntentMediaSeekRelative(connection, "\"STR123-6\"","voice",
                                         -60);
-        mSession.onSendIntentMediaSeekLive(connection, "STR123-7","voice", -30);
-        mSession.onSendIntentMediaSeekWallclock(connection, "STR123-8","voice",
+        mSession.onSendIntentMediaSeekLive(connection, "\"STR123-7\"","voice", -30);
+        mSession.onSendIntentMediaSeekWallclock(connection, "\"STR123-8\"","voice",
                                         "2020-02-12T10:00:00.000Z");
-        mSession.onSendIntentSearch(connection, "STR123-9", "voice",
+        mSession.onSendIntentSearch(connection, "\"STR123-9\"", "voice",
                                         "DOCTOR WHO");
-        mSession.onSendIntentDisplay(connection, "STR123-10", "voice",
+        mSession.onSendIntentDisplay(connection, "\"STR123-10\"", "voice",
                                          "urn:broadcaster:programme:1249863457643");
-        mSession.onSendIntentPlayback(connection, "STR123-11", "voice",
+        mSession.onSendIntentPlayback(connection, "\"STR123-11\"", "voice",
                                           "urn:broadcaster:programme:1249863457643",
                                                     EMPTY_STRING, EMPTY_INTEGER);
     }
@@ -1721,10 +1726,10 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
 
         // TEST for response.Error
         Log.d(TAG, "\"onReceiveError\" is received by MockOrbSessionCallback{" +
-                "\n\"id\":\"" + id + "\", " +
+                "\n\"id\":" + id + ", " +
                 "\n\"code\":" + code + ", " +
-                "\n\"message\":\"" + message + "\"" +
-                "\n\"}");
+                "\n\"message\":" + message +
+                "\n}");
 
         mSession.onRespondError(connection, id, code, message);
         mSession.onRespondError(connection, "STR"+EMPTY_STRING, code, message, "this is data");
@@ -1745,12 +1750,12 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
 
         // TEST for response.Error
         Log.d(TAG, "\"onReceiveError\" is received by MockOrbSessionCallback{" +
-                                            "\n\"id\":" + id +"\"," +
-                                            "\n\"code\":" + code + ", " +
+                                            "\n\"id\":" + id + ", " +
+                                            "\n\"code:" + code + ", " +
                                             "\n\"message\":\"" + message + "\", " +
                                             "\n\"method\":\"" + method + "\", " +
                                             "\n\"data\":\"" + data + "\"" +
-                                            "\n\"}");
+                                            "\n}");
     }
 
     private static byte[] getAssetBytes(Context context, String asset) {
