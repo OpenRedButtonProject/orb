@@ -270,13 +270,10 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestNegotiateMethods(int connec
     {
         return JsonRpcStatus::INVALID_PARAMS;
     }
-
     std::string terminalToApp;
     terminalToApp = obj["params"]["terminalToApp"].toStyledString();
     std::string appToTerminal;
     appToTerminal = obj["params"]["appToTerminal"].toStyledString();
-
-
     // Remove newline characters
     size_t pos;
     while ((pos = appToTerminal.find('\n')) != std::string::npos)
@@ -288,14 +285,10 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestNegotiateMethods(int connec
     {
         terminalToApp.erase(pos, 2);
     }
-
     // Remove square brackets
     appToTerminal.erase(appToTerminal.begin(), appToTerminal.begin() + 1);
     // Remove square brackets
     terminalToApp.erase(terminalToApp.begin(), terminalToApp.begin() + 1);
-
-    LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
-
     m_sessionCallback->RequestNegotiateMethods(connectionId, id, terminalToApp,
         appToTerminal);
     return JsonRpcStatus::SUCCESS;
@@ -337,7 +330,6 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestSubscribe(int connectionId,
             return JsonRpcStatus::INVALID_PARAMS;
         }
     }
-    LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
     m_sessionCallback->RequestSubscribe(connectionId, id, msgTypeBoolList[0],
         msgTypeBoolList[1], msgTypeBoolList[2],
         msgTypeBoolList[3], msgTypeBoolList[4],
@@ -382,7 +374,6 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestUnsubscribe(int connectionI
             return JsonRpcStatus::INVALID_PARAMS;
         }
     }
-    LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
     m_sessionCallback->RequestUnsubscribe(connectionId, id, msgTypeBoolList[0],
         msgTypeBoolList[1], msgTypeBoolList[2],
         msgTypeBoolList[3], msgTypeBoolList[4],
@@ -415,7 +406,6 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestFeatureSupportInfo(int conn
     {
         return JsonRpcStatus::INVALID_PARAMS;
     }
-    LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
     m_sessionCallback->RequestFeatureSupportInfo(connectionId, id,
         GetAccessibilityFeatureId(feature));
     return JsonRpcStatus::SUCCESS;
@@ -445,7 +435,6 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestFeatureSettingsQuery(int co
     {
         return JsonRpcStatus::INVALID_PARAMS;
     }
-    LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
     m_sessionCallback->RequestFeatureSettingsQuery(connectionId, id,
         GetAccessibilityFeatureId(feature));
     return JsonRpcStatus::SUCCESS;
@@ -475,7 +464,6 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestFeatureSuppress(int connect
     {
         return JsonRpcStatus::INVALID_PARAMS;
     }
-    LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
     m_sessionCallback->RequestFeatureSuppress(connectionId, id,
         GetAccessibilityFeatureId(feature));
     return JsonRpcStatus::SUCCESS;
@@ -501,7 +489,6 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestDialogueEnhancementOverride
             dialogueEnhancementGain = params["dialogueEnhancementGain"].asInt();
         }
     }
-    LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
     m_sessionCallback->RequestDialogueEnhancementOverride(connectionId, id,
         dialogueEnhancementGain);
     return JsonRpcStatus::SUCCESS;
@@ -526,7 +513,6 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestTriggerResponseToUserAction
         return JsonRpcStatus::INVALID_PARAMS;
     }
     std::string magnitude = obj["params"]["magnitude"].asString();
-    LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
     m_sessionCallback->RequestTriggerResponseToUserAction(connectionId, id, magnitude);
     return JsonRpcStatus::SUCCESS;
 }
@@ -543,7 +529,6 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyVoiceReady(int connectionId,
         return JsonRpcStatus::INVALID_PARAMS;
     }
     bool ready = obj["params"]["ready"].asBool();
-    LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
     m_sessionCallback->NotifyVoiceReady(connectionId, ready);
     return JsonRpcStatus::SUCCESS;
 }
@@ -899,7 +884,6 @@ JsonRpcService::JsonRpcStatus JsonRpcService::ReceiveError(int connectionId, con
         data = error["data"].asString();
     }
 
-    LOG(LOG_INFO, "JSON-RPC-EXAMPLE #2: Service received request. Call session callback...");
     if (method != OPTIONAL_STR_NOT_SET || data != OPTIONAL_STR_NOT_SET)
     {
         m_sessionCallback->ReceiveError(connectionId, id, code, message, method, data);
