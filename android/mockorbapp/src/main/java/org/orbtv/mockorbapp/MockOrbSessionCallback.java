@@ -1423,11 +1423,51 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                                    boolean uiMagnifier, boolean highContrastUI,
                                    boolean screenReader, boolean responseToUserAction,
                                    boolean audioDescription, boolean inVisionSigning) {
+        StringBuilder subscriptions = new StringBuilder("\n\t");
+        String suffix = "PrefChange, \n\t";
+        if (subtitles) {
+            subscriptions.append(sFeatures.get(F_SUBTITLES) + suffix);
+        }
+        if (dialogueEnhancement) {
+            subscriptions.append(sFeatures.get(F_DIALOGUE_ENHANCEMENT) + suffix);
+        }
+        if (uiMagnifier) {
+            subscriptions.append(sFeatures.get(F_MAGNIFICATION_UI) + suffix);
+        }
+        if (highContrastUI) {
+            subscriptions.append(sFeatures.get(F_HIGH_CONTRAST_UI) + suffix);
+        }
+        if (screenReader) {
+            subscriptions.append(sFeatures.get(F_SCREEN_READER) + suffix);
+        }
+        if (responseToUserAction) {
+            subscriptions.append(sFeatures.get(F_RESPONSE_TO_A_USER_ACTION) + suffix);
+        }
+        if (audioDescription) {
+            subscriptions.append(sFeatures.get(F_AUDIO_DESCRIPTION) + suffix);
+        }
+        if (inVisionSigning) {
+            subscriptions.append(sFeatures.get(F_IN_VISION_SIGN_LANGUAGE) + suffix);
+        }
+        String subscriptionList;
+        int len = subscriptions.length();
+        if (len > 2) {
+            subscriptionList = subscriptions.toString().substring(0, len - 4);
+        } else {
+            subscriptionList = "";
+        }
+        if (mOnEventListener != null) {
+            String action = (isSubscribe)? "subscribe" : "unsubscribe";
+            mOnEventListener.onShowMessage(
+                    "Received a request of " + action +
+                            " for accessibility feature {" + subscriptionList + "}");
+            mOnEventListener.onShowMessage(
+                    "Successfully " + action);
+        }
 
         mSession.onRespondSubscribe(isSubscribe, connection, id,
                 subtitles, dialogueEnhancement, uiMagnifier, highContrastUI,
                 screenReader, responseToUserAction, audioDescription, inVisionSigning);
-
     }
 
     /**
