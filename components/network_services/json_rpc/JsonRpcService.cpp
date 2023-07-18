@@ -228,12 +228,16 @@ void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const st
     {
         int code = static_cast<int>(status);
         std::string message = GetErrorMessage(status);
-        std::string id;
-        if (HasParam(obj, "id", Json::stringValue) ||
-            HasParam(obj, "id", Json::intValue) ||
-            HasParam(obj, "id", Json::uintValue))
+        std::string id = OPTIONAL_STR_NOT_SET;
+        if (status != JsonRpcStatus::PARSE_ERROR &&
+            status != JsonRpcStatus::INVALID_REQUEST)
         {
-            id = EncodeJsonId(obj["id"]);
+            if (HasParam(obj, "id", Json::stringValue) ||
+                HasParam(obj, "id", Json::intValue) ||
+                HasParam(obj, "id", Json::uintValue))
+            {
+                id = EncodeJsonId(obj["id"]);
+            }
         }
         RespondError(connection->Id(), id, code, message);
     }
@@ -596,6 +600,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
         {
             return JsonRpcStatus::INVALID_PARAMS;
         }
+
         currentTimeStr = EncodeJsonId(params["currentTime"]);
     }
 
@@ -1584,6 +1589,13 @@ bool HasJsonParam(const Json::Value &json, const std::string &param)
 
 std::string EncodeJsonId(const Json::Value& id)
 {
+    //Avoid floating problem
+    if (id.type() == Json::realValue)
+    {
+        std::ostringstream oss;
+        oss << std::noshowpoint << id.asDouble();
+        return oss.str();
+    }
     Json::StreamWriterBuilder writerBuilder;
     writerBuilder["indentation"] = "";
     return Json::writeString(writerBuilder, id);
@@ -1594,9 +1606,9 @@ Json::Value DecodeJsonId(const std::string& id)
     Json::CharReaderBuilder builder;
     Json::Value jsonId;
     std::string errs;
-    std::string str = "\"" + id + "\"";
-    std::istringstream ss(str.c_str());
-    if (!Json::parseFromStream(builder, ss, &jsonId, &errs)) {
+    std::istringstream ss(id);
+    if (!Json::parseFromStream(builder, ss, &jsonId, &errs))
+    {
         return Json::nullValue;
     }
     return jsonId;
