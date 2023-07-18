@@ -37,7 +37,6 @@ public class JsonRpc {
 
     public void onRespondNegotiateMethods(int connection, String id,
                                           String terminalToApp, String appToTerminal) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onRespondNegotiateMethods...");
         nativeOnRespondNegotiateMethods(connection, id, terminalToApp, appToTerminal);
     }
 
@@ -49,7 +48,6 @@ public class JsonRpc {
         boolean uiMagnifier, boolean highContrastUI,
         boolean screenReader, boolean responseToUserAction,
         boolean audioDescription, boolean inVisionSigning) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onRespondSubscribe...");
         nativeOnRespondSubscribe(isSubscribe, connection, id,
                 subtitles, dialogueEnhancement, uiMagnifier, highContrastUI,
                 screenReader, responseToUserAction, audioDescription, inVisionSigning);
@@ -59,7 +57,6 @@ public class JsonRpc {
         int connection,
         String id,
         int dialogueEnhancementGain) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onRespondDialogueEnhancementOverride...");
         nativeOnRespondDialogueEnhancementOverride(connection, id, dialogueEnhancementGain);
     }
 
@@ -67,7 +64,6 @@ public class JsonRpc {
             int connection,
             String id,
             boolean actioned) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onRespondTriggerResponseToUserAction...");
         nativeOnRespondTriggerResponseToUserAction(connection, id, actioned);
     }
 
@@ -76,7 +72,6 @@ public class JsonRpc {
         String id,
         int feature,
         String value) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onRespondFeatureSupportInfo...");
         nativeOnRespondFeatureSupportInfo(connection, id, feature, value);
     }
 
@@ -85,7 +80,6 @@ public class JsonRpc {
         String id,
         int feature,
         String value) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onRespondFeatureSuppress...");
         nativeOnRespondFeatureSuppress(connection, id, feature, value);
     }
 
@@ -94,7 +88,6 @@ public class JsonRpc {
         String id,
         int code,
         String message) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onRespondError...");
         nativeOnRespondError(connection, id, code, message);
     }
 
@@ -104,7 +97,6 @@ public class JsonRpc {
         int code,
         String message,
         String data) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onRespondError...");
         nativeOnRespondErrorWithData(connection, id, code, message, data);
     }
 
@@ -123,7 +115,6 @@ public class JsonRpc {
         String windowColour,
         int windowOpacity,
         String language) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onQuerySubtitles...");
         nativeOnQuerySubtitles(connection, id,
                 enabled, size, fontFamily, textColour, textOpacity,
                 edgeType, edgeColour, backgroundColour, backgroundOpacity,
@@ -137,7 +128,6 @@ public class JsonRpc {
         int gain,
         int limitMin,
         int limitMax) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onQueryDialogueEnhancement...");
         nativeOnQueryDialogueEnhancement(connection, id,
                 gainPreference, gain, limitMin, limitMax);
     }
@@ -147,7 +137,6 @@ public class JsonRpc {
         String id,
         boolean enabled,
         String magType) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onQueryUIMagnifier...");
         nativeOnQueryUIMagnifier(connection, id, enabled, magType);
     }
 
@@ -156,7 +145,6 @@ public class JsonRpc {
         String id,
         boolean enabled,
         String hcType) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onQueryHighContrastUI...");
         nativeOnQueryHighContrastUI(connection, id, enabled, hcType);
     }
 
@@ -167,7 +155,6 @@ public class JsonRpc {
         int speed,
         String voice,
         String language) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onQueryScreenReader...");
         nativeOnQueryScreenReader(connection, id,
                 enabled, speed, voice, language);
     }
@@ -177,7 +164,6 @@ public class JsonRpc {
         String id,
         boolean enabled,
         String type) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onQueryResponseToUserAction...");
         nativeOnQueryResponseToUserAction(connection, id, enabled, type);
     }
 
@@ -187,7 +173,6 @@ public class JsonRpc {
         boolean enabled,
         int gainPreference,
         int panAzimuthPreference) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onQueryAudioDescription...");
         nativeOnQueryAudioDescription(connection, id,
                 enabled, gainPreference, panAzimuthPreference);
     }
@@ -196,7 +181,6 @@ public class JsonRpc {
         int connection,
         String id,
         boolean enabled) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onQueryInVisionSigning...");
         nativeOnQueryInVisionSigning(connection, id, enabled);
     }
 
@@ -205,7 +189,6 @@ public class JsonRpc {
         int connection,
         String id,
         String origin) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onSendIntentMediaBasics...");
         nativeOnSendIntentMediaBasics(cmd, connection, id, origin);
     }
 
@@ -215,7 +198,6 @@ public class JsonRpc {
         String origin,
         String anchor,
         int offset) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onSendIntentMediaSeekContent...");
         nativeOnSendIntentMediaSeekContent(connection, id, origin, anchor, offset);
     }
 
@@ -224,7 +206,6 @@ public class JsonRpc {
         String id,
         String origin,
         int offset) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onSendIntentMediaSeekRelative...");
         nativeOnSendIntentMediaSeekRelative(connection, id, origin, offset);
     }
 
@@ -233,7 +214,6 @@ public class JsonRpc {
         String id,
         String origin,
         int offset) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onSendIntentMediaSeekLive...");
         nativeOnSendIntentMediaSeekLive(connection, id, origin, offset);
     }
 
@@ -242,7 +222,6 @@ public class JsonRpc {
         String id,
         String origin,
         String dateTime) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onSendIntentMediaSeekWallclock...");
         nativeOnSendIntentMediaSeekWallclock(connection, id, origin, dateTime);
     }
 
@@ -251,7 +230,6 @@ public class JsonRpc {
         String id,
         String origin,
         String query) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onSendIntentSearch...");
         nativeOnSendIntentSearch(connection, id, origin, query);
     }
 
@@ -260,7 +238,6 @@ public class JsonRpc {
         String id,
         String origin,
         String mediaId) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onSendIntentDisplay...");
         nativeOnSendIntentDisplay(connection, id, origin, mediaId);
     }
 
@@ -271,7 +248,6 @@ public class JsonRpc {
         String mediaId,
         String anchor,
         int offset) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #7a: onSendIntentPlayback...");
         nativeOnSendIntentPlayback(connection, id, origin, mediaId, anchor, offset);
     }
 
@@ -282,7 +258,6 @@ public class JsonRpc {
         String id,
         String terminalToApp,
         String appToTerminal) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #4a: onRequestNegotiateMethods...");
         mOrbSessionCallback.onRequestNegotiateMethods(connection, id, terminalToApp, appToTerminal);
     }
 
@@ -294,7 +269,6 @@ public class JsonRpc {
         boolean uiMagnifier, boolean highContrastUI,
         boolean screenReader, boolean responseToUserAction,
         boolean audioDescription, boolean inVisionSigning) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #4: onRequestSubscribe...");
         mOrbSessionCallback.onRequestSubscribe(isSubscribe, connection, id,
                 subtitles, dialogueEnhancement, uiMagnifier, highContrastUI,
                 screenReader, responseToUserAction, audioDescription, inVisionSigning);
@@ -304,7 +278,6 @@ public class JsonRpc {
         int connection,
         String id,
         int dialogueEnhancementGain) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #4: onRequestDialogueEnhancementOverride...");
         mOrbSessionCallback.onRequestDialogueEnhancementOverride(connection, id, dialogueEnhancementGain);
     }
 
@@ -312,7 +285,6 @@ public class JsonRpc {
             int connection,
             String id,
             String magnitude){
-        Log.d(TAG, "JSON-RPC-EXAMPLE #4: onRequestTriggerResponseToUserAction...");
         mOrbSessionCallback.onRequestTriggerResponseToUserAction(connection, id, magnitude);
     }
 
@@ -320,7 +292,6 @@ public class JsonRpc {
             int connection,
             String id,
             int feature) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #4a: onRequestFeatureSupportInfo...");
         mOrbSessionCallback.onRequestFeatureSupportInfo(connection, id, feature);
     }
 
@@ -328,7 +299,6 @@ public class JsonRpc {
             int connection,
             String id,
             int feature) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #4a: onRequestFeatureSettingsQuery...");
         mOrbSessionCallback.onRequestFeatureSettingsQuery(connection, id, feature);
     }
 
@@ -336,7 +306,6 @@ public class JsonRpc {
             int connection,
             String id,
             int feature) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #4a: onRequestFeatureSuppress...");
         mOrbSessionCallback.onRequestFeatureSuppress(connection, id, feature);
     }
 
@@ -344,14 +313,12 @@ public class JsonRpc {
             int connection,
             String id,
             String method) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #4a: onReceiveIntentConfirm...");
         mOrbSessionCallback.onReceiveIntentConfirm(connection, id, method);
     }
 
     private void onNotifyVoiceReady(
             int connection,
             boolean isReady) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #4a: onNotifyVoiceReady...");
         mOrbSessionCallback.onNotifyVoiceReady(connection, isReady);
     }
 
@@ -360,7 +327,6 @@ public class JsonRpc {
             String state,
             boolean actPause, boolean actPlay, boolean actFastForward, boolean actFastReverse, boolean actStop,
             boolean actSeekContent, boolean actSeekRelative, boolean actSeekLive, boolean actWallclock) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #4a: onNotifyStateMedia...");
         mOrbSessionCallback.onNotifyStateMedia(connection, state,
                 actPause, actPlay, actFastForward, actFastReverse, actStop,
                 actSeekContent, actSeekRelative, actSeekLive, actWallclock);
@@ -376,7 +342,6 @@ public class JsonRpc {
             boolean subtitlesEnabled, boolean subtitlesAvailable,
             boolean audioDescripEnabled, boolean audioDescripAvailable,
             boolean signLangEnabled, boolean signLangAvailable) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #4a: onNotifyStateMedia...");
         mOrbSessionCallback.onNotifyStateMedia(connection,
                 state, kind, type, currentTime,
                 rangeStart, rangeEnd,
@@ -393,7 +358,6 @@ public class JsonRpc {
             String id,
             int code,
             String message) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #4a: onReceiveError...");
         mOrbSessionCallback.onReceiveError(connection, id, code, message);
     }
 
@@ -404,7 +368,6 @@ public class JsonRpc {
             String message,
             String method,
             String data) {
-        Log.d(TAG, "JSON-RPC-EXAMPLE #4a: onReceiveError with all params...");
         mOrbSessionCallback.onReceiveError(connection, id, code, message, method, data);
     }
 
