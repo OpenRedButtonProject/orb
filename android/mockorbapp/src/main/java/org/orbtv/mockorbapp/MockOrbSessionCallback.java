@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -64,6 +65,38 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     private final HashMap<Integer, Handler> mActiveSearchList = new HashMap<>();
 
     static SparseArray<Integer> mKeyMap;
+
+    private static final int F_SUBTITLES = 0;
+    private static final int F_DIALOGUE_ENHANCEMENT = 1;
+    private static final int F_MAGNIFICATION_UI = 2;
+    private static final int F_HIGH_CONTRAST_UI = 3;
+    private static final int F_SCREEN_READER = 4;
+    private static final int F_RESPONSE_TO_A_USER_ACTION = 5;
+    private static final int F_AUDIO_DESCRIPTION = 6;
+    private static final int F_IN_VISION_SIGN_LANGUAGE = 7;
+    private final int EMPTY_INTEGER = -999999;
+    private final String EMPTY_STRING = "";
+
+    public interface OnEventListener {
+        void onShowMessage(String msg);
+    }
+    private OnEventListener mOnEventListener;
+    public void setOnEventListener(OnEventListener listener) {
+        mOnEventListener = listener;
+    }
+
+    private static final Map<Integer, String> sFeatures =
+            new HashMap<Integer, String>() { {
+                put(F_SUBTITLES, "subtitles");
+                put(F_DIALOGUE_ENHANCEMENT, "dialogueEnhancement");
+                put(F_MAGNIFICATION_UI, "uiMagnifier");
+                put(F_HIGH_CONTRAST_UI, "highContrastUI");
+                put(F_SCREEN_READER, "screenReader");
+                put(F_RESPONSE_TO_A_USER_ACTION, "responseToUserAction");
+                put(F_AUDIO_DESCRIPTION, "audioDescription");
+                put(F_IN_VISION_SIGN_LANGUAGE, "inVisionSigning");
+            };
+            };
 
     MockOrbSessionCallback(MainActivity mainActivity, Bundle extras)
             throws Exception {
@@ -1432,14 +1465,21 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      *
      * @param connection The request and response should have the same value
      * @param id The request and response should have the same value
-     * @param feature TODO
+     * @param featureId TODO
      */
     @Override
-    public void onRequestFeatureSupportInfo(int connection, String id, int feature) {
-        // TODO These are mock values
+    public void onRequestFeatureSupportInfo(int connection, String id, int featureId) {
 
-        String value = "tvosOnly";
-        mSession.onRespondFeatureSupportInfo(connection, id, feature, value);
+        String result = "tvosOnly";
+        mSession.onRespondFeatureSupportInfo(connection, id, featureId, result);
+
+        if (mOnEventListener != null) {
+            String feature = sFeatures.get(featureId);
+            mOnEventListener.onShowMessage(
+                    "Received a request of featureSupportInfo for " + feature);
+            mOnEventListener.onShowMessage(
+                    "FeatureSupportInfo for " + feature + " is \""+ result + "\"");
+        }
     }
 
     /**
@@ -1452,48 +1492,13 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     @Override
     public void onRequestFeatureSettingsQuery(int connection, String id, int feature) {
 
-        switch (feature) {
-            case F_SUBTITLES:
-                mSession.onQuerySubtitles(connection, id,
-                        true, 150, "Arial", "#AA0066", 100,
-                        "outline", "#FFFFFF", EMPTY_STRING, EMPTY_INTEGER,
-                        "#00DD00", EMPTY_INTEGER, EMPTY_STRING);
-                break;
-            case F_DIALOGUE_ENHANCEMENT:
-                mSession.onQueryDialogueEnhancement(connection, id,
-                        6, 6, 0, 12);
-                break;
-            case F_MAGNIFICATION_UI:
-                mSession.onQueryUIMagnifier(connection, id,
-                        true, "textMagnification");
-                break;
-            case F_HIGH_CONTRAST_UI:
-                mSession.onQueryHighContrastUI(connection, id,
-                        true, "monochrome");
-                break;
-            case F_SCREEN_READER:
-                mSession.onQueryScreenReader(connection, id,
-                        true, 120, "male", EMPTY_STRING);
-                break;
-            case F_RESPONSE_TO_A_USER_ACTION:
-                mSession.onQueryResponseToUserAction(connection, id,
-                        true, "audio");
-                break;
-            case F_AUDIO_DESCRIPTION:
-                mSession.onQueryAudioDescription(connection, id,
-                        true, 0, 90);
-                break;
-            case F_IN_VISION_SIGN_LANGUAGE:
-                mSession.onQueryInVisionSigning(connection, id,
-                        true);
-                break;
-            default:
-        }
+        mSession.onQuerySubtitles(connection, id,
+                    true, 150, "Arial", "#AA0066", 100,
+                    "outline", "#FFFFFF", EMPTY_STRING, EMPTY_INTEGER,
+                    "#00DD00", EMPTY_INTEGER, EMPTY_STRING);
 
         // TEST for Notifications
         // id: EMPTY_STRING
-
-        // done
 
         switch (feature) {
             case F_SUBTITLES:
@@ -1534,29 +1539,18 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         }
     }
 
-    private final int F_SUBTITLES = 0;
-    private final int F_DIALOGUE_ENHANCEMENT = 1;
-    private final int F_MAGNIFICATION_UI = 2;
-    private final int F_HIGH_CONTRAST_UI = 3;
-    private final int F_SCREEN_READER = 4;
-    private final int F_RESPONSE_TO_A_USER_ACTION = 5;
-    private final int F_AUDIO_DESCRIPTION = 6;
-    private final int F_IN_VISION_SIGN_LANGUAGE = 7;
-    private final int EMPTY_INTEGER = -999999;
-    private final String EMPTY_STRING = "";
-
     /**
      * TODO
      *
      * @param connection The request and response should have the same value
      * @param id The request and response should have the same value
-     * @param feature TODO
+     * @param featureId TODO
      */
     @Override
-    public void onRequestFeatureSuppress(int connection, String id, int feature) {
+    public void onRequestFeatureSuppress(int connection, String id, int featureId) {
 
-        String value = "suppressing";
-        mSession.onRespondFeatureSuppress(connection, id, feature, value);
+        String result = "suppressing";
+        mSession.onRespondFeatureSuppress(connection, id, featureId, result);
     }
 
     /**
@@ -1620,7 +1614,6 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 "\n\"actWallclock\":" + actWallclock +
                 "\n\"}");
     }
-
 
     /**
      * TODO

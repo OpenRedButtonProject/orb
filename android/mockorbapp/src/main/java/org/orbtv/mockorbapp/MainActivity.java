@@ -66,20 +66,25 @@ public class MainActivity extends Activity {
         if (mLogLines.size() > 8) {
             mLogLines.remove(0);
         }
-        TableLayout table = findViewById(R.id.log_table);
-        for (int i = 7; i >= 0; i--) {
-            TableRow row = (TableRow) table.getChildAt(i);
-            TextView time = (TextView) row.getChildAt(0);
-            TextView log = (TextView) row.getChildAt(1);
-            if (mLogLines.size() > i) {
-                Pair<String, String> pair = mLogLines.get(i);
-                time.setText(pair.first);
-                log.setText(pair.second);
-            } else {
-                time.setText("");
-                log.setText("");
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                TableLayout table = findViewById(R.id.log_table);
+                for (int i = 7; i >= 0; i--) {
+                    TableRow row = (TableRow) table.getChildAt(i);
+                    TextView time = (TextView) row.getChildAt(0);
+                    TextView log = (TextView) row.getChildAt(1);
+                    if (mLogLines.size() > i) {
+                        Pair<String, String> pair = mLogLines.get(i);
+                        time.setText(pair.first);
+                        log.setText(pair.second);
+                    } else {
+                        time.setText("");
+                        log.setText("");
+                    }
+                }
             }
-        }
+        });
     }
 
     @Override
@@ -115,17 +120,11 @@ public class MainActivity extends Activity {
         bindDialService();
         //frameLayout.addView(mTvBrowserSession.getView());
         mTvBrowserSession.onNetworkStatusEvent(true); // TODO(library) Is this good?
-
-        log("one");
-        log("two");
-        log("three");
-        log("four");
-        log("five");
-        log("six");
-        log("seven");
-        log("eight");
-        log("nine");
-
+        mMockCallback.setOnEventListener(new MockOrbSessionCallback.OnEventListener() {
+            public void onShowMessage(String message) {
+                log(message);
+            }
+        });
     }
 
     @Override
