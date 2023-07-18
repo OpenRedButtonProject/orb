@@ -1799,16 +1799,22 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void onReceiveError(int connection, String id, int code, String message) {
+        if (mOnEventListener != null) {
+            mOnEventListener.onShowMessage(
+                    "Received an error {code : " + code + ", message : " + message + "}");
+        }
 
         // TEST for response.Error
-        Log.d(TAG, "\"onReceiveError\" is received by MockOrbSessionCallback{" +
-                "\n\"id\":" + id + ", " +
-                "\n\"code\":" + code + ", " +
-                "\n\"message\":" + message +
-                "\n}");
-
+        String data = "this is data";
         mSession.onRespondError(connection, id, code, message);
-        mSession.onRespondError(connection, "STR"+EMPTY_STRING, code, message, "this is data");
+        mSession.onRespondError(connection, "\"STR\"" + EMPTY_STRING, code, message, data);
+        if (mOnEventListener != null) {
+            mOnEventListener.onShowMessage(
+                    "Sent a mock error {code : " + code + ", message : " + message + "}");
+            mOnEventListener.onShowMessage(
+                    "Sent a mock error {code : " + code + ", message : " + message +
+                            ((data.isEmpty())? "" : ", data : " + data)  + "}");
+        }
     }
 
     /**
@@ -1823,15 +1829,12 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void onReceiveError(int connection, String id, int code, String message, String method, String data) {
-
-        // TEST for response.Error
-        Log.d(TAG, "\"onReceiveError\" is received by MockOrbSessionCallback{" +
-                                            "\n\"id\":" + id + ", " +
-                                            "\n\"code:" + code + ", " +
-                                            "\n\"message\":\"" + message + "\", " +
-                                            "\n\"method\":\"" + method + "\", " +
-                                            "\n\"data\":\"" + data + "\"" +
-                                            "\n}");
+        if (mOnEventListener != null) {
+            mOnEventListener.onShowMessage(
+                    "Received an error {code : " + code + ", message : " + message +
+                            ((method.isEmpty())? "" : ", method : " + method) +
+                            ((data.isEmpty())? "" : ", data : " + data)  + "}");
+        }
     }
 
     private static byte[] getAssetBytes(Context context, String asset) {
