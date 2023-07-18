@@ -1469,7 +1469,6 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void onRequestFeatureSupportInfo(int connection, String id, int featureId) {
-
         String result = "tvosOnly";
         mSession.onRespondFeatureSupportInfo(connection, id, featureId, result);
 
@@ -1548,9 +1547,16 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void onRequestFeatureSuppress(int connection, String id, int featureId) {
-
         String result = "suppressing";
         mSession.onRespondFeatureSuppress(connection, id, featureId, result);
+
+        if (mOnEventListener != null) {
+            String feature = sFeatures.get(featureId);
+            mOnEventListener.onShowMessage(
+                    "Received a request of featureSuppress for " + feature);
+            mOnEventListener.onShowMessage(
+                    "FeatureSuppress for " + feature + " is \""+ result + "\"");
+        }
     }
 
     /**
