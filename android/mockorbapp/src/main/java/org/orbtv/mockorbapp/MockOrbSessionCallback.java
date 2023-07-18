@@ -1515,7 +1515,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         if (mOnEventListener != null) {
             String feature = sFeatures.get(featureId);
             mOnEventListener.onShowMessage(
-                    "Received a request of featureSupportInfo for " + feature);
+                    "Received a request of featureSupportInfo for \"" + feature + "\"");
             mOnEventListener.onShowMessage(
                     "FeatureSupportInfo for " + feature + " is \""+ result + "\"");
         }
@@ -1526,20 +1526,58 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      *
      * @param connection The request and response should have the same value
      * @param id The request and response should have the same value
-     * @param feature TODO
+     * @param featureId TODO
      */
     @Override
-    public void onRequestFeatureSettingsQuery(int connection, String id, int feature) {
-
-        mSession.onQuerySubtitles(connection, id,
-                    true, 150, "Arial", "#AA0066", 100,
-                    "outline", "#FFFFFF", EMPTY_STRING, EMPTY_INTEGER,
-                    "#00DD00", EMPTY_INTEGER, EMPTY_STRING);
+    public void onRequestFeatureSettingsQuery(int connection, String id, int featureId) {
+        switch (featureId) {
+            case F_SUBTITLES:
+                mSession.onQuerySubtitles(connection, id,
+                        true, 150, "Arial", "#AA0066", 100,
+                        "outline", "#FFFFFF", EMPTY_STRING, EMPTY_INTEGER,
+                        "#00DD00", EMPTY_INTEGER, EMPTY_STRING);
+                break;
+            case F_DIALOGUE_ENHANCEMENT:
+                mSession.onQueryDialogueEnhancement(connection, id,
+                        6, 6, 0, 12);
+                break;
+            case F_MAGNIFICATION_UI:
+                mSession.onQueryUIMagnifier(connection, id,
+                        true, "textMagnification");
+                break;
+            case F_HIGH_CONTRAST_UI:
+                mSession.onQueryHighContrastUI(connection, id,
+                        true, "monochrome");
+                break;
+            case F_SCREEN_READER:
+                mSession.onQueryScreenReader(connection, id,
+                        true, 120, "male", EMPTY_STRING);
+                break;
+            case F_RESPONSE_TO_A_USER_ACTION:
+                mSession.onQueryResponseToUserAction(connection, id,
+                        true, "audio");
+                break;
+            case F_AUDIO_DESCRIPTION:
+                mSession.onQueryAudioDescription(connection, id,
+                        true, 0, 90);
+                break;
+            case F_IN_VISION_SIGN_LANGUAGE:
+                mSession.onQueryInVisionSigning(connection, id,
+                        true);
+                break;
+            default:
+        }
+        if (mOnEventListener != null) {
+            String feature = sFeatures.get(featureId);
+            mOnEventListener.onShowMessage(
+                    "Received a request of FeatureSettingsQuery for \"" + feature + "\"");
+            mOnEventListener.onShowMessage(
+                    "Sent a FeatureSettingsQuery for \"" + feature + "\"");
+        }
 
         // TEST for Notifications
         // id: EMPTY_STRING
-
-        switch (feature) {
+        switch (featureId) {
             case F_SUBTITLES:
                 mSession.onQuerySubtitles(connection, EMPTY_STRING,
                         false, EMPTY_INTEGER, EMPTY_STRING, EMPTY_STRING, EMPTY_INTEGER,
@@ -1576,6 +1614,11 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 break;
             default:
         }
+        if (mOnEventListener != null) {
+            String feature = sFeatures.get(featureId);
+            mOnEventListener.onShowMessage(
+                    "Sent a mock notification for \"" + feature + "\"");
+        }
     }
 
     /**
@@ -1593,7 +1636,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         if (mOnEventListener != null) {
             String feature = sFeatures.get(featureId);
             mOnEventListener.onShowMessage(
-                    "Received a request of featureSuppress for " + feature);
+                    "Received a request of featureSuppress for \"" + feature + "\"");
             mOnEventListener.onShowMessage(
                     "FeatureSuppress for " + feature + " is \""+ result + "\"");
         }
