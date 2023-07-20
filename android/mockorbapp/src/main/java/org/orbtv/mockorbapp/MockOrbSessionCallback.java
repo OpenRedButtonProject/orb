@@ -74,6 +74,11 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     private static final int F_RESPONSE_TO_A_USER_ACTION = 5;
     private static final int F_AUDIO_DESCRIPTION = 6;
     private static final int F_IN_VISION_SIGN_LANGUAGE = 7;
+    private final int INTENT_PAUSE = 0;
+    private final int INTENT_PLAY = 1;
+    private final int INTENT_FAST_FORWARD = 2;
+    private final int INTENT_FAST_REVERSE = 3;
+    private final int INTENT_STOP = 4;
     private final int EMPTY_INTEGER = -999999;
     private final String EMPTY_STRING = "";
 
@@ -1396,16 +1401,18 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     @Override
     public void onRequestNegotiateMethods(int connection, String id,
                                    String terminalToApp, String appToTerminal) {
-//        mSession
-        Log.d(TAG, "Requested terminalToApp: " + terminalToApp);
-        Log.d(TAG, "Requested appToTerminal: " + appToTerminal);
-
-
+        // Generate a negotiated method list
         String approvedTerminalToApp = terminalToApp;
         String approvedAppToTerminal = appToTerminal;
-
         mSession.onRespondNegotiateMethods(connection, id,
                 approvedTerminalToApp, approvedAppToTerminal);
+
+        if (mOnEventListener != null) {
+            mOnEventListener.onShowMessage(
+                    "Received a request of NegotiateMethods");
+            mOnEventListener.onShowMessage(
+                    "Sent a response with negotiated methods");
+        }
     }
 
     /**
@@ -1480,11 +1487,21 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     @Override
     public void onRequestDialogueEnhancementOverride(int connection, String id,
                                                      int dialogueEnhancementGain) {
-
-        if (dialogueEnhancementGain == EMPTY_INTEGER) {
-            dialogueEnhancementGain = 0;
+        int appliedGain = 0;
+        if (dialogueEnhancementGain != EMPTY_INTEGER) {
+            appliedGain = dialogueEnhancementGain;
         }
         mSession.onRespondDialogueEnhancementOverride(connection, id, dialogueEnhancementGain);
+
+        if (mOnEventListener != null) {
+            mOnEventListener.onShowMessage(
+                    "Received a request of dialogueEnhancementOverride " +
+                            ((dialogueEnhancementGain == EMPTY_INTEGER)?
+                                    "" : "{requested Gain : " + dialogueEnhancementGain + "}"));
+            mOnEventListener.onShowMessage(
+                    "Sent a response of dialogueEnhancementOverride " +
+                                    "{applied Gain : " + appliedGain + "}");
+        }
     }
 
     /**
@@ -1496,8 +1513,17 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void onRequestTriggerResponseToUserAction(int connection, String id, String magnitude) {
-
+        boolean actioned = true;
         mSession.onRespondTriggerResponseToUserAction(connection, id, magnitude);
+
+        if (mOnEventListener != null) {
+            mOnEventListener.onShowMessage(
+                    "Received a request of dialogueEnhancementOverride " +
+                                    "{magnitude : " + magnitude + "}");
+            mOnEventListener.onShowMessage(
+                    "Sent a response of dialogueEnhancementOverride " +
+                            "{actioned : " + actioned + "}");
+        }
     }
 
     /**
@@ -1651,9 +1677,10 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void onReceiveIntentConfirm(int connection, String id, String method) {
-        Log.d(TAG, "\"onReceiveIntentConfirm\" is received by MockOrbSessionCallback{" +
-                "\n\"method\":\"" + method + "\"" +
-                "\n}");
+        if (mOnEventListener != null) {
+            mOnEventListener.onShowMessage(
+                    "Received a intent confirm {method : " + method + "}");
+        }
     }
 
     /**
@@ -1664,9 +1691,10 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void onNotifyVoiceReady(int connection, boolean isReady) {
-        Log.d(TAG, "\"onNotifyVoiceReady\" is received by MockOrbSessionCallback{" +
-                "\n\"ready\":" + isReady +
-                "\n}");
+        if (mOnEventListener != null) {
+            mOnEventListener.onShowMessage(
+                    "Received a notification of VoiceReady {ready : " + isReady + "}");
+        }
     }
 
     /**
@@ -1744,7 +1772,6 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                                    boolean subtitlesEnabled, boolean subtitlesAvailable,
                                    boolean audioDescripEnabled, boolean audioDescripAvailable,
                                    boolean signLangEnabled, boolean signLangAvailable) {
-
         Log.d(TAG, "\"onNotifyStateMedia\" is received by MockOrbSessionCallback{" +
                 "\n\"state\":\"" + state + "\"," +
                 "\n\"kind\":\"" + kind + "\"," +
@@ -1771,36 +1798,80 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 "\n\"audioDescripAvailable\":" + audioDescripAvailable + "," +
                 "\n\"signLangEnabled\":" + signLangEnabled + "," +
                 "\n\"signLangAvailable\":" + signLangAvailable + "," +
-                "\n}");
+                "\n\"}");
+        if (mOnEventListener != null) {
+            mOnEventListener.onShowMessage(
+                    "Received a media state notification with {state : " + state + "}");
+        }
 
         // TEST for intent.Media
-        mSession.onSendIntentMediaBasics(INTENT_PAUSE, connection, "\"STR123-0\"", "voice");
-        mSession.onSendIntentMediaBasics(INTENT_PLAY, connection, "\"STR123-1\"", "voice");
-        mSession.onSendIntentMediaBasics(INTENT_FAST_FORWARD, connection, "\"STR123-2\"", "voice");
-        mSession.onSendIntentMediaBasics(INTENT_FAST_REVERSE, connection, "\"STR123-3\"", "voice");
-        mSession.onSendIntentMediaBasics(INTENT_STOP, connection, "\"STR123-4\"", "voice");
+        String intentMsg = null;
+        String prefix = "Sent a mock intent of ";
+        String suffix = " media playback";
+        String anchor = "start";
+        int offset = 30;
+        if (actPause) {
+            mSession.onSendIntentMediaBasics(
+                    INTENT_PAUSE, connection, "\"STR123-0\"", "voice");
+            intentMsg = prefix + "\"pausing\"" + suffix;
+        } else if (actPlay) {
+            mSession.onSendIntentMediaBasics(
+                    INTENT_PLAY, connection, "\"STR123-1\"", "voice");
+            intentMsg = prefix + "\"playing\"" + suffix;
+        } else if (actFastForward) {
+            mSession.onSendIntentMediaBasics(
+                    INTENT_FAST_FORWARD, connection, "\"STR123-2\"", "voice");
+            intentMsg = prefix + "\"fast-forwarding\"" + suffix;
+        } else if (actFastReverse) {
+            mSession.onSendIntentMediaBasics(
+                    INTENT_FAST_REVERSE, connection, "\"STR123-3\"", "voice");
+            intentMsg = prefix + "\"fast-reversing\"" + suffix;
+        } else if (actStop) {
+            mSession.onSendIntentMediaBasics(
+                    INTENT_STOP, connection, "\"STR123-4\"", "voice");
+            intentMsg = prefix + "\"stopping\"" + suffix;
+        } else if (actSeekContent) {
+            mSession.onSendIntentMediaSeekContent(
+                    connection, "\"STR123-5\"","voice", anchor, offset);
+            intentMsg = prefix + "seeking to a time position at " +
+                    offset + " sec relative to the " + anchor + " of the media content";
+        } else if (actSeekRelative) {
+            mSession.onSendIntentMediaSeekRelative(
+                    connection, "\"STR123-6\"","voice", offset);
+            intentMsg = prefix + "seeking to a time position at " +
+                    offset + " sec to the current time position of the media content";
+        } else if (actSeekLive) {
+            mSession.onSendIntentMediaSeekLive(
+                    connection, "\"STR123-7\"","voice", offset);
+            intentMsg = prefix + "seeking to a time position at " +
+                    offset + " sec relative to the live edge of the media  content";
+        } else if (actWallclock) {
+            String dayTime = "2020-02-12T10:00:00.000Z";
+            mSession.onSendIntentMediaSeekWallclock(
+                    connection, "\"STR123-8\"","voice", dayTime);
+            intentMsg = prefix + "seeking to a time position relating to " + dayTime;
+        }
+        if (intentMsg != null) {
+            if (mOnEventListener != null) {
+                mOnEventListener.onShowMessage(intentMsg);
+            }
+            return;
+        }
 
-        mSession.onSendIntentMediaSeekContent(connection, "\"STR123-5\"","voice",
-                                        "start", 30);
-        mSession.onSendIntentMediaSeekRelative(connection, "\"STR123-6\"","voice",
-                                        -60);
-        mSession.onSendIntentMediaSeekLive(connection, "\"STR123-7\"","voice", -30);
-        mSession.onSendIntentMediaSeekWallclock(connection, "\"STR123-8\"","voice",
-                                        "2020-02-12T10:00:00.000Z");
-        mSession.onSendIntentSearch(connection, "\"STR123-9\"", "voice",
-                                        "DOCTOR WHO");
-        mSession.onSendIntentDisplay(connection, "\"STR123-10\"", "voice",
-                                         "urn:broadcaster:programme:1249863457643");
-        mSession.onSendIntentPlayback(connection, "\"STR123-11\"", "voice",
-                                          "urn:broadcaster:programme:1249863457643",
-                                                    EMPTY_STRING, EMPTY_INTEGER);
+        String query = "DOCTOR WHO";
+        mSession.onSendIntentSearch(connection, "\"STR123-9\"", "voice", query);
+        String newMediaId = "urn:broadcaster:programme:1249863457643";
+        mSession.onSendIntentDisplay(connection, "\"STR123-10\"", "voice", newMediaId);
+        mSession.onSendIntentPlayback(connection, "\"STR123-11\"", "voice", newMediaId,
+                anchor, offset);
+        if (mOnEventListener != null) {
+            mOnEventListener.onShowMessage(prefix + "searching for " + query);
+            mOnEventListener.onShowMessage(prefix + "displaying {mediaId : " + mediaId + "}");
+            mOnEventListener.onShowMessage(prefix + "requesting playback {mediaId " + mediaId +
+                    ((offset == EMPTY_INTEGER)? "" : ", offset : " + offset) +
+                    ((anchor.isEmpty())? "" : ", anchor : " + anchor) + "}");
+        }
     }
-
-    private final int INTENT_PAUSE = 0;
-    private final int INTENT_PLAY = 1;
-    private final int INTENT_FAST_FORWARD = 2;
-    private final int INTENT_FAST_REVERSE = 3;
-    private final int INTENT_STOP = 4;
 
     /**
      * TODO
