@@ -1544,14 +1544,14 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     @Override
     public void onRequestTriggerResponseToUserAction(int connection, String id, String magnitude) {
         boolean actioned = true;
-        mSession.onRespondTriggerResponseToUserAction(connection, id, magnitude);
+        mSession.onRespondTriggerResponseToUserAction(connection, id, actioned);
 
         if (mOnEventListener != null) {
             mOnEventListener.onShowMessage(
-                    "Received a request of dialogueEnhancementOverride " +
+                    "Received a request of triggerResponseToUserAction " +
                                     "{magnitude : " + magnitude + "}");
             mOnEventListener.onShowMessage(
-                    "Sent a response of dialogueEnhancementOverride " +
+                    "Sent a response of triggerResponseToUserAction " +
                             "{actioned : " + actioned + "}");
         }
     }
