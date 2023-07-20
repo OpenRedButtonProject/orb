@@ -742,12 +742,12 @@ class OrbSession implements IOrbSession {
      *
      * @param connection The request and response should have the same value
      * @param id The request and response should have the same value
-     * @param magnitude
+     * @param actioned
      */
     @Override
-    public void onRespondTriggerResponseToUserAction(int connection, String id, String magnitude) {
+    public void onRespondTriggerResponseToUserAction(int connection, String id, boolean actioned) {
 
-        mJsonRpc.onRespondTriggerResponseToUserAction(connection, id, true);
+        mJsonRpc.onRespondTriggerResponseToUserAction(connection, id, actioned);
     }
 
     /**
