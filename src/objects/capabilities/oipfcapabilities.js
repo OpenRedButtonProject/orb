@@ -258,7 +258,7 @@ hbbtv.objects.OipfCapabilities = (function() {
         }
 
         // video_display_format
-        if (typeof capabilities.videoDisplayFormats === 'object') {
+        if (typeof videoDisplayFormats === 'object') {
             videoDisplayFormats.forEach(function(format) {
                 const element = doc.createElementNS(ns, 'video_display_format');
                 element.setAttribute('width', format.width);
