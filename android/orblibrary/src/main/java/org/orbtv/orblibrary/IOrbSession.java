@@ -284,9 +284,9 @@ public interface IOrbSession {
      *
      * @param connection The request and response should have the same value
      * @param id The request and response should have the same value
-     * @param magnitude
+     * @param actioned
      */
-    public void onRespondTriggerResponseToUserAction(int connection, String id, String magnitude);
+    void onRespondTriggerResponseToUserAction(int connection, String id, boolean actioned);
 
     /**
      * TODO
