@@ -123,33 +123,33 @@ JsonRpcService::JsonRpcService(
     m_endpoint(endpoint),
     m_sessionCallback(std::move(sessionCallback))
 {
-    registerMethod(MD_NEGOTIATE_METHODS, &JsonRpcService::RequestNegotiateMethods);
-    registerMethod(MD_SUBSCRIBE, &JsonRpcService::RequestSubscribe);
-    registerMethod(MD_UNSUBSCRIBE, &JsonRpcService::RequestUnsubscribe);
+    RegisterMethod(MD_NEGOTIATE_METHODS, &JsonRpcService::RequestNegotiateMethods);
+    RegisterMethod(MD_SUBSCRIBE, &JsonRpcService::RequestSubscribe);
+    RegisterMethod(MD_UNSUBSCRIBE, &JsonRpcService::RequestUnsubscribe);
 
-    registerMethod(MD_AF_FEATURE_SUPPORT_INFO, &JsonRpcService::RequestFeatureSupportInfo);
-    registerMethod(MD_AF_FEATURE_SETTINGS_QUERY, &JsonRpcService::RequestFeatureSettingsQuery);
-    registerMethod(MD_AF_FEATURE_SUPPRESS, &JsonRpcService::RequestFeatureSuppress);
+    RegisterMethod(MD_AF_FEATURE_SUPPORT_INFO, &JsonRpcService::RequestFeatureSupportInfo);
+    RegisterMethod(MD_AF_FEATURE_SETTINGS_QUERY, &JsonRpcService::RequestFeatureSettingsQuery);
+    RegisterMethod(MD_AF_FEATURE_SUPPRESS, &JsonRpcService::RequestFeatureSuppress);
 
-    registerMethod(MD_AF_DIALOGUE_ENHANCEMENT_OVERRIDE,
+    RegisterMethod(MD_AF_DIALOGUE_ENHANCEMENT_OVERRIDE,
         &JsonRpcService::RequestDialogueEnhancementOverride);
-    registerMethod(MD_AF_TRIGGER_RESPONSE_TO_USER_ACTION,
+    RegisterMethod(MD_AF_TRIGGER_RESPONSE_TO_USER_ACTION,
         &JsonRpcService::RequestTriggerResponseToUserAction);
 
-    registerMethod(MD_VOICE_READY, &JsonRpcService::NotifyVoiceReady);
-    registerMethod(MD_STATE_MEDIA, &JsonRpcService::NotifyStateMedia);
-    registerMethod(MD_INTENT_MEDIA_PAUSE, &JsonRpcService::ReceiveIntentConfirm);
-    registerMethod(MD_INTENT_MEDIA_PLAY, &JsonRpcService::ReceiveIntentConfirm);
-    registerMethod(MD_INTENT_MEDIA_FAST_FORWARD, &JsonRpcService::ReceiveIntentConfirm);
-    registerMethod(MD_INTENT_MEDIA_FAST_REVERSE, &JsonRpcService::ReceiveIntentConfirm);
-    registerMethod(MD_INTENT_MEDIA_STOP, &JsonRpcService::ReceiveIntentConfirm);
-    registerMethod(MD_INTENT_MEDIA_SEEK_CONTENT, &JsonRpcService::ReceiveIntentConfirm);
-    registerMethod(MD_INTENT_MEDIA_SEEK_RELATIVE, &JsonRpcService::ReceiveIntentConfirm);
-    registerMethod(MD_INTENT_MEDIA_SEEK_LIVE, &JsonRpcService::ReceiveIntentConfirm);
-    registerMethod(MD_INTENT_MEDIA_SEEK_WALLCLOCK, &JsonRpcService::ReceiveIntentConfirm);
-    registerMethod(MD_INTENT_SEARCH, &JsonRpcService::ReceiveIntentConfirm);
-    registerMethod(MD_INTENT_DISPLAY, &JsonRpcService::ReceiveIntentConfirm);
-    registerMethod(MD_INTENT_PLAYBACK, &JsonRpcService::ReceiveIntentConfirm);
+    RegisterMethod(MD_VOICE_READY, &JsonRpcService::NotifyVoiceReady);
+    RegisterMethod(MD_STATE_MEDIA, &JsonRpcService::NotifyStateMedia);
+    RegisterMethod(MD_INTENT_MEDIA_PAUSE, &JsonRpcService::ReceiveIntentConfirm);
+    RegisterMethod(MD_INTENT_MEDIA_PLAY, &JsonRpcService::ReceiveIntentConfirm);
+    RegisterMethod(MD_INTENT_MEDIA_FAST_FORWARD, &JsonRpcService::ReceiveIntentConfirm);
+    RegisterMethod(MD_INTENT_MEDIA_FAST_REVERSE, &JsonRpcService::ReceiveIntentConfirm);
+    RegisterMethod(MD_INTENT_MEDIA_STOP, &JsonRpcService::ReceiveIntentConfirm);
+    RegisterMethod(MD_INTENT_MEDIA_SEEK_CONTENT, &JsonRpcService::ReceiveIntentConfirm);
+    RegisterMethod(MD_INTENT_MEDIA_SEEK_RELATIVE, &JsonRpcService::ReceiveIntentConfirm);
+    RegisterMethod(MD_INTENT_MEDIA_SEEK_LIVE, &JsonRpcService::ReceiveIntentConfirm);
+    RegisterMethod(MD_INTENT_MEDIA_SEEK_WALLCLOCK, &JsonRpcService::ReceiveIntentConfirm);
+    RegisterMethod(MD_INTENT_SEARCH, &JsonRpcService::ReceiveIntentConfirm);
+    RegisterMethod(MD_INTENT_DISPLAY, &JsonRpcService::ReceiveIntentConfirm);
+    RegisterMethod(MD_INTENT_PLAYBACK, &JsonRpcService::ReceiveIntentConfirm);
 }
 
 bool JsonRpcService::OnConnection(WebSocketConnection *connection)
@@ -225,7 +225,12 @@ void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const st
         status = JsonRpcStatus::PARSE_ERROR;
     }
 
-    if (status != JsonRpcStatus::SUCCESS)
+    if (status == JsonRpcStatus::NOTIFICATION_ERROR)
+    {
+        LOG(LOG_INFO, "Error in notification message");
+    }
+
+    if (status != JsonRpcStatus::SUCCESS && status != JsonRpcStatus::NOTIFICATION_ERROR)
     {
         int code = static_cast<int>(status);
         std::string message = GetErrorMessage(status);
@@ -538,68 +543,110 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
     Json::Value &obj)
 {
     Json::Value params;
-    if (HasJsonParam(obj, "params"))
+    if (!HasJsonParam(obj, "params"))
     {
-        params = obj["params"];
+        return JsonRpcStatus::NOTIFICATION_ERROR;
     }
-    std::string state;
-    if (HasParam(params, "state", Json::stringValue))
+    params = obj["params"];
+
+    if (!HasParam(params, "state", Json::stringValue))
     {
-        state = params["state"].asString();
+        return JsonRpcStatus::NOTIFICATION_ERROR;
+    }
+    std::string state = params["state"].asString();
+
+    if (state != "no-media" &&
+        state != "error" &&
+        state != "buffering" &&
+        state != "paused" &&
+        state != "playing" &&
+        state != "stopped")
+    {
+        return JsonRpcStatus::NOTIFICATION_ERROR;
     }
 
     std::string kind;
+    if (HasParam(params, "kind", Json::stringValue))
+    {
+        kind = params["kind"].asString();
+        if (kind != "audio" && kind != "audio-video")
+        {
+            return JsonRpcStatus::NOTIFICATION_ERROR;
+        }
+    }
     if (state == "buffering" || state == "paused" || state == "playing" ||
         state == "stopped")
     {
-        if (HasParam(params, "kind", Json::stringValue))
+        if (kind == OPTIONAL_STR_NOT_SET)
         {
-            kind = params["kind"].asString();
+            return JsonRpcStatus::NOTIFICATION_ERROR;
         }
     }
 
     std::string type;
+    if (HasParam(params, "type", Json::stringValue))
+    {
+        type = params["type"].asString();
+        if (type != "live" && type != "on-demand")
+        {
+            return JsonRpcStatus::NOTIFICATION_ERROR;
+        }
+    }
     if (state == "buffering" || state == "paused" || state == "playing" ||
         state == "stopped")
     {
-        if (HasParam(params, "type", Json::stringValue))
+        if (type == OPTIONAL_STR_NOT_SET)
         {
-            type = params["type"].asString();
+            return JsonRpcStatus::NOTIFICATION_ERROR;
         }
     }
 
     std::string currentTimeStr;
+    if (HasParam(params, "currentTime", Json::stringValue) ||
+        HasParam(params, "currentTime", Json::intValue) ||
+        HasParam(params, "currentTime", Json::uintValue) ||
+        HasParam(params, "currentTime", Json::realValue))
+    {
+        currentTimeStr = EncodeJsonId(params["currentTime"]);
+    }
     if (state == "buffering" || state == "paused" || state == "playing")
     {
-        if (HasParam(params, "currentTime", Json::stringValue) ||
-            HasParam(params, "currentTime", Json::intValue) ||
-            HasParam(params, "currentTime", Json::uintValue) ||
-            HasParam(params, "currentTime", Json::realValue))
+        if (currentTimeStr == OPTIONAL_STR_NOT_SET)
         {
-            currentTimeStr = EncodeJsonId(params["currentTime"]);
+            return JsonRpcStatus::NOTIFICATION_ERROR;
         }
     }
 
     std::string rangeStart;
     std::string rangeEnd;
+    if (HasJsonParam(params, "range"))
+    {
+        if (HasParam(params["range"], "start", Json::stringValue) ||
+            HasParam(params["range"], "start", Json::intValue) ||
+            HasParam(params["range"], "start", Json::uintValue) ||
+            HasParam(params["range"], "start", Json::realValue))
+        {
+            rangeStart = EncodeJsonId(params["range"]["start"]);
+        }
+        if (HasParam(params["range"], "end", Json::stringValue) ||
+            HasParam(params["range"], "end", Json::intValue) ||
+            HasParam(params["range"], "end", Json::uintValue) ||
+            HasParam(params["range"], "end", Json::realValue))
+        {
+            rangeEnd = EncodeJsonId(params["range"]["end"]);
+        }
+        if (params["range"]["start"].type() != params["range"]["end"].type() ||
+            params["range"]["start"].type() != params["currentTime"].type())
+        {
+            return JsonRpcStatus::NOTIFICATION_ERROR;
+        }
+    }
     if (state == "buffering" || state == "paused" || state == "playing")
     {
-        if (HasJsonParam(params, "range"))
+        if (rangeStart == OPTIONAL_STR_NOT_SET ||
+            rangeEnd == OPTIONAL_STR_NOT_SET)
         {
-            if (HasParam(params["range"], "start", Json::stringValue) ||
-                HasParam(params["range"], "start", Json::intValue) ||
-                HasParam(params["range"], "start", Json::uintValue) ||
-                HasParam(params["range"], "start", Json::realValue))
-            {
-                rangeStart = EncodeJsonId(params["range"]["start"]);
-            }
-            if (HasParam(params["range"], "end", Json::stringValue) ||
-                HasParam(params["range"], "end", Json::intValue) ||
-                HasParam(params["range"], "end", Json::uintValue) ||
-                HasParam(params["range"], "end", Json::realValue))
-            {
-                rangeEnd = EncodeJsonId(params["range"]["end"]);
-            }
+            return JsonRpcStatus::NOTIFICATION_ERROR;
         }
     }
 
@@ -613,100 +660,104 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
     bool actSeekLive = false;
     bool actWallclock = false;
 
-    Json::Value actions;
-    if (HasJsonParam(params, "availableActions"))
+    if (!HasJsonParam(params, "availableActions"))
     {
-        actions = params["availableActions"];
+        return JsonRpcStatus::NOTIFICATION_ERROR;
+    }
 
-        if (HasParam(actions, "pause", Json::booleanValue) &&
-            actions["pause"] == true)
-        {
-            actPause = true;
-        }
+    Json::Value actions = params["availableActions"];
+    if (HasParam(actions, "pause", Json::booleanValue) &&
+        actions["pause"] == true)
+    {
+        actPause = true;
+    }
 
-        if (HasParam(actions, "play", Json::booleanValue) &&
-            actions["play"] == true)
-        {
-            actPlay = true;
-        }
+    if (HasParam(actions, "play", Json::booleanValue) &&
+        actions["play"] == true)
+    {
+        actPlay = true;
+    }
 
-        if (HasParam(actions, "fast-forward", Json::booleanValue) &&
-            actions["fast-forward"] == true)
-        {
-            actFastForward = true;
-        }
+    if (HasParam(actions, "fast-forward", Json::booleanValue) &&
+        actions["fast-forward"] == true)
+    {
+        actFastForward = true;
+    }
 
-        if (HasParam(actions, "fast-reverse", Json::booleanValue) &&
-            actions["fast-reverse"] == true)
-        {
-            actFastReverse = true;
-        }
-        if (HasParam(actions, "stop", Json::booleanValue) &&
-            actions["stop"] == true)
-        {
-            actStop = true;
-        }
+    if (HasParam(actions, "fast-reverse", Json::booleanValue) &&
+        actions["fast-reverse"] == true)
+    {
+        actFastReverse = true;
+    }
+    if (HasParam(actions, "stop", Json::booleanValue) &&
+        actions["stop"] == true)
+    {
+        actStop = true;
+    }
 
-        if (HasParam(actions, "seek-content", Json::booleanValue) &&
-            actions["seek-content"] == true)
-        {
-            actSeekContent = true;
-        }
+    if (HasParam(actions, "seek-content", Json::booleanValue) &&
+        actions["seek-content"] == true)
+    {
+        actSeekContent = true;
+    }
 
-        if (HasParam(actions, "seek-relative", Json::booleanValue) &&
-            actions["seek-relative"] == true)
-        {
-            actSeekRelative = true;
-        }
+    if (HasParam(actions, "seek-relative", Json::booleanValue) &&
+        actions["seek-relative"] == true)
+    {
+        actSeekRelative = true;
+    }
 
-        if (HasParam(actions, "seek-live", Json::booleanValue) &&
-            actions["seek-live"] == true)
-        {
-            actSeekLive = true;
-        }
+    if (HasParam(actions, "seek-live", Json::booleanValue) &&
+        actions["seek-live"] == true)
+    {
+        actSeekLive = true;
+    }
 
-        if (HasParam(actions, "seek-wallclock", Json::booleanValue) &&
-            actions["seek-wallclock"] == true)
-        {
-            actWallclock = true;
-        }
+    if (HasParam(actions, "seek-wallclock", Json::booleanValue) &&
+        actions["seek-wallclock"] == true)
+    {
+        actWallclock = true;
     }
 
     std::string mediaId;
     std::string title;
     std::string secTitle;
     std::string synopsis;
-
-    if (state == "buffering" || state == "paused" || state == "playing" ||
-        state == "stopped")
+    if (HasJsonParam(params, "metadata"))
     {
-        Json::Value metadata;
-        if (HasJsonParam(params, "metadata"))
-        {
-            metadata = params["metadata"];
-        }
-
+        Json::Value metadata = params["metadata"];
         if (HasParam(metadata, "title", Json::stringValue))
         {
             title = metadata["title"].asString();
         }
-
         if (HasParam(metadata, "mediaId", Json::stringValue))
         {
             mediaId = metadata["mediaId"].asString();
         }
-
         if (HasParam(metadata, "secondaryTitle", Json::stringValue))
         {
             secTitle = metadata["secondaryTitle"].asString();
         }
-
         if (HasParam(metadata, "synopsis", Json::stringValue))
         {
             synopsis = metadata["synopsis"].asString();
         }
     }
+    if (state == "buffering" || state == "paused" || state == "playing" ||
+        state == "stopped")
+    {
+        if (title == OPTIONAL_STR_NOT_SET ||
+            mediaId == OPTIONAL_STR_NOT_SET ||
+            secTitle == OPTIONAL_STR_NOT_SET ||
+            secTitle == OPTIONAL_STR_NOT_SET)
+        {
+            return JsonRpcStatus::NOTIFICATION_ERROR;
+        }
+    }
 
+    Json::Value subtitles;
+    Json::Value audioDescription;
+    Json::Value signLanguage;
     bool subtitlesEnabled = false;
     bool subtitlesAvailable = false;
     bool audioDescripEnabled = false;
@@ -714,26 +765,11 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
     bool signLangEnabled = false;
     bool signLangAvailable = false;
 
-    if (state == "buffering" || state == "paused" || state == "playing")
+    if (HasJsonParam(params, "accessibility"))
     {
-        if (HasJsonParam(params, "accessibility"))
+        if (HasJsonParam(params["accessibility"], "subtitles"))
         {
-            Json::Value subtitles;
-            Json::Value audioDescription;
-            Json::Value signLanguage;
-
-            if (HasJsonParam(params["accessibility"], "subtitles"))
-            {
-                subtitles = params["accessibility"]["subtitles"];
-            }
-            if (HasJsonParam(params["accessibility"], "audioDescription"))
-            {
-                audioDescription = params["accessibility"]["audioDescription"];
-            }
-            if (HasJsonParam(params["accessibility"], "signLanguage"))
-            {
-                signLanguage = params["accessibility"]["signLanguage"];
-            }
+            subtitles = params["accessibility"]["subtitles"];
             if (HasParam(subtitles, "enabled", Json::booleanValue))
             {
                 subtitlesEnabled = subtitles["enabled"].asBool();
@@ -742,6 +778,11 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
             {
                 subtitlesAvailable = subtitles["available"].asBool();
             }
+        }
+
+        if (HasJsonParam(params["accessibility"], "audioDescription"))
+        {
+            audioDescription = params["accessibility"]["audioDescription"];
             if (HasParam(audioDescription, "enabled", Json::booleanValue))
             {
                 audioDescripEnabled = audioDescription["enabled"].asBool();
@@ -750,6 +791,11 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
             {
                 audioDescripAvailable = audioDescription["available"].asBool();
             }
+        }
+
+        if (HasJsonParam(params["accessibility"], "signLanguage"))
+        {
+            signLanguage = params["accessibility"]["signLanguage"];
             if (HasParam(signLanguage, "enabled", Json::booleanValue))
             {
                 signLangEnabled = signLanguage["enabled"].asBool();
@@ -760,6 +806,20 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
             }
         }
     }
+
+    if (state == "buffering" || state == "paused" || state == "playing")
+    {
+        if (!HasParam(subtitles, "enabled", Json::booleanValue) ||
+            !HasParam(subtitles, "available", Json::booleanValue) ||
+            !HasParam(audioDescription, "enabled", Json::booleanValue) ||
+            !HasParam(audioDescription, "available", Json::booleanValue) ||
+            !HasParam(signLanguage, "enabled", Json::booleanValue) ||
+            !HasParam(signLanguage, "available", Json::booleanValue))
+        {
+            return JsonRpcStatus::NOTIFICATION_ERROR;
+        }
+    }
+
     m_sessionCallback->NotifyStateMedia(connectionId,
         state, kind, type, currentTimeStr,
         rangeStart, rangeEnd,
@@ -1497,7 +1557,7 @@ void JsonRpcService::RespondTriggerResponseToUserAction(int connectionId, const 
 }
 
 // Helper functions
-void JsonRpcService::registerMethod(const std::string &name, JsonRpcMethod method)
+void JsonRpcService::RegisterMethod(const std::string &name, JsonRpcMethod method)
 {
     m_json_rpc_methods[name] = std::bind(method, this, std::placeholders::_1,
         std::placeholders::_2);

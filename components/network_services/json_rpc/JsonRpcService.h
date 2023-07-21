@@ -25,6 +25,7 @@ public:
         INVALID_REQUEST = -32600,
         METHOD_NOT_FOUND = -32601,
         INVALID_PARAMS = -32602,
+        NOTIFICATION_ERROR = -32603,
     };
     typedef JsonRpcStatus (JsonRpcService::*JsonRpcMethod)(int, const Json::Value&);
 
@@ -275,7 +276,7 @@ private:
         Json::Value&)> > m_json_rpc_methods;
 
     // Helper functions
-    void registerMethod(const std::string& name, JsonRpcMethod method);
+    void RegisterMethod(const std::string& name, JsonRpcMethod method);
 
     void SendJsonMessageToClient(int connectionId, const std::string &responseName,
         const Json::Value &jsonResponse);
