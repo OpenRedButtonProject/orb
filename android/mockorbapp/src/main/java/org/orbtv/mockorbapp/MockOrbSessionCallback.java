@@ -1423,14 +1423,14 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * TODO
      *
-     * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
+     * @param connection    The request and response should have the same value
+     * @param id            The request and response should have the same value
      * @param terminalToApp
      * @param appToTerminal
      */
     @Override
     public void onRequestNegotiateMethods(int connection, String id,
-                                   String terminalToApp, String appToTerminal) {
+                                          String terminalToApp, String appToTerminal) {
         // Generate a negotiated method list
         String approvedTerminalToApp = terminalToApp;
         String approvedAppToTerminal = appToTerminal;
@@ -1448,8 +1448,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * TODO
      *
-     * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
+     * @param connection          The request and response should have the same value
+     * @param id                  The request and response should have the same value
      * @param subtitles
      * @param dialogueEnhancement
      * @param
@@ -1494,7 +1494,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
             subscriptionList = "";
         }
         if (mOnEventListener != null) {
-            String action = (isSubscribe)? "subscribe" : "unsubscribe";
+            String action = (isSubscribe) ? "subscribe" : "unsubscribe";
             mOnEventListener.onShowMessage(
                     "Received a request of " + action +
                             " for accessibility feature {" + subscriptionList + "}");
@@ -1510,8 +1510,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * TODO
      *
-     * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
+     * @param connection              The request and response should have the same value
+     * @param id                      The request and response should have the same value
      * @param dialogueEnhancementGain TODO
      */
     @Override
@@ -1526,11 +1526,11 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         if (mOnEventListener != null) {
             mOnEventListener.onShowMessage(
                     "Received a request of dialogueEnhancementOverride " +
-                            ((dialogueEnhancementGain == EMPTY_INTEGER)?
+                            ((dialogueEnhancementGain == EMPTY_INTEGER) ?
                                     "" : "{requested Gain : " + dialogueEnhancementGain + "}"));
             mOnEventListener.onShowMessage(
                     "Sent a response of dialogueEnhancementOverride " +
-                                    "{applied Gain : " + appliedGain + "}");
+                            "{applied Gain : " + appliedGain + "}");
         }
     }
 
@@ -1538,7 +1538,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * TODO
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
+     * @param id         The request and response should have the same value
      * @param magnitude
      */
     @Override
@@ -1549,7 +1549,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         if (mOnEventListener != null) {
             mOnEventListener.onShowMessage(
                     "Received a request of triggerResponseToUserAction " +
-                                    "{magnitude : " + magnitude + "}");
+                            "{magnitude : " + magnitude + "}");
             mOnEventListener.onShowMessage(
                     "Sent a response of triggerResponseToUserAction " +
                             "{actioned : " + actioned + "}");
@@ -1560,8 +1560,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * TODO
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param featureId TODO
+     * @param id         The request and response should have the same value
+     * @param featureId  TODO
      */
     @Override
     public void onRequestFeatureSupportInfo(int connection, String id, int featureId) {
@@ -1573,7 +1573,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
             mOnEventListener.onShowMessage(
                     "Received a request of featureSupportInfo for \"" + feature + "\"");
             mOnEventListener.onShowMessage(
-                    "FeatureSupportInfo for " + feature + " is \""+ result + "\"");
+                    "FeatureSupportInfo for " + feature + " is \"" + result + "\"");
         }
     }
 
@@ -1581,8 +1581,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * TODO
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param featureId TODO
+     * @param id         The request and response should have the same value
+     * @param featureId  TODO
      */
     @Override
     public void onRequestFeatureSettingsQuery(int connection, String id, int featureId) {
@@ -1681,8 +1681,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * TODO
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param featureId TODO
+     * @param id         The request and response should have the same value
+     * @param featureId  TODO
      */
     @Override
     public void onRequestFeatureSuppress(int connection, String id, int featureId) {
@@ -1694,7 +1694,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
             mOnEventListener.onShowMessage(
                     "Received a request of featureSuppress for \"" + feature + "\"");
             mOnEventListener.onShowMessage(
-                    "FeatureSuppress for " + feature + " is \""+ result + "\"");
+                    "FeatureSuppress for " + feature + " is \"" + result + "\"");
         }
     }
 
@@ -1702,7 +1702,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * TODO
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
+     * @param id         The request and response should have the same value
      * @param method
      */
     @Override
@@ -1730,7 +1730,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * TODO
      *
-     * @param connection The request and response should have the same value
+     * @param connection      The request and response should have the same value
      * @param state
      * @param actPause
      * @param actPlay
@@ -1770,7 +1770,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * TODO
      *
-     * @param connection The request and response should have the same value
+     * @param connection            The request and response should have the same value
      * @param state
      * @param kind
      * @param type
@@ -1828,7 +1828,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 "\n\"audioDescripAvailable\":" + audioDescripAvailable + "," +
                 "\n\"signLangEnabled\":" + signLangEnabled + "," +
                 "\n\"signLangAvailable\":" + signLangAvailable + "," +
-                "\n\"}");
+                "\n}");
         if (mOnEventListener != null) {
             mOnEventListener.onShowMessage(
                     "Received a media state notification with {state : " + state + "}");
@@ -1862,23 +1862,23 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
             intentMsg = prefix + "\"stopping\"" + suffix;
         } else if (actSeekContent) {
             mSession.onSendIntentMediaSeekContent(
-                    connection, "\"STR123-5\"","voice", anchor, offset);
+                    connection, "\"STR123-5\"", "voice", anchor, offset);
             intentMsg = prefix + "seeking to a time position at " +
                     offset + " sec relative to the " + anchor + " of the media content";
         } else if (actSeekRelative) {
             mSession.onSendIntentMediaSeekRelative(
-                    connection, "\"STR123-6\"","voice", offset);
+                    connection, "\"STR123-6\"", "voice", offset);
             intentMsg = prefix + "seeking to a time position at " +
                     offset + " sec to the current time position of the media content";
         } else if (actSeekLive) {
             mSession.onSendIntentMediaSeekLive(
-                    connection, "\"STR123-7\"","voice", offset);
+                    connection, "\"STR123-7\"", "voice", offset);
             intentMsg = prefix + "seeking to a time position at " +
-                    offset + " sec relative to the live edge of the media  content";
+                    offset + " sec relative to the live edge of the media content";
         } else if (actWallclock) {
             String dayTime = "2020-02-12T10:00:00.000Z";
             mSession.onSendIntentMediaSeekWallclock(
-                    connection, "\"STR123-8\"","voice", dayTime);
+                    connection, "\"STR123-8\"", "voice", dayTime);
             intentMsg = prefix + "seeking to a time position relating to " + dayTime;
         }
         if (intentMsg != null) {
@@ -1898,8 +1898,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
             mOnEventListener.onShowMessage(prefix + "searching for " + query);
             mOnEventListener.onShowMessage(prefix + "displaying {mediaId : " + mediaId + "}");
             mOnEventListener.onShowMessage(prefix + "requesting playback {mediaId " + mediaId +
-                    ((offset == EMPTY_INTEGER)? "" : ", offset : " + offset) +
-                    ((anchor.isEmpty())? "" : ", anchor : " + anchor) + "}");
+                    ((offset == EMPTY_INTEGER) ? "" : ", offset : " + offset) +
+                    ((anchor.isEmpty()) ? "" : ", anchor : " + anchor) + "}");
         }
     }
 
@@ -1907,8 +1907,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * TODO
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param code TODO
+     * @param id         The request and response should have the same value
+     * @param code       TODO
      * @param message
      */
     @Override
@@ -1927,7 +1927,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                     "Sent a mock error {code : " + code + ", message : " + message + "}");
             mOnEventListener.onShowMessage(
                     "Sent a mock error {code : " + code + ", message : " + message +
-                            ((data.isEmpty())? "" : ", data : " + data)  + "}");
+                            ((data.isEmpty()) ? "" : ", data : " + data) + "}");
         }
     }
 
@@ -1935,8 +1935,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * TODO
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param code TODO
+     * @param id         The request and response should have the same value
+     * @param code       TODO
      * @param message
      * @param method
      * @param data
@@ -1946,8 +1946,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         if (mOnEventListener != null) {
             mOnEventListener.onShowMessage(
                     "Received an error {code : " + code + ", message : " + message +
-                            ((method.isEmpty())? "" : ", method : " + method) +
-                            ((data.isEmpty())? "" : ", data : " + data)  + "}");
+                            ((method.isEmpty()) ? "" : ", method : " + method) +
+                            ((data.isEmpty()) ? "" : ", data : " + data) + "}");
         }
     }
 
