@@ -260,23 +260,36 @@ public interface IOrbSession {
     void close();
 
     /**
-     * TODO
+     * Called to send a response message for the result of negotiated methods
      *
-     * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param terminalToApp
-     * @param appToTerminal
+     * @param connection    The request and response should have the same value
+     * @param id            The request and response should have the same value
+     * @param terminalToApp The names for the negotiated methods sent from terminal to app
+     *                      - The names shall separated by comma ','
+     *                      - Example "org.hbbtv.app.intent.media.play,org.hbbtv.notify"
+     * @param appToTerminal The names for the negotiated methods sent from app to terminal
+     *                      - same as terminalToApp
      */
     void onRespondNegotiateMethods(int connection, String id,
                                    String terminalToApp, String appToTerminal);
 
     /**
-     * TODO
+     * Called to send a response message for a successful subscribe/unsubscribe request
      *
-     * @param isSubscribe
-     * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param subtitles
+     * @param isSubscribe          The response for a subscribe/unsubscribe request
+     *                             - true: subscribe
+     *                             - false: unsubscribe
+     * @param connection           The request and response should have the same value
+     * @param id                   The request and response should have the same value
+     *                             User preference change of 8 accessibility features:
+     * @param subtitles            Subtitles
+     * @param dialogueEnhancement  Dialogue enhancement
+     * @param uiMagnifier          Magnification UI
+     * @param highContrastUI       High contrast UI
+     * @param screenReader         Screen reader
+     * @param responseToUserAction Response to user action
+     * @param audioDescription     Audio description
+     * @param inVisionSigning      In-vision signing
      */
     void onRespondSubscribe(boolean isSubscribe, int connection, String id,
                             boolean subtitles, boolean dialogueEnhancement,
@@ -285,296 +298,279 @@ public interface IOrbSession {
                             boolean audioDescription, boolean inVisionSigning);
 
     /**
-     * TODO
+     * Called to send a response message for a result of overriding dialogue enhancement
      *
-     * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param dialogueEnhancementGain
+     * @param connection              The request and response should have the same value
+     * @param id                      The request and response should have the same value
+     * @param dialogueEnhancementGain The applied gain value in dB of the dialogue enhancement
      */
     void onRespondDialogueEnhancementOverride(int connection, String id,
                                               int dialogueEnhancementGain);
 
     /**
-     * TODO
+     * Called to send a response message for a result of trigger response to user action
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param actioned
+     * @param id         The request and response should have the same value
+     * @param actioned   The result of user action mechanism
+     *                   - true: successfully triggered
+     *                   - false: unsuccessfully triggered
      */
     void onRespondTriggerResponseToUserAction(int connection, String id, boolean actioned);
 
     /**
-     * TODO
+     * Called to send a response message for the support information of a feature
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param feature
-     * @param value
+     * @param id         The request and response should have the same value
+     * @param feature    The index of a particular accessibility feature
+     * @param result     The result code of the support for the accessibility feature
      */
-    void onRespondFeatureSupportInfo(int connection, String id, int feature, String value);
+    void onRespondFeatureSupportInfo(int connection, String id, int feature, String result);
 
     /**
-     * TODO
+     * Called to send a response message for suppressing the support of a feature
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param feature
-     * @param value
+     * @param id         The request and response should have the same value
+     * @param feature    The index of a particular accessibility feature
+     * @param value      The result code for suppressing
      */
     void onRespondFeatureSuppress(int connection, String id, int feature, String value);
 
     /**
-     * TODO
+     * Called to send a error message
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param code
-     * @param message
+     * @param id         The request and response should have the same value
+     * @param code       The error code
+     * @param message    The error message
      */
     void onRespondError(int connection, String id, int code, String message);
 
     /**
-     * TODO
+     * Called to send a error message with some data
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param code
-     * @param message
-     * @param data
+     * @param id         The request and response should have the same value
+     * @param code       The error code
+     * @param message    The error message
+     * @param data       The error data
      */
     void onRespondError(int connection, String id, int code, String message, String data);
 
     /**
-     * TODO
+     * Called to send a message with the user settings of subtitles
      *
-     * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param enabled
-     * @param size
-     * @param fontFamily
-     * @param textColour
-     * @param textOpacity
-     * @param edgeType
-     * @param edgeColour
-     * @param backgroundColour
-     * @param backgroundOpacity
-     * @param windowColour
-     * @param windowOpacity
-     * @param language
+     * @param connection        The request and response should have the same value
+     * @param id                The request and response should have the same value
+     *                          - Not empty: a message of user settings query
+     *                          - Empty: a message of notification
+     * @param enabled           Enabled subtitles
+     * @param size              The font size
+     * @param fontFamily        The description of the font family
+     * @param textColour        The text colour in RGB24 format
+     * @param textOpacity       The test opacity with the percentage from 0 to 100
+     * @param edgeType          The description of edge type
+     * @param edgeColour        The edge colour in RGB24 format
+     * @param backgroundColour  The background colour in RGB24 format
+     * @param backgroundOpacity The background opacity with the percentage from 0 to 100
+     * @param windowColour      The window colour in RGB24 format
+     * @param windowOpacity     The window opacity with the percentage from 0 to 100
+     * @param language          The description of language in ISO639-2 3-character code
      */
-    void onQuerySubtitles(int connection, String id,
-                            boolean enabled,
-                            int size,
-                            String fontFamily,
-                            String textColour,
-                            int textOpacity,
-                            String edgeType,
-                            String edgeColour,
-                            String backgroundColour,
-                            int backgroundOpacity,
-                            String windowColour,
-                            int windowOpacity,
-                            String language);
+    void onQuerySubtitles(int connection, String id, boolean enabled,
+                          int size, String fontFamily, String textColour, int textOpacity,
+                          String edgeType, String edgeColour,
+                          String backgroundColour, int backgroundOpacity,
+                          String windowColour, int windowOpacity, String language);
 
     /**
-     * TODO
+     * Called to send a message with the settings of dialogue enhancement
      *
-     * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param gainPreference
-     * @param gain
-     * @param limitMin
-     * @param limitMax
+     * @param connection     The request and response should have the same value
+     * @param id             The request and response should have the same value
+     *                       - Not empty: a message of user settings query
+     *                       - Empty: a message of notification
+     * @param gainPreference The dialogue enhancement gain preference in dB
+     * @param gain           The currently-active gain value in dB
+     * @param limitMin       The current allowed minimum gain value in dB
+     * @param limitMax       The current allowed maximum gain value in dB
      */
-    void onQueryDialogueEnhancement(int connection, String id,
-                          int gainPreference,
-                          int gain,
-                          int limitMin,
-                          int limitMax);
+    void onQueryDialogueEnhancement(int connection, String id, int gainPreference, int gain,
+                                    int limitMin, int limitMax);
 
     /**
-     * TODO
+     * Called to send a message with the settings of a user Interface Magnification feature
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param enabled
-     * @param magType
+     * @param id         The request and response should have the same value
+     *                   - Not empty: a message of user settings query
+     *                   - Empty: a message of notification
+     * @param enabled    Enabled a screen magnification UI setting
+     * @param magType    The description of the type of magnification scheme currently set
      */
-    void onQueryUIMagnifier(int connection, String id,
-                            boolean enabled,
-                            String magType);
+    void onQueryUIMagnifier(int connection, String id, boolean enabled, String magType);
 
     /**
-     * TODO
+     * Called to send a message with the settings of a high contrast UI feature
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param enabled
-     * @param hcType
+     * @param id         The request and response should have the same value
+     *                   - Not empty: a message of user settings query
+     *                   - Empty: a message of notification
+     * @param enabled    Enabled a high contrast UI
+     * @param hcType     The description of the type of high contrast scheme currently set
      */
-    void onQueryHighContrastUI(int connection, String id,
-                            boolean enabled,
-                            String hcType);
+    void onQueryHighContrastUI(int connection, String id, boolean enabled, String hcType);
 
     /**
-     * TODO
+     * Called to send a message with the settings of a screen reader feature
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param enabled
-     * @param speed
-     * @param voice
-     * @param language
+     * @param id         The request and response should have the same value
+     *                   - Not empty: a message of user settings query
+     *                   - Empty: a message of notification
+     * @param enabled    Enabled a screen reader preference
+     * @param speed      A percentage scaling factor of the default speech speed, 100% considered normal speed
+     * @param voice      The description of the voice
+     * @param language   The description of language in ISO639-2 3-character code
      */
     void onQueryScreenReader(int connection, String id,
-                             boolean enabled,
-                             int speed,
-                             String voice,
-                             String language);
+                             boolean enabled, int speed, String voice, String language);
 
     /**
-     * TODO
+     * Called to send a message with the settings of a "response to a user action" feature
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param enabled
-     * @param type
+     * @param id         The request and response should have the same value
+     *                   - Not empty: a message of user settings query
+     *                   - Empty: a message of notification
+     * @param enabled    Enabled a "response to a user action" preference
+     * @param type       The description of the mechanism the terminal uses to feedback to the user that the user action has occurred.
      */
-    void onQueryResponseToUserAction(int connection, String id,
-                               boolean enabled,
-                               String type);
+    void onQueryResponseToUserAction(int connection, String id, boolean enabled, String type);
 
     /**
-     * TODO
+     * Called to send a message with the settings of an audio description feature
      *
-     * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param enabled
-     * @param gainPreference
-     * @param panAzimuthPreference
+     * @param connection           The request and response should have the same value
+     * @param id                   The request and response should have the same value
+     *                             - Not empty: a message of user settings query
+     *                             - Empty: a message of notification
+     * @param enabled              Enabled audio description
+     * @param gainPreference       The audio description gain preference set by the user in dB.
+     * @param panAzimuthPreference The degree of the azimuth pan preference set by the user
      */
-    void onQueryAudioDescription(int connection, String id,
-                             boolean enabled,
-                             int gainPreference,
-                             int panAzimuthPreference);
+    void onQueryAudioDescription(int connection, String id, boolean enabled,
+                                 int gainPreference, int panAzimuthPreference);
 
     /**
-     * TODO
+     * Called to send a message with the settings of an in-vision signing feature
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param enabled
+     * @param id         The request and response should have the same value
+     *                   - Not empty: a message of user settings query
+     *                   - Empty: a message of notification
+     * @param enabled    Enabled an in-vision signing preference
      */
-    void onQueryInVisionSigning(int connection, String id,
-                                 boolean enabled);
+    void onQueryInVisionSigning(int connection, String id, boolean enabled);
 
     /**
-     * TODO
+     * Called to send an intent for a request to operate the media playback
      *
+     * @param cmd        The index of a basic intent of media playback
+     *                   - 0: pause
+     *                   - 1: play
+     *                   - 2: fast-forward
+     *                   - 3: fast-reverse
+     *                   - 4: stop
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param origin
+     * @param id         The request and response should have the same value
+     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
      */
-    void onSendIntentMediaBasics(
-            int cmd,
-            int connection, String id,
-            String origin);
+    void onSendIntentMediaBasics(int cmd, int connection, String id, String origin);
 
     /**
-     * TODO
+     * Called to send an intent for a request to seek a time position relative to the start or end of the media content
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param origin
-     * @param anchor
-     * @param offset
+     * @param id         The request and response should have the same value
+     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
+     * @param anchor     The value indicates an anchor point of the content
+     *                   - "start": the start or end of the content
+     *                   - "end": the start or end of the content
+     * @param offset     The number value for the time position, a positive or negative number of seconds
      */
-    void onSendIntentMediaSeekContent(
-            int connection, String id,
-            String origin,
-            String anchor,
-            int offset);
+    void onSendIntentMediaSeekContent(int connection, String id, String origin,
+                                      String anchor, int offset);
 
     /**
-     * TODO
+     * Called to send an intent for a request to seek a time position relative to the current time of the media content
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param origin
-     * @param offset
+     * @param id         The request and response should have the same value
+     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
+     * @param offset     The number value for the current time position, a positive or negative number of seconds
      */
-    void onSendIntentMediaSeekRelative(
-            int connection, String id,
-            String origin,
-            int offset);
+    void onSendIntentMediaSeekRelative(int connection, String id, String origin, int offset);
 
     /**
-     * TODO
+     * Called to send an intent for a request to seek a time position relative to the live edge of the media content
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param origin
-     * @param offset
+     * @param id         The request and response should have the same value
+     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
+     * @param offset     The number value for the time position at or before the live edge, zero or negative number of seconds
      */
-    void onSendIntentMediaSeekLive(
-            int connection, String id,
-            String origin,
-            int offset);
+    void onSendIntentMediaSeekLive(int connection, String id, String origin, int offset);
 
     /**
-     * TODO
+     * Called to send an intent for a request to seek a time position relating to absolute wall clock time
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param origin
-     * @param dayTime
+     * @param id         The request and response should have the same value
+     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
+     * @param dayTime    The value conveys the wall clock time, in internet date-time format
      */
-    void onSendIntentMediaSeekWallclock(
-            int connection, String id,
-            String origin,
-            String dayTime);
+    void onSendIntentMediaSeekWallclock(int connection, String id, String origin, String dayTime);
 
     /**
-     * TODO
+     * Called to send an intent to request a search of content available
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param origin
-     * @param query
+     * @param id         The request and response should have the same value
+     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
+     * @param query      The string value is the search term specified by the user.
      */
-    void onSendIntentSearch(
-            int connection, String id,
-            String origin,
-            String query);
+    void onSendIntentSearch(int connection, String id, String origin, String query);
 
     /**
-     * TODO
+     * Called to send an intent to request a display (but not playback) of a specific identified piece of content
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param origin
-     * @param mediaId
+     * @param id         The request and response should have the same value
+     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
+     * @param mediaId    The value for a URI uniquely identifying a piece of content
      */
-    void onSendIntentDisplay(
-            int connection, String id,
-            String origin,
-            String mediaId);
+    void onSendIntentDisplay(int connection, String id, String origin, String mediaId);
 
     /**
-     * TODO
+     * Called to send an intent to request immediate playback of a specific identified piece of content
      *
      * @param connection The request and response should have the same value
-     * @param id The request and response should have the same value
-     * @param origin
-     * @param mediaId
-     * @param anchor
-     * @param offset
+     * @param id         The request and response should have the same value
+     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
+     * @param mediaId    The value for a URI uniquely identifying a piece of content
+     *                   === With meanings as seek-content ===
+     * @param anchor     The value indicates an anchor point of the content
+     *                   - "start": the start or end of the content
+     *                   - "end": the start or end of the content
+     * @param offset     The number value for the time position, a positive or negative number of seconds
+     *                   === With meaning as seek-live ===
+     * @param offset     The number value for the time position at or before the live edge, zero or negative number of seconds
      */
-    void onSendIntentPlayback(
-            int connection, String id,
-            String origin,
-            String mediaId,
-            String anchor,
-            int offset);
+    void onSendIntentPlayback(int connection, String id, String origin,
+                              String mediaId, String anchor, int offset);
 
 }
