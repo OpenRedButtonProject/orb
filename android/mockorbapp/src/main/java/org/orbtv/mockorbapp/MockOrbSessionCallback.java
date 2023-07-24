@@ -94,22 +94,27 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     public interface OnEventListener {
         void onShowMessage(String msg);
     }
+
     private OnEventListener mOnEventListener;
+
     public void setOnEventListener(OnEventListener listener) {
         mOnEventListener = listener;
     }
 
     private static final Map<Integer, String> sFeatures =
-            new HashMap<Integer, String>() { {
-                put(F_SUBTITLES, "subtitles");
-                put(F_DIALOGUE_ENHANCEMENT, "dialogueEnhancement");
-                put(F_MAGNIFICATION_UI, "uiMagnifier");
-                put(F_HIGH_CONTRAST_UI, "highContrastUI");
-                put(F_SCREEN_READER, "screenReader");
-                put(F_RESPONSE_TO_A_USER_ACTION, "responseToUserAction");
-                put(F_AUDIO_DESCRIPTION, "audioDescription");
-                put(F_IN_VISION_SIGN_LANGUAGE, "inVisionSigning");
-            };
+            new HashMap<Integer, String>() {
+                {
+                    put(F_SUBTITLES, "subtitles");
+                    put(F_DIALOGUE_ENHANCEMENT, "dialogueEnhancement");
+                    put(F_MAGNIFICATION_UI, "uiMagnifier");
+                    put(F_HIGH_CONTRAST_UI, "highContrastUI");
+                    put(F_SCREEN_READER, "screenReader");
+                    put(F_RESPONSE_TO_A_USER_ACTION, "responseToUserAction");
+                    put(F_AUDIO_DESCRIPTION, "audioDescription");
+                    put(F_IN_VISION_SIGN_LANGUAGE, "inVisionSigning");
+                }
+
+                ;
             };
 
     MockOrbSessionCallback(MainActivity mainActivity, Bundle extras)
@@ -436,7 +441,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * If the terminal supports UHD, get a list that describes the highest quality video format
      * the terminal supports, as defined by HBBTV 10.2.4.7 for the video_display_format element;
      * otherwise get an empty list.
-     *
+     * <p>
      * Note: If the terminal changes its display format based on the content being played,
      * multiple elements may be included in the list when multiple frame rate families are usable
      * or the highest resolution does not support each highest quality parameter.
@@ -453,8 +458,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * that can be decoded and presented by an A/V control object or HTML5 media element.
      *
      * @return The current number of additional media streams. If the value is non-zero, then a
-     *    call to play an A/V control object, HTML5 media element or video/broadcast object shall
-     *    not fail due to lack of resources for SD media.
+     * call to play an A/V control object, HTML5 media element or video/broadcast object shall
+     * not fail due to lack of resources for SD media.
      */
     @Override
     public int getExtraSDVideoDecodes() {
@@ -466,8 +471,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * that can be decoded and presented by an A/V control object or HTML5 media element.
      *
      * @return The current number of additional media streams. If the value is non-zero, then a
-     *    call to play an A/V control object, HTML5 media element or video/broadcast object shall
-     *    not fail due to lack of resources for HD media.
+     * call to play an A/V control object, HTML5 media element or video/broadcast object shall
+     * not fail due to lack of resources for HD media.
      */
     @Override
     public int getExtraHDVideoDecodes() {
@@ -479,8 +484,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * audio that can be decoded and presented by an A/V control object or HTML5 media element.
      *
      * @return The current number of additional media streams. If the value is non-zero, then a
-     *    call to play an A/V control object, HTML5 media element or video/broadcast object shall
-     *    not fail due to lack of resources for UHD media.
+     * call to play an A/V control object, HTML5 media element or video/broadcast object shall
+     * not fail due to lack of resources for UHD media.
      */
     @Override
     public int getExtraUHDVideoDecodes() {
@@ -606,19 +611,19 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
 
     /**
      * Override the default component selection of the terminal for the specified type.
-     *
+     * <p>
      * If id is empty, no component shall be selected for presentation (presentation is explicitly
      * disabled). Otherwise, the specified component shall be selected for presentation.
-     *
+     * <p>
      * If playback has already started, the presented component shall be updated.
-     *
+     * <p>
      * Default component selection shall be restored (revert back to the control of the terminal)
      * when: (1) the application terminates, (2) the channel is changed, (3) presentation has not
      * been explicitly disabled and the user selects another track in the terminal UI, or (4) the
      * restoreComponentSelection method is called.
      *
      * @param type Type of component selection to override (COMPONENT_TYPE_* code).
-     * @param id A platform-defined component id or an empty string to disable presentation.
+     * @param id   A platform-defined component id or an empty string to disable presentation.
      */
     @Override
     public void overrideComponentSelection(int type, String id) {
@@ -627,7 +632,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
 
     /**
      * Restore the default component selection of the terminal for the specified type.
-     *
+     * <p>
      * If playback has already started, the presented component shall be updated.
      *
      * @param type Type of component selection override to clear (COMPONENT_TYPE_* code).
@@ -640,9 +645,9 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Sets the presentation window of the DVB video. Values are in HbbTV 1280x720 coordinates.
      *
-     * @param x Rectangle definition
-     * @param y Rectangle definition
-     * @param width Rectangle definition
+     * @param x      Rectangle definition
+     * @param y      Rectangle definition
+     * @param width  Rectangle definition
      * @param height Rectangle definition
      */
     @Override
@@ -710,25 +715,24 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Tune to specified channel. The implementation relies on the 'idType' parameter to
      * determine the valid fields that describe the channel. Possible idTypes are:
-     *    ID_IPTV_SDS/ID_IPTV_URI - where 'ipBroadcastID' and 'sourceId' fields are valid
-     *    other ID_.. values - where 'onid', 'tsid' and 'sid' fields are valid
-     *    ID_DVB_SI_DIRECT - is supposed to be handled by setChannelByDsd()
+     * ID_IPTV_SDS/ID_IPTV_URI - where 'ipBroadcastID' and 'sourceId' fields are valid
+     * other ID_.. values - where 'onid', 'tsid' and 'sid' fields are valid
+     * ID_DVB_SI_DIRECT - is supposed to be handled by setChannelByDsd()
      *
-     * @param idType The type of channel
-     * @param onid The original network ID for the required channel.
-     * @param tsid The transport stream ID for the required channel.
-     * @param sid The service ID for the required channel.
-     * @param sourceID The ATSC source_ID of the channel.
-     * @param ipBroadcastID The DVB textual service identifier of the IP broadcast service.
-     * @param trickplay Ignore unless PVR functionality is supported (does not affect return)
+     * @param idType                     The type of channel
+     * @param onid                       The original network ID for the required channel.
+     * @param tsid                       The transport stream ID for the required channel.
+     * @param sid                        The service ID for the required channel.
+     * @param sourceID                   The ATSC source_ID of the channel.
+     * @param ipBroadcastID              The DVB textual service identifier of the IP broadcast service.
+     * @param trickplay                  Ignore unless PVR functionality is supported (does not affect return)
      * @param contentAccessDescriptorURL May be required by DRM-protected IPTV broadcasts
-     * @param quiet Channel change operation
-     *              0 - normal tune
-     *              1 - normal tune and no UI displayed
-     *              2 - quiet tune (user does not know)
-     *
+     * @param quiet                      Channel change operation
+     *                                   0 - normal tune
+     *                                   1 - normal tune and no UI displayed
+     *                                   2 - quiet tune (user does not know)
      * @return negative value (e.g. BridgeTypes.CHANNEL_STATUS_CONNECTING) on success, or
-     *         zero/positive value (see BridgeTypes.CHANNEL_STATUS_.. error values) on failure
+     * zero/positive value (see BridgeTypes.CHANNEL_STATUS_.. error values) on failure
      */
     @Override
     public int setChannelByTriplet(int idType, int onid, int tsid, int sid, int sourceID,
@@ -757,15 +761,14 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Tune to specified channel using DSD.
      *
-     * @param dsd DSD for the required channel.
-     * @param sid SID for the required channel.
-     * @param trickplay Ignore unless PVR functionality is supported (does not affect return)
+     * @param dsd                        DSD for the required channel.
+     * @param sid                        SID for the required channel.
+     * @param trickplay                  Ignore unless PVR functionality is supported (does not affect return)
      * @param contentAccessDescriptorURL May be required by DRM-protected IPTV broadcasts
-     * @param quiet Channel change operation
-     *              0 - normal tune
-     *              1 - normal tune and no UI displayed
-     *              2 - quiet tune (user does not know)
-     *
+     * @param quiet                      Channel change operation
+     *                                   0 - normal tune
+     *                                   1 - normal tune and no UI displayed
+     *                                   2 - quiet tune (user does not know)
      * @return negative value (e.g. BridgeTypes.CHANNEL_STATUS_CONNECTING) on success, or
      * zero/positive value (see BridgeTypes.CHANNEL_STATUS_.. error values) on failure
      */
@@ -839,14 +842,13 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * Get a private audio component in the selected channel.
      *
      * @param componentTag The component_tag of the component.
-     *
      * @return The private component with the specified component_tag in the PMT of the currently
-     *    selected broadcast channel; or null if unavailable or the component is not private (i.e.
-     *    the stream type is audio, video or subtitle).
-     *
-     *    Mandatory properties: id, pid and encrypted. The id property shall be usable with the
-     *    overrideComponentSelection method to select the component as an audio track. Other
-     *    Component properties are not required.
+     * selected broadcast channel; or null if unavailable or the component is not private (i.e.
+     * the stream type is audio, video or subtitle).
+     * <p>
+     * Mandatory properties: id, pid and encrypted. The id property shall be usable with the
+     * overrideComponentSelection method to select the component as an audio track. Other
+     * Component properties are not required.
      */
     @Override
     public BridgeTypes.Component getPrivateAudioComponent(String componentTag) {
@@ -858,14 +860,13 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * Get a private video component in the selected channel.
      *
      * @param componentTag The component_tag of the component.
-     *
      * @return The private component with the specified component_tag in the PMT of the currently
-     *    selected broadcast channel; or null if unavailable or the component is not private (i.e.
-     *    the stream type is audio, video or subtitle).
-     *
-     *    Mandatory properties: id, pid and encrypted. The id property shall be usable with the
-     *    overrideComponentSelection method to select the component as an video track. Other
-     *    Component properties are not required.
+     * selected broadcast channel; or null if unavailable or the component is not private (i.e.
+     * the stream type is audio, video or subtitle).
+     * <p>
+     * Mandatory properties: id, pid and encrypted. The id property shall be usable with the
+     * overrideComponentSelection method to select the component as an video track. Other
+     * Component properties are not required.
      */
     @Override
     public BridgeTypes.Component getPrivateVideoComponent(String componentTag) {
@@ -956,6 +957,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Returns the current age set for parental control. 0 will be returned if parental control is
      * disabled or no age is set.
+     *
      * @return age in the range 4-18, or 0
      */
     @Override
@@ -965,6 +967,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
 
     /**
      * Returns the region set for parental control.
+     *
      * @return country using the 3-character code as specified in ISO 3166
      */
     @Override
@@ -975,16 +978,16 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Called when the application at origin requests access to the distinctive identifier. The
      * client application should display a dialog for the user to allow or deny this and:
-     *
+     * <p>
      * 1. TvBrowser.notifyAccessToDistinctiveIdentifier should be called with the user choice.
      * 2. TvBrowserSessionCallback.getDistinctiveIdentifier should honour the user choice.
-     *
+     * <p>
      * The client application should allow the user to reset access from a settings menu. This shall
      * result in a new distinctive identifier being generated for an origin next time access is
      * allowed.
-     *
+     * <p>
      * The helper method TvBrowser.generateDistinctiveIdentifier may be used.
-     *
+     * <p>
      * Integrators should check 12.1.5 for requirements about distinctive identifiers.
      *
      * @param origin The origin of the application
@@ -1025,7 +1028,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * The distinctive identifier for origin or a distinctive identifier status string (for statuses
      * see BridgeTypes.DISTINCTIVE_IDENTIFIER_STATUS_*).
-     *
+     * <p>
      * Integrators should check 12.1.5 for requirements about distinctive identifiers.
      *
      * @param origin The origin of the requesting application
@@ -1045,7 +1048,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * memory leaks and possibly allow an application to make decisions related to its caching
      * strategy (e.g. for images).
      *
-     *  @return The available memory to the application (in MBs) or -1 if the information is not available.
+     * @return The available memory to the application (in MBs) or -1 if the information is not available.
      */
     @Override
     public long getFreeMemory() {
@@ -1118,8 +1121,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * Start TEMI timeline monitoring.
      *
      * @param componentTag The component tag of the temi timeline to monitor.
-     * @param timelineId The timeline id of the temi timeline to monitor.
-     *
+     * @param timelineId   The timeline id of the temi timeline to monitor.
      * @return The associated filter id upon success, -1 otherwise
      */
     @Override
@@ -1183,7 +1185,6 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * Get current TEMI time.
      *
      * @param filterId
-     *
      * @return current TEMI time, -1 if not available
      */
     @Override
@@ -1215,10 +1216,11 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * Get the list of supported DRM System IDs currently available. Once called,
      * the caller can track the availability changes by listening to
      * onDRMSystemStatusChange events. DRM System ID can enter the following states:
-     *    - 0 READY, fully initialised and ready
-     *    - 1 UNKNOWN, no longer available
-     *    - 2 INITIALISING, initialising and not ready to communicate
-     *    - 3 ERROR, in error state
+     * - 0 READY, fully initialised and ready
+     * - 1 UNKNOWN, no longer available
+     * - 2 INITIALISING, initialising and not ready to communicate
+     * - 3 ERROR, in error state
+     *
      * @return List of supported DRM System IDs currently available.
      */
     @Override
@@ -1250,7 +1252,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * Checks the availability of a valid license for playing a protected content item.
      *
      * @param DRMPrivateData DRM proprietary private data
-     * @param DRMSystemID ID of the DRM System
+     * @param DRMSystemID    ID of the DRM System
      * @return true if there is a valid license available that may allow playing the content
      */
     @Override
@@ -1262,7 +1264,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * Checks the availability of a valid license for recording a protected content item.
      *
      * @param DRMPrivateData DRM proprietary private data
-     * @param DRMSystemID ID of the DRM System
+     * @param DRMSystemID    ID of the DRM System
      * @return true if there is a valid license available locally that may allow recording the content
      */
     @Override
@@ -1273,12 +1275,12 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Send message to the DRM system.
      *
-     * @param msgId unique ID to identify the message, to be passed as the 'msgID'
-     *        argument for onDRMMessageResult
-     * @param msgType message type as defined by the DRM system
-     * @param msg message to be provided to the underlying DRM system
+     * @param msgId       unique ID to identify the message, to be passed as the 'msgID'
+     *                    argument for onDRMMessageResult
+     * @param msgType     message type as defined by the DRM system
+     * @param msg         message to be provided to the underlying DRM system
      * @param drmSystemID ID of the DRM System
-     * @param block Whether the function needs to block until the reply is received
+     * @param block       Whether the function needs to block until the reply is received
      */
     @Override
     public String sendDRMMessage(String msgId, String msgType, String msg, String drmSystemID, boolean block) {
@@ -1301,7 +1303,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      *
      * @param DRMSystemID ID of the DRM System
      * @return false if the terminal is unable to set the specified DRM system as requested,
-     *         true otherwise
+     * true otherwise
      */
     @Override
     public boolean setActiveDRM(String DRMSystemID) {
@@ -1311,7 +1313,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Request file from DSM-CC
      *
-     * @param url DVB Url of requested file
+     * @param url       DVB Url of requested file
      * @param requestId ID of request (returned to DsmccClient.receiveContent)
      */
     @Override
@@ -1366,8 +1368,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Subscribe to DSM-CC Stream Event with URL and event name
      *
-     * @param url DVB Url of event object
-     * @param name Name of stream event
+     * @param url      DVB Url of event object
+     * @param name     Name of stream event
      * @param listenId ID of subscriber
      */
     @Override
@@ -1380,10 +1382,10 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Subscribe to DSM-CC Stream Event with component tag and event ID
      *
-     * @param name Name of stream event
+     * @param name         Name of stream event
      * @param componentTag Component tag for stream event
-     * @param eventId Event Id of stream event
-     * @param listenId ID of subscriber
+     * @param eventId      Event Id of stream event
+     * @param listenId     ID of subscriber
      */
     @Override
     public boolean subscribeDsmccStreamEventId(String name, int componentTag, int eventId, int listenId) {
@@ -1410,7 +1412,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * Publish a test report (debug build only).
      *
      * @param testSuite A unique test suite name.
-     * @param xml The XML test report.
+     * @param xml       The XML test report.
      */
     @Override
     public void publishTestReport(String testSuite, String xml) {
@@ -1421,12 +1423,15 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     /**
-     * TODO
+     * Request a negotiation for methods
      *
      * @param connection    The request and response should have the same value
      * @param id            The request and response should have the same value
-     * @param terminalToApp
-     * @param appToTerminal
+     * @param terminalToApp The names of the methods sent from terminal to app
+     *                      - The names shall separated by comma ','
+     *                      - Example "org.hbbtv.app.intent.media.play,org.hbbtv.notify"
+     * @param appToTerminal The names of the methods sent from app to terminal
+     *                      - same as terminalToApp
      */
     @Override
     public void onRequestNegotiateMethods(int connection, String id,
@@ -1446,13 +1451,22 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     /**
-     * TODO
+     * Request to subscribe/unsubscribe some particular accessibility features
      *
-     * @param connection          The request and response should have the same value
-     * @param id                  The request and response should have the same value
-     * @param subtitles
-     * @param dialogueEnhancement
-     * @param
+     * @param isSubscribe          The request to subscribe/unsubscribe
+     *                             - true: subscribe
+     *                             - false: unsubscribe
+     * @param connection           The request and response should have the same value
+     * @param id                   The request and response should have the same value
+     *                             User preference change of 8 accessibility features:
+     * @param subtitles            Subtitles
+     * @param dialogueEnhancement  Dialogue enhancement
+     * @param uiMagnifier          Magnification UI
+     * @param highContrastUI       High contrast UI
+     * @param screenReader         Screen reader
+     * @param responseToUserAction Response to user action
+     * @param audioDescription     Audio description
+     * @param inVisionSigning      In-vision signing
      */
     @Override
     public void onRequestSubscribe(boolean isSubscribe, int connection, String id,
@@ -1508,11 +1522,11 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     /**
-     * TODO
+     * Request for a overriding dialogue enhancement
      *
      * @param connection              The request and response should have the same value
      * @param id                      The request and response should have the same value
-     * @param dialogueEnhancementGain TODO
+     * @param dialogueEnhancementGain The requested gain value in dB of the dialogue enhancement
      */
     @Override
     public void onRequestDialogueEnhancementOverride(int connection, String id,
@@ -1535,11 +1549,11 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     /**
-     * TODO
+     * Request for a trigger response to user action
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
-     * @param magnitude
+     * @param magnitude  The magnitude of response to user action
      */
     @Override
     public void onRequestTriggerResponseToUserAction(int connection, String id, String magnitude) {
@@ -1557,11 +1571,11 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     /**
-     * TODO
+     * Request for the support information of a feature
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
-     * @param featureId  TODO
+     * @param featureId  The index of a particular accessibility feature
      */
     @Override
     public void onRequestFeatureSupportInfo(int connection, String id, int featureId) {
@@ -1578,11 +1592,11 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     /**
-     * TODO
+     * Request to query settings of a particular feature
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
-     * @param featureId  TODO
+     * @param featureId  The index of a particular accessibility feature
      */
     @Override
     public void onRequestFeatureSettingsQuery(int connection, String id, int featureId) {
@@ -1678,11 +1692,11 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     /**
-     * TODO
+     * Request for suppressing the support of a feature
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
-     * @param featureId  TODO
+     * @param featureId  The index of a particular accessibility feature
      */
     @Override
     public void onRequestFeatureSuppress(int connection, String id, int featureId) {
@@ -1699,11 +1713,11 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     /**
-     * TODO
+     * Receive a response for a request that expresses user intent.
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
-     * @param method
+     * @param method     The string value that has the same value as the method of the original request
      */
     @Override
     public void onReceiveIntentConfirm(int connection, String id, String method) {
@@ -1714,10 +1728,12 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     /**
-     * TODO
+     * Receive a notification of voice-readiness
      *
      * @param connection The request and response should have the same value
-     * @param isReady
+     * @param isReady    The boolean value of the status of voice-readiness
+     *                   - true: the application is voice-ready
+     *                   - false: not voice-ready
      */
     @Override
     public void onNotifyVoiceReady(int connection, boolean isReady) {
@@ -1728,25 +1744,28 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     /**
-     * TODO
+     * Receive a notification that describes the state of media presentation by the application at the time
      *
      * @param connection      The request and response should have the same value
-     * @param state
-     * @param actPause
-     * @param actPlay
-     * @param actFastForward
-     * @param actFastReverse
-     * @param actStop
-     * @param actSeekContent
-     * @param actSeekRelative
-     * @param actSeekLive
-     * @param actWallclock
+     * @param state           The description of state with respect to media playback
+     *                        === Available actions supported ===
+     * @param actPause        Pause
+     * @param actPlay         Play
+     * @param actFastForward  Fast-forward
+     * @param actFastReverse  Fast-reverse
+     * @param actStop         Stop
+     * @param actSeekContent  Seek a time position relative to the media content
+     * @param actSeekRelative Seek a time position relative to the current time
+     * @param actSeekLive     Seek a time position relative to the live edge
+     * @param actWallclock    Seek a time position relating to a absolute wall clock time
      */
     @Override
     public void onNotifyStateMedia(int connection,
                                    String state,
-                                   boolean actPause, boolean actPlay, boolean actFastForward, boolean actFastReverse,
-                                   boolean actStop, boolean actSeekContent, boolean actSeekRelative, boolean actSeekLive, boolean actWallclock) {
+                                   boolean actPause, boolean actPlay, boolean actFastForward,
+                                   boolean actFastReverse, boolean actStop,
+                                   boolean actSeekContent, boolean actSeekRelative,
+                                   boolean actSeekLive, boolean actWallclock) {
 
         Log.d(TAG, "\"onNotifyStateMedia\" is received by MockOrbSessionCallback{" +
                 "\n\"state\":\"" + state + "\"," +
@@ -1768,41 +1787,45 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     /**
-     * TODO
+     * Receive a notification that describes the state of media presentation by the application at the time
      *
      * @param connection            The request and response should have the same value
-     * @param state
-     * @param kind
-     * @param type
-     * @param currentTime
-     * @param rangeStart
-     * @param rangeEnd
-     * @param actPause
-     * @param actPlay
-     * @param actFastForward
-     * @param actFastReverse
-     * @param actStop
-     * @param actSeekContent
-     * @param actSeekRelative
-     * @param actSeekLive
-     * @param actWallclock
-     * @param mediaId
-     * @param title
-     * @param secTitle
-     * @param synopsis
-     * @param subtitlesEnabled
+     * @param state                 The description of state with respect to media playback
+     * @param kind                  The string value describing the kind of media being presented
+     * @param type                  The description of whether the media is on-demand or a live stream
+     * @param currentTime           the current time index of the media
+     * @param rangeStart            the start time index of the media
+     * @param rangeEnd              the end time index of the media
+     *                              === Available actions supported ===
+     * @param actPause              Pause
+     * @param actPlay               Play
+     * @param actFastForward        Fast-forward
+     * @param actFastReverse        Fast-reverse
+     * @param actStop               Stop
+     * @param actSeekContent        Seek a time position relative to the media content
+     * @param actSeekRelative       Seek a time position relative to the current time
+     * @param actSeekLive           Seek a time position relative to the live edge
+     * @param actWallclock          Seek a time position relating to a absolute wall clock time
+     *                              === Metadata describing the currently presenting media ===
+     * @param mediaId               The URI uniquely identifying a piece of content
+     * @param title                 The title of the media
+     * @param secTitle              The secondary title of the media
+     * @param synopsis              The longer description of the media
+     *                              === Availability or current state of that access services ===
+     * @param subtitlesEnabled      Subtitles
      * @param subtitlesAvailable
-     * @param audioDescripEnabled
+     * @param audioDescripEnabled   Audio description
      * @param audioDescripAvailable
-     * @param signLangEnabled
+     * @param signLangEnabled       In-vision sign-language
      * @param signLangAvailable
      */
     @Override
-    public void onNotifyStateMedia(int connection,
-                                   String state, String kind, String type, String currentTime,
-                                   String rangeStart, String rangeEnd,
-                                   boolean actPause, boolean actPlay, boolean actFastForward, boolean actFastReverse,
-                                   boolean actStop, boolean actSeekContent, boolean actSeekRelative, boolean actSeekLive, boolean actWallclock,
+    public void onNotifyStateMedia(int connection, String state, String kind, String type,
+                                   String currentTime, String rangeStart, String rangeEnd,
+                                   boolean actPause, boolean actPlay, boolean actFastForward,
+                                   boolean actFastReverse, boolean actStop,
+                                   boolean actSeekContent, boolean actSeekRelative,
+                                   boolean actSeekLive, boolean actWallclock,
                                    String mediaId, String title, String secTitle, String synopsis,
                                    boolean subtitlesEnabled, boolean subtitlesAvailable,
                                    boolean audioDescripEnabled, boolean audioDescripAvailable,
@@ -1904,12 +1927,12 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     /**
-     * TODO
+     * Called to send a error message
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
-     * @param code       TODO
-     * @param message
+     * @param code       The error code
+     * @param message    The error message
      */
     @Override
     public void onReceiveError(int connection, String id, int code, String message) {
@@ -1932,17 +1955,18 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     /**
-     * TODO
+     * Called to send a error message with some data
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
-     * @param code       TODO
-     * @param message
-     * @param method
-     * @param data
+     * @param code       The error code
+     * @param message    The error message
+     * @param method     The method same as in the original request
+     * @param data       The error data
      */
     @Override
-    public void onReceiveError(int connection, String id, int code, String message, String method, String data) {
+    public void onReceiveError(int connection, String id, int code, String message,
+                               String method, String data) {
         if (mOnEventListener != null) {
             mOnEventListener.onShowMessage(
                     "Received an error {code : " + code + ", message : " + message +
