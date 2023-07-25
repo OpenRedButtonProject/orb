@@ -738,8 +738,7 @@ public interface IOrbSessionCallback {
      * @param actSeekLive     Seek a time position relative to the live edge
      * @param actWallclock    Seek a time position relating to a absolute wall clock time
      */
-    void onNotifyStateMedia(int connection,
-                            String state,
+    void onNotifyStateMedia(int connection, String state,
                             boolean actPause, boolean actPlay, boolean actFastForward,
                             boolean actFastReverse, boolean actStop,
                             boolean actSeekContent, boolean actSeekRelative,
