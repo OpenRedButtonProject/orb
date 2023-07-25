@@ -67,20 +67,21 @@ public class MainActivity extends Activity {
     private MockOrbSessionCallback mMockCallback;
     private IMockDialService mDialService = null;
     private int mDialAppId = -1;
+    private int mMaxLogSize = 8;
 
     private List<Pair<String, String>> mLogLines = new ArrayList<>();
     private void log(String message) {
         SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss:SSS",
                 Locale.getDefault());
         mLogLines.add(new Pair<>(formatter.format(new Date()), message));
-        if (mLogLines.size() > 8) {
+        if (mLogLines.size() > mMaxLogSize) {
             mLogLines.remove(0);
         }
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 TableLayout table = findViewById(R.id.log_table);
-                for (int i = 7; i >= 0; i--) {
+                for (int i = mMaxLogSize - 1 ; i >= 0; i--) {
                     TableRow row = (TableRow) table.getChildAt(i);
                     TextView time = (TextView) row.getChildAt(0);
                     TextView log = (TextView) row.getChildAt(1);

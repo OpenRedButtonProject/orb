@@ -75,14 +75,14 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
 
     static SparseArray<Integer> mKeyMap;
 
-    private static final int F_SUBTITLES = 0;
-    private static final int F_DIALOGUE_ENHANCEMENT = 1;
-    private static final int F_MAGNIFICATION_UI = 2;
-    private static final int F_HIGH_CONTRAST_UI = 3;
-    private static final int F_SCREEN_READER = 4;
-    private static final int F_RESPONSE_TO_A_USER_ACTION = 5;
-    private static final int F_AUDIO_DESCRIPTION = 6;
-    private static final int F_IN_VISION_SIGN_LANGUAGE = 7;
+    private final int F_SUBTITLES = 0;
+    private final int F_DIALOGUE_ENHANCEMENT = 1;
+    private final int F_MAGNIFICATION_UI = 2;
+    private final int F_HIGH_CONTRAST_UI = 3;
+    private final int F_SCREEN_READER = 4;
+    private final int F_RESPONSE_TO_A_USER_ACTION = 5;
+    private final int F_AUDIO_DESCRIPTION = 6;
+    private final int F_IN_VISION_SIGN_LANGUAGE = 7;
     private final int INTENT_PAUSE = 0;
     private final int INTENT_PLAY = 1;
     private final int INTENT_FAST_FORWARD = 2;
@@ -101,7 +101,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         mOnEventListener = listener;
     }
 
-    private static final Map<Integer, String> sFeatures =
+    private final Map<Integer, String> sFeatures =
             new HashMap<Integer, String>() {
                 {
                     put(F_SUBTITLES, "subtitles");
@@ -113,8 +113,6 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                     put(F_AUDIO_DESCRIPTION, "audioDescription");
                     put(F_IN_VISION_SIGN_LANGUAGE, "inVisionSigning");
                 }
-
-                ;
             };
 
     MockOrbSessionCallback(MainActivity mainActivity, Bundle extras)
@@ -1760,8 +1758,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * @param actWallclock    Seek a time position relating to a absolute wall clock time
      */
     @Override
-    public void onNotifyStateMedia(int connection,
-                                   String state,
+    public void onNotifyStateMedia(int connection, String state,
                                    boolean actPause, boolean actPlay, boolean actFastForward,
                                    boolean actFastReverse, boolean actStop,
                                    boolean actSeekContent, boolean actSeekRelative,
