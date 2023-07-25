@@ -61,5 +61,7 @@ public:
      * @param keyAction The JavaScript key action (0 = keyup , 1 = keydown)
      */
     virtual void OnInputKeyGenerated(int keyCode, uint8_t keyAction) override;
+
+    virtual void OnExitButtonPressed() override;
 }; // class ORVEventListenerImpl
 } // namespace orb

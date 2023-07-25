@@ -45,6 +45,8 @@ public:
 
         virtual void EventInputKeyGenerated(int keyCode, uint8_t keyAction) override;
 
+        virtual void ExitButtonPressed() override;
+
         // Must define an interface map since we are implementing an interface on the exchange
         // so Thunder knows what type we are
         BEGIN_INTERFACE_MAP(NotificationHandler)
@@ -61,7 +63,8 @@ public:
         OnJavaScriptEventDispatchRequested_cb onJavaScriptEventDispatchRequested_cb,
         OnDvbUrlLoaded_cb onDvbUrlLoaded_cb,
         OnDvbUrlLoadedNoData_cb onDvbUrlLoadedNoData_cb,
-        OnInputKeyGenerated_cb onInputKeyGenerated_cb
+        OnInputKeyGenerated_cb onInputKeyGenerated_cb,
+        OnExitButtonPressed_cb onExitButtonPressed_cb
         );
     virtual ~ORBComRpcClient();
 
@@ -84,11 +87,13 @@ public:
     void SubscribeToDvbUrlLoadedEvent() override;
     void SubscribeToDvbUrlLoadedNoDataEvent() override;
     void SubscribeToInputKeyGeneratedEvent() override;
+    void SubscribeToExitButtonPressedEvent() override;
 
     void UnsubscribeFromJavaScriptEventDispatchRequestedEvent() override;
     void UnsubscribeFromDvbUrlLoadedEvent() override;
     void UnsubscribeFromDvbUrlLoadedNoDataEvent() override;
     void UnsubscribeFromInputKeyGeneratedEvent() override;
+    void UnsubscribeFromExitButtonPressedEvent() override;
 
 private:
     Core::NodeId GetConnectionEndpoint();

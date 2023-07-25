@@ -139,6 +139,14 @@ static void OnInputKeyGenerated(int keyCode, unsigned char keyAction)
 }
 
 /**
+ * Callback for the exitButtonPressed event coming from ORB.
+ */
+static void OnExitButtonPressed()
+{
+    ORB_LOG("<Not supported>");
+}
+
+/**
  * Handle the specified DVB URI scheme request.
  *
  * @param request  The DVB URI scheme request
@@ -253,7 +261,8 @@ ORBWPEWebExtensionHelper::ORBWPEWebExtensionHelper()
         OnJavaScriptEventDispatchRequested,
         OnDvbUrlLoaded,
         OnDvbUrlLoadedNoData,
-        OnInputKeyGenerated
+        OnInputKeyGenerated,
+        OnExitButtonPressed
         );
 
     m_orbClient->SubscribeToDvbUrlLoadedNoDataEvent();

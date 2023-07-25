@@ -55,6 +55,9 @@ struct EXTERNAL IORB : virtual public Core::IUnknown
         // @param keyAction: The keyAction (0 = keyup , 1 = keydown)
         virtual void EventInputKeyGenerated(int keyCode, uint8_t keyAction) = 0;
 
+        // @brief Event that is fired when the EXIT (or similar) button is pressed by the user
+        virtual void ExitButtonPressed() = 0;
+
         virtual ~INotification()
         {
         }
@@ -99,6 +102,8 @@ struct EXTERNAL IORB : virtual public Core::IUnknown
     virtual void DvbUrlLoadedNoData(int requestId, unsigned int fileContentLength) = 0;
 
     virtual void EventInputKeyGenerated(int keyCode, uint8_t keyAction) = 0;
+
+    virtual void ExitButtonPressed() = 0;
 };
 } // Exchange
 } // WPEFramework

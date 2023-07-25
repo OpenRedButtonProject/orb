@@ -350,6 +350,19 @@ void ORBImplementation::EventInputKeyGenerated(int keyCode, uint8_t keyAction)
     }
 }
 
+void ORBImplementation::ExitButtonPressed()
+{
+    ORB_LOG_NO_ARGS();
+
+    // Loop through all the registered callbacks and fire off the notification
+    std::lock_guard<std::mutex> locker(_notificationMutex);
+    ORB_LOG("We have %d callbacks to trigger", _notificationClients.size());
+    for (const auto client : _notificationClients)
+    {
+        client->ExitButtonPressed();
+    }
+}
+
 /**
  * @brief ORBImplementation::LaunchApplication
  *

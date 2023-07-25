@@ -14,6 +14,7 @@ MODULE_NAME_DECLARATION(BUILD_REFERENCE)
 #define EVENT_DVB_URL_LOADED "dvbUrlLoaded"
 #define EVENT_DVB_URL_LOADED_NO_DATA "dvbUrlLoadedNoData"
 #define EVENT_INPUT_KEY_GENERATED "inputKeyGenerated"
+#define EVENT_EXIT_BUTTON_PRESSED "exitButtonPressed"
 
 namespace orb
 {
@@ -97,7 +98,7 @@ void ORBComRpcClient::NotificationHandler::DvbUrlLoadedNoData(int requestId, uns
 /**
  * @brief ORBComRpcClient::NotificationHandler::EventInputKeyGenerated
  *
- * React to the 'EventInputKeyGenerated'  accordingly
+ * React to the 'EventInputKeyGenerated' event accordingly
  *
  * @param keyCode   The JavaScript key code
  * @param keyAction The JavaScript key action (0 = keyup , 1 = keydown)
@@ -110,6 +111,22 @@ void ORBComRpcClient::NotificationHandler::EventInputKeyGenerated(int keyCode, u
     {
         ORB_LOG("Dispatching event inputKeyGenerated");
         _parent.m_onInputKeyGenerated(keyCode, keyAction);
+    }
+}
+
+/**
+ * @brief ORBComRpcClient::NotificationHandler::ExitButtonPressed
+ *
+ * React to the 'ExitButtonPressed' event accordingly
+ */
+void ORBComRpcClient::NotificationHandler::ExitButtonPressed()
+{
+    ORB_LOG_NO_ARGS();
+
+    if (_parent.m_subscribedEvents[EVENT_EXIT_BUTTON_PRESSED] == true)
+    {
+        ORB_LOG("Dispatching event exitButtonPressed");
+        _parent.m_onExitButtonPressed();
     }
 }
 
@@ -126,10 +143,11 @@ ORBComRpcClient::ORBComRpcClient(
     OnJavaScriptEventDispatchRequested_cb onJavaScriptEventDispatchRequested_cb,
     OnDvbUrlLoaded_cb onDvbUrlLoaded_cb,
     OnDvbUrlLoadedNoData_cb onDvbUrlLoadedNoData_cb,
-    OnInputKeyGenerated_cb onInputKeyGenerated_cb
+    OnInputKeyGenerated_cb onInputKeyGenerated_cb,
+    OnExitButtonPressed_cb onExitButtonPressed_cb
     )
     :  ORBGenericClient(onJavaScriptEventDispatchRequested_cb, onDvbUrlLoaded_cb,
-                        onDvbUrlLoadedNoData_cb, onInputKeyGenerated_cb),
+                        onDvbUrlLoadedNoData_cb, onInputKeyGenerated_cb, onExitButtonPressed_cb),
     m_remoteConnection(GetConnectionEndpoint()),
     m_engine(Core::ProxyType<RPC::InvokeServerType<1, 0, 4> >::Create()),
     m_client(Core::ProxyType<RPC::CommunicatorClient>::Create(m_remoteConnection,
@@ -181,7 +199,9 @@ ORBComRpcClient::ORBComRpcClient(
     // event subscription init
     m_subscribedEvents[EVENT_JAVASCRIPT_EVENT_DISPATCH_REQUESTED] = false;
     m_subscribedEvents[EVENT_DVB_URL_LOADED] = false;
+    m_subscribedEvents[EVENT_DVB_URL_LOADED_NO_DATA] = false;
     m_subscribedEvents[EVENT_INPUT_KEY_GENERATED] = false;
+    m_subscribedEvents[EVENT_EXIT_BUTTON_PRESSED] = false;
 }
 
 /**
@@ -419,6 +439,15 @@ void ORBComRpcClient::SubscribeToInputKeyGeneratedEvent()
 }
 
 /**
+ * Subscribe to 'ExitButtonPressedEvent'
+ */
+void ORBComRpcClient::SubscribeToExitButtonPressedEvent()
+{
+    ORB_LOG_NO_ARGS();
+    m_subscribedEvents[EVENT_EXIT_BUTTON_PRESSED] = true;
+}
+
+/**
  * Unsubscribe from 'JavaScriptEventDispatchRequestedEvent'
  */
 void ORBComRpcClient::UnsubscribeFromJavaScriptEventDispatchRequestedEvent()
@@ -455,6 +484,15 @@ void ORBComRpcClient::UnsubscribeFromInputKeyGeneratedEvent()
 }
 
 /**
+ * Unsubscribe from 'ExitButtonPressedEvent'
+ */
+void ORBComRpcClient::UnsubscribeFromExitButtonPressedEvent()
+{
+    ORB_LOG_NO_ARGS();
+    m_subscribedEvents[EVENT_EXIT_BUTTON_PRESSED] = false;
+}
+
+/**
  * Create a new ORB client instance.
  *
  * @param onJavaScriptEventDispatchRequested_cb The OnJavaScriptEventDispatchRequested callback
@@ -467,14 +505,16 @@ std::shared_ptr<ORBGenericClient> CreateORBClient(
     OnJavaScriptEventDispatchRequested_cb onJavaScriptEventDispatchRequested_cb,
     OnDvbUrlLoaded_cb onDvbUrlLoaded_cb,
     OnDvbUrlLoadedNoData_cb onDvbUrlLoadedNoData_cb,
-    OnInputKeyGenerated_cb onInputKeyGenerated_cb
+    OnInputKeyGenerated_cb onInputKeyGenerated_cb,
+    OnExitButtonPressed_cb onExitButtonPressed_cb
     )
 {
     return std::make_shared<ORBComRpcClient>(
         onJavaScriptEventDispatchRequested_cb,
         onDvbUrlLoaded_cb,
         onDvbUrlLoadedNoData_cb,
-        onInputKeyGenerated_cb
+        onInputKeyGenerated_cb,
+        onExitButtonPressed_cb
         );
 }
 }   // namespace orb
