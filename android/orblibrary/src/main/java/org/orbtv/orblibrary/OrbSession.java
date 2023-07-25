@@ -400,12 +400,12 @@ class OrbSession implements IOrbSession {
      * @param xmlAit
      */
     @Override
-    public void processXmlAit(String xmlAit) {
+    public void processXmlAit(String xmlAit, boolean isDvbi) {
         if (xmlAit == null) {
             Log.e(TAG, "XML AIT is null.");
             return;
         }
-        mApplicationManager.processXmlAit(xmlAit);
+        mApplicationManager.processXmlAit(xmlAit, isDvbi);
     }
 
     /**

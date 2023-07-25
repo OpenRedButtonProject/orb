@@ -200,7 +200,7 @@ public:
      * @param xmlAit The XML AIT contents.
      * @return true if the application can be created, otherwise false
      */
-    bool ProcessXmlAit(const std::string &xmlAit);
+    bool ProcessXmlAit(const std::string &xmlAit, const bool &isDvbi = false);
 
     /**
      * Check whether a Teletext application is signalled.
@@ -359,7 +359,6 @@ private:
     std::unique_ptr<SessionCallback> m_sessionCallback;
     uint16_t m_nextAppId;
     Ait m_ait;
-    std::unique_ptr<Ait::S_AIT_TABLE> m_xmlAit;
     App m_app;
     Utils::S_DVB_TRIPLET m_currentService = Utils::MakeInvalidDvbTriplet();
     uint16_t m_currentServiceReceivedFirstAit = false;
