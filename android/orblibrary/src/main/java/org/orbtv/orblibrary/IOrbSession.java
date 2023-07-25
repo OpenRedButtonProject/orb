@@ -66,7 +66,7 @@ public interface IOrbSession {
      *
      * @param xmlAit
      */
-    void processXmlAit(String xmlAit);
+    void processXmlAit(String xmlAit, boolean isDvbi);
 
     /**
      * Returns whether a Teletext application is signalled in the current AIT.

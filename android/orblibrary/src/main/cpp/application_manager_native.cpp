@@ -267,10 +267,10 @@ JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniProcessAi
 extern "C"
 JNIEXPORT jboolean JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniProcessXmlAit(
     JNIEnv *env, jobject object,
-    jstring j_data)
+    jstring j_data, jboolean is_dvbi)
 {
     std::string data = JniUtils::MakeStdString(env, j_data);
-    return GetManager(env, object)->ProcessXmlAit(data);
+    return GetManager(env, object)->ProcessXmlAit(data, is_dvbi);
 }
 
 extern "C"

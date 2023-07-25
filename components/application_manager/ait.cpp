@@ -105,6 +105,12 @@ bool Ait::ProcessSection(const uint8_t *data, uint32_t nbytes)
     return updated;
 }
 
+void Ait::ApplyAitTable(std::unique_ptr<Ait::S_AIT_TABLE> &aitTable)
+{
+    m_ait = std::move(aitTable);
+    m_aitCompleted = m_ait;
+}
+
 /**
  *
  * @param aitTable AIT table.

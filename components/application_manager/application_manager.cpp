@@ -168,7 +168,7 @@ bool ApplicationManager::CreateApplication(uint16_t callingAppId, const std::str
             if (!contents.empty())
             {
                 LOG(LOG_INFO, "Locator resource is XML AIT");
-                result = ProcessXmlAit(contents);
+                result = ProcessXmlAit(contents, false);
             }
             else
             {
@@ -395,7 +395,7 @@ void ApplicationManager::ProcessAitSection(uint16_t aitPid, uint16_t serviceId,
  * @param xmlAit The XML AIT contents.
  * @return true if the application can be created, otherwise false
  */
-bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit)
+bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &isDvbi)
 {
     const Ait::S_AIT_APP_DESC *app_description;
     bool result = false;
@@ -409,20 +409,20 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit)
         return false;
     }
 
-    m_xmlAit = std::move(XmlParser::ParseAit(xmlAit.c_str(), xmlAit.length()));
-    if (nullptr == m_xmlAit || m_xmlAit->numApps == 0)
+    std::unique_ptr<Ait::S_AIT_TABLE> aitTable = std::move(XmlParser::ParseAit(xmlAit.c_str(), xmlAit.length()));
+    if (nullptr == aitTable || aitTable->numApps == 0)
     {
         // No AIT or apps parsed, early out
         return false;
     }
 
-    Ait::PrintInfo(m_xmlAit.get());
-    app_description = GetAutoStartApp(m_xmlAit.get());
+    Ait::PrintInfo(aitTable.get());
+    app_description = GetAutoStartApp(aitTable.get());
 
     if (app_description)
     {
         auto new_app = App::CreateAppFromAitDesc(app_description, m_currentService,
-            m_isNetworkAvailable, "", false, false);
+            m_isNetworkAvailable, "", isDvbi, false);
         result = RunApp(new_app);
         if (!result)
         {
@@ -432,6 +432,22 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit)
         }
     }
 
+    if (result && isDvbi) {
+        m_ait.Clear();
+        m_currentServiceAitPid = UINT16_MAX;
+        m_ait.ApplyAitTable(aitTable);
+
+        if (!m_currentServiceReceivedFirstAit)
+        {
+            m_aitTimeout.stop();
+            m_currentServiceReceivedFirstAit = true;
+            OnSelectedServiceAitReceived();
+        }
+        else
+        {
+            OnSelectedServiceAitUpdated();
+        }
+    }
 
     return result;
 }

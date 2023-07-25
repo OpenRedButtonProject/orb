@@ -181,6 +181,8 @@ public:
      */
     bool ProcessSection(const uint8_t *data, uint32_t nbytes);
 
+    void ApplyAitTable(std::unique_ptr<Ait::S_AIT_TABLE> &aitTable);
+
     /**
      *
      * @param aitTable AIT table.
