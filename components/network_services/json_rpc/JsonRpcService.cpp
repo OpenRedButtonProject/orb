@@ -530,12 +530,13 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestTriggerResponseToUserAction
 JsonRpcService::JsonRpcStatus JsonRpcService::NotifyVoiceReady(int connectionId, const
     Json::Value &obj)
 {
-    if (HasJsonParam(obj, "params") &&
-        HasParam(obj["params"], "ready", Json::booleanValue))
+    if (!HasJsonParam(obj, "params") ||
+        !HasParam(obj["params"], "ready", Json::booleanValue))
     {
-        bool ready = obj["params"]["ready"].asBool();
-        m_sessionCallback->NotifyVoiceReady(connectionId, ready);
+        return JsonRpcStatus::NOTIFICATION_ERROR;
     }
+    bool ready = obj["params"]["ready"].asBool();
+    m_sessionCallback->NotifyVoiceReady(connectionId, ready);
     return JsonRpcStatus::SUCCESS;
 }
 
