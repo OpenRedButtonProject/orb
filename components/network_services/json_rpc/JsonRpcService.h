@@ -25,7 +25,7 @@ public:
         INVALID_REQUEST = -32600,
         METHOD_NOT_FOUND = -32601,
         INVALID_PARAMS = -32602,
-        NOTIFICATION_ERROR = -32603,
+        NOTIFICATION_ERROR = -99999,
     };
     typedef JsonRpcStatus (JsonRpcService::*JsonRpcMethod)(int, const Json::Value&);
 
