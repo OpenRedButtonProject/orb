@@ -417,22 +417,7 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
     }
 
     Ait::PrintInfo(aitTable.get());
-    app_description = GetAutoStartApp(aitTable.get());
-
-    if (app_description)
-    {
-        auto new_app = App::CreateAppFromAitDesc(app_description, m_currentService,
-            m_isNetworkAvailable, "", isDvbi, false);
-        result = RunApp(new_app);
-        if (!result)
-        {
-            LOG(LOG_ERROR, "Could not find app (org_id=%d, app_id=%d)",
-                app_description->orgId,
-                app_description->appId);
-        }
-    }
-
-    if (result && isDvbi) {
+    if (isDvbi) {
         m_ait.Clear();
         m_currentServiceAitPid = UINT16_MAX;
         m_ait.ApplyAitTable(aitTable);
@@ -446,6 +431,23 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
         else
         {
             OnSelectedServiceAitUpdated();
+        }
+        result = true;
+    }
+    else {
+        app_description = GetAutoStartApp(aitTable.get());
+
+        if (app_description)
+        {
+            auto new_app = App::CreateAppFromAitDesc(app_description, m_currentService,
+                                                     m_isNetworkAvailable, "", isDvbi, false);
+            result = RunApp(new_app);
+            if (!result)
+            {
+                LOG(LOG_ERROR, "Could not find app (org_id=%d, app_id=%d)",
+                    app_description->orgId,
+                    app_description->appId);
+            }
         }
     }
 
