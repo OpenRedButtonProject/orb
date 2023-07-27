@@ -335,7 +335,15 @@ bool ORBPlatformEventHandlerImpl::OnInputKeyGenerated(int keyCode, KeyAction key
         return false;
     }
 
-    if (ORBEngine::GetSharedInstance().GetApplicationManager()->InKeySet(currentAppId, keyCode))
+    // Check if the user has pressed the EXIT (or similar) button in the RCU
+    if (ORBEngine::GetSharedInstance().GetORBPlatform()->Platform_IsExitButton(keyCode))
+    {
+        ORB_LOG("EXIT button pressed");
+        ORBEngine::GetSharedInstance().GetEventListener()->OnExitButtonPressed();
+        consumed = true;
+    }
+    else if (ORBEngine::GetSharedInstance().GetApplicationManager()->InKeySet(currentAppId,
+        keyCode))
     {
         consumed = true;
 

@@ -88,4 +88,13 @@ void ORBEventListenerImpl::OnInputKeyGenerated(int keyCode, uint8_t keyAction)
     ORB_LOG("PID=%d", getpid());
     ORBImplementation::instance(nullptr)->EventInputKeyGenerated(keyCode, keyAction);
 }
+
+/**
+ * Trigger the ExitButtonPressed event.
+ */
+void ORBEventListenerImpl::OnExitButtonPressed()
+{
+    ORB_LOG_NO_ARGS();
+    ORBImplementation::instance(nullptr)->ExitButtonPressed();
+}
 } // namespace orb

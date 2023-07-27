@@ -135,6 +135,19 @@ static void OnInputKeyGenerated(int keyCode, unsigned char keyAction)
     }
 }
 
+/**
+ * Called back by the ORB client upon receipt of the exitButtonPressed notification from the ORB
+ * service.
+ */
+static void OnExitButtonPressed()
+{
+    ORB_LOG_NO_ARGS();
+    std::string kScript = "window.close();";
+    char *javascript = strdup(kScript.c_str());
+    g_main_context_invoke_full(nullptr, G_PRIORITY_HIGH_IDLE, EvaluateJavaScript,
+        (gpointer) javascript, (GDestroyNotify) free);
+}
+
 /******************************************************************************
  * wpeBridge.request method implementation in C++
  ******************************************************************************/
@@ -354,10 +367,12 @@ void webkit_web_extension_initialize_with_user_data(WebKitWebExtension *extensio
             OnJavaScriptEventDispatchRequested,
             OnDvbUrlLoaded,
             OnDvbUrlLoadedNoData,
-            OnInputKeyGenerated
+            OnInputKeyGenerated,
+            OnExitButtonPressed
             );
         s_orbClient->SubscribeToJavaScriptEventDispatchRequestedEvent();
         s_orbClient->SubscribeToInputKeyGeneratedEvent();
+        s_orbClient->SubscribeToExitButtonPressedEvent();
     }
 
     s_orbWpeWebExtension = extension;

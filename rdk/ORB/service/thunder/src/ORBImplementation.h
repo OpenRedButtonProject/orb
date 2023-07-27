@@ -85,6 +85,8 @@ public:
 
     void EventInputKeyGenerated(int keyCode, uint8_t keyAction) override;
 
+    void ExitButtonPressed() override;
+
 private:
 
     mutable Core::CriticalSection _adminLock;

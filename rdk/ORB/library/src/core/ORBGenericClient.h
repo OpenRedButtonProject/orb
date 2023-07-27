@@ -15,6 +15,7 @@ typedef void (*OnDvbUrlLoaded_cb)(int requestId, unsigned char *content, unsigne
     contentLength);
 typedef void (*OnDvbUrlLoadedNoData_cb)(int requestId, unsigned int contentLength);
 typedef void (*OnInputKeyGenerated_cb)(int keyCode, unsigned char keyAction);
+typedef void (*OnExitButtonPressed_cb)();
 
 namespace orb
 {
@@ -29,13 +30,15 @@ public:
         OnJavaScriptEventDispatchRequested_cb onJavaScriptEventDispatchRequested_cb,
         OnDvbUrlLoaded_cb onDvbUrlLoaded_cb,
         OnDvbUrlLoadedNoData_cb onDvbUrlLoadedNoData_cb,
-        OnInputKeyGenerated_cb onInputKeyGenerated_cb
+        OnInputKeyGenerated_cb onInputKeyGenerated_cb,
+        OnExitButtonPressed_cb onExitButtonPressed_cb
         )
     {
         m_onJavaScriptEventDispatchRequested = onJavaScriptEventDispatchRequested_cb;
         m_onDvbUrlLoaded = onDvbUrlLoaded_cb;
         m_onDvbUrlLoadedNoData = onDvbUrlLoadedNoData_cb;
         m_onInputKeyGenerated = onInputKeyGenerated_cb;
+        m_onExitButtonPressed = onExitButtonPressed_cb;
     }
 
     virtual ~ORBGenericClient()
@@ -60,11 +63,13 @@ public:
     virtual void SubscribeToDvbUrlLoadedEvent() = 0;
     virtual void SubscribeToDvbUrlLoadedNoDataEvent() = 0;
     virtual void SubscribeToInputKeyGeneratedEvent() = 0;
+    virtual void SubscribeToExitButtonPressedEvent() = 0;
 
     virtual void UnsubscribeFromJavaScriptEventDispatchRequestedEvent() = 0;
     virtual void UnsubscribeFromDvbUrlLoadedEvent() = 0;
     virtual void UnsubscribeFromDvbUrlLoadedNoDataEvent() = 0;
     virtual void UnsubscribeFromInputKeyGeneratedEvent() = 0;
+    virtual void UnsubscribeFromExitButtonPressedEvent() = 0;
 
 protected:
     // callbacks
@@ -72,6 +77,7 @@ protected:
     OnDvbUrlLoaded_cb m_onDvbUrlLoaded;
     OnDvbUrlLoadedNoData_cb m_onDvbUrlLoadedNoData;
     OnInputKeyGenerated_cb m_onInputKeyGenerated;
+    OnExitButtonPressed_cb m_onExitButtonPressed;
 }; // class ORBGenericClient
 
 
@@ -82,6 +88,7 @@ protected:
  * @param onDvbUrlLoaded_cb                     The OnDvbUrlLoaded callback
  * @param onDvbUrlLoadedNoData_cb               The OnDvbUrlLoadedNoData callback
  * @param onInputKeyGenerated_cb                The OnInputKeyGenerated callback
+ * @param onExitButtonPressed_cb                The OnExitButtonPressed callback
  *
  * @return Pointer to the new ORB client instance
  */
@@ -89,6 +96,7 @@ std::shared_ptr<ORBGenericClient> CreateORBClient(
     OnJavaScriptEventDispatchRequested_cb onJavaScriptEventDispatchRequested_cb,
     OnDvbUrlLoaded_cb onDvbUrlLoaded_cb,
     OnDvbUrlLoadedNoData_cb onDvbUrlLoadedNoData_cb,
-    OnInputKeyGenerated_cb onInputKeyGenerated_cb
+    OnInputKeyGenerated_cb onInputKeyGenerated_cb,
+    OnExitButtonPressed_cb OnExitButtonPressed_cb
     );
 } // namespace orb

@@ -25,6 +25,7 @@ public:
     virtual void Platform_Finalise() override;
     virtual unsigned int Platform_MapKeyCode(unsigned int keyCode) override;
     virtual void Platform_SetCurrentKeySetMask(uint16_t keySetMask) override;
+    virtual bool Platform_IsExitButton(unsigned int keyCode) override;
 
     // Application api
     virtual bool Application_Load(std::string url) override;

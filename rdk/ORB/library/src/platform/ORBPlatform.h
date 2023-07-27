@@ -65,6 +65,15 @@ public:
      */
     virtual void Platform_SetCurrentKeySetMask(uint16_t keySetMask) = 0;
 
+    /**
+     * Check if the specified key code corresponds to the EXIT (or similar) button in the
+     * RCU of the underlying platform.
+     *
+     * @param keyCode The key code to be checked
+     *
+     * @return True if the specified key code corresponds to the EXIT button, false otherwise
+     */
+    virtual bool Platform_IsExitButton(unsigned int keyCode) = 0;
 
 
     /******************************************************************************

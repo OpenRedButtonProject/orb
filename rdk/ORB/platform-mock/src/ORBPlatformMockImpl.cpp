@@ -128,6 +128,20 @@ void ORBPlatformMockImpl::Platform_SetCurrentKeySetMask(uint16_t keySetMask)
     s_keySetMask = keySetMask;
 }
 
+/**
+ * Check if the specified key code corresponds to the EXIT (or similar) button in the
+ * RCU of the underlying platform.
+ *
+ * @param keyCode The key code to be checked
+ *
+ * @return True if the specified key code corresponds to the EXIT button, false otherwise
+ */
+bool ORBPlatformMockImpl::Platform_IsExitButton(unsigned int keyCode)
+{
+    ORB_LOG("keyCode=%u", keyCode);
+    return false;
+}
+
 /******************************************************************************
 ** Application API
 *****************************************************************************/
