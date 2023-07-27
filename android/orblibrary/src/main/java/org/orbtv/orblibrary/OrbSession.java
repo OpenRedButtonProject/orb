@@ -696,7 +696,7 @@ class OrbSession implements IOrbSession {
      *                      - The names shall separated by comma ','
      *                      - Example "org.hbbtv.app.intent.media.play,org.hbbtv.notify"
      * @param appToTerminal The names for the negotiated methods sent from app to terminal
-     *                      - same as terminalToApp
+     *                      - Same as terminalToApp
      */
     @Override
     public void onRespondNegotiateMethods(int connection, String id,
@@ -788,7 +788,7 @@ class OrbSession implements IOrbSession {
     }
 
     /**
-     * Called to send a error message
+     * Called to send an error message
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
@@ -801,7 +801,7 @@ class OrbSession implements IOrbSession {
     }
 
     /**
-     * Called to send a error message with some data
+     * Called to send an error message with some data
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
@@ -1071,6 +1071,7 @@ class OrbSession implements IOrbSession {
      *                   - "end": the start or end of the content
      * @param offset     The number value for the time position, a positive or negative number of seconds
      *                   === With meaning as seek-live ===
+     * @param offset     The number value for the time position at or before the live edge, zero or negative number of seconds
      */
     @Override
     public void onSendIntentPlayback(int connection, String id, String origin,

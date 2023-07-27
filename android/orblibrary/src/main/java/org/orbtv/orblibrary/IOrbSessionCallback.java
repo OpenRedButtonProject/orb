@@ -751,9 +751,9 @@ public interface IOrbSessionCallback {
      * @param state                 The description of state with respect to media playback
      * @param kind                  The string value describing the kind of media being presented
      * @param type                  The description of whether the media is on-demand or a live stream
-     * @param currentTime           the current time index of the media
-     * @param rangeStart            the start time index of the media
-     * @param rangeEnd              the end time index of the media
+     * @param currentTime           The current time index of the media
+     * @param rangeStart            The start time index of the media
+     * @param rangeEnd              The end time index of the media
      *                              === Available actions supported ===
      * @param actPause              Pause
      * @param actPlay               Play
@@ -789,7 +789,7 @@ public interface IOrbSessionCallback {
                             boolean signLangEnabled, boolean signLangAvailable);
 
     /**
-     * Called to send a error message
+     * Called to send an error message
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
@@ -799,7 +799,7 @@ public interface IOrbSessionCallback {
     void onReceiveError(int connection, String id, int code, String message);
 
     /**
-     * Called to send a error message with some data
+     * Called to send an error message with some data
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
