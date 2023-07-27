@@ -268,7 +268,7 @@ public interface IOrbSession {
      *                      - The names shall separated by comma ','
      *                      - Example "org.hbbtv.app.intent.media.play,org.hbbtv.notify"
      * @param appToTerminal The names for the negotiated methods sent from app to terminal
-     *                      - same as terminalToApp
+     *                      - Same as terminalToApp
      */
     void onRespondNegotiateMethods(int connection, String id,
                                    String terminalToApp, String appToTerminal);
@@ -339,7 +339,7 @@ public interface IOrbSession {
     void onRespondFeatureSuppress(int connection, String id, int feature, String value);
 
     /**
-     * Called to send a error message
+     * Called to send an error message
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
@@ -349,7 +349,7 @@ public interface IOrbSession {
     void onRespondError(int connection, String id, int code, String message);
 
     /**
-     * Called to send a error message with some data
+     * Called to send an error message with some data
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
