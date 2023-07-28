@@ -119,6 +119,7 @@ public class BridgeTypes {
         public int sid;
         public boolean hidden;
         public int sourceId;
+        public List<Channel> serviceInstances;
 
         // channelType and idType values. See OIPF spec vol 5 DAE, section 7.13.11.1
         public static final int TYPE_TV = 0;
@@ -167,7 +168,7 @@ public class BridgeTypes {
          */
         public Channel(boolean valid, String ccid, String name, String dsd, int channelType,
                        int idType, int majorChannel, int terminalChannel, int nid, int onid, int tsid, int sid,
-                       boolean hidden, int sourceId, String ipBroadcastId) {
+                       boolean hidden, int sourceId, String ipBroadcastId, List<Channel> serviceInstances) {
             this.valid = valid;
             this.ccid = ccid;
             this.name = name;
@@ -183,6 +184,7 @@ public class BridgeTypes {
             this.hidden = hidden;
             this.sourceId = sourceId;
             this.ipBroadcastId = ipBroadcastId;
+            this.serviceInstances = serviceInstances;
         }
 
         /**
@@ -208,6 +210,13 @@ public class BridgeTypes {
             o.put("hidden", hidden);
             o.put("sourceID", sourceId);
             o.put("ipBroadcastID", ipBroadcastId);
+            if (serviceInstances != null) {
+                JSONArray instances = new JSONArray();
+                for (int i = 0; i < serviceInstances.size(); ++i) {
+                    instances.put(i, serviceInstances.get(i).toJSONObject());
+                }
+                o.put("serviceInstances", instances);
+            }
             return o;
         }
     }
