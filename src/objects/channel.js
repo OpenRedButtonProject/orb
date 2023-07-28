@@ -94,6 +94,14 @@ hbbtv.objects.Channel = (function() {
             const p = privates.get(this);
             return p.channelData.ipBroadcastID;
         },
+        serviceInstances() {
+            const p = privates.get(this);
+            return p.serviceInstances;
+        },
+        parentService() {
+            const p = privates.get(this);
+            return p.channelData.parentService;
+        },
     });
 
     // Initialise an instance of prototype
@@ -101,6 +109,13 @@ hbbtv.objects.Channel = (function() {
         privates.set(this, {});
         const p = privates.get(this);
         p.channelData = channelData; // Hold reference to caller's object
+        if (channelData.serviceInstances) {
+            for (const instance of channelData.serviceInstances) {
+                instance.parentService = this;
+            }
+            p.serviceInstances = hbbtv.objects.createChannelList(channelData.serviceInstances);
+            console.log(channelData.serviceInstances);
+        }
     }
 
     // Private method to get a copy of the channel data

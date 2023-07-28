@@ -77,11 +77,16 @@ hbbtv.objects.ChannelList = (function() {
         },
     });
 
-    function initialise() {
+    function initialise(data) {
         privates.set(this, {});
         const p = privates.get(this);
-        // Keeps reference to channel data
-        getChannelList(p, false);
+        if (!data) {
+            // Keeps reference to channel data
+            getChannelList(p, false);
+        }
+        else {
+            p.channelDataList = data;
+        }
     }
 
     function getChannelList(p, thrw) {
@@ -124,8 +129,8 @@ hbbtv.objects.ChannelListProxy = {
     },
 };
 
-hbbtv.objects.createChannelList = function() {
+hbbtv.objects.createChannelList = function(data) {
     const channelList = Object.create(hbbtv.objects.ChannelList.prototype);
-    hbbtv.objects.ChannelList.initialise.call(channelList);
+    hbbtv.objects.ChannelList.initialise.call(channelList, data);
     return new Proxy(channelList, hbbtv.objects.ChannelListProxy);
 };
