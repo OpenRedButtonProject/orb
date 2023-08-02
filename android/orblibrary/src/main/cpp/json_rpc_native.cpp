@@ -567,7 +567,6 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnQuerySubtitles(
     if (idStr.length() == LENGTH_OF_EMPTY_ID) {
 
         GetService(env, object)->NotifySubtitles(
-                connection,
                 enabled, size, fontFamilyStr, textColourStr, textOpacity,
                 edgeTypeStr, edgeColourStr, backgroundColourStr, backgroundOpacity,
                 windowColourStr, windowOpacity, languageStr);
@@ -596,7 +595,6 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnQueryDialogueEnhancement(
     std::string idStr = JniUtils::MakeStdString(env, id);
     if (idStr.length() == LENGTH_OF_EMPTY_ID) {
         GetService(env, object)->NotifyDialogueEnhancement(
-                connection,
                 gainPreference, gain, limitMin, limitMax);
     }
     else {
@@ -619,8 +617,7 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnQueryUIMagnifier(
     std::string idStr = JniUtils::MakeStdString(env, id);
     std::string magTypeStr = JniUtils::MakeStdString(env, magType);
     if (idStr.length() == LENGTH_OF_EMPTY_ID) {
-        GetService(env, object)->NotifyUIMagnifier(
-                connection, enabled, magTypeStr);
+        GetService(env, object)->NotifyUIMagnifier(enabled, magTypeStr);
     }
     else {
         GetService(env, object)->RespondFeatureSettingsUIMagnifier(
@@ -641,8 +638,7 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnQueryHighContrastUI(
     std::string idStr = JniUtils::MakeStdString(env, id);
     std::string hcTypeStr = JniUtils::MakeStdString(env, hcType);
     if (idStr.length() == LENGTH_OF_EMPTY_ID) {
-        GetService(env, object)->NotifyHighContrastUI(
-                connection, enabled, hcTypeStr);
+        GetService(env, object)->NotifyHighContrastUI(enabled, hcTypeStr);
     }
     else {
         GetService(env, object)->RespondFeatureSettingsHighContrastUI(
@@ -667,7 +663,6 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnQueryScreenReader(
     std::string languageStr = JniUtils::MakeStdString(env, language);
     if (idStr.length() == LENGTH_OF_EMPTY_ID) {
         GetService(env, object)->NotifyScreenReader(
-                connection,
                 enabled, speed, voiceStr, languageStr);
     }
     else {
@@ -691,8 +686,7 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnQueryResponseToUserAction(
     std::string idStr = JniUtils::MakeStdString(env, id);
     std::string typeStr = JniUtils::MakeStdString(env, type);
     if (idStr.length() == LENGTH_OF_EMPTY_ID) {
-        GetService(env, object)->NotifyResponseToUserAction(
-                connection, enabled, typeStr);
+        GetService(env, object)->NotifyResponseToUserAction(enabled, typeStr);
     }
     else {
         GetService(env, object)->RespondFeatureSettingsResponseToUserAction(
@@ -714,7 +708,6 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnQueryAudioDescription(
     std::string idStr = JniUtils::MakeStdString(env, id);
     if (idStr.length() == LENGTH_OF_EMPTY_ID) {
         GetService(env, object)->NotifyAudioDescription(
-                connection,
                 enabled, gainPreference, panAzimuthPreference);
     }
     else {
@@ -736,7 +729,7 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnQueryInVisionSigning(
     std::string idStr = JniUtils::MakeStdString(env, id);
     if (idStr.length() == LENGTH_OF_EMPTY_ID) {
         GetService(env, object)->NotifyInVisionSigning(
-                connection, enabled);
+                enabled);
     }
     else {
         GetService(env, object)->RespondFeatureSettingsInVisionSigning(
