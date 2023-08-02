@@ -12,6 +12,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <mutex>
 #include <json/json.h>
 
@@ -26,6 +27,7 @@ public:
         METHOD_NOT_FOUND = -32601,
         INVALID_PARAMS = -32602,
         NOTIFICATION_ERROR = -99999,
+        UNKNOWN = 1,
     };
     typedef JsonRpcStatus (JsonRpcService::*JsonRpcMethod)(int, const Json::Value&);
 
@@ -240,28 +242,28 @@ public:
     void SendIntentPlayback(int connectionId, const std::string &id, const std::string &origin,
         const std::string &mediaId, const std::string &anchor, int offset);
 
-    void NotifySubtitles(int connectionId, bool enabled, int size, const std::string &fontFamily,
+    void NotifySubtitles(bool enabled, int size, const std::string &fontFamily,
         const std::string &textColour, int textOpacity, const std::string &edgeType,
         const std::string &edgeColour, const std::string &backgroundColour, int backgroundOpacity,
         const std::string &windowColour, int windowOpacity, const std::string &language);
 
-    void NotifyDialogueEnhancement(int connectionId, int dialogueEnhancementGainPreference,
+    void NotifyDialogueEnhancement(int dialogueEnhancementGainPreference,
         int dialogueEnhancementGain, int dialogueEnhancementLimitMin,
         int dialogueEnhancementLimitMax);
 
-    void NotifyUIMagnifier(int connectionId, bool enabled, const std::string &magType);
+    void NotifyUIMagnifier(bool enabled, const std::string &magType);
 
-    void NotifyHighContrastUI(int connectionId, bool enabled, const std::string &hcType);
+    void NotifyHighContrastUI(bool enabled, const std::string &hcType);
 
-    void NotifyScreenReader(int connectionId, bool enabled, int speed, const std::string &voice,
+    void NotifyScreenReader(bool enabled, int speed, const std::string &voice,
         const std::string &language);
 
-    void NotifyResponseToUserAction(int connectionId, bool enabled, const std::string &type);
+    void NotifyResponseToUserAction(bool enabled, const std::string &type);
 
-    void NotifyAudioDescription(int connectionId, bool enabled, int gainPreference,
+    void NotifyAudioDescription(bool enabled, int gainPreference,
         int panAzimuthPreference);
 
-    void NotifyInVisionSigning(int connectionId, bool enabled);
+    void NotifyInVisionSigning(bool enabled);
 
     void RespondDialogueEnhancementOverride(int connectionId, const std::string &id,
         int dialogueEnhancementGain);
@@ -269,17 +271,38 @@ public:
     void RespondTriggerResponseToUserAction(int connectionId, const std::string &id,
         bool actioned);
 
+
+
 private:
     std::string m_endpoint;
     std::unique_ptr<SessionCallback> m_sessionCallback;
     std::map<std::string, std::function<JsonRpcStatus(int connectionId, const
         Json::Value&)> > m_json_rpc_methods;
+    std::unordered_set<std::string> m_supported_methods_app_to_terminal;
+    std::unordered_set<std::string> m_supported_methods_terminal_to_app;
+
+    std::unordered_map<int, std::unordered_set<std::string> > m_negotiate_methods_app_to_terminal;
+    std::unordered_map<int, std::unordered_set<std::string> > m_negotiate_methods_terminal_to_app;
+
+    std::unordered_map<int, std::unordered_set<std::string> > m_subscribed_method;
 
     // Helper functions
     void RegisterMethod(const std::string& name, JsonRpcMethod method);
 
     void SendJsonMessageToClient(int connectionId, const std::string &responseName,
         const Json::Value &jsonResponse);
+
+    std::string ResetStylesFilterMethods(int connectionId, std::string &oldString, const
+        std::string &direction);
+
+    void GetSubscribedConnectionIds(std::vector<int> &availableConnectionIds, int msgType);
+
+    bool CheckMethodInNegotiatedMap(const std::string &direction, int connectionId,
+        const std::string &method);
+
+    bool CheckMethodInSupportedSet(const std::string &direction, const std::string &method);
+
+    void RegisterSupportedMethods();
 };
 } // namespace NetworkServices
 
