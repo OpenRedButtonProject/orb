@@ -647,6 +647,16 @@ hbbtv.objects.VideoBroadcast = (function() {
         },
     });
 
+    Object.defineProperty(prototype, 'currentServiceInstance', {
+        get: function() {
+            if (!privates.get(this).isBroadcastRelated) {
+                return null;
+            }
+
+            return privates.get(this).currentServiceInstance;
+        },
+    });
+
     Object.defineProperty(prototype, 'onDRMRightsError', {
         get() {
             return privates.get(this).onDRMRightsErrorDomLevel0;
@@ -755,6 +765,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                         );
                     }
                 }
+                p.currentChannelData = tmpChannelData;
             } else {
                 /* DAE vol5 Table 8 state transition #8 - no channel being presented */
                 unregisterAllStreamEventListeners(p);
@@ -1624,7 +1635,38 @@ hbbtv.objects.VideoBroadcast = (function() {
                 }
             };
 
+            if (!p.onServiceInstanceChanged) {
+                p.onServiceInstanceChanged = (event) => {
+                    console.log('Received onServiceInstanceChanged');
+                    console.log(event);
+                    const p = privates.get(this);
+                    if (p.isBroadcastRelated) {
+                        let tmpChannelData;
+                        try {
+                            tmpChannelData = hbbtv.objects.createChannel(
+                                hbbtv.bridge.broadcast.getCurrentChannel()
+                            );
+                        } catch (e) {
+                            if (e.name === 'SecurityError') {
+                                console.log(
+                                    'onServiceInstanceChanged, unexpected condition: app appears broadcast-independent.'
+                                );
+                            }
+                            throw e;
+                        }
+                        if (tmpChannelData !== false) {
+                            const serviceInstanceChannelList = tmpChannelData.serviceInstances;
+                            const index = event.serviceInstanceIndex;
+                            if (serviceInstanceChannelList !== null && index <= serviceInstanceChannelList.length) {
+                                p.currentServiceInstance = tmpChannelData.serviceInstances.item(index);
+                            }
+                        }
+                    }
+                };
+            }
+
             hbbtv.bridge.addWeakEventListener('ChannelStatusChanged', p.onChannelStatusChanged);
+            hbbtv.bridge.addWeakEventListener('ServiceInstanceChanged', p.onServiceInstanceChanged);
         }
 
         if (!p.onProgrammesChanged) {
@@ -1764,6 +1806,10 @@ hbbtv.objects.VideoBroadcast = (function() {
         if (p.onChannelStatusChanged != null) {
             hbbtv.bridge.removeWeakEventListener('ChannelStatusChanged', p.onChannelStatusChanged);
             p.onChannelStatusChanged = null;
+        }
+        if (p.onServiceInstanceChanged != null) {
+            hbbtv.bridge.removeWeakEventListener('ServiceInstanceChanged', p.onServiceInstanceChanged);
+            p.onServiceInstanceChanged = null;
         }
         if (p.onProgrammesChanged != null) {
             hbbtv.bridge.removeWeakEventListener('ProgrammesChanged', p.onProgrammesChanged);

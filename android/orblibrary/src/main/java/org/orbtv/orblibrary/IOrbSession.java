@@ -272,6 +272,13 @@ public interface IOrbSession {
     void onDsmccReceiveStreamEvent(int listenId, String name, String data, String text, String status);
 
     /**
+     * Called when the dvbi client has tuned to a specific instance
+     *
+     * @param index     Index of the currently tuned service instance
+     */
+    void onServiceInstanceChange(int index);
+
+    /**
      * TODO(library) What makes sense here?
      */
     void close();
