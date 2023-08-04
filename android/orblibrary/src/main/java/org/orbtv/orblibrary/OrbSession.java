@@ -521,6 +521,16 @@ class OrbSession implements IOrbSession {
     }
 
     /**
+     * Called when the dvbi client has tuned to a specific instance
+     *
+     * @param index     Index of the currently tuned service instance
+     */
+    @Override
+    public void onServiceInstanceChange(int index) {
+        mBridge.dispatchServiceInstanceChangedEvent(index);
+    }
+
+    /**
      * Called when the present/following events have changed on the current service.
      */
     @Override
