@@ -180,15 +180,9 @@ class Bridge extends AbstractBridge {
     @Override
     protected int Broadcast_setChannelToCcid(BridgeToken token, String ccid, boolean trickplay,
                                              String contentAccessDescriptorURL, int quiet) {
-        BridgeTypes.Channel ch = mOrbLibraryCallback.getChannel(ccid);
         // TODO Add 1:1 method to callback
-        return mOrbLibraryCallback.setChannelByTriplet(
-                ch.idType,
-                ch.onid,
-                ch.tsid,
-                ch.sid,
-                ch.sourceId,
-                ch.ipBroadcastId,
+        return mOrbLibraryCallback.setChannelToCcid(
+                ccid,
                 trickplay,
                 contentAccessDescriptorURL,
                 quiet);

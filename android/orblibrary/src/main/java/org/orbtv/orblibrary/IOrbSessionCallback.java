@@ -337,6 +337,9 @@ public interface IOrbSessionCallback {
      */
     BridgeTypes.Channel getChannel(String ccid);
 
+    int setChannelToCcid(String ccid, boolean trickplay,
+                         String contentAccessDescriptorURL, int quiet);
+
     /**
      * Tune to specified channel. The implementation relies on the 'idType' parameter to
      * determine the valid fields that describe the channel. Possible idTypes are:
