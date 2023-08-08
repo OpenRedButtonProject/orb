@@ -645,12 +645,18 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
     }
 
     std::string currentTimeStr;
-    if (HasParam(params, "currentTime", Json::stringValue) ||
-        HasParam(params, "currentTime", Json::intValue) ||
+    bool isIntCurrent;
+    if (HasParam(params, "currentTime", Json::intValue) ||
         HasParam(params, "currentTime", Json::uintValue) ||
         HasParam(params, "currentTime", Json::realValue))
     {
         currentTimeStr = EncodeJsonId(params["currentTime"]);
+        isIntCurrent = true;
+    }
+    else if (HasParam(params, "currentTime", Json::stringValue))
+    {
+        currentTimeStr = EncodeJsonId(params["currentTime"]);
+        isIntCurrent = false;
     }
     if (state == "buffering" || state == "paused" || state == "playing")
     {
@@ -664,22 +670,26 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
     std::string rangeEnd;
     if (HasJsonParam(params, "range"))
     {
-        if (HasParam(params["range"], "start", Json::stringValue) ||
-            HasParam(params["range"], "start", Json::intValue) ||
+        bool isIntStart = HasParam(params["range"], "start", Json::intValue) ||
             HasParam(params["range"], "start", Json::uintValue) ||
-            HasParam(params["range"], "start", Json::realValue))
+            HasParam(params["range"], "start", Json::realValue);
+        bool isIntEnd = HasParam(params["range"], "end", Json::intValue) ||
+            HasParam(params["range"], "end", Json::uintValue) ||
+            HasParam(params["range"], "end", Json::realValue);
+
+        if (isIntCurrent && isIntStart && isIntEnd)
         {
             rangeStart = EncodeJsonId(params["range"]["start"]);
-        }
-        if (HasParam(params["range"], "end", Json::stringValue) ||
-            HasParam(params["range"], "end", Json::intValue) ||
-            HasParam(params["range"], "end", Json::uintValue) ||
-            HasParam(params["range"], "end", Json::realValue))
-        {
             rangeEnd = EncodeJsonId(params["range"]["end"]);
         }
-        if (params["range"]["start"].type() != params["range"]["end"].type() ||
-            params["range"]["start"].type() != params["currentTime"].type())
+        else if (!isIntCurrent &&
+                 HasParam(params["range"], "start", Json::stringValue) &&
+                 HasParam(params["range"], "end", Json::stringValue))
+        {
+            rangeStart = EncodeJsonId(params["range"]["start"]);
+            rangeEnd = EncodeJsonId(params["range"]["end"]);
+        }
+        else
         {
             return JsonRpcStatus::NOTIFICATION_ERROR;
         }
@@ -792,7 +802,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
         if (title == OPTIONAL_STR_NOT_SET ||
             mediaId == OPTIONAL_STR_NOT_SET ||
             secTitle == OPTIONAL_STR_NOT_SET ||
-            secTitle == OPTIONAL_STR_NOT_SET)
+            synopsis == OPTIONAL_STR_NOT_SET)
         {
             return JsonRpcStatus::NOTIFICATION_ERROR;
         }
