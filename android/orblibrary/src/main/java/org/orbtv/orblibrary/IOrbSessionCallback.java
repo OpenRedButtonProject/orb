@@ -34,7 +34,11 @@ public interface IOrbSessionCallback {
         INVISIBLE
     };
     
-    // TODO Change names to THIS_STYLE
+    /**
+     * The level of support a TV OS has for a particular Accessibility Feature.
+     *
+     * TODO Change names to THIS_STYLE.
+     */
     enum SupportType {
         notSupported,
         tvosSettingOnly,
@@ -42,7 +46,13 @@ public interface IOrbSessionCallback {
         tvosAndHbbTV,
         supportedNotSetting
     }
-    
+
+    /**
+     * The result of an Application to request that a TV OS suppresses its support for an
+     * Accessibility Feature.
+     *
+     * TODO Change names to THIS_STYLE.
+     */
     enum SuppressType {
         none,
         suppressing,
