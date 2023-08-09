@@ -77,12 +77,22 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
 
     private final int F_SUBTITLES = 0;
     private final int F_DIALOGUE_ENHANCEMENT = 1;
-    private final int F_MAGNIFICATION_UI = 2;
+    private final int F_UI_MAGNIFIER = 2;
     private final int F_HIGH_CONTRAST_UI = 3;
     private final int F_SCREEN_READER = 4;
     private final int F_RESPONSE_TO_A_USER_ACTION = 5;
     private final int F_AUDIO_DESCRIPTION = 6;
     private final int F_IN_VISION_SIGN_LANGUAGE = 7;
+    private final String[] mFeatures = new String[]{
+            "subtitles",
+            "dialogueEnhancement",
+            "uiMagnifier",
+            "highContrastUI",
+            "screenReader",
+            "responseToUserAction",
+            "audioDescription",
+            "inVisionSigning"};
+
     private final int INTENT_PAUSE = 0;
     private final int INTENT_PLAY = 1;
     private final int INTENT_FAST_FORWARD = 2;
@@ -90,30 +100,85 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     private final int INTENT_STOP = 4;
     private final int EMPTY_INTEGER = -999999;
     private final String EMPTY_STRING = "";
+    private static final int SUBTITLES_KEY = KeyEvent.KEYCODE_1;
+    private static final int DIALOGUE_ENHANCEMENT_KEY = KeyEvent.KEYCODE_2;
+    private static final int UI_MAGNIFIER_KEY = KeyEvent.KEYCODE_3;
+    private static final int HIGH_CONTRAST_UI_KEY = KeyEvent.KEYCODE_4;
+    private static final int SCREEN_READER_KEY = KeyEvent.KEYCODE_5;
+    private static final int RESPONSE_TO_USER_ACTION_KEY = KeyEvent.KEYCODE_6;
+    private static final int AUDIO_DESCRIPTION_KEY = KeyEvent.KEYCODE_7;
+    private static final int IN_VISION_SIGNING_KEY = KeyEvent.KEYCODE_8;
 
-    public interface OnEventListener {
-        void onShowMessage(String msg);
+    private final Map<Integer, SupportType> mMockSupportTypes = new HashMap<Integer, SupportType>() {
+        {
+            put(F_SUBTITLES, SupportType.tvosAndHbbTV);
+            put(F_DIALOGUE_ENHANCEMENT, SupportType.tvosAndHbbTV);
+            put(F_UI_MAGNIFIER, SupportType.tvosAndHbbTV);
+            put(F_HIGH_CONTRAST_UI, SupportType.tvosAndHbbTV);
+            put(F_SCREEN_READER, SupportType.tvosAndHbbTV);
+            put(F_RESPONSE_TO_A_USER_ACTION, SupportType.tvosAndHbbTV);
+            put(F_AUDIO_DESCRIPTION, SupportType.tvosAndHbbTV);
+            put(F_IN_VISION_SIGN_LANGUAGE, SupportType.tvosAndHbbTV);
+        }
+    };
+    private final Map<Integer, SuppressType> mMockSuppressTypes = new HashMap<Integer, SuppressType>() {
+        {
+            put(F_SUBTITLES, SuppressType.none);
+            put(F_DIALOGUE_ENHANCEMENT, SuppressType.none);
+            put(F_UI_MAGNIFIER, SuppressType.none);
+            put(F_HIGH_CONTRAST_UI, SuppressType.none);
+            put(F_SCREEN_READER, SuppressType.none);
+            put(F_RESPONSE_TO_A_USER_ACTION, SuppressType.none);
+            put(F_AUDIO_DESCRIPTION, SuppressType.none);
+            put(F_IN_VISION_SIGN_LANGUAGE, SuppressType.none);
+        }
+    };
+    private final Map<Integer, Boolean> mMockEnableStatus = new HashMap<Integer, Boolean>() {
+        {
+            put(F_SUBTITLES, true);
+            put(F_DIALOGUE_ENHANCEMENT, true);
+            put(F_UI_MAGNIFIER, true);
+            put(F_HIGH_CONTRAST_UI, true);
+            put(F_SCREEN_READER, true);
+            put(F_RESPONSE_TO_A_USER_ACTION, true);
+            put(F_AUDIO_DESCRIPTION, true);
+            put(F_IN_VISION_SIGN_LANGUAGE, true);
+        }
+    };
+    private int MOCK_SUBTITLES_SIZE = 150;
+    private String MOCK_SUBTITLES_FONT_FAMILY = "Arial";
+    private String MOCK_SUBTITLES_TEXT_COLOUR = "#AA0066";
+    private int MOCK_SUBTITLES_TEXT_OPACITY = 100;
+    private String MOCK_SUBTITLES_EDGE_TYPE = "outline";
+    private String MOCK_SUBTITLES_EDGE_COLOUR = "#FFFFFF";
+    private String MOCK_SUBTITLES_BACKGROUND_COLOUR = EMPTY_STRING;
+    private int MOCK_SUBTITLES_BACKGROUND_OPACITY = EMPTY_INTEGER;
+    private String MOCK_SUBTITLES_WINDOW_COLOUR = "#00DD00";
+    private int MOCK_SUBTITLES_WINDOW_OPACITY = EMPTY_INTEGER;
+    private String MOCK_SUBTITLES_LANGUAGE = EMPTY_STRING;
+    private int MOCK_DIALOGUE_ENHANCEMENT_GAIN_PREFERENCE = 6;
+    private int MOCK_DIALOGUE_ENHANCEMENT_GAIN = 6;
+    private int MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MIN = 0;
+    private int MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MAX = 12;
+    private String MOCK_UI_MAGNIFIER_MAG_TYPE = "textMagnification";
+    private String MOCK_HIGH_CONTRAST_UI_HC_TYPE = "monochrome";
+    private int MOCK_SCREEN_READER_SPEED = 120;
+    private String MOCK_SCREEN_READER_VOICE = "male";
+    private String MOCK_SCREEN_READER_LANGUAGE = EMPTY_STRING;
+    private String MOCK_RESPONSE_TO_A_USER_ACTION_TYPE = "audio";
+    private String MOCK_RESPONSE_TO_A_USER_ACTION_MAGNITUDE = EMPTY_STRING;
+    private int MOCK_AUDIO_DESCRIPTION_GAIN = 0;
+    private int MOCK_AUDIO_DESCRIPTION_PAN_AZIMUTH = 90;
+
+    public interface ConsoleCallback {
+        void log(String msg);
     }
 
-    private OnEventListener mOnEventListener;
+    private ConsoleCallback mConsoleCallback;
 
-    public void setOnEventListener(OnEventListener listener) {
-        mOnEventListener = listener;
+    public void setConsoleCallback(ConsoleCallback listener) {
+        mConsoleCallback = listener;
     }
-
-    private final Map<Integer, String> sFeatures =
-            new HashMap<Integer, String>() {
-                {
-                    put(F_SUBTITLES, "subtitles");
-                    put(F_DIALOGUE_ENHANCEMENT, "dialogueEnhancement");
-                    put(F_MAGNIFICATION_UI, "uiMagnifier");
-                    put(F_HIGH_CONTRAST_UI, "highContrastUI");
-                    put(F_SCREEN_READER, "screenReader");
-                    put(F_RESPONSE_TO_A_USER_ACTION, "responseToUserAction");
-                    put(F_AUDIO_DESCRIPTION, "audioDescription");
-                    put(F_IN_VISION_SIGN_LANGUAGE, "inVisionSigning");
-                }
-            };
 
     MockOrbSessionCallback(MainActivity mainActivity, Bundle extras)
             throws Exception {
@@ -653,7 +718,6 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         Log.v(TAG, "HbbTVClient.setDvbVideoRectangle(" + x + ", " + y + ", " + width + ", " + height + ")");
 
     }
-
 
     /**
      * Get the list of channels available.
@@ -1434,18 +1498,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     @Override
     public void onRequestNegotiateMethods(int connection, String id,
                                           String terminalToApp, String appToTerminal) {
-        // Generate a negotiated method list
-        String approvedTerminalToApp = terminalToApp;
-        String approvedAppToTerminal = appToTerminal;
-        mSession.onRespondNegotiateMethods(connection, id,
-                approvedTerminalToApp, approvedAppToTerminal);
-
-        if (mOnEventListener != null) {
-            mOnEventListener.onShowMessage(
-                    "Received a request of NegotiateMethods");
-            mOnEventListener.onShowMessage(
-                    "Sent a response with negotiated methods");
-        }
+        consoleLog("Negotiate supported methods");
     }
 
     /**
@@ -1472,51 +1525,40 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                                    boolean uiMagnifier, boolean highContrastUI,
                                    boolean screenReader, boolean responseToUserAction,
                                    boolean audioDescription, boolean inVisionSigning) {
-        StringBuilder subscriptions = new StringBuilder("\n\t");
-        String suffix = "PrefChange, \n\t";
+        Vector<String> subscriptions = new Vector<>();
         if (subtitles) {
-            subscriptions.append(sFeatures.get(F_SUBTITLES) + suffix);
+            subscriptions.add(mFeatures[F_SUBTITLES]);
         }
         if (dialogueEnhancement) {
-            subscriptions.append(sFeatures.get(F_DIALOGUE_ENHANCEMENT) + suffix);
+            subscriptions.add(mFeatures[F_DIALOGUE_ENHANCEMENT]);
         }
         if (uiMagnifier) {
-            subscriptions.append(sFeatures.get(F_MAGNIFICATION_UI) + suffix);
+            subscriptions.add(mFeatures[F_UI_MAGNIFIER]);
         }
         if (highContrastUI) {
-            subscriptions.append(sFeatures.get(F_HIGH_CONTRAST_UI) + suffix);
+            subscriptions.add(mFeatures[F_HIGH_CONTRAST_UI]);
         }
         if (screenReader) {
-            subscriptions.append(sFeatures.get(F_SCREEN_READER) + suffix);
+            subscriptions.add(mFeatures[F_SCREEN_READER]);
         }
         if (responseToUserAction) {
-            subscriptions.append(sFeatures.get(F_RESPONSE_TO_A_USER_ACTION) + suffix);
+            subscriptions.add(mFeatures[F_RESPONSE_TO_A_USER_ACTION]);
         }
         if (audioDescription) {
-            subscriptions.append(sFeatures.get(F_AUDIO_DESCRIPTION) + suffix);
+            subscriptions.add(mFeatures[F_AUDIO_DESCRIPTION]);
         }
         if (inVisionSigning) {
-            subscriptions.append(sFeatures.get(F_IN_VISION_SIGN_LANGUAGE) + suffix);
+            subscriptions.add(mFeatures[F_IN_VISION_SIGN_LANGUAGE]);
         }
-        String subscriptionList;
-        int len = subscriptions.length();
-        if (len > 2) {
-            subscriptionList = subscriptions.toString().substring(0, len - 4);
-        } else {
-            subscriptionList = "";
+        StringBuilder sb = new StringBuilder("\n");
+        for (int i = 0; i < subscriptions.size(); i++) {
+            sb.append(subscriptions.get(i));
+            if (i < subscriptions.size() - 1) {
+                sb.append(", ");
+            }
         }
-        if (mOnEventListener != null) {
-            String action = (isSubscribe) ? "subscribe" : "unsubscribe";
-            mOnEventListener.onShowMessage(
-                    "Received a request of " + action +
-                            " for accessibility feature {" + subscriptionList + "}");
-            mOnEventListener.onShowMessage(
-                    "Successfully " + action);
-        }
-
-        mSession.onRespondSubscribe(isSubscribe, connection, id,
-                subtitles, dialogueEnhancement, uiMagnifier, highContrastUI,
-                screenReader, responseToUserAction, audioDescription, inVisionSigning);
+        String action = (isSubscribe) ? "Subscribe" : "Unsubscribe";
+        consoleLog(action + " accessibility feature: " + sb);
     }
 
     /**
@@ -1529,21 +1571,28 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     @Override
     public void onRequestDialogueEnhancementOverride(int connection, String id,
                                                      int dialogueEnhancementGain) {
-        int appliedGain = 0;
-        if (dialogueEnhancementGain != EMPTY_INTEGER) {
+        String requestedValue = (dialogueEnhancementGain == EMPTY_INTEGER) ?
+                "" : ", gain: " + dialogueEnhancementGain;
+        consoleLog("Request dialogue enhancement override" + requestedValue);
+
+        int appliedGain;
+        if (dialogueEnhancementGain == EMPTY_INTEGER) {
+            // If the value is not specified, it shall be reset to the user preference.
+            appliedGain = MOCK_DIALOGUE_ENHANCEMENT_GAIN_PREFERENCE;
+        } else if (dialogueEnhancementGain >= MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MAX) {
+            // If the value is is outside the allowed value range,
+            // it shall be restricted in the allowed range.
+            appliedGain = MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MAX;
+        } else if (dialogueEnhancementGain <= MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MIN) {
+            // same as LIMIT_MAX
+            appliedGain = MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MIN;
+        } else {
+            // the requested gain value shall be applied.
             appliedGain = dialogueEnhancementGain;
         }
-        mSession.onRespondDialogueEnhancementOverride(connection, id, dialogueEnhancementGain);
-
-        if (mOnEventListener != null) {
-            mOnEventListener.onShowMessage(
-                    "Received a request of dialogueEnhancementOverride " +
-                            ((dialogueEnhancementGain == EMPTY_INTEGER) ?
-                                    "" : "{requested Gain : " + dialogueEnhancementGain + "}"));
-            mOnEventListener.onShowMessage(
-                    "Sent a response of dialogueEnhancementOverride " +
-                            "{applied Gain : " + appliedGain + "}");
-        }
+        MOCK_DIALOGUE_ENHANCEMENT_GAIN = appliedGain;
+        mSession.onRespondDialogueEnhancementOverride(connection, id, appliedGain);
+        consoleLog("Apply dialogue enhancement override, gain: " + appliedGain);
     }
 
     /**
@@ -1555,17 +1604,13 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void onRequestTriggerResponseToUserAction(int connection, String id, String magnitude) {
+        MOCK_RESPONSE_TO_A_USER_ACTION_MAGNITUDE = magnitude;
+        consoleLog("Request to trigger response to user action, magnitude: " + magnitude);
+        // If the requested is successfully performed by the terminal,
+        // it shall reply with a non-error response, where the actioned field shall be set to true;
         boolean actioned = true;
         mSession.onRespondTriggerResponseToUserAction(connection, id, actioned);
-
-        if (mOnEventListener != null) {
-            mOnEventListener.onShowMessage(
-                    "Received a request of triggerResponseToUserAction " +
-                            "{magnitude : " + magnitude + "}");
-            mOnEventListener.onShowMessage(
-                    "Sent a response of triggerResponseToUserAction " +
-                            "{actioned : " + actioned + "}");
-        }
+        consoleLog("Trigger response to user action, isActioned: " + actioned);
     }
 
     /**
@@ -1577,16 +1622,22 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void onRequestFeatureSupportInfo(int connection, String id, int featureId) {
-        String result = "tvosOnly";
-        mSession.onRespondFeatureSupportInfo(connection, id, featureId, result);
-
-        if (mOnEventListener != null) {
-            String feature = sFeatures.get(featureId);
-            mOnEventListener.onShowMessage(
-                    "Received a request of featureSupportInfo for \"" + feature + "\"");
-            mOnEventListener.onShowMessage(
-                    "FeatureSupportInfo for " + feature + " is \"" + result + "\"");
+        if (featureId < 0 || featureId >= mFeatures.length) {
+            Log.e(TAG, "Error, unrecognised feature in request");
+            return;
         }
+        String featureName = mFeatures[featureId];
+        consoleLog("Request for feature support info for " + featureName);
+
+        // ToDo, consider other support options
+        SupportType result = mMockSupportTypes.get(featureId);
+        if (result != null) {
+            mSession.onRespondFeatureSupportInfo(connection, id, featureId, result.name());
+        } else {
+            Log.e(TAG, "Error, unrecognised feature in request");
+            return;
+        }
+        consoleLog("Respond feature support info for " + featureName + ": " + result);
     }
 
     /**
@@ -1598,95 +1649,48 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void onRequestFeatureSettingsQuery(int connection, String id, int featureId) {
-        switch (featureId) {
-            case F_SUBTITLES:
-                mSession.onQuerySubtitles(connection, id,
-                        true, 150, "Arial", "#AA0066", 100,
-                        "outline", "#FFFFFF", EMPTY_STRING, EMPTY_INTEGER,
-                        "#00DD00", EMPTY_INTEGER, EMPTY_STRING);
-                break;
-            case F_DIALOGUE_ENHANCEMENT:
-                mSession.onQueryDialogueEnhancement(connection, id,
-                        6, 6, 0, 12);
-                break;
-            case F_MAGNIFICATION_UI:
-                mSession.onQueryUIMagnifier(connection, id,
-                        true, "textMagnification");
-                break;
-            case F_HIGH_CONTRAST_UI:
-                mSession.onQueryHighContrastUI(connection, id,
-                        true, "monochrome");
-                break;
-            case F_SCREEN_READER:
-                mSession.onQueryScreenReader(connection, id,
-                        true, 120, "male", EMPTY_STRING);
-                break;
-            case F_RESPONSE_TO_A_USER_ACTION:
-                mSession.onQueryResponseToUserAction(connection, id,
-                        true, "audio");
-                break;
-            case F_AUDIO_DESCRIPTION:
-                mSession.onQueryAudioDescription(connection, id,
-                        true, 0, 90);
-                break;
-            case F_IN_VISION_SIGN_LANGUAGE:
-                mSession.onQueryInVisionSigning(connection, id,
-                        true);
-                break;
-            default:
+        if (featureId < 0 || featureId >= mFeatures.length) {
+            Log.e(TAG, "Error, unrecognised feature in request");
+            return;
         }
-        if (mOnEventListener != null) {
-            String feature = sFeatures.get(featureId);
-            mOnEventListener.onShowMessage(
-                    "Received a request of FeatureSettingsQuery for \"" + feature + "\"");
-            mOnEventListener.onShowMessage(
-                    "Sent a FeatureSettingsQuery for \"" + feature + "\"");
-        }
+        String featureName = mFeatures[featureId];
+        consoleLog("Request feature settings query for " + featureName);
 
-        // TEST for Notifications
-        // id: EMPTY_STRING
+        Boolean isEnabled = mMockEnableStatus.get(featureId);
+        if (isEnabled == null) {
+            Log.e(TAG, "Error, unrecognised feature in request");
+            return;
+        }
         switch (featureId) {
             case F_SUBTITLES:
-                mSession.onQuerySubtitles(connection, EMPTY_STRING,
-                        false, EMPTY_INTEGER, EMPTY_STRING, EMPTY_STRING, EMPTY_INTEGER,
-                        EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, EMPTY_INTEGER,
-                        EMPTY_STRING, EMPTY_INTEGER, EMPTY_STRING);
+                querySettingSubtitles(connection, id, isEnabled);
                 break;
             case F_DIALOGUE_ENHANCEMENT:
-                mSession.onQueryDialogueEnhancement(connection, EMPTY_STRING,
-                        3, 3, 0, 9);
+                querySettingDialogueEnhancement(connection, id, isEnabled);
                 break;
-            case F_MAGNIFICATION_UI:
-                mSession.onQueryUIMagnifier(connection, EMPTY_STRING,
-                        true, "screenZoom");
+            case F_UI_MAGNIFIER:
+                querySettingsUiMagnifier(connection, id, isEnabled);
                 break;
             case F_HIGH_CONTRAST_UI:
-                mSession.onQueryHighContrastUI(connection, EMPTY_STRING,
-                        true, "monochrome");
+                querySettingsHighContrastUI(connection, id, isEnabled);
                 break;
             case F_SCREEN_READER:
-                mSession.onQueryScreenReader(connection, EMPTY_STRING,
-                        false, EMPTY_INTEGER, EMPTY_STRING, EMPTY_STRING);
+                querySettingsScreenReader(connection, id, isEnabled);
                 break;
             case F_RESPONSE_TO_A_USER_ACTION:
-                mSession.onQueryResponseToUserAction(connection, EMPTY_STRING,
-                        false, EMPTY_STRING);
+                querySettingsResponseToUserAction(connection, id, isEnabled);
                 break;
             case F_AUDIO_DESCRIPTION:
-                mSession.onQueryAudioDescription(connection, EMPTY_STRING,
-                        true, 3, 90);
+                querySettingsAudioDescription(connection, id, isEnabled);
                 break;
             case F_IN_VISION_SIGN_LANGUAGE:
-                mSession.onQueryInVisionSigning(connection, EMPTY_STRING,
-                        false);
+                mSession.onQueryInVisionSigning(connection, id, isEnabled);
                 break;
             default:
+                Log.e(TAG, "Error, unrecognised feature in request");
+                return;
         }
-        if (mOnEventListener != null) {
-            String feature = sFeatures.get(featureId);
-            mOnEventListener.onShowMessage(
-                    "Sent a mock notification for \"" + feature + "\"");
-        }
+        consoleLog("Query feature settings of " + featureName);
     }
 
     /**
@@ -1698,16 +1702,18 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void onRequestFeatureSuppress(int connection, String id, int featureId) {
-        String result = "suppressing";
-        mSession.onRespondFeatureSuppress(connection, id, featureId, result);
-
-        if (mOnEventListener != null) {
-            String feature = sFeatures.get(featureId);
-            mOnEventListener.onShowMessage(
-                    "Received a request of featureSuppress for \"" + feature + "\"");
-            mOnEventListener.onShowMessage(
-                    "FeatureSuppress for " + feature + " is \"" + result + "\"");
+        if (featureId < 0 || featureId >= mFeatures.length ||
+                featureId >= mMockSuppressTypes.size()) {
+            Log.e(TAG, "Error, unrecognised feature in request");
+            return;
         }
+        String featureName = mFeatures[featureId];
+        consoleLog("Request suppress for " + featureName);
+
+        setSuppressStatus(featureId, SuppressType.suppressing);
+        SuppressType result = mMockSuppressTypes.get(featureId);
+        mSession.onRespondFeatureSuppress(connection, id, featureId, result.name());
+        consoleLog("Respond suppress for" + featureName + ", result: " + result);
     }
 
     /**
@@ -1719,10 +1725,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void onReceiveIntentConfirm(int connection, String id, String method) {
-        if (mOnEventListener != null) {
-            mOnEventListener.onShowMessage(
-                    "Received a intent confirm {method : " + method + "}");
-        }
+        consoleLog("Receive a confirm of an intent, method: " + method);
     }
 
     /**
@@ -1735,10 +1738,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void onNotifyVoiceReady(int connection, boolean isReady) {
-        if (mOnEventListener != null) {
-            mOnEventListener.onShowMessage(
-                    "Received a notification of VoiceReady {ready : " + isReady + "}");
-        }
+        consoleLog("Receive a voice-readiness status, isReady: " + isReady);
     }
 
     /**
@@ -1763,7 +1763,6 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                                    boolean actFastReverse, boolean actStop,
                                    boolean actSeekContent, boolean actSeekRelative,
                                    boolean actSeekLive, boolean actWallclock) {
-
         Log.d(TAG, "\"onNotifyStateMedia\" is received by MockOrbSessionCallback{" +
                 "\n\"state\":\"" + state + "\"," +
                 "\n\"kind\":\"" + kind + "\"," +
@@ -1781,6 +1780,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 "\n\"actSeekLive\":" + actSeekLive + "," +
                 "\n\"actWallclock\":" + actWallclock +
                 "\n}");
+        consoleLog("Receive a media state, state: " + state);
     }
 
     /**
@@ -1849,78 +1849,74 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 "\n\"signLangEnabled\":" + signLangEnabled + "," +
                 "\n\"signLangAvailable\":" + signLangAvailable + "," +
                 "\n}");
-        if (mOnEventListener != null) {
-            mOnEventListener.onShowMessage(
-                    "Received a media state notification with {state : " + state + "}");
-        }
-
+        consoleLog("Receive a media state, state: " + state);
         // TEST for intent.Media
-        String intentMsg = null;
-        String prefix = "Sent a mock intent of ";
-        String suffix = " media playback";
-        String anchor = "start";
-        int offset = 30;
-        if (actPause) {
-            mSession.onSendIntentMediaBasics(
-                    INTENT_PAUSE, connection, "\"STR123-0\"", "voice");
-            intentMsg = prefix + "\"pausing\"" + suffix;
-        } else if (actPlay) {
-            mSession.onSendIntentMediaBasics(
-                    INTENT_PLAY, connection, "\"STR123-1\"", "voice");
-            intentMsg = prefix + "\"playing\"" + suffix;
-        } else if (actFastForward) {
-            mSession.onSendIntentMediaBasics(
-                    INTENT_FAST_FORWARD, connection, "\"STR123-2\"", "voice");
-            intentMsg = prefix + "\"fast-forwarding\"" + suffix;
-        } else if (actFastReverse) {
-            mSession.onSendIntentMediaBasics(
-                    INTENT_FAST_REVERSE, connection, "\"STR123-3\"", "voice");
-            intentMsg = prefix + "\"fast-reversing\"" + suffix;
-        } else if (actStop) {
-            mSession.onSendIntentMediaBasics(
-                    INTENT_STOP, connection, "\"STR123-4\"", "voice");
-            intentMsg = prefix + "\"stopping\"" + suffix;
-        } else if (actSeekContent) {
-            mSession.onSendIntentMediaSeekContent(
-                    connection, "\"STR123-5\"", "voice", anchor, offset);
-            intentMsg = prefix + "seeking to a time position at " +
-                    offset + " sec relative to the " + anchor + " of the media content";
-        } else if (actSeekRelative) {
-            mSession.onSendIntentMediaSeekRelative(
-                    connection, "\"STR123-6\"", "voice", offset);
-            intentMsg = prefix + "seeking to a time position at " +
-                    offset + " sec to the current time position of the media content";
-        } else if (actSeekLive) {
-            mSession.onSendIntentMediaSeekLive(
-                    connection, "\"STR123-7\"", "voice", offset);
-            intentMsg = prefix + "seeking to a time position at " +
-                    offset + " sec relative to the live edge of the media content";
-        } else if (actWallclock) {
-            String dayTime = "2020-02-12T10:00:00.000Z";
-            mSession.onSendIntentMediaSeekWallclock(
-                    connection, "\"STR123-8\"", "voice", dayTime);
-            intentMsg = prefix + "seeking to a time position relating to " + dayTime;
-        }
-        if (intentMsg != null) {
-            if (mOnEventListener != null) {
-                mOnEventListener.onShowMessage(intentMsg);
-            }
-            return;
-        }
-
-        String query = "DOCTOR WHO";
-        mSession.onSendIntentSearch(connection, "\"STR123-9\"", "voice", query);
-        String newMediaId = "urn:broadcaster:programme:1249863457643";
-        mSession.onSendIntentDisplay(connection, "\"STR123-10\"", "voice", newMediaId);
-        mSession.onSendIntentPlayback(connection, "\"STR123-11\"", "voice", newMediaId,
-                anchor, offset);
-        if (mOnEventListener != null) {
-            mOnEventListener.onShowMessage(prefix + "searching for " + query);
-            mOnEventListener.onShowMessage(prefix + "displaying {mediaId : " + mediaId + "}");
-            mOnEventListener.onShowMessage(prefix + "requesting playback {mediaId " + mediaId +
-                    ((offset == EMPTY_INTEGER) ? "" : ", offset : " + offset) +
-                    ((anchor.isEmpty()) ? "" : ", anchor : " + anchor) + "}");
-        }
+//        String intentMsg = null;
+//        String prefix = "Sent a mock intent of ";
+//        String suffix = " media playback";
+//        String anchor = "start";
+//        int offset = 30;
+//        if (actPause) {
+//            mSession.onSendIntentMediaBasics(
+//                    INTENT_PAUSE, connection, "\"STR123-0\"", "voice");
+//            intentMsg = prefix + "\"pausing\"" + suffix;
+//        } else if (actPlay) {
+//            mSession.onSendIntentMediaBasics(
+//                    INTENT_PLAY, connection, "\"STR123-1\"", "voice");
+//            intentMsg = prefix + "\"playing\"" + suffix;
+//        } else if (actFastForward) {
+//            mSession.onSendIntentMediaBasics(
+//                    INTENT_FAST_FORWARD, connection, "\"STR123-2\"", "voice");
+//            intentMsg = prefix + "\"fast-forwarding\"" + suffix;
+//        } else if (actFastReverse) {
+//            mSession.onSendIntentMediaBasics(
+//                    INTENT_FAST_REVERSE, connection, "\"STR123-3\"", "voice");
+//            intentMsg = prefix + "\"fast-reversing\"" + suffix;
+//        } else if (actStop) {
+//            mSession.onSendIntentMediaBasics(
+//                    INTENT_STOP, connection, "\"STR123-4\"", "voice");
+//            intentMsg = prefix + "\"stopping\"" + suffix;
+//        } else if (actSeekContent) {
+//            mSession.onSendIntentMediaSeekContent(
+//                    connection, "\"STR123-5\"", "voice", anchor, offset);
+//            intentMsg = prefix + "seeking to a time position at " +
+//                    offset + " sec relative to the " + anchor + " of the media content";
+//        } else if (actSeekRelative) {
+//            mSession.onSendIntentMediaSeekRelative(
+//                    connection, "\"STR123-6\"", "voice", offset);
+//            intentMsg = prefix + "seeking to a time position at " +
+//                    offset + " sec to the current time position of the media content";
+//        } else if (actSeekLive) {
+//            mSession.onSendIntentMediaSeekLive(
+//                    connection, "\"STR123-7\"", "voice", offset);
+//            intentMsg = prefix + "seeking to a time position at " +
+//                    offset + " sec relative to the live edge of the media content";
+//        } else if (actWallclock) {
+//            String dayTime = "2020-02-12T10:00:00.000Z";
+//            mSession.onSendIntentMediaSeekWallclock(
+//                    connection, "\"STR123-8\"", "voice", dayTime);
+//            intentMsg = prefix + "seeking to a time position relating to " + dayTime;
+//        }
+//        if (intentMsg != null) {
+//            if (mConsoleCallback != null) {
+//                mConsoleCallback.log(intentMsg);
+//            }
+//            return;
+//        }
+//
+//        String query = "DOCTOR WHO";
+//        mSession.onSendIntentSearch(connection, "\"STR123-9\"", "voice", query);
+//        String newMediaId = "urn:broadcaster:programme:1249863457643";
+//        mSession.onSendIntentDisplay(connection, "\"STR123-10\"", "voice", newMediaId);
+//        mSession.onSendIntentPlayback(connection, "\"STR123-11\"", "voice", newMediaId,
+//                anchor, offset);
+//        if (mConsoleCallback != null) {
+//            mConsoleCallback.log(prefix + "searching for " + query);
+//            mConsoleCallback.log(prefix + "displaying {mediaId : " + mediaId + "}");
+//            mConsoleCallback.log(prefix + "requesting playback {mediaId " + mediaId +
+//                    ((offset == EMPTY_INTEGER) ? "" : ", offset : " + offset) +
+//                    ((anchor.isEmpty()) ? "" : ", anchor : " + anchor) + "}");
+//        }
     }
 
     /**
@@ -1933,22 +1929,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void onReceiveError(int connection, String id, int code, String message) {
-        if (mOnEventListener != null) {
-            mOnEventListener.onShowMessage(
-                    "Received an error {code : " + code + ", message : " + message + "}");
-        }
-
-        // TEST for response.Error
-        String data = "this is data";
-        mSession.onRespondError(connection, id, code, message);
-        mSession.onRespondError(connection, "\"STR\"" + EMPTY_STRING, code, message, data);
-        if (mOnEventListener != null) {
-            mOnEventListener.onShowMessage(
-                    "Sent a mock error {code : " + code + ", message : " + message + "}");
-            mOnEventListener.onShowMessage(
-                    "Sent a mock error {code : " + code + ", message : " + message +
-                            ((data.isEmpty()) ? "" : ", data : " + data) + "}");
-        }
+        consoleLog("Receive an error, code: " + code);
     }
 
     /**
@@ -1964,12 +1945,220 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     @Override
     public void onReceiveError(int connection, String id, int code, String message,
                                String method, String data) {
-        if (mOnEventListener != null) {
-            mOnEventListener.onShowMessage(
-                    "Received an error {code : " + code + ", message : " + message +
-                            ((method.isEmpty()) ? "" : ", method : " + method) +
-                            ((data.isEmpty()) ? "" : ", data : " + data) + "}");
+        consoleLog("Receive an error, code: " + code + ", method: " + method);
+    }
+
+    private void consoleLog(String log) {
+        if (mConsoleCallback != null) {
+            mConsoleCallback.log(log);
         }
+    }
+
+    private void setSuppressStatus(int featureId, SuppressType suppress) {
+        if (featureId < 0 || featureId >= mMockSuppressTypes.size() ||
+                featureId >= mMockSupportTypes.size()) {
+            Log.e(TAG, "Error, unrecognised feature in request");
+            return;
+        }
+        SupportType supportType = mMockSupportTypes.get(featureId);
+        switch (suppress) {
+            case none:
+                mMockSuppressTypes.replace(featureId, SuppressType.none);
+                break;
+            case suppressing:
+            case notSuppressing:
+                if (supportType == SupportType.tvosAndHbbTV ||
+                        supportType == SupportType.supportedNotSetting) {
+                    // Responses containing "suppressing" or "notSuppressing" are only valid
+                    // when the corresponding feature is "tvosAndHbbTV" or "supportedNoSetting".
+                    mMockSuppressTypes.replace(featureId, suppress);
+                } else {
+                    // Responses containing "featureNotSupported" are only valid
+                    // when the corresponding feature is "notSupported", "tvosOnly", or "tvosSettingOnly".
+                    mMockSuppressTypes.replace(featureId, SuppressType.featureNotSupported);
+                }
+                break;
+            case featureNotSupported:
+                if (supportType == SupportType.tvosAndHbbTV ||
+                        supportType == SupportType.supportedNotSetting) {
+                    Log.e(TAG, "Not allowed to set featureNotSupported");
+                } else {
+                    mMockSuppressTypes.replace(featureId, SuppressType.featureNotSupported);
+                }
+                break;
+        }
+    }
+
+    private void querySettingSubtitles(int connection, String id, boolean isEnabled) {
+        if (isEnabled) {
+            mSession.onQuerySubtitles(connection, id,
+                    true, MOCK_SUBTITLES_SIZE, MOCK_SUBTITLES_FONT_FAMILY,
+                    MOCK_SUBTITLES_TEXT_COLOUR, MOCK_SUBTITLES_TEXT_OPACITY,
+                    MOCK_SUBTITLES_EDGE_TYPE, MOCK_SUBTITLES_EDGE_COLOUR,
+                    MOCK_SUBTITLES_BACKGROUND_COLOUR, MOCK_SUBTITLES_BACKGROUND_OPACITY,
+                    MOCK_SUBTITLES_WINDOW_COLOUR, MOCK_SUBTITLES_WINDOW_OPACITY,
+                    MOCK_SUBTITLES_LANGUAGE);
+        } else {
+            // Not enable when the subtitles is turning off
+            mSession.onQuerySubtitles(connection, id,
+                    false, EMPTY_INTEGER, EMPTY_STRING, EMPTY_STRING, EMPTY_INTEGER,
+                    EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, EMPTY_INTEGER,
+                    EMPTY_STRING, EMPTY_INTEGER, EMPTY_STRING);
+        }
+    }
+
+    private void querySettingDialogueEnhancement(int connection, String id, boolean isEnabled) {
+        if (isEnabled) {
+            mSession.onQueryDialogueEnhancement(connection, id,
+                    MOCK_DIALOGUE_ENHANCEMENT_GAIN_PREFERENCE, MOCK_DIALOGUE_ENHANCEMENT_GAIN,
+                    MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MIN,
+                    MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MAX);
+        } else {
+            // If DE is switched off, dialogueEnhancementGain shall be set to 0.
+            mSession.onQueryDialogueEnhancement(connection, id,
+                    MOCK_DIALOGUE_ENHANCEMENT_GAIN_PREFERENCE, 0,
+                    MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MIN,
+                    MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MAX);
+        }
+    }
+
+    private void querySettingsUiMagnifier(int connection, String id, boolean isEnabled) {
+        if (isEnabled) {
+            // "magType" shall be present if the "enabled" parameter is set to "true".
+            mSession.onQueryUIMagnifier(connection, id, true, MOCK_UI_MAGNIFIER_MAG_TYPE);
+        } else {
+            mSession.onQueryUIMagnifier(connection, id, false, EMPTY_STRING);
+        }
+    }
+
+    private void querySettingsHighContrastUI(int connection, String id, boolean isEnabled) {
+        if (isEnabled) {
+            // "hcType" shall be present if the "enabled" parameter is set to "true".
+            mSession.onQueryHighContrastUI(connection, id, true, MOCK_HIGH_CONTRAST_UI_HC_TYPE);
+        } else {
+            mSession.onQueryHighContrastUI(connection, id, false, EMPTY_STRING);
+        }
+    }
+
+    private void querySettingsScreenReader(int connection, String id, boolean isEnabled) {
+        if (isEnabled) {
+            mSession.onQueryScreenReader(connection, id,
+                    true, MOCK_SCREEN_READER_SPEED, MOCK_SCREEN_READER_VOICE,
+                    MOCK_SCREEN_READER_LANGUAGE);
+        } else {
+            // The language value should only be present
+            // if the user has changed this from the default setting.
+            // The voice value should be present if the enabled value is set to true.
+            mSession.onQueryScreenReader(connection, id,
+                    false, EMPTY_INTEGER, EMPTY_STRING, EMPTY_STRING);
+        }
+    }
+
+    private void querySettingsResponseToUserAction(int connection, String id, boolean isEnabled) {
+        if (isEnabled) {
+            mSession.onQueryResponseToUserAction(connection, id, true,
+                    MOCK_RESPONSE_TO_A_USER_ACTION_TYPE);
+        } else {
+            // If the "enabled" value is set to true, then the "type" field shall be present.
+            mSession.onQueryResponseToUserAction(connection, id, false,
+                    EMPTY_STRING);
+        }
+    }
+
+    private void querySettingsAudioDescription(int connection, String id, boolean isEnabled) {
+        if (isEnabled) {
+            mSession.onQueryAudioDescription(connection, id, true,
+                    MOCK_AUDIO_DESCRIPTION_GAIN, MOCK_AUDIO_DESCRIPTION_PAN_AZIMUTH);
+        } else {
+            // If it is not enabled, “gainPreference” and “panAzimuthPreference” shall not be present.
+            mSession.onQueryAudioDescription(connection, id, false,
+                    EMPTY_INTEGER, EMPTY_INTEGER);
+        }
+    }
+
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        boolean isEnabled;
+        switch (keyCode) {
+            case SUBTITLES_KEY:
+            case KeyEvent.KEYCODE_CAPTIONS: {
+                isEnabled = Boolean.FALSE.equals(mMockEnableStatus.get(F_SUBTITLES));
+                mMockEnableStatus.replace(F_SUBTITLES, isEnabled);
+
+                // notification for feature settings
+                querySettingSubtitles(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                consoleLog("Notify settings of subtitles, isEnabled: " + isEnabled);
+                break;
+            }
+            case DIALOGUE_ENHANCEMENT_KEY: {
+                // TODO, consider the case with a new gain set by users
+                isEnabled = Boolean.FALSE.equals(mMockEnableStatus.get(F_DIALOGUE_ENHANCEMENT));
+                mMockEnableStatus.replace(F_DIALOGUE_ENHANCEMENT, isEnabled);
+
+                querySettingDialogueEnhancement(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                consoleLog("Notify settings of dialogue enhancement, gain: " +
+                        (isEnabled ? MOCK_DIALOGUE_ENHANCEMENT_GAIN : 0));
+                break;
+            }
+            case UI_MAGNIFIER_KEY:
+            case KeyEvent.KEYCODE_TV_ZOOM_MODE: {
+                isEnabled = Boolean.FALSE.equals(mMockEnableStatus.get(F_UI_MAGNIFIER));
+                mMockEnableStatus.replace(F_UI_MAGNIFIER, isEnabled);
+
+                // notification for feature settings
+                querySettingsUiMagnifier(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                consoleLog("Notify settings of UI magnification, isEnabled: " + isEnabled);
+                break;
+            }
+            case HIGH_CONTRAST_UI_KEY: {
+                isEnabled = Boolean.FALSE.equals(mMockEnableStatus.get(F_HIGH_CONTRAST_UI));
+                mMockEnableStatus.replace(F_HIGH_CONTRAST_UI, isEnabled);
+
+                // notification for feature settings
+                querySettingsHighContrastUI(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                consoleLog("Notify settings of high contrast UI, isEnabled: " + isEnabled);
+                break;
+            }
+            case SCREEN_READER_KEY: {
+                isEnabled = Boolean.FALSE.equals(mMockEnableStatus.get(F_SCREEN_READER));
+                mMockEnableStatus.replace(F_SCREEN_READER, isEnabled);
+
+                // notification for feature settings
+                querySettingsScreenReader(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                consoleLog("Notify settings of screen reader, isEnabled: " + isEnabled);
+                break;
+            }
+            case RESPONSE_TO_USER_ACTION_KEY: {
+                isEnabled = Boolean.FALSE.equals(mMockEnableStatus.get(F_RESPONSE_TO_A_USER_ACTION));
+                mMockEnableStatus.replace(F_RESPONSE_TO_A_USER_ACTION, isEnabled);
+
+                // notification for feature settings
+                querySettingsResponseToUserAction(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                consoleLog("Notify settings of response to user action, isEnabled: " + isEnabled);
+                break;
+            }
+            case AUDIO_DESCRIPTION_KEY:
+            case KeyEvent.KEYCODE_TV_AUDIO_DESCRIPTION: {
+                isEnabled = Boolean.FALSE.equals(mMockEnableStatus.get(F_AUDIO_DESCRIPTION));
+                mMockEnableStatus.replace(F_AUDIO_DESCRIPTION, isEnabled);
+
+                // notification for feature settings
+                querySettingsAudioDescription(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                consoleLog("Notify settings of audio description, isEnabled: " + isEnabled);
+                break;
+            }
+            case IN_VISION_SIGNING_KEY: {
+                isEnabled = Boolean.FALSE.equals(mMockEnableStatus.get(F_IN_VISION_SIGN_LANGUAGE));
+                mMockEnableStatus.replace(F_IN_VISION_SIGN_LANGUAGE, isEnabled);
+
+                // notification for feature settings
+                mSession.onQueryInVisionSigning(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                consoleLog("Notify settings of in-vision signing, isEnabled: " + isEnabled);
+                break;
+            }
+            default:
+                return false;
+        }
+        return true;
     }
 
     private static byte[] getAssetBytes(Context context, String asset) {
