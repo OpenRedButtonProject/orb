@@ -27,6 +27,7 @@ import android.os.RemoteException;
 import android.provider.Settings;
 import android.util.Log;
 import android.util.Pair;
+import android.view.KeyEvent;
 import android.widget.FrameLayout;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -68,9 +69,9 @@ public class MainActivity extends Activity {
     private IMockDialService mDialService = null;
     private int mDialAppId = -1;
     private int mMaxLogSize = 8;
-
     private List<Pair<String, String>> mLogLines = new ArrayList<>();
-    private void log(String message) {
+
+    private void consoleLog(String message) {
         SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss:SSS",
                 Locale.getDefault());
         mLogLines.add(new Pair<>(formatter.format(new Date()), message));
@@ -81,7 +82,7 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 TableLayout table = findViewById(R.id.log_table);
-                for (int i = mMaxLogSize - 1 ; i >= 0; i--) {
+                for (int i = mMaxLogSize - 1; i >= 0; i--) {
                     TableRow row = (TableRow) table.getChildAt(i);
                     TextView time = (TextView) row.getChildAt(0);
                     TextView log = (TextView) row.getChildAt(1);
@@ -133,11 +134,19 @@ public class MainActivity extends Activity {
         bindDialService();
         //frameLayout.addView(mTvBrowserSession.getView());
         mTvBrowserSession.onNetworkStatusEvent(true); // TODO(library) Is this good?
-        mMockCallback.setOnEventListener(new MockOrbSessionCallback.OnEventListener() {
-            public void onShowMessage(String message) {
-                log(message);
+        mMockCallback.setConsoleCallback(new MockOrbSessionCallback.ConsoleCallback() {
+            public void log(String message) {
+                consoleLog(message);
             }
         });
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (mMockCallback.onKeyUp(keyCode, event)) {
+            return true;
+        }
+        return super.onKeyUp(keyCode, event);
     }
 
     @Override

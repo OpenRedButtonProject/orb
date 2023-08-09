@@ -33,6 +33,22 @@ public interface IOrbSessionCallback {
         /* The application is running but not currently visible to the user. */
         INVISIBLE
     };
+    
+    // TODO Change names to THIS_STYLE
+    enum SupportType {
+        notSupported,
+        tvosSettingOnly,
+        tvosOnly,
+        tvosAndHbbTV,
+        supportedNotSetting
+    }
+    
+    enum SuppressType {
+        none,
+        suppressing,
+        notSuppressing,
+        featureNotSupported
+    }
 
     /**
      * This method is called once the session is ready to be called by the client and present HbbTV
