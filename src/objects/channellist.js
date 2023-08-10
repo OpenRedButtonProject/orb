@@ -60,16 +60,34 @@ hbbtv.objects.ChannelList = (function() {
     Object.defineProperty(prototype, 'findChannel', {
         writable: false,
         value: function(props) {
-            const p = privates.get(this);
-            const channelData = p.channelDataList.find((channel) => {
-                let match = true;
+            function isMatch(channel) {
                 for (let key in props) {
                     if (props[key] != undefined && props[key] !== channel[key]) {
                         return false;
                     }
                 }
                 return true;
-            });
+            }
+            const p = privates.get(this);
+            let channelData = undefined;
+            for (let channel of p.channelDataList) {
+                if (isMatch(channel)) {
+                    channelData = channel;
+                    break;
+                }
+                else if (channel.serviceInstances) {
+                    for (let instance of channel.serviceInstances) {
+                        if (isMatch(instance)) {
+                            instance.parentService = channel;
+                            channelData = instance;
+                            break;
+                        }
+                    }
+                    if (channelData) {
+                        break;
+                    }
+                }
+            };
             if (channelData) {
                 return hbbtv.objects.createChannel(channelData);
             }
