@@ -358,7 +358,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestSubscribe(int connectionId,
     }
     Json::Value msgType = obj["params"]["msgType"];
 
-    std::vector<bool> msgTypeBoolList(false, sizeOfAccessibilityFeature);
+    std::vector<bool> msgTypeBoolList(sizeOfAccessibilityFeature, false);
     for (const auto& msg: msgType)
     {
         int length = msg.asString().length();
@@ -408,7 +408,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestUnsubscribe(int connectionI
     }
     Json::Value msgType = obj["params"]["msgType"];
 
-    std::vector<bool> msgTypeBoolList(false, sizeOfAccessibilityFeature);
+    std::vector<bool> msgTypeBoolList(sizeOfAccessibilityFeature, false);
     for (const auto& msg: msgType)
     {
         int length = msg.asString().length();
