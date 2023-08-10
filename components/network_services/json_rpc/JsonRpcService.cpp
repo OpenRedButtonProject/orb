@@ -364,9 +364,9 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestSubscribe(int connectionId,
         int length = msg.asString().length();
         std::string feature = msg.asString().substr(0, length - 10);     // Remove PrefChange
         int featureId = GetAccessibilityFeatureId(feature);
-        if (featureId != -1)
+        if (featureId > -1 && featureId < sizeOfAccessibilityFeature)
         {
-            msgTypeBoolList[featureId] = true;     // TODO Check featureId index exists!
+            msgTypeBoolList[featureId] = true;
             m_subscribed_method[connectionId].insert(msg.asString());
         }
         else
@@ -414,9 +414,9 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestUnsubscribe(int connectionI
         int length = msg.asString().length();
         std::string feature = msg.asString().substr(0, length - 10);     // Remove PrefChange
         int featureId = GetAccessibilityFeatureId(feature);
-        if (featureId != -1)
+        if (featureId > -1 && featureId < sizeOfAccessibilityFeature)
         {
-            msgTypeBoolList[featureId] = true;     // TODO Check featureId index exists!
+            msgTypeBoolList[featureId] = true;
             m_subscribed_method[connectionId].erase(msg.asString());
         }
         else
@@ -953,7 +953,11 @@ void JsonRpcService::RespondFeatureSupportInfo(int connectionId, const std::stri
     Json::Value result;
 
     result["method"] = MD_AF_FEATURE_SUPPORT_INFO;
-    result["feature"] = GetAccessibilityFeatureName(featureId);     // TODO What happens if featureId is unknown?
+    if (featureId > -1 && featureId < sizeOfAccessibilityFeature)
+    {
+        return;
+    }
+    result["feature"] = GetAccessibilityFeatureName(featureId);
     result["value"] = value;
     Json::Value response = CreateJsonResponse(id, result);
     SendJsonMessageToClient(connectionId, __func__, response);
@@ -1145,7 +1149,11 @@ void JsonRpcService::RespondFeatureSuppress(int connectionId, const std::string 
 {
     Json::Value result;
     result["method"] = MD_AF_FEATURE_SUPPRESS;
-    result["feature"] = GetAccessibilityFeatureName(featureId);     // TODO What happens if featureId is unknown?
+    if (featureId > -1 && featureId < sizeOfAccessibilityFeature)
+    {
+        return;
+    }
+    result["feature"] = GetAccessibilityFeatureName(featureId);
     result["value"] = value;
     Json::Value response = CreateJsonResponse(id, result);
     SendJsonMessageToClient(connectionId, __func__, response);
