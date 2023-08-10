@@ -116,7 +116,6 @@ hbbtv.objects.Channel = (function() {
                 instance.parentService = this;
             }
             p.serviceInstances = hbbtv.objects.createChannelList(channelData.serviceInstances);
-            console.log(channelData.serviceInstances);
         }
     }
 
