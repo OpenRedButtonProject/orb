@@ -43,10 +43,18 @@ function init() {
    }
    
    const ws = new WebSocket(url);
-   const b01 = '{"jsonrpc": "2.0", "method" : "org.hbbtv.af.featureSupportInfo", "params" : {"feature":"subtitles"}, "id" : 1 }';
+   const a01 = '{"jsonrpc": "2.0","method": "org.hbbtv.negotiateMethods","params": {"terminalToApp": ["org.hbbtv.app.intent.media.play","org.hbbtv.app.intent.media.pause","org.hbbtv.app.intent.media.stop","org.hbbtv.app.intent.media.fast-reverse","org.hbbtv.notify"],"appToTerminal": ["org.hbbtv.negotiateMethods","org.hbbtv.subscribe","org.hbbtv.unsubscribe","org.hbbtv.af.featureSupportInfo", "org.hbbtv.af.featureSettingsQuery", "org.hbbtv.af.featureSuppress", "org.hbbtv.app.voice.ready","org.hbbtv.app.state.media","org.hbbtv.app.state.media.2","org.hbbtv.app.state.media.3"]},"id": 1}';
+   const b01 = '{"jsonrpc": "2.0","method": "org.hbbtv.subscribe","params": {"msgType": ["subtitlesPrefChange","dialogueEnhancementPrefChange","uiMagnifierPrefChange","highContrastUIPrefChange","screenReaderPrefChange","responseToUserActionPrefChange","audioDescriptionPrefChange", "inVisionSigningPrefChange"]},"id": 51}';
+   const c01 = '{"jsonrpc": "2.0", "method": "org.hbbtv.af.featureSupportInfo", "params" : {"feature":"subtitles"}, "id" : 1 }';
+   const d01 = '{"jsonrpc": "2.0","method": "org.hbbtv.app.voice.ready", "params": {"ready": true}}';
+   const e01 = `{"jsonrpc": "2.0","method": "org.hbbtv.app.state.media","params": {"state": "playing","kind": "audio-video","type": "live","currentTime": "2021-04-28T18:52:00Z","range": {"start": "2021-04-28T18:50:00Z","end": "2021-04-28T18:55:00Z"},"availableActions": {"seek-live": true,"fast-forward": false,"fast-reverse": false,"pause": true,"play": true,"stop": true},"metadata": {"mediaId": "urn:broadcaster:programme:1249863457643","title": "The Sketch Show","secondaryTitle": "Series 2 episode 4","synopsis": "Comedy sketches providing a humourous take on today's events. Brought to you by the usual team."},"accessibility": {"subtitles": { "enabled": true, "available": true },"audioDescription": { "enabled": false, "available": true },"signLanguage": { "enabled": false, "available": false }}}}`;
 
    ws.onopen = function(e) {
+      ws.send(a01);
       ws.send(b01);
+      ws.send(c01);
+      ws.send(d01);
+      ws.send(e01);
    };
    
    ws.onmessage = function(e) {
