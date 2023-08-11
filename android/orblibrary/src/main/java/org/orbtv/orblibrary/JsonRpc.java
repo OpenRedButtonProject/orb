@@ -103,41 +103,37 @@ public class JsonRpc {
         nativeOnQueryInVisionSigning(connection, id, enabled);
     }
 
-    public void onSendIntentMediaBasics(int cmd, int connection, String id, String origin) {
-        nativeOnSendIntentMediaBasics(cmd, connection, id, origin);
+    public void onSendIntentMediaBasics(int cmd) {
+        nativeOnSendIntentMediaBasics(cmd);
     }
 
-    public void onSendIntentMediaSeekContent(int connection, String id, String origin,
-                                             String anchor, int offset) {
-        nativeOnSendIntentMediaSeekContent(connection, id, origin, anchor, offset);
+    public void onSendIntentMediaSeekContent(String anchor, int offset) {
+        nativeOnSendIntentMediaSeekContent(anchor, offset);
     }
 
-    public void onSendIntentMediaSeekRelative(int connection, String id, String origin,
-                                              int offset) {
-        nativeOnSendIntentMediaSeekRelative(connection, id, origin, offset);
+    public void onSendIntentMediaSeekRelative(int offset) {
+        nativeOnSendIntentMediaSeekRelative(offset);
     }
 
-    public void onSendIntentMediaSeekLive(int connection, String id, String origin,
-                                          int offset) {
-        nativeOnSendIntentMediaSeekLive(connection, id, origin, offset);
+    public void onSendIntentMediaSeekLive(int offset) {
+        nativeOnSendIntentMediaSeekLive(offset);
     }
 
-    public void onSendIntentMediaSeekWallclock(int connection, String id, String origin,
-                                               String dateTime) {
-        nativeOnSendIntentMediaSeekWallclock(connection, id, origin, dateTime);
+    public void onSendIntentMediaSeekWallclock(String dateTime) {
+        nativeOnSendIntentMediaSeekWallclock(dateTime);
     }
 
-    public void onSendIntentSearch(int connection, String id, String origin, String query) {
-        nativeOnSendIntentSearch(connection, id, origin, query);
+    public void onSendIntentSearch(String query) {
+        nativeOnSendIntentSearch(query);
     }
 
-    public void onSendIntentDisplay(int connection, String id, String origin, String mediaId) {
-        nativeOnSendIntentDisplay(connection, id, origin, mediaId);
+    public void onSendIntentDisplay(String mediaId) {
+        nativeOnSendIntentDisplay(mediaId);
     }
 
-    public void onSendIntentPlayback(int connection, String id, String origin, String mediaId,
+    public void onSendIntentPlayback(String mediaId,
                                      String anchor, int offset) {
-        nativeOnSendIntentPlayback(connection, id, origin, mediaId, anchor, offset);
+        nativeOnSendIntentPlayback(mediaId, anchor, offset);
     }
 
     // Called by native
@@ -181,21 +177,21 @@ public class JsonRpc {
         mOrbSessionCallback.onReceiveIntentConfirm(connection, id, method);
     }
 
-    private void onNotifyVoiceReady(int connection, boolean isReady) {
-        mOrbSessionCallback.onNotifyVoiceReady(connection, isReady);
+    private void onNotifyVoiceReady(boolean isReady) {
+        mOrbSessionCallback.onNotifyVoiceReady(isReady);
     }
 
     private void onNotifyStateMedia(String state) {
         mOrbSessionCallback.onNotifyStateMedia(state);
     }
 
-    private void onReceiveError(int connection, String id, int code, String message) {
-        mOrbSessionCallback.onReceiveError(connection, id, code, message);
+    private void onReceiveError(int code, String message) {
+        mOrbSessionCallback.onReceiveError(code, message);
     }
 
-    private void onReceiveError(int connection, String id, int code, String message,
+    private void onReceiveError(int code, String message,
                                 String method, String data) {
-        mOrbSessionCallback.onReceiveError(connection, id, code, message, method, data);
+        mOrbSessionCallback.onReceiveError(code, message, method, data);
     }
 
     // Native
@@ -250,27 +246,19 @@ public class JsonRpc {
 
     private native void nativeOnQueryInVisionSigning(int connection, String id, boolean enabled);
 
-    private native void nativeOnSendIntentMediaBasics(int cmd, int connection, String id,
-                                                      String origin);
+    private native void nativeOnSendIntentMediaBasics(int cmd);
 
-    private native void nativeOnSendIntentMediaSeekContent(int connection, String id, String origin,
-                                                           String anchor, int offset);
+    private native void nativeOnSendIntentMediaSeekContent(String anchor, int offset);
 
-    private native void nativeOnSendIntentMediaSeekRelative(int connection, String id, String origin,
-                                                            int offset);
+    private native void nativeOnSendIntentMediaSeekRelative(int offset);
 
-    private native void nativeOnSendIntentMediaSeekLive(int connection, String id, String origin,
-                                                        int offset);
+    private native void nativeOnSendIntentMediaSeekLive(int offset);
 
-    private native void nativeOnSendIntentMediaSeekWallclock(int connection, String id, String origin,
-                                                             String dateTime);
+    private native void nativeOnSendIntentMediaSeekWallclock(String dateTime);
 
-    private native void nativeOnSendIntentSearch(int connection, String id, String origin,
-                                                 String query);
+    private native void nativeOnSendIntentSearch(String query);
 
-    private native void nativeOnSendIntentDisplay(int connection, String id, String origin,
-                                                  String mediaId);
+    private native void nativeOnSendIntentDisplay(String mediaId);
 
-    private native void nativeOnSendIntentPlayback(int connection, String id, String origin,
-                                                   String mediaId, String anchor, int offset);
+    private native void nativeOnSendIntentPlayback(String mediaId, String anchor, int offset);
 }

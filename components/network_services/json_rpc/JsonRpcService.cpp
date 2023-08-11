@@ -160,7 +160,10 @@ bool JsonRpcService::OnConnection(WebSocketConnection *connection)
         return false;
     }
     LOG(LOG_INFO, "Connected: connectionId=%d", connection->Id());
-    m_negotiate_methods_app_to_terminal[connection->Id()].insert(MD_NEGOTIATE_METHODS);
+    ConnectionData data;
+    data.intentIdCount = 0;
+    data.negotiateMethodsAppToTerminal.insert(MD_NEGOTIATE_METHODS);
+    m_connectionMap[connection->Id()] = data;
     return true;
 }
 
@@ -198,7 +201,8 @@ void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const st
         if (HasParam(obj, "method", Json::stringValue))
         {
             method = obj["method"].asString();
-            if (!CheckMethodInNegotiatedMap("appToTerminal", connection->Id(), method))
+            if (!CheckMethodInSet(m_connectionMap[connection->Id()].negotiateMethodsAppToTerminal,
+                method))
             {
                 LOG(LOG_INFO, "Error, Method not found");
                 status = JsonRpcStatus::METHOD_NOT_FOUND;
@@ -258,9 +262,7 @@ void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const st
 
 void JsonRpcService::OnDisconnected(WebSocketConnection *connection)
 {
-    m_negotiate_methods_terminal_to_app.erase(connection->Id());
-    m_negotiate_methods_app_to_terminal.erase(connection->Id());
-    m_subscribed_method.erase(connection->Id());
+    m_connectionMap.erase(connection->Id());
 }
 
 void JsonRpcService::OnServiceStopped()
@@ -325,12 +327,14 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestNegotiateMethods(int connec
 
     //add method to set
     std::string filteredTerminalToApp = ResetStylesFilterMethods(connectionId, terminalToApp,
-        "terminalToApp");
+        false);
     std::string filteredAppToTerminal = ResetStylesFilterMethods(connectionId, appToTerminal,
-        "appToTerminal");
+        true);
 
     m_sessionCallback->RequestNegotiateMethods();
-    RespondNegotiateMethods(connectionId, id, filteredTerminalToApp, filteredAppToTerminal);
+    RespondNegotiateMethods(connectionId, id,
+        filteredTerminalToApp,
+        filteredAppToTerminal);
     return JsonRpcStatus::SUCCESS;
 }
 
@@ -364,7 +368,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestSubscribe(int connectionId,
         if (featureId > -1 && featureId < sizeOfAccessibilityFeature)
         {
             msgTypeBoolList[featureId] = true;
-            m_subscribed_method[connectionId].insert(msg.asString());
+            m_connectionMap[connectionId].subscribedMethods.insert(msg.asString());
         }
         else
         {
@@ -414,7 +418,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestUnsubscribe(int connectionI
         if (featureId > -1 && featureId < sizeOfAccessibilityFeature)
         {
             msgTypeBoolList[featureId] = true;
-            m_subscribed_method[connectionId].erase(msg.asString());
+            m_connectionMap[connectionId].subscribedMethods.erase(msg.asString());
         }
         else
         {
@@ -577,8 +581,8 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyVoiceReady(int connectionId,
     {
         return JsonRpcStatus::NOTIFICATION_ERROR;
     }
-    bool ready = obj["params"]["ready"].asBool();
-    m_sessionCallback->NotifyVoiceReady(connectionId, ready);
+    m_connectionMap[connectionId].voiceReady = obj["params"]["ready"].asBool();
+    m_sessionCallback->NotifyVoiceReady(m_connectionMap[connectionId].voiceReady);
     return JsonRpcStatus::SUCCESS;
 }
 
@@ -617,8 +621,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
             return JsonRpcStatus::NOTIFICATION_ERROR;
         }
     }
-    if (state == "buffering" || state == "paused" || state == "playing" ||
-        state == "stopped")
+    if (state == "buffering" || state == "paused" || state == "playing" || state == "stopped")
     {
         if (kind == OPTIONAL_STR_NOT_SET)
         {
@@ -635,8 +638,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
             return JsonRpcStatus::NOTIFICATION_ERROR;
         }
     }
-    if (state == "buffering" || state == "paused" || state == "playing" ||
-        state == "stopped")
+    if (state == "buffering" || state == "paused" || state == "playing" || state == "stopped")
     {
         if (type == OPTIONAL_STR_NOT_SET)
         {
@@ -703,15 +705,15 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
         }
     }
 
-    bool actPause = false;
-    bool actPlay = false;
-    bool actFastForward = false;
-    bool actFastReverse = false;
-    bool actStop = false;
-    bool actSeekContent = false;
-    bool actSeekRelative = false;
-    bool actSeekLive = false;
-    bool actWallclock = false;
+    m_connectionMap[connectionId].actionPause = false;
+    m_connectionMap[connectionId].actionPlay = false;
+    m_connectionMap[connectionId].actionFastForward = false;
+    m_connectionMap[connectionId].actionFastReverse = false;
+    m_connectionMap[connectionId].actionStop = false;
+    m_connectionMap[connectionId].actionSeekContent = false;
+    m_connectionMap[connectionId].actionSeekRelative = false;
+    m_connectionMap[connectionId].actionSeekLive = false;
+    m_connectionMap[connectionId].actionSeekWallclock = false;
 
     if (!HasJsonParam(params, "availableActions"))
     {
@@ -722,54 +724,47 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
     if (HasParam(actions, "pause", Json::booleanValue) &&
         actions["pause"] == true)
     {
-        actPause = true;
+        m_connectionMap[connectionId].actionPause = true;
     }
-
     if (HasParam(actions, "play", Json::booleanValue) &&
         actions["play"] == true)
     {
-        actPlay = true;
+        m_connectionMap[connectionId].actionPlay = true;
     }
-
     if (HasParam(actions, "fast-forward", Json::booleanValue) &&
         actions["fast-forward"] == true)
     {
-        actFastForward = true;
+        m_connectionMap[connectionId].actionFastForward = true;
     }
-
     if (HasParam(actions, "fast-reverse", Json::booleanValue) &&
         actions["fast-reverse"] == true)
     {
-        actFastReverse = true;
+        m_connectionMap[connectionId].actionFastReverse = true;
     }
     if (HasParam(actions, "stop", Json::booleanValue) &&
         actions["stop"] == true)
     {
-        actStop = true;
+        m_connectionMap[connectionId].actionStop = true;
     }
-
     if (HasParam(actions, "seek-content", Json::booleanValue) &&
         actions["seek-content"] == true)
     {
-        actSeekContent = true;
+        m_connectionMap[connectionId].actionSeekContent = true;
     }
-
     if (HasParam(actions, "seek-relative", Json::booleanValue) &&
         actions["seek-relative"] == true)
     {
-        actSeekRelative = true;
+        m_connectionMap[connectionId].actionSeekRelative = true;
     }
-
     if (HasParam(actions, "seek-live", Json::booleanValue) &&
         actions["seek-live"] == true)
     {
-        actSeekLive = true;
+        m_connectionMap[connectionId].actionSeekLive = true;
     }
-
     if (HasParam(actions, "seek-wallclock", Json::booleanValue) &&
         actions["seek-wallclock"] == true)
     {
-        actWallclock = true;
+        m_connectionMap[connectionId].actionSeekWallclock = true;
     }
 
     std::string mediaId;
@@ -796,8 +791,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
             synopsis = metadata["synopsis"].asString();
         }
     }
-    if (state == "buffering" || state == "paused" || state == "playing" ||
-        state == "stopped")
+    if (state == "buffering" || state == "paused" || state == "playing" || state == "stopped")
     {
         if (title == OPTIONAL_STR_NOT_SET ||
             mediaId == OPTIONAL_STR_NOT_SET ||
@@ -872,7 +866,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
             return JsonRpcStatus::NOTIFICATION_ERROR;
         }
     }
-
+    m_connectionMap[connectionId].state = state;
     m_sessionCallback->NotifyStateMedia(state);
     return JsonRpcStatus::SUCCESS;
 }
@@ -936,17 +930,18 @@ JsonRpcService::JsonRpcStatus JsonRpcService::ReceiveError(int connectionId, con
 
     if (method != OPTIONAL_STR_NOT_SET || data != OPTIONAL_STR_NOT_SET)
     {
-        m_sessionCallback->ReceiveError(connectionId, id, code, message, method, data);
+        m_sessionCallback->ReceiveError(code, message, method, data);
     }
     else
     {
-        m_sessionCallback->ReceiveError(connectionId, id, code, message);
+        m_sessionCallback->ReceiveError(code, message);
     }
     return JsonRpcStatus::SUCCESS;
 }
 
 void JsonRpcService::RespondFeatureSupportInfo(int connectionId, const std::string& id,
-    int featureId, const std::string& value)
+    int featureId,
+    const std::string& value)
 {
     Json::Value result;
 
@@ -1060,7 +1055,8 @@ void JsonRpcService::RespondFeatureSettingsUIMagnifier(int connectionId, const s
 }
 
 void JsonRpcService::RespondFeatureSettingsHighContrastUI(int connectionId, const std::string &id,
-    bool enabled, const std::string &hcType)
+    bool enabled,
+    const std::string &hcType)
 {
     Json::Value value;
     value["enabled"] = enabled;
@@ -1074,7 +1070,8 @@ void JsonRpcService::RespondFeatureSettingsHighContrastUI(int connectionId, cons
 }
 
 void JsonRpcService::RespondFeatureSettingsScreenReader(int connectionId, const std::string &id,
-    bool enabled, int speed,
+    bool enabled,
+    int speed,
     const std::string &voice,
     const std::string &language)
 {
@@ -1114,7 +1111,8 @@ void JsonRpcService::RespondFeatureSettingsResponseToUserAction(int connectionId
 }
 
 void JsonRpcService::RespondFeatureSettingsAudioDescription(int connectionId, const std::string &id,
-    bool enabled, int gainPreference,
+    bool enabled,
+    int gainPreference,
     int panAzimuthPreference)
 {
     Json::Value value;
@@ -1143,7 +1141,8 @@ void JsonRpcService::RespondFeatureSettingsInVisionSigning(int connectionId, con
 }
 
 void JsonRpcService::RespondFeatureSuppress(int connectionId, const std::string &id,
-    int featureId, const std::string &value)
+    int featureId,
+    const std::string &value)
 {
     Json::Value result;
     result["method"] = MD_AF_FEATURE_SUPPRESS;
@@ -1289,168 +1288,223 @@ void JsonRpcService::RespondError(int connectionId, const std::string &id,
     SendJsonMessageToClient(connectionId, __func__, response);
 }
 
-void JsonRpcService::SendIntentMediaPause(int connectionId, const std::string &id,
-    const std::string &origin)
+void JsonRpcService::SendIntentMediaPause()
 {
-    if (!CheckMethodInNegotiatedMap("terminalToApp", connectionId, MD_INTENT_MEDIA_PAUSE))
+    std::vector<int> connectionIds;
+    CheckIntentMethod(connectionIds, MD_INTENT_MEDIA_PAUSE);
+    if (connectionIds.empty())
     {
         return;
     }
     Json::Value params;
-    params["origin"] = origin;
-    Json::Value response = CreateJsonResponse(id, MD_INTENT_MEDIA_PAUSE, params);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    params["origin"] = "voice";
+    for (int connectionId : connectionIds)
+    {
+        std::string id = GenerateID(connectionId);
+        Json::Value response = CreateJsonResponse(id, MD_INTENT_MEDIA_PAUSE, params);
+        SendJsonMessageToClient(connectionId, __func__, response);
+    }
 }
 
-void JsonRpcService::SendIntentMediaPlay(int connectionId, const std::string &id,
-    const std::string &origin)
+void JsonRpcService::SendIntentMediaPlay()
 {
-    if (!CheckMethodInNegotiatedMap("terminalToApp", connectionId, MD_INTENT_MEDIA_PLAY))
+    std::vector<int> connectionIds;
+    CheckIntentMethod(connectionIds, MD_INTENT_MEDIA_PLAY);
+    if (connectionIds.empty())
     {
         return;
     }
     Json::Value params;
-    params["origin"] = origin;
-    Json::Value response = CreateJsonResponse(id, MD_INTENT_MEDIA_PLAY, params);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    params["origin"] = "voice";
+    for (int connectionId : connectionIds)
+    {
+        std::string id = GenerateID(connectionId);
+        Json::Value response = CreateJsonResponse(id, MD_INTENT_MEDIA_PLAY, params);
+        SendJsonMessageToClient(connectionId, __func__, response);
+    }
 }
 
-void JsonRpcService::SendIntentMediaFastForward(int connectionId, const std::string &id,
-    const std::string &origin)
+void JsonRpcService::SendIntentMediaFastForward()
 {
-    if (!CheckMethodInNegotiatedMap("terminalToApp", connectionId, MD_INTENT_MEDIA_FAST_FORWARD))
+    std::vector<int> connectionIds;
+    CheckIntentMethod(connectionIds, MD_INTENT_MEDIA_FAST_FORWARD);
+    if (connectionIds.empty())
     {
         return;
     }
+    LOG(LOG_INFO, "%d", connectionIds.size());
     Json::Value params;
-    params["origin"] = origin;
-    Json::Value response = CreateJsonResponse(id, MD_INTENT_MEDIA_FAST_FORWARD, params);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    params["origin"] = "voice";
+    for (int connectionId : connectionIds)
+    {
+        std::string id = GenerateID(connectionId);
+        Json::Value response = CreateJsonResponse(id, MD_INTENT_MEDIA_FAST_FORWARD, params);
+        SendJsonMessageToClient(connectionId, __func__, response);
+    }
 }
 
-void JsonRpcService::SendIntentMediaFastReverse(int connectionId, const std::string &id,
-    const std::string &origin)
+void JsonRpcService::SendIntentMediaFastReverse()
 {
-    if (!CheckMethodInNegotiatedMap("terminalToApp", connectionId, MD_INTENT_MEDIA_FAST_REVERSE))
+    std::vector<int> connectionIds;
+    CheckIntentMethod(connectionIds, MD_INTENT_MEDIA_FAST_REVERSE);
+    if (connectionIds.empty())
     {
         return;
     }
     Json::Value params;
-    params["origin"] = origin;
-    Json::Value response = CreateJsonResponse(id, MD_INTENT_MEDIA_FAST_REVERSE, params);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    params["origin"] = "voice";
+    for (int connectionId : connectionIds)
+    {
+        std::string id = GenerateID(connectionId);
+        Json::Value response = CreateJsonResponse(id, MD_INTENT_MEDIA_FAST_REVERSE, params);
+        SendJsonMessageToClient(connectionId, __func__, response);
+    }
 }
 
-void JsonRpcService::SendIntentMediaStop(int connectionId, const std::string &id,
-    const std::string &origin)
+void JsonRpcService::SendIntentMediaStop()
 {
-    if (!CheckMethodInNegotiatedMap("terminalToApp", connectionId, MD_INTENT_MEDIA_STOP))
+    std::vector<int> connectionIds;
+    CheckIntentMethod(connectionIds, MD_INTENT_MEDIA_STOP);
+    if (connectionIds.empty())
     {
         return;
     }
     Json::Value params;
-    params["origin"] = origin;
-    Json::Value response = CreateJsonResponse(id, MD_INTENT_MEDIA_STOP, params);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    params["origin"] = "voice";
+    for (int connectionId : connectionIds)
+    {
+        std::string id = GenerateID(connectionId);
+        Json::Value response = CreateJsonResponse(id, MD_INTENT_MEDIA_STOP, params);
+        SendJsonMessageToClient(connectionId, __func__, response);
+    }
 }
 
-void JsonRpcService::SendIntentMediaSeekContent(int connectionId, const std::string &id,
-    const std::string &origin,
-    const std::string &anchor, int offset)
+void JsonRpcService::SendIntentMediaSeekContent(const std::string &anchor, int offset)
 {
-    if (!CheckMethodInNegotiatedMap("terminalToApp", connectionId, MD_INTENT_MEDIA_SEEK_CONTENT))
+    std::vector<int> connectionIds;
+    CheckIntentMethod(connectionIds, MD_INTENT_MEDIA_SEEK_CONTENT);
+    if (connectionIds.empty())
     {
         return;
     }
     Json::Value params;
-    params["origin"] = origin;
+    params["origin"] = "voice";
     params["anchor"] = anchor;
     params["offset"] = offset;
-    Json::Value response = CreateJsonResponse(id, MD_INTENT_MEDIA_SEEK_CONTENT, params);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    for (int connectionId : connectionIds)
+    {
+        std::string id = GenerateID(connectionId);
+        Json::Value response = CreateJsonResponse(id, MD_INTENT_MEDIA_SEEK_CONTENT, params);
+        SendJsonMessageToClient(connectionId, __func__, response);
+    }
 }
 
-void JsonRpcService::SendIntentMediaSeekRelative(int connectionId, const std::string &id,
-    const std::string &origin, int offset)
+void JsonRpcService::SendIntentMediaSeekRelative(int offset)
 {
-    if (!CheckMethodInNegotiatedMap("terminalToApp", connectionId, MD_INTENT_MEDIA_SEEK_RELATIVE))
+    std::vector<int> connectionIds;
+    CheckIntentMethod(connectionIds, MD_INTENT_MEDIA_SEEK_RELATIVE);
+    if (connectionIds.empty())
     {
         return;
     }
     Json::Value params;
-    params["origin"] = origin;
+    params["origin"] = "voice";
     params["offset"] = offset;
-    Json::Value response = CreateJsonResponse(id, MD_INTENT_MEDIA_SEEK_RELATIVE, params);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    for (int connectionId : connectionIds)
+    {
+        std::string id = GenerateID(connectionId);
+        Json::Value response = CreateJsonResponse(id, MD_INTENT_MEDIA_SEEK_RELATIVE, params);
+        SendJsonMessageToClient(connectionId, __func__, response);
+    }
 }
 
-void JsonRpcService::SendIntentMediaSeekLive(int connectionId, const std::string &id,
-    const std::string &origin, int offset)
+void JsonRpcService::SendIntentMediaSeekLive(int offset)
 {
-    if (!CheckMethodInNegotiatedMap("terminalToApp", connectionId, MD_INTENT_MEDIA_SEEK_LIVE))
+    std::vector<int> connectionIds;
+    CheckIntentMethod(connectionIds, MD_INTENT_MEDIA_SEEK_LIVE);
+    if (connectionIds.empty())
     {
         return;
     }
     Json::Value params;
-    params["origin"] = origin;
+    params["origin"] = "voice";
     params["offset"] = offset;
-    Json::Value response = CreateJsonResponse(id, MD_INTENT_MEDIA_SEEK_LIVE, params);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    for (int connectionId : connectionIds)
+    {
+        std::string id = GenerateID(connectionId);
+        Json::Value response = CreateJsonResponse(id, MD_INTENT_MEDIA_SEEK_LIVE, params);
+        SendJsonMessageToClient(connectionId, __func__, response);
+    }
 }
 
-void JsonRpcService::SendIntentMediaSeekWallclock(int connectionId, const std::string &id,
-    const std::string &origin,
-    const std::string &dateTime)
+void JsonRpcService::SendIntentMediaSeekWallclock(const std::string &dateTime)
 {
-    if (!CheckMethodInNegotiatedMap("terminalToApp", connectionId, MD_INTENT_MEDIA_SEEK_WALLCLOCK))
+    std::vector<int> connectionIds;
+    CheckIntentMethod(connectionIds, MD_INTENT_MEDIA_SEEK_WALLCLOCK);
+    if (connectionIds.empty())
     {
         return;
     }
     Json::Value params;
-    params["origin"] = origin;
+    params["origin"] = "voice";
     params["date-time"] = dateTime;
-    Json::Value response = CreateJsonResponse(id, MD_INTENT_MEDIA_SEEK_WALLCLOCK, params);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    for (int connectionId : connectionIds)
+    {
+        std::string id = GenerateID(connectionId);
+        Json::Value response = CreateJsonResponse(id, MD_INTENT_MEDIA_SEEK_WALLCLOCK, params);
+        SendJsonMessageToClient(connectionId, __func__, response);
+    }
 }
 
-void JsonRpcService::SendIntentSearch(int connectionId, const std::string &id,
-    const std::string &origin, const std::string &query)
+void JsonRpcService::SendIntentSearch(const std::string &query)
 {
-    if (!CheckMethodInNegotiatedMap("terminalToApp", connectionId, MD_INTENT_SEARCH))
+    std::vector<int> connectionIds;
+    CheckIntentMethod(connectionIds, MD_INTENT_SEARCH);
+    if (connectionIds.empty())
     {
         return;
     }
     Json::Value params;
-    params["origin"] = origin;
+    params["origin"] = "voice";
     params["query"] = query;
-    Json::Value response = CreateJsonResponse(id, MD_INTENT_SEARCH, params);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    for (int connectionId : connectionIds)
+    {
+        std::string id = GenerateID(connectionId);
+        Json::Value response = CreateJsonResponse(id, MD_INTENT_SEARCH, params);
+        SendJsonMessageToClient(connectionId, __func__, response);
+    }
 }
 
-void JsonRpcService::SendIntentDisplay(int connectionId, const std::string &id,
-    const std::string &origin, const std::string &mediaId)
+void JsonRpcService::SendIntentDisplay(const std::string &mediaId)
 {
-    if (!CheckMethodInNegotiatedMap("terminalToApp", connectionId, MD_INTENT_DISPLAY))
+    std::vector<int> connectionIds;
+    CheckIntentMethod(connectionIds, MD_INTENT_DISPLAY);
+    if (connectionIds.empty())
     {
         return;
     }
     Json::Value params;
-    params["origin"] = origin;
+    params["origin"] = "voice";
     params["mediaId"] = mediaId;
-    Json::Value response = CreateJsonResponse(id, MD_INTENT_DISPLAY, params);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    for (int connectionId : connectionIds)
+    {
+        std::string id = GenerateID(connectionId);
+        Json::Value response = CreateJsonResponse(id, MD_INTENT_DISPLAY, params);
+        SendJsonMessageToClient(connectionId, __func__, response);
+    }
 }
 
-void JsonRpcService::SendIntentPlayback(int connectionId, const std::string &id,
-    const std::string &origin, const std::string &mediaId,
-    const std::string &anchor, int offset)
+void JsonRpcService::SendIntentPlayback(const std::string &mediaId, const std::string &anchor, int
+    offset)
 {
-    if (!CheckMethodInNegotiatedMap("terminalToApp", connectionId, MD_INTENT_PLAYBACK))
+    std::vector<int> connectionIds;
+    CheckIntentMethod(connectionIds, MD_INTENT_PLAYBACK);
+    if (connectionIds.empty())
     {
         return;
     }
     Json::Value params;
-    params["origin"] = origin;
+    params["origin"] = "voice";
     params["mediaId"] = mediaId;
     if (anchor != OPTIONAL_STR_NOT_SET)
     {
@@ -1460,8 +1514,12 @@ void JsonRpcService::SendIntentPlayback(int connectionId, const std::string &id,
     {
         params["offset"] = offset;
     }
-    Json::Value response = CreateJsonResponse(id, MD_INTENT_PLAYBACK, params);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    for (int connectionId : connectionIds)
+    {
+        std::string id = GenerateID(connectionId);
+        Json::Value response = CreateJsonResponse(id, MD_INTENT_PLAYBACK, params);
+        SendJsonMessageToClient(connectionId, __func__, response);
+    }
 }
 
 void JsonRpcService::NotifySubtitles(bool enabled,
@@ -1588,8 +1646,7 @@ void JsonRpcService::NotifyUIMagnifier(bool enabled, const std::string &magType)
     }
 }
 
-void JsonRpcService::NotifyHighContrastUI(bool enabled,
-    const std::string &hcType)
+void JsonRpcService::NotifyHighContrastUI(bool enabled, const std::string &hcType)
 {
     std::vector<int> subscribedConnectionIds;
     GetSubscribedConnectionIds(subscribedConnectionIds, 3);
@@ -1613,8 +1670,7 @@ void JsonRpcService::NotifyHighContrastUI(bool enabled,
     }
 }
 
-void JsonRpcService::NotifyScreenReader(bool enabled,
-    int speed, const std::string &voice,
+void JsonRpcService::NotifyScreenReader(bool enabled, int speed, const std::string &voice,
     const std::string &language)
 {
     std::vector<int> subscribedConnectionIds;
@@ -1647,8 +1703,7 @@ void JsonRpcService::NotifyScreenReader(bool enabled,
     }
 }
 
-void JsonRpcService::NotifyResponseToUserAction(bool enabled,
-    const std::string &type)
+void JsonRpcService::NotifyResponseToUserAction(bool enabled, const std::string &type)
 {
     std::vector<int> subscribedConnectionIds;
     GetSubscribedConnectionIds(subscribedConnectionIds, 5);
@@ -1672,8 +1727,8 @@ void JsonRpcService::NotifyResponseToUserAction(bool enabled,
     }
 }
 
-void JsonRpcService::NotifyAudioDescription(bool enabled,
-    int gainPreference, int panAzimuthPreference)
+void JsonRpcService::NotifyAudioDescription(bool enabled, int gainPreference, int
+    panAzimuthPreference)
 {
     std::vector<int> subscribedConnectionIds;
     GetSubscribedConnectionIds(subscribedConnectionIds, 6);
@@ -1745,14 +1800,23 @@ void JsonRpcService::RespondTriggerResponseToUserAction(int connectionId, const 
 }
 
 // Helper functions
+
+std::string JsonRpcService::GenerateID(int connectionId)
+{
+    m_connectionMap[connectionId].intentIdCount++;
+    std::string id = EncodeJsonId("IntentId" + std::to_string(
+        m_connectionMap[connectionId].intentIdCount));
+    return id;
+}
+
 void JsonRpcService::GetSubscribedConnectionIds(std::vector<int> &subscribedConnectionIds, const
     int msgTypeIndex)
 {
     std::string suffix = "PrefChange";
     std::string msgType = ACCESSIBILITY_FEATURE_NAMES.at(msgTypeIndex) + suffix;
-    for (auto & i : m_subscribed_method)
+    for (auto & i : m_connectionMap)
     {
-        if (i.second.find(msgType) != i.second.end())
+        if (i.second.subscribedMethods.find(msgType) != i.second.subscribedMethods.end())
         {
             subscribedConnectionIds.push_back(i.first);
         }
@@ -1781,8 +1845,7 @@ void JsonRpcService::SendJsonMessageToClient(int connectionId, const std::string
     connections_mutex_.unlock();
 }
 
-bool HasParam(const Json::Value &json, const std::string &param,
-    const Json::ValueType& type)
+bool HasParam(const Json::Value &json, const std::string &param, const Json::ValueType& type)
 {
     if (!json.isMember(param))
     {
@@ -1800,12 +1863,12 @@ bool HasParam(const Json::Value &json, const std::string &param,
  *
  * @param connectionId The connection ID.
  * @param oldString The string of methods in json style.
- * @param direction The string, should be "terminalToApp" or "appToTerminal".
+ * @param isAppToTerminal The bool shows appToTerminal or terminalToApp.
  *
  * @return The string of filtered methods and separated by ","
  */
-std::string JsonRpcService::ResetStylesFilterMethods(int connectionId, std::string &oldString, const
-    std::string &direction)
+std::string JsonRpcService::ResetStylesFilterMethods(int connectionId, std::string &oldString,
+    bool isAppToTerminal)
 {
     oldString.erase(std::remove(oldString.begin(), oldString.end(), '['), oldString.end());
     oldString.erase(std::remove(oldString.begin(), oldString.end(), ']'), oldString.end());
@@ -1818,68 +1881,76 @@ std::string JsonRpcService::ResetStylesFilterMethods(int connectionId, std::stri
     std::string str;
     while (std::getline(ss, str, ','))
     {
-        if (CheckMethodInSupportedSet(direction, str))
+        if (isAppToTerminal && CheckMethodInSet(m_supported_methods_app_to_terminal, str))
         {
-            if (direction == "appToTerminal")
-            {
-                m_negotiate_methods_app_to_terminal[connectionId].insert(str);
-            }
-            else if (direction == "terminalToApp")
-            {
-                m_negotiate_methods_terminal_to_app[connectionId].insert(str);
-            }
-            if (!newString.empty())
-            {
-                newString += ",";
-            }
-            newString += str;
+            m_connectionMap[connectionId].negotiateMethodsAppToTerminal.insert(str);
         }
+        else if (!isAppToTerminal && CheckMethodInSet(m_supported_methods_terminal_to_app, str))
+        {
+            m_connectionMap[connectionId].negotiateMethodsTerminalToApp.insert(str);
+        }
+        if (!newString.empty())
+        {
+            newString += ",";
+        }
+        newString += str;
     }
     return newString;
 }
 
-bool JsonRpcService::CheckMethodInNegotiatedMap(const std::string& direction, int connectionId,
-    const std::string& method)
+void JsonRpcService::CheckIntentMethod(std::vector<int> &connectionIds, const std::string& method)
 {
-    if (direction == "appToTerminal")
+    for (auto &i : m_connectionMap)
     {
-        if (m_negotiate_methods_app_to_terminal[connectionId].find(method) ==
-            m_negotiate_methods_app_to_terminal[connectionId].end())
+        if (!i.second.voiceReady)
         {
-            return false;
+            continue;
+        }
+        if (!CheckMethodInSet(i.second.negotiateMethodsTerminalToApp, method))
+        {
+            continue;
+        }
+
+        bool shouldAddConnection = false;
+
+        if (method == MD_INTENT_MEDIA_PAUSE && i.second.actionPause)
+        {
+            shouldAddConnection = i.second.state != "paused";
+        }
+        else if ((method == MD_INTENT_MEDIA_PLAY && i.second.actionPlay) ||
+                 (method == MD_INTENT_MEDIA_FAST_FORWARD && i.second.actionFastForward) ||
+                 (method == MD_INTENT_MEDIA_FAST_REVERSE && i.second.actionFastReverse))
+        {
+            shouldAddConnection = i.second.state != "playing";
+        }
+        else if (method == MD_INTENT_MEDIA_STOP && i.second.actionStop)
+        {
+            shouldAddConnection = i.second.state != "stopped";
+        }
+        else if ((method == MD_INTENT_MEDIA_SEEK_CONTENT && i.second.actionSeekContent) ||
+                 (method == MD_INTENT_MEDIA_SEEK_RELATIVE && i.second.actionSeekRelative) ||
+                 (method == MD_INTENT_MEDIA_SEEK_LIVE && i.second.actionSeekLive) ||
+                 (method == MD_INTENT_MEDIA_SEEK_WALLCLOCK && i.second.actionSeekWallclock))
+        {
+            shouldAddConnection = true;
+        }
+        else if (method == MD_INTENT_SEARCH || method == MD_INTENT_DISPLAY || method ==
+                 MD_INTENT_PLAYBACK)
+        {
+            shouldAddConnection = true;
+        }
+
+        if (shouldAddConnection)
+        {
+            connectionIds.push_back(i.first);
         }
     }
-    else if (direction == "terminalToApp")
-    {
-        if (m_negotiate_methods_terminal_to_app[connectionId].find(method) ==
-            m_negotiate_methods_terminal_to_app[connectionId].end())
-        {
-            return false;
-        }
-    }
-    return true;
 }
 
-bool JsonRpcService::CheckMethodInSupportedSet(const std::string& direction,
-    const std::string& method)
+bool JsonRpcService::CheckMethodInSet(std::unordered_set<std::string> &set, const
+    std::string& method)
 {
-    if (direction == "appToTerminal")
-    {
-        if (m_supported_methods_app_to_terminal.find(method) ==
-            m_supported_methods_app_to_terminal.end())
-        {
-            return false;
-        }
-    }
-    else if (direction == "terminalToApp")
-    {
-        if (m_supported_methods_terminal_to_app.find(method) ==
-            m_supported_methods_terminal_to_app.end())
-        {
-            return false;
-        }
-    }
-    return true;
+    return set.find(method) != set.end();
 }
 
 // Static functions
@@ -2012,8 +2083,7 @@ Json::Value CreateNegotiatedMethods(const std::string& stringList)
         endPos = stringList.find(',', startPos);
     }
     // Append the last element
-    std::string lastElement = stringList.substr(startPos,
-        stringList.length() - startPos);
+    std::string lastElement = stringList.substr(startPos, stringList.length() - startPos);
     jsonArray.append(lastElement);
     return jsonArray;
 }

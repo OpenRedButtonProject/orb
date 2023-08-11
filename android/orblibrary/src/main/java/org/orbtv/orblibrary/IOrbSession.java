@@ -447,82 +447,57 @@ public interface IOrbSession {
      *                   - 2: fast-forward
      *                   - 3: fast-reverse
      *                   - 4: stop
-     * @param connection The request and response should have the same value
-     * @param id         The request and response should have the same value
-     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
      */
-    void onSendIntentMediaBasics(int cmd, int connection, String id, String origin);
+    void onSendIntentMediaBasics(int cmd);
 
     /**
      * Called to send an intent for a request to seek a time position relative to the start or end of the media content
      *
-     * @param connection The request and response should have the same value
-     * @param id         The request and response should have the same value
-     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
      * @param anchor     The value indicates an anchor point of the content
      *                   - "start": the start or end of the content
      *                   - "end": the start or end of the content
      * @param offset     The number value for the time position, a positive or negative number of seconds
      */
-    void onSendIntentMediaSeekContent(int connection, String id, String origin,
-                                      String anchor, int offset);
+    void onSendIntentMediaSeekContent(String anchor, int offset);
 
     /**
      * Called to send an intent for a request to seek a time position relative to the current time of the media content
      *
-     * @param connection The request and response should have the same value
-     * @param id         The request and response should have the same value
-     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
      * @param offset     The number value for the current time position, a positive or negative number of seconds
      */
-    void onSendIntentMediaSeekRelative(int connection, String id, String origin, int offset);
+    void onSendIntentMediaSeekRelative(int offset);
 
     /**
      * Called to send an intent for a request to seek a time position relative to the live edge of the media content
      *
-     * @param connection The request and response should have the same value
-     * @param id         The request and response should have the same value
-     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
      * @param offset     The number value for the time position at or before the live edge, zero or negative number of seconds
      */
-    void onSendIntentMediaSeekLive(int connection, String id, String origin, int offset);
+    void onSendIntentMediaSeekLive(int offset);
 
     /**
      * Called to send an intent for a request to seek a time position relating to absolute wall clock time
      *
-     * @param connection The request and response should have the same value
-     * @param id         The request and response should have the same value
-     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
      * @param dayTime    The value conveys the wall clock time, in internet date-time format
      */
-    void onSendIntentMediaSeekWallclock(int connection, String id, String origin, String dayTime);
+    void onSendIntentMediaSeekWallclock(String dayTime);
 
     /**
      * Called to send an intent to request a search of content available
      *
-     * @param connection The request and response should have the same value
-     * @param id         The request and response should have the same value
-     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
      * @param query      The string value is the search term specified by the user.
      */
-    void onSendIntentSearch(int connection, String id, String origin, String query);
+    void onSendIntentSearch(String query);
 
     /**
      * Called to send an intent to request a display (but not playback) of a specific identified piece of content
      *
-     * @param connection The request and response should have the same value
-     * @param id         The request and response should have the same value
-     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
      * @param mediaId    The value for a URI uniquely identifying a piece of content
      */
-    void onSendIntentDisplay(int connection, String id, String origin, String mediaId);
+    void onSendIntentDisplay(String mediaId);
 
     /**
      * Called to send an intent to request immediate playback of a specific identified piece of content
      *
-     * @param connection The request and response should have the same value
-     * @param id         The request and response should have the same value
-     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
      * @param mediaId    The value for a URI uniquely identifying a piece of content
      *                   === With meanings as seek-content ===
      * @param anchor     The value indicates an anchor point of the content
@@ -532,7 +507,6 @@ public interface IOrbSession {
      *                   === With meaning as seek-live ===
      * @param offset     The number value for the time position at or before the live edge, zero or negative number of seconds
      */
-    void onSendIntentPlayback(int connection, String id, String origin,
-                              String mediaId, String anchor, int offset);
+    void onSendIntentPlayback(String mediaId, String anchor, int offset);
 
 }
