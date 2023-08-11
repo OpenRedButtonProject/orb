@@ -1719,20 +1719,19 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Receive a notification of voice-readiness
      *
-     * @param connection The request and response should have the same value
      * @param isReady    The boolean value of the status of voice-readiness
      *                   - true: the application is voice-ready
      *                   - false: not voice-ready
      */
     @Override
-    public void onNotifyVoiceReady(int connection, boolean isReady) {
+    public void onNotifyVoiceReady(boolean isReady) {
         consoleLog("Receive a voice-readiness status, isReady: " + isReady);
     }
 
     /**
      * Receive a notification that describes the state of media presentation by the application at the time
      *
-     * @param state           The description of state with respect to media playback
+     * @param state                 The description of state with respect to media playback
      */
     @Override
     public void onNotifyStateMedia(String state) {
@@ -1742,28 +1741,24 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Called to send an error message
      *
-     * @param connection The request and response should have the same value
-     * @param id         The request and response should have the same value
      * @param code       The error code
      * @param message    The error message
      */
     @Override
-    public void onReceiveError(int connection, String id, int code, String message) {
+    public void onReceiveError(int code, String message) {
         consoleLog("Receive an error, code: " + code);
     }
 
     /**
      * Called to send an error message with some data
      *
-     * @param connection The request and response should have the same value
-     * @param id         The request and response should have the same value
      * @param code       The error code
      * @param message    The error message
      * @param method     The method same as in the original request
      * @param data       The error data
      */
     @Override
-    public void onReceiveError(int connection, String id, int code, String message,
+    public void onReceiveError(int code, String message,
                                String method, String data) {
         consoleLog("Receive an error, code: " + code + ", method: " + method);
     }

@@ -920,43 +920,33 @@ class OrbSession implements IOrbSession {
      *                   - 2: fast-forward
      *                   - 3: fast-reverse
      *                   - 4: stop
-     * @param connection The request and response should have the same value
-     * @param id         The request and response should have the same value
-     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
      */
     @Override
-    public void onSendIntentMediaBasics(int cmd, int connection, String id, String origin) {
-        mJsonRpc.onSendIntentMediaBasics(cmd, connection, id, origin);
+    public void onSendIntentMediaBasics(int cmd) {
+        mJsonRpc.onSendIntentMediaBasics(cmd);
     }
 
     /**
      * Called to send an intent for a request to seek a time position relative to the start or end of the media content
      *
-     * @param connection The request and response should have the same value
-     * @param id         The request and response should have the same value
-     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
      * @param anchor     The value indicates an anchor point of the content
      *                   - "start": the start or end of the content
      *                   - "end": the start or end of the content
      * @param offset     The number value for the time position, a positive or negative number of seconds
      */
     @Override
-    public void onSendIntentMediaSeekContent(int connection, String id, String origin,
-                                             String anchor, int offset) {
-        mJsonRpc.onSendIntentMediaSeekContent(connection, id, origin, anchor, offset);
+    public void onSendIntentMediaSeekContent(String anchor, int offset) {
+        mJsonRpc.onSendIntentMediaSeekContent(anchor, offset);
     }
 
     /**
      * Called to send an intent for a request to seek a time position relative to the current time of the media content
      *
-     * @param connection The request and response should have the same value
-     * @param id         The request and response should have the same value
-     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
      * @param offset     The number value for the current time position, a positive or negative number of seconds
      */
     @Override
-    public void onSendIntentMediaSeekRelative(int connection, String id, String origin, int offset) {
-        mJsonRpc.onSendIntentMediaSeekRelative(connection, id, origin, offset);
+    public void onSendIntentMediaSeekRelative(int offset) {
+        mJsonRpc.onSendIntentMediaSeekRelative(offset);
     }
 
     /**
@@ -964,60 +954,46 @@ class OrbSession implements IOrbSession {
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
-     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
      * @param offset     The number value for the time position at or before the live edge, zero or negative number of seconds
      */
     @Override
-    public void onSendIntentMediaSeekLive(int connection, String id, String origin, int offset) {
-        mJsonRpc.onSendIntentMediaSeekLive(connection, id, origin, offset);
+    public void onSendIntentMediaSeekLive(int offset) {
+        mJsonRpc.onSendIntentMediaSeekLive(offset);
     }
 
     /**
      * Called to send an intent for a request to seek a time position relating to absolute wall clock time
      *
-     * @param connection The request and response should have the same value
-     * @param id         The request and response should have the same value
-     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
      * @param dateTime   The value conveys the wall clock time, in internet date-time format
      */
     @Override
-    public void onSendIntentMediaSeekWallclock(int connection, String id, String origin,
-                                               String dateTime) {
-        mJsonRpc.onSendIntentMediaSeekWallclock(connection, id, origin, dateTime);
+    public void onSendIntentMediaSeekWallclock(String dateTime) {
+        mJsonRpc.onSendIntentMediaSeekWallclock(dateTime);
     }
 
     /**
      * Called to send an intent to request a search of content available
      *
-     * @param connection The request and response should have the same value
-     * @param id         The request and response should have the same value
-     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
      * @param query      The string value is the search term specified by the user.
      */
     @Override
-    public void onSendIntentSearch(int connection, String id, String origin, String query) {
-        mJsonRpc.onSendIntentSearch(connection, id, origin, query);
+    public void onSendIntentSearch(String query) {
+        mJsonRpc.onSendIntentSearch(query);
     }
 
     /**
      * Called to send an intent to request a display (but not playback) of a specific identified piece of content
      *
-     * @param connection The request and response should have the same value
-     * @param id         The request and response should have the same value
-     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
      * @param mediaId    The value for a URI uniquely identifying a piece of content
      */
     @Override
-    public void onSendIntentDisplay(int connection, String id, String origin, String mediaId) {
-        mJsonRpc.onSendIntentDisplay(connection, id, origin, mediaId);
+    public void onSendIntentDisplay(String mediaId) {
+        mJsonRpc.onSendIntentDisplay(mediaId);
     }
 
     /**
      * Called to send an intent to request immediate playback of a specific identified piece of content
      *
-     * @param connection The request and response should have the same value
-     * @param id         The request and response should have the same value
-     * @param origin     The value of a JSON-RPC request, "voice" for voice interaction
      * @param mediaId    The value for a URI uniquely identifying a piece of content
      *                   === With meanings as seek-content ===
      * @param anchor     The value indicates an anchor point of the content
@@ -1028,8 +1004,7 @@ class OrbSession implements IOrbSession {
      * @param offset     The number value for the time position at or before the live edge, zero or negative number of seconds
      */
     @Override
-    public void onSendIntentPlayback(int connection, String id, String origin,
-                                     String mediaId, String anchor, int offset) {
-        mJsonRpc.onSendIntentPlayback(connection, id, origin, mediaId, anchor, offset);
+    public void onSendIntentPlayback(String mediaId, String anchor, int offset) {
+        mJsonRpc.onSendIntentPlayback(mediaId, anchor, offset);
     }
 }

@@ -73,10 +73,11 @@ public:
             int feature) = 0;
 
         virtual void NotifyVoiceReady(
-            int connectionId,
             bool isReady) = 0;
 
-        virtual void NotifyStateMedia(std::string state) = 0;
+
+        virtual void NotifyStateMedia(
+            std::string state) = 0;
 
         virtual void ReceiveIntentConfirm(
             int connectionId,
@@ -84,14 +85,10 @@ public:
             std::string method) = 0;
 
         virtual void ReceiveError(
-            int connectionId,
-            std::string id,
             int code,
             std::string message) = 0;
 
         virtual void ReceiveError(
-            int connectionId,
-            std::string id,
             int code,
             std::string message,
             std::string method,
@@ -186,38 +183,29 @@ public:
     void RespondError(int connectionId, const std::string &id, int code,
         const std::string &message, const std::string &data);
 
-    void SendIntentMediaPause(int connectionId, const std::string &id, const std::string &origin);
+    void SendIntentMediaPause();
 
-    void SendIntentMediaPlay(int connectionId, const std::string &id, const std::string &origin);
+    void SendIntentMediaPlay();
 
-    void SendIntentMediaFastForward(int connectionId, const std::string &id,
-        const std::string &origin);
+    void SendIntentMediaFastForward();
 
-    void SendIntentMediaFastReverse(int connectionId, const std::string &id,
-        const std::string &origin);
+    void SendIntentMediaFastReverse();
 
-    void SendIntentMediaStop(int connectionId, const std::string &id, const std::string &origin);
+    void SendIntentMediaStop();
 
-    void SendIntentMediaSeekContent(int connectionId, const std::string &id,
-        const std::string &origin, const std::string &anchor, int offset);
+    void SendIntentMediaSeekContent(const std::string &anchor, int offset);
 
-    void SendIntentMediaSeekRelative(int connectionId, const std::string &id,
-        const std::string &origin, int offset);
+    void SendIntentMediaSeekRelative(int offset);
 
-    void SendIntentMediaSeekLive(int connectionId, const std::string &id,
-        const std::string &origin, int offset);
+    void SendIntentMediaSeekLive(int offset);
 
-    void SendIntentMediaSeekWallclock(int connectionId, const std::string &id,
-        const std::string &origin, const std::string &dateTime);
+    void SendIntentMediaSeekWallclock(const std::string &dateTime);
 
-    void SendIntentSearch(int connectionId, const std::string &id, const std::string &origin,
-        const std::string &query);
+    void SendIntentSearch(const std::string &query);
 
-    void SendIntentDisplay(int connectionId, const std::string &id, const std::string &origin,
-        const std::string &mediaId);
+    void SendIntentDisplay(const std::string &mediaId);
 
-    void SendIntentPlayback(int connectionId, const std::string &id, const std::string &origin,
-        const std::string &mediaId, const std::string &anchor, int offset);
+    void SendIntentPlayback(const std::string &mediaId, const std::string &anchor, int offset);
 
     void NotifySubtitles(bool enabled, int size, const std::string &fontFamily,
         const std::string &textColour, int textOpacity, const std::string &edgeType,
@@ -251,6 +239,25 @@ public:
 
 
 private:
+    struct ConnectionData
+    {
+        std::unordered_set<std::string> negotiateMethodsAppToTerminal;
+        std::unordered_set<std::string> negotiateMethodsTerminalToApp;
+        std::unordered_set<std::string> subscribedMethods;
+        int intentIdCount;
+        std::string state;
+        bool voiceReady;
+        bool actionPause;
+        bool actionPlay;
+        bool actionFastForward;
+        bool actionFastReverse;
+        bool actionStop;
+        bool actionSeekContent;
+        bool actionSeekRelative;
+        bool actionSeekLive;
+        bool actionSeekWallclock;
+    };
+
     std::string m_endpoint;
     std::unique_ptr<SessionCallback> m_sessionCallback;
     std::map<std::string, std::function<JsonRpcStatus(int connectionId, const
@@ -258,10 +265,7 @@ private:
     std::unordered_set<std::string> m_supported_methods_app_to_terminal;
     std::unordered_set<std::string> m_supported_methods_terminal_to_app;
 
-    std::unordered_map<int, std::unordered_set<std::string> > m_negotiate_methods_app_to_terminal;
-    std::unordered_map<int, std::unordered_set<std::string> > m_negotiate_methods_terminal_to_app;
-
-    std::unordered_map<int, std::unordered_set<std::string> > m_subscribed_method;
+    std::unordered_map<int, ConnectionData> m_connectionMap;
 
     // Helper functions
     void RegisterMethod(const std::string& name, JsonRpcMethod method);
@@ -269,17 +273,18 @@ private:
     void SendJsonMessageToClient(int connectionId, const std::string &responseName,
         const Json::Value &jsonResponse);
 
-    std::string ResetStylesFilterMethods(int connectionId, std::string &oldString, const
-        std::string &direction);
+    std::string ResetStylesFilterMethods(int connectionId, std::string &oldString,
+        bool isAppToTerminal);
 
     void GetSubscribedConnectionIds(std::vector<int> &availableConnectionIds, int msgType);
 
-    bool CheckMethodInNegotiatedMap(const std::string &direction, int connectionId,
-        const std::string &method);
-
-    bool CheckMethodInSupportedSet(const std::string &direction, const std::string &method);
+    bool CheckMethodInSet(std::unordered_set<std::string> &set, const std::string &method);
 
     void RegisterSupportedMethods();
+
+    void CheckIntentMethod(std::vector<int> &connectionIds, const std::string& method);
+
+    std::string GenerateID(int connectionId);
 };
 } // namespace NetworkServices
 

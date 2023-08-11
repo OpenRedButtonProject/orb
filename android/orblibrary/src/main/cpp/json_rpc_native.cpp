@@ -29,8 +29,7 @@
 #define CB_RECEIVE_INTENT_CONFIRM 9
 #define CB_NOTIFY_VOICE_READY 10
 #define CB_NOTIFY_STATE_MEDIA 11
-#define CB_NOTIFY_STATE_MEDIA_ALL_VALUES 12
-#define CB_NUMBER_OF_ITEMS 13
+#define CB_NUMBER_OF_ITEMS 12
 
 #define LENGTH_OF_EMPTY_ID 0
 #define CMD_INTENT_PAUSE 0
@@ -192,18 +191,17 @@ public:
     }
 
     void NotifyVoiceReady(
-        int connection,
         bool isReady) override
     {
         JNIEnv *env = JniUtils::GetEnv();
         env->CallVoidMethod(
                 mCallbackObject,
                 g_cb[CB_NOTIFY_VOICE_READY],
-                connection, isReady);
+                isReady);
     }
 
     void NotifyStateMedia(
-        std::string state)
+        std::string state) override
     {
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_state = env->NewStringUTF(state.c_str());
@@ -215,40 +213,32 @@ public:
     }
 
     void ReceiveError(
-        int connection,
-        std::string id,
         int code,
         std::string message) override
     {
         JNIEnv *env = JniUtils::GetEnv();
-        jstring j_id = env->NewStringUTF(id.c_str());
         jstring j_message = env->NewStringUTF(message.c_str());
         env->CallVoidMethod(
                 mCallbackObject,
                 g_cb[CB_RECEIVE_ERROR],
-                connection, j_id, code, j_message);
-        env->DeleteLocalRef(j_id);
+                code, j_message);
         env->DeleteLocalRef(j_message);
     }
 
     void ReceiveError(
-            int connection,
-            std::string id,
             int code,
             std::string message,
             std::string method,
             std::string data) override
     {
         JNIEnv *env = JniUtils::GetEnv();
-        jstring j_id = env->NewStringUTF(id.c_str());
         jstring j_message = env->NewStringUTF(message.c_str());
         jstring j_method = env->NewStringUTF(method.c_str());
         jstring j_data = env->NewStringUTF(data.c_str());
         env->CallVoidMethod(
                 mCallbackObject,
                 g_cb[CB_RECEIVE_ERROR_ALL_PARAMS],
-                connection, j_id, code, j_message, j_method, j_data);
-        env->DeleteLocalRef(j_id);
+                code, j_message, j_method, j_data);
         env->DeleteLocalRef(j_message);
         env->DeleteLocalRef(j_method);
         env->DeleteLocalRef(j_data);
@@ -283,13 +273,13 @@ void InitialiseJsonRpcNative()
     g_cb[CB_RECEIVE_INTENT_CONFIRM] = env->GetMethodID(managerClass,
          "onReceiveIntentConfirm", "(ILjava/lang/String;Ljava/lang/String;)V");
     g_cb[CB_NOTIFY_VOICE_READY] = env->GetMethodID(managerClass,
-         "onNotifyVoiceReady", "(IZ)V");
+         "onNotifyVoiceReady", "(Z)V");
     g_cb[CB_NOTIFY_STATE_MEDIA] = env->GetMethodID(managerClass,
          "onNotifyStateMedia", "(Ljava/lang/String;)V");
     g_cb[CB_RECEIVE_ERROR] = env->GetMethodID(managerClass,
-         "onReceiveError", "(ILjava/lang/String;ILjava/lang/String;)V");
+         "onReceiveError", "(ILjava/lang/String;)V");
     g_cb[CB_RECEIVE_ERROR_ALL_PARAMS] = env->GetMethodID(managerClass,
-               "onReceiveError", "(ILjava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+               "onReceiveError", "(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
 }
 
 extern "C"
@@ -318,7 +308,6 @@ JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_JsonRpc_nativeClose(
 }
 
 // java -> cpp
-
 extern "C"
 JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondDialogueEnhancementOverride(
     JNIEnv *env,
@@ -617,28 +606,23 @@ JNIEXPORT void JNICALL
 Java_org_orbtv_orblibrary_JsonRpc_nativeOnSendIntentMediaBasics(
     JNIEnv *env,
     jobject object,
-    jint cmd,
-    jint connection,
-    jstring id,
-    jstring origin)
+    jint cmd)
 {
-    std::string idStr = JniUtils::MakeStdString(env, id);
-    std::string originStr = JniUtils::MakeStdString(env, origin);
     switch(cmd) {
         case CMD_INTENT_PAUSE:
-            GetService(env, object)->SendIntentMediaPause(connection, idStr, originStr);
+            GetService(env, object)->SendIntentMediaPause();
             break;
         case CMD_INTENT_PLAY:
-            GetService(env, object)->SendIntentMediaPlay(connection, idStr, originStr);
+            GetService(env, object)->SendIntentMediaPlay();
             break;
         case CMD_INTENT_FAST_FORWARD:
-            GetService(env, object)->SendIntentMediaFastForward(connection, idStr, originStr);
+            GetService(env, object)->SendIntentMediaFastForward();
             break;
         case CMD_INTENT_FAST_REVERSE:
-            GetService(env, object)->SendIntentMediaFastReverse(connection, idStr, originStr);
+            GetService(env, object)->SendIntentMediaFastReverse();
             break;
         case CMD_INTENT_STOP:
-            GetService(env, object)->SendIntentMediaStop(connection, idStr, originStr);
+            GetService(env, object)->SendIntentMediaStop();
             break;
     }
 }
@@ -648,16 +632,11 @@ JNIEXPORT void JNICALL
 Java_org_orbtv_orblibrary_JsonRpc_nativeOnSendIntentMediaSeekContent(
     JNIEnv *env,
     jobject object,
-    jint connection,
-    jstring id,
-    jstring origin,
     jstring anchor,
     int offset)
 {
-    std::string idStr = JniUtils::MakeStdString(env, id);
-    std::string originStr = JniUtils::MakeStdString(env, origin);
     std::string anchorStr = JniUtils::MakeStdString(env, anchor);
-    GetService(env, object)->SendIntentMediaSeekContent(connection, idStr, originStr, anchorStr, offset);
+    GetService(env, object)->SendIntentMediaSeekContent(anchorStr, offset);
 }
 
 extern "C"
@@ -665,14 +644,9 @@ JNIEXPORT void JNICALL
 Java_org_orbtv_orblibrary_JsonRpc_nativeOnSendIntentMediaSeekRelative(
     JNIEnv *env,
     jobject object,
-    jint connection,
-    jstring id,
-    jstring origin,
     int offset)
 {
-    std::string idStr = JniUtils::MakeStdString(env, id);
-    std::string originStr = JniUtils::MakeStdString(env, origin);
-    GetService(env, object)->SendIntentMediaSeekRelative(connection, idStr, originStr, offset);
+    GetService(env, object)->SendIntentMediaSeekRelative(offset);
 }
 
 extern "C"
@@ -680,14 +654,9 @@ JNIEXPORT void JNICALL
 Java_org_orbtv_orblibrary_JsonRpc_nativeOnSendIntentMediaSeekLive(
     JNIEnv *env,
     jobject object,
-    jint connection,
-    jstring id,
-    jstring origin,
     int offset)
 {
-    std::string idStr = JniUtils::MakeStdString(env, id);
-    std::string originStr = JniUtils::MakeStdString(env, origin);
-    GetService(env, object)->SendIntentMediaSeekLive(connection, idStr, originStr, offset);
+    GetService(env, object)->SendIntentMediaSeekLive(offset);
 }
 
 extern "C"
@@ -695,15 +664,10 @@ JNIEXPORT void JNICALL
 Java_org_orbtv_orblibrary_JsonRpc_nativeOnSendIntentMediaSeekWallclock(
     JNIEnv *env,
     jobject object,
-    jint connection,
-    jstring id,
-    jstring origin,
     jstring dateTime)
 {
-    std::string idStr = JniUtils::MakeStdString(env, id);
-    std::string originStr = JniUtils::MakeStdString(env, origin);
     std::string dateTimeStr = JniUtils::MakeStdString(env, dateTime);
-    GetService(env, object)->SendIntentMediaSeekWallclock(connection, idStr, originStr, dateTimeStr);
+    GetService(env, object)->SendIntentMediaSeekWallclock(dateTimeStr);
 }
 
 extern "C"
@@ -711,15 +675,10 @@ JNIEXPORT void JNICALL
 Java_org_orbtv_orblibrary_JsonRpc_nativeOnSendIntentSearch(
     JNIEnv *env,
     jobject object,
-    jint connection,
-    jstring id,
-    jstring origin,
     jstring query)
 {
-    std::string idStr = JniUtils::MakeStdString(env, id);
-    std::string originStr = JniUtils::MakeStdString(env, origin);
     std::string queryStr = JniUtils::MakeStdString(env, query);
-    GetService(env, object)->SendIntentSearch(connection, idStr, originStr, queryStr);
+    GetService(env, object)->SendIntentSearch(queryStr);
 }
 
 extern "C"
@@ -727,15 +686,10 @@ JNIEXPORT void JNICALL
 Java_org_orbtv_orblibrary_JsonRpc_nativeOnSendIntentDisplay(
     JNIEnv *env,
     jobject object,
-    jint connection,
-    jstring id,
-    jstring origin,
     jstring mediaId)
 {
-    std::string idStr = JniUtils::MakeStdString(env, id);
-    std::string originStr = JniUtils::MakeStdString(env, origin);
     std::string mediaIdStr = JniUtils::MakeStdString(env, mediaId);
-    GetService(env, object)->SendIntentDisplay(connection, idStr, originStr, mediaIdStr);
+    GetService(env, object)->SendIntentDisplay(mediaIdStr);
 }
 
 extern "C"
@@ -743,18 +697,13 @@ JNIEXPORT void JNICALL
 Java_org_orbtv_orblibrary_JsonRpc_nativeOnSendIntentPlayback(
     JNIEnv *env,
     jobject object,
-    jint connection,
-    jstring id,
-    jstring origin,
     jstring mediaId,
     jstring anchor,
     jint offset)
 {
-    std::string idStr = JniUtils::MakeStdString(env, id);
-    std::string originStr = JniUtils::MakeStdString(env, origin);
     std::string mediaIdStr = JniUtils::MakeStdString(env, mediaId);
     std::string anchorStr = JniUtils::MakeStdString(env, anchor);
-    GetService(env, object)->SendIntentPlayback(connection, idStr, originStr, mediaIdStr, anchorStr, offset);
+    GetService(env, object)->SendIntentPlayback(mediaIdStr, anchorStr, offset);
 }
 
 static NetworkServices::JsonRpcService* GetService(JNIEnv *env, jobject object)
