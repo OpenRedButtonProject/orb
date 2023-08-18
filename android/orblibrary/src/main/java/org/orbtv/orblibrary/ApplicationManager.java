@@ -125,8 +125,8 @@ class ApplicationManager {
         return true;
     }
 
-    public boolean processXmlAit(String str, boolean isDvbi) {
-        boolean result = jniProcessXmlAit(str, isDvbi);
+    public boolean processXmlAit(String str, boolean isDvbi, String scheme) {
+        boolean result = jniProcessXmlAit(str, isDvbi, scheme);
         return result;
     }
 
@@ -221,7 +221,7 @@ class ApplicationManager {
 
     private native void jniProcessAitSection(int aitPid, int serviceId, byte[] data);
 
-    private native boolean jniProcessXmlAit(String data, boolean isDvbi);
+    private native boolean jniProcessXmlAit(String data, boolean isDvbi, String scheme);
 
     private native boolean jniIsTeletextApplicationSignalled();
 

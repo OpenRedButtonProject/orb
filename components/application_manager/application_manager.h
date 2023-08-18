@@ -200,7 +200,7 @@ public:
      * @param xmlAit The XML AIT contents.
      * @return true if the application can be created, otherwise false
      */
-    bool ProcessXmlAit(const std::string &xmlAit, const bool &isDvbi = false);
+    bool ProcessXmlAit(const std::string &xmlAit, const bool &isDvbi = false, const std::string &scheme = LINKED_APP_SCHEME_1_1);
 
     /**
      * Check whether a Teletext application is signalled.
