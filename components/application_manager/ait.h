@@ -42,6 +42,9 @@
 #define HBBTV_VERSION_MINOR 7
 #define HBBTV_VERSION_MICRO 1
 
+#define LINKED_APP_SCHEME_1_1 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.1"
+#define LINKED_APP_SCHEME_1_2 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.2"
+
 class Ait
 {
 public:
@@ -157,6 +160,7 @@ public:
         uint8_t numApps;
         std::vector<S_AIT_APP_DESC> appArray;
         bool complete;
+        std::string scheme;
     } S_AIT_TABLE;
 
     /**

@@ -263,7 +263,7 @@ uint16_t ApplicationManager::SetKeySetMask(uint16_t appId, uint16_t keySetMask)
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_app.id == appId)
     {
-        if (!m_app.isActivated)
+        if (!m_app.isActivated && m_ait.Get()->scheme != LINKED_APP_SCHEME_1_2)
         {
             if ((keySetMask & KEY_SET_VCR) != 0)
             {
@@ -395,7 +395,7 @@ void ApplicationManager::ProcessAitSection(uint16_t aitPid, uint16_t serviceId,
  * @param xmlAit The XML AIT contents.
  * @return true if the application can be created, otherwise false
  */
-bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &isDvbi)
+bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &isDvbi, const std::string &scheme)
 {
     const Ait::S_AIT_APP_DESC *app_description;
     bool result = false;
@@ -415,7 +415,7 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
         // No AIT or apps parsed, early out
         return false;
     }
-
+    aitTable->scheme = scheme;
     Ait::PrintInfo(aitTable.get());
     if (isDvbi) {
         m_ait.Clear();
