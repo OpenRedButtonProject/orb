@@ -12,8 +12,6 @@
 #include <sstream>
 
 // Constants
-#define LOG_TAG "JsonRpcService"
-
 #define OPTIONAL_INT_NOT_SET -999999
 #define OPTIONAL_STR_NOT_SET ""
 
