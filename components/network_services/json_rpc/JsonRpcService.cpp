@@ -941,7 +941,7 @@ void JsonRpcService::RespondFeatureSupportInfo(int connectionId, const std::stri
     Json::Value result;
 
     result["method"] = MD_AF_FEATURE_SUPPORT_INFO;
-    if (featureId > -1 && featureId < sizeOfAccessibilityFeature)
+    if (featureId < 0 || featureId >= sizeOfAccessibilityFeature)
     {
         return;
     }
@@ -1137,7 +1137,7 @@ void JsonRpcService::RespondFeatureSuppress(int connectionId, const std::string 
 {
     Json::Value result;
     result["method"] = MD_AF_FEATURE_SUPPRESS;
-    if (featureId > -1 && featureId < sizeOfAccessibilityFeature)
+    if (featureId < 0 || featureId >= sizeOfAccessibilityFeature)
     {
         return;
     }
