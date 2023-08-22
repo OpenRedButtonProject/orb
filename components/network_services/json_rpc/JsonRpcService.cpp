@@ -329,8 +329,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestNegotiateMethods(int connec
     std::string filteredAppToTerminal = ResetStylesFilterMethods(connectionId, appToTerminal,
         "appToTerminal");
 
-    m_sessionCallback->RequestNegotiateMethods(connectionId, id, filteredTerminalToApp,
-        filteredAppToTerminal);
+    m_sessionCallback->RequestNegotiateMethods();
     RespondNegotiateMethods(connectionId, id, filteredTerminalToApp, filteredAppToTerminal);
     return JsonRpcStatus::SUCCESS;
 }
@@ -372,7 +371,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestSubscribe(int connectionId,
             return JsonRpcStatus::INVALID_PARAMS;
         }
     }
-    m_sessionCallback->RequestSubscribe(connectionId, id, msgTypeBoolList[0],
+    m_sessionCallback->RequestSubscribe(msgTypeBoolList[0],
         msgTypeBoolList[1], msgTypeBoolList[2],
         msgTypeBoolList[3], msgTypeBoolList[4],
         msgTypeBoolList[5], msgTypeBoolList[6],
@@ -422,7 +421,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestUnsubscribe(int connectionI
             return JsonRpcStatus::INVALID_PARAMS;
         }
     }
-    m_sessionCallback->RequestUnsubscribe(connectionId, id, msgTypeBoolList[0],
+    m_sessionCallback->RequestUnsubscribe(msgTypeBoolList[0],
         msgTypeBoolList[1], msgTypeBoolList[2],
         msgTypeBoolList[3], msgTypeBoolList[4],
         msgTypeBoolList[5], msgTypeBoolList[6],
@@ -864,16 +863,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
         }
     }
 
-    m_sessionCallback->NotifyStateMedia(connectionId,
-        state, kind, type, currentTimeStr,
-        rangeStart, rangeEnd,
-        actPause, actPlay, actFastForward,
-        actFastReverse, actStop, actSeekContent,
-        actSeekRelative, actSeekLive, actWallclock,
-        mediaId, title, secTitle, synopsis,
-        subtitlesEnabled, subtitlesAvailable,
-        audioDescripEnabled, audioDescripAvailable,
-        signLangEnabled, signLangAvailable);
+    m_sessionCallback->NotifyStateMedia(state);
     return JsonRpcStatus::SUCCESS;
 }
 

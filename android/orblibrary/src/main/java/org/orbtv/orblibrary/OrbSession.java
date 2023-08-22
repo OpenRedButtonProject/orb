@@ -688,52 +688,6 @@ class OrbSession implements IOrbSession {
     }
 
     /**
-     * Called to send a response message for the result of negotiated methods
-     *
-     * @param connection    The request and response should have the same value
-     * @param id            The request and response should have the same value
-     * @param terminalToApp The names for the negotiated methods sent from terminal to app
-     *                      - The names shall separated by comma ','
-     *                      - Example "org.hbbtv.app.intent.media.play,org.hbbtv.notify"
-     * @param appToTerminal The names for the negotiated methods sent from app to terminal
-     *                      - Same as terminalToApp
-     */
-    @Override
-    public void onRespondNegotiateMethods(int connection, String id,
-                                          String terminalToApp, String appToTerminal) {
-        mJsonRpc.onRespondNegotiateMethods(connection, id, terminalToApp, appToTerminal);
-    }
-
-    /**
-     * Called to send a response message for a successful subscribe/unsubscribe request
-     *
-     * @param isSubscribe          The response for a subscribe/unsubscribe request
-     *                             - true: subscribe
-     *                             - false: unsubscribe
-     * @param connection           The request and response should have the same value
-     * @param id                   The request and response should have the same value
-     *                             User preference change of 8 accessibility features:
-     * @param subtitles            Subtitles
-     * @param dialogueEnhancement  Dialogue enhancement
-     * @param uiMagnifier          Magnification UI
-     * @param highContrastUI       High contrast UI
-     * @param screenReader         Screen reader
-     * @param responseToUserAction Response to user action
-     * @param audioDescription     Audio description
-     * @param inVisionSigning      In-vision signing
-     */
-    @Override
-    public void onRespondSubscribe(boolean isSubscribe, int connection, String id,
-                                   boolean subtitles, boolean dialogueEnhancement,
-                                   boolean uiMagnifier, boolean highContrastUI,
-                                   boolean screenReader, boolean responseToUserAction,
-                                   boolean audioDescription, boolean inVisionSigning) {
-        mJsonRpc.onRespondSubscribe(isSubscribe, connection, id,
-                subtitles, dialogueEnhancement, uiMagnifier, highContrastUI,
-                screenReader, responseToUserAction, audioDescription, inVisionSigning);
-    }
-
-    /**
      * Called to send a response message for a result of overriding dialogue enhancement
      *
      * @param connection              The request and response should have the same value

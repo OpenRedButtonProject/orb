@@ -647,17 +647,8 @@ public interface IOrbSessionCallback {
 
     /**
      * Request a negotiation for methods
-     *
-     * @param connection    The request and response should have the same value
-     * @param id            The request and response should have the same value
-     * @param terminalToApp The names of the methods sent from terminal to app
-     *                      - The names shall separated by comma ','
-     *                      - Example "org.hbbtv.app.intent.media.play,org.hbbtv.notify"
-     * @param appToTerminal The names of the methods sent from app to terminal
-     *                      - same as terminalToApp
      */
-    void onRequestNegotiateMethods(int connection, String id,
-                                   String terminalToApp, String appToTerminal);
+    void onRequestNegotiateMethods();
 
     /**
      * Request to subscribe/unsubscribe some particular accessibility features
@@ -665,8 +656,6 @@ public interface IOrbSessionCallback {
      * @param isSubscribe          The request to subscribe/unsubscribe
      *                             - true: subscribe
      *                             - false: unsubscribe
-     * @param connection           The request and response should have the same value
-     * @param id                   The request and response should have the same value
      *                             User preference change of 8 accessibility features:
      * @param subtitles            Subtitles
      * @param dialogueEnhancement  Dialogue enhancement
@@ -677,7 +666,7 @@ public interface IOrbSessionCallback {
      * @param audioDescription     Audio description
      * @param inVisionSigning      In-vision signing
      */
-    void onRequestSubscribe(boolean isSubscribe, int connection, String id,
+    void onRequestSubscribe(boolean isSubscribe,
                             boolean subtitles, boolean dialogueEnhancement,
                             boolean uiMagnifier, boolean highContrastUI,
                             boolean screenReader, boolean responseToUserAction,
@@ -751,68 +740,9 @@ public interface IOrbSessionCallback {
     /**
      * Receive a notification that describes the state of media presentation by the application at the time
      *
-     * @param connection      The request and response should have the same value
      * @param state           The description of state with respect to media playback
-     *                        === Available actions supported ===
-     * @param actPause        Pause
-     * @param actPlay         Play
-     * @param actFastForward  Fast-forward
-     * @param actFastReverse  Fast-reverse
-     * @param actStop         Stop
-     * @param actSeekContent  Seek a time position relative to the media content
-     * @param actSeekRelative Seek a time position relative to the current time
-     * @param actSeekLive     Seek a time position relative to the live edge
-     * @param actWallclock    Seek a time position relating to a absolute wall clock time
      */
-    void onNotifyStateMedia(int connection, String state,
-                            boolean actPause, boolean actPlay, boolean actFastForward,
-                            boolean actFastReverse, boolean actStop,
-                            boolean actSeekContent, boolean actSeekRelative,
-                            boolean actSeekLive, boolean actWallclock);
-
-    /**
-     * Receive a notification that describes the state of media presentation by the application at the time
-     *
-     * @param connection            The request and response should have the same value
-     * @param state                 The description of state with respect to media playback
-     * @param kind                  The string value describing the kind of media being presented
-     * @param type                  The description of whether the media is on-demand or a live stream
-     * @param currentTime           The current time index of the media
-     * @param rangeStart            The start time index of the media
-     * @param rangeEnd              The end time index of the media
-     *                              === Available actions supported ===
-     * @param actPause              Pause
-     * @param actPlay               Play
-     * @param actFastForward        Fast-forward
-     * @param actFastReverse        Fast-reverse
-     * @param actStop               Stop
-     * @param actSeekContent        Seek a time position relative to the media content
-     * @param actSeekRelative       Seek a time position relative to the current time
-     * @param actSeekLive           Seek a time position relative to the live edge
-     * @param actWallclock          Seek a time position relating to a absolute wall clock time
-     *                              === Metadata describing the currently presenting media ===
-     * @param mediaId               The URI uniquely identifying a piece of content
-     * @param title                 The title of the media
-     * @param secTitle              The secondary title of the media
-     * @param synopsis              The longer description of the media
-     *                              === Availability or current state of that access services ===
-     * @param subtitlesEnabled      Subtitles
-     * @param subtitlesAvailable
-     * @param audioDescripEnabled   Audio description
-     * @param audioDescripAvailable
-     * @param signLangEnabled       In-vision sign-language
-     * @param signLangAvailable
-     */
-    void onNotifyStateMedia(int connection, String state, String kind, String type,
-                            String currentTime, String rangeStart, String rangeEnd,
-                            boolean actPause, boolean actPlay, boolean actFastForward,
-                            boolean actFastReverse, boolean actStop,
-                            boolean actSeekContent, boolean actSeekRelative,
-                            boolean actSeekLive, boolean actWallclock,
-                            String mediaId, String title, String secTitle, String synopsis,
-                            boolean subtitlesEnabled, boolean subtitlesAvailable,
-                            boolean audioDescripEnabled, boolean audioDescripAvailable,
-                            boolean signLangEnabled, boolean signLangAvailable);
+    void onNotifyStateMedia(String state);
 
     /**
      * Called to send an error message

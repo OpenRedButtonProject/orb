@@ -66,61 +66,42 @@ public:
         env->DeleteGlobalRef(mCallbackObject);
     }
 
-    void RequestNegotiateMethods(
-        int connection,
-        std::string id,
-        std::string terminalToApp,
-        std::string appToTerminal) override
+    void RequestNegotiateMethods() override
     {
         JNIEnv *env = JniUtils::GetEnv();
-        jstring j_id = env->NewStringUTF(id.c_str());
-        jstring j_terminalToApp = env->NewStringUTF(terminalToApp.c_str());
-        jstring j_appToTerminal = env->NewStringUTF(appToTerminal.c_str());
         env->CallVoidMethod(
                 mCallbackObject,
-                g_cb[CB_REQUEST_NEGOTIATE_METHODS],
-                connection, j_id, j_terminalToApp, j_appToTerminal);
-        env->DeleteLocalRef(j_id);
-        env->DeleteLocalRef(j_terminalToApp);
-        env->DeleteLocalRef(j_appToTerminal);
+                g_cb[CB_REQUEST_NEGOTIATE_METHODS]);
     }
 
     void RequestSubscribe(
-        int connection,
-        std::string id,
         bool subtitles, bool dialogueEnhancement,
         bool uiMagnifier, bool highContrastUI,
         bool screenReader, bool responseToUserAction,
         bool audioDescription, bool inVisionSigning) override
     {
         JNIEnv *env = JniUtils::GetEnv();
-        jstring j_id = env->NewStringUTF(id.c_str());
         env->CallVoidMethod(
                 mCallbackObject,
                 g_cb[CB_REQUEST_SUBSCRIBE_UNSUBSCRIBE],
-                true, connection, j_id,
+                true,
                 subtitles, dialogueEnhancement, uiMagnifier, highContrastUI,
                 screenReader, responseToUserAction, audioDescription, inVisionSigning);
-        env->DeleteLocalRef(j_id);
     }
 
     void RequestUnsubscribe(
-        int connection,
-        std::string id,
         bool subtitles, bool dialogueEnhancement,
         bool uiMagnifier, bool highContrastUI,
         bool screenReader, bool responseToUserAction,
         bool audioDescription, bool inVisionSigning) override
     {
         JNIEnv *env = JniUtils::GetEnv();
-        jstring j_id = env->NewStringUTF(id.c_str());
         env->CallVoidMethod(
                 mCallbackObject,
                 g_cb[CB_REQUEST_SUBSCRIBE_UNSUBSCRIBE],
-                false, connection, j_id,
+                false,
                 subtitles, dialogueEnhancement, uiMagnifier, highContrastUI,
                 screenReader, responseToUserAction, audioDescription, inVisionSigning);
-        env->DeleteLocalRef(j_id);
     }
 
     void RequestDialogueEnhancementOverride(
@@ -222,67 +203,15 @@ public:
     }
 
     void NotifyStateMedia(
-        int connection,
-        std::string state,
-        bool actPause, bool actPlay, bool actFastForward, bool actFastReverse, bool actStop,
-        bool actSeekContent, bool actSeekRelative, bool actSeekLive, bool actWallclock)
+        std::string state)
     {
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_state = env->NewStringUTF(state.c_str());
         env->CallVoidMethod(
                 mCallbackObject,
                 g_cb[CB_NOTIFY_STATE_MEDIA],
-                connection,
-                j_state,
-                actPause, actPlay, actFastForward, actFastReverse, actStop,
-                actSeekContent, actSeekRelative, actSeekLive, actWallclock);
+                j_state);
         env->DeleteLocalRef(j_state);
-    }
-
-    void NotifyStateMedia(
-        int connection,
-        std::string state, std::string kind, std::string type, std::string currentTime,
-        std::string rangeStart, std::string rangeEnd,
-        bool actPause, bool actPlay, bool actFastForward, bool actFastReverse, bool actStop,
-        bool actSeekContent, bool actSeekRelative, bool actSeekLive, bool actWallclock,
-        std::string mediaId, std::string title, std::string secTitle, std::string synopsis,
-        bool subtitlesEnabled, bool subtitlesAvailable,
-        bool audioDescripEnabled, bool audioDescripAvailable,
-        bool signLangEnabled, bool signLangAvailable)
-    {
-        JNIEnv *env = JniUtils::GetEnv();
-        jstring j_state = env->NewStringUTF(state.c_str());
-        jstring j_kind = env->NewStringUTF(kind.c_str());
-        jstring j_type = env->NewStringUTF( type.c_str());
-        jstring j_currentTime = env->NewStringUTF(currentTime.c_str());
-        jstring j_rangeStart = env->NewStringUTF(rangeStart.c_str());
-        jstring j_rangeEnd = env->NewStringUTF(rangeEnd.c_str());
-        jstring j_mediaId = env->NewStringUTF(mediaId.c_str());
-        jstring j_title = env->NewStringUTF(title.c_str());
-        jstring j_secTitle = env->NewStringUTF( secTitle.c_str());
-        jstring j_synopsis = env->NewStringUTF(synopsis.c_str());
-        env->CallVoidMethod(
-                mCallbackObject,
-                g_cb[CB_NOTIFY_STATE_MEDIA_ALL_VALUES],
-                connection,
-                j_state, j_kind, j_type, j_currentTime,
-                j_rangeStart, j_rangeEnd,
-                actPause, actPlay, actFastForward, actFastReverse, actStop,
-                actSeekContent, actSeekRelative, actSeekLive, actWallclock,
-                j_mediaId, j_title, j_secTitle, j_synopsis,
-                subtitlesEnabled, subtitlesAvailable,
-                audioDescripEnabled, audioDescripAvailable,
-                signLangEnabled, signLangAvailable);
-        env->DeleteLocalRef(j_state);
-        env->DeleteLocalRef(j_kind);
-        env->DeleteLocalRef(j_type);
-        env->DeleteLocalRef(j_currentTime);
-        env->DeleteLocalRef(j_rangeStart);
-        env->DeleteLocalRef(j_rangeEnd);
-        env->DeleteLocalRef(j_mediaId);
-        env->DeleteLocalRef(j_title);
-        env->DeleteLocalRef(j_secTitle);
-        env->DeleteLocalRef(j_synopsis);
     }
 
     void ReceiveError(
@@ -338,9 +267,9 @@ void InitialiseJsonRpcNative()
     // Callback methods
 
     g_cb[CB_REQUEST_NEGOTIATE_METHODS] = env->GetMethodID(managerClass,
-        "onRequestNegotiateMethods", "(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+        "onRequestNegotiateMethods", "()V");
     g_cb[CB_REQUEST_SUBSCRIBE_UNSUBSCRIBE] = env->GetMethodID(managerClass,
-        "onRequestSubscribe", "(ZILjava/lang/String;ZZZZZZZZ)V");
+        "onRequestSubscribe", "(ZZZZZZZZZ)V");
     g_cb[CB_REQUEST_FEATURE_SUPPORT_INFO] = env->GetMethodID(managerClass,
          "onRequestFeatureSupportInfo", "(ILjava/lang/String;I)V");
     g_cb[CB_REQUEST_FEATURE_SETTINGS_QUERY] = env->GetMethodID(managerClass,
@@ -356,13 +285,7 @@ void InitialiseJsonRpcNative()
     g_cb[CB_NOTIFY_VOICE_READY] = env->GetMethodID(managerClass,
          "onNotifyVoiceReady", "(IZ)V");
     g_cb[CB_NOTIFY_STATE_MEDIA] = env->GetMethodID(managerClass,
-         "onNotifyStateMedia", "(ILjava/lang/String;ZZZZZZZZZ)V");
-    g_cb[CB_NOTIFY_STATE_MEDIA_ALL_VALUES] = env->GetMethodID(managerClass,
-         "onNotifyStateMediaAllValues","(ILjava/lang/String;Ljava/lang/String;"
-               "Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;"
-               "ZZZZZZZZZ"
-               "Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;"
-               "ZZZZZZ)V");
+         "onNotifyStateMedia", "(Ljava/lang/String;)V");
     g_cb[CB_RECEIVE_ERROR] = env->GetMethodID(managerClass,
          "onReceiveError", "(ILjava/lang/String;ILjava/lang/String;)V");
     g_cb[CB_RECEIVE_ERROR_ALL_PARAMS] = env->GetMethodID(managerClass,
@@ -395,54 +318,6 @@ JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_JsonRpc_nativeClose(
 }
 
 // java -> cpp
-extern "C"
-JNIEXPORT void JNICALL
-Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondNegotiateMethods(
-    JNIEnv *env,
-    jobject object,
-    jint connection,
-    jstring id,
-    jstring terminalToApp,
-    jstring appToTerminal)
-{
-    std::string idStr = JniUtils::MakeStdString(env, id);
-    std::string terminalToAppStr = JniUtils::MakeStdString(env, terminalToApp);
-    std::string appToTerminalStr = JniUtils::MakeStdString(env, appToTerminal);
-    GetService(env, object)->RespondNegotiateMethods(
-            connection, idStr, terminalToAppStr, appToTerminalStr);
-}
-
-extern "C"
-JNIEXPORT void JNICALL
-Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondSubscribe(
-    JNIEnv *env,
-    jobject object,
-    jboolean isSubscribe,
-    jint connection,
-    jstring id,
-    jboolean subtitles,
-    jboolean dialogueEnhancement,
-    jboolean uiMagnifier,
-    jboolean highContrastUI,
-    jboolean screenReader,
-    jboolean responseToUserAction,
-    jboolean audioDescription,
-    jboolean inVisionSigning)
-{
-    std::string idStr = JniUtils::MakeStdString(env, id);
-
-    if (isSubscribe) {
-        GetService(env, object)->RespondSubscribe(
-                connection, idStr,
-                subtitles, dialogueEnhancement, uiMagnifier, highContrastUI,
-                screenReader, responseToUserAction, audioDescription, inVisionSigning);
-    } else {
-        GetService(env, object)->RespondUnsubscribe(
-                connection, idStr,
-                subtitles, dialogueEnhancement, uiMagnifier, highContrastUI,
-                screenReader, responseToUserAction, audioDescription, inVisionSigning);
-    }
-}
 
 extern "C"
 JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_JsonRpc_nativeOnRespondDialogueEnhancementOverride(
