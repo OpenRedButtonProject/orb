@@ -34,22 +34,6 @@ public class JsonRpc {
         return JSON_RPC_SERVER_VERSION;
     }
 
-
-    public void onRespondNegotiateMethods(int connection, String id,
-                                          String terminalToApp, String appToTerminal) {
-        nativeOnRespondNegotiateMethods(connection, id, terminalToApp, appToTerminal);
-    }
-
-    public void onRespondSubscribe(boolean isSubscribe, int connection, String id,
-                                   boolean subtitles, boolean dialogueEnhancement,
-                                   boolean uiMagnifier, boolean highContrastUI,
-                                   boolean screenReader, boolean responseToUserAction,
-                                   boolean audioDescription, boolean inVisionSigning) {
-        nativeOnRespondSubscribe(isSubscribe, connection, id,
-                subtitles, dialogueEnhancement, uiMagnifier, highContrastUI,
-                screenReader, responseToUserAction, audioDescription, inVisionSigning);
-    }
-
     public void onRespondDialogueEnhancementOverride(int connection, String id,
                                                      int dialogueEnhancementGain) {
         nativeOnRespondDialogueEnhancementOverride(connection, id, dialogueEnhancementGain);
@@ -158,17 +142,16 @@ public class JsonRpc {
 
     // Called by native
 
-    private void onRequestNegotiateMethods(int connection, String id,
-                                           String terminalToApp, String appToTerminal) {
-        mOrbSessionCallback.onRequestNegotiateMethods(connection, id, terminalToApp, appToTerminal);
+    private void onRequestNegotiateMethods() {
+        mOrbSessionCallback.onRequestNegotiateMethods();
     }
 
-    private void onRequestSubscribe(boolean isSubscribe, int connection, String id,
+    private void onRequestSubscribe(boolean isSubscribe,
                                     boolean subtitles, boolean dialogueEnhancement,
                                     boolean uiMagnifier, boolean highContrastUI,
                                     boolean screenReader, boolean responseToUserAction,
                                     boolean audioDescription, boolean inVisionSigning) {
-        mOrbSessionCallback.onRequestSubscribe(isSubscribe, connection, id,
+        mOrbSessionCallback.onRequestSubscribe(isSubscribe,
                 subtitles, dialogueEnhancement, uiMagnifier, highContrastUI,
                 screenReader, responseToUserAction, audioDescription, inVisionSigning);
     }
@@ -202,34 +185,8 @@ public class JsonRpc {
         mOrbSessionCallback.onNotifyVoiceReady(connection, isReady);
     }
 
-    private void onNotifyStateMedia(int connection, String state,
-                                    boolean actPause, boolean actPlay, boolean actFastForward,
-                                    boolean actFastReverse, boolean actStop,
-                                    boolean actSeekContent, boolean actSeekRelative,
-                                    boolean actSeekLive, boolean actWallclock) {
-        mOrbSessionCallback.onNotifyStateMedia(connection, state,
-                actPause, actPlay, actFastForward, actFastReverse, actStop,
-                actSeekContent, actSeekRelative, actSeekLive, actWallclock);
-    }
-
-    private void onNotifyStateMediaAllValues(int connection, String state, String kind, String type,
-                                             String currentTime, String rangeStart, String rangeEnd,
-                                             boolean actPause, boolean actPlay, boolean actFastForward,
-                                             boolean actFastReverse, boolean actStop,
-                                             boolean actSeekContent, boolean actSeekRelative,
-                                             boolean actSeekLive, boolean actWallclock,
-                                             String mediaId, String title, String secTitle, String synopsis,
-                                             boolean subtitlesEnabled, boolean subtitlesAvailable,
-                                             boolean audioDescripEnabled, boolean audioDescripAvailable,
-                                             boolean signLangEnabled, boolean signLangAvailable) {
-        mOrbSessionCallback.onNotifyStateMedia(connection, state, kind, type,
-                currentTime, rangeStart, rangeEnd,
-                actPause, actPlay, actFastForward, actFastReverse, actStop,
-                actSeekContent, actSeekRelative, actSeekLive, actWallclock,
-                mediaId, title, secTitle, synopsis,
-                subtitlesEnabled, subtitlesAvailable,
-                audioDescripEnabled, audioDescripAvailable,
-                signLangEnabled, signLangAvailable);
+    private void onNotifyStateMedia(String state) {
+        mOrbSessionCallback.onNotifyStateMedia(state);
     }
 
     private void onReceiveError(int connection, String id, int code, String message) {
@@ -246,15 +203,6 @@ public class JsonRpc {
     private native void nativeOpen(int port, String endpoint);
 
     private native void nativeClose();
-
-    private native void nativeOnRespondNegotiateMethods(int connection, String id,
-                                                        String terminalToApp, String appToTerminal);
-
-    private native void nativeOnRespondSubscribe(boolean isSubscribe, int connection, String id,
-                                                 boolean subtitles, boolean dialogueEnhancement,
-                                                 boolean uiMagnifier, boolean highContrastUI,
-                                                 boolean screenReader, boolean responseToUserAction,
-                                                 boolean audioDescription, boolean inVisionSigning);
 
     private native void nativeOnRespondDialogueEnhancementOverride(int connection, String id,
                                                                    int dialogueEnhancementGain);

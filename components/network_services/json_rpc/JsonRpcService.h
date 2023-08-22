@@ -33,23 +33,15 @@ public:
 
     class SessionCallback {
 public:
-        virtual void RequestNegotiateMethods(
-            int connectionId,
-            std::string id,
-            std::string terminalToApp,
-            std::string appToTerminal) = 0;
+        virtual void RequestNegotiateMethods() = 0;
 
         virtual void RequestSubscribe(
-            int connectionId,
-            std::string id,
             bool subtitles, bool dialogueEnhancement,
             bool uiMagnifier, bool highContrastUI,
             bool screenReader, bool responseToUserAction,
             bool audioDescription, bool inVisionSigning) = 0;
 
         virtual void RequestUnsubscribe(
-            int connectionId,
-            std::string id,
             bool subtitles, bool dialogueEnhancement,
             bool uiMagnifier, bool highContrastUI,
             bool screenReader, bool responseToUserAction,
@@ -84,22 +76,7 @@ public:
             int connectionId,
             bool isReady) = 0;
 
-        virtual void NotifyStateMedia(
-            int connectionId,
-            std::string state,
-            bool actPause, bool actPlay, bool actFastForward, bool actFastReverse, bool actStop,
-            bool actSeekContent, bool actSeekRelative, bool actSeekLive, bool actWallclock) = 0;
-
-        virtual void NotifyStateMedia(
-            int connectionId,
-            std::string state, std::string kind, std::string type, std::string currentTime,
-            std::string rangeStart, std::string rangeEnd,
-            bool actPause, bool actPlay, bool actFastForward, bool actFastReverse, bool actStop,
-            bool actSeekContent, bool actSeekRelative, bool actSeekLive, bool actWallclock,
-            std::string mediaId, std::string title, std::string secTitle, std::string synopsis,
-            bool subtitlesEnabled, bool subtitlesAvailable,
-            bool audioDescripEnabled, bool audioDescripAvailable,
-            bool signLangEnabled, bool signLangAvailable) = 0;
+        virtual void NotifyStateMedia(std::string state) = 0;
 
         virtual void ReceiveIntentConfirm(
             int connectionId,

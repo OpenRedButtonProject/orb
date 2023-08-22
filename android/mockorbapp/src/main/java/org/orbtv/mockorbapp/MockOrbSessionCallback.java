@@ -1486,18 +1486,9 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
 
     /**
      * Request a negotiation for methods
-     *
-     * @param connection    The request and response should have the same value
-     * @param id            The request and response should have the same value
-     * @param terminalToApp The names of the methods sent from terminal to app
-     *                      - The names shall separated by comma ','
-     *                      - Example "org.hbbtv.app.intent.media.play,org.hbbtv.notify"
-     * @param appToTerminal The names of the methods sent from app to terminal
-     *                      - same as terminalToApp
      */
     @Override
-    public void onRequestNegotiateMethods(int connection, String id,
-                                          String terminalToApp, String appToTerminal) {
+    public void onRequestNegotiateMethods() {
         consoleLog("Negotiate supported methods");
     }
 
@@ -1507,8 +1498,6 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * @param isSubscribe          The request to subscribe/unsubscribe
      *                             - true: subscribe
      *                             - false: unsubscribe
-     * @param connection           The request and response should have the same value
-     * @param id                   The request and response should have the same value
      *                             User preference change of 8 accessibility features:
      * @param subtitles            Subtitles
      * @param dialogueEnhancement  Dialogue enhancement
@@ -1520,7 +1509,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * @param inVisionSigning      In-vision signing
      */
     @Override
-    public void onRequestSubscribe(boolean isSubscribe, int connection, String id,
+    public void onRequestSubscribe(boolean isSubscribe,
                                    boolean subtitles, boolean dialogueEnhancement,
                                    boolean uiMagnifier, boolean highContrastUI,
                                    boolean screenReader, boolean responseToUserAction,
@@ -1744,179 +1733,11 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Receive a notification that describes the state of media presentation by the application at the time
      *
-     * @param connection      The request and response should have the same value
      * @param state           The description of state with respect to media playback
-     *                        === Available actions supported ===
-     * @param actPause        Pause
-     * @param actPlay         Play
-     * @param actFastForward  Fast-forward
-     * @param actFastReverse  Fast-reverse
-     * @param actStop         Stop
-     * @param actSeekContent  Seek a time position relative to the media content
-     * @param actSeekRelative Seek a time position relative to the current time
-     * @param actSeekLive     Seek a time position relative to the live edge
-     * @param actWallclock    Seek a time position relating to a absolute wall clock time
      */
     @Override
-    public void onNotifyStateMedia(int connection, String state,
-                                   boolean actPause, boolean actPlay, boolean actFastForward,
-                                   boolean actFastReverse, boolean actStop,
-                                   boolean actSeekContent, boolean actSeekRelative,
-                                   boolean actSeekLive, boolean actWallclock) {
-        Log.d(TAG, "\"onNotifyStateMedia\" is received by MockOrbSessionCallback{" +
-                "\n\"state\":\"" + state + "\"," +
-                "\n\"kind\":\"" + kind + "\"," +
-                "\n\"type\":\"" + type + "\"," +
-                "\n\"currentTime\":" + currentTime + "," +
-                "\n\"rangeStart\":" + rangeStart + "," +
-                "\n\"rangeEnd\":" + rangeEnd + "," +
-                "\n\"actPause\":" + actPause + "," +
-                "\n\"actPlay\":" + actPlay + "," +
-                "\n\"actFastForward\":" + actFastForward + "," +
-                "\n\"actFastReverse\":" + actFastReverse + "," +
-                "\n\"actStop\":" + actStop + "," +
-                "\n\"actSeekContent\":" + actSeekContent + "," +
-                "\n\"actSeekRelative\":" + actSeekRelative + "," +
-                "\n\"actSeekLive\":" + actSeekLive + "," +
-                "\n\"actWallclock\":" + actWallclock +
-                "\n}");
+    public void onNotifyStateMedia(String state) {
         consoleLog("Receive a media state, state: " + state);
-    }
-
-    /**
-     * Receive a notification that describes the state of media presentation by the application at the time
-     *
-     * @param connection            The request and response should have the same value
-     * @param state                 The description of state with respect to media playback
-     * @param kind                  The string value describing the kind of media being presented
-     * @param type                  The description of whether the media is on-demand or a live stream
-     * @param currentTime           The current time index of the media
-     * @param rangeStart            The start time index of the media
-     * @param rangeEnd              The end time index of the media
-     *                              === Available actions supported ===
-     * @param actPause              Pause
-     * @param actPlay               Play
-     * @param actFastForward        Fast-forward
-     * @param actFastReverse        Fast-reverse
-     * @param actStop               Stop
-     * @param actSeekContent        Seek a time position relative to the media content
-     * @param actSeekRelative       Seek a time position relative to the current time
-     * @param actSeekLive           Seek a time position relative to the live edge
-     * @param actWallclock          Seek a time position relating to a absolute wall clock time
-     *                              === Metadata describing the currently presenting media ===
-     * @param mediaId               The URI uniquely identifying a piece of content
-     * @param title                 The title of the media
-     * @param secTitle              The secondary title of the media
-     * @param synopsis              The longer description of the media
-     *                              === Availability or current state of that access services ===
-     * @param subtitlesEnabled      Subtitles
-     * @param subtitlesAvailable
-     * @param audioDescripEnabled   Audio description
-     * @param audioDescripAvailable
-     * @param signLangEnabled       In-vision sign-language
-     * @param signLangAvailable
-     */
-    @Override
-    public void onNotifyStateMedia(int connection, String state, String kind, String type,
-                                   String currentTime, String rangeStart, String rangeEnd,
-                                   boolean actPause, boolean actPlay, boolean actFastForward,
-                                   boolean actFastReverse, boolean actStop,
-                                   boolean actSeekContent, boolean actSeekRelative,
-                                   boolean actSeekLive, boolean actWallclock,
-                                   String mediaId, String title, String secTitle, String synopsis,
-                                   boolean subtitlesEnabled, boolean subtitlesAvailable,
-                                   boolean audioDescripEnabled, boolean audioDescripAvailable,
-                                   boolean signLangEnabled, boolean signLangAvailable) {
-        Log.d(TAG, "\"onNotifyStateMedia\" is received by MockOrbSessionCallback{" +
-                "\n\"state\":\"" + state + "\"," +
-                "\n\"actPause\":" + actPause + "," +
-                "\n\"actPlay\":" + actPlay + "," +
-                "\n\"actFastForward\":" + actFastForward + "," +
-                "\n\"actFastReverse\":" + actFastReverse + "," +
-                "\n\"actStop\":" + actStop + "," +
-                "\n\"actSeekContent\":" + actSeekContent + "," +
-                "\n\"actSeekRelative\":" + actSeekRelative + "," +
-                "\n\"actSeekLive\":" + actSeekLive + "," +
-                "\n\"actWallclock\":" + actWallclock + "," +
-                "\n\"mediaId\":\"" + mediaId + "\"," +
-                "\n\"title\":\"" + title + "\"," +
-                "\n\"secondaryTitle\":\"" + secTitle + "\"," +
-                "\n\"synopsis\":\"" + synopsis + "\"," +
-                "\n\"subtitlesEnabled\":" + subtitlesEnabled + "," +
-                "\n\"subtitlesAvailable\":" + subtitlesAvailable + "," +
-                "\n\"audioDescripEnabled\":" + audioDescripEnabled + "," +
-                "\n\"audioDescripAvailable\":" + audioDescripAvailable + "," +
-                "\n\"signLangEnabled\":" + signLangEnabled + "," +
-                "\n\"signLangAvailable\":" + signLangAvailable + "," +
-                "\n}");
-        consoleLog("Receive a media state, state: " + state);
-        // TEST for intent.Media
-//        String intentMsg = null;
-//        String prefix = "Sent a mock intent of ";
-//        String suffix = " media playback";
-//        String anchor = "start";
-//        int offset = 30;
-//        if (actPause) {
-//            mSession.onSendIntentMediaBasics(
-//                    INTENT_PAUSE, connection, "\"STR123-0\"", "voice");
-//            intentMsg = prefix + "\"pausing\"" + suffix;
-//        } else if (actPlay) {
-//            mSession.onSendIntentMediaBasics(
-//                    INTENT_PLAY, connection, "\"STR123-1\"", "voice");
-//            intentMsg = prefix + "\"playing\"" + suffix;
-//        } else if (actFastForward) {
-//            mSession.onSendIntentMediaBasics(
-//                    INTENT_FAST_FORWARD, connection, "\"STR123-2\"", "voice");
-//            intentMsg = prefix + "\"fast-forwarding\"" + suffix;
-//        } else if (actFastReverse) {
-//            mSession.onSendIntentMediaBasics(
-//                    INTENT_FAST_REVERSE, connection, "\"STR123-3\"", "voice");
-//            intentMsg = prefix + "\"fast-reversing\"" + suffix;
-//        } else if (actStop) {
-//            mSession.onSendIntentMediaBasics(
-//                    INTENT_STOP, connection, "\"STR123-4\"", "voice");
-//            intentMsg = prefix + "\"stopping\"" + suffix;
-//        } else if (actSeekContent) {
-//            mSession.onSendIntentMediaSeekContent(
-//                    connection, "\"STR123-5\"", "voice", anchor, offset);
-//            intentMsg = prefix + "seeking to a time position at " +
-//                    offset + " sec relative to the " + anchor + " of the media content";
-//        } else if (actSeekRelative) {
-//            mSession.onSendIntentMediaSeekRelative(
-//                    connection, "\"STR123-6\"", "voice", offset);
-//            intentMsg = prefix + "seeking to a time position at " +
-//                    offset + " sec to the current time position of the media content";
-//        } else if (actSeekLive) {
-//            mSession.onSendIntentMediaSeekLive(
-//                    connection, "\"STR123-7\"", "voice", offset);
-//            intentMsg = prefix + "seeking to a time position at " +
-//                    offset + " sec relative to the live edge of the media content";
-//        } else if (actWallclock) {
-//            String dayTime = "2020-02-12T10:00:00.000Z";
-//            mSession.onSendIntentMediaSeekWallclock(
-//                    connection, "\"STR123-8\"", "voice", dayTime);
-//            intentMsg = prefix + "seeking to a time position relating to " + dayTime;
-//        }
-//        if (intentMsg != null) {
-//            if (mConsoleCallback != null) {
-//                mConsoleCallback.log(intentMsg);
-//            }
-//            return;
-//        }
-//
-//        String query = "DOCTOR WHO";
-//        mSession.onSendIntentSearch(connection, "\"STR123-9\"", "voice", query);
-//        String newMediaId = "urn:broadcaster:programme:1249863457643";
-//        mSession.onSendIntentDisplay(connection, "\"STR123-10\"", "voice", newMediaId);
-//        mSession.onSendIntentPlayback(connection, "\"STR123-11\"", "voice", newMediaId,
-//                anchor, offset);
-//        if (mConsoleCallback != null) {
-//            mConsoleCallback.log(prefix + "searching for " + query);
-//            mConsoleCallback.log(prefix + "displaying {mediaId : " + mediaId + "}");
-//            mConsoleCallback.log(prefix + "requesting playback {mediaId " + mediaId +
-//                    ((offset == EMPTY_INTEGER) ? "" : ", offset : " + offset) +
-//                    ((anchor.isEmpty()) ? "" : ", anchor : " + anchor) + "}");
-//        }
     }
 
     /**
