@@ -78,6 +78,9 @@ public:
     virtual bool Configuration_RequestAccessToDistinctiveIdentifier(std::string origin,
         std::map<std::string, std::string> appNames) override;
     virtual std::string Configuration_GetUserAgentString() override;
+#ifdef BBC_API_ENABLE
+    virtual std::shared_ptr<DisplayInfo> Configuration_GetPrimaryDisplay() override;
+#endif
 
     // Dsmcc api
     virtual void Dsmcc_RequestFile(std::string url, int requestId) override;

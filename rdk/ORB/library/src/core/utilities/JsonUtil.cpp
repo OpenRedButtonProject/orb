@@ -345,4 +345,29 @@ json JsonUtil::DrmSystemStatusToJsonObject(DrmSystemStatus drmSystemStatus)
 
     return json_drmSystemStatus;
 }
+
+#ifdef BBC_API_ENABLE
+json JsonUtil::DisplayInfoToJsonObject(DisplayInfo displayInfo)
+{
+    json json_displayInfo;
+    json json_videoModes = json::array();
+
+    json_displayInfo.emplace("physicalWidth", displayInfo.GetPhysicalWidth());
+    json_displayInfo.emplace("physicalHeight", displayInfo.GetPhysicalHeight());
+
+    for (DisplayInfo::VideoMode videoMode : displayInfo.GetVideoModes())
+    {
+        json json_videoMode;
+        json_videoMode.emplace("width", videoMode.GetWidth());
+        json_videoMode.emplace("height", videoMode.GetHeight());
+        json_videoMode.emplace("framerate", videoMode.GetFrameRate());
+        json_videoMode.emplace("colorimetry", videoMode.GetColorimetry());
+        json_videoModes.push_back(json_videoMode);
+    }
+    json_displayInfo.emplace("videoModes", json_videoModes);
+
+    return json_displayInfo;
+}
+
+#endif
 } // namespace orb

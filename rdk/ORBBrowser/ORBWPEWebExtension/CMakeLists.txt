@@ -58,10 +58,15 @@ set(POLLYFILL_JS_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../out/resources/assets/polyfill/playerpage.html"
 )
 
-add_custom_command(OUTPUT ${POLLYFILL_JS_FILES}
-                   COMMAND ORB_NATIVE=rdk make WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../../
-                   COMMENT "Creating polyfill objects")
 
+set(BBC_API_ENABLE_VALUE 0)
+if(DEFINED BBC_API_ENABLE)
+   set(BBC_API_ENABLE_VALUE ${BBC_API_ENABLE})
+endif()
+
+add_custom_command(OUTPUT ${POLLYFILL_JS_FILES}
+                   COMMAND ORB_NATIVE=rdk BBC_API_ENABLE=${BBC_API_ENABLE_VALUE} make WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../../
+                   COMMENT "Creating polyfill objects")
 add_custom_target(polyfill_js ALL DEPENDS ${POLLYFILL_JS_FILES})
 
 install(DIRECTORY 

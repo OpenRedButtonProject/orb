@@ -1154,6 +1154,18 @@ hbbtv.bridge.configuration = (function() {
         hbbtv.native.request('Configuration.requestAccessToDistinctiveIdentifier');
     };
 
+    /**
+     * Get the primary display info from the system.
+     *
+     * @return {DisplayInfo} A DisplayInfo object.
+     *
+     * @method
+     * @memberof bridge.configuration#
+     */
+    exported.getPrimaryDisplay = function() {
+        return hbbtv.native.request('Configuration.getPrimaryDisplay').result;
+    };
+
     return exported;
 })();
 

@@ -14,6 +14,7 @@
 #include "Component.h"
 #include "LocalSystem.h"
 #include "Programme.h"
+#include "DisplayInfo.h"
 
 #include <map>
 #include <memory>
@@ -493,6 +494,16 @@ public:
      * @return The User-Agent string
      */
     virtual std::string Configuration_GetUserAgentString() = 0;
+
+#ifdef BBC_API_ENABLE
+    /**
+     * Get a report of the device's primary display capabilities in accordance with the BBC TV
+     * Platform Certification specs.
+     *
+     * @return A pointer to the corresponding DisplayInfo object
+     */
+    virtual std::shared_ptr<DisplayInfo> Configuration_GetPrimaryDisplay() = 0;
+#endif
 
     /******************************************************************************
     ** DSM-CC API
