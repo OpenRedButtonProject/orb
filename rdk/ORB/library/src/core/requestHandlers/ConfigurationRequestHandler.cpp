@@ -9,6 +9,7 @@
 #include "ORBPlatform.h"
 #include "ORBEngine.h"
 #include "JsonUtil.h"
+#include "DisplayInfo.h"
 
 #define CONFIGURATION_GET_CAPABILITIES "getCapabilities"
 #define CONFIGURATION_GET_AUDIO_PROFILES "getAudioProfiles"
@@ -28,6 +29,7 @@
 #define CONFIGIRATION_GET_DEVICE_ID "getDeviceId"
 #define CONFIGURATION_REQUEST_ACCESS_TO_DISTINCTIVE_IDENTIFIER \
     "requestAccessToDistinctiveIdentifier"
+#define CONFIGURATION_GET_PRIMARY_DISPLAY "getPrimaryDisplay"
 
 namespace orb {
 /**
@@ -183,6 +185,15 @@ bool ConfigurationRequestHandler::Handle(
         ORBEngine::GetSharedInstance().GetORBPlatform()->
         Configuration_RequestAccessToDistinctiveIdentifier(origin, appNames);
     }
+#ifdef BBC_API_ENABLE
+    // Configuration.getPrimaryDisplay
+    else if (method == CONFIGURATION_GET_PRIMARY_DISPLAY)
+    {
+        std::shared_ptr<DisplayInfo> displayInfo =
+            ORBEngine::GetSharedInstance().GetORBPlatform()->Configuration_GetPrimaryDisplay();
+        response["result"] = JsonUtil::DisplayInfoToJsonObject(*(displayInfo.get()));
+    }
+#endif
     // UnknownMethod
     else
     {

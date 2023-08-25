@@ -14,6 +14,15 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 find_path(XML2_INCLUDE_DIR NAMES parser.h PATH_SUFFIXES libxml2/libxml)
 
+set(BBC_API_ENABLE_VALUE 0)
+if (DEFINED BBC_API_ENABLE)
+   set(BBC_API_ENABLE_VALUE ${BBC_API_ENABLE})
+endif()
+
+if(${BBC_API_ENABLE_VALUE} EQUAL 1)
+   add_definitions(-DBBC_API_ENABLE)
+endif()
+
 # core sources
 set(CORE_SOURCES
    src/core/ORBEngine.cpp
@@ -55,6 +64,7 @@ set(ORB_API_HEADERS
    src/platform/dataTypes/Capabilities.h
    src/platform/dataTypes/Channel.h
    src/platform/dataTypes/Component.h
+   src/platform/dataTypes/DisplayInfo.h
    src/platform/dataTypes/DrmSystemStatus.h
    src/platform/dataTypes/LocalSystem.h
    src/platform/dataTypes/ParentalRating.h

@@ -18,6 +18,7 @@
 #include "LocalSystem.h"
 #include "Component.h"
 #include "DrmSystemStatus.h"
+#include "DisplayInfo.h"
 
 using json = nlohmann::json;
 
@@ -68,6 +69,13 @@ public:
     // DrmSystemStatus
 
     static json DrmSystemStatusToJsonObject(DrmSystemStatus drmSystemStatus);
+
+#ifdef BBC_API_ENABLE
+    // DisplayInfo
+
+    static json DisplayInfoToJsonObject(DisplayInfo displayInfo);
+
+#endif
 
     // CommonQuery
 }; // class JsonUtil

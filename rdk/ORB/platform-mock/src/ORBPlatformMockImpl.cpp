@@ -978,6 +978,26 @@ std::string ORBPlatformMockImpl::Configuration_GetUserAgentString()
     return userAgentString;
 }
 
+#ifdef BBC_API_ENABLE
+/**
+ * Get a report of the device's primary display capabilities in accordance with the BBC TV
+ * Platform Certification specs.
+ *
+ * @return A pointer to the corresponding DisplayInfo object
+ */
+std::shared_ptr<DisplayInfo> ORBPlatformMockImpl::Configuration_GetPrimaryDisplay()
+{
+    DisplayInfo::VideoMode videoMode(3840, 2160, 50, "bt2020");
+    std::vector<DisplayInfo::VideoMode> videoModes;
+    videoModes.push_back(videoMode);
+
+    std::shared_ptr<DisplayInfo> displayInfo = std::make_shared<DisplayInfo>(3840, 2160,
+        videoModes);
+    return displayInfo;
+}
+
+#endif
+
 /******************************************************************************
 ** DSM-CC API
 *****************************************************************************/
