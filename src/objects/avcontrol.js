@@ -139,10 +139,10 @@ hbbtv.objects.AVControl = (function() {
             }
             return;
         } else if (name === 'data') {
-            if (priv.playState !== PLAY_STATE_STOPPED) {
-                this.stop();
-            }
             if (value !== priv.data) {
+                if (priv.playState !== PLAY_STATE_STOPPED) {
+                    this.stop();
+                }
                 priv.data = value;
                 priv.seekPos = undefined;
                 priv.connected = false;
@@ -207,9 +207,7 @@ hbbtv.objects.AVControl = (function() {
                     populateTracks(subtitle, idCounter++);
                 }
             }
-            if (speed == 0 && priv.playState === PLAY_STATE_STOPPED) {
-                transitionToState.call(this, PLAY_STATE_PAUSED);
-            } else if (isStateTransitionValid.call(this, priv.playState, PLAY_STATE_CONNECTING)) {
+            if (isStateTransitionValid.call(this, priv.playState, PLAY_STATE_CONNECTING)) {
                 transitionToState.call(this, PLAY_STATE_CONNECTING);
                 priv.xhr.open('HEAD', this.data);
                 priv.xhr.send();
@@ -248,7 +246,10 @@ hbbtv.objects.AVControl = (function() {
                 if (priv.targetSpeed <= 0) {
                     // here, because we are in rewind mode or stopped, the videoElement is already
                     // in paused state, and because of that the event listener will not
-                    // be triggered, so we call explicitly onPauseHandler()
+                    // be triggered, so we call explicitly transitionToState.call(thiz, PLAY_STATE_PAUSED);
+                    transitionToState.call(thiz, PLAY_STATE_PAUSED);
+                }
+                else {
                     priv.onPauseHandler();
                 }
             } else {
@@ -1046,7 +1047,7 @@ hbbtv.objects.AVControl = (function() {
             // video element dispatches pause AND ended events (instead of just
             // the ended event) when playback is finished, messing up the state
             // machine pipeline
-            if (!videoElement.ended) {
+            if (!videoElement.ended && thiz.playState !== PLAY_STATE_PAUSED) {
                 transitionToState.call(thiz, PLAY_STATE_PAUSED);
             }
         };
