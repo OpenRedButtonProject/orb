@@ -139,10 +139,10 @@ hbbtv.objects.AVControl = (function() {
             }
             return;
         } else if (name === 'data') {
-            if (priv.playState !== PLAY_STATE_STOPPED) {
-                this.stop();
-            }
             if (value !== priv.data) {
+                if (priv.playState !== PLAY_STATE_STOPPED) {
+                    this.stop();
+                }
                 priv.data = value;
                 priv.seekPos = undefined;
                 priv.connected = false;
@@ -207,9 +207,7 @@ hbbtv.objects.AVControl = (function() {
                     populateTracks(subtitle, idCounter++);
                 }
             }
-            if (speed == 0 && priv.playState === PLAY_STATE_STOPPED) {
-                transitionToState.call(this, PLAY_STATE_PAUSED);
-            } else if (isStateTransitionValid.call(this, priv.playState, PLAY_STATE_CONNECTING)) {
+            if (isStateTransitionValid.call(this, priv.playState, PLAY_STATE_CONNECTING)) {
                 transitionToState.call(this, PLAY_STATE_CONNECTING);
                 priv.xhr.open('HEAD', this.data);
                 priv.xhr.send();
