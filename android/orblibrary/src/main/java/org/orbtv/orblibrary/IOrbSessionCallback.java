@@ -16,8 +16,6 @@
 
 package org.orbtv.orblibrary;
 
-import android.util.Log;
-
 import org.orbtv.orbpolyfill.BridgeTypes;
 
 import java.util.List;
@@ -40,11 +38,11 @@ public interface IOrbSessionCallback {
      * TODO Change names to THIS_STYLE.
      */
     enum SupportType {
-        notSupported,
-        tvosSettingOnly,
-        tvosOnly,
-        tvosAndHbbTV,
-        supportedNotSetting
+        NOT_SUPPORTED,
+        TVOS_SETTING_ONLY,
+        TVOS_ONLY,
+        TVOS_AND_HBBTV,
+        SUPPORTED_NOT_SETTING
     }
 
     /**
@@ -54,10 +52,10 @@ public interface IOrbSessionCallback {
      * TODO Change names to THIS_STYLE.
      */
     enum SuppressType {
-        none,
-        suppressing,
-        notSuppressing,
-        featureNotSupported
+        NONE,
+        SUPPRESSING,
+        NOT_SUPPRESSING,
+        FEATURE_NOT_SUPPORTED
     }
 
     /**
