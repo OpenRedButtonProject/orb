@@ -175,7 +175,7 @@ public:
         bool screenReader, bool responseToUserAction, bool audioDescription, bool inVisionSigning);
 
     void RespondNegotiateMethods(int connectionId, const std::string &id,
-        const std::string &terminalToApp, const std::string &appToTerminal);
+        const Json::Value& terminalToApp, const Json::Value& appToTerminal);
 
     void RespondError(int connectionId, const std::string &id, int code,
         const std::string &message);
@@ -273,14 +273,16 @@ private:
     void SendJsonMessageToClient(int connectionId, const std::string &responseName,
         const Json::Value &jsonResponse);
 
-    std::string ResetStylesFilterMethods(int connectionId, std::string &oldString,
-        bool isAppToTerminal);
-
     void GetSubscribedConnectionIds(std::vector<int> &availableConnectionIds, int msgType);
 
-    bool CheckMethodInSet(std::unordered_set<std::string> &set, const std::string &method);
-
     void RegisterSupportedMethods();
+
+    void SendIntentMessage(const std::string &method, const Json::Value &params);
+
+    void SendNotifyMessage(int msgTypeIndex, const Json::Value &response);
+
+    Json::Value FilterMethods(int connectionId, const Json::Value& methodsList, bool
+        isAppToTerminal);
 
     void CheckIntentMethod(std::vector<int> &connectionIds, const std::string& method);
 
