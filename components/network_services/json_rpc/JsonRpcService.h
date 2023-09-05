@@ -19,6 +19,26 @@
 namespace NetworkServices {
 class JsonRpcService : public WebSocketService {
 public:
+    enum class ConnectionDataType
+    {
+        NegotiateMethodsAppToTerminal,
+        NegotiateMethodsTerminalToApp,
+        SubscribedMethods,
+        UnsubscribedMethods,
+        IntentIdCount,
+        State,
+        VoiceReady,
+        ActionPause,
+        ActionPlay,
+        ActionFastForward,
+        ActionFastReverse,
+        ActionStop,
+        ActionSeekContent,
+        ActionSeekRelative,
+        ActionSeekLive,
+        ActionSeekWallclock
+    };
+
     enum class JsonRpcStatus
     {
         SUCCESS = 0,
@@ -237,7 +257,6 @@ public:
         bool actioned);
 
 
-
 private:
     struct ConnectionData
     {
@@ -257,6 +276,10 @@ private:
         bool actionSeekLive;
         bool actionSeekWallclock;
     };
+    // Setters and getters for variables
+    void InitialConnectionData(int connectionId);
+    void SetConnectionData(int connectionId, ConnectionDataType type, const Json::Value& value);
+    Json::Value GetConnectionData(int connectionId, ConnectionDataType type);
 
     std::string m_endpoint;
     std::unique_ptr<SessionCallback> m_sessionCallback;
@@ -265,9 +288,11 @@ private:
     std::unordered_set<std::string> m_supported_methods_app_to_terminal;
     std::unordered_set<std::string> m_supported_methods_terminal_to_app;
 
-    std::unordered_map<int, ConnectionData> m_connectionMap;
+    std::unordered_map<int, ConnectionData> m_connectionData;
 
     // Helper functions
+    std::vector<int> GetAllConnectionIds();
+
     void RegisterMethod(const std::string& name, JsonRpcMethod method);
 
     void SendJsonMessageToClient(int connectionId, const std::string &responseName,
