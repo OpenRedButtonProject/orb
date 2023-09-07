@@ -187,12 +187,9 @@ public:
         const std::string &value);
 
     void RespondSubscribe(int connectionId, const std::string &id,
-        bool subtitles, bool dialogueEnhancement, bool uiMagnifier, bool highContrastUI,
-        bool screenReader, bool responseToUserAction, bool audioDescription, bool inVisionSigning);
-
+        const Json::Value &msgTypeList);
     void RespondUnsubscribe(int connectionId, const std::string &id,
-        bool subtitles, bool dialogueEnhancement, bool uiMagnifier, bool highContrastUI,
-        bool screenReader, bool responseToUserAction, bool audioDescription, bool inVisionSigning);
+        const Json::Value &msgTypeList);
 
     void RespondNegotiateMethods(int connectionId, const std::string &id,
         const Json::Value& terminalToApp, const Json::Value& appToTerminal);
@@ -295,10 +292,9 @@ private:
 
     void RegisterMethod(const std::string& name, JsonRpcMethod method);
 
-    void SendJsonMessageToClient(int connectionId, const std::string &responseName,
-        const Json::Value &jsonResponse);
+    void SendJsonMessageToClient(int connectionId, const Json::Value &jsonResponse);
 
-    void GetSubscribedConnectionIds(std::vector<int> &availableConnectionIds, int msgType);
+    void GetNotifyConnectionIds(std::vector<int> &availableConnectionIds, const int msgType);
 
     void RegisterSupportedMethods();
 
@@ -311,7 +307,7 @@ private:
 
     void CheckIntentMethod(std::vector<int> &connectionIds, const std::string& method);
 
-    std::string GenerateID(int connectionId);
+    std::string GenerateId(int connectionId);
 };
 } // namespace NetworkServices
 

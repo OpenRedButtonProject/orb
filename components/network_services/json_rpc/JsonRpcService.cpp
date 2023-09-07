@@ -84,9 +84,9 @@ const static std::map<int, std::string> ACCESSIBILITY_FEATURE_NAMES = {
     {6, F_AUDIO_DESCRIPTION},
     {7, F_IN_VISION_SIGNING},
 };
-static bool CheckMethodInSet(const std::unordered_set<std::string> &set, const std::string& method);
+static bool IsMethodInSet(const std::unordered_set<std::string> &set, const std::string& method);
 
-static bool CheckMethodInJson(const Json::Value& array, const std::string& method);
+static bool IsMethodInJsonArray(const Json::Value& array, const std::string& method);
 
 static bool HasParam(const Json::Value &json, const std::string &param, const
     Json::ValueType& type);
@@ -101,7 +101,7 @@ static Json::Value CreateFeatureSettingsQuery(const std::string& feature, const 
 
 static Json::Value CreateNotifyRequest(const Json::Value& params);
 
-static Json::Value CreateJsonResponse(const std::string& id, const std::string& method, const
+static Json::Value CreateIntentResponse(const std::string& id, const std::string& method, const
     Json::Value& params);
 
 static Json::Value CreateJsonResponse(const std::string& id, const Json::Value& result);
@@ -176,14 +176,12 @@ void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const st
 
     if (!reader.parse(text, obj))
     {
-        LOG(LOG_INFO, "Error, json rpc parse wrong");
         status = JsonRpcStatus::PARSE_ERROR;
     }
 
     if (status == JsonRpcStatus::UNKNOWN &&
         (!HasParam(obj, "jsonrpc", Json::stringValue) || obj["jsonrpc"] != "2.0"))
     {
-        LOG(LOG_INFO, "Error, Invalid Request");
         status = JsonRpcStatus::INVALID_REQUEST;
     }
 
@@ -200,12 +198,11 @@ void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const st
         if (HasParam(obj, "method", Json::stringValue))
         {
             method = obj["method"].asString();
-            if (!CheckMethodInJson(
+            if (!IsMethodInJsonArray(
                 GetConnectionData(connection->Id(),
                     ConnectionDataType::NegotiateMethodsAppToTerminal),
                 method))
             {
-                LOG(LOG_INFO, "Error, Method not found");
                 status = JsonRpcStatus::METHOD_NOT_FOUND;
             }
         }
@@ -218,7 +215,6 @@ void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const st
         else
         {
             //cannot find parameter of "method"
-            LOG(LOG_INFO, "Error, Invalid Request");
             status = JsonRpcStatus::INVALID_REQUEST;
         }
     }
@@ -232,7 +228,6 @@ void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const st
         }
         else
         {
-            LOG(LOG_INFO, "Error, Method not found");
             status = JsonRpcStatus::METHOD_NOT_FOUND;
         }
     }
@@ -383,11 +378,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestSubscribe(int connectionId,
         msgTypeBoolList[3], msgTypeBoolList[4],
         msgTypeBoolList[5], msgTypeBoolList[6],
         msgTypeBoolList[7]);
-    RespondSubscribe(connectionId, id, msgTypeBoolList[0],
-        msgTypeBoolList[1], msgTypeBoolList[2],
-        msgTypeBoolList[3], msgTypeBoolList[4],
-        msgTypeBoolList[5], msgTypeBoolList[6],
-        msgTypeBoolList[7]);
+    RespondSubscribe(connectionId, id, msgType);
     return JsonRpcStatus::SUCCESS;
 }
 
@@ -434,11 +425,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestUnsubscribe(int connectionI
         msgTypeBoolList[3], msgTypeBoolList[4],
         msgTypeBoolList[5], msgTypeBoolList[6],
         msgTypeBoolList[7]);
-    RespondUnsubscribe(connectionId, id, msgTypeBoolList[0],
-        msgTypeBoolList[1], msgTypeBoolList[2],
-        msgTypeBoolList[3], msgTypeBoolList[4],
-        msgTypeBoolList[5], msgTypeBoolList[6],
-        msgTypeBoolList[7]);
+    RespondUnsubscribe(connectionId, id, msgType);
     return JsonRpcStatus::SUCCESS;
 }
 
@@ -959,7 +946,7 @@ void JsonRpcService::RespondFeatureSupportInfo(int connectionId, const std::stri
     result["feature"] = GetAccessibilityFeatureName(featureId);
     result["value"] = value;
     Json::Value response = CreateJsonResponse(id, result);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    SendJsonMessageToClient(connectionId, response);
 }
 
 void JsonRpcService::RespondFeatureSettingsSubtitles(int connectionId, const std::string &id,
@@ -1023,7 +1010,7 @@ void JsonRpcService::RespondFeatureSettingsSubtitles(int connectionId, const std
     }
     Json::Value result = CreateFeatureSettingsQuery(F_SUBTITLES, value);
     Json::Value response = CreateJsonResponse(id, result);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    SendJsonMessageToClient(connectionId, response);
 }
 
 void JsonRpcService::RespondFeatureSettingsDialogueEnhancement(int connectionId,
@@ -1042,7 +1029,7 @@ void JsonRpcService::RespondFeatureSettingsDialogueEnhancement(int connectionId,
     value["dialogueEnhancementLimit"] = dialogueEnhancementLimit;
     Json::Value result = CreateFeatureSettingsQuery(F_DIALOGUE_ENHANCEMENT, value);
     Json::Value response = CreateJsonResponse(id, result);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    SendJsonMessageToClient(connectionId, response);
 }
 
 void JsonRpcService::RespondFeatureSettingsUIMagnifier(int connectionId, const std::string &id,
@@ -1057,7 +1044,7 @@ void JsonRpcService::RespondFeatureSettingsUIMagnifier(int connectionId, const s
     }
     Json::Value result = CreateFeatureSettingsQuery(F_UI_MAGNIFIER, value);
     Json::Value response = CreateJsonResponse(id, result);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    SendJsonMessageToClient(connectionId, response);
 }
 
 void JsonRpcService::RespondFeatureSettingsHighContrastUI(int connectionId,
@@ -1073,7 +1060,7 @@ void JsonRpcService::RespondFeatureSettingsHighContrastUI(int connectionId,
     }
     Json::Value result = CreateFeatureSettingsQuery(F_HIGH_CONTRAST_UI, value);
     Json::Value response = CreateJsonResponse(id, result);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    SendJsonMessageToClient(connectionId, response);
 }
 
 void JsonRpcService::RespondFeatureSettingsScreenReader(int connectionId,
@@ -1099,7 +1086,7 @@ void JsonRpcService::RespondFeatureSettingsScreenReader(int connectionId,
     }
     Json::Value result = CreateFeatureSettingsQuery(F_SCREEN_READER, value);
     Json::Value response = CreateJsonResponse(id, result);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    SendJsonMessageToClient(connectionId, response);
 }
 
 void JsonRpcService::RespondFeatureSettingsResponseToUserAction(int connectionId,
@@ -1115,7 +1102,7 @@ void JsonRpcService::RespondFeatureSettingsResponseToUserAction(int connectionId
     }
     Json::Value result = CreateFeatureSettingsQuery(F_RESPONSE_TO_USER_ACTION, value);
     Json::Value response = CreateJsonResponse(id, result);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    SendJsonMessageToClient(connectionId, response);
 }
 
 void JsonRpcService::RespondFeatureSettingsAudioDescription(int connectionId, const std::string &id,
@@ -1135,7 +1122,7 @@ void JsonRpcService::RespondFeatureSettingsAudioDescription(int connectionId, co
     }
     Json::Value result = CreateFeatureSettingsQuery(F_AUDIO_DESCRIPTION, value);
     Json::Value response = CreateJsonResponse(id, result);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    SendJsonMessageToClient(connectionId, response);
 }
 
 void JsonRpcService::RespondFeatureSettingsInVisionSigning(int connectionId, const std::string &id,
@@ -1145,7 +1132,7 @@ void JsonRpcService::RespondFeatureSettingsInVisionSigning(int connectionId, con
     value["enabled"] = enabled;
     Json::Value result = CreateFeatureSettingsQuery(F_IN_VISION_SIGNING, value);
     Json::Value response = CreateJsonResponse(id, result);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    SendJsonMessageToClient(connectionId, response);
 }
 
 void JsonRpcService::RespondFeatureSuppress(int connectionId, const std::string &id,
@@ -1161,97 +1148,25 @@ void JsonRpcService::RespondFeatureSuppress(int connectionId, const std::string 
     result["feature"] = GetAccessibilityFeatureName(featureId);
     result["value"] = value;
     Json::Value response = CreateJsonResponse(id, result);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    SendJsonMessageToClient(connectionId, response);
 }
 
 void JsonRpcService::RespondSubscribe(int connectionId, const std::string &id,
-    bool subtitles, bool dialogueEnhancement,
-    bool uiMagnifier, bool highContrastUI,
-    bool screenReader, bool responseToUserAction,
-    bool audioDescription, bool inVisionSigning)
+    const Json::Value &msgTypeList)
 {
     Json::Value result;
-    Json::Value msgTypeList(Json::arrayValue);
-    if (subtitles)
-    {
-        msgTypeList.append(PC_SUBTITLES);
-    }
-    if (dialogueEnhancement)
-    {
-        msgTypeList.append(PC_DIALOGUE_ENHANCEMENT);
-    }
-    if (uiMagnifier)
-    {
-        msgTypeList.append(PC_UI_MAGNIFIER);
-    }
-    if (highContrastUI)
-    {
-        msgTypeList.append(PC_HIGH_CONTRAST_UI);
-    }
-    if (screenReader)
-    {
-        msgTypeList.append(PC_SCREEN_READER);
-    }
-    if (responseToUserAction)
-    {
-        msgTypeList.append(PC_RESPONSE_TO_USER_ACTION);
-    }
-    if (audioDescription)
-    {
-        msgTypeList.append(PC_AUDIO_DESCRIPTION);
-    }
-    if (inVisionSigning)
-    {
-        msgTypeList.append(PC_IN_VISION_SIGNING);
-    }
     result["msgType"] = msgTypeList;
     Json::Value response = CreateJsonResponse(id, result);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    SendJsonMessageToClient(connectionId, response);
 }
 
 void JsonRpcService::RespondUnsubscribe(int connectionId, const std::string &id,
-    bool subtitles, bool dialogueEnhancement,
-    bool uiMagnifier, bool highContrastUI,
-    bool screenReader, bool responseToUserAction,
-    bool audioDescription, bool inVisionSigning)
+    const Json::Value &msgTypeList)
 {
     Json::Value result;
-    Json::Value msgTypeList(Json::arrayValue);
-    if (subtitles)
-    {
-        msgTypeList.append(PC_SUBTITLES);
-    }
-    if (dialogueEnhancement)
-    {
-        msgTypeList.append(PC_DIALOGUE_ENHANCEMENT);
-    }
-    if (uiMagnifier)
-    {
-        msgTypeList.append(PC_UI_MAGNIFIER);
-    }
-    if (highContrastUI)
-    {
-        msgTypeList.append(PC_HIGH_CONTRAST_UI);
-    }
-    if (screenReader)
-    {
-        msgTypeList.append(PC_SCREEN_READER);
-    }
-    if (responseToUserAction)
-    {
-        msgTypeList.append(PC_RESPONSE_TO_USER_ACTION);
-    }
-    if (audioDescription)
-    {
-        msgTypeList.append(PC_AUDIO_DESCRIPTION);
-    }
-    if (inVisionSigning)
-    {
-        msgTypeList.append(PC_IN_VISION_SIGNING);
-    }
     result["msgType"] = msgTypeList;
     Json::Value response = CreateJsonResponse(id, result);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    SendJsonMessageToClient(connectionId, response);
 }
 
 void JsonRpcService::RespondNegotiateMethods(int connectionId, const std::string &id,
@@ -1263,7 +1178,7 @@ void JsonRpcService::RespondNegotiateMethods(int connectionId, const std::string
     result["terminalToApp"] = terminalToApp;
     result["appToTerminal"] = appToTerminal;
     Json::Value response = CreateJsonResponse(id, result);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    SendJsonMessageToClient(connectionId, response);
 }
 
 void JsonRpcService::RespondError(int connectionId, const std::string &id,
@@ -1273,7 +1188,7 @@ void JsonRpcService::RespondError(int connectionId, const std::string &id,
     error["code"] = code;
     error["message"] = message;
     Json::Value response = CreateJsonErrorResponse(id, error);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    SendJsonMessageToClient(connectionId, response);
 }
 
 void JsonRpcService::RespondError(int connectionId, const std::string &id,
@@ -1287,7 +1202,7 @@ void JsonRpcService::RespondError(int connectionId, const std::string &id,
         error["data"] = data;
     }
     Json::Value response = CreateJsonErrorResponse(id, error);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    SendJsonMessageToClient(connectionId, response);
 }
 
 void JsonRpcService::SendIntentMediaPause()
@@ -1449,7 +1364,7 @@ void JsonRpcService::NotifySubtitles(bool enabled,
         value["language"] = language;
     }
     params["value"] = value;
-    SendNotifyMessage(0, params);
+    SendNotifyMessage(GetAccessibilityFeatureId(F_SUBTITLES), params);
 }
 
 void JsonRpcService::NotifyDialogueEnhancement(
@@ -1468,7 +1383,7 @@ void JsonRpcService::NotifyDialogueEnhancement(
     dialogueEnhancementLimit["max"] = dialogueEnhancementLimitMax;
     value["dialogueEnhancementLimit"] = dialogueEnhancementLimit;
     params["value"] = value;
-    SendNotifyMessage(1, params);
+    SendNotifyMessage(GetAccessibilityFeatureId(F_DIALOGUE_ENHANCEMENT), params);
 }
 
 void JsonRpcService::NotifyUIMagnifier(bool enabled, const std::string &magType)
@@ -1482,7 +1397,7 @@ void JsonRpcService::NotifyUIMagnifier(bool enabled, const std::string &magType)
         value["magType"] = magType;
     }
     params["value"] = value;
-    SendNotifyMessage(2, params);
+    SendNotifyMessage(GetAccessibilityFeatureId(F_UI_MAGNIFIER), params);
 }
 
 void JsonRpcService::NotifyHighContrastUI(bool enabled, const std::string &hcType)
@@ -1496,7 +1411,7 @@ void JsonRpcService::NotifyHighContrastUI(bool enabled, const std::string &hcTyp
         value["hcType"] = hcType;
     }
     params["value"] = value;
-    SendNotifyMessage(3, params);
+    SendNotifyMessage(GetAccessibilityFeatureId(F_HIGH_CONTRAST_UI), params);
 }
 
 void JsonRpcService::NotifyScreenReader(bool enabled, int speed, const std::string &voice,
@@ -1519,7 +1434,7 @@ void JsonRpcService::NotifyScreenReader(bool enabled, int speed, const std::stri
         value["language"] = language;
     }
     params["value"] = value;
-    SendNotifyMessage(4, params);
+    SendNotifyMessage(GetAccessibilityFeatureId(F_SCREEN_READER), params);
 }
 
 void JsonRpcService::NotifyResponseToUserAction(bool enabled, const std::string &type)
@@ -1533,7 +1448,7 @@ void JsonRpcService::NotifyResponseToUserAction(bool enabled, const std::string 
         value["type"] = type;
     }
     params["value"] = value;
-    SendNotifyMessage(5, params);
+    SendNotifyMessage(GetAccessibilityFeatureId(F_RESPONSE_TO_USER_ACTION), params);
 }
 
 void JsonRpcService::NotifyAudioDescription(bool enabled, int gainPreference, int
@@ -1552,7 +1467,7 @@ void JsonRpcService::NotifyAudioDescription(bool enabled, int gainPreference, in
         value["panAzimuthPreference"] = panAzimuthPreference;
     }
     params["value"] = value;
-    SendNotifyMessage(6, params);
+    SendNotifyMessage(GetAccessibilityFeatureId(F_AUDIO_DESCRIPTION), params);
 }
 
 void JsonRpcService::NotifyInVisionSigning(bool enabled)
@@ -1562,7 +1477,7 @@ void JsonRpcService::NotifyInVisionSigning(bool enabled)
     Json::Value value;
     value["enabled"] = enabled;
     params["value"] = value;
-    SendNotifyMessage(7, params);
+    SendNotifyMessage(GetAccessibilityFeatureId(F_IN_VISION_SIGNING), params);
 }
 
 void JsonRpcService::RespondDialogueEnhancementOverride(int connectionId,
@@ -1576,7 +1491,7 @@ void JsonRpcService::RespondDialogueEnhancementOverride(int connectionId,
         result["dialogueEnhancementGain"] = dialogueEnhancementGain;
     }
     Json::Value response = CreateJsonResponse(id, result);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    SendJsonMessageToClient(connectionId, response);
 }
 
 void JsonRpcService::RespondTriggerResponseToUserAction(int connectionId,
@@ -1587,11 +1502,23 @@ void JsonRpcService::RespondTriggerResponseToUserAction(int connectionId,
     result["method"] = MD_AF_TRIGGER_RESPONSE_TO_USER_ACTION;
     result["actioned"] = actioned;
     Json::Value response = CreateJsonResponse(id, result);
-    SendJsonMessageToClient(connectionId, __func__, response);
+    SendJsonMessageToClient(connectionId, response);
 }
 
 // Helper functions
-std::string JsonRpcService::GenerateID(int connectionId)
+/**
+ * Generate a unique ID for an intent associated with a given connection.
+ *
+ * This method increments the intent ID count for the certain connection,
+ * generates a unique ID based on the incremented count.
+ * Start from "IntentId1", "IntentId2", ...
+ *
+ * @param connectionId The ID of the connection for which the intent ID is generated.
+ *
+ * @return A unique JSON-RPC intent ID as a string.
+ */
+
+std::string JsonRpcService::GenerateId(int connectionId)
 {
     int intentId = GetConnectionData(connectionId,
         ConnectionDataType::IntentIdCount).asInt();
@@ -1602,7 +1529,16 @@ std::string JsonRpcService::GenerateID(int connectionId)
     return id;
 }
 
-void JsonRpcService::GetSubscribedConnectionIds(std::vector<int> &subscribedConnectionIds,
+/**
+ * This method retrieves the connection IDs who have subscribed and have
+ * negotiated support for the 'MD_NOTIFY' method (used for notifications).
+ *
+ * @param result A vector to store the connection IDs of satisfied clients.
+ * @param msgTypeIndex The index of the notification message type in
+ *                     ACCESSIBILITY_FEATURE_NAMES predefined list.
+ */
+
+void JsonRpcService::GetNotifyConnectionIds(std::vector<int> &result,
     const int msgTypeIndex)
 {
     std::string suffix = "PrefChange";
@@ -1612,21 +1548,40 @@ void JsonRpcService::GetSubscribedConnectionIds(std::vector<int> &subscribedConn
     {
         Json::Value subscribedMethods = GetConnectionData(i,
             ConnectionDataType::SubscribedMethods);
-        if (CheckMethodInJson(subscribedMethods, msgType))
+        Json::Value negotiateMethods = GetConnectionData(i,
+            ConnectionDataType::NegotiateMethodsTerminalToApp);
+
+        if (IsMethodInJsonArray(subscribedMethods, msgType) &&
+            IsMethodInJsonArray(negotiateMethods, MD_NOTIFY))
         {
-            subscribedConnectionIds.push_back(i);
+            result.push_back(i);
         }
     }
 }
 
+/**
+ * This method allows the registration of a JSON-RPC method by associating it with
+ * its name. The registered method can later be invoked using the provided name
+ * in JSON-RPC requests.
+ *
+ * @param name The name of the method to register.
+ * @param method A callable pointer representing the JSON-RPC method to be registered.
+ */
 void JsonRpcService::RegisterMethod(const std::string &name, JsonRpcMethod method)
 {
     m_json_rpc_methods[name] = std::bind(method, this, std::placeholders::_1,
         std::placeholders::_2);
 }
 
+/**
+ * This method takes a connection ID and a JSON response, sends the formatted
+ * response message to the client with the specified connection ID.
+ * This method is the exit point of class JsonRpcService.
+ *
+ * @param connectionId The unique identifier of the client connection.
+ * @param jsonResponse The JSON data to be sent as a response to the client.
+ */
 void JsonRpcService::SendJsonMessageToClient(int connectionId,
-    const std::string &responseName,
     const Json::Value &jsonResponse)
 {
     Json::FastWriter writer;
@@ -1642,42 +1597,46 @@ void JsonRpcService::SendJsonMessageToClient(int connectionId,
     connections_mutex_.unlock();
 }
 
+/**
+ * Send an intent message to available clients.
+ *
+ * @param method The name of the intent method to send.
+ * @param params The JSON parameters associated with the intent.
+ */
 void JsonRpcService::SendIntentMessage(const std::string& method, const Json::Value &params)
 {
     std::vector<int> connectionIds;
     CheckIntentMethod(connectionIds, method);
-    if (connectionIds.empty())
-    {
-        return;
-    }
     for (int connectionId : connectionIds)
     {
-        std::string id = GenerateID(connectionId);
-        Json::Value response = CreateJsonResponse(id, method, params);
-        SendJsonMessageToClient(connectionId, __func__, response);
-    }
-}
-
-void JsonRpcService::SendNotifyMessage(int msgTypeIndex, const Json::Value &params)
-{
-    Json::Value response = CreateNotifyRequest(params);
-    std::vector<int> subscribedConnectionIds;
-    GetSubscribedConnectionIds(subscribedConnectionIds, msgTypeIndex);
-    if (subscribedConnectionIds.empty())
-    {
-        return;
-    }
-    for (int connectionId : subscribedConnectionIds)
-    {
-        SendJsonMessageToClient(connectionId, __func__, response);
+        std::string id = GenerateId(connectionId);
+        Json::Value response = CreateIntentResponse(id, method, params);
+        SendJsonMessageToClient(connectionId, response);
     }
 }
 
 /**
- * Remove the method not in table
+ * Send a notification message to available clients.
+ *
+ * @param msgTypeIndex The index of the notification message type in a predefined list.
+ * @param params The JSON parameters associated with the notification.
+ */
+void JsonRpcService::SendNotifyMessage(int msgTypeIndex, const Json::Value &params)
+{
+    Json::Value response = CreateNotifyRequest(params);
+    std::vector<int> connectionIds;
+    GetNotifyConnectionIds(connectionIds, msgTypeIndex);
+    for (int connectionId : connectionIds)
+    {
+        SendJsonMessageToClient(connectionId, response);
+    }
+}
+
+/**
+ * Remove the method not in table.
  *
  * @param connectionId The connection ID.
- * @param oldString The Json::arrayValue of methods.
+ * @param methodsList The Json::arrayValue of methods.
  * @param isAppToTerminal The bool shows appToTerminal or terminalToApp.
  *
  * @return The Json::arrayValue of filtered methods
@@ -1689,7 +1648,7 @@ Json::Value JsonRpcService::FilterMethods(int connectionId,
     Json::Value newMethodsList;
     for (const auto& method : methodsList)
     {
-        if (isAppToTerminal && CheckMethodInSet(
+        if (isAppToTerminal && IsMethodInSet(
             m_supported_methods_app_to_terminal,
             method.asString()))
         {
@@ -1698,7 +1657,7 @@ Json::Value JsonRpcService::FilterMethods(int connectionId,
                 method.asString());
             newMethodsList.append(method);
         }
-        else if (!isAppToTerminal && CheckMethodInSet(
+        else if (!isAppToTerminal && IsMethodInSet(
             m_supported_methods_terminal_to_app,
             method.asString()))
         {
@@ -1711,6 +1670,14 @@ Json::Value JsonRpcService::FilterMethods(int connectionId,
     return newMethodsList;
 }
 
+/**
+ * This method retrieves connection IDs that are VoiceReady, negotiated,
+ * and have been available actions from state media.
+ *
+ * @param result A vector to store the connection IDs of satisfied clients.
+ * @param msgTypeIndex The index of the notification message type in
+ *                     ACCESSIBILITY_FEATURE_NAMES predefined list.
+ */
 void JsonRpcService::CheckIntentMethod(std::vector<int> &result, const std::string& method)
 {
     std::vector<int> connectionIds = GetAllConnectionIds();
@@ -1720,7 +1687,7 @@ void JsonRpcService::CheckIntentMethod(std::vector<int> &result, const std::stri
         {
             continue;
         }
-        if (!CheckMethodInJson(GetConnectionData(i,
+        if (!IsMethodInJsonArray(GetConnectionData(i,
             ConnectionDataType::NegotiateMethodsTerminalToApp),
             method))
         {
@@ -1775,7 +1742,17 @@ void JsonRpcService::CheckIntentMethod(std::vector<int> &result, const std::stri
     }
 }
 
-// Getter Setter function
+/**
+ * Getter Setter function for connection data map,
+ * These methods locks the connections_mutex_ to ensure
+ * thread safety while updating the connection data.
+ */
+
+/**
+ * This method get all register connection IDs.
+ *
+ * @return A list of connection ids.
+ */
 std::vector<int> JsonRpcService::GetAllConnectionIds()
 {
     connections_mutex_.lock();
@@ -1788,6 +1765,11 @@ std::vector<int> JsonRpcService::GetAllConnectionIds()
     return connectionIds;
 }
 
+/**
+ * This method get all register connection IDs.
+ *
+ * @return A list of connection ids.
+ */
 void JsonRpcService::InitialConnectionData(int connectionId)
 {
     connections_mutex_.lock();
@@ -1796,6 +1778,13 @@ void JsonRpcService::InitialConnectionData(int connectionId)
     connections_mutex_.unlock();
 }
 
+/**
+ * This method updates connection data based on the specified type and value.
+ *
+ * @param connectionId The unique identifier of the connection to update.
+ * @param type The type of connection data to update.
+ * @param value The new value for the specified connection data.
+ */
 void JsonRpcService::SetConnectionData(int connectionId, ConnectionDataType type, const
     Json::Value& value)
 {
@@ -1809,10 +1798,8 @@ void JsonRpcService::SetConnectionData(int connectionId, ConnectionDataType type
     switch (type)
     {
         case ConnectionDataType::NegotiateMethodsAppToTerminal:
-        {
             connectionData.negotiateMethodsAppToTerminal.insert(value.asString());
             break;
-        }
         case ConnectionDataType::NegotiateMethodsTerminalToApp:
             connectionData.negotiateMethodsTerminalToApp.insert(value.asString());
             break;
@@ -1862,6 +1849,22 @@ void JsonRpcService::SetConnectionData(int connectionId, ConnectionDataType type
     connections_mutex_.unlock();
 }
 
+/**
+ * This method retrieves connection data of the specified type for a given connection ID.
+ *
+ * @param connectionId The unique identifier of the connection to retrieve data for.
+ * @param type The type of connection data to retrieve.
+ *
+ * @return A Json::Value containing the requested connection data. The structure and content
+ * of the Json::Value depend on the specified 'type':
+ *   - For NegotiateMethodsAppToTerminal, NegotiateMethodsTerminalToApp, and SubscribedMethods,
+ *     the Json::Value is an array of strings representing the respective data.
+ *   - For IntentIdCount and State, the Json::Value is a single string or integer value.
+ *   - For VoiceReady, ActionPause, ActionPlay, ActionFastForward, ActionFastReverse, ActionStop,
+ *     ActionSeekContent, ActionSeekRelative, ActionSeekLive, and ActionSeekWallclock, the Json::Value
+ *     is a boolean value.
+ *   - For UnsubscribedMethods, an empty Json::Value is returned (indicating no data).
+ */
 Json::Value JsonRpcService::GetConnectionData(int connectionId, ConnectionDataType type)
 {
     connections_mutex_.lock();
@@ -1945,7 +1948,14 @@ Json::Value JsonRpcService::GetConnectionData(int connectionId, ConnectionDataTy
 }
 
 // Static functions
-bool CheckMethodInJson(const Json::Value& array, const std::string& method)
+/**
+ * Check if a given 'method' string exists within a JSON array.
+ *
+ * @param array A JSON array to search for the 'method' string.
+ * @param method The string to search for within the JSON array.
+ * @return 'true' if the 'method' string is found within the JSON array, 'false' otherwise.
+ */
+bool IsMethodInJsonArray(const Json::Value& array, const std::string& method)
 {
     if (array.type() == Json::arrayValue)
     {
@@ -1960,37 +1970,51 @@ bool CheckMethodInJson(const Json::Value& array, const std::string& method)
     return false;
 }
 
-bool CheckMethodInSet(const std::unordered_set<std::string> &set, const std::string& method)
+/**
+ * Check if a given 'method' string exists within an unordered set.
+ *
+ * @param set An unordered set to search for the 'method' string.
+ * @param method The string to search for within the unordered set.
+ * @return 'true' if the 'method' string is found within the unordered set, 'false' otherwise.
+ */
+bool IsMethodInSet(const std::unordered_set<std::string> &set, const std::string& method)
 {
     return set.find(method) != set.end();
 }
 
+/**
+ * Check if a JSON object has a specified parameter with a certain data type.
+ *
+ * @param json The JSON object to check for the presence of the parameter.
+ * @param param The name of the parameter to search for within the JSON object.
+ * @param type The expected data type of the parameter.
+ * @return 'true' if the parameter 'param' exists within the JSON object
+ *          and has the specified data type, 'false' otherwise.
+ */
 bool HasParam(const Json::Value &json, const std::string &param, const Json::ValueType& type)
 {
-    if (!json.isMember(param))
-    {
-        return false;
-    }
-    if (json[param].type() != type)
-    {
-        return false;
-    }
-    return true;
+    return json.isMember(param) && json[param].type() == type;
 }
 
+/**
+ * Check if a JSON object has a specified parameter with a json data type.
+ *
+ * @param json The JSON object to check for the presence of the parameter.
+ * @param param The name of the parameter to search for within the JSON object.
+ * @return 'true' if the parameter 'param' exists within the JSON object
+ *          and has the json data type, 'false' otherwise.
+ */
 bool HasJsonParam(const Json::Value &json, const std::string &param)
 {
-    if (!json.isMember(param))
-    {
-        return false;
-    }
-    if (!json[param].isObject())
-    {
-        return false;
-    }
-    return true;
+    return json.isMember(param) && json[param].isObject();
 }
 
+/**
+ * Encode a JSON value to a string representation.
+ *
+ * @param id The JSON value to encode into a string.
+ * @return A string representation of the 'id'.
+ */
 std::string EncodeJsonId(const Json::Value& id)
 {
     //Avoid floating problem
@@ -2005,6 +2029,12 @@ std::string EncodeJsonId(const Json::Value& id)
     return Json::writeString(writerBuilder, id);
 }
 
+/**
+ * Decode a string representation to a JSON value.
+ *
+ * @param The JSON string to decode into a JSON value.
+ * @return A JSON value decoded from the input.
+ */
 Json::Value DecodeJsonId(const std::string& id)
 {
     Json::CharReaderBuilder builder;
@@ -2018,6 +2048,13 @@ Json::Value DecodeJsonId(const std::string& id)
     return jsonId;
 }
 
+/**
+ * Create a JSON request for querying feature settings.
+ *
+ * @param feature The name of the feature.
+ * @param value The Json value of parameters associated with the feature query.
+ * @return A JSON request containing full information for feature setting query.
+ */
 Json::Value CreateFeatureSettingsQuery(const std::string& feature, const Json::Value& value)
 {
     Json::Value result;
@@ -2027,6 +2064,12 @@ Json::Value CreateFeatureSettingsQuery(const std::string& feature, const Json::V
     return result;
 }
 
+/**
+ * Create a JSON request for notify message.
+ *
+ * @param params The Json value of parameters associated with the notify message.
+ * @return A JSON request containing full information for notify message.
+ */
 Json::Value CreateNotifyRequest(const Json::Value& params)
 {
     Json::Value jsonResponse;
@@ -2036,7 +2079,15 @@ Json::Value CreateNotifyRequest(const Json::Value& params)
     return jsonResponse;
 }
 
-Json::Value CreateJsonResponse(const std::string& id, const std::string& method, const
+/**
+ * Create a JSON response for an intent media response.
+ *
+ * @param id The id for the intent request.
+ * @param method The method associated with the intent media response.
+ * @param params The parameters associated with the intent media response.
+ * @return A JSON response object with the specified id, method, and parameters.
+ */
+Json::Value CreateIntentResponse(const std::string& id, const std::string& method, const
     Json::Value& params)
 {
     Json::Value jsonResponse;
@@ -2047,6 +2098,15 @@ Json::Value CreateJsonResponse(const std::string& id, const std::string& method,
     return jsonResponse;
 }
 
+/**
+ * Create a JSON response with a specific id and result data.
+ * This is a general case.
+ *
+ * @param id The id for the JSON response.
+ * @param result The result data to include in the response.
+ * @return A JSON response object with the specified id and result.
+ *
+ */
 Json::Value CreateJsonResponse(const std::string& id, const Json::Value& result)
 {
     Json::Value jsonResponse;
@@ -2056,6 +2116,13 @@ Json::Value CreateJsonResponse(const std::string& id, const Json::Value& result)
     return jsonResponse;
 }
 
+/**
+ * Create a JSON error response with a specific id and error information.
+ *
+ * @param id The unique identifier for the JSON error response.
+ * @param error The error information or details to include in the response.
+ * @return A JSON error response object with the id and error details.
+ */
 Json::Value CreateJsonErrorResponse(const std::string& id, const Json::Value& error)
 {
     Json::Value jsonResponse;
@@ -2065,6 +2132,15 @@ Json::Value CreateJsonErrorResponse(const std::string& id, const Json::Value& er
     return jsonResponse;
 }
 
+/**
+ * Takes a JsonRpcStatus as input and returns a descriptive error message that
+ * corresponds to the provided status. It includes cases for common JSON-RPC errors
+ * such as "Method not found," "Parse Error," "Invalid params,", "Invalid request."
+ * or "Unknown."
+ *
+ * @param status The JsonRpcStatus enumeration indicating the error condition.
+ * @return A human-readable error message corresponding to the provided status.
+ */
 std::string GetErrorMessage(JsonRpcService::JsonRpcStatus status)
 {
     std::string message;
@@ -2085,6 +2161,7 @@ std::string GetErrorMessage(JsonRpcService::JsonRpcStatus status)
         default:
             message = "Unknown";
     }
+    LOG(LOG_INFO, "Error, %s", message.c_str());
     return message;
 }
 
