@@ -1775,7 +1775,7 @@ void JsonRpcService::SendJsonMessageToClient(int connectionId, const std::string
     if (connection != nullptr)
     {
         std::ostringstream oss;
-        oss << "response=" << responseName << "|" << message;
+        oss << message;
         connection->SendMessage(oss.str());
     }
     connections_mutex_.unlock();
