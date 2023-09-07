@@ -584,7 +584,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
                     dispatchErrorEvent.call(lastMediaSync, 16, p.masterMediaObject); // not in suitable state for sync (permanent)
                 }
             } else {
-                dispatchErrorEvent.call(lastMediaSync, 16, p.masterMediaObject); // not in suitable state for sync (permanent)
+                dispatchErrorEvent.call(lastMediaSync, 14, p.masterMediaObject); // The presentation of the master media failed (permanent)
             }
         }
     }
