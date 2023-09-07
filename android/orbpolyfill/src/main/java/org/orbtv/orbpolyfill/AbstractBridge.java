@@ -846,11 +846,11 @@ public abstract class AbstractBridge {
      * Get the parental rating threshold currently set on the system for the given scheme.
      *
      * @param token The token associated with this request.
-     * @param schemeName The name of the scheme to get the threshold of.
+     * @param scheme The name of the scheme to get the threshold of.
      *
      * @return A ParentalRating object representing the threshold.
      */
-    protected abstract BridgeTypes.ParentalRating ParentalControl_getThreshold(BridgeToken token, String schemeName);
+    protected abstract BridgeTypes.ParentalRating ParentalControl_getThreshold(BridgeToken token, String scheme);
 
     /**
      * Test whether the rating is blocked for the given scheme, region and value.
@@ -1665,7 +1665,7 @@ public abstract class AbstractBridge {
             case "ParentalControl.getThreshold": {
                 BridgeTypes.ParentalRating result = ParentalControl_getThreshold(
                         token,
-                        params.getString("schemeName")
+                        params.getString("scheme")
                 );
                 response.put("result", BridgeTypes.toJSONObject(result));
                 break;
