@@ -655,19 +655,19 @@ class Bridge extends AbstractBridge {
      * Get the parental rating threshold currently set on the system for the given scheme.
      *
      * @param token The token associated with this request.
-     * @param schemeName The name of the scheme to get the threshold of.
+     * @param scheme The name of the scheme to get the threshold of.
      *
      * @return A ParentalRating object representing the threshold.
      */
     @Override
     protected BridgeTypes.ParentalRating ParentalControl_getThreshold(BridgeToken token,
-                                                                      String schemeName) {
+                                                                      String scheme) {
         // TODO Add 1:1 method to callback
-        if (schemeName.equals("dvb-si")) {
+        if (scheme.equals("dvb-si")) {
             int thresholdAge = mOrbLibraryCallback.getParentalControlAge();
             return new BridgeTypes.ParentalRating(
                     String.valueOf(thresholdAge),
-                    schemeName,
+                    scheme,
                     thresholdAge,
                     0,
                     mOrbLibraryCallback.getParentalControlRegion()
