@@ -916,6 +916,10 @@ hbbtv.objects.VideoBroadcast = (function() {
             }
             /* DAE vol5 Table 8 state transition #2 - combination of channel properties is invalid */
             /*                                      - channel type is not supported */
+            if (errorState === CHANNEL_STATUS_CHANNEL_NOT_IN_TS) {
+                p.playState = PLAY_STATE_UNREALIZED;
+                dispatchPlayStateChangeEvent.call(this, p.playState);
+            }
             dispatchChannelChangeErrorEvent.call(this, channel, errorState);
             return;
         }
