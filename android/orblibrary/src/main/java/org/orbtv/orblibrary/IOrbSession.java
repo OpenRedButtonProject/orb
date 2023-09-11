@@ -441,71 +441,71 @@ public interface IOrbSession {
     /**
      * Called to send an intent for a request to operate the media playback
      *
-     * @param cmd        The index of a basic intent of media playback
-     *                   - 0: pause
-     *                   - 1: play
-     *                   - 2: fast-forward
-     *                   - 3: fast-reverse
-     *                   - 4: stop
+     * @param cmd The index of a basic intent of media playback
+     *            - 0: pause
+     *            - 1: play
+     *            - 2: fast-forward
+     *            - 3: fast-reverse
+     *            - 4: stop
      */
     void onSendIntentMediaBasics(int cmd);
 
     /**
      * Called to send an intent for a request to seek a time position relative to the start or end of the media content
      *
-     * @param anchor     The value indicates an anchor point of the content
-     *                   - "start": the start or end of the content
-     *                   - "end": the start or end of the content
-     * @param offset     The number value for the time position, a positive or negative number of seconds
+     * @param anchor The value indicates an anchor point of the content
+     *               - "start": the start or end of the content
+     *               - "end": the start or end of the content
+     * @param offset The number value for the time position, a positive or negative number of seconds
      */
     void onSendIntentMediaSeekContent(String anchor, int offset);
 
     /**
      * Called to send an intent for a request to seek a time position relative to the current time of the media content
      *
-     * @param offset     The number value for the current time position, a positive or negative number of seconds
+     * @param offset The number value for the current time position, a positive or negative number of seconds
      */
     void onSendIntentMediaSeekRelative(int offset);
 
     /**
      * Called to send an intent for a request to seek a time position relative to the live edge of the media content
      *
-     * @param offset     The number value for the time position at or before the live edge, zero or negative number of seconds
+     * @param offset The number value for the time position at or before the live edge, zero or negative number of seconds
      */
     void onSendIntentMediaSeekLive(int offset);
 
     /**
      * Called to send an intent for a request to seek a time position relating to absolute wall clock time
      *
-     * @param dayTime    The value conveys the wall clock time, in internet date-time format
+     * @param dayTime The value conveys the wall clock time, in internet date-time format
      */
     void onSendIntentMediaSeekWallclock(String dayTime);
 
     /**
      * Called to send an intent to request a search of content available
      *
-     * @param query      The string value is the search term specified by the user.
+     * @param query The string value is the search term specified by the user.
      */
     void onSendIntentSearch(String query);
 
     /**
      * Called to send an intent to request a display (but not playback) of a specific identified piece of content
      *
-     * @param mediaId    The value for a URI uniquely identifying a piece of content
+     * @param mediaId The value for a URI uniquely identifying a piece of content
      */
     void onSendIntentDisplay(String mediaId);
 
     /**
      * Called to send an intent to request immediate playback of a specific identified piece of content
      *
-     * @param mediaId    The value for a URI uniquely identifying a piece of content
-     *                   === With meanings as seek-content ===
-     * @param anchor     The value indicates an anchor point of the content
-     *                   - "start": the start or end of the content
-     *                   - "end": the start or end of the content
-     * @param offset     The number value for the time position, a positive or negative number of seconds
-     *                   === With meaning as seek-live ===
-     * @param offset     The number value for the time position at or before the live edge, zero or negative number of seconds
+     * @param mediaId The value for a URI uniquely identifying a piece of content
+     *                === With meanings as seek-content ===
+     * @param anchor  The value indicates an anchor point of the content
+     *                - "start": the start or end of the content
+     *                - "end": the start or end of the content
+     * @param offset  The number value for the time position, a positive or negative number of seconds
+     *                === With meaning as seek-live ===
+     * @param offset  The number value for the time position at or before the live edge, zero or negative number of seconds
      */
     void onSendIntentPlayback(String mediaId, String anchor, int offset);
 

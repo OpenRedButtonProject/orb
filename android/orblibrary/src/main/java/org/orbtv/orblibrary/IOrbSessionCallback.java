@@ -728,34 +728,34 @@ public interface IOrbSessionCallback {
     /**
      * Receive a notification of voice-readiness
      *
-     * @param isReady    The boolean value of the status of voice-readiness
-     *                   - true: the application is voice-ready
-     *                   - false: not voice-ready
+     * @param isReady The boolean value of the status of voice-readiness
+     *                - true: the application is voice-ready
+     *                - false: not voice-ready
      */
     void onNotifyVoiceReady(boolean isReady);
 
     /**
      * Receive a notification that describes the state of media presentation by the application at the time
      *
-     * @param state                 The description of state with respect to media playback
+     * @param state The description of state with respect to media playback
      */
     void onNotifyStateMedia(String state);
 
     /**
      * Called to send an error message
      *
-     * @param code       The error code
-     * @param message    The error message
+     * @param code    The error code
+     * @param message The error message
      */
     void onReceiveError(int code, String message);
 
     /**
      * Called to send an error message with some data
      *
-     * @param code       The error code
-     * @param message    The error message
-     * @param method     The method same as in the original request
-     * @param data       The error data
+     * @param code    The error code
+     * @param message The error message
+     * @param method  The method same as in the original request
+     * @param data    The error data
      */
     void onReceiveError(int code, String message,
                         String method, String data);
