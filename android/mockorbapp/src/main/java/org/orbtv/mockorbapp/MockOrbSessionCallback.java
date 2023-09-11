@@ -108,7 +108,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     private static final int RESPONSE_TO_USER_ACTION_KEY = KeyEvent.KEYCODE_6;
     private static final int AUDIO_DESCRIPTION_KEY = KeyEvent.KEYCODE_7;
     private static final int IN_VISION_SIGNING_KEY = KeyEvent.KEYCODE_8;
-    private final Map<Integer, SupportType> mMockSupportTypes = new HashMap<Integer, SupportType>() {
+    private final Map<Integer, SupportType> MOCK_SUPPORT_TYPES = new HashMap<Integer, SupportType>() {
         {
             put(F_SUBTITLES, SupportType.tvosAndHbbTV);
             put(F_DIALOGUE_ENHANCEMENT, SupportType.tvosAndHbbTV);
@@ -120,7 +120,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
             put(F_IN_VISION_SIGN_LANGUAGE, SupportType.tvosAndHbbTV);
         }
     };
-    private final Map<Integer, SuppressType> mMockSuppressTypes = new HashMap<Integer, SuppressType>() {
+    private final Map<Integer, SuppressType> MOCK_SUPPRESS_TYPES = new HashMap<Integer, SuppressType>() {
         {
             put(F_SUBTITLES, SuppressType.none);
             put(F_DIALOGUE_ENHANCEMENT, SuppressType.none);
@@ -132,7 +132,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
             put(F_IN_VISION_SIGN_LANGUAGE, SuppressType.none);
         }
     };
-    private final Map<Integer, Boolean> mMockEnableStatus = new HashMap<Integer, Boolean>() {
+    private final Map<Integer, Boolean> MOCK_ENABLE_STATUS = new HashMap<Integer, Boolean>() {
         {
             put(F_SUBTITLES, true);
             put(F_DIALOGUE_ENHANCEMENT, true);
@@ -1618,7 +1618,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         consoleLog("Request for feature support info for " + featureName);
 
         // ToDo, consider other support options
-        SupportType result = mMockSupportTypes.get(featureId);
+        SupportType result = MOCK_SUPPORT_TYPES.get(featureId);
         if (result != null) {
             mSession.onRespondFeatureSupportInfo(connection, id, featureId, result.name());
         } else {
@@ -1644,7 +1644,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         String featureName = FEATURES[featureId];
         consoleLog("Request feature settings query for " + featureName);
 
-        Boolean isEnabled = mMockEnableStatus.get(featureId);
+        Boolean isEnabled = MOCK_ENABLE_STATUS.get(featureId);
         if (isEnabled == null) {
             Log.e(TAG, "Error, unrecognised feature in request");
             return;
@@ -1691,7 +1691,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     @Override
     public void onRequestFeatureSuppress(int connection, String id, int featureId) {
         if (featureId < 0 || featureId >= FEATURES.length ||
-                featureId >= mMockSuppressTypes.size()) {
+                featureId >= MOCK_SUPPRESS_TYPES.size()) {
             Log.e(TAG, "Error, unrecognised feature in request");
             return;
         }
@@ -1699,7 +1699,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         consoleLog("Request suppress for " + featureName);
 
         setSuppressStatus(featureId, SuppressType.suppressing);
-        SuppressType result = mMockSuppressTypes.get(featureId);
+        SuppressType result = MOCK_SUPPRESS_TYPES.get(featureId);
         mSession.onRespondFeatureSuppress(connection, id, featureId, result.name());
         consoleLog("Respond suppress for" + featureName + ", result: " + result.name());
     }
@@ -1719,9 +1719,9 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Receive a notification of voice-readiness
      *
-     * @param isReady    The boolean value of the status of voice-readiness
-     *                   - true: the application is voice-ready
-     *                   - false: not voice-ready
+     * @param isReady The boolean value of the status of voice-readiness
+     *                - true: the application is voice-ready
+     *                - false: not voice-ready
      */
     @Override
     public void onNotifyVoiceReady(boolean isReady) {
@@ -1731,7 +1731,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Receive a notification that describes the state of media presentation by the application at the time
      *
-     * @param state                 The description of state with respect to media playback
+     * @param state The description of state with respect to media playback
      */
     @Override
     public void onNotifyStateMedia(String state) {
@@ -1741,8 +1741,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Called to send an error message
      *
-     * @param code       The error code
-     * @param message    The error message
+     * @param code    The error code
+     * @param message The error message
      */
     @Override
     public void onReceiveError(int code, String message) {
@@ -1752,10 +1752,10 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Called to send an error message with some data
      *
-     * @param code       The error code
-     * @param message    The error message
-     * @param method     The method same as in the original request
-     * @param data       The error data
+     * @param code    The error code
+     * @param message The error message
+     * @param method  The method same as in the original request
+     * @param data    The error data
      */
     @Override
     public void onReceiveError(int code, String message,
@@ -1770,15 +1770,15 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     private void setSuppressStatus(int featureId, SuppressType suppress) {
-        if (featureId < 0 || featureId >= mMockSuppressTypes.size() ||
-                featureId >= mMockSupportTypes.size()) {
+        if (featureId < 0 || featureId >= MOCK_SUPPRESS_TYPES.size() ||
+                featureId >= MOCK_SUPPORT_TYPES.size()) {
             Log.e(TAG, "Error, unrecognised feature in request");
             return;
         }
-        SupportType supportType = mMockSupportTypes.get(featureId);
+        SupportType supportType = MOCK_SUPPORT_TYPES.get(featureId);
         switch (suppress) {
             case none:
-                mMockSuppressTypes.replace(featureId, SuppressType.none);
+                MOCK_SUPPRESS_TYPES.replace(featureId, SuppressType.none);
                 break;
             case suppressing:
             case notSuppressing:
@@ -1786,11 +1786,11 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                         supportType == SupportType.supportedNoSetting) {
                     // Responses containing "suppressing" or "notSuppressing" are only valid
                     // when the corresponding feature is "tvosAndHbbTV" or "supportedNoSetting".
-                    mMockSuppressTypes.replace(featureId, suppress);
+                    MOCK_SUPPRESS_TYPES.replace(featureId, suppress);
                 } else {
                     // Responses containing "featureNotSupported" are only valid
                     // when the corresponding feature is "notSupported", "tvosOnly", or "tvosSettingOnly".
-                    mMockSuppressTypes.replace(featureId, SuppressType.featureNotSupported);
+                    MOCK_SUPPRESS_TYPES.replace(featureId, SuppressType.featureNotSupported);
                 }
                 break;
             case featureNotSupported:
@@ -1798,7 +1798,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                         supportType == SupportType.supportedNoSetting) {
                     Log.e(TAG, "Not allowed to set featureNotSupported");
                 } else {
-                    mMockSuppressTypes.replace(featureId, SuppressType.featureNotSupported);
+                    MOCK_SUPPRESS_TYPES.replace(featureId, SuppressType.featureNotSupported);
                 }
                 break;
         }
@@ -1896,8 +1896,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         switch (keyCode) {
             case SUBTITLES_KEY:
             case KeyEvent.KEYCODE_CAPTIONS: {
-                isEnabled = Boolean.FALSE.equals(mMockEnableStatus.get(F_SUBTITLES));
-                mMockEnableStatus.replace(F_SUBTITLES, isEnabled);
+                isEnabled = Boolean.FALSE.equals(MOCK_ENABLE_STATUS.get(F_SUBTITLES));
+                MOCK_ENABLE_STATUS.replace(F_SUBTITLES, isEnabled);
 
                 // notification for feature settings
                 querySettingSubtitles(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
@@ -1906,8 +1906,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
             }
             case DIALOGUE_ENHANCEMENT_KEY: {
                 // TODO, consider the case with a new gain set by users
-                isEnabled = Boolean.FALSE.equals(mMockEnableStatus.get(F_DIALOGUE_ENHANCEMENT));
-                mMockEnableStatus.replace(F_DIALOGUE_ENHANCEMENT, isEnabled);
+                isEnabled = Boolean.FALSE.equals(MOCK_ENABLE_STATUS.get(F_DIALOGUE_ENHANCEMENT));
+                MOCK_ENABLE_STATUS.replace(F_DIALOGUE_ENHANCEMENT, isEnabled);
 
                 querySettingDialogueEnhancement(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
                 consoleLog("Notify settings of dialogue enhancement, gain: " +
@@ -1916,8 +1916,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
             }
             case UI_MAGNIFIER_KEY:
             case KeyEvent.KEYCODE_TV_ZOOM_MODE: {
-                isEnabled = Boolean.FALSE.equals(mMockEnableStatus.get(F_UI_MAGNIFIER));
-                mMockEnableStatus.replace(F_UI_MAGNIFIER, isEnabled);
+                isEnabled = Boolean.FALSE.equals(MOCK_ENABLE_STATUS.get(F_UI_MAGNIFIER));
+                MOCK_ENABLE_STATUS.replace(F_UI_MAGNIFIER, isEnabled);
 
                 // notification for feature settings
                 querySettingsUiMagnifier(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
@@ -1925,8 +1925,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 break;
             }
             case HIGH_CONTRAST_UI_KEY: {
-                isEnabled = Boolean.FALSE.equals(mMockEnableStatus.get(F_HIGH_CONTRAST_UI));
-                mMockEnableStatus.replace(F_HIGH_CONTRAST_UI, isEnabled);
+                isEnabled = Boolean.FALSE.equals(MOCK_ENABLE_STATUS.get(F_HIGH_CONTRAST_UI));
+                MOCK_ENABLE_STATUS.replace(F_HIGH_CONTRAST_UI, isEnabled);
 
                 // notification for feature settings
                 querySettingsHighContrastUI(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
@@ -1934,8 +1934,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 break;
             }
             case SCREEN_READER_KEY: {
-                isEnabled = Boolean.FALSE.equals(mMockEnableStatus.get(F_SCREEN_READER));
-                mMockEnableStatus.replace(F_SCREEN_READER, isEnabled);
+                isEnabled = Boolean.FALSE.equals(MOCK_ENABLE_STATUS.get(F_SCREEN_READER));
+                MOCK_ENABLE_STATUS.replace(F_SCREEN_READER, isEnabled);
 
                 // notification for feature settings
                 querySettingsScreenReader(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
@@ -1943,8 +1943,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 break;
             }
             case RESPONSE_TO_USER_ACTION_KEY: {
-                isEnabled = Boolean.FALSE.equals(mMockEnableStatus.get(F_RESPONSE_TO_A_USER_ACTION));
-                mMockEnableStatus.replace(F_RESPONSE_TO_A_USER_ACTION, isEnabled);
+                isEnabled = Boolean.FALSE.equals(MOCK_ENABLE_STATUS.get(F_RESPONSE_TO_A_USER_ACTION));
+                MOCK_ENABLE_STATUS.replace(F_RESPONSE_TO_A_USER_ACTION, isEnabled);
 
                 // notification for feature settings
                 querySettingsResponseToUserAction(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
@@ -1953,8 +1953,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
             }
             case AUDIO_DESCRIPTION_KEY:
             case KeyEvent.KEYCODE_TV_AUDIO_DESCRIPTION: {
-                isEnabled = Boolean.FALSE.equals(mMockEnableStatus.get(F_AUDIO_DESCRIPTION));
-                mMockEnableStatus.replace(F_AUDIO_DESCRIPTION, isEnabled);
+                isEnabled = Boolean.FALSE.equals(MOCK_ENABLE_STATUS.get(F_AUDIO_DESCRIPTION));
+                MOCK_ENABLE_STATUS.replace(F_AUDIO_DESCRIPTION, isEnabled);
 
                 // notification for feature settings
                 querySettingsAudioDescription(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
@@ -1962,8 +1962,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 break;
             }
             case IN_VISION_SIGNING_KEY: {
-                isEnabled = Boolean.FALSE.equals(mMockEnableStatus.get(F_IN_VISION_SIGN_LANGUAGE));
-                mMockEnableStatus.replace(F_IN_VISION_SIGN_LANGUAGE, isEnabled);
+                isEnabled = Boolean.FALSE.equals(MOCK_ENABLE_STATUS.get(F_IN_VISION_SIGN_LANGUAGE));
+                MOCK_ENABLE_STATUS.replace(F_IN_VISION_SIGN_LANGUAGE, isEnabled);
 
                 // notification for feature settings
                 mSession.onQueryInVisionSigning(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
