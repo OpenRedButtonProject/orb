@@ -84,6 +84,9 @@ const static std::map<int, std::string> ACCESSIBILITY_FEATURE_NAMES = {
     {6, F_AUDIO_DESCRIPTION},
     {7, F_IN_VISION_SIGNING},
 };
+
+static Json::Value GetMethodsInJsonArray(const std::unordered_set<std::string>& set);
+
 static bool IsMethodInSet(const std::unordered_set<std::string> &set, const std::string& method);
 
 static bool IsMethodInJsonArray(const Json::Value& array, const std::string& method);
@@ -198,10 +201,13 @@ void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const st
         if (HasParam(obj, "method", Json::stringValue))
         {
             method = obj["method"].asString();
-            if (!IsMethodInJsonArray(
-                GetConnectionData(connection->Id(),
-                    ConnectionDataType::NegotiateMethodsAppToTerminal),
-                method))
+            Json::Value negotiateMethods = GetConnectionData(connection->Id(),
+                ConnectionDataType::NegotiateMethodsAppToTerminal);
+            if (!negotiateMethods.isArray())
+            {
+                LOG(LOG_INFO, "Warning, connection data lost, parameter has wrong type.");
+            }
+            if (!IsMethodInJsonArray(negotiateMethods, method))
             {
                 status = JsonRpcStatus::METHOD_NOT_FOUND;
             }
@@ -1517,16 +1523,21 @@ void JsonRpcService::RespondTriggerResponseToUserAction(int connectionId,
  *
  * @return A unique JSON-RPC intent ID as a string.
  */
-
 std::string JsonRpcService::GenerateId(int connectionId)
 {
-    int intentId = GetConnectionData(connectionId,
-        ConnectionDataType::IntentIdCount).asInt();
-    std::string id = EncodeJsonId("IntentId" + std::to_string(++intentId));
-    SetConnectionData(connectionId,
-        ConnectionDataType::IntentIdCount,
-        intentId);
-    return id;
+    Json::Value data = GetConnectionData(connectionId, ConnectionDataType::IntentIdCount);
+    if (data.isInt())
+    {
+        int intentId = data.asInt();
+        intentId++;    //Generate the unique 'id' for intent media method
+        std::string id = EncodeJsonId("IntentId" + std::to_string(intentId));
+        SetConnectionData(connectionId,
+            ConnectionDataType::IntentIdCount,
+            intentId);
+        return id;
+    }
+    LOG(LOG_INFO, "Warning, connection data lost, parameter has wrong type.");
+    return OPTIONAL_STR_NOT_SET;
 }
 
 /**
@@ -1537,7 +1548,6 @@ std::string JsonRpcService::GenerateId(int connectionId)
  * @param msgTypeIndex The index of the notification message type in
  *                     ACCESSIBILITY_FEATURE_NAMES predefined list.
  */
-
 void JsonRpcService::GetNotifyConnectionIds(std::vector<int> &result,
     const int msgTypeIndex)
 {
@@ -1550,6 +1560,11 @@ void JsonRpcService::GetNotifyConnectionIds(std::vector<int> &result,
             ConnectionDataType::SubscribedMethods);
         Json::Value negotiateMethods = GetConnectionData(i,
             ConnectionDataType::NegotiateMethodsTerminalToApp);
+        if (!subscribedMethods.isArray() || !negotiateMethods.isArray())
+        {
+            LOG(LOG_INFO, "Warning, connection data lost, parameter has wrong type.");
+            continue;
+        }
 
         if (IsMethodInJsonArray(subscribedMethods, msgType) &&
             IsMethodInJsonArray(negotiateMethods, MD_NOTIFY))
@@ -1683,49 +1698,65 @@ void JsonRpcService::CheckIntentMethod(std::vector<int> &result, const std::stri
     std::vector<int> connectionIds = GetAllConnectionIds();
     for (int i : connectionIds)
     {
-        if (!GetConnectionData(i, ConnectionDataType::VoiceReady))
+        Json::Value voiceReadyJson = GetConnectionData(i, ConnectionDataType::VoiceReady);
+        Json::Value negotiateMethodsJson = GetConnectionData(i,
+            ConnectionDataType::NegotiateMethodsTerminalToApp);
+
+        if (!voiceReadyJson.isBool() || !negotiateMethodsJson.isArray())
+        {
+            LOG(LOG_INFO, "Warning, connection data lost, parameter has wrong type.");
+            continue;
+        }
+        if (!voiceReadyJson.asBool() || !IsMethodInJsonArray(negotiateMethodsJson, method))
         {
             continue;
         }
-        if (!IsMethodInJsonArray(GetConnectionData(i,
-            ConnectionDataType::NegotiateMethodsTerminalToApp),
-            method))
+
+        Json::Value stateJson = GetConnectionData(i, ConnectionDataType::State);
+        Json::Value actionPauseJson = GetConnectionData(i, ConnectionDataType::ActionPause);
+        Json::Value actionPlayJson = GetConnectionData(i, ConnectionDataType::ActionPlay);
+        Json::Value actionFastForwardJson = GetConnectionData(i,
+            ConnectionDataType::ActionFastForward);
+        Json::Value actionFastReverseJson = GetConnectionData(i,
+            ConnectionDataType::ActionFastReverse);
+        Json::Value actionStopJson = GetConnectionData(i, ConnectionDataType::ActionStop);
+        Json::Value actionSeekContentJson = GetConnectionData(i,
+            ConnectionDataType::ActionSeekContent);
+        Json::Value actionSeekRelativeJson = GetConnectionData(i,
+            ConnectionDataType::ActionSeekRelative);
+        Json::Value actionSeekLiveJson = GetConnectionData(i, ConnectionDataType::ActionSeekLive);
+        Json::Value actionSeekWallclockJson = GetConnectionData(i,
+            ConnectionDataType::ActionSeekWallclock);
+
+        if (!stateJson.isString() || !actionPauseJson.isBool() ||
+            !actionPlayJson.isBool() || !actionFastForwardJson.isBool() ||
+            !actionFastReverseJson.isBool() || !actionStopJson.isBool() ||
+            !actionSeekContentJson.isBool() || !actionSeekRelativeJson.isBool() ||
+            !actionSeekLiveJson.isBool() || !actionSeekWallclockJson.isBool())
         {
+            LOG(LOG_INFO, "Warning, connection data lost, parameter has wrong type.");
             continue;
         }
 
         bool shouldAddConnection = false;
-
-        if (method == MD_INTENT_MEDIA_PAUSE &&
-            GetConnectionData(i, ConnectionDataType::ActionPause))
+        if (method == MD_INTENT_MEDIA_PAUSE && actionPauseJson.asBool())
         {
-            shouldAddConnection =
-                GetConnectionData(i, ConnectionDataType::State) != "paused";
+            shouldAddConnection = stateJson.asString() != "paused";
         }
-        else if ((method == MD_INTENT_MEDIA_PLAY &&
-                  GetConnectionData(i, ConnectionDataType::ActionPlay)) ||
-                 (method == MD_INTENT_MEDIA_FAST_FORWARD &&
-                  GetConnectionData(i, ConnectionDataType::ActionFastForward)) ||
-                 (method == MD_INTENT_MEDIA_FAST_REVERSE &&
-                  GetConnectionData(i, ConnectionDataType::ActionFastReverse)))
+        else if ((method == MD_INTENT_MEDIA_PLAY && actionPlayJson.asBool()) ||
+                 (method == MD_INTENT_MEDIA_FAST_FORWARD && actionFastForwardJson.asBool()) ||
+                 (method == MD_INTENT_MEDIA_FAST_REVERSE && actionFastReverseJson.asBool()))
         {
-            shouldAddConnection =
-                GetConnectionData(i, ConnectionDataType::State) != "playing";
+            shouldAddConnection = stateJson.asString() != "playing";
         }
-        else if (method == MD_INTENT_MEDIA_STOP && GetConnectionData(i,
-            ConnectionDataType::ActionStop))
+        else if (method == MD_INTENT_MEDIA_STOP && actionStopJson.asBool())
         {
-            shouldAddConnection =
-                GetConnectionData(i, ConnectionDataType::State) != "stopped";
+            shouldAddConnection = stateJson.asString() != "stopped";
         }
-        else if ((method == MD_INTENT_MEDIA_SEEK_CONTENT && GetConnectionData(i,
-            ConnectionDataType::ActionSeekContent)) ||
-                 (method == MD_INTENT_MEDIA_SEEK_RELATIVE && GetConnectionData(i,
-                     ConnectionDataType::ActionSeekRelative)) ||
-                 (method == MD_INTENT_MEDIA_SEEK_LIVE && GetConnectionData(i,
-                     ConnectionDataType::ActionSeekLive)) ||
-                 (method == MD_INTENT_MEDIA_SEEK_WALLCLOCK && GetConnectionData(i,
-                     ConnectionDataType::ActionSeekWallclock)))
+        else if ((method == MD_INTENT_MEDIA_SEEK_CONTENT && actionSeekContentJson.asBool()) ||
+                 (method == MD_INTENT_MEDIA_SEEK_RELATIVE && actionSeekRelativeJson.asBool()) ||
+                 (method == MD_INTENT_MEDIA_SEEK_LIVE && actionSeekLiveJson.asBool()) ||
+                 (method == MD_INTENT_MEDIA_SEEK_WALLCLOCK && actionSeekWallclockJson.asBool()))
         {
             shouldAddConnection = true;
         }
@@ -1743,10 +1774,10 @@ void JsonRpcService::CheckIntentMethod(std::vector<int> &result, const std::stri
 }
 
 /**
- * Getter Setter function for connection data map,
- * These methods locks the connections_mutex_ to ensure
- * thread safety while updating the connection data.
+ * Getter Setter function for connection data map. These methods locks the
+ * connections_mutex_ to ensure thread safety while updating the connection data.
  */
+
 
 /**
  * This method get all register connection IDs.
@@ -1858,8 +1889,9 @@ void JsonRpcService::SetConnectionData(int connectionId, ConnectionDataType type
  * @return A Json::Value containing the requested connection data. The structure and content
  * of the Json::Value depend on the specified 'type':
  *   - For NegotiateMethodsAppToTerminal, NegotiateMethodsTerminalToApp, and SubscribedMethods,
- *     the Json::Value is an array of strings representing the respective data.
- *   - For IntentIdCount and State, the Json::Value is a single string or integer value.
+ *     the Json::Value is an array of strings.
+ *   - For IntentIdCount, the Json::Value is an integer value.
+ *   - For State, the Json::Value is a single string value.
  *   - For VoiceReady, ActionPause, ActionPlay, ActionFastForward, ActionFastReverse, ActionStop,
  *     ActionSeekContent, ActionSeekRelative, ActionSeekLive, and ActionSeekWallclock, the Json::Value
  *     is a boolean value.
@@ -1878,29 +1910,17 @@ Json::Value JsonRpcService::GetConnectionData(int connectionId, ConnectionDataTy
         {
             case ConnectionDataType::NegotiateMethodsAppToTerminal:
             {
-                int index = 0;
-                for (const std::string& item : connectionData.negotiateMethodsAppToTerminal)
-                {
-                    value[index++] = Json::Value(item);
-                }
+                value = GetMethodsInJsonArray(connectionData.negotiateMethodsAppToTerminal);
                 break;
             }
             case ConnectionDataType::NegotiateMethodsTerminalToApp:
             {
-                int index = 0;
-                for (const std::string& item : connectionData.negotiateMethodsTerminalToApp)
-                {
-                    value[index++] = Json::Value(item);
-                }
+                value = GetMethodsInJsonArray(connectionData.negotiateMethodsTerminalToApp);
                 break;
             }
             case ConnectionDataType::SubscribedMethods:
             {
-                int index = 0;
-                for (const std::string& item : connectionData.subscribedMethods)
-                {
-                    value[index++] = Json::Value(item);
-                }
+                value = GetMethodsInJsonArray(connectionData.subscribedMethods);
                 break;
             }
             case ConnectionDataType::IntentIdCount:
@@ -1948,6 +1968,25 @@ Json::Value JsonRpcService::GetConnectionData(int connectionId, ConnectionDataTy
 }
 
 // Static functions
+/**
+ * Convert a std::unordered_set of methods strings into a JSON array.
+ *
+ * @param set The unordered set of methods strings to convert to a JSON array.
+ * @return A Json::Value containing the converted JSON array.
+ */
+Json::Value GetMethodsInJsonArray(const std::unordered_set<std::string>& set)
+{
+    Json::Value value;
+    int index = 0;
+    // Loop through the unordered_set 'set' and copy each string item into 'value' as a Json::arrayValue
+    for (const std::string& item : set)
+    {
+        // Add each 'item' as a Json::Value to 'value' at the current 'index'
+        value[index++] = Json::Value(item);
+    }
+    return value;
+}
+
 /**
  * Check if a given 'method' string exists within a JSON array.
  *
@@ -2025,7 +2064,7 @@ std::string EncodeJsonId(const Json::Value& id)
         return oss.str();
     }
     Json::StreamWriterBuilder writerBuilder;
-    writerBuilder["indentation"] = "";
+    writerBuilder["indentation"] = OPTIONAL_STR_NOT_SET;
     return Json::writeString(writerBuilder, id);
 }
 
@@ -2178,7 +2217,7 @@ std::string GetAccessibilityFeatureName(int id)
     {
         return it->second;
     }
-    return "";
+    return OPTIONAL_STR_NOT_SET;
 }
 
 /**
