@@ -38,11 +38,11 @@ public interface IOrbSessionCallback {
      * TODO Change names to THIS_STYLE.
      */
     enum SupportType {
-        NOT_SUPPORTED,
-        TVOS_SETTING_ONLY,
-        TVOS_ONLY,
-        TVOS_AND_HBBTV,
-        SUPPORTED_NOT_SETTING
+        notSupported,
+        tvosSettingOnly,
+        tvosOnly,
+        tvosAndHbbTV,
+        supportedNoSetting
     }
 
     /**
@@ -52,10 +52,10 @@ public interface IOrbSessionCallback {
      * TODO Change names to THIS_STYLE.
      */
     enum SuppressType {
-        NONE,
-        SUPPRESSING,
-        NOT_SUPPRESSING,
-        FEATURE_NOT_SUPPORTED
+        none,
+        suppressing,
+        notSuppressing,
+        featureNotSupported
     }
 
     /**
