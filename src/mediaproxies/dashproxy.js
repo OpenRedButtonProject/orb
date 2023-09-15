@@ -522,9 +522,10 @@ hbbtv.objects.DashProxy = (function() {
 
         function hasValidEssentialScheme() {
             if (representation.EssentialProperty) {
-                return SUPPORTED_ESSENTIAL_SCHEMES.includes(
-                    representation.EssentialProperty.schemeIdUri
-                );
+                const supportedEssentialProperties = representation.EssentialProperty.every(value => SUPPORTED_ESSENTIAL_SCHEMES.includes(
+                    value.schemeIdUri
+                ));
+                return supportedEssentialProperties;
             }
             return true;
         }
