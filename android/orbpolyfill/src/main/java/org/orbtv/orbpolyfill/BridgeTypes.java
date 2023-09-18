@@ -81,6 +81,7 @@ public class BridgeTypes {
     public static final int VK_STOP = 413;
     public static final int VK_PLAY = 415;
     public static final int VK_PAUSE = 19;
+    public static final int VK_PLAY_PAUSE = 402;
     public static final int VK_FAST_FWD = 417;
     public static final int VK_REWIND = 412;
     public static final int VK_TELETEXT = 459;
