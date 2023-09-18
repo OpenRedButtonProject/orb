@@ -5,6 +5,33 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE := liborg.orbtv.orblibrary.native
 
+ifeq ($(ORB_VENDOR), true)
+    LOCAL_VENDOR_MODULE := true
+    
+    LOCAL_SHARED_LIBRARIES := \
+        libbase \
+        libcutils \
+        libutils \
+        liblog
+    
+    LOCAL_STATIC_LIBRARIES := \
+        libcap \
+        libssl \
+        libcrypto_static \
+        libjsoncpp_ORB
+        
+    LOCAL_HEADER_LIBRARIES := jni_headers
+else
+    LOCAL_SHARED_LIBRARIES := \
+        libcap \
+        libssl \
+        libcrypto \
+        libjsoncpp_ORB
+       
+    LOCAL_STATIC_LIBRARIES := \
+        liblog
+endif
+
 LOCAL_SRC_FILES := \
    jni_utils.cpp \
    application_manager_native.cpp \
@@ -19,19 +46,10 @@ LOCAL_C_INCLUDES := \
    $(LOCAL_PATH)/../symlink.network_services/media_synchroniser/ \
    $(LOCAL_PATH)/../symlink.network_services/app2app/
 
-LOCAL_SHARED_LIBRARIES := \
-   libcap \
-   libssl \
-   libcrypto \
-   libjsoncpp_ORB
-
-LOCAL_STATIC_LIBRARIES := \
-   liblog \
-   libxml2 \
-   libwebsockets \
-   liblog \
-   liborg.orbtv.orblibrary.applicationmanager \
-   liborg.orbtv.orblibrary.networkservices
+LOCAL_STATIC_LIBRARIES += libxml2
+LOCAL_STATIC_LIBRARIES += libwebsockets
+LOCAL_STATIC_LIBRARIES += liborg.orbtv.orblibrary.applicationmanager
+LOCAL_STATIC_LIBRARIES += liborg.orbtv.orblibrary.networkservices
 
 LOCAL_CFLAGS := -Wno-unused-parameter \
    -Wno-unused-variable \
