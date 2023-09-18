@@ -3,6 +3,23 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE := liborg.orbtv.orblibrary.networkservices
 
+ifeq ($(ORB_VENDOR), true)
+    LOCAL_VENDOR_MODULE := true
+    LOCAL_SHARED_LIBRARIES := liblog
+
+    LOCAL_STATIC_LIBRARIES := \
+        libcap \
+        libssl \
+        libwebsockets
+else
+    LOCAL_SHARED_LIBRARIES := \
+        libcap \
+        libssl
+        
+    LOCAL_STATIC_LIBRARIES := \
+        libwebsockets
+endif
+
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/media_synchroniser \
                     $(LOCAL_PATH)/app2app
 
@@ -35,13 +52,7 @@ LOCAL_CFLAGS := \
 LOCAL_CPPFLAGS += -fexceptions \
                   -frtti
 
-LOCAL_SHARED_LIBRARIES := \
-   libcap \
-   libssl \
-   libcrypto \
-   libjsoncpp_ORB
-   
-LOCAL_STATIC_LIBRARIES := \
-   libwebsockets
+LOCAL_SHARED_LIBRARIES += libcrypto
+LOCAL_SHARED_LIBRARIES += libjsoncpp_ORB
 
 include $(BUILD_STATIC_LIBRARY)

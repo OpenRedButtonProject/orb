@@ -3,6 +3,14 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE := liborg.orbtv.orblibrary.applicationmanager
 
+ifeq ($(ORB_VENDOR), true)
+    LOCAL_VENDOR_MODULE := true
+    LOCAL_SHARED_LIBRARIES := liblog
+    LOCAL_STATIC_LIBRARIES := libxml2
+else
+    LOCAL_SHARED_LIBRARIES := libxml2
+endif
+
 LOCAL_SRC_FILES := \
    application_manager.cpp \
    utils.cpp \
@@ -16,8 +24,5 @@ LOCAL_CFLAGS := \
    -Wno-reorder-ctor
 
 LOCAL_CPPFLAGS += -fexceptions
-
-LOCAL_SHARED_LIBRARIES := \
-   libxml2
 
 include $(BUILD_STATIC_LIBRARY)
