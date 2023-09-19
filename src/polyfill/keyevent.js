@@ -34,6 +34,7 @@
         VK_STOP: 413,
         VK_PLAY: 415,
         VK_PAUSE: 19,
+        VK_PLAY_PAUSE: 402,
         VK_FAST_FWD: 417,
         VK_REWIND: 412,
     };
