@@ -317,6 +317,17 @@ hbbtv.mediaManager = (function() {
             mediaProxy.callObserverMethod(MEDIA_PROXY_ID, 'setSeekable', [ranges]);
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
         };
+        const updateBuffered = function(e) {
+            const ranges = [];
+            for (let i = 0; i < media.buffered.length; ++i) {
+                ranges.push({
+                    start: media.buffered.start(i),
+                    end: media.buffered.end(i),
+                });
+            }
+            mediaProxy.callObserverMethod(MEDIA_PROXY_ID, 'setBuffered', [ranges]);
+            mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
+        };
         const makeCallback = function(property) {
             return function(e) {
                 mediaProxy.updateObserverProperties(MEDIA_PROXY_ID, {
@@ -399,6 +410,7 @@ hbbtv.mediaManager = (function() {
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
         });
         media.addEventListener('progress', updateSeekable);
+        media.addEventListener('progress', updateBuffered);
         media.addEventListener('timeupdate', makeCallback('currentTime'));
         media.addTextTrack = function() {
             return textTracks.orb_addTextTrack.apply(textTracks, arguments);
