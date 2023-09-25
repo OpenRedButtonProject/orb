@@ -41,7 +41,8 @@ hbbtv.objects.ChannelList = (function() {
         const p = privates.get(this);
         const channelData = p.channelDataList
             .filter((channel) => {
-                return channel.ccid === channelID;
+                return (channel.ccid && channel.ccid === channelID)
+                    || (channel.ipBroadcastID && channel.ipBroadcastID === channelID);
             })
             .pop();
         return hbbtv.objects.createChannel(channelData);

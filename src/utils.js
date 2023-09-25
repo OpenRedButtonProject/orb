@@ -89,6 +89,9 @@ hbbtv.utils = (function() {
     }
 
     function base64Encode(str) {
+        if (str === undefined) {
+            str = '';
+        }
         const table = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
         let result = '';
         let length = str.length;
