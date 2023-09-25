@@ -1346,7 +1346,7 @@ hbbtv.objects.VideoBroadcast = (function() {
         if (p.playState == PLAY_STATE_PRESENTING || p.playState == PLAY_STATE_STOPPED) {
             if (targetURL.startsWith('dvb://')) {
                 registerStreamEventListener(p, targetURL, eventName, listener);
-            } else {
+            } else if (targetURL.startsWith('dsmcc:')) {
                 let found = false;
                 let componentTag, streamEventId;
                 let request = new XMLHttpRequest();
@@ -1415,6 +1415,8 @@ hbbtv.objects.VideoBroadcast = (function() {
                 });
                 request.open('GET', targetURL);
                 request.send();
+            } else {
+                // TODO: handle DASH stream events
             }
         }
     };

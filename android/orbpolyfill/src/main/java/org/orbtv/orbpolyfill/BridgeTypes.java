@@ -200,14 +200,20 @@ public class BridgeTypes {
             o.put("channelType", channelType);
             o.put("idType", idType);
             o.put("ccid", ccid);
-            o.put("dsd", dsd);
-            o.put("nid", nid);
+            if (!dsd.isEmpty()) {
+                o.put("dsd", dsd);
+            }
             o.put("onid", onid);
+            if (nid != 0) {
+                o.put("nid", nid);
+            }
             o.put("tsid", tsid);
             o.put("sid", sid);
             o.put("name", name);
             o.put("majorChannel", majorChannel);
-            o.put("terminalChannel", terminalChannel);
+            if (terminalChannel != -1) {
+                o.put("terminalChannel", terminalChannel);
+            }
             o.put("hidden", hidden);
             o.put("sourceID", sourceId);
             o.put("ipBroadcastID", ipBroadcastId);
