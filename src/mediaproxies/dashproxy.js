@@ -454,7 +454,7 @@ hbbtv.objects.DashProxy = (function() {
                     if (
                         rating.region &&
                         rating.value &&
-                        !hbbtv.bridge.parentalControl.isRatingBlocked(rating)
+                        !window.orbParentalRating.isRatingBlocked(rating.scheme, rating.region, rating.value)
                     ) {
                         data.blocked = false;
                         break;
@@ -469,6 +469,10 @@ hbbtv.objects.DashProxy = (function() {
         }
         if (data.blocked) {
             console.warn('DashProxy: Content was blocked by parental control.');
+            nativeEvt.error = {
+                code: 3,
+                message: 'MEDIA_ERR_DECODE'
+            }
             this.dispatchEvent(nativeEvt);
             privates.get(this).player.attachSource(null);
         }

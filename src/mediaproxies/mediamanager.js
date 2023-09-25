@@ -13,7 +13,15 @@ hbbtv.mediaManager = (function() {
         resolveHostAddress: (hostname) =>
             hbbtv.native.request('Network.resolveHostAddress', {
                 hostname
-            }).result,
+            }).result, 
+    };
+    window.orbParentalRating = {
+        isRatingBlocked: (scheme, region, value) =>
+            hbbtv.native.request('ParentalControl.isRatingBlocked', {
+                "scheme": scheme,
+                "region": region,
+                "value": value
+            }).result, 
     };
 
     function initialise() {
@@ -392,8 +400,8 @@ hbbtv.mediaManager = (function() {
         media.addEventListener('error', (e) => {
             mediaProxy.updateObserverProperties(MEDIA_PROXY_ID, {
                 error: {
-                    code: media.error.code,
-                    message: media.error.message,
+                    code: media.error ? media.error.code : e.error.code,
+                    message: media.error ? media.error.message : e.error.message,
                 },
             });
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
