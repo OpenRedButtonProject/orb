@@ -18,6 +18,7 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
+import android.webkit.WebSettings;
 import android.webkit.WebViewClient;
 
 import org.json.JSONObject;
@@ -55,6 +56,7 @@ class BrowserView extends WebView {
         getSettings().setStandardFontFamily(configuration.sansSerifFontFamily);
         getSettings().setSansSerifFontFamily(configuration.sansSerifFontFamily);
         getSettings().setFixedFontFamily(configuration.fixedFontFamily);
+        getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         addJavascriptInterface(new JavaScriptBridgeInterface(bridge), "androidBridge");
 
         mWebResourceClient = new WebResourceClient(dsmccClient, new HtmlBuilder(mContext.getAssets())) {
