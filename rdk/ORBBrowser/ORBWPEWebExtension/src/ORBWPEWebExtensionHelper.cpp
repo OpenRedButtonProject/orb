@@ -370,5 +370,6 @@ void ORBWPEWebExtensionHelper::SetORBWPEWebExtensionPreferences(WebKitSettings *
     webkit_settings_set_user_agent(preferences, userAgentString.c_str());
 
     webkit_settings_set_enable_plugins(preferences, false);
+    webkit_settings_set_allow_display_of_insecure_content(preferences, true);
 }
 } // namespace orb
