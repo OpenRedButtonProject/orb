@@ -16,6 +16,7 @@ hbbtv.objectManager = (function() {
     let objectUpgradeHandlers = [];
 
     function initialise() {
+        addMetaViewportElement();
         addOipfObjectFactory();
         addHTMLManipulationIntercept(function(manipulatedElement) {
             upgradeDescendantObjects(manipulatedElement);
@@ -205,6 +206,15 @@ hbbtv.objectManager = (function() {
         const video = __createElement.call(document, 'video');
         video._rdkHolepunch = true;
         return video;
+    }
+
+    function addMetaViewportElement() {
+        if (!document.querySelector('meta[name=viewport]')) {
+            let meta = document.createElement('meta');
+            meta.name = 'viewport';
+            meta.content = 'width=device-width, initial-scale=1.0';
+            document.getElementsByTagName('head')[0]?.appendChild(meta);
+        }
     }
 
     return {
