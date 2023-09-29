@@ -198,6 +198,7 @@ hbbtv.objects.MediaElementExtension = (function() {
             'networkState',
             'readyState',
             'seekable',
+            'buffered',
             'videoWidth',
             'videoHeight',
         ];
@@ -533,6 +534,10 @@ hbbtv.objects.MediaElementExtension = (function() {
         };
         this.setSeekable = function(ranges) {
             this.seekable = hbbtv.objects.createTimeRanges(ranges);
+        };
+
+        this.setBuffered = function(ranges) {
+            this.buffered = hbbtv.objects.createTimeRanges(ranges);
         };
 
         // Add the textTracks callbacks that were registered before the
