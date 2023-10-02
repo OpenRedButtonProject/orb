@@ -422,7 +422,7 @@ class Bridge extends AbstractBridge {
                                                    int componentTag, int streamEventId) {
         // TODO Split this method into 2
         int id = mNextListenerId++;
-        if (targetURL.startsWith("dvb:")) {
+        if (streamEventId < 0) { // Is it really invalid for the value of a stream event id to be less than 0?
             if (!mOrbLibraryCallback.subscribeDsmccStreamEventName(targetURL, eventName, id)) {
                 return -1;
             }
