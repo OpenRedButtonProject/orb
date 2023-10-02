@@ -74,6 +74,8 @@ hbbtv.objects.VideoBroadcast = (function() {
     const ERROR_TUNER_UNAVAILABLE = 2;
     const ERROR_UNKNOWN_CHANNEL = 5;
 
+    const DASH_STREAM_EVENTS = ["urn:dvb:dash:appsignalling:2016"];
+
     let gActiveStateOwner = null;
     let gBroadbandAvInUse = false;
     const gGarbageCollectionBlocked = new Set();
@@ -1344,9 +1346,9 @@ hbbtv.objects.VideoBroadcast = (function() {
         /* Extensions to video/broadcast for synchronization: No security restrictions specified */
         const p = privates.get(this);
         if (p.playState == PLAY_STATE_PRESENTING || p.playState == PLAY_STATE_STOPPED) {
-            if (targetURL.startsWith('dvb://')) {
+            if (targetURL.startsWith('dvb://') || DASH_STREAM_EVENTS.includes(targetURL)) {
                 registerStreamEventListener(p, targetURL, eventName, listener);
-            } else if (targetURL.startsWith('dsmcc:')) {
+            } else {
                 let found = false;
                 let componentTag, streamEventId;
                 let request = new XMLHttpRequest();
@@ -1415,8 +1417,6 @@ hbbtv.objects.VideoBroadcast = (function() {
                 });
                 request.open('GET', targetURL);
                 request.send();
-            } else {
-                // TODO: handle DASH stream events
             }
         }
     };
