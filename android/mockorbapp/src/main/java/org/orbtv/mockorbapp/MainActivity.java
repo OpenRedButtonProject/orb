@@ -64,6 +64,9 @@ public class MainActivity extends Activity {
     private static final String DIAL_PACKAGE_NAME = "org.orbtv.mockdialservice";
     private static final String DIAL_CLASS_NAME = "org.orbtv.mockdialservice.MockDialService";
 
+    private static final String VOICE_RECOGNITION_PACKAGE_NAME = "org.orbtv.voicerecognitionservice";
+    private static final String VOICE_RECOGNITION_CLASS_NAME = "org.orbtv.voicerecognitionservice.VoiceRecognitionService";
+
     private IOrbSession mTvBrowserSession = null;
     private MockOrbSessionCallback mMockCallback;
     private IMockDialService mDialService = null;
@@ -132,6 +135,7 @@ public class MainActivity extends Activity {
         mTvBrowserSession = OrbSessionFactory.createSession(getApplicationContext(), mMockCallback,
                 configuration);
         bindDialService();
+        bindVoiceRecognitionService();
         //frameLayout.addView(mTvBrowserSession.getView());
         mTvBrowserSession.onNetworkStatusEvent(true); // TODO(library) Is this good?
         mMockCallback.setConsoleCallback(new MockOrbSessionCallback.ConsoleCallback() {
@@ -143,6 +147,16 @@ public class MainActivity extends Activity {
 
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_U){
+            Log.d(TAG, "onKeyUp: U");
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    startService(mIntentVoiceRecognition);
+                }
+            });
+            Log.d(TAG, "onKeyUp: U2");
+        }
         if (mMockCallback.onKeyUp(keyCode, event)) {
             return true;
         }
@@ -153,6 +167,7 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         unbindDialService();
+        unbindVoiceRecognitionService();
     }
 
     private final IMockDialServiceCallback.Stub mDialServiceCallback =
@@ -210,12 +225,30 @@ public class MainActivity extends Activity {
         }
     };
 
+    private final ServiceConnection mVoiceRecognitionServiceConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder binder) {
+            Log.d("VoiceRecognition ServiceConnection","connected");
+        }
+        public void onServiceDisconnected(ComponentName className) {
+            Log.d("VoiceRecognition ServiceConnection","disconnected");
+        }
+    };
+
+    private Intent mIntent = null;
     private void bindDialService() {
         ComponentName component = new ComponentName(DIAL_PACKAGE_NAME, DIAL_CLASS_NAME);
-        Intent intent = new Intent().setComponent(component);
+        mIntent = new Intent().setComponent(component);
         Log.d(TAG, "Try to resolve DIAL service intent: " +
-                getApplicationContext().getPackageManager().queryIntentServices(intent, 0));
-        getApplicationContext().bindService(intent, mDialServiceConnection, Context.BIND_AUTO_CREATE);
+                getApplicationContext().getPackageManager().queryIntentServices(mIntent, 0));
+        getApplicationContext().bindService(mIntent, mDialServiceConnection, Context.BIND_AUTO_CREATE);
+    }
+    private Intent mIntentVoiceRecognition = null;
+    private void bindVoiceRecognitionService() {
+        ComponentName component = new ComponentName(VOICE_RECOGNITION_PACKAGE_NAME, VOICE_RECOGNITION_CLASS_NAME);
+        mIntentVoiceRecognition = new Intent().setComponent(component);
+        Log.d(TAG, "Try to resolve Voice Recognition service intent: " +
+                getApplicationContext().getPackageManager().queryIntentServices(mIntentVoiceRecognition, 0));
+        getApplicationContext().bindService(mIntentVoiceRecognition, mVoiceRecognitionServiceConnection, Context.BIND_AUTO_CREATE);
     }
 
     private void unbindDialService() {
@@ -227,6 +260,9 @@ public class MainActivity extends Activity {
             }
             getApplicationContext().unbindService(mDialServiceConnection);
         }
+    }
+    private void unbindVoiceRecognitionService() {
+        getApplicationContext().unbindService(mVoiceRecognitionServiceConnection);
     }
 
     private boolean getDoNotTrackEnabled(Context context) {
