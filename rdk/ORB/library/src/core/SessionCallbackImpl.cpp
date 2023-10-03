@@ -83,7 +83,7 @@ std::string SessionCallbackImpl::GetXmlAitContents(const std::string &url)
         url);
     if (downloadedObject != nullptr)
     {
-        if (downloadedObject->GetContentType().rfind("application/vnd.dvb.ait+xml;", 0) == 0)
+        if (downloadedObject->GetContentType().rfind("application/vnd.dvb.ait+xml", 0) == 0)
         {
             return downloadedObject->GetContent();
         }
