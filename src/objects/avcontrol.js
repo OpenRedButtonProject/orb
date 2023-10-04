@@ -923,11 +923,12 @@ hbbtv.objects.AVControl = (function() {
                 'A/V Control: Transitioned from state ' + priv.playState + ' to ' + targetState
             );
             if (priv.playState !== targetState) {
+                priv.playState = targetState;
+                
                 dispatchEvent.call(this, 'PlayStateChange', {
                     state: targetState,
                 });
             }
-            priv.playState = targetState;
             return true;
         }
         console.warn(
@@ -1020,6 +1021,7 @@ hbbtv.objects.AVControl = (function() {
     }
 
     function initialise() {
+        let startPlaying = false;
         let priv = privates.get(this);
         if (priv) {
             return; // already initialised
@@ -1142,11 +1144,13 @@ hbbtv.objects.AVControl = (function() {
             transitionToState.call(thiz, PLAY_STATE_BUFFERING);
             videoElement.oncanplaythrough = () => {
                 videoElement.oncanplaythrough = undefined;
-                onPlayHandler();
+                startPlaying = true;
             };
         });
 
-        videoElement.addEventListener('play', onPlayHandler);
+        videoElement.addEventListener('play', () => {
+            startPlaying = true;
+        });
 
         videoElement.addEventListener('durationchange', () => {
             console.log('A/V Control: Received event ondurationchange ', videoElement.duration);
@@ -1154,6 +1158,10 @@ hbbtv.objects.AVControl = (function() {
         });
 
         videoElement.addEventListener('timeupdate', () => {
+            if (startPlaying) {
+                onPlayHandler();
+                startPlaying = false;
+            }
             dispatchEvent.call(thiz, 'PlayPositionChanged', {
                 position: thiz.playPosition,
             });

@@ -147,10 +147,17 @@ hbbtv.objects.DashProxy = (function() {
                 if (streamInfo) {
                     const periodIdx = streamInfo.index;
 
-                    var repSwitch = dashMetrics.getCurrentRepresentationSwitch('video', true);
+                    let streamType = 'video';
+
+                    var repSwitch = dashMetrics.getCurrentRepresentationSwitch(streamType, true);
+                    if (!repSwitch) {
+                        streamType = 'audio';
+                        repSwitch = dashMetrics.getCurrentRepresentationSwitch(streamType, true);
+                    }
+                    
                     var adaptation = dashAdapter.getAdaptationForType(
                         periodIdx,
-                        'video',
+                        streamType,
                         streamInfo
                     );
                     var currentRep = adaptation.Representation_asArray.find(function(rep) {
