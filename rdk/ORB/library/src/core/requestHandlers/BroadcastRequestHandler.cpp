@@ -315,7 +315,7 @@ bool BroadcastRequestHandler::Handle(
         }
         else
         {
-            std::string componentTag = params.value("componentTag", "");
+            std::string componentTag = std::to_string(params.value("componentTag", 0));
             std::shared_ptr<Component> component =
                 ORBEngine::GetSharedInstance().GetORBPlatform()->Broadcast_GetPrivateAudioComponent(
                     componentTag);
@@ -338,7 +338,7 @@ bool BroadcastRequestHandler::Handle(
         }
         else
         {
-            std::string componentTag = params.value("componentTag", "");
+            std::string componentTag = std::to_string(params.value("componentTag", 0));
             std::shared_ptr<Component> component =
                 ORBEngine::GetSharedInstance().GetORBPlatform()->Broadcast_GetPrivateVideoComponent(
                     componentTag);
