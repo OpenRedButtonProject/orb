@@ -1,5 +1,6 @@
 package org.orbtv.voicerecognitionservice;
 
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -582,8 +583,10 @@ public class CmdParser {
         if (hr < 0 || hr > 23 || min < 0 || min > 59) {
             return null;
         }
-        return ZonedDateTime.now(ZoneOffset.UTC).withHour(hr).withMinute(min).withSecond(0).withNano(0)
-                .format(DateTimeFormatter.ISO_INSTANT);
+        LocalDateTime now = LocalDateTime.now();
+        int hrOffset = hr - now.getHour();
+        return ZonedDateTime.now(ZoneOffset.UTC).plusHours(hrOffset).withMinute(min)
+                .withSecond(0).withNano(0).format(DateTimeFormatter.ISO_INSTANT);
     }
 
     public class Command {
