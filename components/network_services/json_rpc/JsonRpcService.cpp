@@ -117,6 +117,10 @@ static std::string GetAccessibilityFeatureName(int id);
 
 static int GetAccessibilityFeatureId(const std::string& name);
 
+static std::time_t ConvertISO8601ToSecond(const std::string& input);
+
+static std::string ConvertSecondToISO8601(const long sec);
+
 JsonRpcService::JsonRpcService(
     int port,
     const std::string &endpoint,
@@ -644,64 +648,58 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
         }
     }
 
-    std::string currentTimeStr;
-    bool isIntCurrent;
+    long long currentTime = -1;
+    bool isIntCurrent = false;
+    bool isStringCurrent = false;
+    int curr = 0;
     if (HasParam(params, "currentTime", Json::intValue) ||
         HasParam(params, "currentTime", Json::uintValue) ||
         HasParam(params, "currentTime", Json::realValue))
     {
-        currentTimeStr = EncodeJsonId(params["currentTime"]);
+        curr = params["currentTime"].asInt();
+        currentTime = std::time(nullptr);
         isIntCurrent = true;
     }
     else if (HasParam(params, "currentTime", Json::stringValue))
     {
-        currentTimeStr = EncodeJsonId(params["currentTime"]);
-        isIntCurrent = false;
+        std::string currentTimeStr = params["currentTime"].asString();
+        currentTime = ConvertISO8601ToSecond(currentTimeStr);
+        isStringCurrent = true;
     }
-    if (state == "buffering" || state == "paused" || state == "playing")
+    else if (state == "buffering" || state == "paused" || state == "playing")
     {
-        if (currentTimeStr == OPTIONAL_STR_NOT_SET)
-        {
-            return JsonRpcStatus::NOTIFICATION_ERROR;
-        }
+        return JsonRpcStatus::NOTIFICATION_ERROR;
     }
+    SetConnectionData(connectionId, ConnectionDataType::CurrentTime, currentTime);
 
-    std::string rangeStart;
-    std::string rangeEnd;
-    if (HasJsonParam(params, "range"))
+    long long startTime = -1;
+    long long endTime = -1;
+    bool isIntStart = HasParam(params["range"], "start", Json::intValue) ||
+        HasParam(params["range"], "start", Json::uintValue) ||
+        HasParam(params["range"], "start", Json::realValue);
+    bool isIntEnd = HasParam(params["range"], "end", Json::intValue) ||
+        HasParam(params["range"], "end", Json::uintValue) ||
+        HasParam(params["range"], "end", Json::realValue);
+    if (isIntCurrent && isIntStart && isIntEnd)
     {
-        bool isIntStart = HasParam(params["range"], "start", Json::intValue) ||
-            HasParam(params["range"], "start", Json::uintValue) ||
-            HasParam(params["range"], "start", Json::realValue);
-        bool isIntEnd = HasParam(params["range"], "end", Json::intValue) ||
-            HasParam(params["range"], "end", Json::uintValue) ||
-            HasParam(params["range"], "end", Json::realValue);
-
-        if (isIntCurrent && isIntStart && isIntEnd)
-        {
-            rangeStart = EncodeJsonId(params["range"]["start"]);
-            rangeEnd = EncodeJsonId(params["range"]["end"]);
-        }
-        else if (!isIntCurrent &&
-                 HasParam(params["range"], "start", Json::stringValue) &&
-                 HasParam(params["range"], "end", Json::stringValue))
-        {
-            rangeStart = EncodeJsonId(params["range"]["start"]);
-            rangeEnd = EncodeJsonId(params["range"]["end"]);
-        }
-        else
-        {
-            return JsonRpcStatus::NOTIFICATION_ERROR;
-        }
+        int start = params["range"]["start"].asInt();
+        int end = params["range"]["end"].asInt();
+        startTime = currentTime + (start - curr);
+        endTime = currentTime + (end - curr);
     }
-    if (state == "buffering" || state == "paused" || state == "playing")
+    else if (isStringCurrent &&
+             HasParam(params["range"], "start", Json::stringValue) &&
+             HasParam(params["range"], "end", Json::stringValue))
     {
-        if (rangeStart == OPTIONAL_STR_NOT_SET ||
-            rangeEnd == OPTIONAL_STR_NOT_SET)
-        {
-            return JsonRpcStatus::NOTIFICATION_ERROR;
-        }
+        startTime = ConvertISO8601ToSecond(params["range"]["start"].asString());
+        endTime = ConvertISO8601ToSecond(params["range"]["end"].asString());
     }
+    else if (state == "buffering" || state == "paused" || state == "playing")
+    {
+        return JsonRpcStatus::NOTIFICATION_ERROR;
+    }
+    SetConnectionData(connectionId, ConnectionDataType::StartTime, startTime);
+    SetConnectionData(connectionId, ConnectionDataType::EndTime, endTime);
 
     SetConnectionData(connectionId, ConnectionDataType::ActionPause, false);
     SetConnectionData(connectionId, ConnectionDataType::ActionPlay, false);
@@ -1214,11 +1212,14 @@ void JsonRpcService::RequestMediaDescription()
     std::vector<int> connectionIds = GetAllConnectionIds();
     for (int connectionId : connectionIds)
     {
-        std::string description = "No media is playing" ;
-        Json::Value title  = GetConnectionData(connectionId, ConnectionDataType::Content);
-        if (title.isString() && !title.asString().empty()) {
+        std::string description = "No media is playing";
+        Json::Value title = GetConnectionData(connectionId, ConnectionDataType::Content);
+        if (title.isString() && !title.asString().empty())
+        {
             description = "You're watching " + title.asString();
-        } else {
+        }
+        else
+        {
             LOG(LOG_INFO, "Warning, connection data lost, parameter has wrong type.");
         }
         m_sessionCallback->RespondMessage(description);
@@ -1632,15 +1633,71 @@ void JsonRpcService::SendJsonMessageToClient(int connectionId,
  * @param method The name of the intent method to send.
  * @param params The JSON parameters associated with the intent.
  */
-void JsonRpcService::SendIntentMessage(const std::string& method, const Json::Value &params)
+void JsonRpcService::SendIntentMessage(const std::string& method, Json::Value &params)
 {
     std::vector<int> connectionIds;
     CheckIntentMethod(connectionIds, method);
     for (int connectionId : connectionIds)
     {
         std::string id = GenerateId(connectionId);
+        AdjustTimeRange(connectionId, method, params);
         Json::Value response = CreateIntentResponse(id, method, params);
         SendJsonMessageToClient(connectionId, response);
+    }
+}
+
+void JsonRpcService::AdjustTimeRange(int id, const std::string& method, Json::Value &params)
+{
+    Json::Value current = GetConnectionData(id, ConnectionDataType::CurrentTime);
+    Json::Value start = GetConnectionData(id, ConnectionDataType::StartTime);
+    Json::Value end = GetConnectionData(id, ConnectionDataType::EndTime);
+    if (!current.isInt64() || !start.isInt64() || !end.isInt64())
+    {
+        LOG(LOG_INFO, "Warning, connection data lost, parameter has wrong type.");
+        return;
+    }
+    long currentTime = (long) current.asInt64();
+    long startTime = (long) start.asInt64();
+    long endTime = (long) end.asInt64();
+    if (currentTime == -1 || startTime == -1 || endTime == -1)
+    {
+        LOG(LOG_INFO, "Warning, connection data lost, parameter is invalid.");
+        return;
+    }
+    long setTime;
+    if (method == MD_INTENT_MEDIA_SEEK_CONTENT || method == MD_INTENT_MEDIA_SEEK_RELATIVE ||
+        method == MD_INTENT_MEDIA_SEEK_LIVE || (method == MD_INTENT_PLAYBACK && params.isMember(
+            "offset")))
+    {
+        long offset = 0, anchorTime = 0;
+        if (params.isMember("anchor") && params["anchor"].asString() == "start")
+        {
+            anchorTime = startTime;
+        }
+        else if (params.isMember("anchor") && params["anchor"].asString() == "end")
+        {
+            anchorTime = endTime;
+        }
+        else
+        {
+            anchorTime = currentTime;
+            // TO-DO: real current time
+            // for MD_INTENT_MEDIA_SEEK_RELATIVE, MD_INTENT_MEDIA_SEEK_LIVE & MD_INTENT_PLAYBACK
+            // anchorTime = GetSystemCurrentTime();
+        }
+        offset = params["offset"].asInt();
+        setTime = anchorTime + offset;
+        setTime = std::max(setTime, startTime);
+        setTime = std::min(setTime, endTime);
+        params["offset"] = (int) (setTime - anchorTime);
+    }
+    else if (method == MD_INTENT_MEDIA_SEEK_WALLCLOCK)
+    {
+        setTime = ConvertISO8601ToSecond(params["date-time"].asString());
+        setTime = std::max(setTime, startTime);
+        setTime = std::min(setTime, endTime);
+        std::string setWallclock = ConvertSecondToISO8601(setTime);
+        params["date-time"] = setWallclock;
     }
 }
 
@@ -1753,7 +1810,8 @@ void JsonRpcService::CheckIntentMethod(std::vector<int> &result, const std::stri
         }
 
         bool shouldAddConnection = false;
-        if (method == MD_INTENT_SEARCH || method == MD_INTENT_DISPLAY || method == MD_INTENT_PLAYBACK ||
+        if (method == MD_INTENT_SEARCH || method == MD_INTENT_DISPLAY || method ==
+            MD_INTENT_PLAYBACK ||
             (method == MD_INTENT_MEDIA_SEEK_CONTENT && actionSeekContentJson.asBool()) ||
             (method == MD_INTENT_MEDIA_SEEK_RELATIVE && actionSeekRelativeJson.asBool()) ||
             (method == MD_INTENT_MEDIA_SEEK_LIVE && actionSeekLiveJson.asBool()) ||
@@ -1897,6 +1955,15 @@ void JsonRpcService::SetConnectionData(int connectionId, ConnectionDataType type
         case ConnectionDataType::ActionSeekWallclock:
             connectionData.actionSeekWallclock = value.asBool();
             break;
+        case ConnectionDataType::CurrentTime:
+            connectionData.currentTime = value.asInt64();
+            break;
+        case ConnectionDataType::StartTime:
+            connectionData.startTime = value.asInt64();
+            break;
+        case ConnectionDataType::EndTime:
+            connectionData.endTime = value.asInt64();
+            break;
     }
     connections_mutex_.unlock();
 }
@@ -1916,6 +1983,7 @@ void JsonRpcService::SetConnectionData(int connectionId, ConnectionDataType type
  *   - For VoiceReady, ActionPause, ActionPlay, ActionFastForward, ActionFastReverse, ActionStop,
  *     ActionSeekContent, ActionSeekRelative, ActionSeekLive, and ActionSeekWallclock, the Json::Value
  *     is a boolean value.
+ *   - For currentTime, StartTime, EndTime, the value is a long int.
  *   - For UnsubscribedMethods, an empty Json::Value is returned (indicating no data).
  */
 Json::Value JsonRpcService::GetConnectionData(int connectionId, ConnectionDataType type)
@@ -1984,6 +2052,15 @@ Json::Value JsonRpcService::GetConnectionData(int connectionId, ConnectionDataTy
                 value = connectionData.actionSeekWallclock;
                 break;
             case ConnectionDataType::UnsubscribedMethods:
+                break;
+            case ConnectionDataType::CurrentTime:
+                value = connectionData.currentTime;
+                break;
+            case ConnectionDataType::StartTime:
+                value = connectionData.startTime;
+                break;
+            case ConnectionDataType::EndTime:
+                value = connectionData.endTime;
                 break;
         }
     }
@@ -2258,5 +2335,40 @@ static int GetAccessibilityFeatureId(const std::string& name)
         return it->second;
     }
     return -1;
+}
+
+/**
+ * Convert wall-clock time to seconds
+ *
+ * @param input time in ISO8601 format
+ * @return seconds with time_t
+ */
+std::time_t ConvertISO8601ToSecond(const std::string& input)
+{
+    // TO-DO check the format of the input
+    const char *inputBuff = input.c_str();
+    struct tm time;
+    strptime(inputBuff, "%FT%TZ", &time);
+    time.tm_isdst = 0;
+    time_t t = mktime(&time);
+    return t;
+}
+
+/**
+ * Convert seconds to wall-clock time
+ *
+ * @param sec time in seconds
+ * @return time in ISO8601 format
+ */
+std::string ConvertSecondToISO8601(const long sec)
+{
+    std::time_t input = std::time(nullptr);
+    input = sec;
+    char time[25];
+    struct tm *convertTm;
+    convertTm = gmtime(&input);
+    strftime(time, sizeof(time), "%FT%TZ", convertTm);
+    std::string result = time;
+    return result;
 }
 } // namespace NetworkServices
