@@ -37,7 +37,10 @@ public:
         ActionSeekContent,
         ActionSeekRelative,
         ActionSeekLive,
-        ActionSeekWallclock
+        ActionSeekWallclock,
+        CurrentTime,
+        StartTime,
+        EndTime
     };
 
     enum class JsonRpcStatus
@@ -278,6 +281,9 @@ private:
         bool actionSeekRelative;
         bool actionSeekLive;
         bool actionSeekWallclock;
+        long long currentTime;
+        long long startTime;
+        long long endTime;
     };
     // Setters and getters for variables
     void InitialConnectionData(int connectionId);
@@ -304,7 +310,9 @@ private:
 
     void RegisterSupportedMethods();
 
-    void SendIntentMessage(const std::string &method, const Json::Value &params);
+    void SendIntentMessage(const std::string &method, Json::Value &params);
+
+    void AdjustTimeRange(int id, const std::string& method, Json::Value &params);
 
     void SendNotifyMessage(int msgTypeIndex, const Json::Value &response);
 
