@@ -67,8 +67,8 @@ public class CmdParser {
             Arrays.asList("forwards", "after", "later"));
     private final ArrayList<String> DIRECTION_BACKWARDS = new ArrayList<>(
             Arrays.asList("backwards", "back", "before", "ago"));
-    private final ArrayList<String> mKeywordsOfClockTime = new ArrayList<>(
-            Arrays.asList("time", "am", "pm", "o'clock"));
+    private final ArrayList<String> CLOCK_TIMING = new ArrayList<>(
+            Arrays.asList("time", "am", "pm", "o'clock", "midday", "noon", "midnight"));
     private final HashMap<String, Integer> SINGLE_ACTIONS = new HashMap<String, Integer>() {
         {
             put("pause", ACT_PAUSE);
@@ -450,6 +450,10 @@ public class CmdParser {
             } else if (currWord.equals("o'clock")) {
                 int hr = parseNumberName(words.subList(0, i));
                 return convertTimeFormat(hr, 0);
+            } else if (currWord.equals("midday") || currWord.equals("noon")) {
+                return convertTimeFormat(12, 0);
+            } else if (currWord.equals("midnight")) {
+                return convertTimeFormat(0, 0);
             } else {
                 preNumbers = numbers;
                 numbers.clear();
@@ -633,7 +637,7 @@ public class CmdParser {
                 } else if (DIRECTION_BACKWARDS.contains(w)) {
                     direction = KW_DIRECTION_BACKWARDS;
                     key = Math.min(i, key);
-                } else if (mKeywordsOfClockTime.contains(w)) {
+                } else if (CLOCK_TIMING.contains(w)) {
                     clock = findClockTime(words);
                 }
                 if (key > start) {
