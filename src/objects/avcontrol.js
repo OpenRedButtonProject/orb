@@ -786,9 +786,9 @@ hbbtv.objects.AVControl = (function() {
                             if (
                                 mediaSettings.audio.id === track.id ||
                                 ((track.language === lang ||
-                                        hbbtv.languageCodes.ISO639_1_to_ISO639_2[track.language] ===
+                                        hbbtv.languageCodes.ISO639_2_to_ISO639_1[track.language] ===
                                         lang ||
-                                        hbbtv.languageCodes.ISO639_1_to_ISO639_2[lang] ===
+                                        hbbtv.languageCodes.ISO639_2_to_ISO639_1[lang] ===
                                         track.language) &&
                                     (!track.kind ||
                                         track.kind ===
@@ -835,9 +835,9 @@ hbbtv.objects.AVControl = (function() {
                             if (
                                 mediaSettings.subtitles.id === track.id ||
                                 ((track.language === lang ||
-                                        hbbtv.languageCodes.ISO639_1_to_ISO639_2[track.language] ===
+                                        hbbtv.languageCodes.ISO639_2_to_ISO639_1[track.language] ===
                                         lang ||
-                                        hbbtv.languageCodes.ISO639_1_to_ISO639_2[lang] ===
+                                        hbbtv.languageCodes.ISO639_2_to_ISO639_1[lang] ===
                                         track.language) &&
                                     track.kind ===
                                     (mediaSettings.subtitles.roles ?
