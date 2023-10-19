@@ -653,7 +653,7 @@ hbbtv.objects.DashProxy = (function() {
                     },
                     retryAttempts: {
                         MPD: 0,
-                        MediaSegment: 0,
+                        MediaSegment: 1,
                         InitializationSegment: 0,
                         BitstreamSwitchingSegment: 0,
                         IndexSegment: 0,
@@ -663,6 +663,9 @@ hbbtv.objects.DashProxy = (function() {
                         enableSeekDecorrelationFix: true,
                         fastSwitchEnabled: true,
                         flushBufferAtTrackSwitch: true,
+                    },
+                    utcSynchronization: {
+                        enableBackgroundSyncAfterSegmentDownloadError: true,
                     },
                 },
                 errors: {
