@@ -29,6 +29,7 @@ public class CmdParser {
     public static final int INTENT_SEARCH = 9;
     public static final int INTENT_DISPLAY = 10;
     public static final int INTENT_PLAYBACK = 11;
+    public static final int ACT_REQUEST_MEDIA_DESCRIPTION = 18;
     public static final int ACT_PRESS_BUTTON_NUMB_ZERO = 20;
     public static final int ACT_PRESS_BUTTON_NUMB_ONE = 21;
     public static final int ACT_PRESS_BUTTON_NUMB_TWO = 22;
@@ -178,6 +179,9 @@ public class CmdParser {
             }
         }
         if (validActions.isEmpty() && basicActions.isEmpty()) {
+            if (words.contains("what") && words.contains("watch")) {
+                return new Command(ACT_REQUEST_MEDIA_DESCRIPTION);
+            }
             return handleResult(LOG_ERROR_NONE_ACTION);
         } else if (validActions.size() > 1) {
             return handleResult(LOG_ERROR_MULTI_ACTIONS);
