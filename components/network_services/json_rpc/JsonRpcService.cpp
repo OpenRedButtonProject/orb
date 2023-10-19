@@ -791,14 +791,12 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
     }
     if (state == "buffering" || state == "paused" || state == "playing" || state == "stopped")
     {
-        if (title == OPTIONAL_STR_NOT_SET ||
-            mediaId == OPTIONAL_STR_NOT_SET ||
-            secTitle == OPTIONAL_STR_NOT_SET ||
-            synopsis == OPTIONAL_STR_NOT_SET)
+        if (title == OPTIONAL_STR_NOT_SET)
         {
             return JsonRpcStatus::NOTIFICATION_ERROR;
         }
     }
+    SetConnectionData(connectionId, ConnectionDataType::Content, title);
 
     Json::Value subtitles;
     Json::Value audioDescription;
@@ -1209,6 +1207,22 @@ void JsonRpcService::RespondError(int connectionId, const std::string &id,
     }
     Json::Value response = CreateJsonErrorResponse(id, error);
     SendJsonMessageToClient(connectionId, response);
+}
+
+void JsonRpcService::RequestMediaDescription()
+{
+    std::vector<int> connectionIds = GetAllConnectionIds();
+    for (int connectionId : connectionIds)
+    {
+        std::string description = "No media is playing" ;
+        Json::Value title  = GetConnectionData(connectionId, ConnectionDataType::Content);
+        if (title.isString() && !title.asString().empty()) {
+            description = "You're watching " + title.asString();
+        } else {
+            LOG(LOG_INFO, "Warning, connection data lost, parameter has wrong type.");
+        }
+        m_sessionCallback->RespondMessage(description);
+    }
 }
 
 void JsonRpcService::SendIntentMediaPause()
@@ -1850,6 +1864,9 @@ void JsonRpcService::SetConnectionData(int connectionId, ConnectionDataType type
         case ConnectionDataType::State:
             connectionData.state = value.asString();
             break;
+        case ConnectionDataType::Content:
+            connectionData.content = value.asString();
+            break;
         case ConnectionDataType::VoiceReady:
             connectionData.voiceReady = value.asBool();
             break;
@@ -1932,6 +1949,9 @@ Json::Value JsonRpcService::GetConnectionData(int connectionId, ConnectionDataTy
                 break;
             case ConnectionDataType::State:
                 value = connectionData.state;
+                break;
+            case ConnectionDataType::Content:
+                value = connectionData.content;
                 break;
             case ConnectionDataType::VoiceReady:
                 value = connectionData.voiceReady;

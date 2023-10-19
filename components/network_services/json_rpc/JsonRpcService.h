@@ -27,6 +27,7 @@ public:
         UnsubscribedMethods,
         IntentIdCount,
         State,
+        Content,
         VoiceReady,
         ActionPause,
         ActionPlay,
@@ -95,9 +96,11 @@ public:
         virtual void NotifyVoiceReady(
             bool isReady) = 0;
 
-
         virtual void NotifyStateMedia(
             std::string state) = 0;
+
+        virtual void RespondMessage(
+            std::string info) = 0;
 
         virtual void ReceiveIntentConfirm(
             int connectionId,
@@ -200,6 +203,8 @@ public:
     void RespondError(int connectionId, const std::string &id, int code,
         const std::string &message, const std::string &data);
 
+    void RequestMediaDescription();
+
     void SendIntentMediaPause();
 
     void SendIntentMediaPlay();
@@ -262,6 +267,7 @@ private:
         std::unordered_set<std::string> subscribedMethods;
         int intentIdCount;
         std::string state;
+        std::string content;
         bool voiceReady;
         bool actionPause;
         bool actionPlay;
