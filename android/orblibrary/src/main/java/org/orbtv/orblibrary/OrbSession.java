@@ -1007,4 +1007,12 @@ class OrbSession implements IOrbSession {
     public void onSendIntentPlayback(String mediaId, String anchor, int offset) {
         mJsonRpc.onSendIntentPlayback(mediaId, anchor, offset);
     }
+
+    /**
+     * Request for the Description of the current media playback on the application
+     */
+    @Override
+    public void onRequestMediaDescription() {
+        mJsonRpc.onRequestMediaDescription();
+    }
 }

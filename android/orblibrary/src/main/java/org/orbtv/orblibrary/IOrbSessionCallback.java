@@ -805,6 +805,14 @@ public interface IOrbSessionCallback {
      */
     void onNotifyStateMedia(String state);
 
+
+    /**
+     * Called to send a response message
+     *
+     * @param info The content of the message
+     */
+    void onRespondMessage(String info);
+
     /**
      * Called to send an error message
      *

@@ -509,4 +509,9 @@ public interface IOrbSession {
      */
     void onSendIntentPlayback(String mediaId, String anchor, int offset);
 
+    /**
+     * Request for the Description of the current media playback on the application
+     */
+    void onRequestMediaDescription();
+
 }
