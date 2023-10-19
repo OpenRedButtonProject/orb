@@ -104,12 +104,24 @@ class MediaSynchroniserManager {
         long startTime = 0;
         long duration = 0;
         String programmeId = "";
-        if (programmes != null && programmes.size() > 0) {
-            BridgeTypes.Programme programme = programmes.get(0);
-            if (programme != null && programme.programmeId != null && !programme.programmeId.isEmpty()) {
-                programmeId = programme.programmeId.trim();
-                startTime = programme.startTime;
-                duration = programme.duration;
+        String hexOnetId = Integer.toHexString(onetId);
+        String hexTransId = Integer.toHexString(transId);
+        String hexServId = Integer.toHexString(servId);
+        if (programmes != null) {
+            for (BridgeTypes.Programme programme : programmes) {
+                if (programme != null && programme.programmeId != null && !programme.programmeId.isEmpty()) {
+                    String[] ids = programme.programmeId.split(";");
+                    if (ids.length > 0) {
+                        ids = ids[0].replace("dvb://", "").split("\\.");
+                        if (ids.length == 3 && ids[0].equalsIgnoreCase(hexOnetId) &&
+                            ids[1].equalsIgnoreCase(hexTransId) && ids[2].equalsIgnoreCase(hexServId)) {
+                            programmeId = programme.programmeId.trim();
+                            startTime = programme.startTime;
+                            duration = programme.duration;
+                            break;
+                        }
+                    }
+                }
             }
         }
 

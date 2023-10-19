@@ -440,7 +440,7 @@ class OrbSession implements IOrbSession {
         String ccid = mOrbSessionCallback.getCurrentCcid();
         if (!ccid.isEmpty()) {
             BridgeTypes.Channel channel = mOrbSessionCallback.getChannel(ccid);
-            List<BridgeTypes.Programme> programmes = mOrbSessionCallback.getPresentFollowingProgrammes(ccid);
+            List<BridgeTypes.Programme> programmes = mOrbSessionCallback.getProgrammeList(ccid);
             mMediaSynchroniserManager.updateBroadcastContentStatus(onetId, transId, servId, statusCode, permanentError, programmes);
         }
     }
@@ -455,7 +455,7 @@ class OrbSession implements IOrbSession {
         String ccid = mOrbSessionCallback.getCurrentCcid();
         if (!ccid.isEmpty()) {
             BridgeTypes.Channel channel = mOrbSessionCallback.getChannel(ccid);
-            List<BridgeTypes.Programme> programmes = mOrbSessionCallback.getPresentFollowingProgrammes(ccid);
+            List<BridgeTypes.Programme> programmes = mOrbSessionCallback.getProgrammeList(ccid);
             mMediaSynchroniserManager.updateBroadcastContentStatus(channel.onid, channel.tsid, channel.sid, BridgeTypes.CHANNEL_STATUS_PRESENTING, false, programmes);
         }
     }

@@ -922,14 +922,27 @@ void MediaSynchroniserManager::updateDvbInfo(const int &onetId, const int &trans
 {
     char uriBuffer[32];
     std::string ciString;
-    if (!programmeId.empty())
+    std::size_t semicolonPos = programmeId.find(';');
+    std::string formattedProgrammeId;
+
+    if (semicolonPos != std::string::npos && semicolonPos + 1 < programmeId.length())
+    {
+        std::string extractedId = programmeId.substr(semicolonPos + 1);
+        char programmeIdBuffer[5];
+        sprintf(programmeIdBuffer, "%04d", std::stoi(extractedId));
+        formattedProgrammeId = programmeIdBuffer;
+    }
+    else
+    {
+        formattedProgrammeId = programmeId;
+    }
+
+    if (!formattedProgrammeId.empty())
     {
         char ciBuffer[512];
-        sprintf(ciBuffer, ";%s~%s--PT%02ldH%02ldM", programmeId.c_str(),
+        sprintf(ciBuffer, ";%s~%s--PT%02ldH%02ldM", formattedProgrammeId.c_str(),
             MediaSynchroniser::GetDvbDateFromTimestamp(startTime).c_str(), duration / 3600,
-            (duration %
-             3600) /
-            60);
+            (duration % 3600) / 60);
         ciString = ciBuffer;
     }
     sprintf(uriBuffer, "dvb://%04x.%04x.%04x", onetId, transId, servId);
