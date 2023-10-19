@@ -150,7 +150,9 @@ public class CmdParser {
         for (int i = 0; i < words.size(); ++i) {
             String w = words.get(i);
             // handling cases with verb + ing
-            if (w.matches("^.*ing$")) {
+            if (w.equals("playing")) {
+                words.add("play");
+            } else if (w.matches("^.*ing$")) {
                 String substring = w.substring(0, w.length() - "ing".length());
                 words.add(substring);
                 words.add(substring + "e");
@@ -187,11 +189,43 @@ public class CmdParser {
             return handleResult(LOG_ERROR_MULTI_ACTIONS);
         } else if (validActions.size() == 1) {
             return handleOneValidIntent(validActions.get(0));
-        } else if (basicActions.size() == 1) {
-            return handleOneValidIntent(new Command(basicActions.get(0)));
-        } else {
+        }
+        return handleBasicActions(basicActions);
+    }
+
+    private Command handleBasicActions(List<Integer> actions) {
+        if (actions.isEmpty()) {
+            return handleResult(LOG_ERROR_NONE_ACTION);
+        } else if (actions.size() == 1) {
+            return new Command(actions.get(0));
+        } else if (actions.size() > 2) {
             return handleResult(LOG_ERROR_MULTI_ACTIONS);
         }
+        boolean isStopAction = false;
+        List<Integer> vcrActions = new ArrayList<>();
+        for (int i = 0; i < actions.size(); ++i) {
+            Integer act = actions.get(i);
+            switch (act) {
+                case INTENT_MEDIA_STOP:
+                    isStopAction = true;
+                    break;
+                case INTENT_MEDIA_PAUSE:
+                case INTENT_MEDIA_PLAY:
+                case INTENT_MEDIA_FAST_FORWARD:
+                case INTENT_MEDIA_FAST_REVERSE:
+                    vcrActions.add(act);
+                    break;
+            }
+        }
+        if (isStopAction && vcrActions.size() == 1) {
+            if (vcrActions.get(0) == INTENT_MEDIA_PLAY) {
+                // e.g. "stop playing"
+                return new Command(INTENT_MEDIA_STOP);
+            }
+            // e.g. "stop fast-forwarding"
+            return new Command(INTENT_MEDIA_PLAY);
+        }
+        return handleResult(LOG_ERROR_MULTI_ACTIONS);
     }
 
     private List<String> decomposeCommand(String cmd) {
