@@ -136,6 +136,10 @@ public class JsonRpc {
         nativeOnSendIntentPlayback(mediaId, anchor, offset);
     }
 
+    public void onRequestMediaDescription() {
+        nativeOnRequestMediaDescription();
+    }
+
     // Called by native
 
     private void onRequestNegotiateMethods() {
@@ -183,6 +187,10 @@ public class JsonRpc {
 
     private void onNotifyStateMedia(String state) {
         mOrbSessionCallback.onNotifyStateMedia(state);
+    }
+
+    private void onRespondMessage(String log) {
+        mOrbSessionCallback.onRespondMessage(log);
     }
 
     private void onReceiveError(int code, String message) {
@@ -261,4 +269,6 @@ public class JsonRpc {
     private native void nativeOnSendIntentDisplay(String mediaId);
 
     private native void nativeOnSendIntentPlayback(String mediaId, String anchor, int offset);
+
+    private native void nativeOnRequestMediaDescription();
 }

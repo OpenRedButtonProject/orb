@@ -1751,7 +1751,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     /**
-     * Called to send an response message
+     * Called to send a response message
      *
      * @param info The content of the message
      */

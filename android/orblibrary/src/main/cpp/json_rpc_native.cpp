@@ -29,7 +29,8 @@
 #define CB_RECEIVE_INTENT_CONFIRM 9
 #define CB_NOTIFY_VOICE_READY 10
 #define CB_NOTIFY_STATE_MEDIA 11
-#define CB_NUMBER_OF_ITEMS 12
+#define CB_RESPOND_MESSAGE 12
+#define CB_NUMBER_OF_ITEMS 13
 
 #define LENGTH_OF_EMPTY_ID 0
 #define CMD_INTENT_PAUSE 0
@@ -212,6 +213,18 @@ public:
         env->DeleteLocalRef(j_state);
     }
 
+    void RespondMessage(
+            std::string info) override
+    {
+        JNIEnv *env = JniUtils::GetEnv();
+        jstring j_info = env->NewStringUTF(info.c_str());
+        env->CallVoidMethod(
+                mCallbackObject,
+                g_cb[CB_RESPOND_MESSAGE],
+                j_info);
+        env->DeleteLocalRef(j_info);
+    }
+
     void ReceiveError(
         int code,
         std::string message) override
@@ -276,6 +289,8 @@ void InitialiseJsonRpcNative()
          "onNotifyVoiceReady", "(Z)V");
     g_cb[CB_NOTIFY_STATE_MEDIA] = env->GetMethodID(managerClass,
          "onNotifyStateMedia", "(Ljava/lang/String;)V");
+    g_cb[CB_RESPOND_MESSAGE] = env->GetMethodID(managerClass,
+         "onRespondMessage", "(Ljava/lang/String;)V");
     g_cb[CB_RECEIVE_ERROR] = env->GetMethodID(managerClass,
          "onReceiveError", "(ILjava/lang/String;)V");
     g_cb[CB_RECEIVE_ERROR_ALL_PARAMS] = env->GetMethodID(managerClass,
@@ -704,6 +719,15 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnSendIntentPlayback(
     std::string mediaIdStr = JniUtils::MakeStdString(env, mediaId);
     std::string anchorStr = JniUtils::MakeStdString(env, anchor);
     GetService(env, object)->SendIntentPlayback(mediaIdStr, anchorStr, offset);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_orbtv_orblibrary_JsonRpc_nativeOnRequestMediaDescription(
+        JNIEnv *env,
+        jobject object)
+{
+    GetService(env, object)->RequestMediaDescription();
 }
 
 static NetworkServices::JsonRpcService* GetService(JNIEnv *env, jobject object)
