@@ -31,15 +31,6 @@ public class CmdParser {
     public static final int INTENT_PLAYBACK = 11;
     public static final int ACT_REQUEST_MEDIA_DESCRIPTION = 18;
     public static final int ACT_PRESS_BUTTON_NUMB_ZERO = 20;
-    public static final int ACT_PRESS_BUTTON_NUMB_ONE = 21;
-    public static final int ACT_PRESS_BUTTON_NUMB_TWO = 22;
-    public static final int ACT_PRESS_BUTTON_NUMB_THREE = 23;
-    public static final int ACT_PRESS_BUTTON_NUMB_FOUR = 24;
-    public static final int ACT_PRESS_BUTTON_NUMB_FIVE = 25;
-    public static final int ACT_PRESS_BUTTON_NUMB_SIX = 26;
-    public static final int ACT_PRESS_BUTTON_NUMB_SEVEN = 27;
-    public static final int ACT_PRESS_BUTTON_NUMB_EIGHT = 28;
-    public static final int ACT_PRESS_BUTTON_NUMB_NINE = 29;
     public static final int ACT_PRESS_BUTTON_RED = 30;
     public static final int ACT_PRESS_BUTTON_GREEN = 31;
     public static final int ACT_PRESS_BUTTON_YELLOW = 32;
@@ -252,15 +243,6 @@ public class CmdParser {
         cmd.offset = cmd.direction * cmd.offset;
         cmd.direction = KW_DIRECTION_FORWARDS;
         switch (cmd.actId) {
-            case INTENT_MEDIA_PAUSE:
-            case INTENT_MEDIA_PLAY:
-            case INTENT_MEDIA_FAST_FORWARD:
-            case INTENT_MEDIA_FAST_REVERSE:
-            case INTENT_MEDIA_STOP:
-                // check basic intent
-            case INTENT_MEDIA_SEEK_CONTENT:
-            case INTENT_MEDIA_SEEK_RELATIVE:
-                return cmd;
             case INTENT_MEDIA_SEEK_LIVE:
                 if (cmd.offset > 0) {
                     break;
@@ -280,7 +262,8 @@ public class CmdParser {
                 if (cmd.item == null) {
                     break;
                 }
-                if ((cmd.anchor.equals(KW_ANCHOR_START) || cmd.anchor.equals(KW_ANCHOR_END)) && cmd.offset != 0) {
+                if ((cmd.anchor.equals(KW_ANCHOR_START) || cmd.anchor.equals(KW_ANCHOR_END)) &&
+                        cmd.offset != 0) {
                     return cmd;
                 } else if (cmd.anchor.equals(KW_ANCHOR_LIVE) && cmd.offset <= 0) {
                     cmd.anchor = "";
@@ -290,29 +273,8 @@ public class CmdParser {
                     cmd.offset = -999999;
                     return cmd;
                 }
-            case ACT_PRESS_BUTTON_NUMB_ZERO:
-            case ACT_PRESS_BUTTON_NUMB_ONE:
-            case ACT_PRESS_BUTTON_NUMB_TWO:
-            case ACT_PRESS_BUTTON_NUMB_THREE:
-            case ACT_PRESS_BUTTON_NUMB_FOUR:
-            case ACT_PRESS_BUTTON_NUMB_FIVE:
-            case ACT_PRESS_BUTTON_NUMB_SIX:
-            case ACT_PRESS_BUTTON_NUMB_SEVEN:
-            case ACT_PRESS_BUTTON_NUMB_EIGHT:
-            case ACT_PRESS_BUTTON_NUMB_NINE:
-            case ACT_PRESS_BUTTON_RED:
-            case ACT_PRESS_BUTTON_GREEN:
-            case ACT_PRESS_BUTTON_YELLOW:
-            case ACT_PRESS_BUTTON_BLUE:
-            case ACT_PRESS_BUTTON_UP:
-            case ACT_PRESS_BUTTON_DOWN:
-            case ACT_PRESS_BUTTON_LEFT:
-            case ACT_PRESS_BUTTON_RIGHT:
-            case ACT_PRESS_BUTTON_ENTER:
-            case ACT_PRESS_BUTTON_BACK:
-                return new Command(cmd.actId);
         }
-        return handleResult(LOG_ERROR_INTENT_SEND);
+        return cmd;
     }
 
     private boolean isValidBasicAction(Integer actionId) {
