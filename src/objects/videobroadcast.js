@@ -1085,13 +1085,24 @@ hbbtv.objects.VideoBroadcast = (function() {
         audioChannels,
         encoding
     ) {
+        const p = privates.get(this);
         if (!p.isBroadcastRelated) {
             return null;
         }
         const component = hbbtv.bridge.broadcast.getPrivateAudioComponent(componentTag);
-        if (id !== null) {
+        if (component !== null) {
+            
+            // update the currentChannelComponents with the new component
+            if (!p.currentChannelComponents) {
+                p.currentChannelComponents = hbbtv.bridge.broadcast.getComponents(
+                    p.currentChannelData.ccid,
+                    -1
+                );
+            }
+            p.currentChannelComponents.push(component);
+            
             return hbbtv.objects.createAVAudioComponent({
-                id: id,
+                id: component.id,
                 type: COMPONENT_TYPE_AUDIO,
                 componentTag: componentTag,
                 language: language,
@@ -1117,13 +1128,24 @@ hbbtv.objects.VideoBroadcast = (function() {
      * @memberof VideoBroadcast#
      */
     prototype.createAVVideoComponent = function(componentTag, aspectRatio, encoding) {
+        const p = privates.get(this);
         if (!p.isBroadcastRelated) {
             return null;
         }
         const component = hbbtv.bridge.broadcast.getPrivateVideoComponent(componentTag);
-        if (id !== null) {
+        if (component !== null) {
+            
+            // update the currentChannelComponents with the new component
+            if (!p.currentChannelComponents) {
+                p.currentChannelComponents = hbbtv.bridge.broadcast.getComponents(
+                    p.currentChannelData.ccid,
+                    -1
+                );
+            }
+            p.currentChannelComponents.push(component);
+
             return hbbtv.objects.createAVVideoComponent({
-                id: id,
+                id: component.id,
                 type: COMPONENT_TYPE_VIDEO,
                 pid: component.pid,
                 encrypted: component.encrypted,
