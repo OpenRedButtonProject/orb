@@ -833,6 +833,21 @@ public interface IOrbSessionCallback {
                         String method, String data);
 
     /**
+     * Request for the description of the current media on applications
+     *
+     * @return true if this event has been handled, and false if not
+     */
+    boolean onRequestMediaDescription();
+
+    /**
+     * Request to deliver a text input, from voice command, to applications
+     *
+     * @param input The content of the text
+     * @return true if this event has been handled, and false if not
+     */
+    boolean onRequestTextInput(String input);
+
+    /**
      * Called to send an intent, from a voice command, to applications
      *
      * @param action The index number of the intent, from intent.media.pause to intent.playback
@@ -843,6 +858,7 @@ public interface IOrbSessionCallback {
      *               - INTENT_PLAYBACK: a URI
      * @param anchor The value indicates an anchor point of the content, which is either "start" or "end"
      * @param offset The number value for the time position, a number of seconds
+     * @return true if this event has been handled, and false if not
      */
     boolean onSendIntentByVoiceCommand(Integer action, String info, String anchor, int offset);
 
