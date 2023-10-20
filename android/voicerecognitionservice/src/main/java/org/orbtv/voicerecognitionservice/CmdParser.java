@@ -30,6 +30,7 @@ public class CmdParser {
     public static final int INTENT_DISPLAY = 10;
     public static final int INTENT_PLAYBACK = 11;
     public static final int ACT_REQUEST_MEDIA_DESCRIPTION = 18;
+    public static final int ACT_REQUEST_TEXT_INPUT = 19;
     public static final int ACT_PRESS_BUTTON_NUMB_ZERO = 20;
     public static final int ACT_PRESS_BUTTON_RED = 30;
     public static final int ACT_PRESS_BUTTON_GREEN = 31;
@@ -79,7 +80,6 @@ public class CmdParser {
             put("down", ACT_PRESS_BUTTON_DOWN);
             put("left", ACT_PRESS_BUTTON_LEFT);
             put("right", ACT_PRESS_BUTTON_RIGHT);
-            put("enter", ACT_PRESS_BUTTON_ENTER);
             put("ok", ACT_PRESS_BUTTON_ENTER);
             put("okay", ACT_PRESS_BUTTON_ENTER);
             put("back", ACT_PRESS_BUTTON_BACK);
@@ -92,6 +92,7 @@ public class CmdParser {
             put("go", new Integer[]{INTENT_MEDIA_SEEK_CONTENT, INTENT_MEDIA_SEEK_RELATIVE, INTENT_MEDIA_SEEK_LIVE, INTENT_MEDIA_SEEK_WALLCLOCK});
             put("skip", new Integer[]{INTENT_MEDIA_SEEK_CONTENT, INTENT_MEDIA_SEEK_RELATIVE, INTENT_MEDIA_SEEK_LIVE, INTENT_MEDIA_SEEK_WALLCLOCK});
             put("jump", new Integer[]{INTENT_MEDIA_SEEK_CONTENT, INTENT_MEDIA_SEEK_RELATIVE, INTENT_MEDIA_SEEK_LIVE, INTENT_MEDIA_SEEK_WALLCLOCK});
+            put("enter", new Integer[]{ACT_REQUEST_TEXT_INPUT, ACT_PRESS_BUTTON_ENTER});
         }
     };
 
@@ -254,6 +255,7 @@ public class CmdParser {
                 return cmd;
             case INTENT_SEARCH:
             case INTENT_DISPLAY:
+            case ACT_REQUEST_TEXT_INPUT:
                 if (cmd.item == null) {
                     break;
                 }
@@ -316,6 +318,7 @@ public class CmdParser {
             case INTENT_SEARCH:
             case INTENT_DISPLAY:
             case INTENT_PLAYBACK:
+            case ACT_REQUEST_TEXT_INPUT:
                 return cmd.item != null;
             case ACT_PRESS_BUTTON_BACK:
                 return cmd.anchor.equals(KW_ANCHOR_NONE) && cmd.offset == 0;
@@ -598,22 +601,8 @@ public class CmdParser {
         Command(Integer actionId, List<String> words) {
             actId = actionId;
             // For particular intents, get item name from index_start to index_end
-            int start;
+            int start = findIndexOfActions(actionId, words);
             int end = words.size();
-            switch (actionId) {
-                // TODO - handle cases if keyword is not only "search", "display", "play"
-                case INTENT_SEARCH:
-                    start = words.indexOf("search") + 1;
-                    break;
-                case INTENT_DISPLAY:
-                    start = words.indexOf("display") + 1;
-                    break;
-                case INTENT_PLAYBACK:
-                    start = words.indexOf("play") + 1;
-                    break;
-                default:
-                    start = KW_UNDEFINED;
-            }
             for (int i = 0; i < words.size(); ++i) {
                 int key = end;
                 String w = words.get(i);
@@ -660,12 +649,34 @@ public class CmdParser {
             }
             if (start == KW_UNDEFINED || start >= end) {
                 item = null;
-            } else if (actionId == INTENT_SEARCH || actionId == INTENT_DISPLAY) {
+            } else if (actionId == INTENT_SEARCH || actionId == INTENT_DISPLAY ||
+                    actionId == ACT_REQUEST_TEXT_INPUT) {
                 item = TextUtils.join(" ", words.subList(start, words.size()));
             } else {
                 // actionId == INTENT_MEDIA_PLAY
                 item = TextUtils.join(" ", words.subList(start, end));
             }
+        }
+
+        private int findIndexOfActions(Integer actionId, List<String> words) {
+            int start;
+            switch (actionId) {
+                case INTENT_SEARCH:
+                    start = words.indexOf("search") + 1;
+                    break;
+                case INTENT_DISPLAY:
+                    start = words.indexOf("display") + 1;
+                    break;
+                case INTENT_PLAYBACK:
+                    start = words.indexOf("play") + 1;
+                    break;
+                case ACT_REQUEST_TEXT_INPUT:
+                    start = words.indexOf("enter") + 1;
+                    break;
+                default:
+                    start = KW_UNDEFINED;
+            }
+            return start;
         }
 
         private int findFirstIndexOfTimeFormat(List<String> words) {
