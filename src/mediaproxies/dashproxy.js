@@ -666,6 +666,8 @@ hbbtv.objects.DashProxy = (function() {
                     },
                     utcSynchronization: {
                         enableBackgroundSyncAfterSegmentDownloadError: true,
+                        backgroundAttempts: 1,
+                        timeBetweenSyncAttempts: 5,
                     },
                 },
                 errors: {
