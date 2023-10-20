@@ -263,7 +263,7 @@ uint16_t ApplicationManager::SetKeySetMask(uint16_t appId, uint16_t keySetMask)
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_app.id == appId)
     {
-        if (!m_app.isActivated && (m_ait.Get()->scheme != LINKED_APP_SCHEME_1_2 || m_ait.Get()->scheme != LINKED_APP_SCHEME_2))
+        if (!m_app.isActivated && m_ait.Get()->scheme != LINKED_APP_SCHEME_1_2 && m_ait.Get()->scheme != LINKED_APP_SCHEME_2)
         {
             if ((keySetMask & KEY_SET_VCR) != 0)
             {
