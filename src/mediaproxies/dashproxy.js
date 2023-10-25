@@ -646,7 +646,7 @@ hbbtv.objects.DashProxy = (function() {
                 streaming: {
                     trackSwitchMode: {
                         audio: 'alwaysReplace',
-                        video: 'alwaysReplace',
+                        video: 'neverReplace',
                     },
                     capabilities: {
                         filterUnsupportedEssentialProperties: true,
