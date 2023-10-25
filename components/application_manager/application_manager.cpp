@@ -258,11 +258,19 @@ uint16_t ApplicationManager::SetKeySetMask(uint16_t appId, uint16_t keySetMask)
         {
             if ((keySetMask & KEY_SET_VCR) != 0)
             {
-                keySetMask &= ~KEY_SET_VCR;
+                // compatibility check for older versions
+                if (m_app.versionMinor > 1)
+                {
+                    keySetMask &= ~KEY_SET_VCR;
+                }
             }
             if ((keySetMask & KEY_SET_NUMERIC) != 0)
             {
-                keySetMask &= ~KEY_SET_NUMERIC;
+                // compatibility check for older versions
+                if (m_app.versionMinor > 1)
+                {
+                    keySetMask &= ~KEY_SET_NUMERIC;
+                }
             }
         }
         m_app.keySetMask = keySetMask;
