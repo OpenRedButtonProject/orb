@@ -92,6 +92,13 @@ public interface IOrbSession {
     boolean dispatchKeyEvent(KeyEvent event);
 
     /**
+     * Called to Tell the browser to dispatch an text input.
+     *
+     * @param text The content of the text input
+     */
+    void dispatchTextInput(String text);
+
+    /**
      * Called when the service list has changed.
      */
     void onServiceListChanged();
