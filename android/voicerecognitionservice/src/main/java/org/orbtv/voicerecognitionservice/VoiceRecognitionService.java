@@ -11,7 +11,9 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.MediaRecorder;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.util.Log;
 
 import androidx.core.content.ContextCompat;
@@ -51,6 +53,7 @@ import java.io.InputStreamReader;
 public class VoiceRecognitionService extends Service {
     private static final String TAG = VoiceRecognitionService.class.getSimpleName();
     private MediaRecorder mMediaRecorder;
+    private CmdParser mParser;
     private boolean isRecording = false;
     public static final int LOG_MESSAGE = 99;
 
@@ -80,6 +83,7 @@ public class VoiceRecognitionService extends Service {
         mS3 = new AmazonS3Client(mAwsCredentials, REGION);
         mAmazonTranscribe = new AmazonTranscribeClient(mAwsCredentials);
         mAmazonTranscribe.setRegion(REGION);
+        mParser = new CmdParser();
     }
 
     @Override
@@ -166,19 +170,28 @@ public class VoiceRecognitionService extends Service {
         }
     }
 
+    private void parseIncomingCommand(String transcript) {
+        CmdParser.Command action = mParser.parseIncomingCommand(transcript);
+        Log.d(TAG, "Got an action : " + action.actId);
+        broadcastMessage(action.actId, action.item, action.anchor, action.offset);
+    }
+
     private void broadcastMessage(String info) {
         broadcastMessage(LOG_MESSAGE, info, null, null);
     }
 
     private void broadcastMessage(Integer actId, String info, String anchor, Integer offset) {
-        Log.d(TAG, info);
-        Intent result = new Intent();
-        result.setAction("org.orbtv.voiceservice.message");
-        result.putExtra("actId", actId);
-        result.putExtra("info", info);
-        result.putExtra("anchor", anchor);
-        result.putExtra("offset", offset);
-        sendBroadcast(result);
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            public void run() {
+                Intent result = new Intent();
+                result.setAction("org.orbtv.voiceservice.message");
+                result.putExtra("actId", actId);
+                result.putExtra("info", info);
+                result.putExtra("anchor", anchor);
+                result.putExtra("offset", offset);
+                sendBroadcast(result);
+            }
+        });
     }
 
     private void stopRecording() {
@@ -272,7 +285,6 @@ public class VoiceRecognitionService extends Service {
                     Log.e(TAG, jobName + " has failed");
                     Log.e(TAG, jobName + " - " + jobResult.getTranscriptionJob().getFailureReason());
                     break;
-<<<<<<< HEAD
                 }
                 if (status.equalsIgnoreCase("COMPLETED")) {
                     break;
@@ -288,34 +300,6 @@ public class VoiceRecognitionService extends Service {
                     String currentLine;
                     while ((currentLine = reader.readLine()) != null) {
                         jsonContent.append(currentLine);
-=======
-                } else if (status.equalsIgnoreCase("COMPLETED")) {
-                    try {
-                        // Download the JSON file from S3
-                        S3Object s3Object = s3.getObject(bucketName, OBJECT_KEY);
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(s3Object.getObjectContent()));
-                        // Read the JSON data
-                        StringBuilder jsonContent = new StringBuilder();
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            jsonContent.append(line);
-                        }
-                        // Parse the JSON data using org.json
-                        JSONObject jsonObject = new JSONObject(jsonContent.toString());
-                        // Extract the transcript
-                        JSONObject results = jsonObject.getJSONObject("results");
-                        JSONArray transcripts = results.getJSONArray("transcripts");
-                        JSONObject transcriptObject = transcripts.getJSONObject(0);
-                        String transcript = transcriptObject.getString("transcript");
-                        onPostExecute(transcript);
-                        // Close resources
-                        reader.close();
-                        s3Object.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (JSONException e) {
-                        throw new RuntimeException(e);
->>>>>>> 2aee53c (HTM-680 Create voice service receiver)
                     }
                     // Parse the JSON data using org.json
                     JSONObject jsonObject = new JSONObject(jsonContent.toString());
@@ -339,13 +323,14 @@ public class VoiceRecognitionService extends Service {
         }
 
         protected void onPostExecute(String transcript) {
+            Log.d(TAG, "Transcript : " + transcript);
             if (transcript == null) {
                 Log.e(TAG, "Error is found in audio command");
             } else if (transcript.isEmpty()) {
                 broadcastMessage("Receive an empty audio command");
             } else  {
                 broadcastMessage("Receive audio command: " + transcript);
-                // parse the command
+                parseIncomingCommand(transcript);
             }
         }
     }
