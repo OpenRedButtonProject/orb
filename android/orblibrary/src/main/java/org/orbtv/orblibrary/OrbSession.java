@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 
 import org.json.JSONObject;
@@ -426,6 +427,16 @@ class OrbSession implements IOrbSession {
     @Override
     public boolean launchTeletextApplication() {
         return mApplicationManager.runTeletextApplication();
+    }
+    
+    /**
+     * Called to Tell the browser to dispatch an key press event.
+     *
+     * @param event The KeyEvent, with an action and a KeyCode, to be handled
+     */
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        return mBrowserView.dispatchKeyEvent(event);
     }
 
     /**

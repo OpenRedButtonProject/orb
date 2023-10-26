@@ -146,6 +146,7 @@ class BrowserView extends WebView {
         int androidKeyCode = event.getKeyCode();
         int keyCode = mSessionCallback.getTvBrowserKeyCode(androidKeyCode);
         if (!mSessionCallback.inApplicationKeySet(mAppId, keyCode)) {
+            Log.d(TAG, "Key press event {" + androidKeyCode + "} is not supported in app");
             return false;
         }
         int action = event.getAction();

@@ -1,8 +1,10 @@
 package org.orbtv.orblibrary;
 
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 
+import org.json.JSONObject;
 import org.orbtv.orbpolyfill.BridgeTypes;
 
 import java.nio.ByteBuffer;
@@ -80,6 +82,14 @@ public interface IOrbSession {
      * @return True if the application is launched, false otherwise.
      */
     boolean launchTeletextApplication();
+
+    /**
+     * Called to Tell the browser to dispatch an key press event.
+     *
+     * @param event The KeyEvent, with an action and a KeyCode, to be handled
+     * @return true if the event is handled
+     */
+    boolean dispatchKeyEvent(KeyEvent event);
 
     /**
      * Called when the service list has changed.
