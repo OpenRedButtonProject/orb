@@ -199,6 +199,10 @@ class BrowserView extends WebView {
         mContext.getMainExecutor().execute(() -> dispatchJavaScriptBridgeEvent(type, properties));
     }
 
+    public void dispatchTextInput(String text) {
+        dispatchJavaScriptTextInput(text);
+    }
+
     private void setHiddenFlag(int flag) {
         mHiddenMask |= flag;
         if (mHiddenMask == 0) {
@@ -253,6 +257,14 @@ class BrowserView extends WebView {
     private void dispatchJavaScriptKeyEvent(String type, int keyCode) {
         evaluateJavascript("document.activeElement.dispatchEvent(new KeyboardEvent('" + type
                 + "', " + "{'keyCode': " + keyCode + ", 'bubbles': true}))", null);
+    }
+
+    private void dispatchJavaScriptTextInput(String text) {
+        String escapedText = JSONObject.quote(text);
+        evaluateJavascript(
+                "const tagName = document.activeElement.tagName.toLowerCase();" +
+                        "if (tagName === 'input' || tagName === 'textarea')" +
+                        "    document.activeElement.value = " + escapedText + ";", null);
     }
 
     private static class JavaScriptBridgeInterface {

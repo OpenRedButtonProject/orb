@@ -440,6 +440,15 @@ class OrbSession implements IOrbSession {
     }
 
     /**
+     * Called to Tell the browser to dispatch an text input.
+     *
+     * @param text The content of the text input
+     */
+    public void dispatchTextInput(String text) {
+        mBrowserView.dispatchTextInput(text);
+    }
+
+    /**
      * Called when the service list has changed.
      */
     @Override
