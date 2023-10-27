@@ -17,41 +17,42 @@ import java.util.Objects;
 import java.util.Stack;
 
 public class CmdParser {
-    private static final int ACT_PAUSE = 0;
-    private static final int ACT_PLAY = 1;
-    private static final int ACT_FAST_FORWARD = 2;
-    private static final int ACT_FAST_REVERSE = 3;
-    private static final int ACT_STOP = 4;
-    private static final int ACT_SEEK_CONTENT = 5;
-    private static final int ACT_SEEK_RELATIVE = 6;
-    private static final int ACT_SEEK_LIVE = 7;
-    private static final int ACT_SEEK_WALLCLOCK = 8;
-    private static final int ACT_SEARCH = 9;
-    private static final int ACT_DISPLAY = 10;
-    private static final int ACT_PLAYBACK = 11;
-    private static final int ACT_NUMBER_ZERO = 20;
-    private static final int ACT_NUMBER_ONE = 21;
-    private static final int ACT_NUMBER_TWO = 22;
-    private static final int ACT_NUMBER_THREE = 23;
-    private static final int ACT_NUMBER_FOUR = 24;
-    private static final int ACT_NUMBER_FIVE = 25;
-    private static final int ACT_NUMBER_SIX = 26;
-    private static final int ACT_NUMBER_SEVEN = 27;
-    private static final int ACT_NUMBER_EIGHT = 28;
-    private static final int ACT_NUMBER_NINE = 29;
-    private static final int ACT_PRESS_RED = 30;
-    private static final int ACT_PRESS_GREEN = 31;
-    private static final int ACT_PRESS_YELLOW = 32;
-    private static final int ACT_PRESS_BLUE = 33;
-    private static final int ACT_PRESS_UP = 34;
-    private static final int ACT_PRESS_DOWN = 35;
-    private static final int ACT_PRESS_LEFT = 36;
-    private static final int ACT_PRESS_RIGHT = 37;
-    private final int ACT_PRESS_ENTER = 38;
-    private final int ACT_PRESS_BACK = 39;
-    private final int ACT_ERROR_NONE_ACTION = 100;
-    private final int ACT_ERROR_MULTI_ACTIONS = 101;
-    private final int ACT_ERROR_INTENT_SEND = 102;
+    public static final int INTENT_MEDIA_PAUSE = 0;
+    public static final int INTENT_MEDIA_PLAY = 1;
+    public static final int INTENT_MEDIA_FAST_FORWARD = 2;
+    public static final int INTENT_MEDIA_FAST_REVERSE = 3;
+    public static final int INTENT_MEDIA_STOP = 4;
+    public static final int INTENT_MEDIA_SEEK_CONTENT = 5;
+    public static final int INTENT_MEDIA_SEEK_RELATIVE = 6;
+    public static final int INTENT_MEDIA_SEEK_LIVE = 7;
+    public static final int INTENT_MEDIA_SEEK_WALLCLOCK = 8;
+    public static final int INTENT_SEARCH = 9;
+    public static final int INTENT_DISPLAY = 10;
+    public static final int INTENT_PLAYBACK = 11;
+    public static final int ACT_PRESS_BUTTON_NUMB_ZERO = 20;
+    public static final int ACT_PRESS_BUTTON_NUMB_ONE = 21;
+    public static final int ACT_PRESS_BUTTON_NUMB_TWO = 22;
+    public static final int ACT_PRESS_BUTTON_NUMB_THREE = 23;
+    public static final int ACT_PRESS_BUTTON_NUMB_FOUR = 24;
+    public static final int ACT_PRESS_BUTTON_NUMB_FIVE = 25;
+    public static final int ACT_PRESS_BUTTON_NUMB_SIX = 26;
+    public static final int ACT_PRESS_BUTTON_NUMB_SEVEN = 27;
+    public static final int ACT_PRESS_BUTTON_NUMB_EIGHT = 28;
+    public static final int ACT_PRESS_BUTTON_NUMB_NINE = 29;
+    public static final int ACT_PRESS_BUTTON_RED = 30;
+    public static final int ACT_PRESS_BUTTON_GREEN = 31;
+    public static final int ACT_PRESS_BUTTON_YELLOW = 32;
+    public static final int ACT_PRESS_BUTTON_BLUE = 33;
+    public static final int ACT_PRESS_BUTTON_UP = 34;
+    public static final int ACT_PRESS_BUTTON_DOWN = 35;
+    public static final int ACT_PRESS_BUTTON_LEFT = 36;
+    public static final int ACT_PRESS_BUTTON_RIGHT = 37;
+    public static final int ACT_PRESS_BUTTON_ENTER = 38;
+    public static final int ACT_PRESS_BUTTON_BACK = 39;
+    public static final int LOG_MESSAGE = 99;
+    public static final int LOG_ERROR_NONE_ACTION = 100;
+    public static final int LOG_ERROR_MULTI_ACTIONS = 101;
+    public static final int LOG_ERROR_INTENT_SEND = 102;
     private final String KW_ANCHOR_NONE = "none";
     private final String KW_ANCHOR_START = "start";
     private final String KW_ANCHOR_END = "end";
@@ -71,34 +72,34 @@ public class CmdParser {
             Arrays.asList("time", "am", "pm", "o'clock", "midday", "noon", "midnight"));
     private final HashMap<String, Integer> SINGLE_ACTIONS = new HashMap<String, Integer>() {
         {
-            put("pause", ACT_PAUSE);
-            put("fastforward", ACT_FAST_FORWARD);
-            put("fastreverse", ACT_FAST_REVERSE);
-            put("rewind", ACT_FAST_REVERSE);
-            put("stop", ACT_STOP);
-            put("search", ACT_SEARCH);
-            put("display", ACT_DISPLAY);
-            put("red", ACT_PRESS_RED);
-            put("green", ACT_PRESS_GREEN);
-            put("yellow", ACT_PRESS_YELLOW);
-            put("blue", ACT_PRESS_BLUE);
-            put("up", ACT_PRESS_UP);
-            put("down", ACT_PRESS_DOWN);
-            put("left", ACT_PRESS_LEFT);
-            put("right", ACT_PRESS_RIGHT);
-            put("enter", ACT_PRESS_ENTER);
-            put("ok", ACT_PRESS_ENTER);
-            put("okay", ACT_PRESS_ENTER);
-            put("back", ACT_PRESS_BACK);
+            put("pause", INTENT_MEDIA_PAUSE);
+            put("fastforward", INTENT_MEDIA_FAST_FORWARD);
+            put("fastreverse", INTENT_MEDIA_FAST_REVERSE);
+            put("rewind", INTENT_MEDIA_FAST_REVERSE);
+            put("stop", INTENT_MEDIA_STOP);
+            put("search", INTENT_SEARCH);
+            put("display", INTENT_DISPLAY);
+            put("red", ACT_PRESS_BUTTON_RED);
+            put("green", ACT_PRESS_BUTTON_GREEN);
+            put("yellow", ACT_PRESS_BUTTON_YELLOW);
+            put("blue", ACT_PRESS_BUTTON_BLUE);
+            put("up", ACT_PRESS_BUTTON_UP);
+            put("down", ACT_PRESS_BUTTON_DOWN);
+            put("left", ACT_PRESS_BUTTON_LEFT);
+            put("right", ACT_PRESS_BUTTON_RIGHT);
+            put("enter", ACT_PRESS_BUTTON_ENTER);
+            put("ok", ACT_PRESS_BUTTON_ENTER);
+            put("okay", ACT_PRESS_BUTTON_ENTER);
+            put("back", ACT_PRESS_BUTTON_BACK);
         }
     };
 
     private final HashMap<String, Integer[]> MULTI_ACTIONS = new HashMap<String, Integer[]>() {
         {
-            put("play", new Integer[]{ACT_PLAY, ACT_PLAYBACK});
-            put("go", new Integer[]{ACT_SEEK_CONTENT, ACT_SEEK_RELATIVE, ACT_SEEK_LIVE, ACT_SEEK_WALLCLOCK});
-            put("skip", new Integer[]{ACT_SEEK_CONTENT, ACT_SEEK_RELATIVE, ACT_SEEK_LIVE, ACT_SEEK_WALLCLOCK});
-            put("jump", new Integer[]{ACT_SEEK_CONTENT, ACT_SEEK_RELATIVE, ACT_SEEK_LIVE, ACT_SEEK_WALLCLOCK});
+            put("play", new Integer[]{INTENT_MEDIA_PLAY, INTENT_PLAYBACK});
+            put("go", new Integer[]{INTENT_MEDIA_SEEK_CONTENT, INTENT_MEDIA_SEEK_RELATIVE, INTENT_MEDIA_SEEK_LIVE, INTENT_MEDIA_SEEK_WALLCLOCK});
+            put("skip", new Integer[]{INTENT_MEDIA_SEEK_CONTENT, INTENT_MEDIA_SEEK_RELATIVE, INTENT_MEDIA_SEEK_LIVE, INTENT_MEDIA_SEEK_WALLCLOCK});
+            put("jump", new Integer[]{INTENT_MEDIA_SEEK_CONTENT, INTENT_MEDIA_SEEK_RELATIVE, INTENT_MEDIA_SEEK_LIVE, INTENT_MEDIA_SEEK_WALLCLOCK});
         }
     };
 
@@ -140,7 +141,7 @@ public class CmdParser {
         // parse cmd
         List<String> words = decomposeCommand(cmd);
         if (words == null || words.isEmpty()) {
-            return handleResult(ACT_ERROR_NONE_ACTION);
+            return handleResult(LOG_ERROR_NONE_ACTION);
         }
         ArraySet<Integer> actions = new ArraySet<>();
         List<Command> validActions = new ArrayList<>();
@@ -177,15 +178,15 @@ public class CmdParser {
             }
         }
         if (validActions.isEmpty() && basicActions.isEmpty()) {
-            return handleResult(ACT_ERROR_NONE_ACTION);
+            return handleResult(LOG_ERROR_NONE_ACTION);
         } else if (validActions.size() > 1) {
-            return handleResult(ACT_ERROR_MULTI_ACTIONS);
+            return handleResult(LOG_ERROR_MULTI_ACTIONS);
         } else if (validActions.size() == 1) {
             return handleOneValidIntent(validActions.get(0));
         } else if (basicActions.size() == 1) {
             return handleOneValidIntent(new Command(basicActions.get(0)));
         } else {
-            return handleResult(ACT_ERROR_MULTI_ACTIONS);
+            return handleResult(LOG_ERROR_MULTI_ACTIONS);
         }
     }
 
@@ -213,31 +214,31 @@ public class CmdParser {
         cmd.offset = cmd.direction * cmd.offset;
         cmd.direction = KW_DIRECTION_FORWARDS;
         switch (cmd.actId) {
-            case ACT_PAUSE:
-            case ACT_PLAY:
-            case ACT_FAST_FORWARD:
-            case ACT_FAST_REVERSE:
-            case ACT_STOP:
+            case INTENT_MEDIA_PAUSE:
+            case INTENT_MEDIA_PLAY:
+            case INTENT_MEDIA_FAST_FORWARD:
+            case INTENT_MEDIA_FAST_REVERSE:
+            case INTENT_MEDIA_STOP:
                 // check basic intent
-            case ACT_SEEK_CONTENT:
-            case ACT_SEEK_RELATIVE:
+            case INTENT_MEDIA_SEEK_CONTENT:
+            case INTENT_MEDIA_SEEK_RELATIVE:
                 return cmd;
-            case ACT_SEEK_LIVE:
+            case INTENT_MEDIA_SEEK_LIVE:
                 if (cmd.offset > 0) {
                     break;
                 }
                 return cmd;
-            case ACT_SEEK_WALLCLOCK:
+            case INTENT_MEDIA_SEEK_WALLCLOCK:
                 // TODO - check wall clock format is valid
                 cmd.item = cmd.clock;
                 return cmd;
-            case ACT_SEARCH:
-            case ACT_DISPLAY:
+            case INTENT_SEARCH:
+            case INTENT_DISPLAY:
                 if (cmd.item == null) {
                     break;
                 }
                 return cmd;
-            case ACT_PLAYBACK:
+            case INTENT_PLAYBACK:
                 if (cmd.item == null) {
                     break;
                 }
@@ -251,48 +252,48 @@ public class CmdParser {
                     cmd.offset = -999999;
                     return cmd;
                 }
-            case ACT_NUMBER_ZERO:
-            case ACT_NUMBER_ONE:
-            case ACT_NUMBER_TWO:
-            case ACT_NUMBER_THREE:
-            case ACT_NUMBER_FOUR:
-            case ACT_NUMBER_FIVE:
-            case ACT_NUMBER_SIX:
-            case ACT_NUMBER_SEVEN:
-            case ACT_NUMBER_EIGHT:
-            case ACT_NUMBER_NINE:
-            case ACT_PRESS_RED:
-            case ACT_PRESS_GREEN:
-            case ACT_PRESS_YELLOW:
-            case ACT_PRESS_BLUE:
-            case ACT_PRESS_UP:
-            case ACT_PRESS_DOWN:
-            case ACT_PRESS_LEFT:
-            case ACT_PRESS_RIGHT:
-            case ACT_PRESS_ENTER:
-            case ACT_PRESS_BACK:
+            case ACT_PRESS_BUTTON_NUMB_ZERO:
+            case ACT_PRESS_BUTTON_NUMB_ONE:
+            case ACT_PRESS_BUTTON_NUMB_TWO:
+            case ACT_PRESS_BUTTON_NUMB_THREE:
+            case ACT_PRESS_BUTTON_NUMB_FOUR:
+            case ACT_PRESS_BUTTON_NUMB_FIVE:
+            case ACT_PRESS_BUTTON_NUMB_SIX:
+            case ACT_PRESS_BUTTON_NUMB_SEVEN:
+            case ACT_PRESS_BUTTON_NUMB_EIGHT:
+            case ACT_PRESS_BUTTON_NUMB_NINE:
+            case ACT_PRESS_BUTTON_RED:
+            case ACT_PRESS_BUTTON_GREEN:
+            case ACT_PRESS_BUTTON_YELLOW:
+            case ACT_PRESS_BUTTON_BLUE:
+            case ACT_PRESS_BUTTON_UP:
+            case ACT_PRESS_BUTTON_DOWN:
+            case ACT_PRESS_BUTTON_LEFT:
+            case ACT_PRESS_BUTTON_RIGHT:
+            case ACT_PRESS_BUTTON_ENTER:
+            case ACT_PRESS_BUTTON_BACK:
                 return new Command(cmd.actId);
         }
-        return handleResult(ACT_ERROR_INTENT_SEND);
+        return handleResult(LOG_ERROR_INTENT_SEND);
     }
 
     private boolean isValidBasicAction(Integer actionId) {
-        if (actionId <= ACT_STOP) {
+        if (actionId <= INTENT_MEDIA_STOP) {
             return true;
         }
-        return actionId >= ACT_PRESS_RED && actionId <= ACT_PRESS_ENTER;
+        return actionId >= ACT_PRESS_BUTTON_RED && actionId <= ACT_PRESS_BUTTON_ENTER;
     }
 
     private Command handleResult(int code) {
         Command resultCmd = new Command(code);
         switch (code) {
-            case ACT_ERROR_NONE_ACTION:
+            case LOG_ERROR_NONE_ACTION:
                 resultCmd.item = "Error: no valid action in command is found";
                 break;
-            case ACT_ERROR_MULTI_ACTIONS:
+            case LOG_ERROR_MULTI_ACTIONS:
                 resultCmd.item = "Error: more than one action is found in one command";
                 break;
-            case ACT_ERROR_INTENT_SEND:
+            case LOG_ERROR_INTENT_SEND:
                 resultCmd.item = "Error: an invalid Intent cannot be sent";
                 break;
             default:
@@ -303,20 +304,20 @@ public class CmdParser {
 
     private boolean isValidAction(Command cmd) {
         switch (cmd.actId) {
-            case ACT_SEEK_CONTENT:
+            case INTENT_MEDIA_SEEK_CONTENT:
                 return (cmd.anchor.equals(KW_ANCHOR_START) || cmd.anchor.equals(KW_ANCHOR_END));
-            case ACT_SEEK_RELATIVE:
+            case INTENT_MEDIA_SEEK_RELATIVE:
                 // TODO - check offset could be 0
                 return cmd.anchor.equals(KW_ANCHOR_NONE) && cmd.offset != 0;
-            case ACT_SEEK_LIVE:
+            case INTENT_MEDIA_SEEK_LIVE:
                 return cmd.anchor.equals(KW_ANCHOR_LIVE);
-            case ACT_SEEK_WALLCLOCK:
+            case INTENT_MEDIA_SEEK_WALLCLOCK:
                 return cmd.clock != null;
-            case ACT_SEARCH:
-            case ACT_DISPLAY:
-            case ACT_PLAYBACK:
+            case INTENT_SEARCH:
+            case INTENT_DISPLAY:
+            case INTENT_PLAYBACK:
                 return cmd.item != null;
-            case ACT_PRESS_BACK:
+            case ACT_PRESS_BUTTON_BACK:
                 return cmd.anchor.equals(KW_ANCHOR_NONE) && cmd.offset == 0;
             default:
                 return false;
@@ -329,7 +330,7 @@ public class CmdParser {
             if (NUMBER_NAMES.containsKey(w) || w.matches("^\\d+$")) {
                 int num = parseNumberName(Collections.singletonList(w));
                 if (0 <= num && num < 10) {
-                    numbers.add(num + ACT_NUMBER_ZERO);
+                    numbers.add(num + ACT_PRESS_BUTTON_NUMB_ZERO);
                 }
             }
         }
@@ -601,13 +602,13 @@ public class CmdParser {
             int end = words.size();
             switch (actionId) {
                 // TODO - handle cases if keyword is not only "search", "display", "play"
-                case ACT_SEARCH:
+                case INTENT_SEARCH:
                     start = words.indexOf("search") + 1;
                     break;
-                case ACT_DISPLAY:
+                case INTENT_DISPLAY:
                     start = words.indexOf("display") + 1;
                     break;
-                case ACT_PLAYBACK:
+                case INTENT_PLAYBACK:
                     start = words.indexOf("play") + 1;
                     break;
                 default:
@@ -659,10 +660,10 @@ public class CmdParser {
             }
             if (start == KW_UNDEFINED || start >= end) {
                 item = null;
-            } else if (actionId == ACT_SEARCH || actionId == ACT_DISPLAY) {
+            } else if (actionId == INTENT_SEARCH || actionId == INTENT_DISPLAY) {
                 item = TextUtils.join(" ", words.subList(start, words.size()));
             } else {
-                // actionId == ACT_PLAY
+                // actionId == INTENT_MEDIA_PLAY
                 item = TextUtils.join(" ", words.subList(start, end));
             }
         }
