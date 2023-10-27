@@ -35,6 +35,7 @@ import com.amazonaws.services.transcribe.model.LanguageCode;
 import com.amazonaws.services.transcribe.model.ListTranscriptionJobsRequest;
 import com.amazonaws.services.transcribe.model.ListTranscriptionJobsResult;
 import com.amazonaws.services.transcribe.model.Media;
+import com.amazonaws.services.transcribe.model.Settings;
 import com.amazonaws.services.transcribe.model.StartTranscriptionJobRequest;
 import com.amazonaws.services.transcribe.model.TranscriptionJobSummary;
 
@@ -58,6 +59,7 @@ public class VoiceRecognitionService extends Service {
     private static final String AWS_SECRET_KEY = "TODO"; //TODO
     private static final String BUCKET_NAME = "TODO"; //TODO
     private static final String OBJECT_KEY = "TODO"; //TODO
+    private static final String TRANSCRIBE_VOCABULARY = "TODO"; //TODO
     private static final com.amazonaws.regions.Region REGION = Region.EU_Ireland.toAWSRegion();
     private AmazonS3 s3;
     private AmazonTranscribe amazonTranscribe;
@@ -238,7 +240,8 @@ public class VoiceRecognitionService extends Service {
                     .withLanguageCode(LanguageCode.EnGB)
                     .withMediaFormat(fileName)
                     .withOutputBucketName(bucketName)
-                    .withTranscriptionJobName(jobName);
+                    .withTranscriptionJobName(jobName)
+                    .withSettings(new Settings().withVocabularyName(TRANSCRIBE_VOCABULARY));
             amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
             // Poll for the job status
             String status = "";
