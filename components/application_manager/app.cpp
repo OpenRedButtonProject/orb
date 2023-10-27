@@ -45,6 +45,7 @@ App App::CreateAppFromAitDesc(const Ait::S_AIT_APP_DESC *desc,
     bool isTrusted)
 {
     App app;
+    app.versionMinor = INT8_MAX;
 
     app.baseUrl = Ait::GetBaseURL(desc, currentService, isNetworkAvailable, &app.protocolId);
 
@@ -62,6 +63,14 @@ App App::CreateAppFromAitDesc(const Ait::S_AIT_APP_DESC *desc,
     app.isServiceBound = desc->appDesc.serviceBound;
     app.isHidden = isBroadcast; // Broadcast-related applications need to call show.
     app.parentalRatings = desc->parentalRatings;
+
+    for (uint8_t i = 0; i < desc->appDesc.appProfiles.size(); i++)
+    {
+        if (app.versionMinor >= desc->appDesc.appProfiles[i].versionMinor)
+        {
+            app.versionMinor = desc->appDesc.appProfiles[i].versionMinor;
+        }
+    }
 
     /* AUTOSTARTED apps are activated when they receive a key event */
     app.isActivated = !(desc->controlCode == Ait::APP_CTL_AUTOSTART);

@@ -61,6 +61,7 @@ public:
     bool isActivated = true;
     uint16_t id;
     std::vector<Ait::S_APP_PARENTAL_RATING> parentalRatings;
+    uint8_t versionMinor;
 };
 
 #endif // HBBTV_SERVICE_APP_H
