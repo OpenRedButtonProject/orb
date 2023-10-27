@@ -972,9 +972,7 @@ class OrbSession implements IOrbSession {
     /**
      * Called to send an intent for a request to seek a time position relative to the live edge of the media content
      *
-     * @param connection The request and response should have the same value
-     * @param id         The request and response should have the same value
-     * @param offset     The number value for the time position at or before the live edge, zero or negative number of seconds
+     * @param offset The number value for the time position at or before the live edge, zero or negative number of seconds
      */
     @Override
     public void onSendIntentMediaSeekLive(int offset) {
