@@ -141,6 +141,7 @@ public class MainActivity extends Activity {
                 consoleLog(message);
             }
         });
+        mMockCallback.registerVoiceReceiver();
     }
 
     @Override
@@ -164,6 +165,7 @@ public class MainActivity extends Activity {
         super.onDestroy();
         unbindDialService();
         unbindVoiceRecognitionService();
+        mMockCallback.unregisterVoiceReceiver();
     }
 
     private final IMockDialServiceCallback.Stub mDialServiceCallback =
