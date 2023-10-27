@@ -20,6 +20,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -66,13 +67,12 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     private String mDsmPath = "";
     private final HashMap<Integer, Handler> mActiveSubscriptionList;
     private final MockHttpServer mServer;
-
     private IOrbSession mSession = null;
     private TestSuiteRunner mTestSuiteRunner = null;
     private TestSuiteScenario mTestSuiteScenario;
+    private VoiceServiceReceiver mVoiceReceiver;
 
     private final HashMap<Integer, Handler> mActiveSearchList = new HashMap<>();
-
     static SparseArray<Integer> mKeyMap;
 
     private final int F_SUBTITLES = 0;
@@ -92,12 +92,6 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
             "responseToUserAction",
             "audioDescription",
             "inVisionSigning"};
-
-    private final int INTENT_PAUSE = 0;
-    private final int INTENT_PLAY = 1;
-    private final int INTENT_FAST_FORWARD = 2;
-    private final int INTENT_FAST_REVERSE = 3;
-    private final int INTENT_STOP = 4;
     private final int EMPTY_INTEGER = -999999;
     private final String EMPTY_STRING = "";
     private static final int SUBTITLES_KEY = KeyEvent.KEYCODE_1;
@@ -168,6 +162,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     private String MOCK_RESPONSE_TO_A_USER_ACTION_MAGNITUDE = EMPTY_STRING;
     private int MOCK_AUDIO_DESCRIPTION_GAIN = 0;
     private int MOCK_AUDIO_DESCRIPTION_PAN_AZIMUTH = 90;
+    private String MOCK_NEW_MEDIA_ID = "urn:broadcaster:programme:1249863457643";
 
     public interface ConsoleCallback {
         void log(String msg);
@@ -219,6 +214,23 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                         System.exit(0);
                     }
                 });
+    }
+
+    public void registerVoiceReceiver() {
+        mVoiceReceiver = new VoiceServiceReceiver();
+        mContext.registerReceiver(mVoiceReceiver, new IntentFilter("org.orbtv.voiceservice.message"));
+        mVoiceReceiver.setVoiceCallback(new VoiceServiceReceiver.ResultCallback() {
+            @Override
+            public void onReceive(Integer action, String info, String anchor, int offset) {
+                if(!dispatchVoiceCommand(action, info, anchor, offset)) {
+                    consoleLog("Error in voice recognition");
+                }
+            }
+        });
+    }
+
+    public void unregisterVoiceReceiver() {
+        mContext.unregisterReceiver(mVoiceReceiver);
     }
 
     /**
@@ -1739,6 +1751,17 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     /**
+     * Called to send a response message
+     *
+     * @param info The content of the message
+     */
+    @Override
+    public void onRespondMessage(String info) {
+        consoleLog(info);
+        // TODO: audio response
+    }
+
+    /**
      * Called to send an error message
      *
      * @param code    The error code
@@ -1761,6 +1784,175 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     public void onReceiveError(int code, String message,
                                String method, String data) {
         consoleLog("Receive an error, code: " + code + ", method: " + method);
+    }
+
+    /**
+     * Request for the description of the current media on applications
+     *
+     * @return true if this event has been handled, and false if not
+     */
+    @Override
+    public boolean onRequestMediaDescription() {
+        consoleLog("Request for the information of media playing...");
+        mSession.onRequestMediaDescription();
+        return true;
+    }
+
+    /**
+     * Request to deliver a text input, from voice command, to applications
+     *
+     * @param input The content of the text
+     * @return true if this event has been handled, and false if not
+     */
+    @Override
+    public boolean onRequestTextInput(String input) {
+        // Mock function to display the input text
+        consoleLog("Enter text {" + input + "}");
+        return true;
+    }
+
+    /**
+     * Called to send an intent, from a voice command, to applications
+     *
+     * @param action The index number of the intent, from intent.media.pause to intent.playback
+     * @param info   The value uniquely identifying a piece of content:
+     *               - INTENT_MEDIA_SEEK_WALLCLOCK: a wall clock time
+     *               - INTENT_DISPLAY: a URI
+     *               - INTENT_SEARCH: a search term specified by the user.
+     *               - INTENT_PLAYBACK: a URI
+     * @param anchor The value indicates an anchor point of the content, which is either "start" or "end"
+     * @param offset The number value for the time position, a number of seconds
+     * @return true if this event has been handled, and false if not
+     */
+    @Override
+    public boolean onSendIntentByVoiceCommand(Integer action, String info, String anchor,
+                                              int offset) {
+        String mediaId;
+        switch (action) {
+            case INTENT_MEDIA_PAUSE:
+                mSession.onSendIntentMediaBasics(INTENT_MEDIA_PAUSE);
+                consoleLog("Send an intent, action: pause");
+                return true;
+            case INTENT_MEDIA_PLAY:
+                mSession.onSendIntentMediaBasics(INTENT_MEDIA_PLAY);
+                consoleLog("Send an intent, action: play");
+                return true;
+            case INTENT_MEDIA_FAST_FORWARD:
+                mSession.onSendIntentMediaBasics(INTENT_MEDIA_FAST_FORWARD);
+                consoleLog("Send an intent, action: fast-forward");
+                return true;
+            case INTENT_MEDIA_FAST_REVERSE:
+                mSession.onSendIntentMediaBasics(INTENT_MEDIA_FAST_REVERSE);
+                consoleLog("Send an intent, action: fast-reverse");
+                return true;
+            case INTENT_MEDIA_STOP:
+                mSession.onSendIntentMediaBasics(INTENT_MEDIA_STOP);
+                consoleLog("Send an intent, action: stop");
+                return true;
+            case INTENT_MEDIA_SEEK_CONTENT:
+                if (anchor.equals("start") || anchor.equals("end")) {
+                    mSession.onSendIntentMediaSeekContent(anchor, offset);
+                    consoleLog("Send an intent, action: seek-content");
+                    return true;
+                }
+                break;
+            case INTENT_MEDIA_SEEK_RELATIVE:
+                mSession.onSendIntentMediaSeekRelative(offset);
+                consoleLog("Send an intent, action: seek-relative");
+                return true;
+            case INTENT_MEDIA_SEEK_LIVE:
+                mSession.onSendIntentMediaSeekLive(offset);
+                consoleLog("Send an intent, action: seek-live");
+                return true;
+            case INTENT_DISPLAY:
+                // TODO - get mediaId by media name
+                mediaId = MOCK_NEW_MEDIA_ID;
+                mSession.onSendIntentDisplay(mediaId);
+                consoleLog("Send an intent, action: display");
+                return true;
+            case INTENT_MEDIA_SEEK_WALLCLOCK:
+                mSession.onSendIntentMediaSeekWallclock(info);
+                consoleLog("Send an intent, action: seek-wallclock");
+                return true;
+            case INTENT_SEARCH:
+                mSession.onSendIntentSearch(info);
+                consoleLog("Send an intent, action: search");
+                return true;
+            case INTENT_PLAYBACK:
+                mediaId = MOCK_NEW_MEDIA_ID;
+                mSession.onSendIntentPlayback(mediaId, anchor, offset);
+                consoleLog("Send an intent, action: playback");
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * Called to send a send a key press event, from a voice command, to the application
+     *
+     * @param action The index number of the intent, either pressing a button or showing a log
+     */
+    @Override
+    public boolean onSendKeyPressAction(Integer action) {
+        switch (action) {
+            case ACT_PRESS_BUTTON_NUMB_ZERO:
+            case ACT_PRESS_BUTTON_NUMB_ONE:
+            case ACT_PRESS_BUTTON_NUMB_TWO:
+            case ACT_PRESS_BUTTON_NUMB_THREE:
+            case ACT_PRESS_BUTTON_NUMB_FOUR:
+            case ACT_PRESS_BUTTON_NUMB_FIVE:
+            case ACT_PRESS_BUTTON_NUMB_SIX:
+            case ACT_PRESS_BUTTON_NUMB_SEVEN:
+            case ACT_PRESS_BUTTON_NUMB_EIGHT:
+            case ACT_PRESS_BUTTON_NUMB_NINE:
+                // send a Mock intent, by showing a message on window log
+                consoleLog("Press " + (action - ACT_PRESS_BUTTON_NUMB_ZERO));
+                return true;
+            case ACT_PRESS_BUTTON_RED:
+            case ACT_PRESS_BUTTON_GREEN:
+            case ACT_PRESS_BUTTON_YELLOW:
+            case ACT_PRESS_BUTTON_BLUE:
+            case ACT_PRESS_BUTTON_UP:
+            case ACT_PRESS_BUTTON_DOWN:
+            case ACT_PRESS_BUTTON_LEFT:
+            case ACT_PRESS_BUTTON_RIGHT:
+            case ACT_PRESS_BUTTON_ENTER:
+            case ACT_PRESS_BUTTON_BACK:
+                // send a Mock intent, by showing a message on window log
+                consoleLog("Press " + ACT_BUTTON_NAMES.get(action));
+                return true;
+        }
+        return false;
+    }
+
+    private boolean dispatchVoiceCommand(Integer action, String info, String anchor, int offset) {
+        switch (action) {
+            case INTENT_MEDIA_PAUSE:
+            case INTENT_MEDIA_PLAY:
+            case INTENT_MEDIA_FAST_FORWARD:
+            case INTENT_MEDIA_FAST_REVERSE:
+            case INTENT_MEDIA_STOP:
+            case INTENT_MEDIA_SEEK_CONTENT:
+            case INTENT_MEDIA_SEEK_RELATIVE:
+            case INTENT_MEDIA_SEEK_LIVE:
+            case INTENT_MEDIA_SEEK_WALLCLOCK:
+            case INTENT_SEARCH:
+            case INTENT_DISPLAY:
+            case INTENT_PLAYBACK:
+                return onSendIntentByVoiceCommand(action, info, anchor, offset);
+            case ACT_REQUEST_MEDIA_DESCRIPTION:
+                return onRequestMediaDescription();
+            case ACT_REQUEST_TEXT_INPUT:
+                return onRequestTextInput(info);
+            case LOG_MESSAGE:
+            case LOG_ERROR_NONE_ACTION:
+            case LOG_ERROR_MULTI_ACTIONS:
+            case LOG_ERROR_INTENT_SEND:
+                consoleLog(info);
+                return true;
+            default:
+                return onSendKeyPressAction(action);
+        }
     }
 
     private void consoleLog(String log) {
