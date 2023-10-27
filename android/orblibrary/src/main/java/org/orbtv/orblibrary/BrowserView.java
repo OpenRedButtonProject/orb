@@ -59,7 +59,8 @@ class BrowserView extends WebView {
         getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         addJavascriptInterface(new JavaScriptBridgeInterface(bridge), "androidBridge");
 
-        mWebResourceClient = new WebResourceClient(dsmccClient, new HtmlBuilder(mContext.getAssets())) {
+        mWebResourceClient = new WebResourceClient(dsmccClient, new HtmlBuilder(mContext.getAssets()),
+                configuration.doNotTrackPreference) {
             @Override
             public void onRequestFailed(WebResourceRequest request, int appId) {
                 if (request.isForMainFrame() && appId == mLoadAppId) {

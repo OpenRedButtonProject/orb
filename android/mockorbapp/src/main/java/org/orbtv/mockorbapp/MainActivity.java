@@ -15,6 +15,7 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.provider.Settings;
 import android.util.Log;
 import android.widget.FrameLayout;
 
@@ -58,7 +59,8 @@ public class MainActivity extends Activity {
                 MAIN_ACTIVITY_UUID,
                 USER_AGENT,
                 SANS_SERIF_FONT_FAMILY,
-                FIXED_FONT_FAMILY
+                FIXED_FONT_FAMILY,
+                getDoNotTrackPreference()
         );
 
         setContentView(R.layout.activity_main);
@@ -157,6 +159,22 @@ public class MainActivity extends Activity {
             }
             getApplicationContext().unbindService(mDialServiceConnection);
         }
+    }
+
+    private OrbSessionFactory.DoNotTrackPreference getDoNotTrackPreference() {
+        String setting = Settings.Global.getString(getContentResolver(), "hbbtv_do_not_track_preference");
+        if (setting == null) {
+            Log.d(TAG, "Do Not Track: Unset.");
+        } else if (setting.equals("0")) {
+            Log.d(TAG, "Do Not Track: Allow tracking (0).");
+            return OrbSessionFactory.DoNotTrackPreference.DNT_ALLOW_TRACKING;
+        } else if (setting.equals("1")) {
+            Log.d(TAG, "Do Not Track: No tracking (1).");
+            return OrbSessionFactory.DoNotTrackPreference.DNT_NO_TRACKING;
+        } else {
+            Log.e(TAG, "Do Not Track: Illegal hbbtv_do_not_track_preference value.");
+        }
+        return OrbSessionFactory.DoNotTrackPreference.DNT_UNSET;
     }
 
     public String getHostAddress() {

@@ -45,14 +45,17 @@ abstract class WebResourceClient {
 
     private final DsmccClient mDsmccClient;
     private final HtmlBuilder mHtmlBuilder;
+    private final OrbSessionFactory.DoNotTrackPreference mDoNotTrackPreference;
     OkHttpClient mHttpClient;
     OkHttpClient mHttpSandboxClient;
 
-    WebResourceClient(DsmccClient dsmccClient, HtmlBuilder htmlBuilder) {
+    WebResourceClient(DsmccClient dsmccClient, HtmlBuilder htmlBuilder,
+                      OrbSessionFactory.DoNotTrackPreference doNotTrackPreference) {
         mDsmccClient = dsmccClient;
         mHtmlBuilder = htmlBuilder;
         mHttpClient = new OkHttpClient();
         mHttpSandboxClient = new OkHttpClient();
+        mDoNotTrackPreference = doNotTrackPreference;
     }
 
     public WebResourceResponse shouldInterceptRequest(WebResourceRequest request, int appId) {
@@ -107,7 +110,17 @@ abstract class WebResourceClient {
                 requestHeaders.put("Cookie", cookie);
             }
         }
-
+        
+        if (mDoNotTrackPreference == OrbSessionFactory.DoNotTrackPreference.DNT_UNSET) {
+            // Don't include a DNT header
+        } else if (mDoNotTrackPreference == OrbSessionFactory.DoNotTrackPreference.DNT_ALLOW_TRACKING) {
+            requestHeaders.put("DNT", "0");
+        } else if (mDoNotTrackPreference == OrbSessionFactory.DoNotTrackPreference.DNT_NO_TRACKING) {
+            requestHeaders.put("DNT", "1");
+        } else {
+            Log.e(TAG, "Unhandled value for DoNotTrackPreference.");
+        }
+        
         Response httpResponse = mHttpClient.newCall(new Request.Builder()
                 .url(url)
                 .method(request.getMethod(), null)
