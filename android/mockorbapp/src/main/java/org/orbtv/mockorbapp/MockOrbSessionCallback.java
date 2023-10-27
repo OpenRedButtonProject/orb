@@ -222,7 +222,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         mVoiceReceiver.setVoiceCallback(new VoiceServiceReceiver.ResultCallback() {
             @Override
             public void onReceive(Integer action, String info, String anchor, int offset) {
-                if(!dispatchVoiceCommand(action, info, anchor, offset)) {
+                if(!sendVoiceCommand(action, info, anchor, offset)) {
                     consoleLog("Error in voice recognition");
                 }
             }
@@ -1751,11 +1751,10 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     /**
-     * Called to send a response message
+     * Called to send an response message
      *
      * @param info The content of the message
      */
-    @Override
     public void onRespondMessage(String info) {
         consoleLog(info);
         // TODO: audio response
@@ -1894,38 +1893,16 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public boolean onSendKeyPressAction(Integer action) {
-        switch (action) {
-            case ACT_PRESS_BUTTON_NUMB_ZERO:
-            case ACT_PRESS_BUTTON_NUMB_ONE:
-            case ACT_PRESS_BUTTON_NUMB_TWO:
-            case ACT_PRESS_BUTTON_NUMB_THREE:
-            case ACT_PRESS_BUTTON_NUMB_FOUR:
-            case ACT_PRESS_BUTTON_NUMB_FIVE:
-            case ACT_PRESS_BUTTON_NUMB_SIX:
-            case ACT_PRESS_BUTTON_NUMB_SEVEN:
-            case ACT_PRESS_BUTTON_NUMB_EIGHT:
-            case ACT_PRESS_BUTTON_NUMB_NINE:
-                // send a Mock intent, by showing a message on window log
-                consoleLog("Press " + (action - ACT_PRESS_BUTTON_NUMB_ZERO));
-                return true;
-            case ACT_PRESS_BUTTON_RED:
-            case ACT_PRESS_BUTTON_GREEN:
-            case ACT_PRESS_BUTTON_YELLOW:
-            case ACT_PRESS_BUTTON_BLUE:
-            case ACT_PRESS_BUTTON_UP:
-            case ACT_PRESS_BUTTON_DOWN:
-            case ACT_PRESS_BUTTON_LEFT:
-            case ACT_PRESS_BUTTON_RIGHT:
-            case ACT_PRESS_BUTTON_ENTER:
-            case ACT_PRESS_BUTTON_BACK:
-                // send a Mock intent, by showing a message on window log
-                consoleLog("Press " + ACT_BUTTON_NAMES.get(action));
-                return true;
+        // send a Mock intent, by showing a message on window log
+        String buttonName = ACT_BUTTON_NAMES.getOrDefault(action, "invalid");
+        if (buttonName.equals("invalid")) {
+            return false;
         }
-        return false;
+        consoleLog("Press " + buttonName + " button");
+        return true;
     }
 
-    private boolean dispatchVoiceCommand(Integer action, String info, String anchor, int offset) {
+    public boolean sendVoiceCommand(Integer action, String info, String anchor, int offset) {
         switch (action) {
             case INTENT_MEDIA_PAUSE:
             case INTENT_MEDIA_PLAY:
