@@ -374,6 +374,27 @@ class OrbSession implements IOrbSession {
     }
 
     /**
+     * Returns whether a Teletext application is signalled in the current AIT.
+     *
+     * @return True if a Teletext application is signalled, false otherwise.
+     */
+    @Override
+    public boolean isTeletextApplicationSignalled() {
+        return mApplicationManager.isTeletextApplicationSignalled();
+    }
+
+    /**
+     * Launch the Teletext application signalled in the current AIT (e.g., when the user presses the
+     * TEXT key).
+     *
+     * @return True if the application is launched, false otherwise.
+     */
+    @Override
+    public boolean launchTeletextApplication() {
+        return mApplicationManager.runTeletextApplication();
+    }
+
+    /**
      * Called when the service list has changed.
      */
     @Override
