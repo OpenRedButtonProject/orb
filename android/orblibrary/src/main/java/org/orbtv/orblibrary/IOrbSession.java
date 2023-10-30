@@ -66,6 +66,21 @@ public interface IOrbSession {
     void processXmlAit(String xmlAit);
 
     /**
+     * Returns whether a Teletext application is signalled in the current AIT.
+     *
+     * @return True if a Teletext application is signalled, false otherwise.
+     */
+    boolean isTeletextApplicationSignalled();
+
+    /**
+     * Launch the Teletext application signalled in the current AIT (e.g., when the user presses the
+     * TEXT key).
+     *
+     * @return True if the application is launched, false otherwise.
+     */
+    boolean launchTeletextApplication();
+
+    /**
      * Called when the service list has changed.
      */
     void onServiceListChanged();
