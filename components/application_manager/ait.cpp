@@ -130,8 +130,17 @@ const Ait::S_AIT_APP_DESC * Ait::AutoStartApp(const S_AIT_TABLE *aitTable, int
                                                                       HBBTV_VERSION_MINOR) &&
                          (ad.versionMicro <= HBBTV_VERSION_MICRO)))
                     {
-                        supported = true;
-                        break;
+                        // TODO(COIT-53) Add flags for PVR and DL options that are used in comparison with the application profile.
+                        if (ad.appProfile == 0)
+                        {
+                            supported = true;
+                            break;
+                        }
+                        else
+                        {
+                            LOG(LOG_ERROR, "Ait::AutoStartApp '%d' profile not supported.",
+                                ad.appProfile);
+                        }
                     }
                     else
                     {
