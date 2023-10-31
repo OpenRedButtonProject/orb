@@ -24,6 +24,13 @@ hbbtv.mediaManager = (function() {
             }).result, 
     };
 
+    hbbtv.bridge = {
+        configuration: {
+            getPreferredAudioLanguage: () =>
+            hbbtv.native.request('Configuration.getPreferredAudioLanguage').result
+        }
+    };
+
     function initialise() {
         addSourceManipulationIntercept();
         addMutationIntercept();
