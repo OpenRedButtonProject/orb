@@ -50,7 +50,7 @@ import java.io.InputStreamReader;
 
 public class VoiceRecognitionService extends Service {
     private static final String TAG = VoiceRecognitionService.class.getSimpleName();
-    private MediaRecorder mediaRecorder;
+    private MediaRecorder mMediaRecorder;
     private boolean isRecording = false;
     // AWS S3 and Transcribe credentials and configurations
     // Set up the s3 bucket with name same as BUCKET_NAME
@@ -61,9 +61,9 @@ public class VoiceRecognitionService extends Service {
     private static final String OBJECT_KEY = "TODO"; //TODO
     private static final String TRANSCRIBE_VOCABULARY = "TODO"; //TODO
     private static final com.amazonaws.regions.Region REGION = Region.EU_Ireland.toAWSRegion();
-    private AmazonS3 s3;
-    private AmazonTranscribe amazonTranscribe;
-    private BasicAWSCredentials awsCredentials;
+    private AmazonS3 mS3;
+    private AmazonTranscribe mAmazonTranscribe;
+    private BasicAWSCredentials mAwsCredentials;
     private Context mContext;
 
     @Override
@@ -73,10 +73,11 @@ public class VoiceRecognitionService extends Service {
         Intent permissionCheck = new Intent(mContext, PermissionRequestActivity.class);
         permissionCheck.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         mContext.startActivity(permissionCheck);
-        awsCredentials = new BasicAWSCredentials(AWS_ACCESS_KEY, AWS_SECRET_KEY);
-        s3 = new AmazonS3Client(awsCredentials, REGION);
-        amazonTranscribe = new AmazonTranscribeClient(awsCredentials);
-        amazonTranscribe.setRegion(REGION);
+
+        mAwsCredentials = new BasicAWSCredentials(AWS_ACCESS_KEY, AWS_SECRET_KEY);
+        mS3 = new AmazonS3Client(mAwsCredentials, REGION);
+        mAmazonTranscribe = new AmazonTranscribeClient(mAwsCredentials);
+        mAmazonTranscribe.setRegion(REGION);
     }
 
     @Override
@@ -149,14 +150,14 @@ public class VoiceRecognitionService extends Service {
         startForeground(1337, n);
         notificationManager.notify(1337, n);
         try {
-            mediaRecorder = new MediaRecorder();
-            mediaRecorder.reset();
-            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB); // Set the output format to AMR
-            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB); // Set the audio encoder to AMR
-            mediaRecorder.setOutputFile(getOutputFilePath()); // Set the output file path
-            mediaRecorder.prepare();
-            mediaRecorder.start();
+            mMediaRecorder = new MediaRecorder();
+            mMediaRecorder.reset();
+            mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB); // Set the output format to AMR
+            mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB); // Set the audio encoder to AMR
+            mMediaRecorder.setOutputFile(getOutputFilePath()); // Set the output file path
+            mMediaRecorder.prepare();
+            mMediaRecorder.start();
             isRecording = true;
         } catch (IOException e) {
             e.printStackTrace();
@@ -164,10 +165,10 @@ public class VoiceRecognitionService extends Service {
     }
 
     private void stopRecording() {
-        if (mediaRecorder != null && isRecording) {
-            mediaRecorder.stop();
-            mediaRecorder.release();
-            mediaRecorder = null;
+        if (mMediaRecorder != null && isRecording) {
+            mMediaRecorder.stop();
+            mMediaRecorder.release();
+            mMediaRecorder = null;
             isRecording = false;
         }
     }
@@ -188,7 +189,7 @@ public class VoiceRecognitionService extends Service {
             // Create a DeleteObjectRequest with the bucket name and object key
             DeleteObjectRequest deleteObjectRequest = new DeleteObjectRequest(BUCKET_NAME, OBJECT_KEY);
             // Delete the object from S3
-            s3.deleteObject(deleteObjectRequest);
+            mS3.deleteObject(deleteObjectRequest);
             if (!fileToUpload.exists()) {
                 Log.e(TAG, path + " does not exist!");
                 return null;
@@ -198,7 +199,7 @@ public class VoiceRecognitionService extends Service {
                     .builder()
                     .context(mContext.getApplicationContext())
                     .defaultBucket(BUCKET_NAME)
-                    .s3Client(s3)
+                    .s3Client(mS3)
                     .build();
             TransferObserver observer = transferUtility.upload(keyName, fileToUpload);
             observer.setTransferListener(new TransferListener() {
@@ -242,46 +243,49 @@ public class VoiceRecognitionService extends Service {
                     .withOutputBucketName(bucketName)
                     .withTranscriptionJobName(jobName)
                     .withSettings(new Settings().withVocabularyName(TRANSCRIBE_VOCABULARY));
-            amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
+            mAmazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
             // Poll for the job status
             String status = "";
-            while (!status.equalsIgnoreCase("COMPLETED")) {
-                GetTranscriptionJobRequest request = new GetTranscriptionJobRequest();
-                request.withTranscriptionJobName(jobName);
-                GetTranscriptionJobResult jobResult = amazonTranscribe.getTranscriptionJob(request);
+            while (true) {
+                GetTranscriptionJobRequest request = new GetTranscriptionJobRequest().withTranscriptionJobName(jobName);
+                GetTranscriptionJobResult jobResult = mAmazonTranscribe.getTranscriptionJob(request);
                 status = jobResult.getTranscriptionJob().getTranscriptionJobStatus();
                 if (status.equalsIgnoreCase("FAILED")) {
                     Log.e(TAG, jobName + " has failed");
                     Log.e(TAG, jobName + " - " + jobResult.getTranscriptionJob().getFailureReason());
                     break;
-                } else if (status.equalsIgnoreCase("COMPLETED")) {
-                    try {
-                        // Download the JSON file from S3
-                        S3Object s3Object = s3.getObject(bucketName, OBJECT_KEY);
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(s3Object.getObjectContent()));
-                        // Read the JSON data
-                        StringBuilder jsonContent = new StringBuilder();
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            jsonContent.append(line);
-                        }
-                        // Parse the JSON data using org.json
-                        JSONObject jsonObject = new JSONObject(jsonContent.toString());
-                        // Extract the transcript
-                        JSONObject results = jsonObject.getJSONObject("results");
-                        JSONArray transcripts = results.getJSONArray("transcripts");
-                        JSONObject transcriptObject = transcripts.getJSONObject(0);
-                        String transcript = transcriptObject.getString("transcript");
-                        System.out.println("Transcript: " + transcript);
-                        onPostExecute(transcript);
-                        // Close resources
-                        reader.close();
-                        s3Object.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (JSONException e) {
-                        throw new RuntimeException(e);
+                }
+                if (status.equalsIgnoreCase("COMPLETED")) {
+                    break;
+                }
+            }
+            if (status.equalsIgnoreCase("COMPLETED")) {
+                try {
+                    // Download the JSON file from S3
+                    S3Object s3Object = mS3.getObject(bucketName, OBJECT_KEY);
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(s3Object.getObjectContent()));
+                    // Read the JSON data
+                    StringBuilder jsonContent = new StringBuilder();
+                    String currentLine;
+                    while ((currentLine = reader.readLine()) != null) {
+                        jsonContent.append(currentLine);
                     }
+                    // Parse the JSON data using org.json
+                    JSONObject jsonObject = new JSONObject(jsonContent.toString());
+                    // Extract the transcript
+                    JSONObject results = jsonObject.getJSONObject("results");
+                    JSONArray transcripts = results.getJSONArray("transcripts");
+                    JSONObject transcriptObject = transcripts.getJSONObject(0);
+                    String transcript = transcriptObject.getString("transcript");
+                    System.out.println("Transcript: " + transcript);
+                    onPostExecute(transcript);
+                    // Close resources
+                    reader.close();
+                    s3Object.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
                 }
             }
             return null;
@@ -296,7 +300,7 @@ public class VoiceRecognitionService extends Service {
 
     private boolean checkTranscriptionJobExists(String jobName) {
         ListTranscriptionJobsRequest listRequest = new ListTranscriptionJobsRequest();
-        ListTranscriptionJobsResult listResult = amazonTranscribe.listTranscriptionJobs(listRequest);
+        ListTranscriptionJobsResult listResult = mAmazonTranscribe.listTranscriptionJobs(listRequest);
         for (TranscriptionJobSummary transcriptionJob : listResult.getTranscriptionJobSummaries()) {
             if (transcriptionJob.getTranscriptionJobName().equals(jobName)) {
                 return true;
@@ -309,6 +313,6 @@ public class VoiceRecognitionService extends Service {
     private void deleteTranscriptionJob(String jobName) {
         DeleteTranscriptionJobRequest deleteRequest = new DeleteTranscriptionJobRequest();
         deleteRequest.withTranscriptionJobName(jobName);
-        amazonTranscribe.deleteTranscriptionJob(deleteRequest);
+        mAmazonTranscribe.deleteTranscriptionJob(deleteRequest);
     }
 }
