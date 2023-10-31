@@ -2,6 +2,7 @@ define build-polyfill
 $(eval polyfill_iframe_srcs = \
 src/housekeeping/banner.js \
 src/housekeeping/beginiffe.js \
+src/languagecodes.js \
 src/mediaproxies/init.js \
 src/natives/$(3).js \
 src/mediaproxies/tracklists/audiotracklist.js \

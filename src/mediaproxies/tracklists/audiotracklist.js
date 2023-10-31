@@ -105,15 +105,30 @@ hbbtv.objects.AudioTrackList = (function() {
     };
 
     listProto.orb_setTrackList = function(trackList) {
-        const p = privates.get(this);
+        let p = privates.get(this);
+        let preferredAudioLanguageTrack = null;
         for (let i = trackList.length; i < this.length; ++i) {
             p.proxy.unregisterObserver(AUDIO_TRACK_KEY_PREFIX + i);
             delete this[i];
         }
+
         for (let i = 0; i < trackList.length; ++i) {
             this[i] = makeAudioTrack(this, i, trackList[i]);
+            if (p.defaultAudioLanguage) {
+                if (this[i].language === p.defaultAudioLanguage ||
+                    hbbtv.languageCodes.ISO639_2_to_ISO639_1[this[i].language] === p.defaultAudioLanguage ||
+                    hbbtv.languageCodes.ISO639_2_to_ISO639_1[p.defaultAudioLanguage] === this[i].language) {
+                        preferredAudioLanguageTrack = this[i];
+                }
+            }
         }
+
         privates.get(this).length = trackList.length;
+
+        if (preferredAudioLanguageTrack) {
+            preferredAudioLanguageTrack.enabled = true;
+            p.defaultAudioLanguage = null; // the property is valid only during first playback
+        }
     };
 
     listProto.orb_appendTrack = function(track) {
@@ -169,6 +184,7 @@ hbbtv.objects.AudioTrackList = (function() {
         privates.set(this, {
             length: 0,
             eventTarget: document.createDocumentFragment(),
+            defaultAudioLanguage: hbbtv.bridge.configuration.getPreferredAudioLanguage(),
             proxy,
         });
         proxy.registerObserver(AUDIO_TRACK_LIST_KEY, this);
