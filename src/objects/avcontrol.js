@@ -581,7 +581,7 @@ hbbtv.objects.AVControl = (function() {
                     if (!onlyActive || videoTrack.selected) {
                         components.push({
                             // AVComponent properties
-                            componentTag: videoTrack.id,
+                            componentTag: parseInt(videoTrack.id),
                             pid: parseInt(videoTrack.id),
                             type: this.COMPONENT_TYPE_VIDEO,
                             encoding: videoTrack.encoding ?
@@ -876,7 +876,7 @@ hbbtv.objects.AVControl = (function() {
                 for (let i = 0; i < videoTracks.length; ++i) {
                     const track = videoTracks[i];
                     if (
-                        mediaSettings.video.id === track.id ||
+                        mediaSettings.video.id === parseInt(track.id) ||
                         mediaSettings.video.kind.includes(track.kind)
                     ) {
                         index = i;
