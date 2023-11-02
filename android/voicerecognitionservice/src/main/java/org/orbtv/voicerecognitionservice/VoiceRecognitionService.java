@@ -40,6 +40,7 @@ import com.amazonaws.services.transcribe.AmazonTranscribeClient;
 import com.amazonaws.services.transcribe.model.DeleteTranscriptionJobRequest;
 import com.amazonaws.services.transcribe.model.GetTranscriptionJobRequest;
 import com.amazonaws.services.transcribe.model.GetTranscriptionJobResult;
+import com.amazonaws.services.transcribe.model.GetVocabularyRequest;
 import com.amazonaws.services.transcribe.model.LanguageCode;
 import com.amazonaws.services.transcribe.model.ListTranscriptionJobsRequest;
 import com.amazonaws.services.transcribe.model.ListTranscriptionJobsResult;
@@ -223,12 +224,17 @@ public class VoiceRecognitionService extends Service {
             String path = params[0];
             File fileToUpload = new File(path);
             String keyName = fileToUpload.getName();
-            // Create a DeleteObjectRequest with the bucket name and object key
-            DeleteObjectRequest deleteObjectRequest = new DeleteObjectRequest(BUCKET_NAME, OBJECT_KEY);
-            // Delete the object from S3
-            mS3.deleteObject(deleteObjectRequest);
             if (!fileToUpload.exists()) {
                 Log.e(TAG, path + " does not exist!");
+                return null;
+            }
+            try {
+                DeleteObjectRequest deleteObjectRequest =
+                        new DeleteObjectRequest(BUCKET_NAME, OBJECT_KEY);
+                mS3.deleteObject(deleteObjectRequest);
+            } catch (Exception e) {
+                broadcastMessage("AWS credentials are invalid. " +
+                        "Cannot upload audio to aws.");
                 return null;
             }
 
@@ -275,12 +281,26 @@ public class VoiceRecognitionService extends Service {
             StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
             Media media = new Media();
             media.setMediaFileUri(s3Path);
-            startTranscriptionJobRequest.withMedia(media)
-                    .withLanguageCode(LanguageCode.EnGB)
-                    .withMediaFormat(fileName)
-                    .withOutputBucketName(bucketName)
-                    .withTranscriptionJobName(jobName)
-                    .withSettings(new Settings().withVocabularyName(TRANSCRIBE_VOCABULARY));
+            try {
+                mAmazonTranscribe.getVocabulary(new GetVocabularyRequest()
+                        .withVocabularyName(TRANSCRIBE_VOCABULARY));
+                startTranscriptionJobRequest.withMedia(media)
+                        .withLanguageCode(LanguageCode.EnGB)
+                        .withMediaFormat(fileName)
+                        .withOutputBucketName(bucketName)
+                        .withTranscriptionJobName(jobName)
+                        .withSettings(new Settings().withVocabularyName(TRANSCRIBE_VOCABULARY));
+            } catch (Exception e) {
+                broadcastMessage("Vocabulary does not exist: " +
+                        TRANSCRIBE_VOCABULARY +
+                        " transcribe without custom vocabulary.");
+                startTranscriptionJobRequest.withMedia(media)
+                        .withLanguageCode(LanguageCode.EnGB)
+                        .withMediaFormat(fileName)
+                        .withOutputBucketName(bucketName)
+                        .withTranscriptionJobName(jobName);
+            }
+
             mAmazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
             // Poll for the job status
             String status = "";
@@ -335,7 +355,7 @@ public class VoiceRecognitionService extends Service {
                 Log.e(TAG, "Error is found in audio command");
             } else if (transcript.isEmpty()) {
                 broadcastMessage("Receive an empty audio command");
-            } else  {
+            } else {
                 broadcastMessage("Receive audio command: " + transcript);
                 parseIncomingCommand(transcript);
             }
