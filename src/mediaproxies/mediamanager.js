@@ -332,6 +332,18 @@ hbbtv.mediaManager = (function() {
             mediaProxy.callObserverMethod(MEDIA_PROXY_ID, 'setSeekable', [ranges]);
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
         };
+
+        const updateSeekablePeriod = function(e) {
+            const ranges = [];
+            ranges.push({
+                start: e.firstPeriodStart,
+                end: media.currentTime,
+            });
+        
+            mediaProxy.callObserverMethod(MEDIA_PROXY_ID, 'setSeekable', [ranges]);
+            mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
+        };
+        
         const updateBuffered = function(e) {
             const ranges = [];
             for (let i = 0; i < media.buffered.length; ++i) {
@@ -386,7 +398,31 @@ hbbtv.mediaManager = (function() {
         media.addEventListener('__orb_startDateUpdated__', (e) =>
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e)
         );
+
+        // in case of dynamic mpd, update the seekable property based on timeupdate
+        // remove the handling after MPD@timeShiftBufferDepth seconds passed, since dash
+        // updates the seekable property continuously. Use this in case of rdk.
+        if (hbbtv.native.name === 'rdk') {
+            media.addEventListener('__orb_timeShiftBufferDepthReceived__', (e) => {
+                const data = e;
+                if (data.hasOwnProperty('timeShiftBufferDepth')) {
+                    media.addEventListener('timeupdate', updateSeekable);
+                    setTimeout(() => {
+                        media.removeEventListener('timeupdate', updateSeekable);
+                    }, (e.timeShiftBufferDepth - 1) * 1000);
+                } else {
+                    media.addEventListener('timeupdate', () => {
+                        updateSeekablePeriod(data);
+                    });
+                }
+            });
+        }
+
         media.addEventListener('play', (e) => {
+            // some tests ask for the seekable property just after the playing event
+            if (hbbtv.native.name === 'rdk') {
+                updateSeekable(e);
+            }
             let evt = new Event('__orb_onplayspeedchanged__');
             Object.assign(evt, {
                 speed: media.playbackRate

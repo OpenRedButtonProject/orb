@@ -555,6 +555,23 @@ hbbtv.objects.DashProxy = (function() {
         p.periods = e.data.Period_asArray;
         p.mrsUrl = e.data.mrsUrl;
         p.ciAncillaryData = e.data.ciAncillaryData;
+        
+        // dispatch __orb_timeShiftBufferDepthReceived__ event for seekable property in case of rdk native
+        if (hbbtv.native.name === 'rdk') {
+            const timeShiftEvt = new Event('__orb_timeShiftBufferDepthReceived__');
+            if (e.data.hasOwnProperty('timeShiftBufferDepth')) {
+                Object.assign(timeShiftEvt, {
+                    timeShiftBufferDepth: e.data.timeShiftBufferDepth,
+                });
+            } else {
+                Object.assign(timeShiftEvt, {
+                    firstPeriodStart: e.data.Period_asArray[0].start,
+                });
+            }
+            
+            this.dispatchEvent(timeShiftEvt);
+        }
+        
         const evt = new Event('__orb_startDateUpdated__');
         Object.assign(evt, {
             startDate: Date.parse(e.data.availabilityStartTime),
