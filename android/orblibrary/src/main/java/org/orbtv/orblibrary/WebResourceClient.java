@@ -21,14 +21,13 @@ import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
-
-// For building in source. Replaced with com.squareup... by build.gradle during Gradle build:
-import com.android.okhttp.*;
+import okhttp3.*;
 
 abstract class WebResourceClient {
     private static final String TAG = WebResourceClient.class.getSimpleName();
@@ -53,7 +52,12 @@ abstract class WebResourceClient {
                       OrbSessionFactory.DoNotTrackPreference doNotTrackPreference) {
         mDsmccClient = dsmccClient;
         mHtmlBuilder = htmlBuilder;
-        mHttpClient = new OkHttpClient();
+        List<Protocol> protocols = new ArrayList<>();
+        protocols.add(Protocol.HTTP_2);
+        protocols.add(Protocol.HTTP_1_1);
+        mHttpClient = new OkHttpClient.Builder()
+                .protocols(protocols)
+                .build();
         mHttpSandboxClient = new OkHttpClient();
         mDoNotTrackPreference = doNotTrackPreference;
     }

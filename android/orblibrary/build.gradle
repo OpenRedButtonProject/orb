@@ -61,29 +61,9 @@ task copyPolyfill(type: Copy) {
     into file("${projectDir}/src/main/assets/polyfill")
 }
 
-task replaceImport1(type: Exec) {
-    workingDir "${projectDir}/src/main/java/org/orbtv/orblibrary/"
-    commandLine "sed", "-i", "s/com.android.okhttp/com.squareup.okhttp/g", "ApplicationManager.java"
-}
-
-task replaceImport2(type: Exec) {
-    workingDir "${projectDir}/src/main/java/org/orbtv/orblibrary/"
-    commandLine "sed", "-i", "s/com.android.okhttp/com.squareup.okhttp/g", "WebResourceClient.java"
-}
-
-task revertImport1(type: Exec) {
-    workingDir "${projectDir}/src/main/java/org/orbtv/orblibrary/"
-    commandLine "sed", "-i", "s/com.squareup.okhttp/com.android.okhttp/g", "ApplicationManager.java"
-}
-
-task revertImport2(type: Exec) {
-    workingDir "${projectDir}/src/main/java/org/orbtv/orblibrary/"
-    commandLine "sed", "-i", "s/com.squareup.okhttp/com.android.okhttp/g", "WebResourceClient.java"
-}
-
 dependencies {
     implementation project(path: ':orbpolyfill')
-    implementation 'com.squareup.okhttp:okhttp:2.7.4'
+    implementation 'com.squareup.okhttp3:okhttp:3.14.9'
     implementation 'com.android.ndk.thirdparty:openssl:1.1.1d-alpha-1'
     implementation 'com.android.ndk.thirdparty:jsoncpp:1.8.4-alpha-1'
 }
@@ -92,7 +72,3 @@ copyPolyfill.dependsOn(makePolyfill)
 preBuild.dependsOn(copyPolyfill)
 preBuild.dependsOn(unzipLibxml2)
 preBuild.dependsOn(unzipLibwebsockets)
-preBuild.dependsOn(replaceImport1)
-preBuild.dependsOn(replaceImport2)
-build.finalizedBy(revertImport1)
-build.finalizedBy(revertImport2)

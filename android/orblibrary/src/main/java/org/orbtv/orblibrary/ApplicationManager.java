@@ -9,8 +9,7 @@ package org.orbtv.orblibrary;
 
 import android.util.Log;
 
-// For building in source. Replaced with com.squareup... by build.gradle during Gradle build:
-import com.android.okhttp.*;
+import okhttp3.*;
 
 class ApplicationManager {
     private static final String TAG = ApplicationManager.class.getSimpleName();
