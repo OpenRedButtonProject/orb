@@ -63,6 +63,7 @@ public class VoiceRecognitionService extends Service {
     private MediaRecorder mMediaRecorder;
     private CommandParser mParser;
     private boolean isRecording = false;
+    private final int RECORDING_LIMIT = 10; // set recording limit be 10 seconds
     public static final int LOG_MESSAGE = 99;
 
     // AWS S3 and Transcribe credentials and configurations
@@ -91,7 +92,9 @@ public class VoiceRecognitionService extends Service {
         mS3 = new AmazonS3Client(mAwsCredentials, REGION);
         mAmazonTranscribe = new AmazonTranscribeClient(mAwsCredentials);
         mAmazonTranscribe.setRegion(REGION);
+
         mParser = new CommandParser();
+        broadcastMessage("Press RECORD to start recording.");
     }
 
     @Override
@@ -170,7 +173,19 @@ public class VoiceRecognitionService extends Service {
             mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB); // Set the output format to AMR
             mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB); // Set the audio encoder to AMR
             mMediaRecorder.setOutputFile(getOutputFilePath()); // Set the output file path
+            mMediaRecorder.setMaxDuration(RECORDING_LIMIT * 1000);
             mMediaRecorder.prepare();
+            mMediaRecorder.setOnInfoListener(new MediaRecorder.OnInfoListener() {
+                @Override
+                public void onInfo(MediaRecorder mr, int what, int extra) {
+                    if(what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED){
+                        broadcastMessage("Stop recording, audio over " +
+                                RECORDING_LIMIT + " seconds.");
+                        broadcastMessage("Press RECORD key to start recording.");
+                        stopRecording();
+                    }
+                }
+            });
             mMediaRecorder.start();
             isRecording = true;
         } catch (IOException e) {
