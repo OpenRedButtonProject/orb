@@ -247,7 +247,7 @@ hbbtv.objects.AVControl = (function() {
                     // here, because we are in rewind mode or stopped, the videoElement is already
                     // in paused state, and because of that the event listener will not
                     // be triggered, so we call explicitly transitionToState.call(thiz, PLAY_STATE_PAUSED);
-                    transitionToState.call(thiz, PLAY_STATE_PAUSED);
+                    transitionToState.call(this, PLAY_STATE_PAUSED);
                 }
                 else {
                     priv.onPauseHandler();
