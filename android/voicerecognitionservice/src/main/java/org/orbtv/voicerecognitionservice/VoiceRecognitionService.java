@@ -1,3 +1,10 @@
+/**
+ * ORB Software. Copyright (c) 2023 Ocean Blue Software Limited
+ *
+ * Licensed under the ORB License that can be found in the LICENSE file at
+ * the top level of this repository.
+ */
+
 package org.orbtv.voicerecognitionservice;
 
 import android.Manifest;
@@ -53,7 +60,7 @@ import java.io.InputStreamReader;
 public class VoiceRecognitionService extends Service {
     private static final String TAG = VoiceRecognitionService.class.getSimpleName();
     private MediaRecorder mMediaRecorder;
-    private CmdParser mParser;
+    private CommandParser mParser;
     private boolean isRecording = false;
     public static final int LOG_MESSAGE = 99;
 
@@ -83,7 +90,7 @@ public class VoiceRecognitionService extends Service {
         mS3 = new AmazonS3Client(mAwsCredentials, REGION);
         mAmazonTranscribe = new AmazonTranscribeClient(mAwsCredentials);
         mAmazonTranscribe.setRegion(REGION);
-        mParser = new CmdParser();
+        mParser = new CommandParser();
     }
 
     @Override
@@ -171,7 +178,7 @@ public class VoiceRecognitionService extends Service {
     }
 
     private void parseIncomingCommand(String transcript) {
-        CmdParser.Command action = mParser.parseIncomingCommand(transcript);
+        CommandParser.Command action = mParser.parseIncomingCommand(transcript);
         Log.d(TAG, "Got an action : " + action.actId);
         broadcastMessage(action.actId, action.item, action.anchor, action.offset);
     }
