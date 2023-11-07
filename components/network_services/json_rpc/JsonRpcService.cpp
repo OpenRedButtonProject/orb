@@ -2345,11 +2345,33 @@ static int GetAccessibilityFeatureId(const std::string& name)
  */
 std::time_t ConvertISO8601ToSecond(const std::string& input)
 {
-    // TO-DO check the format of the input
+    if (input.empty())
+    {
+        return -1;
+    }
+    int zh = 0;
+    int zm = 0;
+    int len = input.length();
+    int lenDateTime = len - strlen("+00:00");
+    lenDateTime = (lenDateTime < 0) ? 0 : lenDateTime;
+    if (input[lenDateTime] == '+' || input[lenDateTime] == '-')
+    {
+        sscanf(input.substr(lenDateTime, len).c_str(), "%d:%d", &zh, &zm);
+        if (zh < -23 || zh > 23 || zm < 0 || zm > 59)
+        {
+            return -1;
+        }
+        if (zh < 0)
+        {
+            zm = -zm;
+        }
+    }
     const char *inputBuff = input.c_str();
     struct tm time;
     strptime(inputBuff, "%FT%TZ", &time);
     time.tm_isdst = 0;
+    time.tm_hour -= zh;
+    time.tm_min -= zm;
     time_t t = mktime(&time);
     return t;
 }
