@@ -25,12 +25,12 @@ LOCAL_STATIC_JAVA_LIBRARIES += aws-android-sdk-transcribe
 include $(BUILD_PACKAGE)
 
 include $(CLEAR_VARS)
-LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES += gson:libs/gson-2.8.9.jar
-LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES += androidx-core:libs/androidx-core-1.3.1.jar
-LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES += aws-android-sdk-core:libs/aws-android-sdk-core-2.73.0.jar
-LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES += aws-android-sdk-mobile-client:libs/aws-android-sdk-mobile-client-2.73.0.jar
-LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES += aws-android-sdk-s3:libs/aws-android-sdk-s3-2.29.0.jar
-LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES += aws-android-sdk-transcribe:libs/aws-android-sdk-transcribe-2.73.0.jar
+LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES += gson:symlink.gson/gson-2.8.9.jar
+LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES += androidx-core:symlink.androidx-core/androidx-core-1.3.1.jar
+LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES += aws-android-sdk-core:symlink.aws-android-sdk/aws-android-sdk-core-2.73.0.jar
+LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES += aws-android-sdk-mobile-client:symlink.aws-android-sdk/aws-android-sdk-mobile-client-2.73.0.jar
+LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES += aws-android-sdk-s3:symlink.aws-android-sdk/aws-android-sdk-s3-2.29.0.jar
+LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES += aws-android-sdk-transcribe:symlink.aws-android-sdk/aws-android-sdk-transcribe-2.73.0.jar
 
 include $(BUILD_MULTI_PREBUILT)
 include $(call all-makefiles-under, $(LOCAL_PATH))

@@ -1,3 +1,10 @@
+/**
+ * ORB Software. Copyright (c) 2023 Ocean Blue Software Limited
+ * <p>
+ * Licensed under the ORB License that can be found in the LICENSE file at
+ * the top level of this repository.
+ */
+
 package org.orbtv.voicerecognitionservice;
 
 import java.time.LocalDateTime;
@@ -17,7 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Stack;
 
-public class CmdParser {
+public class CommandParser {
     public static final int INTENT_MEDIA_PAUSE = 0;
     public static final int INTENT_MEDIA_PLAY = 1;
     public static final int INTENT_MEDIA_FAST_FORWARD = 2;

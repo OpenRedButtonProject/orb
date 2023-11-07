@@ -1,3 +1,10 @@
+/**
+ * ORB Software. Copyright (c) 2023 Ocean Blue Software Limited
+ * <p>
+ * Licensed under the ORB License that can be found in the LICENSE file at
+ * the top level of this repository.
+ */
+
 package org.orbtv.mockorbapp;
 
 import android.content.BroadcastReceiver;
