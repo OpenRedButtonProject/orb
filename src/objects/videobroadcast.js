@@ -866,6 +866,7 @@ hbbtv.objects.VideoBroadcast = (function() {
         }
         // Change channel
         p.isTransitioningToBroadcastRelated = true;
+        p.quiet = quiet;
         let errorState = 0;
         if (channel.idType == 13) {
             // ID_DVB_SI_DIRECT
@@ -1491,9 +1492,11 @@ hbbtv.objects.VideoBroadcast = (function() {
                                 event.transId != p.currentChannelData.tsid
                             ) {
                                 try {
-                                    p.currentChannelData = hbbtv.objects.createChannel(
-                                        hbbtv.bridge.broadcast.getCurrentChannelForEvent()
-                                    );
+                                    if (p.quiet !== 2) {
+                                        p.currentChannelData = hbbtv.objects.createChannel(
+                                            hbbtv.bridge.broadcast.getCurrentChannelForEvent()
+                                        );
+                                    }
                                 } catch (e) {
                                     if (e.name === 'SecurityError') {
                                         console.log(
@@ -2149,6 +2152,7 @@ hbbtv.objects.VideoBroadcast = (function() {
         p.currentChannelData = null;
         p.channelConfig = null;
         p.isTransitioningToBroadcastRelated = false;
+        p.quiet = 0;
         setIsBroadcastRelated.call(this, true);
         try {
             p.currentChannelData = hbbtv.objects.createChannel(
