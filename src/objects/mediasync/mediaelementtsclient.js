@@ -109,8 +109,10 @@ hbbtv.objects.MediaElementTsClient = (function() {
                 p.eventTarget.dispatchEvent(new Event('SyncNowAchievable'));
             }
         } else {
-            p.moPrototype.pause.call(p.mediaObject);
-            dispatchErrorEvent.call(this, 11); // failed to synchronise media (transient)
+            if (!p.mediaObject.paused) {
+                p.moPrototype.pause.call(p.mediaObject);
+                dispatchErrorEvent.call(this, 11); // failed to synchronise media (transient)
+            }
         }
     }
 
