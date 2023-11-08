@@ -1186,19 +1186,26 @@ void JsonRpcService::RequestMediaDescription()
     std::vector<int> connectionIds = GetAllConnectionIds();
     for (int connectionId : connectionIds)
     {
-        std::string description = "No media is playing";
         Json::Value title = GetConnectionData(connectionId, ConnectionDataType::Title);
         Json::Value secTitle = GetConnectionData(connectionId, ConnectionDataType::SecondTitle);
         Json::Value synopsis = GetConnectionData(connectionId, ConnectionDataType::Synopsis);
         if (!title.isString() || title.asString().empty())
         {
-            description = "You're watching " + title.asString();
+            LOG(LOG_INFO, "Warning, connection data lost, parameter has the wrong type.");
+            m_sessionCallback->RespondMessage("No media is playing");
+            return;
         }
-        else
+        std::stringstream message;
+        message << "You're watching " << title.asString();
+        if (secTitle.isString() && !secTitle.asString().empty())
         {
-            LOG(LOG_INFO, "Warning, connection data lost, parameter has wrong type.");
+            message << " {Secondary title: " << secTitle.asString() << "}";
         }
-        m_sessionCallback->RespondMessage(description);
+        if (synopsis.isString() && !synopsis.asString().empty())
+        {
+            message << " \nSynopsis: " << synopsis.asString();
+        }
+        m_sessionCallback->RespondMessage(message.str());
     }
 }
 
@@ -1981,17 +1988,16 @@ Json::Value JsonRpcService::GetConnectionData(int connectionId, ConnectionDataTy
                 value = GetMethodsInJsonArray(connectionData.subscribedMethods);
                 break;
             }
+            case ConnectionDataType::UnsubscribedMethods:
+                break;
             case ConnectionDataType::IntentIdCount:
                 value = connectionData.intentIdCount;
                 break;
-            case ConnectionDataType::State:
-                value = connectionData.state;
-                break;
-            case ConnectionDataType::Title:
-                value = connectionData.title;
-                break;
             case ConnectionDataType::VoiceReady:
                 value = connectionData.voiceReady;
+                break;
+            case ConnectionDataType::State:
+                value = connectionData.state;
                 break;
             case ConnectionDataType::ActionPause:
                 value = connectionData.actionPause;
@@ -2020,7 +2026,17 @@ Json::Value JsonRpcService::GetConnectionData(int connectionId, ConnectionDataTy
             case ConnectionDataType::ActionSeekWallclock:
                 value = connectionData.actionSeekWallclock;
                 break;
-            case ConnectionDataType::UnsubscribedMethods:
+            case ConnectionDataType::MediaId:
+                value = connectionData.mediaId;
+                break;
+            case ConnectionDataType::Title:
+                value = connectionData.title;
+                break;
+            case ConnectionDataType::SecondTitle:
+                value = connectionData.secondTitle;
+                break;
+            case ConnectionDataType::Synopsis:
+                value = connectionData.synopsis;
                 break;
             case ConnectionDataType::CurrentTime:
                 value = connectionData.currentTime;
