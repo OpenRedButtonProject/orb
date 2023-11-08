@@ -56,6 +56,7 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 
 public class VoiceRecognitionService extends Service {
@@ -64,17 +65,18 @@ public class VoiceRecognitionService extends Service {
     private CommandParser mParser;
     private boolean isRecording = false;
     private final int RECORDING_LIMIT = 10; // set recording limit be 10 seconds
+    private boolean hasAWSKey = false;
     public static final int LOG_MESSAGE = 99;
 
     // AWS S3 and Transcribe credentials and configurations
     // Set up the s3 bucket with name same as BUCKET_NAME
     // Set up the IAM user with correct access s3 bucket
-    private static final String AWS_ACCESS_KEY = "TODO"; //TODO
-    private static final String AWS_SECRET_KEY = "TODO"; //TODO
-    private static final String BUCKET_NAME = "TODO"; //TODO
-    private static final String OBJECT_KEY = "TODO"; //TODO
-    private static final String TRANSCRIBE_VOCABULARY = "TODO"; //TODO
-    private static final com.amazonaws.regions.Region REGION = Region.EU_Ireland.toAWSRegion();
+    private String AWS_ACCESS_KEY;
+    private String AWS_SECRET_KEY;
+    private String BUCKET_NAME;
+    private String OBJECT_KEY;
+    private String TRANSCRIBE_VOCABULARY;
+    private com.amazonaws.regions.Region REGION;
     private AmazonS3 mS3;
     private AmazonTranscribe mAmazonTranscribe;
     private BasicAWSCredentials mAwsCredentials;
@@ -87,18 +89,47 @@ public class VoiceRecognitionService extends Service {
         Intent permissionCheck = new Intent(mContext, PermissionRequestActivity.class);
         permissionCheck.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         mContext.startActivity(permissionCheck);
+        hasAWSKey = getAwsConfiguration();
+        if (!hasAWSKey) {
+            broadcastMessage("AWS Configuration setting error.");
+            return;
+        } else {
+            broadcastMessage("Press RECORD to start recording.");
+        }
 
         mAwsCredentials = new BasicAWSCredentials(AWS_ACCESS_KEY, AWS_SECRET_KEY);
         mS3 = new AmazonS3Client(mAwsCredentials, REGION);
         mAmazonTranscribe = new AmazonTranscribeClient(mAwsCredentials);
         mAmazonTranscribe.setRegion(REGION);
-
         mParser = new CommandParser();
-        broadcastMessage("Press RECORD to start recording.");
+    }
+
+    private boolean getAwsConfiguration() {
+        try {
+            InputStream inputStream = getAssets().open("awsconfiguration.json");
+            byte[] buffer = new byte[inputStream.available()];
+            inputStream.read(buffer);
+            inputStream.close();
+            String json = new String(buffer, "UTF-8");
+
+            JSONObject AWSConfig = new JSONObject(json);
+            AWS_ACCESS_KEY = AWSConfig.getString("AWS_ACCESS_KEY");
+            AWS_SECRET_KEY = AWSConfig.getString("AWS_SECRET_KEY");
+            BUCKET_NAME = AWSConfig.getString("BUCKET_NAME");
+            OBJECT_KEY = AWSConfig.getString("OBJECT_KEY");
+            TRANSCRIBE_VOCABULARY = AWSConfig.getString("TRANSCRIBE_VOCABULARY");
+            REGION = Region.fromValue(AWSConfig.getString("REGION")).toAWSRegion();
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if (!hasAWSKey) {
+            return START_STICKY;
+        }
         if (!isRecording) {
             if (checkPermissions()) {
                 broadcastMessage("Start recording...");
@@ -178,7 +209,7 @@ public class VoiceRecognitionService extends Service {
             mMediaRecorder.setOnInfoListener(new MediaRecorder.OnInfoListener() {
                 @Override
                 public void onInfo(MediaRecorder mr, int what, int extra) {
-                    if(what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED){
+                    if (what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED) {
                         broadcastMessage("Stop recording, audio over " +
                                 RECORDING_LIMIT + " seconds.");
                         broadcastMessage("Press RECORD key to start recording.");
