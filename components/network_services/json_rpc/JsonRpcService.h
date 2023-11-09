@@ -21,14 +21,6 @@ class JsonRpcService : public WebSocketService {
 public:
     enum class ConnectionDataType
     {
-        NegotiateMethodsAppToTerminal,
-        NegotiateMethodsTerminalToApp,
-        SubscribedMethods,
-        UnsubscribedMethods,
-        IntentIdCount,
-        State,
-        Content,
-        VoiceReady,
         ActionPause,
         ActionPlay,
         ActionFastForward,
@@ -38,9 +30,46 @@ public:
         ActionSeekRelative,
         ActionSeekLive,
         ActionSeekWallclock,
+        MediaId,
+        Title,
+        SecondTitle,
+        Synopsis,
         CurrentTime,
         StartTime,
-        EndTime
+        EndTime,
+        State,
+        NegotiateMethodsAppToTerminal,
+        NegotiateMethodsTerminalToApp,
+        SubscribedMethods,
+        UnsubscribedMethods,
+        IntentIdCount,
+        VoiceReady
+    };
+
+    struct ConnectionData
+    {
+        bool actionPause = false;
+        bool actionPlay = false;
+        bool actionFastForward = false;
+        bool actionFastReverse = false;
+        bool actionStop = false;
+        bool actionSeekContent = false;
+        bool actionSeekRelative = false;
+        bool actionSeekLive = false;
+        bool actionSeekWallclock = false;
+        std::string mediaId = "";
+        std::string title = "";
+        std::string secondTitle = "";
+        std::string synopsis = "";
+        long long currentTime = -1;
+        long long startTime = -1;
+        long long endTime = -1;
+        std::string state = "";
+        std::unordered_set<std::string> negotiateMethodsAppToTerminal;
+        std::unordered_set<std::string> negotiateMethodsTerminalToApp;
+        std::unordered_set<std::string> subscribedMethods;
+        int intentIdCount;
+        bool voiceReady = false;
     };
 
     enum class JsonRpcStatus
@@ -263,31 +292,10 @@ public:
 
 
 private:
-    struct ConnectionData
-    {
-        std::unordered_set<std::string> negotiateMethodsAppToTerminal;
-        std::unordered_set<std::string> negotiateMethodsTerminalToApp;
-        std::unordered_set<std::string> subscribedMethods;
-        int intentIdCount;
-        std::string state;
-        std::string content;
-        bool voiceReady;
-        bool actionPause;
-        bool actionPlay;
-        bool actionFastForward;
-        bool actionFastReverse;
-        bool actionStop;
-        bool actionSeekContent;
-        bool actionSeekRelative;
-        bool actionSeekLive;
-        bool actionSeekWallclock;
-        long long currentTime;
-        long long startTime;
-        long long endTime;
-    };
     // Setters and getters for variables
     void InitialConnectionData(int connectionId);
     void SetConnectionData(int connectionId, ConnectionDataType type, const Json::Value& value);
+    void SetStateMediaToConnectionData(int connectionId, const ConnectionData& mediaData);
     Json::Value GetConnectionData(int connectionId, ConnectionDataType type);
 
     std::string m_endpoint;

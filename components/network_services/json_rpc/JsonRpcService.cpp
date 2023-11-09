@@ -603,7 +603,6 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
         return JsonRpcStatus::NOTIFICATION_ERROR;
     }
     std::string state = params["state"].asString();
-
     if (state != "no-media" &&
         state != "error" &&
         state != "buffering" &&
@@ -613,188 +612,163 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
     {
         return JsonRpcStatus::NOTIFICATION_ERROR;
     }
-
-    std::string kind;
-    if (HasParam(params, "kind", Json::stringValue))
-    {
-        kind = params["kind"].asString();
-        if (kind != "audio" && kind != "audio-video")
-        {
-            return JsonRpcStatus::NOTIFICATION_ERROR;
-        }
-    }
-    if (state == "buffering" || state == "paused" || state == "playing" || state == "stopped")
-    {
-        if (kind == OPTIONAL_STR_NOT_SET)
-        {
-            return JsonRpcStatus::NOTIFICATION_ERROR;
-        }
-    }
-
-    std::string type;
-    if (HasParam(params, "type", Json::stringValue))
-    {
-        type = params["type"].asString();
-        if (type != "live" && type != "on-demand")
-        {
-            return JsonRpcStatus::NOTIFICATION_ERROR;
-        }
-    }
-    if (state == "buffering" || state == "paused" || state == "playing" || state == "stopped")
-    {
-        if (type == OPTIONAL_STR_NOT_SET)
-        {
-            return JsonRpcStatus::NOTIFICATION_ERROR;
-        }
-    }
-
-    long long currentTime = -1;
-    bool isIntCurrent = false;
-    bool isStringCurrent = false;
-    int curr = 0;
-    if (HasParam(params, "currentTime", Json::intValue) ||
-        HasParam(params, "currentTime", Json::uintValue) ||
-        HasParam(params, "currentTime", Json::realValue))
-    {
-        curr = params["currentTime"].asInt();
-        currentTime = std::time(nullptr);
-        isIntCurrent = true;
-    }
-    else if (HasParam(params, "currentTime", Json::stringValue))
-    {
-        std::string currentTimeStr = params["currentTime"].asString();
-        currentTime = ConvertISO8601ToSecond(currentTimeStr);
-        isStringCurrent = true;
-    }
-    else if (state == "buffering" || state == "paused" || state == "playing")
-    {
-        return JsonRpcStatus::NOTIFICATION_ERROR;
-    }
-    SetConnectionData(connectionId, ConnectionDataType::CurrentTime, currentTime);
-
-    long long startTime = -1;
-    long long endTime = -1;
-    bool isIntStart = HasParam(params["range"], "start", Json::intValue) ||
-        HasParam(params["range"], "start", Json::uintValue) ||
-        HasParam(params["range"], "start", Json::realValue);
-    bool isIntEnd = HasParam(params["range"], "end", Json::intValue) ||
-        HasParam(params["range"], "end", Json::uintValue) ||
-        HasParam(params["range"], "end", Json::realValue);
-    if (isIntCurrent && isIntStart && isIntEnd)
-    {
-        int start = params["range"]["start"].asInt();
-        int end = params["range"]["end"].asInt();
-        startTime = currentTime + (start - curr);
-        endTime = currentTime + (end - curr);
-    }
-    else if (isStringCurrent &&
-             HasParam(params["range"], "start", Json::stringValue) &&
-             HasParam(params["range"], "end", Json::stringValue))
-    {
-        startTime = ConvertISO8601ToSecond(params["range"]["start"].asString());
-        endTime = ConvertISO8601ToSecond(params["range"]["end"].asString());
-    }
-    else if (state == "buffering" || state == "paused" || state == "playing")
-    {
-        return JsonRpcStatus::NOTIFICATION_ERROR;
-    }
-    SetConnectionData(connectionId, ConnectionDataType::StartTime, startTime);
-    SetConnectionData(connectionId, ConnectionDataType::EndTime, endTime);
-
-    SetConnectionData(connectionId, ConnectionDataType::ActionPause, false);
-    SetConnectionData(connectionId, ConnectionDataType::ActionPlay, false);
-    SetConnectionData(connectionId, ConnectionDataType::ActionFastForward, false);
-    SetConnectionData(connectionId, ConnectionDataType::ActionFastReverse, false);
-    SetConnectionData(connectionId, ConnectionDataType::ActionStop, false);
-    SetConnectionData(connectionId, ConnectionDataType::ActionSeekContent, false);
-    SetConnectionData(connectionId, ConnectionDataType::ActionSeekRelative, false);
-    SetConnectionData(connectionId, ConnectionDataType::ActionSeekLive, false);
-    SetConnectionData(connectionId, ConnectionDataType::ActionSeekWallclock, false);
-
+    std::unique_ptr<ConnectionData> mediaData(new ConnectionData);
+    mediaData->state = state;
     if (!HasJsonParam(params, "availableActions"))
     {
         return JsonRpcStatus::NOTIFICATION_ERROR;
     }
-
     Json::Value actions = params["availableActions"];
     if (HasParam(actions, "pause", Json::booleanValue) &&
         actions["pause"] == true)
     {
-        SetConnectionData(connectionId, ConnectionDataType::ActionPause, true);
+        mediaData->actionPause = true;
     }
     if (HasParam(actions, "play", Json::booleanValue) &&
         actions["play"] == true)
     {
-        SetConnectionData(connectionId, ConnectionDataType::ActionPlay, true);
+        mediaData->actionPlay = true;
     }
     if (HasParam(actions, "fast-forward", Json::booleanValue) &&
         actions["fast-forward"] == true)
     {
-        SetConnectionData(connectionId, ConnectionDataType::ActionFastForward, true);
+        mediaData->actionFastForward = true;
     }
     if (HasParam(actions, "fast-reverse", Json::booleanValue) &&
         actions["fast-reverse"] == true)
     {
-        SetConnectionData(connectionId, ConnectionDataType::ActionFastReverse, true);
+        mediaData->actionFastReverse = true;
     }
     if (HasParam(actions, "stop", Json::booleanValue) &&
         actions["stop"] == true)
     {
-        SetConnectionData(connectionId, ConnectionDataType::ActionStop, true);
+        mediaData->actionStop = true;
     }
     if (HasParam(actions, "seek-content", Json::booleanValue) &&
         actions["seek-content"] == true)
     {
-        SetConnectionData(connectionId, ConnectionDataType::ActionSeekContent, true);
+        mediaData->actionSeekContent = true;
     }
     if (HasParam(actions, "seek-relative", Json::booleanValue) &&
         actions["seek-relative"] == true)
     {
-        SetConnectionData(connectionId, ConnectionDataType::ActionSeekRelative, true);
+        mediaData->actionSeekRelative = true;
     }
     if (HasParam(actions, "seek-live", Json::booleanValue) &&
         actions["seek-live"] == true)
     {
-        SetConnectionData(connectionId, ConnectionDataType::ActionSeekLive, true);
+        mediaData->actionSeekLive = true;
     }
     if (HasParam(actions, "seek-wallclock", Json::booleanValue) &&
         actions["seek-wallclock"] == true)
     {
-        SetConnectionData(connectionId, ConnectionDataType::ActionSeekWallclock, true);
+        mediaData->actionSeekWallclock = true;
     }
 
-    std::string mediaId;
-    std::string title;
-    std::string secTitle;
-    std::string synopsis;
-    if (HasJsonParam(params, "metadata"))
+    if (state == "no-media" || state == "error")
     {
-        Json::Value metadata = params["metadata"];
-        if (HasParam(metadata, "title", Json::stringValue))
-        {
-            title = metadata["title"].asString();
-        }
-        if (HasParam(metadata, "mediaId", Json::stringValue))
-        {
-            mediaId = metadata["mediaId"].asString();
-        }
-        if (HasParam(metadata, "secondaryTitle", Json::stringValue))
-        {
-            secTitle = metadata["secondaryTitle"].asString();
-        }
-        if (HasParam(metadata, "synopsis", Json::stringValue))
-        {
-            synopsis = metadata["synopsis"].asString();
-        }
+        SetStateMediaToConnectionData(connectionId, *mediaData);
+        m_sessionCallback->NotifyStateMedia(state);
+        return JsonRpcStatus::SUCCESS;
     }
-    if (state == "buffering" || state == "paused" || state == "playing" || state == "stopped")
+
+    // state is "buffering", "paused", "playing" or "stopped"
+    std::string kind;
+    if (HasParam(params, "kind", Json::stringValue))
     {
-        if (title == OPTIONAL_STR_NOT_SET)
-        {
-            return JsonRpcStatus::NOTIFICATION_ERROR;
-        }
+        kind = params["kind"].asString();
     }
-    SetConnectionData(connectionId, ConnectionDataType::Content, title);
+    std::string type;
+    if (HasParam(params, "type", Json::stringValue))
+    {
+        type = params["type"].asString();
+    }
+    if (kind.empty() || (kind != "audio" && kind != "audio-video") ||
+        type.empty() || (type != "live" && type != "on-demand"))
+    {
+        LOG(LOG_INFO, "Invalid settings for either type or kind in notification message");
+        return JsonRpcStatus::NOTIFICATION_ERROR;
+    }
+
+    if (!HasJsonParam(params, "metadata"))
+    {
+        return JsonRpcStatus::NOTIFICATION_ERROR;
+    }
+    Json::Value metadata = params["metadata"];
+    if (HasParam(metadata, "mediaId", Json::stringValue))
+    {
+        mediaData->mediaId = metadata["mediaId"].asString();
+    }
+    if (HasParam(metadata, "title", Json::stringValue))
+    {
+        mediaData->title = metadata["title"].asString();
+    }
+    if (HasParam(metadata, "secondaryTitle", Json::stringValue))
+    {
+        mediaData->secondTitle = metadata["secondaryTitle"].asString();
+    }
+    if (HasParam(metadata, "synopsis", Json::stringValue))
+    {
+        mediaData->synopsis = metadata["synopsis"].asString();
+    }
+    if (mediaData->title.empty())
+    {
+        LOG(LOG_INFO, "Invalid value for metadata title in notification message");
+        return JsonRpcStatus::NOTIFICATION_ERROR;
+    }
+
+    if (state == "stopped")
+    {
+        SetStateMediaToConnectionData(connectionId, *mediaData);
+        m_sessionCallback->NotifyStateMedia(state);
+        return JsonRpcStatus::SUCCESS;
+    }
+
+    // state is "buffering", "paused" or "playing"
+    Json::Value current = params["currentTime"];
+    Json::Value range = params["range"];
+    if (!params.isMember("currentTime") || !range.isMember("start") ||
+        !range.isMember("end"))
+    {
+        LOG(LOG_INFO, "A required item is missing in notification message");
+        return JsonRpcStatus::NOTIFICATION_ERROR;
+    }
+    Json::Value start = range["start"];
+    Json::Value end = range["end"];
+    long long currentTime = -1;
+    long long startTime = -1;
+    long long endTime = -1;
+    bool isCurrentNum = current.type() == Json::intValue || current.type() == Json::uintValue ||
+        current.type() == Json::realValue;
+    bool isStartNum = start.type() == Json::intValue || start.type() == Json::uintValue ||
+        start.type() == Json::realValue;
+    bool isEndNum = end.type() == Json::intValue || end.type() == Json::uintValue ||
+        end.type() == Json::realValue;
+    if (isCurrentNum && isStartNum && !isEndNum)
+    {
+        int curr = params["currentTime"].asInt();
+        currentTime = std::time(nullptr);
+        int st = start.asInt();
+        int e = end.asInt();
+        startTime = currentTime + (st - curr);
+        endTime = currentTime + (e - curr);
+    }
+    else if (current.type() == Json::stringValue && current.type() == Json::stringValue &&
+             current.type() == Json::stringValue)
+    {
+        currentTime = ConvertISO8601ToSecond(current.asString());
+        startTime = ConvertISO8601ToSecond(start.asString());
+        endTime = ConvertISO8601ToSecond(end.asString());
+    }
+    if (currentTime == -1 || startTime == -1 || endTime == -1 ||
+        !(currentTime >= startTime && currentTime <= endTime))
+    {
+        LOG(LOG_INFO, "Invalid time and range of media in notification message");
+        return JsonRpcStatus::NOTIFICATION_ERROR;
+    }
+    mediaData->currentTime = currentTime;
+    mediaData->startTime = startTime;
+    mediaData->endTime = endTime;
 
     Json::Value subtitles;
     Json::Value audioDescription;
@@ -860,7 +834,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
             return JsonRpcStatus::NOTIFICATION_ERROR;
         }
     }
-    SetConnectionData(connectionId, ConnectionDataType::State, state);
+    SetStateMediaToConnectionData(connectionId, *mediaData);
     m_sessionCallback->NotifyStateMedia(state);
     return JsonRpcStatus::SUCCESS;
 }
@@ -1213,8 +1187,10 @@ void JsonRpcService::RequestMediaDescription()
     for (int connectionId : connectionIds)
     {
         std::string description = "No media is playing";
-        Json::Value title = GetConnectionData(connectionId, ConnectionDataType::Content);
-        if (title.isString() && !title.asString().empty())
+        Json::Value title = GetConnectionData(connectionId, ConnectionDataType::Title);
+        Json::Value secTitle = GetConnectionData(connectionId, ConnectionDataType::SecondTitle);
+        Json::Value synopsis = GetConnectionData(connectionId, ConnectionDataType::Synopsis);
+        if (!title.isString() || title.asString().empty())
         {
             description = "You're watching " + title.asString();
         }
@@ -1919,52 +1895,45 @@ void JsonRpcService::SetConnectionData(int connectionId, ConnectionDataType type
         case ConnectionDataType::IntentIdCount:
             connectionData.intentIdCount = value.asInt();
             break;
-        case ConnectionDataType::State:
-            connectionData.state = value.asString();
-            break;
-        case ConnectionDataType::Content:
-            connectionData.content = value.asString();
-            break;
         case ConnectionDataType::VoiceReady:
             connectionData.voiceReady = value.asBool();
             break;
-        case ConnectionDataType::ActionPause:
-            connectionData.actionPause = value.asBool();
-            break;
-        case ConnectionDataType::ActionPlay:
-            connectionData.actionPlay = value.asBool();
-            break;
-        case ConnectionDataType::ActionFastForward:
-            connectionData.actionFastForward = value.asBool();
-            break;
-        case ConnectionDataType::ActionFastReverse:
-            connectionData.actionFastReverse = value.asBool();
-            break;
-        case ConnectionDataType::ActionStop:
-            connectionData.actionStop = value.asBool();
-            break;
-        case ConnectionDataType::ActionSeekContent:
-            connectionData.actionSeekContent = value.asBool();
-            break;
-        case ConnectionDataType::ActionSeekRelative:
-            connectionData.actionSeekRelative = value.asBool();
-            break;
-        case ConnectionDataType::ActionSeekLive:
-            connectionData.actionSeekLive = value.asBool();
-            break;
-        case ConnectionDataType::ActionSeekWallclock:
-            connectionData.actionSeekWallclock = value.asBool();
-            break;
-        case ConnectionDataType::CurrentTime:
-            connectionData.currentTime = value.asInt64();
-            break;
-        case ConnectionDataType::StartTime:
-            connectionData.startTime = value.asInt64();
-            break;
-        case ConnectionDataType::EndTime:
-            connectionData.endTime = value.asInt64();
-            break;
     }
+    connections_mutex_.unlock();
+}
+
+/**
+ * This method updates connection data based on the specified type and value.
+ *
+ * @param connectionId The unique identifier of the connection to update.
+ * @param mediaData The data for state media
+ */
+void JsonRpcService::SetStateMediaToConnectionData(int connectionId, const
+    ConnectionData& mediaData)
+{
+    connections_mutex_.lock();
+    if (m_connectionData.find(connectionId) == m_connectionData.end())
+    {
+        return;
+    }
+    ConnectionData& connectionData = m_connectionData[connectionId];
+    connectionData.state = mediaData.state;
+    connectionData.actionPause = mediaData.actionPause;
+    connectionData.actionPlay = mediaData.actionPlay;
+    connectionData.actionFastForward = mediaData.actionFastForward;
+    connectionData.actionFastReverse = mediaData.actionFastReverse;
+    connectionData.actionStop = mediaData.actionStop;
+    connectionData.actionSeekContent = mediaData.actionSeekContent;
+    connectionData.actionSeekRelative = mediaData.actionSeekRelative;
+    connectionData.actionSeekLive = mediaData.actionSeekLive;
+    connectionData.actionSeekWallclock = mediaData.actionSeekWallclock;
+    connectionData.currentTime = mediaData.currentTime;
+    connectionData.startTime = mediaData.startTime;
+    connectionData.endTime = mediaData.endTime;
+    connectionData.title = mediaData.title;
+    connectionData.mediaId = mediaData.mediaId;
+    connectionData.secondTitle = mediaData.secondTitle;
+    connectionData.synopsis = mediaData.synopsis;
     connections_mutex_.unlock();
 }
 
@@ -2018,8 +1987,8 @@ Json::Value JsonRpcService::GetConnectionData(int connectionId, ConnectionDataTy
             case ConnectionDataType::State:
                 value = connectionData.state;
                 break;
-            case ConnectionDataType::Content:
-                value = connectionData.content;
+            case ConnectionDataType::Title:
+                value = connectionData.title;
                 break;
             case ConnectionDataType::VoiceReady:
                 value = connectionData.voiceReady;
