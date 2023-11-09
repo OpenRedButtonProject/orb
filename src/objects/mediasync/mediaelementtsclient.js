@@ -192,12 +192,12 @@ hbbtv.objects.MediaElementTsClient = (function() {
         const moPrototypeOverride = Object.create(p.moPrototype);
         moPrototypeOverride.pause = () => {
             dispatchErrorEvent.call(this, 9); // not in suitable state to synchronise media (transient)
-            p.moPrototype.pause.call(this);
+            p.moPrototype.pause.call(mediaObject);
         };
 
         moPrototypeOverride.load = () => {
             dispatchErrorEvent.call(this, 9); // not in suitable state to synchronise media (transient)
-            p.moPrototype.load.call(this);
+            p.moPrototype.load.call(mediaObject);
         };
 
         moPrototypeOverride.play = () => {
