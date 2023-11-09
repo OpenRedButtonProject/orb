@@ -261,10 +261,11 @@ class BrowserView extends WebView {
 
     private void dispatchJavaScriptTextInput(String text) {
         String escapedText = JSONObject.quote(text);
-        evaluateJavascript(
-                "const tagName = document.activeElement.tagName.toLowerCase();" +
-                        "if (tagName === 'input' || tagName === 'textarea')" +
-                        "    document.activeElement.value = " + escapedText + ";", null);
+        evaluateJavascript("const tagName = document.activeElement.tagName.toLowerCase();" +
+                "if (tagName === 'input' || tagName === 'textarea')" +
+                "    document.activeElement.value = " + escapedText + ";" +
+                "document.activeElement.dispatchEvent(new Event('input'));" +
+                "document.activeElement.dispatchEvent(new Event('change'));", null);
     }
 
     private static class JavaScriptBridgeInterface {

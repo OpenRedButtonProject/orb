@@ -58,6 +58,7 @@ import java.util.zip.ZipInputStream;
 
 public class MockOrbSessionCallback implements IOrbSessionCallback {
     private static final String TAG = "MockTvBrowserCallback";
+    private static final int KEY_PRESS_EVENT = -99;
 
     private final MainActivity mMainActivity;
     private final String mManifest;
@@ -222,7 +223,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         mVoiceReceiver.setVoiceCallback(new VoiceServiceReceiver.ResultCallback() {
             @Override
             public void onReceive(Integer action, String info, String anchor, int offset) {
-                if(!sendVoiceCommand(action, info, anchor, offset)) {
+                if (!sendVoiceCommand(action, info, anchor, offset)) {
                     consoleLog("Error in voice recognition");
                 }
             }
@@ -1806,6 +1807,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     @Override
     public boolean onRequestTextInput(String input) {
         // Mock function to display the input text
+        mSession.dispatchTextInput(input);
         consoleLog("Enter text {" + input + "}");
         return true;
     }
@@ -1893,13 +1895,63 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public boolean onSendKeyPressAction(Integer action) {
-        // send a Mock intent, by showing a message on window log
+        switch (action) {
+            case ACT_PRESS_BUTTON_NUMB_ZERO:
+            case ACT_PRESS_BUTTON_NUMB_ONE:
+            case ACT_PRESS_BUTTON_NUMB_TWO:
+            case ACT_PRESS_BUTTON_NUMB_THREE:
+            case ACT_PRESS_BUTTON_NUMB_FOUR:
+            case ACT_PRESS_BUTTON_NUMB_FIVE:
+            case ACT_PRESS_BUTTON_NUMB_SIX:
+            case ACT_PRESS_BUTTON_NUMB_SEVEN:
+            case ACT_PRESS_BUTTON_NUMB_EIGHT:
+            case ACT_PRESS_BUTTON_NUMB_NINE:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_0 + action - ACT_PRESS_BUTTON_NUMB_ZERO, action);
+            case ACT_PRESS_BUTTON_RED:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_PROG_RED, action);
+            case ACT_PRESS_BUTTON_GREEN:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_PROG_GREEN, action);
+            case ACT_PRESS_BUTTON_YELLOW:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_PROG_YELLOW, action);
+            case ACT_PRESS_BUTTON_BLUE:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_PROG_BLUE, action);
+            case ACT_PRESS_BUTTON_UP:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_DPAD_UP, action);
+            case ACT_PRESS_BUTTON_DOWN:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_DPAD_DOWN, action);
+            case ACT_PRESS_BUTTON_LEFT:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_DPAD_LEFT, action);
+            case ACT_PRESS_BUTTON_RIGHT:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_DPAD_RIGHT, action);
+            case ACT_PRESS_BUTTON_ENTER:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_ENTER, action);
+            case ACT_PRESS_BUTTON_BACK:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_DEL, action);
+        }
+        return false;
+    }
+
+    /**
+     * Dispatch a keyUp event and show a message on window log
+     *
+     * @param keyCode The index number of the keyCode
+     * @param action  The index number of actions for pressing a certain button
+     */
+    private boolean dispatchKeyPressEvent(int keyCode, int action) {
         String buttonName = ACT_BUTTON_NAMES.getOrDefault(action, "invalid");
         if (buttonName.equals("invalid")) {
             return false;
         }
         consoleLog("Press " + buttonName + " button");
-        return true;
+        KeyEvent event = new KeyEvent(KeyEvent.ACTION_UP, keyCode);
+        return notifyKeyUp(KEY_PRESS_EVENT, event);
+    }
+
+    private boolean notifyKeyUp(int keyCode, KeyEvent event) {
+        if (keyCode == KEY_PRESS_EVENT) {
+            return mSession.dispatchKeyEvent(event);
+        }
+        return false;
     }
 
     public boolean sendVoiceCommand(Integer action, String info, String anchor, int offset) {
