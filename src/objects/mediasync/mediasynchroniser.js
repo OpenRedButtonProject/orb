@@ -66,6 +66,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
     prototype.initMediaSynchroniser = async function(mediaObject, timelineSelector) {
         const p = privates.get(this);
         const isBroadcast = mediaObject.getAttribute('__mimeType') === 'video/broadcast';
+
         if (p.inPermanentErrorState) {
             dispatchErrorEvent.call(this, 13, null); // in permanent error state (transient)
         } else if (lastMediaSync === this) {
@@ -151,6 +152,17 @@ hbbtv.objects.MediaSynchroniser = (function() {
                 // invalidate previously initilised media synchroniser
                 setToPermanentErrorState.call(lastMediaSync);
                 dispatchErrorEvent.call(lastMediaSync, 18, mediaObject); // replaced by a new media synchroniser (permanent)
+            }
+
+            if (!isBroadcast) {
+                p.moPrototype = Object.getPrototypeOf(mediaObject);
+                const moPrototypeOverride = Object.create(p.moPrototype);
+
+                moPrototypeOverride.load = () => {
+                    p.moPrototype.load.call(mediaObject);
+                    dispatchErrorEvent.call(this, 16); // not in suitable state for sync (permanent)
+                };
+                Object.setPrototypeOf(mediaObject, moPrototypeOverride);
             }
 
             p.masterMediaObject = mediaObject;
@@ -623,6 +635,8 @@ hbbtv.objects.MediaSynchroniser = (function() {
                     '__orb_onperiodchanged__',
                     p.onPeriodChangedHandler
                 );
+
+                Object.setPrototypeOf(p.masterMediaObject, p.moPrototype);
             }
             for (const mediaObject of p.mediaObjects) {
                 const priv = privates.get(mediaObject);
