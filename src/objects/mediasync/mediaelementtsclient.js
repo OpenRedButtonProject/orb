@@ -194,6 +194,12 @@ hbbtv.objects.MediaElementTsClient = (function() {
             dispatchErrorEvent.call(this, 9); // not in suitable state to synchronise media (transient)
             p.moPrototype.pause.call(this);
         };
+
+        moPrototypeOverride.load = () => {
+            dispatchErrorEvent.call(this, 9); // not in suitable state to synchronise media (transient)
+            p.moPrototype.load.call(this);
+        };
+
         moPrototypeOverride.play = () => {
             const res = p.moPrototype.play.call(mediaObject);
             dispatchErrorEvent.call(this, 9); // not in suitable state to synchronise media (transient)
