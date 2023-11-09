@@ -16,8 +16,13 @@
 extern "C"
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *)
 {
+    #ifdef BUILD_INFO
+    __android_log_print(ANDROID_LOG_INFO, "Orb/Native", BUILD_INFO);
+    #endif
+    
     JniUtils::Init(vm, JNI_VERSION_1_6);
     InitialiseApplicationManagerNative();
     InitialiseNetworkServicesNative();
     return JNI_VERSION_1_6;
 }
+
