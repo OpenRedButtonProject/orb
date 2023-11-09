@@ -38,8 +38,6 @@ LOCAL_SRC_FILES := \
    network_services_native.cpp \
    native.cpp
 
-LOCAL_CFLAGS := -Wno-unused-parameter
-
 LOCAL_C_INCLUDES := \
    $(LOCAL_PATH)/../symlink.application_manager/ \
    $(LOCAL_PATH)/../symlink.network_services/ \
@@ -57,5 +55,7 @@ LOCAL_CFLAGS := -Wno-unused-parameter \
    -Wno-reorder-ctor \
    -Wno-non-virtual-dtor \
    -Wno-unused-private-field
+   
+LOCAL_CFLAGS += -DBUILD_INFO='"$(LOCAL_MODULE) build $(shell date +"%Y-%m-%d %H:%M:%S")"'
 
 include $(BUILD_SHARED_LIBRARY)
