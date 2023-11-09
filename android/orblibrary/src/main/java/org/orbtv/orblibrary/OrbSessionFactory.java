@@ -17,17 +17,6 @@ import java.util.UUID;
 public class OrbSessionFactory {
     private static final String TAG = OrbSessionFactory.class.getSimpleName();
 
-    public enum DoNotTrackPreference {
-        /** The user prefers to allow tracking. */
-        DNT_ALLOW_TRACKING,
-
-        /** The user prefers not to be tracked. */
-        DNT_NO_TRACKING,
-
-        /** A user DNT preference is not set. */
-        DNT_UNSET,
-    }
-
     /**
      * Create a TV browser session.
      *
@@ -80,7 +69,7 @@ public class OrbSessionFactory {
         public final String userAgent;
         public final String sansSerifFontFamily;
         public final String fixedFontFamily;
-        public final DoNotTrackPreference doNotTrackPreference;
+        public final boolean doNotTrackEnabled;
 
         /**
          *
@@ -93,12 +82,12 @@ public class OrbSessionFactory {
          * @param userAgent
          * @param sansSerifFontFamily
          * @param fixedFontFamily
-         * @param doNotTrackPreference The Do Not Track (DNT) preference of the user.
+         * @param doNotTrackEnabled If the user has enabled Do Not Track (DNT).
          */
         public Configuration(int mediaSyncWcPort, int mediaSyncCiiPort, int mediaSyncTsPort,
                              int app2appLocalPort, int app2appRemotePort, String mainActivityUuid, String userAgent,
                              String sansSerifFontFamily, String fixedFontFamily,
-                             DoNotTrackPreference doNotTrackPreference) {
+                             boolean doNotTrackEnabled) {
             this.mediaSyncWcPort = mediaSyncWcPort;
             this.mediaSyncCiiPort = mediaSyncCiiPort;
             this.mediaSyncTsPort = mediaSyncTsPort;
@@ -108,7 +97,7 @@ public class OrbSessionFactory {
             this.userAgent = userAgent;
             this.sansSerifFontFamily = sansSerifFontFamily;
             this.fixedFontFamily = fixedFontFamily;
-            this.doNotTrackPreference = doNotTrackPreference;
+            this.doNotTrackEnabled = doNotTrackEnabled;
         }
     }
 
