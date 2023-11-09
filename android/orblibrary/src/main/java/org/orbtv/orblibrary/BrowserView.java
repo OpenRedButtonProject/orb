@@ -60,7 +60,7 @@ class BrowserView extends WebView {
         addJavascriptInterface(new JavaScriptBridgeInterface(bridge), "androidBridge");
 
         mWebResourceClient = new WebResourceClient(dsmccClient, new HtmlBuilder(mContext.getAssets()),
-                configuration.doNotTrackPreference) {
+                configuration.doNotTrackEnabled) {
             @Override
             public void onRequestFailed(WebResourceRequest request, int appId) {
                 if (request.isForMainFrame() && appId == mLoadAppId) {

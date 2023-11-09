@@ -60,7 +60,7 @@ public class MainActivity extends Activity {
                 USER_AGENT,
                 SANS_SERIF_FONT_FAMILY,
                 FIXED_FONT_FAMILY,
-                getDoNotTrackPreference()
+                getDoNotTrackEnabled(getApplicationContext())
         );
 
         setContentView(R.layout.activity_main);
@@ -161,20 +161,15 @@ public class MainActivity extends Activity {
         }
     }
 
-    private OrbSessionFactory.DoNotTrackPreference getDoNotTrackPreference() {
-        String setting = Settings.Global.getString(getContentResolver(), "hbbtv_do_not_track_preference");
-        if (setting == null) {
-            Log.d(TAG, "Do Not Track: Unset.");
-        } else if (setting.equals("0")) {
-            Log.d(TAG, "Do Not Track: Allow tracking (0).");
-            return OrbSessionFactory.DoNotTrackPreference.DNT_ALLOW_TRACKING;
-        } else if (setting.equals("1")) {
-            Log.d(TAG, "Do Not Track: No tracking (1).");
-            return OrbSessionFactory.DoNotTrackPreference.DNT_NO_TRACKING;
+    private boolean getDoNotTrackEnabled(Context context) {
+        String setting = Settings.Global.getString(context.getContentResolver(), "do_not_track_enabled");
+        if (setting != null && setting.equals("1")) {
+            Log.d(TAG, "do_not_track_enabled=1");
+            return true;
         } else {
-            Log.e(TAG, "Do Not Track: Illegal hbbtv_do_not_track_preference value.");
+            Log.d(TAG, "do_not_track_enabled=unset|0");
+            return false;
         }
-        return OrbSessionFactory.DoNotTrackPreference.DNT_UNSET;
     }
 
     public String getHostAddress() {
