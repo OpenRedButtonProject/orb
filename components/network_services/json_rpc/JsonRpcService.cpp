@@ -1794,33 +1794,31 @@ void JsonRpcService::CheckIntentMethod(std::vector<int> &result, const std::stri
 
         bool shouldAddConnection = false;
         if (method == MD_INTENT_SEARCH || method == MD_INTENT_DISPLAY || method ==
-            MD_INTENT_PLAYBACK ||
-            (method == MD_INTENT_MEDIA_SEEK_CONTENT && actionSeekContentJson.asBool()) ||
-            (method == MD_INTENT_MEDIA_SEEK_RELATIVE && actionSeekRelativeJson.asBool()) ||
-            (method == MD_INTENT_MEDIA_SEEK_LIVE && actionSeekLiveJson.asBool()) ||
-            (method == MD_INTENT_MEDIA_SEEK_WALLCLOCK && actionSeekWallclockJson.asBool()))
+            MD_INTENT_PLAYBACK)
         {
             shouldAddConnection = true;
         }
-        else if (stateJson.asString() == "no-media" || stateJson.asString() == "error" ||
-                 stateJson.asString() == "buffering")
+        else if (stateJson.asString().empty() || stateJson.asString() == "no-media" ||
+                 stateJson.asString() == "error")
         {
             continue;
+        }
+        else if (stateJson.asString() == "stopped")
+        {
+            shouldAddConnection = (method == MD_INTENT_MEDIA_PLAY && actionPlayJson.asBool());
         }
         else if (method == MD_INTENT_MEDIA_PAUSE && actionPauseJson.asBool())
         {
             shouldAddConnection = stateJson.asString() != "paused";
         }
-        else if ((method == MD_INTENT_MEDIA_PLAY && actionPlayJson.asBool()))
-        {
-            shouldAddConnection = stateJson.asString() != "playing";
-        }
-        else if (method == MD_INTENT_MEDIA_STOP && actionStopJson.asBool())
-        {
-            shouldAddConnection = stateJson.asString() != "stopped";
-        }
-        else if ((method == MD_INTENT_MEDIA_FAST_FORWARD && actionFastForwardJson.asBool()) ||
-                 (method == MD_INTENT_MEDIA_FAST_REVERSE && actionFastReverseJson.asBool()))
+        else if ((method == MD_INTENT_MEDIA_PLAY && actionPlayJson.asBool()) ||
+                 (method == MD_INTENT_MEDIA_FAST_FORWARD && actionFastForwardJson.asBool()) ||
+                 (method == MD_INTENT_MEDIA_FAST_REVERSE && actionFastReverseJson.asBool()) ||
+                 (method == MD_INTENT_MEDIA_STOP && actionStopJson.asBool()) ||
+                 (method == MD_INTENT_MEDIA_SEEK_CONTENT && actionSeekContentJson.asBool()) ||
+                 (method == MD_INTENT_MEDIA_SEEK_RELATIVE && actionSeekRelativeJson.asBool()) ||
+                 (method == MD_INTENT_MEDIA_SEEK_LIVE && actionSeekLiveJson.asBool()) ||
+                 (method == MD_INTENT_MEDIA_SEEK_WALLCLOCK && actionSeekWallclockJson.asBool()))
         {
             shouldAddConnection = true;
         }
