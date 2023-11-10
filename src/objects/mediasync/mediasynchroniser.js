@@ -156,13 +156,21 @@ hbbtv.objects.MediaSynchroniser = (function() {
 
             if (!isBroadcast) {
                 p.moPrototype = Object.getPrototypeOf(mediaObject);
-                const moPrototypeOverride = Object.create(p.moPrototype);
-
-                moPrototypeOverride.load = () => {
-                    p.moPrototype.load.call(mediaObject);
-                    dispatchErrorEvent.call(this, 16); // not in suitable state for sync (permanent)
-                };
-                Object.setPrototypeOf(mediaObject, moPrototypeOverride);
+                const overridePrototype = () => {
+                    const moPrototypeOverride = Object.create(p.moPrototype);
+                    moPrototypeOverride.load = () => {
+                        p.moPrototype.load.call(mediaObject);
+                        dispatchErrorEvent.call(this, 16, mediaObject); // not in suitable state for sync (permanent)
+                    };
+                    mediaObject.removeEventListener('loaded',overridePrototype);
+                    Object.setPrototypeOf(mediaObject, moPrototypeOverride);
+                }
+                p.overridePrototype = overridePrototype;
+                if (mediaObject.readyState >= HTMLMediaElement.HAVE_METADATA) {
+                    p.overridePrototype();
+                } else {
+                    mediaObject.addEventListener('loaded', p.overridePrototype);
+                }
             }
 
             p.masterMediaObject = mediaObject;
@@ -636,7 +644,10 @@ hbbtv.objects.MediaSynchroniser = (function() {
                     p.onPeriodChangedHandler
                 );
 
-                Object.setPrototypeOf(p.masterMediaObject, p.moPrototype);
+                if (p.overridePrototype) {
+                    mediaObject.removeEventListener('loaded', p.overridePrototype);
+                    Object.setPrototypeOf(p.masterMediaObject, p.moPrototype);
+                }
             }
             for (const mediaObject of p.mediaObjects) {
                 const priv = privates.get(mediaObject);
