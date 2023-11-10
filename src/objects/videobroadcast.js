@@ -1058,7 +1058,6 @@ hbbtv.objects.VideoBroadcast = (function() {
         if (p.playState === PLAY_STATE_CONNECTING || p.playState === PLAY_STATE_PRESENTING) {
             /* DAE vol5 Table 8 state transition #14 */
             p.playState = PLAY_STATE_STOPPED;
-            removeBridgeEventListeners.call(this);
             hbbtv.holePuncher.setBroadcastVideoObject(null);
             hbbtv.bridge.broadcast.setPresentationSuspended(true);
             dispatchPlayStateChangeEvent.call(this, p.playState);
