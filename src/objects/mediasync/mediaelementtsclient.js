@@ -109,8 +109,10 @@ hbbtv.objects.MediaElementTsClient = (function() {
                 p.eventTarget.dispatchEvent(new Event('SyncNowAchievable'));
             }
         } else {
-            p.moPrototype.pause.call(p.mediaObject);
-            dispatchErrorEvent.call(this, 11); // failed to synchronise media (transient)
+            if (!p.mediaObject.paused) {
+                p.moPrototype.pause.call(p.mediaObject);
+                dispatchErrorEvent.call(this, 11); // failed to synchronise media (transient)
+            }
         }
     }
 
@@ -190,8 +192,14 @@ hbbtv.objects.MediaElementTsClient = (function() {
         const moPrototypeOverride = Object.create(p.moPrototype);
         moPrototypeOverride.pause = () => {
             dispatchErrorEvent.call(this, 9); // not in suitable state to synchronise media (transient)
-            p.moPrototype.pause.call(this);
+            p.moPrototype.pause.call(mediaObject);
         };
+
+        moPrototypeOverride.load = () => {
+            dispatchErrorEvent.call(this, 9); // not in suitable state to synchronise media (transient)
+            p.moPrototype.load.call(mediaObject);
+        };
+
         moPrototypeOverride.play = () => {
             const res = p.moPrototype.play.call(mediaObject);
             dispatchErrorEvent.call(this, 9); // not in suitable state to synchronise media (transient)

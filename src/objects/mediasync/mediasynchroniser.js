@@ -66,6 +66,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
     prototype.initMediaSynchroniser = async function(mediaObject, timelineSelector) {
         const p = privates.get(this);
         const isBroadcast = mediaObject.getAttribute('__mimeType') === 'video/broadcast';
+
         if (p.inPermanentErrorState) {
             dispatchErrorEvent.call(this, 13, null); // in permanent error state (transient)
         } else if (lastMediaSync === this) {
@@ -151,6 +152,25 @@ hbbtv.objects.MediaSynchroniser = (function() {
                 // invalidate previously initilised media synchroniser
                 setToPermanentErrorState.call(lastMediaSync);
                 dispatchErrorEvent.call(lastMediaSync, 18, mediaObject); // replaced by a new media synchroniser (permanent)
+            }
+
+            if (!isBroadcast) {
+                p.moPrototype = Object.getPrototypeOf(mediaObject);
+                const overridePrototype = () => {
+                    const moPrototypeOverride = Object.create(p.moPrototype);
+                    moPrototypeOverride.load = () => {
+                        p.moPrototype.load.call(mediaObject);
+                        dispatchErrorEvent.call(this, 16, mediaObject); // not in suitable state for sync (permanent)
+                    };
+                    mediaObject.removeEventListener('loaded',overridePrototype);
+                    Object.setPrototypeOf(mediaObject, moPrototypeOverride);
+                }
+                p.overridePrototype = overridePrototype;
+                if (mediaObject.readyState >= HTMLMediaElement.HAVE_METADATA) {
+                    p.overridePrototype();
+                } else {
+                    mediaObject.addEventListener('loaded', p.overridePrototype);
+                }
             }
 
             p.masterMediaObject = mediaObject;
@@ -584,7 +604,11 @@ hbbtv.objects.MediaSynchroniser = (function() {
                     dispatchErrorEvent.call(lastMediaSync, 16, p.masterMediaObject); // not in suitable state for sync (permanent)
                 }
             } else {
-                dispatchErrorEvent.call(lastMediaSync, 14, p.masterMediaObject); // The presentation of the master media failed (permanent)
+                if (p.masterMediaObject.playState === hbbtv.objects.BroadcastObserver.prototype.PLAY_STATE_STOPPED) {
+                    dispatchErrorEvent.call(lastMediaSync, 16, p.masterMediaObject); // The presentation of the master media failed (permanent)
+                } else {
+                    dispatchErrorEvent.call(lastMediaSync, 14, p.masterMediaObject); // The presentation of the master media failed (permanent)
+                }
             }
         }
     }
@@ -623,6 +647,11 @@ hbbtv.objects.MediaSynchroniser = (function() {
                     '__orb_onperiodchanged__',
                     p.onPeriodChangedHandler
                 );
+
+                if (p.overridePrototype) {
+                    mediaObject.removeEventListener('loaded', p.overridePrototype);
+                    Object.setPrototypeOf(p.masterMediaObject, p.moPrototype);
+                }
             }
             for (const mediaObject of p.mediaObjects) {
                 const priv = privates.get(mediaObject);
