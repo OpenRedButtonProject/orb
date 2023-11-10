@@ -1029,6 +1029,7 @@ hbbtv.objects.VideoBroadcast = (function() {
         if (p.playState !== PLAY_STATE_UNREALIZED) {
             /* DAE vol5 Table 8 state transition #12 */
             p.currentChannelData = null;
+            p.currentNonQuietChannelData = null;
             p.currentChannelProgrammes = null;
             p.currentChannelComponents = null;
             unregisterAllStreamEventListeners(p);
@@ -1492,10 +1493,11 @@ hbbtv.objects.VideoBroadcast = (function() {
                                 event.transId != p.currentChannelData.tsid
                             ) {
                                 try {
+                                    p.currentChannelData = hbbtv.objects.createChannel(
+                                        hbbtv.bridge.broadcast.getCurrentChannelForEvent()
+                                    );
                                     if (p.quiet !== 2) {
-                                        p.currentChannelData = hbbtv.objects.createChannel(
-                                            hbbtv.bridge.broadcast.getCurrentChannelForEvent()
-                                        );
+                                        p.currentNonQuietChannelData = p.currentChannelData;
                                     }
                                 } catch (e) {
                                     if (e.name === 'SecurityError') {
@@ -1557,7 +1559,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                             event.transId != p.currentChannelData.tsid
                         ) {
                             try {
-                                p.currentChannelData = hbbtv.objects.createChannel(
+                                p.currentNonQuietChannelData = p.currentChannelData = hbbtv.objects.createChannel(
                                     hbbtv.bridge.broadcast.getCurrentChannelForEvent()
                                 );
                             } catch (e) {
@@ -1701,7 +1703,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                     p.isTransitioningToBroadcastRelated = false;
                     setIsBroadcastRelated.call(this, true);
                     try {
-                        p.currentChannelData = hbbtv.objects.createChannel(
+                        p.currentNonQuietChannelData = p.currentChannelData = hbbtv.objects.createChannel(
                             hbbtv.bridge.broadcast.getCurrentChannel()
                         );
                         if (p.channelConfig === null) {
@@ -1779,14 +1781,14 @@ hbbtv.objects.VideoBroadcast = (function() {
         if (p.playState === PLAY_STATE_UNREALIZED || p.channelConfig.channelList.length < 2) {
             dispatchChannelChangeErrorEvent.call(
                 this,
-                p.currentChannelData,
+                p.currentNonQuietChannelData,
                 CHANNEL_STATUS_CANNOT_BE_CHANGED
             );
             return;
         }
         let i;
         for (i = 0; i < p.channelConfig.channelList.length; i++) {
-            if (p.channelConfig.channelList.item(i).ccid === p.currentChannelData.ccid) {
+            if (p.channelConfig.channelList.item(i).ccid === p.currentNonQuietChannelData.ccid) {
                 /* DAE vol5 Table 8 state transition #3 happens in setChannel() */
                 let n = p.channelConfig.channelList.length;
                 this.setChannel(p.channelConfig.channelList.item((i + delta + n) % n));
@@ -1800,7 +1802,7 @@ hbbtv.objects.VideoBroadcast = (function() {
             /* Note: playState is updated first, so it is already correct for the ChannelChangeErrorEvent */
             dispatchChannelChangeErrorEvent.call(
                 this,
-                p.currentChannelData,
+                p.currentNonQuietChannelData,
                 CHANNEL_STATUS_CANNOT_BE_CHANGED
             );
             dispatchPlayStateChangeEvent.call(this, p.playState, CHANNEL_STATUS_CANNOT_BE_CHANGED);
@@ -1809,7 +1811,7 @@ hbbtv.objects.VideoBroadcast = (function() {
             /* DAE vol5 Table 8 state transition #5 */
             dispatchChannelChangeErrorEvent.call(
                 this,
-                p.currentChannelData,
+                p.currentNonQuietChannelData,
                 CHANNEL_STATUS_CANNOT_BE_CHANGED
             );
         }
@@ -2150,18 +2152,19 @@ hbbtv.objects.VideoBroadcast = (function() {
         // when setChannel(null, ...) is called on the realized v/b object. Here we set we are
         // broadcast-related unless getCurrentChannel() throws SecurityError.
         p.currentChannelData = null;
+        p.currentNonQuietChannelData = null;
         p.channelConfig = null;
         p.isTransitioningToBroadcastRelated = false;
         p.quiet = 0;
         setIsBroadcastRelated.call(this, true);
         try {
-            p.currentChannelData = hbbtv.objects.createChannel(
+            p.currentNonQuietChannelData = p.currentChannelData = hbbtv.objects.createChannel(
                 hbbtv.bridge.broadcast.getCurrentChannel()
             );
             p.channelConfig = hbbtv.objects.createChannelConfig();
         } catch (e) {
             if (e.name === 'SecurityError') {
-                p.currentChannelData = null;
+                p.currentNonQuietChannelData = p.currentChannelData = null;
                 setIsBroadcastRelated.call(this, false);
             } else {
                 throw e;
