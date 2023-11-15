@@ -1056,6 +1056,17 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     /**
+     * Called when the active key set and optional other keys are changed.
+     *
+     * @param keySet Key set (a bitwise mask of constants, as defined by HbbTV).
+     * @param otherKeys Optional other keys.
+     */
+    @Override
+    public void onKeySetChanged(int keySet, int[] otherKeys) {
+        // Not used
+    }
+
+    /**
      * Start TEMI timeline monitoring.
      *
      * @param componentTag The component tag of the temi timeline to monitor.

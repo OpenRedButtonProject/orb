@@ -1,6 +1,7 @@
 package org.orbtv.orblibrary;
 
 import android.content.Context;
+import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.View;
@@ -103,6 +104,21 @@ class OrbSession implements IOrbSession {
             @Override
             public void dispatchTransitionedToBroadcastRelatedEvent() {
                 mBridge.dispatchTransitionedToBroadcastRelatedEvent();
+            }
+
+            /**
+             * Notify that the key set has changed.
+             *
+             * @param keySet The application key set.
+             */
+            public void notifyKeySetChanged(int keySet, int[] otherKeys) {
+                Handler handler = new Handler(Looper.getMainLooper());
+                Runnable runnable = () -> {
+                    if (mOrbSessionCallback != null) {
+                        mOrbSessionCallback.onKeySetChanged(keySet, otherKeys);
+                    }
+                };
+                handler.post(runnable);
             }
         });
 

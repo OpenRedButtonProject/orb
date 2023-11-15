@@ -76,6 +76,14 @@ class ApplicationManager {
          * Tell the bridge to dispatch a TransitionedToBroadcastRelated event.
          */
         void dispatchTransitionedToBroadcastRelatedEvent();
+
+        /**
+         * Notify that the active key set and optional other keys are changed.
+         *
+         * @param keySet Key set (a bitwise mask of constants, as defined by HbbTV).
+         * @param otherKeys Optional other keys.
+         */
+        void notifyKeySetChanged(int keySet, int[] otherKeys);
     }
 
     ApplicationManager(final IOrbSessionCallback orbLibraryCallback) {
@@ -150,6 +158,8 @@ class ApplicationManager {
     }
 
     public int setKeyValue(int appId, int value) {
+        int[] otherKeys = new int[0];
+        mSessionCallback.notifyKeySetChanged(value, otherKeys);
         return jniSetKeySetMask(appId, value);
     }
 
@@ -231,6 +241,8 @@ class ApplicationManager {
     private void jniCbResetBroadcastPresentation() {
         synchronized (mLock) {
             if (mSessionCallback != null) {
+                int[] otherKeys = new int[0];
+                mSessionCallback.notifyKeySetChanged(0, otherKeys);
                 mSessionCallback.resetBroadcastPresentation();
             } else {
                 Log.e(TAG, "Presentation listener not set.");
