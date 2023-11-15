@@ -1058,7 +1058,6 @@ hbbtv.objects.VideoBroadcast = (function() {
         if (p.playState === PLAY_STATE_CONNECTING || p.playState === PLAY_STATE_PRESENTING) {
             /* DAE vol5 Table 8 state transition #14 */
             p.playState = PLAY_STATE_STOPPED;
-            removeBridgeEventListeners.call(this);
             hbbtv.holePuncher.setBroadcastVideoObject(null);
             hbbtv.bridge.broadcast.setPresentationSuspended(true);
             dispatchPlayStateChangeEvent.call(this, p.playState);
@@ -1091,7 +1090,7 @@ hbbtv.objects.VideoBroadcast = (function() {
         }
         const component = hbbtv.bridge.broadcast.getPrivateAudioComponent(componentTag);
         if (component !== null) {
-            
+
             // update the currentChannelComponents with the new component
             if (!p.currentChannelComponents) {
                 p.currentChannelComponents = hbbtv.bridge.broadcast.getComponents(
@@ -1100,7 +1099,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                 );
             }
             p.currentChannelComponents.push(component);
-            
+
             return hbbtv.objects.createAVAudioComponent({
                 id: component.id,
                 type: COMPONENT_TYPE_AUDIO,
@@ -1134,7 +1133,7 @@ hbbtv.objects.VideoBroadcast = (function() {
         }
         const component = hbbtv.bridge.broadcast.getPrivateVideoComponent(componentTag);
         if (component !== null) {
-            
+
             // update the currentChannelComponents with the new component
             if (!p.currentChannelComponents) {
                 p.currentChannelComponents = hbbtv.bridge.broadcast.getComponents(
@@ -1677,7 +1676,7 @@ hbbtv.objects.VideoBroadcast = (function() {
         if (!p.onStreamEvent) {
             p.onStreamEvent = (event) => {
                 console.log('Received StreamEvent');
-                console.log(event);
+                console.log(JSON.stringify(event));
                 dispatchStreamEvent.call(
                     this,
                     event.id,
