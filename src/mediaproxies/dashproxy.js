@@ -679,7 +679,7 @@ hbbtv.objects.DashProxy = (function() {
                     },
                     retryAttempts: {
                         MPD: 0,
-                        MediaSegment: 1,
+                        MediaSegment: 0,
                         InitializationSegment: 0,
                         BitstreamSwitchingSegment: 0,
                         IndexSegment: 0,
