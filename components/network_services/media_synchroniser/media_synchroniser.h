@@ -173,6 +173,9 @@ private:
     std::string m_contentId;
     std::unordered_map<std::string, TimelineSource *> m_timelineSources;
     std::recursive_mutex m_mutex;
+    std::string m_currentCSSId;
+    std::string m_currentCSSresentationStatus;
+    std::string m_contentCSSIdStatus;
 };
 
 /////////////////////////////////////////////////////////
