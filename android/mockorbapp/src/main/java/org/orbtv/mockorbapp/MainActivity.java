@@ -60,8 +60,9 @@ public class MainActivity extends Activity {
                 USER_AGENT,
                 SANS_SERIF_FONT_FAMILY,
                 FIXED_FONT_FAMILY,
-                getDoNotTrackEnabled(getApplicationContext())
-        );
+                getDoNotTrackEnabled(getApplicationContext()),
+                getCleanTracksEnabled(getApplicationContext())
+      );
 
         setContentView(R.layout.activity_main);
         Bundle extras = getIntent().getExtras();
@@ -170,6 +171,17 @@ public class MainActivity extends Activity {
             Log.d(TAG, "do_not_track_enabled=unset|0");
             return false;
         }
+    }
+
+    private boolean getCleanTracksEnabled(Context context) {
+      String setting = Settings.Global.getString(context.getContentResolver(), "clean_tracks_enabled");
+      if (setting != null && setting.equals("1")) {
+          Log.d(TAG, "clean_tracks_enabled=1");
+          return true;
+      } else {
+          Log.d(TAG, "clean_tracks_enabled=unset|0");
+          return false;
+      }
     }
 
     public String getHostAddress() {

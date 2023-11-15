@@ -1009,6 +1009,15 @@ public abstract class AbstractBridge {
     protected abstract boolean Configuration_getAudioDescriptionEnabled(BridgeToken token);
 
     /**
+     * Get whether clean audio is enabled on this system.
+     *
+     * @param token The token associated with this request.
+     *
+     * @return True if audio description is enabled; or false otherwise.
+     */
+    protected abstract boolean Configuration_getCleanAudioEnabled(BridgeToken token);
+
+    /**
      * Get the DVB network IDs of the channels in the broadcast channel list.
      *
      * @param token The token associated with this request.
@@ -1788,6 +1797,14 @@ public abstract class AbstractBridge {
 
             case "Configuration.getAudioDescriptionEnabled": {
                 boolean result = Configuration_getAudioDescriptionEnabled(
+                        token
+                );
+                response.put("result", result);
+                break;
+            }
+
+            case "Configuration.getCleanAudioEnabled": {
+                boolean result = Configuration_getCleanAudioEnabled(
                         token
                 );
                 response.put("result", result);

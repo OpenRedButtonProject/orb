@@ -70,6 +70,7 @@ public class OrbSessionFactory {
         public final String sansSerifFontFamily;
         public final String fixedFontFamily;
         public final boolean doNotTrackEnabled;
+        public final boolean cleanAudioEnabled;
 
         /**
          *
@@ -83,11 +84,12 @@ public class OrbSessionFactory {
          * @param sansSerifFontFamily
          * @param fixedFontFamily
          * @param doNotTrackEnabled If the user has enabled Do Not Track (DNT).
+         * @param cleanAudioEnabled If the user has enabled clean audio tracks
          */
         public Configuration(int mediaSyncWcPort, int mediaSyncCiiPort, int mediaSyncTsPort,
                              int app2appLocalPort, int app2appRemotePort, String mainActivityUuid, String userAgent,
                              String sansSerifFontFamily, String fixedFontFamily,
-                             boolean doNotTrackEnabled) {
+                             boolean doNotTrackEnabled, boolean cleanAudioEnabled) {
             this.mediaSyncWcPort = mediaSyncWcPort;
             this.mediaSyncCiiPort = mediaSyncCiiPort;
             this.mediaSyncTsPort = mediaSyncTsPort;
@@ -98,6 +100,7 @@ public class OrbSessionFactory {
             this.sansSerifFontFamily = sansSerifFontFamily;
             this.fixedFontFamily = fixedFontFamily;
             this.doNotTrackEnabled = doNotTrackEnabled;
+            this.cleanAudioEnabled = cleanAudioEnabled;
         }
     }
 

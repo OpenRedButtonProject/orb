@@ -1109,6 +1109,18 @@ hbbtv.bridge.configuration = (function() {
     };
 
     /**
+     * Get whether clean audio is enabled on this system.
+     *
+     * @return {boolean} True if clean audio is enabled; or false otherwise.
+     *
+     * @method
+     * @memberof bridge.configuration#
+     */
+    exported.getCleanAudioEnabled = function() {
+        return hbbtv.native.request('Configuration.getCleanAudioEnabled').result;
+    };
+
+    /**
      * Get the DVB network IDs of the channels in the broadcast channel list.
      *
      * @return {Array.<String>} A list of DVB network IDs; or an empty list of not available.
