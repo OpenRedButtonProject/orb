@@ -1171,9 +1171,11 @@ hbbtv.objects.AVControl = (function() {
                 onPlayHandler();
                 startPlaying = false;
             }
-            dispatchEvent.call(thiz, 'PlayPositionChanged', {
-                position: thiz.playPosition,
-            });
+            else {
+                dispatchEvent.call(thiz, 'PlayPositionChanged', {
+                    position: thiz.playPosition,
+                });
+            }
         });
 
         videoElement.addEventListener('ended', () => {
