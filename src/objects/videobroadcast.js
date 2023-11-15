@@ -1578,6 +1578,30 @@ hbbtv.objects.VideoBroadcast = (function() {
                     unregisterAllStreamEventListeners(p);
                     p.playState = PLAY_STATE_UNREALIZED;
                     dispatchPlayStateChangeEvent.call(this, p.playState);
+                } else if (p.playState == PLAY_STATE_STOPPED) {
+                    // The VBO is stopped and the channel is changed externally (e.g., ch+)
+                    if (event.statusCode == CHANNEL_STATUS_CONNECTING) {
+                        if (
+                            p.currentChannelData != null &&
+                            (event.servId != p.currentChannelData.sid ||
+                            event.onetId != p.currentChannelData.onid ||
+                            event.transId != p.currentChannelData.tsid)
+                        ) {
+                            try {
+                                p.currentChannelData = hbbtv.objects.createChannel(
+                                    hbbtv.bridge.broadcast.getCurrentChannelForEvent()
+                                );
+                                p.playState = PLAY_STATE_CONNECTING;
+                                dispatchChannelChangeSucceededEvent.call(
+                                    this,
+                                    p.currentChannelData
+                                );
+                                dispatchPlayStateChangeEvent.call(this, p.playState);
+                            } catch (e) {
+                                // Ignored
+                            }
+                        }
+                    }
                 } else {
                     console.log(
                         'Unhandled state transition. Current playState ' + p.playState + ', event:'
