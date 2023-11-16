@@ -36,8 +36,10 @@ hbbtv.mediaManager = (function() {
     hbbtv.bridge = {
         configuration: {
             getPreferredAudioLanguage: () =>
-            hbbtv.native.request('Configuration.getPreferredAudioLanguage').result
-        }
+                hbbtv.native.request('Configuration.getPreferredAudioLanguage').result,
+            getCleanAudioEnabled: () =>
+                hbbtv.native.request('Configuration.getCleanAudioEnabled').result
+        },
     };
 
     function initialise() {

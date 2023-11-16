@@ -26,6 +26,7 @@ hbbtv.objects.Configuration = (function() {
         countryId: hbbtv.bridge.configuration.getCountryId,
         subtitlesEnabled: hbbtv.bridge.configuration.getSubtitlesEnabled,
         audioDescriptionEnabled: hbbtv.bridge.configuration.getAudioDescriptionEnabled,
+        cleanAudioEnabled: hbbtv.bridge.configuration.getCleanAudioEnabled,
         timeShiftSynchronized() {
             return false; // PVR
         },

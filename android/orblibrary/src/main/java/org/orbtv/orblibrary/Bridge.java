@@ -896,6 +896,18 @@ class Bridge extends AbstractBridge {
     }
 
     /**
+     * Get whether clean audio is enabled on this system.
+     *
+     * @param token The token associated with this request.
+     *
+     * @return True if clean audio is enabled; or false otherwise.
+     */
+    @Override
+    protected boolean Configuration_getCleanAudioEnabled(BridgeToken token) {
+        return mConfiguration.cleanAudioEnabled;
+    }
+
+    /**
      * Get the DVB network IDs of the channels in the broadcast channel list.
      *
      * @param token The token associated with this request.

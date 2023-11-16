@@ -384,6 +384,7 @@ hbbtv.objects.DashProxy = (function() {
                     numChannels: parseInt(track.audioChannelConfiguration[0]),
                     encoding: track.codec,
                     encrypted: track.contentProtection ? true : false,
+                    accessibility: parseInt(track.accessibility[0]),
                 };
                 tracks.push(info);
             });
