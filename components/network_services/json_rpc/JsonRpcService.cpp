@@ -727,8 +727,8 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
     // state is "buffering", "paused" or "playing"
     Json::Value current = params["currentTime"];
     Json::Value range = params["range"];
-    if (!params.isMember("currentTime") || !range.isMember("start") ||
-        !range.isMember("end"))
+    if (!params.isMember("currentTime") || !HasJsonParam(params, "range") ||
+        !range.isMember("start") || !range.isMember("end"))
     {
         LOG(LOG_INFO, "A required item is missing in notification message");
         return JsonRpcStatus::NOTIFICATION_ERROR;
