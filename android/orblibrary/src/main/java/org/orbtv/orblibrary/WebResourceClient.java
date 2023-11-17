@@ -232,6 +232,8 @@ abstract class WebResourceClient {
             String fromExtension = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
             if (fromExtension != null) {
                 type = fromExtension;
+            } else if ((extension.equals("html5")) || (extension.equals("cehtml"))) {
+                type = "text/html";
             }
         }
         return type;
