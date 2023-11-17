@@ -17,6 +17,7 @@
 hbbtv.mediaManager = (function() {
     let objectHandlers = {};
     let fallbackHandlers = undefined;
+    let mediaType = undefined;
     const mediaProxy = hbbtv.objects.createIFrameObjectProxy();
     window.orbNetwork = {
         resolveHostAddress: (hostname) =>
@@ -43,8 +44,8 @@ hbbtv.mediaManager = (function() {
     };
 
     function initialise() {
-        addSourceManipulationIntercept();
         addMutationIntercept();
+        addSourceManipulationIntercept();
 
         const __play = HTMLMediaElement.prototype.play;
         const __load = HTMLMediaElement.prototype.load;
@@ -112,6 +113,15 @@ hbbtv.mediaManager = (function() {
             src.toLowerCase().startsWith('blob:')
         ) {
             return Promise.resolve();
+        }
+
+        if (mediaType) {
+            const nextHandler = getHandlerByContentType(mediaType);
+            mediaType = undefined;
+            if (nextHandler) {
+                setObjectHandler.call(object, nextHandler, src);
+                return Promise.resolve();
+            }
         }
 
         // consider playback anchors with url
@@ -484,7 +494,10 @@ hbbtv.mediaManager = (function() {
         const observer = new MutationObserver(function(mutationsList) {
             for (const mutation of mutationsList) {
                 for (const node of mutation.addedNodes) {
-                    if (
+                    if (node.nodeName.toLowerCase() === 'source' && mediaType === undefined) {
+                        mediaType = node.type;
+                    }
+                    else if (
                         (node.nodeName && node.nodeName.toLowerCase() === 'video') ||
                         node.nodeName.toLowerCase() === 'audio'
                     ) {
