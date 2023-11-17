@@ -135,7 +135,10 @@ MediaSynchroniser::MediaSynchroniser(const int &id,
     m_ciiPort(ciiPort),
     m_wcPort(wcPort),
     m_tsPort(tsPort),
-    m_sysClock(1000000000, 45)
+    m_sysClock(1000000000, 45),
+    m_currentCSSId(""),
+    m_currentCSSresentationStatus(""),
+    m_contentCSSIdStatus("")
 {
     LOG(LOG_INFO, "MediaSynchroniser ctor. id=%d\n", id);
     m_ciiProps.setProperty("teUrl", Json::Value::null);
@@ -279,7 +282,15 @@ void MediaSynchroniser::updateCssCiiProperties(const std::string &contentId, con
             m_ciiProps.setProperty(it.key().asString(), *it);
         }
     }
-    updateAllCIIClients();
+
+    if (!m_currentCSSId.empty() && m_currentCSSresentationStatus != presentationStatus && m_contentCSSIdStatus != contentIdStatus) {
+       updateAllCIIClients();
+    }
+
+    m_currentCSSId = contentId;
+    m_currentCSSresentationStatus = presentationStatus;
+    m_contentCSSIdStatus = contentIdStatus;
+
     updateAllTSClients();
 }
 
@@ -343,6 +354,10 @@ void MediaSynchroniser::disableInterDeviceSync()
         mngr.StopService(m_wcService);
         m_mediaSyncCallback->dispatchInterDeviceSyncDisabled(m_id);
         LOG(LOG_INFO, "Stopped all CSS servers.\n");
+
+        m_currentCSSId.clear();
+        m_currentCSSresentationStatus.clear();
+        m_contentCSSIdStatus.clear();
     }
 }
 
