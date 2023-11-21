@@ -21,6 +21,17 @@ import org.orbtv.orbpolyfill.BridgeTypes;
 import java.util.List;
 
 public interface IOrbSessionCallback {
+    enum ApplicationStatus {
+        /* The application has not been started yet. */
+        NOT_STARTED,
+
+        /* The application is running and visible to the user. */
+        VISIBLE,
+
+        /* The application is running but not currently visible to the user. */
+        INVISIBLE
+    };
+
     /**
      * This method is called once the session is ready to be called by the client and present HbbTV
      * applications.
@@ -450,6 +461,13 @@ public interface IOrbSessionCallback {
      * @param otherKeys Optional other keys.
      */
     void onKeySetChanged(int keySet, int[] otherKeys);
+
+    /**
+     * Notify that the application status is changed.
+     *
+     * @param status The application status.
+     */
+    void onApplicationStatusChanged(ApplicationStatus status);
 
     /**
      * Start TEMI timeline monitoring.
