@@ -335,7 +335,11 @@ void ORBWPEWebExtensionHelper::RegisterDVBURLSchemeHandler(WebKitWebContext *con
     ORB_LOG_NO_ARGS();
 
     WebKitSecurityManager *securityManager = webkit_web_context_get_security_manager(context);
+    webkit_security_manager_register_uri_scheme_as_cors_enabled(securityManager, "hbbtv-carousel");
     webkit_security_manager_register_uri_scheme_as_cors_enabled(securityManager, "dvb");
+
+    webkit_web_context_register_uri_scheme(context, "hbbtv-carousel",
+        (WebKitURISchemeRequestCallback) HandleDVBURISchemeRequest, nullptr, nullptr);
 
     webkit_web_context_register_uri_scheme(context, "dvb",
         (WebKitURISchemeRequestCallback) HandleDVBURISchemeRequest, nullptr, nullptr);

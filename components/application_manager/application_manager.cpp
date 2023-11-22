@@ -1106,6 +1106,17 @@ uint16_t ApplicationManager::GetKeySet(const uint16_t keyCode)
     return KEY_SET_OTHER;
 }
 
+/**
+ * Provide access to the AIT organization id
+ * 
+ * @return uint32_t the organization id
+ */
+uint32_t ApplicationManager::GetOrganizationId()
+{
+    LOG(LOG_INFO, "The organization id is %d\n", m_app.orgId);
+    return m_app.orgId;
+}
+
 static bool IsKeyNavigation(uint16_t code)
 {
     return code == VK_UP ||
