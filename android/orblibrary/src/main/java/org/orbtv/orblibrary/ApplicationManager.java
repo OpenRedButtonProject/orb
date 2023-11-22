@@ -23,6 +23,8 @@ import okhttp3.*;
 class ApplicationManager {
     private static final String TAG = ApplicationManager.class.getSimpleName();
 
+    private final static String NOT_STARTED_URL = "about:blank";
+
     private final static int KEY_SET_RED = 0x1;
     private final static int KEY_SET_GREEN = 0x2;
     private final static int KEY_SET_YELLOW = 0x4;
@@ -34,6 +36,8 @@ class ApplicationManager {
     private final Object mLock = new Object();
     private SessionCallback mSessionCallback;
     private final IOrbSessionCallback mOrbLibraryCallback;
+
+    private String m_entryUrl = NOT_STARTED_URL;
 
     interface SessionCallback {
         /**
@@ -84,6 +88,13 @@ class ApplicationManager {
          * @param otherKeys Optional other keys.
          */
         void notifyKeySetChanged(int keySet, int[] otherKeys);
+
+        /**
+         * Notify that the application status is changed.
+         *
+         * @param status The application status.
+         */
+        void notifyApplicationStatusChanged(IOrbSessionCallback.ApplicationStatus status);
     }
 
     ApplicationManager(final IOrbSessionCallback orbLibraryCallback) {
@@ -252,9 +263,18 @@ class ApplicationManager {
 
     private void jniCbLoadApplication(int appId, String entryUrl) {
         synchronized (mLock) {
+            m_entryUrl = entryUrl;
             if (mSessionCallback != null) {
                 mSessionCallback.resetBroadcastPresentation();
                 mSessionCallback.loadApplication(appId, entryUrl);
+                if (m_entryUrl.equals(NOT_STARTED_URL)) {
+                    mSessionCallback.notifyApplicationStatusChanged(
+                            IOrbSessionCallback.ApplicationStatus.NOT_STARTED);
+                } else {
+                    // jniCbLoadApplication is called before jniCbShowApplication
+                    mSessionCallback.notifyApplicationStatusChanged(
+                            IOrbSessionCallback.ApplicationStatus.INVISIBLE);
+                }
             } else {
                 Log.e(TAG, "Presentation listener not set.");
             }
@@ -265,6 +285,10 @@ class ApplicationManager {
         synchronized (mLock) {
             if (mSessionCallback != null) {
                 mSessionCallback.showApplication();
+                if (!m_entryUrl.equals(NOT_STARTED_URL)) {
+                    mSessionCallback.notifyApplicationStatusChanged(
+                            IOrbSessionCallback.ApplicationStatus.VISIBLE);
+                }
             } else {
                 Log.e(TAG, "Presentation listener not set.");
             }
@@ -275,6 +299,10 @@ class ApplicationManager {
         synchronized (mLock) {
             if (mSessionCallback != null) {
                 mSessionCallback.hideApplication();
+                if (!m_entryUrl.equals(NOT_STARTED_URL)) {
+                    mSessionCallback.notifyApplicationStatusChanged(
+                            IOrbSessionCallback.ApplicationStatus.INVISIBLE);
+                }
             } else {
                 Log.e(TAG, "Presentation listener not set.");
             }

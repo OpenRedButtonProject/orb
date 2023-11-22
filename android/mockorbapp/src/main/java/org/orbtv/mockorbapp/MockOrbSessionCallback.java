@@ -1067,6 +1067,16 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     /**
+     * Notify that the application status is changed.
+     *
+     * @param status The application status.
+     */
+    @Override
+    public void onApplicationStatusChanged(ApplicationStatus status) {
+        // Not used
+    }
+
+    /**
      * Start TEMI timeline monitoring.
      *
      * @param componentTag The component tag of the temi timeline to monitor.

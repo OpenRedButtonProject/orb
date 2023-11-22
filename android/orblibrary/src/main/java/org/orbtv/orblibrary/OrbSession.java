@@ -120,6 +120,22 @@ class OrbSession implements IOrbSession {
                 };
                 handler.post(runnable);
             }
+
+            /**
+             * Notify that the application status is changed.
+             *
+             * @param status The application status.
+             */
+            @Override
+            public void notifyApplicationStatusChanged(IOrbSessionCallback.ApplicationStatus status) {
+                Handler handler = new Handler(Looper.getMainLooper());
+                Runnable runnable = () -> {
+                    if (mOrbSessionCallback != null) {
+                        mOrbSessionCallback.onApplicationStatusChanged(status);
+                    }
+                };
+                handler.post(runnable);
+            }
         });
 
         mBrowserView.setSessionCallback(new BrowserView.SessionCallback() {
