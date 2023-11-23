@@ -85,6 +85,26 @@ const static std::map<int, std::string> ACCESSIBILITY_FEATURE_NAMES = {
     {7, F_IN_VISION_SIGNING},
 };
 
+static Json::Value QuerySettingsSubtitles(bool enabled, int size, const std::string &fontFamily,
+    const std::string &textColour, int textOpacity, const std::string &edgeType, const std::string
+    &edgeColour, const std::string &backgroundColour, int backgroundOpacity, const std::string
+    &windowColour, int windowOpacity, const std::string &language);
+
+static Json::Value QuerySettingsDialogueEnhancement(int dialogueEnhancementGainPreference,
+    int dialogueEnhancementGain, int dialogueEnhancementLimitMin, int dialogueEnhancementLimitMax);
+
+static Json::Value QuerySettingsUIMagnifier(bool enabled, const std::string &magType);
+
+static Json::Value QuerySettingsHighContrastUI(bool enabled, const std::string &hcType);
+
+static Json::Value QuerySettingsScreenReader(bool enabled, int speed, const std::string &voice,
+    const std::string &language);
+
+static Json::Value QuerySettingsResponseToUserAction(bool enabled, const std::string &type);
+
+static Json::Value QuerySettingsAudioDescription(bool enabled, int gainPreference, int
+    panAzimuthPreference);
+
 static Json::Value GetMethodsInJsonArray(const std::unordered_set<std::string>& set);
 
 static bool IsMethodInSet(const std::unordered_set<std::string> &set, const std::string& method);
@@ -943,52 +963,9 @@ void JsonRpcService::RespondFeatureSettingsSubtitles(int connectionId, const std
     int windowOpacity,
     const std::string &language)
 {
-    Json::Value value;
-    value["enabled"] = enabled;
-    if (size != OPTIONAL_INT_NOT_SET)
-    {
-        value["size"] = size;
-    }
-    if (fontFamily != OPTIONAL_STR_NOT_SET)
-    {
-        value["fontFamily"] = fontFamily;
-    }
-    if (textColour != OPTIONAL_STR_NOT_SET)
-    {
-        value["textColour"] = textColour;
-    }
-    if (textOpacity != OPTIONAL_INT_NOT_SET)
-    {
-        value["textOpacity"] = textOpacity;
-    }
-    if (edgeType != OPTIONAL_STR_NOT_SET)
-    {
-        value["edgeType"] = edgeType;
-    }
-    if (edgeColour != OPTIONAL_STR_NOT_SET)
-    {
-        value["edgeColour"] = edgeColour;
-    }
-    if (backgroundColour != OPTIONAL_STR_NOT_SET)
-    {
-        value["backgroundColour"] = backgroundColour;
-    }
-    if (backgroundOpacity != OPTIONAL_INT_NOT_SET)
-    {
-        value["backgroundOpacity"] = backgroundOpacity;
-    }
-    if (windowColour != OPTIONAL_STR_NOT_SET)
-    {
-        value["windowColour"] = windowColour;
-    }
-    if (windowOpacity != OPTIONAL_INT_NOT_SET)
-    {
-        value["windowOpacity"] = windowOpacity;
-    }
-    if (language != OPTIONAL_STR_NOT_SET)
-    {
-        value["language"] = language;
-    }
+    Json::Value value = QuerySettingsSubtitles(enabled, size, fontFamily, textColour, textOpacity,
+        edgeType, edgeColour, backgroundColour, backgroundOpacity, windowColour, windowOpacity,
+        language);
     Json::Value result = CreateFeatureSettingsQuery(F_SUBTITLES, value);
     Json::Value response = CreateJsonResponse(id, result);
     SendJsonMessageToClient(connectionId, response);
@@ -1001,13 +978,8 @@ void JsonRpcService::RespondFeatureSettingsDialogueEnhancement(int connectionId,
     int dialogueEnhancementLimitMin,
     int dialogueEnhancementLimitMax)
 {
-    Json::Value value;
-    value["dialogueEnhancementGainPreference"] = dialogueEnhancementGainPreference;
-    value["dialogueEnhancementGain"] = dialogueEnhancementGain;
-    Json::Value dialogueEnhancementLimit;
-    dialogueEnhancementLimit["min"] = dialogueEnhancementLimitMin;
-    dialogueEnhancementLimit["max"] = dialogueEnhancementLimitMax;
-    value["dialogueEnhancementLimit"] = dialogueEnhancementLimit;
+    Json::Value value = QuerySettingsDialogueEnhancement(dialogueEnhancementGainPreference,
+        dialogueEnhancementGain, dialogueEnhancementLimitMin, dialogueEnhancementLimitMax);
     Json::Value result = CreateFeatureSettingsQuery(F_DIALOGUE_ENHANCEMENT, value);
     Json::Value response = CreateJsonResponse(id, result);
     SendJsonMessageToClient(connectionId, response);
@@ -1017,12 +989,7 @@ void JsonRpcService::RespondFeatureSettingsUIMagnifier(int connectionId, const s
     bool enabled,
     const std::string &magType)
 {
-    Json::Value value;
-    value["enabled"] = enabled;
-    if (magType != OPTIONAL_STR_NOT_SET)
-    {
-        value["magType"] = magType;
-    }
+    Json::Value value = QuerySettingsUIMagnifier(enabled, magType);
     Json::Value result = CreateFeatureSettingsQuery(F_UI_MAGNIFIER, value);
     Json::Value response = CreateJsonResponse(id, result);
     SendJsonMessageToClient(connectionId, response);
@@ -1033,12 +1000,7 @@ void JsonRpcService::RespondFeatureSettingsHighContrastUI(int connectionId,
     bool enabled,
     const std::string &hcType)
 {
-    Json::Value value;
-    value["enabled"] = enabled;
-    if (hcType != OPTIONAL_STR_NOT_SET)
-    {
-        value["hcType"] = hcType;
-    }
+    Json::Value value = QuerySettingsHighContrastUI(enabled, hcType);
     Json::Value result = CreateFeatureSettingsQuery(F_HIGH_CONTRAST_UI, value);
     Json::Value response = CreateJsonResponse(id, result);
     SendJsonMessageToClient(connectionId, response);
@@ -1051,20 +1013,7 @@ void JsonRpcService::RespondFeatureSettingsScreenReader(int connectionId,
     const std::string &voice,
     const std::string &language)
 {
-    Json::Value value;
-    value["enabled"] = enabled;
-    if (speed != OPTIONAL_INT_NOT_SET)
-    {
-        value["speed"] = speed;
-    }
-    if (voice != OPTIONAL_STR_NOT_SET)
-    {
-        value["voice"] = voice;
-    }
-    if (language != OPTIONAL_STR_NOT_SET)
-    {
-        value["language"] = language;
-    }
+    Json::Value value = QuerySettingsScreenReader(enabled, speed, voice, language);
     Json::Value result = CreateFeatureSettingsQuery(F_SCREEN_READER, value);
     Json::Value response = CreateJsonResponse(id, result);
     SendJsonMessageToClient(connectionId, response);
@@ -1075,12 +1024,7 @@ void JsonRpcService::RespondFeatureSettingsResponseToUserAction(int connectionId
     bool enabled,
     const std::string &type)
 {
-    Json::Value value;
-    value["enabled"] = enabled;
-    if (type != OPTIONAL_STR_NOT_SET)
-    {
-        value["type"] = type;
-    }
+    Json::Value value = QuerySettingsResponseToUserAction(enabled, type);
     Json::Value result = CreateFeatureSettingsQuery(F_RESPONSE_TO_USER_ACTION, value);
     Json::Value response = CreateJsonResponse(id, result);
     SendJsonMessageToClient(connectionId, response);
@@ -1091,16 +1035,8 @@ void JsonRpcService::RespondFeatureSettingsAudioDescription(int connectionId, co
     int gainPreference,
     int panAzimuthPreference)
 {
-    Json::Value value;
-    value["enabled"] = enabled;
-    if (gainPreference != OPTIONAL_INT_NOT_SET)
-    {
-        value["gainPreference"] = gainPreference;
-    }
-    if (panAzimuthPreference != OPTIONAL_INT_NOT_SET)
-    {
-        value["panAzimuthPreference"] = panAzimuthPreference;
-    }
+    Json::Value value = QuerySettingsAudioDescription(enabled, gainPreference,
+        panAzimuthPreference);
     Json::Value result = CreateFeatureSettingsQuery(F_AUDIO_DESCRIPTION, value);
     Json::Value response = CreateJsonResponse(id, result);
     SendJsonMessageToClient(connectionId, response);
@@ -1326,53 +1262,9 @@ void JsonRpcService::NotifySubtitles(bool enabled,
 {
     Json::Value params;
     params["msgType"] = PC_SUBTITLES;
-    Json::Value value;
-    value["enabled"] = enabled;
-    if (size != OPTIONAL_INT_NOT_SET)
-    {
-        value["size"] = size;
-    }
-    if (fontFamily != OPTIONAL_STR_NOT_SET)
-    {
-        value["fontFamily"] = fontFamily;
-    }
-    if (textColour != OPTIONAL_STR_NOT_SET)
-    {
-        value["textColour"] = textColour;
-    }
-    if (textOpacity != OPTIONAL_INT_NOT_SET)
-    {
-        value["textOpacity"] = textOpacity;
-    }
-    if (edgeType != OPTIONAL_STR_NOT_SET)
-    {
-        value["edgeType"] = edgeType;
-    }
-    if (edgeColour != OPTIONAL_STR_NOT_SET)
-    {
-        value["edgeColour"] = edgeColour;
-    }
-    if (backgroundColour != OPTIONAL_STR_NOT_SET)
-    {
-        value["backgroundColour"] = backgroundColour;
-    }
-    if (backgroundOpacity != OPTIONAL_INT_NOT_SET)
-    {
-        value["backgroundOpacity"] = backgroundOpacity;
-    }
-    if (windowColour != OPTIONAL_STR_NOT_SET)
-    {
-        value["windowColour"] = windowColour;
-    }
-    if (windowOpacity != OPTIONAL_INT_NOT_SET)
-    {
-        value["windowOpacity"] = windowOpacity;
-    }
-    if (language != OPTIONAL_STR_NOT_SET)
-    {
-        value["language"] = language;
-    }
-    params["value"] = value;
+    params["value"] = QuerySettingsSubtitles(enabled, size, fontFamily, textColour, textOpacity,
+        edgeType, edgeColour, backgroundColour, backgroundOpacity, windowColour, windowOpacity,
+        language);
     SendNotifyMessage(GetAccessibilityFeatureId(F_SUBTITLES), params);
 }
 
@@ -1384,14 +1276,8 @@ void JsonRpcService::NotifyDialogueEnhancement(
 {
     Json::Value params;
     params["msgType"] = PC_DIALOGUE_ENHANCEMENT;
-    Json::Value value;
-    value["dialogueEnhancementGainPreference"] = dialogueEnhancementGainPreference;
-    value["dialogueEnhancementGain"] = dialogueEnhancementGain;
-    Json::Value dialogueEnhancementLimit;
-    dialogueEnhancementLimit["min"] = dialogueEnhancementLimitMin;
-    dialogueEnhancementLimit["max"] = dialogueEnhancementLimitMax;
-    value["dialogueEnhancementLimit"] = dialogueEnhancementLimit;
-    params["value"] = value;
+    params["value"] = QuerySettingsDialogueEnhancement(dialogueEnhancementGainPreference,
+        dialogueEnhancementGain, dialogueEnhancementLimitMin, dialogueEnhancementLimitMax);
     SendNotifyMessage(GetAccessibilityFeatureId(F_DIALOGUE_ENHANCEMENT), params);
 }
 
@@ -1399,13 +1285,7 @@ void JsonRpcService::NotifyUIMagnifier(bool enabled, const std::string &magType)
 {
     Json::Value params;
     params["msgType"] = PC_UI_MAGNIFIER;
-    Json::Value value;
-    value["enabled"] = enabled;
-    if (magType != OPTIONAL_STR_NOT_SET)
-    {
-        value["magType"] = magType;
-    }
-    params["value"] = value;
+    params["value"] = QuerySettingsUIMagnifier(enabled, magType);
     SendNotifyMessage(GetAccessibilityFeatureId(F_UI_MAGNIFIER), params);
 }
 
@@ -1413,13 +1293,7 @@ void JsonRpcService::NotifyHighContrastUI(bool enabled, const std::string &hcTyp
 {
     Json::Value params;
     params["msgType"] = PC_HIGH_CONTRAST_UI;
-    Json::Value value;
-    value["enabled"] = enabled;
-    if (hcType != OPTIONAL_STR_NOT_SET)
-    {
-        value["hcType"] = hcType;
-    }
-    params["value"] = value;
+    params["value"] = QuerySettingsUIMagnifier(enabled, hcType);
     SendNotifyMessage(GetAccessibilityFeatureId(F_HIGH_CONTRAST_UI), params);
 }
 
@@ -1428,21 +1302,7 @@ void JsonRpcService::NotifyScreenReader(bool enabled, int speed, const std::stri
 {
     Json::Value params;
     params["msgType"] = PC_SCREEN_READER;
-    Json::Value value;
-    value["enabled"] = enabled;
-    if (speed != OPTIONAL_INT_NOT_SET)
-    {
-        value["speed"] = speed;
-    }
-    if (voice != OPTIONAL_STR_NOT_SET)
-    {
-        value["voice"] = voice;
-    }
-    if (language != OPTIONAL_STR_NOT_SET)
-    {
-        value["language"] = language;
-    }
-    params["value"] = value;
+    params["value"] = QuerySettingsScreenReader(enabled, speed, voice, language);
     SendNotifyMessage(GetAccessibilityFeatureId(F_SCREEN_READER), params);
 }
 
@@ -1450,13 +1310,7 @@ void JsonRpcService::NotifyResponseToUserAction(bool enabled, const std::string 
 {
     Json::Value params;
     params["msgType"] = PC_RESPONSE_TO_USER_ACTION;
-    Json::Value value;
-    value["enabled"] = enabled;
-    if (type != OPTIONAL_STR_NOT_SET)
-    {
-        value["type"] = type;
-    }
-    params["value"] = value;
+    params["value"] = QuerySettingsResponseToUserAction(enabled, type);
     SendNotifyMessage(GetAccessibilityFeatureId(F_RESPONSE_TO_USER_ACTION), params);
 }
 
@@ -1465,17 +1319,7 @@ void JsonRpcService::NotifyAudioDescription(bool enabled, int gainPreference, in
 {
     Json::Value params;
     params["msgType"] = PC_AUDIO_DESCRIPTION;
-    Json::Value value;
-    value["enabled"] = enabled;
-    if (gainPreference != OPTIONAL_INT_NOT_SET)
-    {
-        value["gainPreference"] = gainPreference;
-    }
-    if (panAzimuthPreference != OPTIONAL_INT_NOT_SET)
-    {
-        value["panAzimuthPreference"] = panAzimuthPreference;
-    }
-    params["value"] = value;
+    params["value"] = QuerySettingsAudioDescription(enabled, gainPreference, panAzimuthPreference);
     SendNotifyMessage(GetAccessibilityFeatureId(F_AUDIO_DESCRIPTION), params);
 }
 
@@ -1634,6 +1478,12 @@ void JsonRpcService::SendIntentMessage(const std::string& method, Json::Value &p
     }
 }
 
+/**
+ * Send an intent message to available clients.
+ *
+ * @param method The name of the intent method to send.
+ * @param params The JSON parameters associated with the intent.
+ */
 void JsonRpcService::AdjustTimeRange(int id, const std::string& method, Json::Value &params)
 {
     Json::Value current = GetConnectionData(id, ConnectionDataType::CurrentTime);
@@ -2057,6 +1907,247 @@ Json::Value JsonRpcService::GetConnectionData(int connectionId, ConnectionDataTy
 }
 
 // Static functions
+
+/**
+ * Query the feature settings of subtitles
+ *
+ * @param enabled           Enabled subtitles
+ * @param size              The font size
+ * @param fontFamily        The description of the font family
+ * @param textColour        The text colour in RGB24 format
+ * @param textOpacity       The test opacity with the percentage from 0 to 100
+ * @param edgeType          The description of edge type
+ * @param edgeColour        The edge colour in RGB24 format
+ * @param backgroundColour  The background colour in RGB24 format
+ * @param backgroundOpacity The background opacity with the percentage from 0 to 100
+ * @param windowColour      The window colour in RGB24 format
+ * @param windowOpacity     The window opacity with the percentage from 0 to 100
+ * @param language          The description of language in ISO639-2 3-character code
+ * @return A Json object containing the settings.
+ */
+Json::Value QuerySettingsSubtitles(bool enabled, int size, const std::string &fontFamily, const
+    std::string &textColour, int textOpacity, const std::string &edgeType, const std::string
+    &edgeColour, const std::string &backgroundColour, int backgroundOpacity, const std::string
+    &windowColour, int windowOpacity, const std::string &language)
+{
+    Json::Value value;
+    value["enabled"] = enabled;
+    // Optional Parameters shall only be present if the user has explicitly modified the setting
+    // value to something other than the terminal default value.
+    if (!enabled)
+    {
+        return value;
+    }
+    if (size != OPTIONAL_INT_NOT_SET)
+    {
+        value["size"] = std::min(std::max(size, 25), 300);
+    }
+    if (fontFamily != OPTIONAL_STR_NOT_SET)
+    {
+        value["fontFamily"] = fontFamily;
+    }
+    if (textColour != OPTIONAL_STR_NOT_SET)
+    {
+        value["textColour"] = textColour;
+    }
+    if (textOpacity != OPTIONAL_INT_NOT_SET)
+    {
+        value["textOpacity"] = std::min(std::max(size, 0), 100);
+    }
+    if (edgeType == "outline" || edgeType == "dropShadow" || edgeType == "raised" || edgeType ==
+        "depressed")
+    {
+        value["edgeType"] = edgeType;
+    }
+    if (edgeColour != OPTIONAL_STR_NOT_SET)
+    {
+        value["edgeColour"] = edgeColour;
+    }
+    if (backgroundColour != OPTIONAL_STR_NOT_SET)
+    {
+        value["backgroundColour"] = backgroundColour;
+    }
+    if (backgroundOpacity != OPTIONAL_INT_NOT_SET)
+    {
+        value["backgroundOpacity"] = std::min(std::max(backgroundOpacity, 0), 100);
+    }
+    if (windowColour != OPTIONAL_STR_NOT_SET)
+    {
+        value["windowColour"] = windowColour;
+    }
+    if (windowOpacity != OPTIONAL_INT_NOT_SET)
+    {
+        value["windowOpacity"] = std::min(std::max(windowOpacity, 0), 100);
+    }
+    if (language != OPTIONAL_STR_NOT_SET)
+    {
+        value["language"] = language;
+    }
+    return value;
+}
+
+/**
+ * Query the feature settings of dialogue enhancement
+ *
+ * @param gainPreference The dialogue enhancement gain preference in dB
+ * @param gain           The currently-active gain value in dB
+ * @param limitMin       The current allowed minimum gain value in dB
+ * @param limitMax       The current allowed maximum gain value in dB
+ * @return A Json object containing the settings.
+ */
+Json::Value QuerySettingsDialogueEnhancement(int dialogueEnhancementGainPreference, int
+    dialogueEnhancementGain, int dialogueEnhancementLimitMin, int dialogueEnhancementLimitMax)
+{
+    Json::Value value;
+    value["dialogueEnhancementGainPreference"] = dialogueEnhancementGainPreference;
+    value["dialogueEnhancementGain"] = dialogueEnhancementGain;
+    Json::Value dialogueEnhancementLimit;
+    dialogueEnhancementLimit["min"] = dialogueEnhancementLimitMin;
+    dialogueEnhancementLimit["max"] = dialogueEnhancementLimitMax;
+    value["dialogueEnhancementLimit"] = dialogueEnhancementLimit;
+    return value;
+}
+
+/**
+ * Query the feature settings of UI magnifier
+ *
+ * @param enabled    Enabled a screen magnification UI setting
+ * @param magType    The description of the type of magnification scheme currently set
+ * @return A Json object containing the settings.
+ */
+Json::Value QuerySettingsUIMagnifier(bool enabled, const std::string &magType)
+{
+    Json::Value value;
+    value["enabled"] = enabled;
+    // It shall be present if the "enabled" parameter is set to true
+    // and shall not be present if the "enabled" parameter is set to false.
+    if (!enabled)
+    {
+        return value;
+    }
+    std::vector<std::string> magTypes = {"textMagnification", "magnifierGlass", "screenZoom",
+                                         "largeLayout", "other"};
+    if (count(magTypes.begin(), magTypes.end(), magType))
+    {
+        value["magType"] = magType;
+    }
+    else
+    {
+        value["magType"] = "other";
+    }
+    return value;
+}
+
+/**
+ * Query the feature settings of high contrast UI
+ *
+ * @param enabled    Enabled a high contrast UI
+ * @param hcType     The description of the type of high contrast scheme currently set
+ * @return A Json object containing the settings.
+ */
+Json::Value QuerySettingsHighContrastUI(bool enabled, const std::string &hcType)
+{
+    Json::Value value;
+    value["enabled"] = enabled;
+    // It shall be present if the "enabled" parameter is set to "true".
+    if (hcType == "monochrome" || hcType == "other")
+    {
+        value["hcType"] = hcType;
+    }
+    else if (enabled)
+    {
+        value["hcType"] = "other";
+    }
+    return value;
+}
+
+/**
+ * Query the feature settings of screen reader
+ *
+ * @param enabled    Enabled a screen reader preference
+ * @param speed      A percentage scaling factor of the default speech speed, 100% considered normal speed
+ * @param voice      The description of the voice
+ * @param language   The description of language in ISO639-2 3-character code
+ * @return A Json object containing the settings.
+ */
+Json::Value QuerySettingsScreenReader(bool enabled, int speed, const std::string &voice, const
+    std::string &language)
+{
+    Json::Value value;
+    value["enabled"] = enabled;
+    if (speed != OPTIONAL_INT_NOT_SET)
+    {
+        value["speed"] = std::min(std::max(speed, 10), 1000);
+    }
+    // The voice value should be present if the enabled value is set to true.
+    if (voice == "default" || voice == "female" || voice == "male")
+    {
+        value["voice"] = voice;
+    }
+    else if (enabled)
+    {
+        value["voice"] = "default";
+    }
+    if (language != OPTIONAL_STR_NOT_SET)
+    {
+        value["language"] = language;
+    }
+    return value;
+}
+
+/**
+ * Query the feature settings of response-to-user-action
+ *
+ * @param enabled    Enabled a "response to a user action" preference
+ * @param type       The description of the mechanism the terminal uses to feedback to the user that the user action has occurred.
+ * @return A Json object containing the settings.
+ */
+Json::Value QuerySettingsResponseToUserAction(bool enabled, const std::string &type)
+{
+    Json::Value value;
+    value["enabled"] = enabled;
+    // If the "enabled" value is set to true, then the "type" field shall be present
+    std::vector<std::string> types = {"audio", "visual", "haptic", "other", "none"};
+    if (count(types.begin(), types.end(), type))
+    {
+        value["type"] = type;
+    }
+    else if (enabled)
+    {
+        value["type"] = "other";
+    }
+    return value;
+}
+
+/**
+ * Query the feature settings of audio description
+ *
+ * @param enabled              Enabled audio description
+ * @param gainPreference       The audio description gain preference set by the user in dB.
+ * @param panAzimuthPreference The degree of the azimuth pan preference set by the user
+ * @return A Json object containing the settings.
+ */
+Json::Value QuerySettingsAudioDescription(bool enabled, int gainPreference, int
+    panAzimuthPreference)
+{
+    Json::Value value;
+    value["enabled"] = enabled;
+    // If Audio Description is not enabled, this field shall not be present.
+    if (!enabled)
+    {
+        return value;
+    }
+    if (gainPreference != OPTIONAL_INT_NOT_SET)
+    {
+        value["gainPreference"] = gainPreference;
+    }
+    if (panAzimuthPreference != OPTIONAL_INT_NOT_SET)
+    {
+        value["panAzimuthPreference"] = std::min(std::max(panAzimuthPreference, -180), 180);
+    }
+    return value;
+}
+
 /**
  * Convert a std::unordered_set of methods strings into a JSON array.
  *
