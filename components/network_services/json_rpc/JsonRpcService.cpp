@@ -570,6 +570,11 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestTriggerResponseToUserAction
         return JsonRpcStatus::INVALID_PARAMS;
     }
     std::string magnitude = obj["params"]["magnitude"].asString();
+    if (magnitude != "triggerPrimary" && magnitude != "triggerSecondary" && magnitude !=
+        "triggerException")
+    {
+        return JsonRpcStatus::INVALID_PARAMS;
+    }
     m_sessionCallback->RequestTriggerResponseToUserAction(connectionId, id, magnitude);
     return JsonRpcStatus::SUCCESS;
 }
@@ -927,16 +932,16 @@ void JsonRpcService::RespondFeatureSupportInfo(int connectionId, const std::stri
 
 void JsonRpcService::RespondFeatureSettingsSubtitles(int connectionId, const std::string &id,
     bool enabled,
-    int size, const std::string fontFamily,
-    const std::string textColour,
+    int size, const std::string &fontFamily,
+    const std::string &textColour,
     int textOpacity,
-    const std::string edgeType,
-    const std::string edgeColour,
-    const std::string backgroundColour,
+    const std::string &edgeType,
+    const std::string &edgeColour,
+    const std::string &backgroundColour,
     int backgroundOpacity,
-    const std::string windowColour,
+    const std::string &windowColour,
     int windowOpacity,
-    const std::string language)
+    const std::string &language)
 {
     Json::Value value;
     value["enabled"] = enabled;
