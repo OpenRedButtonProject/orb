@@ -606,6 +606,30 @@ hbbtv.objects.AVControl = (function() {
             }
 
             const audioTracks = videoElement.audioTracks;
+
+            function isMPEG4HEAAC(codecString) {
+                if (codecString) {
+                    const parts = codecString.split('.');
+                    const codecFamily = parts[0];
+                    const mpeg4Audio = parts[1];
+                    const objectType = parts[2];
+                    if (codecFamily === 'mp4a' && mpeg4Audio === '40') {
+                      const heAacTypes = ['02', '05', '29']; // common HE-AAC object types for MPEG-4
+                      return heAacTypes.includes(objectType);
+                    }
+                }
+                return false;
+            }
+
+            function isEAC3(codecString) {
+                if (codecString) {
+                    const eac3Identifiers = ['ec-3', 'dd+', 'ddp', 'e-ac-3']; // common identifiers for E-AC-3
+                    const normalizedCodecString = codecString.toLowerCase();
+                    return eac3Identifiers.includes(normalizedCodecString);
+                }
+                return false;
+            }
+
             if (
                 (returnAllComponentTypes || componentType === this.COMPONENT_TYPE_AUDIO) &&
                 audioTracks
@@ -613,14 +637,19 @@ hbbtv.objects.AVControl = (function() {
                 for (let i = 0; i < audioTracks.length; ++i) {
                     const audioTrack = audioTracks[i];
                     if (!onlyActive || audioTrack.enabled) {
+                        let trackEncoding = audioTrack.encoding ? audioTrack.encoding.split('"')[1] : undefined
+                        if (isMPEG4HEAAC(trackEncoding)) {
+                            trackEncoding = "HEAAC";
+                        } else if(isEAC3(trackEncoding)) {
+                            trackEncoding = "E-AC3";
+                        }
+
                         components.push({
                             // AVComponent properties
                             componentTag: audioTrack.id,
                             pid: parseInt(audioTrack.id),
                             type: this.COMPONENT_TYPE_AUDIO,
-                            encoding: audioTrack.encoding ?
-                                audioTrack.encoding.split('"')[1] :
-                                undefined,
+                            encoding: trackEncoding,
                             encrypted: audioTrack.encrypted,
                             // AVAudioComponent properties
                             language: audioTrack.language ? audioTrack.language : 'und',
