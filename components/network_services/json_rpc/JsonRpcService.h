@@ -191,10 +191,10 @@ public:
         const std::string &value);
 
     void RespondFeatureSettingsSubtitles(int connectionId, const std::string &id, bool enabled,
-        int size, const std::string fontFamily, const std::string textColour, int textOpacity,
-        const std::string edgeType, const std::string edgeColour,
-        const std::string backgroundColour, int backgroundOpacity,
-        const std::string windowColour, int windowOpacity, const std::string language);
+        int size, const std::string &fontFamily, const std::string &textColour, int textOpacity,
+        const std::string &edgeType, const std::string &edgeColour,
+        const std::string &backgroundColour, int backgroundOpacity,
+        const std::string &windowColour, int windowOpacity, const std::string &language);
 
     void RespondFeatureSettingsDialogueEnhancement(int connectionId, const std::string &id,
         int dialogueEnhancementGainPreference, int dialogueEnhancementGain,
