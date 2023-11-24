@@ -821,13 +821,14 @@ hbbtv.objects.AVControl = (function() {
                     for (const lang of languages) {
                         for (let i = 0; i < audioTracks.length; ++i) {
                             const track = audioTracks[i];
+                            let trackLanguage = track.language.includes('-') ? track.language.split('-')[0] : track.language;
                             if (
                                 mediaSettings.audio.id === track.id ||
-                                ((track.language === lang ||
-                                        hbbtv.languageCodes.ISO639_2_to_ISO639_1[track.language] ===
+                                ((trackLanguage === lang ||
+                                        hbbtv.languageCodes.ISO639_2_to_ISO639_1[trackLanguage] ===
                                         lang ||
                                         hbbtv.languageCodes.ISO639_2_to_ISO639_1[lang] ===
-                                        track.language) &&
+                                        trackLanguage) &&
                                     (!track.kind ||
                                         track.kind ===
                                         (mediaSettings.audio.roles ?
