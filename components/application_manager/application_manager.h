@@ -228,6 +228,13 @@ public:
         MethodRequirement methodRequirement);
 
     /**
+     * Provide access to the AIT organization id
+     * 
+     * @return uint32_t the organization id
+     */
+    uint32_t GetOrganizationId();
+
+    /**
      * Get the names of the current app.
      *
      * @return The current app names as a map of <lang,name> pairs

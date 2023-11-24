@@ -16,9 +16,12 @@
 #include "ORBDVBURILoader.h"
 #include "ORBWPEWebExtensionHelper.h"
 #include "ORBLogging.h"
+#include <string>
 
 namespace orb
 {
+static std::string dvbUrlBase = "";
+
 /**
  * Constructor.
  *
@@ -56,8 +59,30 @@ void ORBDVBURILoader::StartAsync()
     ORB_LOG("requestId=%d requestUri=%s", m_requestId, webkit_uri_scheme_request_get_uri(
         m_request));
 
+    std::string uri = webkit_uri_scheme_request_get_uri(m_request);
+
+    // handle hbbtv-carousel:// scheme
+    if (uri.rfind("hbbtv-carousel://", 0) == 0)
+    {
+        // in case of initial loading, get the base dvburl
+        std::size_t pos = uri.find("?dvburl");
+        if (pos != std::string::npos)
+        {
+            dvbUrlBase = uri.substr(pos + 8, uri.length() - 1);
+        }
+
+        std::string path = "";
+        pos = uri.find('/', 17);
+        if (pos != std::string::npos)
+        {
+            path = uri.substr(pos);
+        }
+        uri = dvbUrlBase + path;
+        ORB_LOG("Requesting dvburi: %s", uri.c_str());
+    }
+
     ORBWPEWebExtensionHelper::GetSharedInstance().GetORBClient()->LoadDvbUrl(
-        webkit_uri_scheme_request_get_uri(m_request),
+        uri,
         m_requestId
         );
 

@@ -50,7 +50,40 @@ void SessionCallbackImpl::LoadApplication(uint16_t app_id, const char *url)
     ORB_LOG("app_id=%hu url=%s", app_id, url);
     ORBEngine::GetSharedInstance().SetCurrentAppId(app_id);
     ORBEngine::GetSharedInstance().SetCurrentAppUrl(url);
-    ORBEngine::GetSharedInstance().GetORBPlatform()->Application_Load(url);
+
+    // in case of dvb url, create an hbbtv-carousel scheme url
+    // dvb://<triplet and component id>/path/to/resource/file.ext
+    // hbbtv-carousel://orgid:carouselid/path/to/resource/file.ext?dvburl=dvb://<triplet and component id>
+    std::string urlStr(url);
+    size_t found;
+    if ((found = urlStr.rfind("dvb://", 0)) == 0)
+    {
+        uint8_t carouselId =
+            ORBEngine::GetSharedInstance().GetORBPlatform()->Dsmcc_RequestCarouselId();
+
+        uint32_t orgId = 
+            ORBEngine::GetSharedInstance().GetApplicationManager()->GetOrganizationId();
+
+        std::string baseUrl = urlStr;
+        std::string path = "";
+        found = urlStr.find('/', found + 6);
+        if (found != std::string::npos)
+        {
+            path = urlStr.substr(found);
+            baseUrl = urlStr.substr(0, found);
+        }
+
+        std::string carouselUrl = "hbbtv-carousel://" +
+            std::to_string(orgId) + ":" +
+            std::to_string(carouselId) +
+            path +
+            "?dvburl=" + baseUrl;
+
+        ORB_LOG("The carousel url is %s", carouselUrl.c_str());
+        urlStr = carouselUrl;
+    }
+
+    ORBEngine::GetSharedInstance().GetORBPlatform()->Application_Load(urlStr.c_str());
 }
 
 /**
