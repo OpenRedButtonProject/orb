@@ -1073,6 +1073,16 @@ void ORBPlatformMockImpl::Dsmcc_UnsubscribeFromStreamEvents(int listenId)
     ORB_LOG("listenId=%d", listenId);
 }
 
+/**
+ * Get the current carouselId signaled from PMT
+ *
+ * @return uint32_t the current carouselId
+ */
+uint32_t ORBPlatformMockImpl::Dsmcc_RequestCarouselId()
+{
+    return 1;
+}
+
 /******************************************************************************
 ** Manager API
 *****************************************************************************/

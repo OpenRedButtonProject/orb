@@ -561,6 +561,12 @@ public:
     virtual void Dsmcc_UnsubscribeFromStreamEvents(int listenId) = 0;
 
 
+    /**
+     * Request the carousel id of current service.
+     *
+     * @return the carousel id
+     */
+    virtual uint32_t Dsmcc_RequestCarouselId() = 0;
 
     /******************************************************************************
     ** Manager API
