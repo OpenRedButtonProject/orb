@@ -125,9 +125,10 @@ hbbtv.objects.AudioTrackList = (function() {
         for (let i = 0; i < trackList.length; ++i) {
             this[i] = makeAudioTrack(this, i, trackList[i]);
             if (p.defaultAudioLanguage) {
-                if (this[i].language === p.defaultAudioLanguage ||
-                    hbbtv.languageCodes.ISO639_2_to_ISO639_1[this[i].language] === p.defaultAudioLanguage ||
-                    hbbtv.languageCodes.ISO639_2_to_ISO639_1[p.defaultAudioLanguage] === this[i].language) {
+                let trackLanguage = this[i].language.includes('-') ? this[i].language.split('-')[0] : this[i].language;
+                if (trackLanguage === p.defaultAudioLanguage ||
+                    hbbtv.languageCodes.ISO639_2_to_ISO639_1[trackLanguage] === p.defaultAudioLanguage ||
+                    hbbtv.languageCodes.ISO639_2_to_ISO639_1[p.defaultAudioLanguage] === trackLanguage) {
                         preferredAudioLanguageTrack = this[i];
                 }
             }
