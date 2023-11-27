@@ -1892,13 +1892,16 @@ Json::Value JsonRpcService::GetConnectionData(int connectionId, ConnectionDataTy
                 value = connectionData.synopsis;
                 break;
             case ConnectionDataType::CurrentTime:
-                value = connectionData.currentTime;
+                // TODO Confirm cast to int is correct
+                value = static_cast<int>(connectionData.currentTime);
                 break;
             case ConnectionDataType::StartTime:
-                value = connectionData.startTime;
+                // TODO Confirm cast to int is correct
+                value = static_cast<int>(connectionData.startTime);
                 break;
             case ConnectionDataType::EndTime:
-                value = connectionData.endTime;
+                // TODO Confirm cast to int is correct
+                value = static_cast<int>(connectionData.endTime);
                 break;
         }
     }

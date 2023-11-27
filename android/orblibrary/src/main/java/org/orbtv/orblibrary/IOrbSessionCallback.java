@@ -31,7 +31,8 @@ public interface IOrbSessionCallback {
         VISIBLE,
 
         /* The application is running but not currently visible to the user. */
-        INVISIBLE
+        INVISIBLE,
+    }
     
     int INTENT_MEDIA_PAUSE = 0;
     int INTENT_MEDIA_PLAY = 1;

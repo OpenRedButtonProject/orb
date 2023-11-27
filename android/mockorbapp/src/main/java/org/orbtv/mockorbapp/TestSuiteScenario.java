@@ -122,6 +122,7 @@ public class TestSuiteScenario {
                 info.getInt("sid"),
                 info.getBoolean("hidden"),
                 -1,
+                null,
                 null
         );
     }
