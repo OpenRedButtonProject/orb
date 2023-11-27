@@ -174,7 +174,7 @@ public class MainActivity extends Activity {
                 public int startApp(String payload) throws RemoteException {
                     Log.d(TAG, "Start HbbTV DIAL app with payload: " + payload);
                     if (mTvBrowserSession != null) {
-                        mTvBrowserSession.processXmlAit(payload, false);
+                        mTvBrowserSession.processXmlAit(payload, false, "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.1");
                     }
                     return 2; // Running
                 }
