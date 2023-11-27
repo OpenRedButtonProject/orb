@@ -182,7 +182,7 @@ hbbtv.objects.AVControl = (function() {
         console.log('A/V Control: Play title ' + this.data + ' with speed ' + speed);
         if (speed === undefined) speed = 1;
 
-        if (playStates[priv.playState] & 97) {
+        if ((playStates[priv.playState] & 97) && (speed !== 0)) {
             // stopped, finished or error
             if (priv.playState !== PLAY_STATE_FINISHED) {
                 priv.loop = priv.params.loop ? priv.params.loop[0] : false;
@@ -225,7 +225,7 @@ hbbtv.objects.AVControl = (function() {
             // buffering or connecting
             priv.xhr.abort();
             transitionToState.call(this, PLAY_STATE_PAUSED);
-        } else if (priv.playState === PLAY_STATE_PAUSED && !priv.connected) {
+        } else if ((priv.playState === PLAY_STATE_PAUSED || (priv.playState === PLAY_STATE_STOPPED)) && !priv.connected) {
             if (speed !== 0) {
                 transitionToState.call(this, PLAY_STATE_CONNECTING);
                 priv.xhr.open('HEAD', this.data);
@@ -380,7 +380,7 @@ hbbtv.objects.AVControl = (function() {
                left: ${this.offsetLeft - bounds.left}px;
                top: ${this.offsetTop - bounds.top}px;
                position: absolute;
-               z-index: 
+               z-index:
             ` + (this.style.zIndex ? this.style.zIndex : 1);
                 priv.fullscreen = true;
                 dispatchEvent.call(this, 'FullScreenChange');
@@ -963,7 +963,7 @@ hbbtv.objects.AVControl = (function() {
             );
             if (priv.playState !== targetState) {
                 priv.playState = targetState;
-                
+
                 dispatchEvent.call(this, 'PlayStateChange', {
                     state: targetState,
                 });
