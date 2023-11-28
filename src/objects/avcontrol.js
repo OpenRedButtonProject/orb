@@ -588,6 +588,8 @@ hbbtv.objects.AVControl = (function() {
                 for (let i = 0; i < videoTracks.length; ++i) {
                     const videoTrack = videoTracks[i];
                     if (!onlyActive || videoTrack.selected) {
+                        console.log(`A/V control: video track[${i}] id(${videoTrack.id}), ` +
+                        `encoding(${videoTrack.encoding}), encrypted(${videoTrack.encrypted})`);
                         components.push({
                             // AVComponent properties
                             componentTag: parseInt(videoTrack.id),
@@ -637,6 +639,11 @@ hbbtv.objects.AVControl = (function() {
                 for (let i = 0; i < audioTracks.length; ++i) {
                     const audioTrack = audioTracks[i];
                     if (!onlyActive || audioTrack.enabled) {
+                        console.log(`A/V control: audio track[${i}] id(${audioTrack.id}), ` +
+                        `encoding(${audioTrack.encoding}), encrypted(${audioTrack.encrypted}), ` +
+                        `language(${audioTrack.language}), kind(${audioTrack.kind}), ` +
+                        `audioChannels(${audioTrack.numChannels})`);
+
                         let trackEncoding = audioTrack.encoding ? audioTrack.encoding.split('"')[1] : undefined
                         if (isMPEG4HEAAC(trackEncoding)) {
                             trackEncoding = "HEAAC";
@@ -669,6 +676,9 @@ hbbtv.objects.AVControl = (function() {
                 for (let i = 0; i < textTracks.length; ++i) {
                     const textTrack = textTracks[i];
                     if (!onlyActive || textTrack.mode === 'showing') {
+                        console.log(`A/V control: textTrack track[${i}] id(${textTrack.id}), ` +
+                        `encoding(${textTrack.encoding}), language(${textTrack.language}), ` +
+                        `kind(${textTrack.kind}), label(${textTrack.label})`);
                         components.push({
                             // AVComponent properties
                             componentTag: textTrack.id,
