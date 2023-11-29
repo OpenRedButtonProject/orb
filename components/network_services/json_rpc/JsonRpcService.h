@@ -34,7 +34,7 @@ public:
         Title,
         SecondTitle,
         Synopsis,
-        CurrentTime,
+        BiasToSystemTime,
         StartTime,
         EndTime,
         State,
@@ -61,9 +61,9 @@ public:
         std::string title = "";
         std::string secondTitle = "";
         std::string synopsis = "";
-        long long currentTime = -1;
-        long long startTime = -1;
-        long long endTime = -1;
+        int biasToSystemTime = 0;
+        int startTime = -1;
+        int endTime = -1;
         std::string state = "";
         std::unordered_set<std::string> negotiateMethodsAppToTerminal;
         std::unordered_set<std::string> negotiateMethodsTerminalToApp;
