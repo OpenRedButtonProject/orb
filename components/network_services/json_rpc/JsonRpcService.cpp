@@ -1758,6 +1758,8 @@ void JsonRpcService::SetConnectionData(int connectionId, ConnectionDataType type
         case ConnectionDataType::VoiceReady:
             connectionData.voiceReady = value.asBool();
             break;
+        default:
+            break;
     }
     connections_mutex_.unlock();
 }
