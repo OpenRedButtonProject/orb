@@ -715,8 +715,13 @@ class Bridge extends AbstractBridge {
     @Override
     protected BridgeTypes.Capabilities Configuration_getCapabilities(BridgeToken token) {
         BridgeTypes.Capabilities capabilities = mOrbLibraryCallback.getCapabilities();
-        capabilities.jsonRpcServerUrl = mJsonRpc.getUrl();
-        capabilities.jsonRpcServerVersion =mJsonRpc.getVersion();
+        if (mJsonRpc != null) {
+            capabilities.jsonRpcServerUrl = mJsonRpc.getUrl();
+            capabilities.jsonRpcServerVersion = mJsonRpc.getVersion();
+        } else {
+            capabilities.jsonRpcServerUrl = null;
+            capabilities.jsonRpcServerVersion = null;
+        }
         return capabilities;
     }
 
@@ -1045,9 +1050,11 @@ class Bridge extends AbstractBridge {
     }
 
     /**
+     *
      * @param token The token associated with this request.
      * @param id
-     * @param timeline
+     * @param timelineSelector
+     * @param isMaster
      *
      * @return
      */

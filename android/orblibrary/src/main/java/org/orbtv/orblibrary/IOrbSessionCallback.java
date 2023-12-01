@@ -338,9 +338,6 @@ public interface IOrbSessionCallback {
      */
     BridgeTypes.Channel getChannel(String ccid);
 
-    int setChannelToCcid(String ccid, boolean trickplay,
-                         String contentAccessDescriptorURL, int quiet);
-
     /**
      * Tune to specified channel. The implementation relies on the 'idType' parameter to
      * determine the valid fields that describe the channel. Possible idTypes are:
@@ -712,11 +709,17 @@ public interface IOrbSessionCallback {
     void publishTestReport(String testSuite, String xml);
 
     /**
+     * @since 204
+     *
      * Request a negotiation for methods
      */
-    void onRequestNegotiateMethods();
+    default void onRequestNegotiateMethods() {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
 
     /**
+     * @since 204
+     *
      * Request to subscribe/unsubscribe some particular accessibility features
      *
      * @param isSubscribe          The request to subscribe/unsubscribe
@@ -732,100 +735,143 @@ public interface IOrbSessionCallback {
      * @param audioDescription     Audio description
      * @param inVisionSigning      In-vision signing
      */
-    void onRequestSubscribe(boolean isSubscribe,
+    default void onRequestSubscribe(boolean isSubscribe,
                             boolean subtitles, boolean dialogueEnhancement,
                             boolean uiMagnifier, boolean highContrastUI,
                             boolean screenReader, boolean responseToUserAction,
-                            boolean audioDescription, boolean inVisionSigning);
+                            boolean audioDescription, boolean inVisionSigning) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
 
     /**
+     * @since 204
+     *
      * Request for a overriding dialogue enhancement
      *
      * @param connection              The request and response should have the same value
      * @param id                      The request and response should have the same value
      * @param dialogueEnhancementGain The requested gain value in dB of the dialogue enhancement
      */
-    void onRequestDialogueEnhancementOverride(int connection, String id,
-                                              int dialogueEnhancementGain);
+    default void onRequestDialogueEnhancementOverride(int connection, String id,
+                                              int dialogueEnhancementGain) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
 
     /**
+     * @since 204
+     *
      * Request for a trigger response to user action
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
      * @param magnitude  The magnitude of response to user action
      */
-    void onRequestTriggerResponseToUserAction(int connection, String id, String magnitude);
+    default void onRequestTriggerResponseToUserAction(int connection, String id, String magnitude) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
 
     /**
+     * @since 204
+     *
      * Request for the support information of a feature
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
      * @param featureId  The index of a particular accessibility feature
      */
-    void onRequestFeatureSupportInfo(int connection, String id, int featureId);
+    default void onRequestFeatureSupportInfo(int connection, String id, int featureId) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
 
     /**
+     * @since 204
+     *
      * Request to query settings of a particular feature
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
      * @param featureId  The index of a particular accessibility feature
      */
-    void onRequestFeatureSettingsQuery(int connection, String id, int featureId);
+    default void onRequestFeatureSettingsQuery(int connection, String id, int featureId) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
 
     /**
+     * @since 204
+     *
      * Request for suppressing the support of a feature
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
      * @param featureId  The index of a particular accessibility feature
      */
-    void onRequestFeatureSuppress(int connection, String id, int featureId);
+    default void onRequestFeatureSuppress(int connection, String id, int featureId) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
 
     /**
+     * @since 204
+     *
      * Receive a response for a request that expresses user intent.
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
      * @param method     The string value that has the same value as the method of the original request
      */
-    void onReceiveIntentConfirm(int connection, String id, String method);
+    default void onReceiveIntentConfirm(int connection, String id, String method) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
 
     /**
+     * @since 204
+     *
      * Receive a notification of voice-readiness
      *
      * @param isReady The boolean value of the status of voice-readiness
      *                - true: the application is voice-ready
      *                - false: not voice-ready
      */
-    void onNotifyVoiceReady(boolean isReady);
+    default void onNotifyVoiceReady(boolean isReady) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
 
     /**
+     * @since 204
+     *
      * Receive a notification that describes the state of media presentation by the application at the time
      *
      * @param state The description of state with respect to media playback
      */
-    void onNotifyStateMedia(String state);
-
+    default void onNotifyStateMedia(String state) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
 
     /**
+     * @since 204
+     *
      * Called to send a response message
      *
      * @param info The content of the message
      */
-    void onRespondMessage(String info);
+    default void onRespondMessage(String info) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
 
     /**
+     * @since 204
+     *
      * Called to send an error message
      *
      * @param code    The error code
      * @param message The error message
      */
-    void onReceiveError(int code, String message);
+    default void onReceiveError(int code, String message) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
 
     /**
+     * @since 204
+     *
      * Called to send an error message with some data
      *
      * @param code    The error code
@@ -833,23 +879,33 @@ public interface IOrbSessionCallback {
      * @param method  The method same as in the original request
      * @param data    The error data
      */
-    void onReceiveError(int code, String message,
-                        String method, String data);
+    default void onReceiveError(int code, String message,
+                        String method, String data) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
 
     /**
+     * @since 204
+     *
      * Request for the description of the current media on applications
      *
      * @return true if this event has been handled, and false if not
      */
-    boolean onRequestMediaDescription();
+    default boolean onRequestMediaDescription() {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
 
     /**
+     * @since 204
+     *
      * Request to deliver a text input, from voice command, to applications
      *
      * @param input The content of the text
      * @return true if this event has been handled, and false if not
      */
-    boolean onRequestTextInput(String input);
+    default boolean onRequestTextInput(String input) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
 
     /**
      * Called to send an intent, from a voice command, to applications
@@ -864,12 +920,32 @@ public interface IOrbSessionCallback {
      * @param offset The number value for the time position, a number of seconds
      * @return true if this event has been handled, and false if not
      */
-    boolean onSendIntentByVoiceCommand(Integer action, String info, String anchor, int offset);
+    default boolean onSendIntentByVoiceCommand(Integer action, String info, String anchor, int offset) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
 
     /**
-     * Called to send a send a key press event, from a voice command, to the application
+     * @since 204
+     *
+     * Called to send a send a key press event, from a voice command, to the application 
      *
      * @param action The index number of the intent, either pressing a button or showing a log
      */
-    boolean onSendKeyPressAction(Integer action);
+    default boolean onSendKeyPressAction(Integer action) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
+    /**
+     * @since 204
+     *
+     * @param ccid
+     * @param trickplay
+     * @param contentAccessDescriptorURL
+     * @param quiet
+     * @return
+     */
+    default int setChannelToCcid(String ccid, boolean trickplay,
+        String contentAccessDescriptorURL, int quiet) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
 }

@@ -204,6 +204,11 @@ public class JsonRpc {
 
     // Native
 
+    /**
+     * NOTE: The native implementations only exist when built for 204. The JsonRpc object should not
+     * be instantiated by builds for < 204.
+     */
+
     private native void nativeOpen(int port, String endpoint);
 
     private native void nativeClose();

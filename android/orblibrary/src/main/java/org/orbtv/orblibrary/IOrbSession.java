@@ -62,6 +62,13 @@ public interface IOrbSession {
     void processAitSection(int aitPid, int serviceId, byte[] data);
 
     /**
+     * For portals (not DVB-I).
+     *
+     * @param xmlAit
+     */
+    void processXmlAit(String xmlAit);
+
+    /**
      * TODO(comment)
      *
      * @param xmlAit
@@ -284,6 +291,8 @@ public interface IOrbSession {
     void close();
 
     /**
+     * @since 204
+     *
      * Called to send a response message for a result of overriding dialogue enhancement
      *
      * @param connection              The request and response should have the same value
@@ -294,6 +303,8 @@ public interface IOrbSession {
                                               int dialogueEnhancementGain);
 
     /**
+     * @since 204
+     *
      * Called to send a response message for a result of trigger response to user action
      *
      * @param connection The request and response should have the same value
@@ -305,6 +316,8 @@ public interface IOrbSession {
     void onRespondTriggerResponseToUserAction(int connection, String id, boolean actioned);
 
     /**
+     * @since 204
+     *
      * Called to send a response message for the support information of a feature
      *
      * @param connection The request and response should have the same value
@@ -315,6 +328,8 @@ public interface IOrbSession {
     void onRespondFeatureSupportInfo(int connection, String id, int feature, String result);
 
     /**
+     * @since 204
+     *
      * Called to send a response message for suppressing the support of a feature
      *
      * @param connection The request and response should have the same value
@@ -325,6 +340,8 @@ public interface IOrbSession {
     void onRespondFeatureSuppress(int connection, String id, int feature, String value);
 
     /**
+     * @since 204
+     *
      * Called to send an error message
      *
      * @param connection The request and response should have the same value
@@ -335,6 +352,8 @@ public interface IOrbSession {
     void onRespondError(int connection, String id, int code, String message);
 
     /**
+     * @since 204
+     *
      * Called to send an error message with some data
      *
      * @param connection The request and response should have the same value
@@ -346,6 +365,8 @@ public interface IOrbSession {
     void onRespondError(int connection, String id, int code, String message, String data);
 
     /**
+     * @since 204
+     *
      * Called to send a message with the user settings of subtitles
      *
      * @param connection        The request and response should have the same value
@@ -372,6 +393,8 @@ public interface IOrbSession {
                           String windowColour, int windowOpacity, String language);
 
     /**
+     * @since 204
+     *
      * Called to send a message with the settings of dialogue enhancement
      *
      * @param connection     The request and response should have the same value
@@ -387,6 +410,8 @@ public interface IOrbSession {
                                     int limitMin, int limitMax);
 
     /**
+     * @since 204
+     *
      * Called to send a message with the settings of a user Interface Magnification feature
      *
      * @param connection The request and response should have the same value
@@ -399,6 +424,8 @@ public interface IOrbSession {
     void onQueryUIMagnifier(int connection, String id, boolean enabled, String magType);
 
     /**
+     * @since 204
+     *
      * Called to send a message with the settings of a high contrast UI feature
      *
      * @param connection The request and response should have the same value
@@ -411,6 +438,8 @@ public interface IOrbSession {
     void onQueryHighContrastUI(int connection, String id, boolean enabled, String hcType);
 
     /**
+     * @since 204
+     *
      * Called to send a message with the settings of a screen reader feature
      *
      * @param connection The request and response should have the same value
@@ -426,6 +455,8 @@ public interface IOrbSession {
                              boolean enabled, int speed, String voice, String language);
 
     /**
+     * @since 204
+     *
      * Called to send a message with the settings of a "response to a user action" feature
      *
      * @param connection The request and response should have the same value
@@ -438,6 +469,8 @@ public interface IOrbSession {
     void onQueryResponseToUserAction(int connection, String id, boolean enabled, String type);
 
     /**
+     * @since 204
+     *
      * Called to send a message with the settings of an audio description feature
      *
      * @param connection           The request and response should have the same value
@@ -452,6 +485,8 @@ public interface IOrbSession {
                                  int gainPreference, int panAzimuthPreference);
 
     /**
+     * @since 204
+     *
      * Called to send a message with the settings of an in-vision signing feature
      *
      * @param connection The request and response should have the same value
@@ -463,6 +498,8 @@ public interface IOrbSession {
     void onQueryInVisionSigning(int connection, String id, boolean enabled);
 
     /**
+     * @since 204
+     *
      * Called to send an intent for a request to operate the media playback
      *
      * @param cmd The index of a basic intent of media playback
@@ -475,6 +512,8 @@ public interface IOrbSession {
     void onSendIntentMediaBasics(int cmd);
 
     /**
+     * @since 204
+     *
      * Called to send an intent for a request to seek a time position relative to the start or end of the media content
      *
      * @param anchor The value indicates an anchor point of the content
@@ -485,6 +524,8 @@ public interface IOrbSession {
     void onSendIntentMediaSeekContent(String anchor, int offset);
 
     /**
+     * @since 204
+     *
      * Called to send an intent for a request to seek a time position relative to the current time of the media content
      *
      * @param offset The number value for the current time position, a positive or negative number of seconds
@@ -492,6 +533,8 @@ public interface IOrbSession {
     void onSendIntentMediaSeekRelative(int offset);
 
     /**
+     * @since 204
+     *
      * Called to send an intent for a request to seek a time position relative to the live edge of the media content
      *
      * @param offset The number value for the time position at or before the live edge, zero or negative number of seconds
@@ -499,6 +542,8 @@ public interface IOrbSession {
     void onSendIntentMediaSeekLive(int offset);
 
     /**
+     * @since 204
+     *
      * Called to send an intent for a request to seek a time position relating to absolute wall clock time
      *
      * @param dayTime The value conveys the wall clock time, in internet date-time format
@@ -506,6 +551,8 @@ public interface IOrbSession {
     void onSendIntentMediaSeekWallclock(String dayTime);
 
     /**
+     * @since 204
+     *
      * Called to send an intent to request a search of content available
      *
      * @param query The string value is the search term specified by the user.
@@ -513,6 +560,8 @@ public interface IOrbSession {
     void onSendIntentSearch(String query);
 
     /**
+     * @since 204
+     *
      * Called to send an intent to request a display (but not playback) of a specific identified piece of content
      *
      * @param mediaId The value for a URI uniquely identifying a piece of content
@@ -520,6 +569,8 @@ public interface IOrbSession {
     void onSendIntentDisplay(String mediaId);
 
     /**
+     * @since 204
+     *
      * Called to send an intent to request immediate playback of a specific identified piece of content
      *
      * @param mediaId The value for a URI uniquely identifying a piece of content
@@ -534,8 +585,9 @@ public interface IOrbSession {
     void onSendIntentPlayback(String mediaId, String anchor, int offset);
 
     /**
+     * @since 204
+     *
      * Request for the Description of the current media playback on the application
      */
     void onRequestMediaDescription();
-
 }

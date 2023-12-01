@@ -200,7 +200,7 @@ public class BridgeTypes {
             o.put("channelType", channelType);
             o.put("idType", idType);
             o.put("ccid", ccid);
-            if (!dsd.isEmpty()) {
+            if (dsd != null && !dsd.isEmpty()) {
                 o.put("dsd", dsd);
             }
             o.put("onid", onid);
