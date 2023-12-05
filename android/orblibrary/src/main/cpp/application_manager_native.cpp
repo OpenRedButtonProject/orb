@@ -186,6 +186,13 @@ JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniInitializ
 }
 
 extern "C"
+JNIEXPORT jint JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniGetOrbHbbTVVersion(JNIEnv *env,
+    jobject object)
+{
+    return ORB_HBBTV_VERSION;
+}
+
+extern "C"
 JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniFinalize(JNIEnv *env, jobject
     object)
 {

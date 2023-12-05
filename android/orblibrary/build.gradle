@@ -8,9 +8,10 @@ android {
     defaultConfig {
         minSdkVersion 28
         targetSdkVersion 31
+        buildConfigField "int", "ORB_HBBTV_VERSION", rootProject.ext.ORB_HBBTV_VERSION.toString()
         externalNativeBuild {
             cmake {
-                arguments "-DANDROID_STL=c++_shared"
+                arguments "-DANDROID_STL=c++_shared", "-DORB_HBBTV_VERSION=" + ORB_HBBTV_VERSION
             }
         }
     }

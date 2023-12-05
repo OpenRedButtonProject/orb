@@ -17,6 +17,7 @@ class OrbSession implements IOrbSession {
     private static final String TAG = OrbSession.class.getSimpleName();
 
     private final IOrbSessionCallback mOrbSessionCallback;
+    private final int mOrbHbbTVVersion;
     private ApplicationManager mApplicationManager;
     private OrbSessionFactory.Configuration mConfiguration;
     private MediaSynchroniserManager mMediaSynchroniserManager;
@@ -36,8 +37,15 @@ class OrbSession implements IOrbSession {
         mOrbSessionCallback = callback;
         mConfiguration = configuration;
         mApplicationManager = new ApplicationManager(mOrbSessionCallback);
+        mOrbHbbTVVersion = mApplicationManager.getOrbHbbTVVersion();
+        Log.d(TAG, "ORB HbbTV Version: " + mOrbHbbTVVersion);
         mMediaSynchroniserManager = new MediaSynchroniserManager(configuration);
-        mJsonRpc = new JsonRpc(configuration.jsonRpcPort, mOrbSessionCallback);
+        if (mOrbHbbTVVersion >= 204) {
+            mJsonRpc = new JsonRpc(configuration.jsonRpcPort, mOrbSessionCallback);
+        } else {
+            mJsonRpc = null;
+        }
+
         mBridge = new Bridge(this, callback, configuration, mApplicationManager,
                 mMediaSynchroniserManager, mJsonRpc);
         mDsmccClient = new DsmccClient(callback);
@@ -393,6 +401,16 @@ class OrbSession implements IOrbSession {
         }
         mApplicationManager.processAitSection(aitPid, serviceId, data);
     }
+    
+    /**
+     * For portals (not DVB-I).
+     *
+     * @param xmlAit
+     */
+    @Override
+    public void processXmlAit(String xmlAit) {
+        processXmlAit(xmlAit, false, "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.1");
+    }
 
     /**
      * TODO(comment)
@@ -713,11 +731,15 @@ class OrbSession implements IOrbSession {
     public void close() {
         mApplicationManager.close();
         mBridge.releaseResources();
-        mJsonRpc.close();
+        if (mOrbHbbTVVersion >= 204) {
+            mJsonRpc.close();
+        }
         //mOrbSessionCallback.finaliseTEMITimelineMonitoring();
     }
 
     /**
+     * @since 204
+     *
      * Called to send a response message for a result of overriding dialogue enhancement
      *
      * @param connection              The request and response should have the same value
@@ -727,11 +749,16 @@ class OrbSession implements IOrbSession {
     @Override
     public void onRespondDialogueEnhancementOverride(int connection, String id,
                                                      int dialogueEnhancementGain) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onRespondDialogueEnhancementOverride(connection, id,
                 dialogueEnhancementGain);
     }
 
     /**
+     * @since 204
+     *
      * Called to send a response message for a result of trigger response to user action
      *
      * @param connection The request and response should have the same value
@@ -742,10 +769,15 @@ class OrbSession implements IOrbSession {
      */
     @Override
     public void onRespondTriggerResponseToUserAction(int connection, String id, boolean actioned) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onRespondTriggerResponseToUserAction(connection, id, actioned);
     }
 
     /**
+     * @since 204
+     *
      * Called to send a response message for the support information of a feature
      *
      * @param connection The request and response should have the same value
@@ -755,10 +787,15 @@ class OrbSession implements IOrbSession {
      */
     @Override
     public void onRespondFeatureSupportInfo(int connection, String id, int feature, String value) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onRespondFeatureSupportInfo(connection, id, feature, value);
     }
 
     /**
+     * @since 204
+     *
      * Called to send a response message for suppressing the support of a feature
      *
      * @param connection The request and response should have the same value
@@ -768,10 +805,15 @@ class OrbSession implements IOrbSession {
      */
     @Override
     public void onRespondFeatureSuppress(int connection, String id, int feature, String value) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onRespondFeatureSuppress(connection, id, feature, value);
     }
 
     /**
+     * @since 204
+     *
      * Called to send an error message
      *
      * @param connection The request and response should have the same value
@@ -781,10 +823,15 @@ class OrbSession implements IOrbSession {
      */
     @Override
     public void onRespondError(int connection, String id, int code, String message) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onRespondError(connection, id, code, message);
     }
 
     /**
+     * @since 204
+     *
      * Called to send an error message with some data
      *
      * @param connection The request and response should have the same value
@@ -794,10 +841,15 @@ class OrbSession implements IOrbSession {
      * @param data       The error data
      */
     public void onRespondError(int connection, String id, int code, String message, String data) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onRespondError(connection, id, code, message, data);
     }
 
     /**
+     * @since 204
+     *
      * Called to send a message with the user settings of subtitles
      *
      * @param connection        The request and response should have the same value
@@ -823,12 +875,17 @@ class OrbSession implements IOrbSession {
                                  String edgeType, String edgeColour,
                                  String backgroundColour, int backgroundOpacity,
                                  String windowColour, int windowOpacity, String language) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onQuerySubtitles(connection, id, enabled, size, fontFamily, textColour, textOpacity,
                 edgeType, edgeColour, backgroundColour, backgroundOpacity,
                 windowColour, windowOpacity, language);
     }
 
     /**
+     * @since 204
+     *
      * Called to send a message with the settings of dialogue enhancement
      *
      * @param connection     The request and response should have the same value
@@ -843,11 +900,16 @@ class OrbSession implements IOrbSession {
     @Override
     public void onQueryDialogueEnhancement(int connection, String id, int gainPreference, int gain,
                                            int limitMin, int limitMax) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onQueryDialogueEnhancement(connection, id,
                 gainPreference, gain, limitMin, limitMax);
     }
 
     /**
+     * @since 204
+     *
      * Called to send a message with the settings of a user Interface Magnification feature
      *
      * @param connection The request and response should have the same value
@@ -859,10 +921,15 @@ class OrbSession implements IOrbSession {
      */
     @Override
     public void onQueryUIMagnifier(int connection, String id, boolean enabled, String magType) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onQueryUIMagnifier(connection, id, enabled, magType);
     }
 
     /**
+     * @since 204
+     *
      * Called to send a message with the settings of a high contrast UI feature
      *
      * @param connection The request and response should have the same value
@@ -874,10 +941,15 @@ class OrbSession implements IOrbSession {
      */
     @Override
     public void onQueryHighContrastUI(int connection, String id, boolean enabled, String hcType) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onQueryHighContrastUI(connection, id, enabled, hcType);
     }
 
     /**
+     * @since 204
+     *
      * Called to send a message with the settings of a screen reader feature
      *
      * @param connection The request and response should have the same value
@@ -892,10 +964,15 @@ class OrbSession implements IOrbSession {
     @Override
     public void onQueryScreenReader(int connection, String id,
                                     boolean enabled, int speed, String voice, String language) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onQueryScreenReader(connection, id, enabled, speed, voice, language);
     }
 
     /**
+     * @since 204
+     *
      * Called to send a message with the settings of a "response to a user action" feature
      *
      * @param connection The request and response should have the same value
@@ -907,10 +984,15 @@ class OrbSession implements IOrbSession {
      */
     @Override
     public void onQueryResponseToUserAction(int connection, String id, boolean enabled, String type) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onQueryResponseToUserAction(connection, id, enabled, type);
     }
 
     /**
+     * @since 204
+     *
      * Called to send a message with the settings of an audio description feature
      *
      * @param connection           The request and response should have the same value
@@ -924,10 +1006,15 @@ class OrbSession implements IOrbSession {
     @Override
     public void onQueryAudioDescription(int connection, String id, boolean enabled,
                                         int gainPreference, int panAzimuthPreference) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onQueryAudioDescription(connection, id, enabled, gainPreference, panAzimuthPreference);
     }
 
     /**
+     * @since 204
+     *
      * Called to send a message with the settings of an in-vision signing feature
      *
      * @param connection The request and response should have the same value
@@ -938,10 +1025,15 @@ class OrbSession implements IOrbSession {
      */
     @Override
     public void onQueryInVisionSigning(int connection, String id, boolean enabled) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onQueryInVisionSigning(connection, id, enabled);
     }
 
     /**
+     * @since 204
+     *
      * Called to send an intent for a request to operate the media playback
      *
      * @param cmd The index of a basic intent of media playback
@@ -953,10 +1045,15 @@ class OrbSession implements IOrbSession {
      */
     @Override
     public void onSendIntentMediaBasics(int cmd) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onSendIntentMediaBasics(cmd);
     }
 
     /**
+     * @since 204
+     *
      * Called to send an intent for a request to seek a time position relative to the start or end of the media content
      *
      * @param anchor The value indicates an anchor point of the content
@@ -966,60 +1063,90 @@ class OrbSession implements IOrbSession {
      */
     @Override
     public void onSendIntentMediaSeekContent(String anchor, int offset) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onSendIntentMediaSeekContent(anchor, offset);
     }
 
     /**
+     * @since 204
+     *
      * Called to send an intent for a request to seek a time position relative to the current time of the media content
      *
      * @param offset The number value for the current time position, a positive or negative number of seconds
      */
     @Override
     public void onSendIntentMediaSeekRelative(int offset) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onSendIntentMediaSeekRelative(offset);
     }
 
     /**
+     * @since 204
+     *
      * Called to send an intent for a request to seek a time position relative to the live edge of the media content
      *
      * @param offset The number value for the time position at or before the live edge, zero or negative number of seconds
      */
     @Override
     public void onSendIntentMediaSeekLive(int offset) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onSendIntentMediaSeekLive(offset);
     }
 
     /**
+     * @since 204
+     *
      * Called to send an intent for a request to seek a time position relating to absolute wall clock time
      *
      * @param dateTime The value conveys the wall clock time, in internet date-time format
      */
     @Override
     public void onSendIntentMediaSeekWallclock(String dateTime) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onSendIntentMediaSeekWallclock(dateTime);
     }
 
     /**
+     * @since 204
+     *
      * Called to send an intent to request a search of content available
      *
      * @param query The string value is the search term specified by the user.
      */
     @Override
     public void onSendIntentSearch(String query) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onSendIntentSearch(query);
     }
 
     /**
+     * @since 204
+     *
      * Called to send an intent to request a display (but not playback) of a specific identified piece of content
      *
      * @param mediaId The value for a URI uniquely identifying a piece of content
      */
     @Override
     public void onSendIntentDisplay(String mediaId) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onSendIntentDisplay(mediaId);
     }
 
     /**
+     * @since 204
+     *
      * Called to send an intent to request immediate playback of a specific identified piece of content
      *
      * @param mediaId The value for a URI uniquely identifying a piece of content
@@ -1033,14 +1160,22 @@ class OrbSession implements IOrbSession {
      */
     @Override
     public void onSendIntentPlayback(String mediaId, String anchor, int offset) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onSendIntentPlayback(mediaId, anchor, offset);
     }
 
     /**
+     * @since 204
+     *
      * Request for the Description of the current media playback on the application
      */
     @Override
     public void onRequestMediaDescription() {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
         mJsonRpc.onRequestMediaDescription();
     }
 }

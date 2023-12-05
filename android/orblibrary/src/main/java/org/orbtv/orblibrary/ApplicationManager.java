@@ -102,6 +102,10 @@ class ApplicationManager {
         mOrbLibraryCallback = orbLibraryCallback;
     }
 
+    int getOrbHbbTVVersion() {
+        return jniGetOrbHbbTVVersion();
+    }
+
     public void setSessionCallback(SessionCallback sessionCallback) {
         synchronized (mLock) {
             mSessionCallback = sessionCallback;
@@ -202,6 +206,8 @@ class ApplicationManager {
     private long mJniManagerPointerField; // Reserved for native library
 
     private native void jniInitialize(ApplicationManager applicationManager);
+
+    private native int jniGetOrbHbbTVVersion();
 
     private native void jniFinalize();
 
@@ -364,4 +370,3 @@ class ApplicationManager {
         return (mOrbLibraryCallback != null) ? mOrbLibraryCallback.getCountryId() : "";
     }
 }
-
