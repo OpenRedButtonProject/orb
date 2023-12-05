@@ -20,6 +20,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -50,12 +51,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class MockOrbSessionCallback implements IOrbSessionCallback {
     private static final String TAG = "MockTvBrowserCallback";
+    private static final int KEY_PRESS_EVENT = -99;
 
     private final MainActivity mMainActivity;
     private final String mManifest;
@@ -65,14 +68,112 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     private String mDsmPath = "";
     private final HashMap<Integer, Handler> mActiveSubscriptionList;
     private final MockHttpServer mServer;
-
     private IOrbSession mSession = null;
     private TestSuiteRunner mTestSuiteRunner = null;
     private TestSuiteScenario mTestSuiteScenario;
+    private VoiceServiceReceiver mVoiceReceiver;
 
     private final HashMap<Integer, Handler> mActiveSearchList = new HashMap<>();
-
     static SparseArray<Integer> mKeyMap;
+
+    private final int F_SUBTITLES = 0;
+    private final int F_DIALOGUE_ENHANCEMENT = 1;
+    private final int F_UI_MAGNIFIER = 2;
+    private final int F_HIGH_CONTRAST_UI = 3;
+    private final int F_SCREEN_READER = 4;
+    private final int F_RESPONSE_TO_A_USER_ACTION = 5;
+    private final int F_AUDIO_DESCRIPTION = 6;
+    private final int F_IN_VISION_SIGN_LANGUAGE = 7;
+    private final String[] FEATURES = new String[]{
+            "subtitles",
+            "dialogueEnhancement",
+            "uiMagnifier",
+            "highContrastUI",
+            "screenReader",
+            "responseToUserAction",
+            "audioDescription",
+            "inVisionSigning"};
+    private final int EMPTY_INTEGER = -999999;
+    private final String EMPTY_STRING = "";
+    private static final int SUBTITLES_KEY = KeyEvent.KEYCODE_1;
+    private static final int DIALOGUE_ENHANCEMENT_KEY = KeyEvent.KEYCODE_2;
+    private static final int UI_MAGNIFIER_KEY = KeyEvent.KEYCODE_3;
+    private static final int HIGH_CONTRAST_UI_KEY = KeyEvent.KEYCODE_4;
+    private static final int SCREEN_READER_KEY = KeyEvent.KEYCODE_5;
+    private static final int RESPONSE_TO_USER_ACTION_KEY = KeyEvent.KEYCODE_6;
+    private static final int AUDIO_DESCRIPTION_KEY = KeyEvent.KEYCODE_7;
+    private static final int IN_VISION_SIGNING_KEY = KeyEvent.KEYCODE_8;
+    private final Map<Integer, SupportType> MOCK_SUPPORT_TYPES = new HashMap<Integer, SupportType>() {
+        {
+            put(F_SUBTITLES, SupportType.tvosAndHbbTV);
+            put(F_DIALOGUE_ENHANCEMENT, SupportType.tvosAndHbbTV);
+            put(F_UI_MAGNIFIER, SupportType.tvosAndHbbTV);
+            put(F_HIGH_CONTRAST_UI, SupportType.tvosAndHbbTV);
+            put(F_SCREEN_READER, SupportType.tvosAndHbbTV);
+            put(F_RESPONSE_TO_A_USER_ACTION, SupportType.tvosAndHbbTV);
+            put(F_AUDIO_DESCRIPTION, SupportType.tvosAndHbbTV);
+            put(F_IN_VISION_SIGN_LANGUAGE, SupportType.tvosAndHbbTV);
+        }
+    };
+    private final Map<Integer, SuppressType> MOCK_SUPPRESS_TYPES = new HashMap<Integer, SuppressType>() {
+        {
+            put(F_SUBTITLES, SuppressType.none);
+            put(F_DIALOGUE_ENHANCEMENT, SuppressType.none);
+            put(F_UI_MAGNIFIER, SuppressType.none);
+            put(F_HIGH_CONTRAST_UI, SuppressType.none);
+            put(F_SCREEN_READER, SuppressType.none);
+            put(F_RESPONSE_TO_A_USER_ACTION, SuppressType.none);
+            put(F_AUDIO_DESCRIPTION, SuppressType.none);
+            put(F_IN_VISION_SIGN_LANGUAGE, SuppressType.none);
+        }
+    };
+    private final Map<Integer, Boolean> MOCK_ENABLE_STATUS = new HashMap<Integer, Boolean>() {
+        {
+            put(F_SUBTITLES, true);
+            put(F_DIALOGUE_ENHANCEMENT, true);
+            put(F_UI_MAGNIFIER, true);
+            put(F_HIGH_CONTRAST_UI, true);
+            put(F_SCREEN_READER, true);
+            put(F_RESPONSE_TO_A_USER_ACTION, true);
+            put(F_AUDIO_DESCRIPTION, true);
+            put(F_IN_VISION_SIGN_LANGUAGE, true);
+        }
+    };
+    private int MOCK_SUBTITLES_SIZE = 150;
+    private String MOCK_SUBTITLES_FONT_FAMILY = "Arial";
+    private String MOCK_SUBTITLES_TEXT_COLOUR = "#AA0066";
+    private int MOCK_SUBTITLES_TEXT_OPACITY = 100;
+    private String MOCK_SUBTITLES_EDGE_TYPE = "outline";
+    private String MOCK_SUBTITLES_EDGE_COLOUR = "#FFFFFF";
+    private String MOCK_SUBTITLES_BACKGROUND_COLOUR = EMPTY_STRING;
+    private int MOCK_SUBTITLES_BACKGROUND_OPACITY = EMPTY_INTEGER;
+    private String MOCK_SUBTITLES_WINDOW_COLOUR = "#00DD00";
+    private int MOCK_SUBTITLES_WINDOW_OPACITY = EMPTY_INTEGER;
+    private String MOCK_SUBTITLES_LANGUAGE = EMPTY_STRING;
+    private int MOCK_DIALOGUE_ENHANCEMENT_GAIN_PREFERENCE = 6;
+    private int MOCK_DIALOGUE_ENHANCEMENT_GAIN = 6;
+    private int MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MIN = 0;
+    private int MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MAX = 12;
+    private String MOCK_UI_MAGNIFIER_MAG_TYPE = "textMagnification";
+    private String MOCK_HIGH_CONTRAST_UI_HC_TYPE = "monochrome";
+    private int MOCK_SCREEN_READER_SPEED = 120;
+    private String MOCK_SCREEN_READER_VOICE = "male";
+    private String MOCK_SCREEN_READER_LANGUAGE = EMPTY_STRING;
+    private String MOCK_RESPONSE_TO_A_USER_ACTION_TYPE = "audio";
+    private String MOCK_RESPONSE_TO_A_USER_ACTION_MAGNITUDE = EMPTY_STRING;
+    private int MOCK_AUDIO_DESCRIPTION_GAIN = 0;
+    private int MOCK_AUDIO_DESCRIPTION_PAN_AZIMUTH = 90;
+    private String MOCK_NEW_MEDIA_ID = "urn:broadcaster:programme:1249863457643";
+
+    public interface ConsoleCallback {
+        void log(String msg);
+    }
+
+    private ConsoleCallback mConsoleCallback;
+
+    public void setConsoleCallback(ConsoleCallback listener) {
+        mConsoleCallback = listener;
+    }
 
     MockOrbSessionCallback(MainActivity mainActivity, Bundle extras)
             throws Exception {
@@ -114,6 +215,23 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                         System.exit(0);
                     }
                 });
+    }
+
+    public void registerVoiceReceiver() {
+        mVoiceReceiver = new VoiceServiceReceiver();
+        mContext.registerReceiver(mVoiceReceiver, new IntentFilter("org.orbtv.voiceservice.message"));
+        mVoiceReceiver.setVoiceCallback(new VoiceServiceReceiver.ResultCallback() {
+            @Override
+            public void onReceive(Integer action, String info, String anchor, int offset) {
+                if (!sendVoiceCommand(action, info, anchor, offset)) {
+                    consoleLog("Error in voice recognition");
+                }
+            }
+        });
+    }
+
+    public void unregisterVoiceReceiver() {
+        mContext.unregisterReceiver(mVoiceReceiver);
     }
 
     /**
@@ -398,7 +516,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * If the terminal supports UHD, get a list that describes the highest quality video format
      * the terminal supports, as defined by HBBTV 10.2.4.7 for the video_display_format element;
      * otherwise get an empty list.
-     *
+     * <p>
      * Note: If the terminal changes its display format based on the content being played,
      * multiple elements may be included in the list when multiple frame rate families are usable
      * or the highest resolution does not support each highest quality parameter.
@@ -415,8 +533,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * that can be decoded and presented by an A/V control object or HTML5 media element.
      *
      * @return The current number of additional media streams. If the value is non-zero, then a
-     *    call to play an A/V control object, HTML5 media element or video/broadcast object shall
-     *    not fail due to lack of resources for SD media.
+     * call to play an A/V control object, HTML5 media element or video/broadcast object shall
+     * not fail due to lack of resources for SD media.
      */
     @Override
     public int getExtraSDVideoDecodes() {
@@ -428,8 +546,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * that can be decoded and presented by an A/V control object or HTML5 media element.
      *
      * @return The current number of additional media streams. If the value is non-zero, then a
-     *    call to play an A/V control object, HTML5 media element or video/broadcast object shall
-     *    not fail due to lack of resources for HD media.
+     * call to play an A/V control object, HTML5 media element or video/broadcast object shall
+     * not fail due to lack of resources for HD media.
      */
     @Override
     public int getExtraHDVideoDecodes() {
@@ -441,8 +559,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * audio that can be decoded and presented by an A/V control object or HTML5 media element.
      *
      * @return The current number of additional media streams. If the value is non-zero, then a
-     *    call to play an A/V control object, HTML5 media element or video/broadcast object shall
-     *    not fail due to lack of resources for UHD media.
+     * call to play an A/V control object, HTML5 media element or video/broadcast object shall
+     * not fail due to lack of resources for UHD media.
      */
     @Override
     public int getExtraUHDVideoDecodes() {
@@ -568,19 +686,19 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
 
     /**
      * Override the default component selection of the terminal for the specified type.
-     *
+     * <p>
      * If id is empty, no component shall be selected for presentation (presentation is explicitly
      * disabled). Otherwise, the specified component shall be selected for presentation.
-     *
+     * <p>
      * If playback has already started, the presented component shall be updated.
-     *
+     * <p>
      * Default component selection shall be restored (revert back to the control of the terminal)
      * when: (1) the application terminates, (2) the channel is changed, (3) presentation has not
      * been explicitly disabled and the user selects another track in the terminal UI, or (4) the
      * restoreComponentSelection method is called.
      *
      * @param type Type of component selection to override (COMPONENT_TYPE_* code).
-     * @param id A platform-defined component id or an empty string to disable presentation.
+     * @param id   A platform-defined component id or an empty string to disable presentation.
      */
     @Override
     public void overrideComponentSelection(int type, String id) {
@@ -589,7 +707,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
 
     /**
      * Restore the default component selection of the terminal for the specified type.
-     *
+     * <p>
      * If playback has already started, the presented component shall be updated.
      *
      * @param type Type of component selection override to clear (COMPONENT_TYPE_* code).
@@ -602,9 +720,9 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Sets the presentation window of the DVB video. Values are in HbbTV 1280x720 coordinates.
      *
-     * @param x Rectangle definition
-     * @param y Rectangle definition
-     * @param width Rectangle definition
+     * @param x      Rectangle definition
+     * @param y      Rectangle definition
+     * @param width  Rectangle definition
      * @param height Rectangle definition
      */
     @Override
@@ -612,7 +730,6 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         Log.v(TAG, "HbbTVClient.setDvbVideoRectangle(" + x + ", " + y + ", " + width + ", " + height + ")");
 
     }
-
 
     /**
      * Get the list of channels available.
@@ -669,28 +786,33 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         return new BridgeTypes.Channel();
     }
 
+    @Override
+    public int setChannelToCcid(String ccid, boolean trickplay, String contentAccessDescriptorURL, int quiet) {
+        // TODO
+        return 0;
+    }
+
     /**
      * Tune to specified channel. The implementation relies on the 'idType' parameter to
      * determine the valid fields that describe the channel. Possible idTypes are:
-     *    ID_IPTV_SDS/ID_IPTV_URI - where 'ipBroadcastID' and 'sourceId' fields are valid
-     *    other ID_.. values - where 'onid', 'tsid' and 'sid' fields are valid
-     *    ID_DVB_SI_DIRECT - is supposed to be handled by setChannelByDsd()
+     * ID_IPTV_SDS/ID_IPTV_URI - where 'ipBroadcastID' and 'sourceId' fields are valid
+     * other ID_.. values - where 'onid', 'tsid' and 'sid' fields are valid
+     * ID_DVB_SI_DIRECT - is supposed to be handled by setChannelByDsd()
      *
-     * @param idType The type of channel
-     * @param onid The original network ID for the required channel.
-     * @param tsid The transport stream ID for the required channel.
-     * @param sid The service ID for the required channel.
-     * @param sourceID The ATSC source_ID of the channel.
-     * @param ipBroadcastID The DVB textual service identifier of the IP broadcast service.
-     * @param trickplay Ignore unless PVR functionality is supported (does not affect return)
+     * @param idType                     The type of channel
+     * @param onid                       The original network ID for the required channel.
+     * @param tsid                       The transport stream ID for the required channel.
+     * @param sid                        The service ID for the required channel.
+     * @param sourceID                   The ATSC source_ID of the channel.
+     * @param ipBroadcastID              The DVB textual service identifier of the IP broadcast service.
+     * @param trickplay                  Ignore unless PVR functionality is supported (does not affect return)
      * @param contentAccessDescriptorURL May be required by DRM-protected IPTV broadcasts
-     * @param quiet Channel change operation
-     *              0 - normal tune
-     *              1 - normal tune and no UI displayed
-     *              2 - quiet tune (user does not know)
-     *
+     * @param quiet                      Channel change operation
+     *                                   0 - normal tune
+     *                                   1 - normal tune and no UI displayed
+     *                                   2 - quiet tune (user does not know)
      * @return negative value (e.g. BridgeTypes.CHANNEL_STATUS_CONNECTING) on success, or
-     *         zero/positive value (see BridgeTypes.CHANNEL_STATUS_.. error values) on failure
+     * zero/positive value (see BridgeTypes.CHANNEL_STATUS_.. error values) on failure
      */
     @Override
     public int setChannelByTriplet(int idType, int onid, int tsid, int sid, int sourceID,
@@ -719,15 +841,14 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Tune to specified channel using DSD.
      *
-     * @param dsd DSD for the required channel.
-     * @param sid SID for the required channel.
-     * @param trickplay Ignore unless PVR functionality is supported (does not affect return)
+     * @param dsd                        DSD for the required channel.
+     * @param sid                        SID for the required channel.
+     * @param trickplay                  Ignore unless PVR functionality is supported (does not affect return)
      * @param contentAccessDescriptorURL May be required by DRM-protected IPTV broadcasts
-     * @param quiet Channel change operation
-     *              0 - normal tune
-     *              1 - normal tune and no UI displayed
-     *              2 - quiet tune (user does not know)
-     *
+     * @param quiet                      Channel change operation
+     *                                   0 - normal tune
+     *                                   1 - normal tune and no UI displayed
+     *                                   2 - quiet tune (user does not know)
      * @return negative value (e.g. BridgeTypes.CHANNEL_STATUS_CONNECTING) on success, or
      * zero/positive value (see BridgeTypes.CHANNEL_STATUS_.. error values) on failure
      */
@@ -826,14 +947,13 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * Get a private audio component in the selected channel.
      *
      * @param componentTag The component_tag of the component.
-     *
      * @return The private component with the specified component_tag in the PMT of the currently
-     *    selected broadcast channel; or null if unavailable or the component is not private (i.e.
-     *    the stream type is audio, video or subtitle).
-     *
-     *    Mandatory properties: id, pid and encrypted. The id property shall be usable with the
-     *    overrideComponentSelection method to select the component as an audio track. Other
-     *    Component properties are not required.
+     * selected broadcast channel; or null if unavailable or the component is not private (i.e.
+     * the stream type is audio, video or subtitle).
+     * <p>
+     * Mandatory properties: id, pid and encrypted. The id property shall be usable with the
+     * overrideComponentSelection method to select the component as an audio track. Other
+     * Component properties are not required.
      */
     @Override
     public BridgeTypes.Component getPrivateAudioComponent(String componentTag) {
@@ -845,14 +965,13 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * Get a private video component in the selected channel.
      *
      * @param componentTag The component_tag of the component.
-     *
      * @return The private component with the specified component_tag in the PMT of the currently
-     *    selected broadcast channel; or null if unavailable or the component is not private (i.e.
-     *    the stream type is audio, video or subtitle).
-     *
-     *    Mandatory properties: id, pid and encrypted. The id property shall be usable with the
-     *    overrideComponentSelection method to select the component as an video track. Other
-     *    Component properties are not required.
+     * selected broadcast channel; or null if unavailable or the component is not private (i.e.
+     * the stream type is audio, video or subtitle).
+     * <p>
+     * Mandatory properties: id, pid and encrypted. The id property shall be usable with the
+     * overrideComponentSelection method to select the component as an video track. Other
+     * Component properties are not required.
      */
     @Override
     public BridgeTypes.Component getPrivateVideoComponent(String componentTag) {
@@ -943,6 +1062,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Returns the current age set for parental control. 0 will be returned if parental control is
      * disabled or no age is set.
+     *
      * @return age in the range 4-18, or 0
      */
     @Override
@@ -952,6 +1072,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
 
     /**
      * Returns the region set for parental control.
+     *
      * @return country using the 3-character code as specified in ISO 3166
      */
     @Override
@@ -962,16 +1083,16 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Called when the application at origin requests access to the distinctive identifier. The
      * client application should display a dialog for the user to allow or deny this and:
-     *
+     * <p>
      * 1. TvBrowser.notifyAccessToDistinctiveIdentifier should be called with the user choice.
      * 2. TvBrowserSessionCallback.getDistinctiveIdentifier should honour the user choice.
-     *
+     * <p>
      * The client application should allow the user to reset access from a settings menu. This shall
      * result in a new distinctive identifier being generated for an origin next time access is
      * allowed.
-     *
+     * <p>
      * The helper method TvBrowser.generateDistinctiveIdentifier may be used.
-     *
+     * <p>
      * Integrators should check 12.1.5 for requirements about distinctive identifiers.
      *
      * @param origin The origin of the application
@@ -1012,7 +1133,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * The distinctive identifier for origin or a distinctive identifier status string (for statuses
      * see BridgeTypes.DISTINCTIVE_IDENTIFIER_STATUS_*).
-     *
+     * <p>
      * Integrators should check 12.1.5 for requirements about distinctive identifiers.
      *
      * @param origin The origin of the requesting application
@@ -1032,7 +1153,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * memory leaks and possibly allow an application to make decisions related to its caching
      * strategy (e.g. for images).
      *
-     *  @return The available memory to the application (in MBs) or -1 if the information is not available.
+     * @return The available memory to the application (in MBs) or -1 if the information is not available.
      */
     @Override
     public long getFreeMemory() {
@@ -1105,8 +1226,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * Start TEMI timeline monitoring.
      *
      * @param componentTag The component tag of the temi timeline to monitor.
-     * @param timelineId The timeline id of the temi timeline to monitor.
-     *
+     * @param timelineId   The timeline id of the temi timeline to monitor.
      * @return The associated filter id upon success, -1 otherwise
      */
     @Override
@@ -1170,7 +1290,6 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * Get current TEMI time.
      *
      * @param filterId
-     *
      * @return current TEMI time, -1 if not available
      */
     @Override
@@ -1202,10 +1321,11 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * Get the list of supported DRM System IDs currently available. Once called,
      * the caller can track the availability changes by listening to
      * onDRMSystemStatusChange events. DRM System ID can enter the following states:
-     *    - 0 READY, fully initialised and ready
-     *    - 1 UNKNOWN, no longer available
-     *    - 2 INITIALISING, initialising and not ready to communicate
-     *    - 3 ERROR, in error state
+     * - 0 READY, fully initialised and ready
+     * - 1 UNKNOWN, no longer available
+     * - 2 INITIALISING, initialising and not ready to communicate
+     * - 3 ERROR, in error state
+     *
      * @return List of supported DRM System IDs currently available.
      */
     @Override
@@ -1237,7 +1357,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * Checks the availability of a valid license for playing a protected content item.
      *
      * @param DRMPrivateData DRM proprietary private data
-     * @param DRMSystemID ID of the DRM System
+     * @param DRMSystemID    ID of the DRM System
      * @return true if there is a valid license available that may allow playing the content
      */
     @Override
@@ -1249,7 +1369,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * Checks the availability of a valid license for recording a protected content item.
      *
      * @param DRMPrivateData DRM proprietary private data
-     * @param DRMSystemID ID of the DRM System
+     * @param DRMSystemID    ID of the DRM System
      * @return true if there is a valid license available locally that may allow recording the content
      */
     @Override
@@ -1260,12 +1380,12 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Send message to the DRM system.
      *
-     * @param msgId unique ID to identify the message, to be passed as the 'msgID'
-     *        argument for onDRMMessageResult
-     * @param msgType message type as defined by the DRM system
-     * @param msg message to be provided to the underlying DRM system
+     * @param msgId       unique ID to identify the message, to be passed as the 'msgID'
+     *                    argument for onDRMMessageResult
+     * @param msgType     message type as defined by the DRM system
+     * @param msg         message to be provided to the underlying DRM system
      * @param drmSystemID ID of the DRM System
-     * @param block Whether the function needs to block until the reply is received
+     * @param block       Whether the function needs to block until the reply is received
      */
     @Override
     public String sendDRMMessage(String msgId, String msgType, String msg, String drmSystemID, boolean block) {
@@ -1288,7 +1408,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      *
      * @param DRMSystemID ID of the DRM System
      * @return false if the terminal is unable to set the specified DRM system as requested,
-     *         true otherwise
+     * true otherwise
      */
     @Override
     public boolean setActiveDRM(String DRMSystemID) {
@@ -1298,7 +1418,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Request file from DSM-CC
      *
-     * @param url DVB Url of requested file
+     * @param url       DVB Url of requested file
      * @param requestId ID of request (returned to DsmccClient.receiveContent)
      */
     @Override
@@ -1353,8 +1473,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Subscribe to DSM-CC Stream Event with URL and event name
      *
-     * @param url DVB Url of event object
-     * @param name Name of stream event
+     * @param url      DVB Url of event object
+     * @param name     Name of stream event
      * @param listenId ID of subscriber
      */
     @Override
@@ -1367,10 +1487,10 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     /**
      * Subscribe to DSM-CC Stream Event with component tag and event ID
      *
-     * @param name Name of stream event
+     * @param name         Name of stream event
      * @param componentTag Component tag for stream event
-     * @param eventId Event Id of stream event
-     * @param listenId ID of subscriber
+     * @param eventId      Event Id of stream event
+     * @param listenId     ID of subscriber
      */
     @Override
     public boolean subscribeDsmccStreamEventId(String name, int componentTag, int eventId, int listenId) {
@@ -1397,7 +1517,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      * Publish a test report (debug build only).
      *
      * @param testSuite A unique test suite name.
-     * @param xml The XML test report.
+     * @param xml       The XML test report.
      */
     @Override
     public void publishTestReport(String testSuite, String xml) {
@@ -1405,6 +1525,707 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
             return;
         }
         mTestSuiteRunner.onTestReportPublished(testSuite, xml);
+    }
+
+    /**
+     * Request a negotiation for methods
+     */
+    @Override
+    public void onRequestNegotiateMethods() {
+        consoleLog("Negotiate supported methods");
+    }
+
+    /**
+     * Request to subscribe/unsubscribe some particular accessibility features
+     *
+     * @param isSubscribe          The request to subscribe/unsubscribe
+     *                             - true: subscribe
+     *                             - false: unsubscribe
+     *                             User preference change of 8 accessibility features:
+     * @param subtitles            Subtitles
+     * @param dialogueEnhancement  Dialogue enhancement
+     * @param uiMagnifier          Magnification UI
+     * @param highContrastUI       High contrast UI
+     * @param screenReader         Screen reader
+     * @param responseToUserAction Response to user action
+     * @param audioDescription     Audio description
+     * @param inVisionSigning      In-vision signing
+     */
+    @Override
+    public void onRequestSubscribe(boolean isSubscribe,
+                                   boolean subtitles, boolean dialogueEnhancement,
+                                   boolean uiMagnifier, boolean highContrastUI,
+                                   boolean screenReader, boolean responseToUserAction,
+                                   boolean audioDescription, boolean inVisionSigning) {
+        Vector<String> subscriptions = new Vector<>();
+        if (subtitles) {
+            subscriptions.add(FEATURES[F_SUBTITLES]);
+        }
+        if (dialogueEnhancement) {
+            subscriptions.add(FEATURES[F_DIALOGUE_ENHANCEMENT]);
+        }
+        if (uiMagnifier) {
+            subscriptions.add(FEATURES[F_UI_MAGNIFIER]);
+        }
+        if (highContrastUI) {
+            subscriptions.add(FEATURES[F_HIGH_CONTRAST_UI]);
+        }
+        if (screenReader) {
+            subscriptions.add(FEATURES[F_SCREEN_READER]);
+        }
+        if (responseToUserAction) {
+            subscriptions.add(FEATURES[F_RESPONSE_TO_A_USER_ACTION]);
+        }
+        if (audioDescription) {
+            subscriptions.add(FEATURES[F_AUDIO_DESCRIPTION]);
+        }
+        if (inVisionSigning) {
+            subscriptions.add(FEATURES[F_IN_VISION_SIGN_LANGUAGE]);
+        }
+        StringBuilder sb = new StringBuilder("\n");
+        for (int i = 0; i < subscriptions.size(); i++) {
+            sb.append(subscriptions.get(i));
+            if (i < subscriptions.size() - 1) {
+                sb.append(", ");
+            }
+        }
+        String action = (isSubscribe) ? "Subscribe" : "Unsubscribe";
+        consoleLog(action + " accessibility feature: " + sb);
+    }
+
+    /**
+     * Request for a overriding dialogue enhancement
+     *
+     * @param connection              The request and response should have the same value
+     * @param id                      The request and response should have the same value
+     * @param dialogueEnhancementGain The requested gain value in dB of the dialogue enhancement
+     */
+    @Override
+    public void onRequestDialogueEnhancementOverride(int connection, String id,
+                                                     int dialogueEnhancementGain) {
+        String requestedValue = (dialogueEnhancementGain == EMPTY_INTEGER) ?
+                "" : ", gain: " + dialogueEnhancementGain;
+        consoleLog("Request dialogue enhancement override" + requestedValue);
+
+        int appliedGain;
+        if (dialogueEnhancementGain == EMPTY_INTEGER) {
+            // If the value is not specified, it shall be reset to the user preference.
+            appliedGain = MOCK_DIALOGUE_ENHANCEMENT_GAIN_PREFERENCE;
+        } else if (dialogueEnhancementGain >= MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MAX) {
+            // If the value is is outside the allowed value range,
+            // it shall be restricted in the allowed range.
+            appliedGain = MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MAX;
+        } else if (dialogueEnhancementGain <= MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MIN) {
+            // same as LIMIT_MAX
+            appliedGain = MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MIN;
+        } else {
+            // the requested gain value shall be applied.
+            appliedGain = dialogueEnhancementGain;
+        }
+        MOCK_DIALOGUE_ENHANCEMENT_GAIN = appliedGain;
+        mSession.onRespondDialogueEnhancementOverride(connection, id, appliedGain);
+        consoleLog("Apply dialogue enhancement override, gain: " + appliedGain);
+    }
+
+    /**
+     * Request for a trigger response to user action
+     *
+     * @param connection The request and response should have the same value
+     * @param id         The request and response should have the same value
+     * @param magnitude  The magnitude of response to user action
+     */
+    @Override
+    public void onRequestTriggerResponseToUserAction(int connection, String id, String magnitude) {
+        MOCK_RESPONSE_TO_A_USER_ACTION_MAGNITUDE = magnitude;
+        consoleLog("Request to trigger response to user action, magnitude: " + magnitude);
+        // If the requested is successfully performed by the terminal,
+        // it shall reply with a non-error response, where the actioned field shall be set to true;
+        boolean actioned = true;
+        mSession.onRespondTriggerResponseToUserAction(connection, id, actioned);
+        consoleLog("Trigger response to user action, isActioned: " + actioned);
+    }
+
+    /**
+     * Request for the support information of a feature
+     *
+     * @param connection The request and response should have the same value
+     * @param id         The request and response should have the same value
+     * @param featureId  The index of a particular accessibility feature
+     */
+    @Override
+    public void onRequestFeatureSupportInfo(int connection, String id, int featureId) {
+        if (featureId < 0 || featureId >= FEATURES.length) {
+            Log.e(TAG, "Error, unrecognised feature in request");
+            return;
+        }
+        String featureName = FEATURES[featureId];
+        consoleLog("Request for feature support info for " + featureName);
+
+        // ToDo, consider other support options
+        SupportType result = MOCK_SUPPORT_TYPES.get(featureId);
+        if (result != null) {
+            mSession.onRespondFeatureSupportInfo(connection, id, featureId, result.name());
+        } else {
+            Log.e(TAG, "Error, unrecognised feature in request");
+            return;
+        }
+        consoleLog("Respond feature support info for " + featureName + ": " + result.name());
+    }
+
+    /**
+     * Request to query settings of a particular feature
+     *
+     * @param connection The request and response should have the same value
+     * @param id         The request and response should have the same value
+     * @param featureId  The index of a particular accessibility feature
+     */
+    @Override
+    public void onRequestFeatureSettingsQuery(int connection, String id, int featureId) {
+        if (featureId < 0 || featureId >= FEATURES.length) {
+            Log.e(TAG, "Error, unrecognised feature in request");
+            return;
+        }
+        String featureName = FEATURES[featureId];
+        consoleLog("Request feature settings query for " + featureName);
+
+        Boolean isEnabled = MOCK_ENABLE_STATUS.get(featureId);
+        if (isEnabled == null) {
+            Log.e(TAG, "Error, unrecognised feature in request");
+            return;
+        }
+        switch (featureId) {
+            case F_SUBTITLES:
+                querySettingSubtitles(connection, id, isEnabled);
+                break;
+            case F_DIALOGUE_ENHANCEMENT:
+                querySettingDialogueEnhancement(connection, id, isEnabled);
+                break;
+            case F_UI_MAGNIFIER:
+                querySettingsUiMagnifier(connection, id, isEnabled);
+                break;
+            case F_HIGH_CONTRAST_UI:
+                querySettingsHighContrastUI(connection, id, isEnabled);
+                break;
+            case F_SCREEN_READER:
+                querySettingsScreenReader(connection, id, isEnabled);
+                break;
+            case F_RESPONSE_TO_A_USER_ACTION:
+                querySettingsResponseToUserAction(connection, id, isEnabled);
+                break;
+            case F_AUDIO_DESCRIPTION:
+                querySettingsAudioDescription(connection, id, isEnabled);
+                break;
+            case F_IN_VISION_SIGN_LANGUAGE:
+                mSession.onQueryInVisionSigning(connection, id, isEnabled);
+                break;
+            default:
+                Log.e(TAG, "Error, unrecognised feature in request");
+                return;
+        }
+        consoleLog("Query feature settings of " + featureName);
+    }
+
+    /**
+     * Request for suppressing the support of a feature
+     *
+     * @param connection The request and response should have the same value
+     * @param id         The request and response should have the same value
+     * @param featureId  The index of a particular accessibility feature
+     */
+    @Override
+    public void onRequestFeatureSuppress(int connection, String id, int featureId) {
+        if (featureId < 0 || featureId >= FEATURES.length ||
+                featureId >= MOCK_SUPPRESS_TYPES.size()) {
+            Log.e(TAG, "Error, unrecognised feature in request");
+            return;
+        }
+        String featureName = FEATURES[featureId];
+        consoleLog("Request suppress for " + featureName);
+
+        setSuppressStatus(featureId, SuppressType.suppressing);
+        SuppressType result = MOCK_SUPPRESS_TYPES.get(featureId);
+        mSession.onRespondFeatureSuppress(connection, id, featureId, result.name());
+        consoleLog("Respond suppress for" + featureName + ", result: " + result.name());
+    }
+
+    /**
+     * Receive a response for a request that expresses user intent.
+     *
+     * @param connection The request and response should have the same value
+     * @param id         The request and response should have the same value
+     * @param method     The string value that has the same value as the method of the original request
+     */
+    @Override
+    public void onReceiveIntentConfirm(int connection, String id, String method) {
+        consoleLog("Receive a confirm of an intent, method: " + method);
+    }
+
+    /**
+     * Receive a notification of voice-readiness
+     *
+     * @param isReady The boolean value of the status of voice-readiness
+     *                - true: the application is voice-ready
+     *                - false: not voice-ready
+     */
+    @Override
+    public void onNotifyVoiceReady(boolean isReady) {
+        consoleLog("Receive a voice-readiness status, isReady: " + isReady);
+    }
+
+    /**
+     * Receive a notification that describes the state of media presentation by the application at the time
+     *
+     * @param state The description of state with respect to media playback
+     */
+    @Override
+    public void onNotifyStateMedia(String state) {
+        consoleLog("Receive a media state, state: " + state);
+    }
+
+    /**
+     * Called to send a response message
+     *
+     * @param info The content of the message
+     */
+    public void onRespondMessage(String info) {
+        consoleLog(info);
+        // TODO: audio response
+    }
+
+    /**
+     * Called to send an error message
+     *
+     * @param code    The error code
+     * @param message The error message
+     */
+    @Override
+    public void onReceiveError(int code, String message) {
+        consoleLog("Receive an error, code: " + code);
+    }
+
+    /**
+     * Called to send an error message with some data
+     *
+     * @param code    The error code
+     * @param message The error message
+     * @param method  The method same as in the original request
+     * @param data    The error data
+     */
+    @Override
+    public void onReceiveError(int code, String message,
+                               String method, String data) {
+        consoleLog("Receive an error, code: " + code + ", method: " + method);
+    }
+
+    /**
+     * Request for the description of the current media on applications
+     *
+     * @return true if this event has been handled, and false if not
+     */
+    @Override
+    public boolean onRequestMediaDescription() {
+        consoleLog("Request for the information of media playing...");
+        mSession.onRequestMediaDescription();
+        return true;
+    }
+
+    /**
+     * Request to deliver a text input, from voice command, to applications
+     *
+     * @param input The content of the text
+     * @return true if this event has been handled, and false if not
+     */
+    @Override
+    public boolean onRequestTextInput(String input) {
+        // Mock function to display the input text
+        mSession.dispatchTextInput(input);
+        consoleLog("Enter text {" + input + "}");
+        return true;
+    }
+
+    /**
+     * Called to send an intent, from a voice command, to applications
+     *
+     * @param action The index number of the intent, from intent.media.pause to intent.playback
+     * @param info   The value uniquely identifying a piece of content:
+     *               - INTENT_MEDIA_SEEK_WALLCLOCK: a wall clock time
+     *               - INTENT_DISPLAY: a URI
+     *               - INTENT_SEARCH: a search term specified by the user.
+     *               - INTENT_PLAYBACK: a URI
+     * @param anchor The value indicates an anchor point of the content, which is either "start" or "end"
+     * @param offset The number value for the time position, a number of seconds
+     * @return true if this event has been handled, and false if not
+     */
+    @Override
+    public boolean onSendIntentByVoiceCommand(Integer action, String info, String anchor,
+                                              int offset) {
+        String mediaId;
+        switch (action) {
+            case INTENT_MEDIA_PAUSE:
+                mSession.onSendIntentMediaBasics(INTENT_MEDIA_PAUSE);
+                consoleLog("Send an intent, action: pause");
+                return true;
+            case INTENT_MEDIA_PLAY:
+                mSession.onSendIntentMediaBasics(INTENT_MEDIA_PLAY);
+                consoleLog("Send an intent, action: play");
+                return true;
+            case INTENT_MEDIA_FAST_FORWARD:
+                mSession.onSendIntentMediaBasics(INTENT_MEDIA_FAST_FORWARD);
+                consoleLog("Send an intent, action: fast-forward");
+                return true;
+            case INTENT_MEDIA_FAST_REVERSE:
+                mSession.onSendIntentMediaBasics(INTENT_MEDIA_FAST_REVERSE);
+                consoleLog("Send an intent, action: fast-reverse");
+                return true;
+            case INTENT_MEDIA_STOP:
+                mSession.onSendIntentMediaBasics(INTENT_MEDIA_STOP);
+                consoleLog("Send an intent, action: stop");
+                return true;
+            case INTENT_MEDIA_SEEK_CONTENT:
+                if (anchor.equals("start") || anchor.equals("end")) {
+                    mSession.onSendIntentMediaSeekContent(anchor, offset);
+                    consoleLog("Send an intent, action: seek-content");
+                    return true;
+                }
+                break;
+            case INTENT_MEDIA_SEEK_RELATIVE:
+                mSession.onSendIntentMediaSeekRelative(offset);
+                consoleLog("Send an intent, action: seek-relative");
+                return true;
+            case INTENT_MEDIA_SEEK_LIVE:
+                mSession.onSendIntentMediaSeekLive(offset);
+                consoleLog("Send an intent, action: seek-live");
+                return true;
+            case INTENT_DISPLAY:
+                // TODO - get mediaId by media name
+                mediaId = MOCK_NEW_MEDIA_ID;
+                mSession.onSendIntentDisplay(mediaId);
+                consoleLog("Send an intent, action: display");
+                return true;
+            case INTENT_MEDIA_SEEK_WALLCLOCK:
+                mSession.onSendIntentMediaSeekWallclock(info);
+                consoleLog("Send an intent, action: seek-wallclock");
+                return true;
+            case INTENT_SEARCH:
+                mSession.onSendIntentSearch(info);
+                consoleLog("Send an intent, action: search");
+                return true;
+            case INTENT_PLAYBACK:
+                mediaId = MOCK_NEW_MEDIA_ID;
+                mSession.onSendIntentPlayback(mediaId, anchor, offset);
+                consoleLog("Send an intent, action: playback");
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * Called to send a send a key press event, from a voice command, to the application
+     *
+     * @param action The index number of the intent, either pressing a button or showing a log
+     */
+    @Override
+    public boolean onSendKeyPressAction(Integer action) {
+        switch (action) {
+            case ACT_PRESS_BUTTON_NUMB_ZERO:
+            case ACT_PRESS_BUTTON_NUMB_ONE:
+            case ACT_PRESS_BUTTON_NUMB_TWO:
+            case ACT_PRESS_BUTTON_NUMB_THREE:
+            case ACT_PRESS_BUTTON_NUMB_FOUR:
+            case ACT_PRESS_BUTTON_NUMB_FIVE:
+            case ACT_PRESS_BUTTON_NUMB_SIX:
+            case ACT_PRESS_BUTTON_NUMB_SEVEN:
+            case ACT_PRESS_BUTTON_NUMB_EIGHT:
+            case ACT_PRESS_BUTTON_NUMB_NINE:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_0 + action - ACT_PRESS_BUTTON_NUMB_ZERO, action);
+            case ACT_PRESS_BUTTON_RED:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_PROG_RED, action);
+            case ACT_PRESS_BUTTON_GREEN:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_PROG_GREEN, action);
+            case ACT_PRESS_BUTTON_YELLOW:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_PROG_YELLOW, action);
+            case ACT_PRESS_BUTTON_BLUE:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_PROG_BLUE, action);
+            case ACT_PRESS_BUTTON_UP:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_DPAD_UP, action);
+            case ACT_PRESS_BUTTON_DOWN:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_DPAD_DOWN, action);
+            case ACT_PRESS_BUTTON_LEFT:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_DPAD_LEFT, action);
+            case ACT_PRESS_BUTTON_RIGHT:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_DPAD_RIGHT, action);
+            case ACT_PRESS_BUTTON_ENTER:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_ENTER, action);
+            case ACT_PRESS_BUTTON_BACK:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_DEL, action);
+        }
+        return false;
+    }
+
+    /**
+     * Dispatch a keyUp event and show a message on window log
+     *
+     * @param keyCode The index number of the keyCode
+     * @param action  The index number of actions for pressing a certain button
+     */
+    private boolean dispatchKeyPressEvent(int keyCode, int action) {
+        String buttonName = ACT_BUTTON_NAMES.getOrDefault(action, "invalid");
+        if (buttonName.equals("invalid")) {
+            return false;
+        }
+        consoleLog("Press " + buttonName + " button");
+        KeyEvent event = new KeyEvent(KeyEvent.ACTION_UP, keyCode);
+        return notifyKeyUp(KEY_PRESS_EVENT, event);
+    }
+
+    private boolean notifyKeyUp(int keyCode, KeyEvent event) {
+        if (keyCode == KEY_PRESS_EVENT) {
+            return mSession.dispatchKeyEvent(event);
+        }
+        return false;
+    }
+
+    public boolean sendVoiceCommand(Integer action, String info, String anchor, int offset) {
+        switch (action) {
+            case INTENT_MEDIA_PAUSE:
+            case INTENT_MEDIA_PLAY:
+            case INTENT_MEDIA_FAST_FORWARD:
+            case INTENT_MEDIA_FAST_REVERSE:
+            case INTENT_MEDIA_STOP:
+            case INTENT_MEDIA_SEEK_CONTENT:
+            case INTENT_MEDIA_SEEK_RELATIVE:
+            case INTENT_MEDIA_SEEK_LIVE:
+            case INTENT_MEDIA_SEEK_WALLCLOCK:
+            case INTENT_SEARCH:
+            case INTENT_DISPLAY:
+            case INTENT_PLAYBACK:
+                return onSendIntentByVoiceCommand(action, info, anchor, offset);
+            case ACT_REQUEST_MEDIA_DESCRIPTION:
+                return onRequestMediaDescription();
+            case ACT_REQUEST_TEXT_INPUT:
+                return onRequestTextInput(info);
+            case LOG_MESSAGE:
+            case LOG_ERROR_NONE_ACTION:
+            case LOG_ERROR_MULTI_ACTIONS:
+            case LOG_ERROR_INTENT_SEND:
+                consoleLog(info);
+                return true;
+            default:
+                return onSendKeyPressAction(action);
+        }
+    }
+
+    private void consoleLog(String log) {
+        if (mConsoleCallback != null) {
+            mConsoleCallback.log(log);
+        }
+    }
+
+    private void setSuppressStatus(int featureId, SuppressType suppress) {
+        if (featureId < 0 || featureId >= MOCK_SUPPRESS_TYPES.size() ||
+                featureId >= MOCK_SUPPORT_TYPES.size()) {
+            Log.e(TAG, "Error, unrecognised feature in request");
+            return;
+        }
+        SupportType supportType = MOCK_SUPPORT_TYPES.get(featureId);
+        switch (suppress) {
+            case none:
+                MOCK_SUPPRESS_TYPES.replace(featureId, SuppressType.none);
+                break;
+            case suppressing:
+            case notSuppressing:
+                if (supportType == SupportType.tvosAndHbbTV ||
+                        supportType == SupportType.supportedNoSetting) {
+                    // Responses containing "suppressing" or "notSuppressing" are only valid
+                    // when the corresponding feature is "tvosAndHbbTV" or "supportedNoSetting".
+                    MOCK_SUPPRESS_TYPES.replace(featureId, suppress);
+                } else {
+                    // Responses containing "featureNotSupported" are only valid
+                    // when the corresponding feature is "notSupported", "tvosOnly", or "tvosSettingOnly".
+                    MOCK_SUPPRESS_TYPES.replace(featureId, SuppressType.featureNotSupported);
+                }
+                break;
+            case featureNotSupported:
+                if (supportType == SupportType.tvosAndHbbTV ||
+                        supportType == SupportType.supportedNoSetting) {
+                    Log.e(TAG, "Not allowed to set featureNotSupported");
+                } else {
+                    MOCK_SUPPRESS_TYPES.replace(featureId, SuppressType.featureNotSupported);
+                }
+                break;
+        }
+    }
+
+    private void querySettingSubtitles(int connection, String id, boolean isEnabled) {
+        if (isEnabled) {
+            mSession.onQuerySubtitles(connection, id,
+                    true, MOCK_SUBTITLES_SIZE, MOCK_SUBTITLES_FONT_FAMILY,
+                    MOCK_SUBTITLES_TEXT_COLOUR, MOCK_SUBTITLES_TEXT_OPACITY,
+                    MOCK_SUBTITLES_EDGE_TYPE, MOCK_SUBTITLES_EDGE_COLOUR,
+                    MOCK_SUBTITLES_BACKGROUND_COLOUR, MOCK_SUBTITLES_BACKGROUND_OPACITY,
+                    MOCK_SUBTITLES_WINDOW_COLOUR, MOCK_SUBTITLES_WINDOW_OPACITY,
+                    MOCK_SUBTITLES_LANGUAGE);
+        } else {
+            // Not enable when the subtitles is turning off
+            mSession.onQuerySubtitles(connection, id,
+                    false, EMPTY_INTEGER, EMPTY_STRING, EMPTY_STRING, EMPTY_INTEGER,
+                    EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, EMPTY_INTEGER,
+                    EMPTY_STRING, EMPTY_INTEGER, EMPTY_STRING);
+        }
+    }
+
+    private void querySettingDialogueEnhancement(int connection, String id, boolean isEnabled) {
+        if (isEnabled) {
+            mSession.onQueryDialogueEnhancement(connection, id,
+                    MOCK_DIALOGUE_ENHANCEMENT_GAIN_PREFERENCE, MOCK_DIALOGUE_ENHANCEMENT_GAIN,
+                    MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MIN,
+                    MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MAX);
+        } else {
+            // If DE is switched off, dialogueEnhancementGain shall be set to 0.
+            mSession.onQueryDialogueEnhancement(connection, id,
+                    MOCK_DIALOGUE_ENHANCEMENT_GAIN_PREFERENCE, 0,
+                    MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MIN,
+                    MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MAX);
+        }
+    }
+
+    private void querySettingsUiMagnifier(int connection, String id, boolean isEnabled) {
+        if (isEnabled) {
+            // "magType" shall be present if the "enabled" parameter is set to "true".
+            mSession.onQueryUIMagnifier(connection, id, true, MOCK_UI_MAGNIFIER_MAG_TYPE);
+        } else {
+            mSession.onQueryUIMagnifier(connection, id, false, EMPTY_STRING);
+        }
+    }
+
+    private void querySettingsHighContrastUI(int connection, String id, boolean isEnabled) {
+        if (isEnabled) {
+            // "hcType" shall be present if the "enabled" parameter is set to "true".
+            mSession.onQueryHighContrastUI(connection, id, true, MOCK_HIGH_CONTRAST_UI_HC_TYPE);
+        } else {
+            mSession.onQueryHighContrastUI(connection, id, false, EMPTY_STRING);
+        }
+    }
+
+    private void querySettingsScreenReader(int connection, String id, boolean isEnabled) {
+        if (isEnabled) {
+            mSession.onQueryScreenReader(connection, id,
+                    true, MOCK_SCREEN_READER_SPEED, MOCK_SCREEN_READER_VOICE,
+                    MOCK_SCREEN_READER_LANGUAGE);
+        } else {
+            // The language value should only be present
+            // if the user has changed this from the default setting.
+            // The voice value should be present if the enabled value is set to true.
+            mSession.onQueryScreenReader(connection, id,
+                    false, EMPTY_INTEGER, EMPTY_STRING, EMPTY_STRING);
+        }
+    }
+
+    private void querySettingsResponseToUserAction(int connection, String id, boolean isEnabled) {
+        if (isEnabled) {
+            mSession.onQueryResponseToUserAction(connection, id, true,
+                    MOCK_RESPONSE_TO_A_USER_ACTION_TYPE);
+        } else {
+            // If the "enabled" value is set to true, then the "type" field shall be present.
+            mSession.onQueryResponseToUserAction(connection, id, false,
+                    EMPTY_STRING);
+        }
+    }
+
+    private void querySettingsAudioDescription(int connection, String id, boolean isEnabled) {
+        if (isEnabled) {
+            mSession.onQueryAudioDescription(connection, id, true,
+                    MOCK_AUDIO_DESCRIPTION_GAIN, MOCK_AUDIO_DESCRIPTION_PAN_AZIMUTH);
+        } else {
+            // If it is not enabled, “gainPreference” and “panAzimuthPreference” shall not be present.
+            mSession.onQueryAudioDescription(connection, id, false,
+                    EMPTY_INTEGER, EMPTY_INTEGER);
+        }
+    }
+
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        boolean isEnabled;
+        switch (keyCode) {
+            case SUBTITLES_KEY:
+            case KeyEvent.KEYCODE_CAPTIONS: {
+                isEnabled = Boolean.FALSE.equals(MOCK_ENABLE_STATUS.get(F_SUBTITLES));
+                MOCK_ENABLE_STATUS.replace(F_SUBTITLES, isEnabled);
+
+                // notification for feature settings
+                querySettingSubtitles(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                consoleLog("Notify settings of subtitles, isEnabled: " + isEnabled);
+                break;
+            }
+            case DIALOGUE_ENHANCEMENT_KEY: {
+                // TODO, consider the case with a new gain set by users
+                isEnabled = Boolean.FALSE.equals(MOCK_ENABLE_STATUS.get(F_DIALOGUE_ENHANCEMENT));
+                MOCK_ENABLE_STATUS.replace(F_DIALOGUE_ENHANCEMENT, isEnabled);
+
+                querySettingDialogueEnhancement(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                consoleLog("Notify settings of dialogue enhancement, gain: " +
+                        (isEnabled ? MOCK_DIALOGUE_ENHANCEMENT_GAIN : 0));
+                break;
+            }
+            case UI_MAGNIFIER_KEY:
+            case KeyEvent.KEYCODE_TV_ZOOM_MODE: {
+                isEnabled = Boolean.FALSE.equals(MOCK_ENABLE_STATUS.get(F_UI_MAGNIFIER));
+                MOCK_ENABLE_STATUS.replace(F_UI_MAGNIFIER, isEnabled);
+
+                // notification for feature settings
+                querySettingsUiMagnifier(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                consoleLog("Notify settings of UI magnification, isEnabled: " + isEnabled);
+                break;
+            }
+            case HIGH_CONTRAST_UI_KEY: {
+                isEnabled = Boolean.FALSE.equals(MOCK_ENABLE_STATUS.get(F_HIGH_CONTRAST_UI));
+                MOCK_ENABLE_STATUS.replace(F_HIGH_CONTRAST_UI, isEnabled);
+
+                // notification for feature settings
+                querySettingsHighContrastUI(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                consoleLog("Notify settings of high contrast UI, isEnabled: " + isEnabled);
+                break;
+            }
+            case SCREEN_READER_KEY: {
+                isEnabled = Boolean.FALSE.equals(MOCK_ENABLE_STATUS.get(F_SCREEN_READER));
+                MOCK_ENABLE_STATUS.replace(F_SCREEN_READER, isEnabled);
+
+                // notification for feature settings
+                querySettingsScreenReader(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                consoleLog("Notify settings of screen reader, isEnabled: " + isEnabled);
+                break;
+            }
+            case RESPONSE_TO_USER_ACTION_KEY: {
+                isEnabled = Boolean.FALSE.equals(MOCK_ENABLE_STATUS.get(F_RESPONSE_TO_A_USER_ACTION));
+                MOCK_ENABLE_STATUS.replace(F_RESPONSE_TO_A_USER_ACTION, isEnabled);
+
+                // notification for feature settings
+                querySettingsResponseToUserAction(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                consoleLog("Notify settings of response to user action, isEnabled: " + isEnabled);
+                break;
+            }
+            case AUDIO_DESCRIPTION_KEY:
+            case KeyEvent.KEYCODE_TV_AUDIO_DESCRIPTION: {
+                isEnabled = Boolean.FALSE.equals(MOCK_ENABLE_STATUS.get(F_AUDIO_DESCRIPTION));
+                MOCK_ENABLE_STATUS.replace(F_AUDIO_DESCRIPTION, isEnabled);
+
+                // notification for feature settings
+                querySettingsAudioDescription(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                consoleLog("Notify settings of audio description, isEnabled: " + isEnabled);
+                break;
+            }
+            case IN_VISION_SIGNING_KEY: {
+                isEnabled = Boolean.FALSE.equals(MOCK_ENABLE_STATUS.get(F_IN_VISION_SIGN_LANGUAGE));
+                MOCK_ENABLE_STATUS.replace(F_IN_VISION_SIGN_LANGUAGE, isEnabled);
+
+                // notification for feature settings
+                mSession.onQueryInVisionSigning(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                consoleLog("Notify settings of in-vision signing, isEnabled: " + isEnabled);
+                break;
+            }
+            default:
+                return false;
+        }
+        return true;
     }
 
     private static byte[] getAssetBytes(Context context, String asset) {
