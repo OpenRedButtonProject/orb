@@ -22,6 +22,10 @@
 #include "application_manager_native.h"
 #include "network_services_native.h"
 
+#if ORB_HBBTV_VERSION >= 204
+#include "json_rpc_native.h"
+#endif
+
 extern "C"
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *)
 {
@@ -32,6 +36,11 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *)
     JniUtils::Init(vm, JNI_VERSION_1_6);
     InitialiseApplicationManagerNative();
     InitialiseNetworkServicesNative();
+    
+#if ORB_HBBTV_VERSION >= 204 
+    InitialiseJsonRpcNative();
+#endif
+
     return JNI_VERSION_1_6;
 }
 

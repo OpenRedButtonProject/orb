@@ -193,14 +193,20 @@ bool AptEptLpt::isInDefaultState()
 
     m_earliest.getTimeStamp(contentTime, wallclockTime);
     if (contentTime != 0 && wallclockTime != "-inf")
+    {
         return false;
+    }
 
     m_latest.getTimeStamp(contentTime, wallclockTime);
     if (contentTime != 0 && wallclockTime != "+inf")
+    {
         return false;
+    }
 
     if (m_actual.value().isNull())
+    {
         return false;
+    }
 
     return true;
 }

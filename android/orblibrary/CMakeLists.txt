@@ -8,12 +8,15 @@ if (CMAKE_CURRENT_BINARY_DIR MATCHES "debug")
    add_definitions(-DANDROID_DEBUG)
 endif()
 
+add_definitions(-DORB_HBBTV_VERSION=${ORB_HBBTV_VERSION})
+
 include_directories(
    build/prebuilts/libxml2/include
    build/prebuilts/libwebsockets/include
    src/main/symlink.network_services
    src/main/symlink.network_services/media_synchroniser
    src/main/symlink.network_services/app2app
+   src/main/symlink.network_services/json_rpc
    src/main/symlink.application_manager
 )
 
@@ -49,25 +52,39 @@ target_link_libraries(
    org.orbtv.orblibrary.applicationmanager
 )
 
-add_library(
-   org.orbtv.orblibrary.networkservices STATIC
-   src/main/symlink.network_services/app2app/app2app_local_service.cpp
-   src/main/symlink.network_services/app2app/app2app_remote_service.cpp
-   src/main/symlink.network_services/media_synchroniser/media_synchroniser.cpp
-   src/main/symlink.network_services/media_synchroniser/Correlation.cpp
-   src/main/symlink.network_services/media_synchroniser/CorrelatedClock.cpp
-   src/main/symlink.network_services/media_synchroniser/ClockBase.cpp
-   src/main/symlink.network_services/media_synchroniser/SysClock.cpp
-   src/main/symlink.network_services/media_synchroniser/ClockUtilities.cpp
-   src/main/symlink.network_services/service_manager.cpp
-   src/main/symlink.network_services/UdpSocketService.cpp
-   src/main/symlink.network_services/websocket_service.cpp
-   src/main/symlink.network_services/media_synchroniser/WallClockService.cpp
-   src/main/symlink.network_services/media_synchroniser/Nullable.h
-   src/main/symlink.network_services/media_synchroniser/ContentIdentificationService.cpp
-   src/main/symlink.network_services/media_synchroniser/CSSUtilities.cpp
-   src/main/symlink.network_services/media_synchroniser/TimelineSyncService.cpp
+set(
+    NETWORK_SERVICES_SOURCE_FILES
+    "src/main/symlink.network_services/app2app/app2app_local_service.cpp"
+    "src/main/symlink.network_services/app2app/app2app_remote_service.cpp"
+    "src/main/symlink.network_services/media_synchroniser/media_synchroniser.cpp"
+    "src/main/symlink.network_services/media_synchroniser/Correlation.cpp"
+    "src/main/symlink.network_services/media_synchroniser/CorrelatedClock.cpp"
+    "src/main/symlink.network_services/media_synchroniser/ClockBase.cpp"
+    "src/main/symlink.network_services/media_synchroniser/SysClock.cpp"
+    "src/main/symlink.network_services/media_synchroniser/ClockUtilities.cpp"
+    "src/main/symlink.network_services/service_manager.cpp"
+    "src/main/symlink.network_services/UdpSocketService.cpp"
+    "src/main/symlink.network_services/websocket_service.cpp"
+    "src/main/symlink.network_services/media_synchroniser/WallClockService.cpp"
+    "src/main/symlink.network_services/media_synchroniser/Nullable.h"
+    "src/main/symlink.network_services/media_synchroniser/ContentIdentificationService.cpp"
+    "src/main/symlink.network_services/media_synchroniser/CSSUtilities.cpp"
+    "src/main/symlink.network_services/media_synchroniser/TimelineSyncService.cpp"
 )
+
+if(DEFINED ORB_HBBTV_VERSION AND ORB_HBBTV_VERSION GREATER_EQUAL 204)
+    list(
+        APPEND NETWORK_SERVICES_SOURCE_FILES
+        "src/main/symlink.network_services/json_rpc/JsonRpcService.h"
+        "src/main/symlink.network_services/json_rpc/JsonRpcService.cpp"
+    )
+endif()
+
+add_library(
+    org.orbtv.orblibrary.networkservices STATIC
+    ${NETWORK_SERVICES_SOURCE_FILES}
+)
+
 target_link_libraries(
    org.orbtv.orblibrary.networkservices
    openssl::ssl
@@ -76,14 +93,26 @@ target_link_libraries(
    libwebsockets
 )
 
-add_library(
-   org.orbtv.orblibrary.native SHARED
-   # sources...
-   src/main/cpp/jni_utils.cpp
-   src/main/cpp/application_manager_native.cpp
-   src/main/cpp/network_services_native.cpp
-   src/main/cpp/native.cpp
+set(
+    NATIVE_SOURCE_FILES
+    "src/main/cpp/jni_utils.cpp"
+    "src/main/cpp/application_manager_native.cpp"
+    "src/main/cpp/network_services_native.cpp"
+    "src/main/cpp/native.cpp"
 )
+
+if(DEFINED ORB_HBBTV_VERSION AND ORB_HBBTV_VERSION GREATER_EQUAL 204)
+    list(
+        APPEND NATIVE_SOURCE_FILES
+        "src/main/cpp/json_rpc_native.cpp"
+    )
+endif()
+
+add_library(
+    org.orbtv.orblibrary.native SHARED
+    ${NATIVE_SOURCE_FILES}
+)
+
 target_link_libraries(
    org.orbtv.orblibrary.native
    # libraries...

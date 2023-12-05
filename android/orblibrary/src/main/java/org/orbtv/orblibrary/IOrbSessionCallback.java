@@ -18,7 +18,9 @@ package org.orbtv.orblibrary;
 
 import org.orbtv.orbpolyfill.BridgeTypes;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public interface IOrbSessionCallback {
     enum ApplicationStatus {
@@ -29,8 +31,97 @@ public interface IOrbSessionCallback {
         VISIBLE,
 
         /* The application is running but not currently visible to the user. */
-        INVISIBLE
+        INVISIBLE,
+    }
+    
+    int INTENT_MEDIA_PAUSE = 0;
+    int INTENT_MEDIA_PLAY = 1;
+    int INTENT_MEDIA_FAST_FORWARD = 2;
+    int INTENT_MEDIA_FAST_REVERSE = 3;
+    int INTENT_MEDIA_STOP = 4;
+    int INTENT_MEDIA_SEEK_CONTENT = 5;
+    int INTENT_MEDIA_SEEK_RELATIVE = 6;
+    int INTENT_MEDIA_SEEK_LIVE = 7;
+    int INTENT_MEDIA_SEEK_WALLCLOCK = 8;
+    int INTENT_SEARCH = 9;
+    int INTENT_DISPLAY = 10;
+    int INTENT_PLAYBACK = 11;
+    int ACT_REQUEST_MEDIA_DESCRIPTION = 18;
+    int ACT_REQUEST_TEXT_INPUT = 19;
+    int ACT_PRESS_BUTTON_NUMB_ZERO = 20;
+    int ACT_PRESS_BUTTON_NUMB_ONE = 21;
+    int ACT_PRESS_BUTTON_NUMB_TWO = 22;
+    int ACT_PRESS_BUTTON_NUMB_THREE = 23;
+    int ACT_PRESS_BUTTON_NUMB_FOUR = 24;
+    int ACT_PRESS_BUTTON_NUMB_FIVE = 25;
+    int ACT_PRESS_BUTTON_NUMB_SIX = 26;
+    int ACT_PRESS_BUTTON_NUMB_SEVEN = 27;
+    int ACT_PRESS_BUTTON_NUMB_EIGHT = 28;
+    int ACT_PRESS_BUTTON_NUMB_NINE = 29;
+    int ACT_PRESS_BUTTON_RED = 30;
+    int ACT_PRESS_BUTTON_GREEN = 31;
+    int ACT_PRESS_BUTTON_YELLOW = 32;
+    int ACT_PRESS_BUTTON_BLUE = 33;
+    int ACT_PRESS_BUTTON_UP = 34;
+    int ACT_PRESS_BUTTON_DOWN = 35;
+    int ACT_PRESS_BUTTON_LEFT = 36;
+    int ACT_PRESS_BUTTON_RIGHT = 37;
+    int ACT_PRESS_BUTTON_ENTER = 38;
+    int ACT_PRESS_BUTTON_BACK = 39;
+    int LOG_MESSAGE = 99;
+    int LOG_ERROR_NONE_ACTION = 100;
+    int LOG_ERROR_MULTI_ACTIONS = 101;
+    int LOG_ERROR_INTENT_SEND = 102;
+    Map<Integer, String> ACT_BUTTON_NAMES = new HashMap<Integer, String>() {
+        {
+            put(ACT_PRESS_BUTTON_NUMB_ZERO, "0");
+            put(ACT_PRESS_BUTTON_NUMB_ONE, "1");
+            put(ACT_PRESS_BUTTON_NUMB_TWO, "2");
+            put(ACT_PRESS_BUTTON_NUMB_THREE, "3");
+            put(ACT_PRESS_BUTTON_NUMB_FOUR, "4");
+            put(ACT_PRESS_BUTTON_NUMB_FIVE, "5");
+            put(ACT_PRESS_BUTTON_NUMB_SIX, "6");
+            put(ACT_PRESS_BUTTON_NUMB_SEVEN, "7");
+            put(ACT_PRESS_BUTTON_NUMB_EIGHT, "8");
+            put(ACT_PRESS_BUTTON_NUMB_NINE, "9");
+            put(ACT_PRESS_BUTTON_RED, "RED");
+            put(ACT_PRESS_BUTTON_GREEN, "GREEN");
+            put(ACT_PRESS_BUTTON_YELLOW, "YELLOW");
+            put(ACT_PRESS_BUTTON_BLUE, "BLUE");
+            put(ACT_PRESS_BUTTON_UP, "UP");
+            put(ACT_PRESS_BUTTON_DOWN, "DOWN");
+            put(ACT_PRESS_BUTTON_LEFT, "LEFT");
+            put(ACT_PRESS_BUTTON_RIGHT, "RIGHT");
+            put(ACT_PRESS_BUTTON_ENTER, "ENTER");
+            put(ACT_PRESS_BUTTON_BACK, "BACK");
+        }
     };
+    
+    /**
+     * The level of support a TV OS has for a particular Accessibility Feature.
+     *
+     * TODO Change names to THIS_STYLE.
+     */
+    enum SupportType {
+        notSupported,
+        tvosSettingOnly,
+        tvosOnly,
+        tvosAndHbbTV,
+        supportedNoSetting
+    }
+
+    /**
+     * The result of an Application to request that a TV OS suppresses its support for an
+     * Accessibility Feature.
+     *
+     * TODO Change names to THIS_STYLE.
+     */
+    enum SuppressType {
+        none,
+        suppressing,
+        notSuppressing,
+        featureNotSupported
+    }
 
     /**
      * This method is called once the session is ready to be called by the client and present HbbTV
@@ -67,7 +158,7 @@ public interface IOrbSessionCallback {
      * If the terminal supports UHD, get a list that describes the highest quality video format the
      * terminal supports, as defined by HBBTV 10.2.4.7 for the video_display_format element;
      * otherwise get an empty list.
-     *
+     * <p>
      * Note: If the terminal changes its display format based on the content being played, multiple
      * elements may be included in the list when multiple frame rate families are usable or the
      * highest resolution does not support each highest quality parameter.
@@ -182,25 +273,25 @@ public interface IOrbSessionCallback {
 
     /**
      * Override the default component selection of the terminal for the specified type.
-     *
+     * <p>
      * If id is empty, no component shall be selected for presentation (presentation is explicitly
      * disabled). Otherwise, the specified component shall be selected for presentation.
-     *
+     * <p>
      * If playback has already started, the presented component shall be updated.
-     *
+     * <p>
      * Default component selection shall be restored (revert back to the control of the terminal)
      * when: (1) the application terminates, (2) the channel is changed, (3) presentation has not
      * been explicitly disabled and the user selects another track in the terminal UI, or (4) the
      * restoreComponentSelection method is called.
      *
      * @param type Type of component selection to override (COMPONENT_TYPE_* code).
-     * @param id A platform-defined component id or an empty string to disable presentation.
+     * @param id   A platform-defined component id or an empty string to disable presentation.
      */
     void overrideComponentSelection(int type, String id);
 
     /**
      * Restore the default component selection of the terminal for the specified type.
-     *
+     * <p>
      * If playback has already started, the presented component shall be updated.
      *
      * @param type Type of component selection override to clear (COMPONENT_TYPE_* code).
@@ -250,25 +341,24 @@ public interface IOrbSessionCallback {
     /**
      * Tune to specified channel. The implementation relies on the 'idType' parameter to
      * determine the valid fields that describe the channel. Possible idTypes are:
-     *    ID_IPTV_SDS/ID_IPTV_URI - where 'ipBroadcastID' and 'sourceId' fields are valid
-     *    other ID_.. values - where 'onid', 'tsid' and 'sid' fields are valid
-     *    ID_DVB_SI_DIRECT - is supposed to be handled by setChannelByDsd()
+     * ID_IPTV_SDS/ID_IPTV_URI - where 'ipBroadcastID' and 'sourceId' fields are valid
+     * other ID_.. values - where 'onid', 'tsid' and 'sid' fields are valid
+     * ID_DVB_SI_DIRECT - is supposed to be handled by setChannelByDsd()
      *
-     * @param idType The type of channel
-     * @param onid The original network ID for the required channel.
-     * @param tsid The transport stream ID for the required channel.
-     * @param sid The service ID for the required channel.
-     * @param sourceID The ATSC source_ID of the channel.
-     * @param ipBroadcastID The DVB textual service identifier of the IP broadcast service.
-     * @param trickplay Ignore unless PVR functionality is supported (does not affect return)
+     * @param idType                     The type of channel
+     * @param onid                       The original network ID for the required channel.
+     * @param tsid                       The transport stream ID for the required channel.
+     * @param sid                        The service ID for the required channel.
+     * @param sourceID                   The ATSC source_ID of the channel.
+     * @param ipBroadcastID              The DVB textual service identifier of the IP broadcast service.
+     * @param trickplay                  Ignore unless PVR functionality is supported (does not affect return)
      * @param contentAccessDescriptorURL May be required by DRM-protected IPTV broadcasts
-     * @param quiet Channel change operation
-     *              0 - normal tune
-     *              1 - normal tune and no UI displayed
-     *              2 - quiet tune (user does not know)
-     *
+     * @param quiet                      Channel change operation
+     *                                   0 - normal tune
+     *                                   1 - normal tune and no UI displayed
+     *                                   2 - quiet tune (user does not know)
      * @return negative value (e.g. BridgeTypes.CHANNEL_STATUS_CONNECTING) on success, or
-     *         zero/positive value (see BridgeTypes.CHANNEL_STATUS_.. error values) on failure
+     * zero/positive value (see BridgeTypes.CHANNEL_STATUS_.. error values) on failure
      */
     int setChannelByTriplet(int idType, int onid, int tsid, int sid, int sourceID,
                             String ipBroadcastID, boolean trickplay,
@@ -277,15 +367,14 @@ public interface IOrbSessionCallback {
     /**
      * Tune to specified channel using DSD.
      *
-     * @param dsd DSD for the required channel.
-     * @param sid SID for the required channel.
-     * @param trickplay Ignore unless PVR functionality is supported (does not affect return)
+     * @param dsd                        DSD for the required channel.
+     * @param sid                        SID for the required channel.
+     * @param trickplay                  Ignore unless PVR functionality is supported (does not affect return)
      * @param contentAccessDescriptorURL May be required by DRM-protected IPTV broadcasts
-     * @param quiet Channel change operation
-     *              0 - normal tune
-     *              1 - normal tune and no UI displayed
-     *              2 - quiet tune (user does not know)
-     *
+     * @param quiet                      Channel change operation
+     *                                   0 - normal tune
+     *                                   1 - normal tune and no UI displayed
+     *                                   2 - quiet tune (user does not know)
      * @return negative value (e.g. BridgeTypes.CHANNEL_STATUS_CONNECTING) on success, or
      * zero/positive value (see BridgeTypes.CHANNEL_STATUS_.. error values) on failure
      */
@@ -321,14 +410,13 @@ public interface IOrbSessionCallback {
      * Get a private audio component in the selected channel.
      *
      * @param componentTag The component_tag of the component.
-     *
      * @return The private component with the specified component_tag in the PMT of the currently
-     *    selected broadcast channel; or null if unavailable or the component is not private (i.e.
-     *    the stream type is audio, video or subtitle).
-     *
-     *    Mandatory properties: id, pid and encrypted. The id property shall be usable with the
-     *    overrideComponentSelection method to select the component as an audio track. Other
-     *    Component properties are not required.
+     * selected broadcast channel; or null if unavailable or the component is not private (i.e.
+     * the stream type is audio, video or subtitle).
+     * <p>
+     * Mandatory properties: id, pid and encrypted. The id property shall be usable with the
+     * overrideComponentSelection method to select the component as an audio track. Other
+     * Component properties are not required.
      */
     BridgeTypes.Component getPrivateAudioComponent(String componentTag);
 
@@ -336,14 +424,13 @@ public interface IOrbSessionCallback {
      * Get a private video component in the selected channel.
      *
      * @param componentTag The component_tag of the component.
-     *
      * @return The private component with the specified component_tag in the PMT of the currently
-     *    selected broadcast channel; or null if unavailable or the component is not private (i.e.
-     *    the stream type is audio, video or subtitle).
-     *
-     *    Mandatory properties: id, pid and encrypted. The id property shall be usable with the
-     *    overrideComponentSelection method to select the component as an video track. Other
-     *    Component properties are not required.
+     * selected broadcast channel; or null if unavailable or the component is not private (i.e.
+     * the stream type is audio, video or subtitle).
+     * <p>
+     * Mandatory properties: id, pid and encrypted. The id property shall be usable with the
+     * overrideComponentSelection method to select the component as an video track. Other
+     * Component properties are not required.
      */
     BridgeTypes.Component getPrivateVideoComponent(String componentTag);
 
@@ -353,10 +440,10 @@ public interface IOrbSessionCallback {
      * Retrieves raw SI descriptor data with the defined descriptor tag id, and optionally the
      * extended descriptor tag id, for an event on a service.
      *
-     * @param ccid          CCID for the required channel
-     * @param eventId       Event ID for the required programme
-     * @param tagId         Descriptor tag ID of data to be returned
-     * @param extendedTagId Optional extended descriptor tag ID of data to be returned, or -1
+     * @param ccid                 CCID for the required channel
+     * @param eventId              Event ID for the required programme
+     * @param tagId                Descriptor tag ID of data to be returned
+     * @param extendedTagId        Optional extended descriptor tag ID of data to be returned, or -1
      * @param privateDataSpecifier Optional private data specifier of data to be returned, or 0
      * @return The buffer containing the data. If there are multiple descriptors with the same
      * tag id then they will all be returned.
@@ -378,12 +465,14 @@ public interface IOrbSessionCallback {
     /**
      * Returns the current age set for parental control. 0 will be returned if parental control is
      * disabled or no age is set.
+     *
      * @return age in the range 4-18, or 0
      */
     int getParentalControlAge();
 
     /**
      * Returns the region set for parental control.
+     *
      * @return country using the 3-character code as specified in ISO 3166
      */
     String getParentalControlRegion();
@@ -391,16 +480,16 @@ public interface IOrbSessionCallback {
     /**
      * Called when the application at origin requests access to the distinctive identifier. The
      * client application should display a dialog for the user to allow or deny this and:
-     *
+     * <p>
      * 1. TvBrowser.onAccessToDistinctiveIdentifierDecided should be called with the user choice.
      * 2. TvBrowserSessionCallback.getDistinctiveIdentifier should honour the user choice.
-     *
+     * <p>
      * The client application should allow the user to reset access from a settings menu. This shall
      * result in a new distinctive identifier being generated for an origin next time access is
      * allowed.
-     *
+     * <p>
      * The helper method TvBrowser.generateDistinctiveIdentifier may be used.
-     *
+     * <p>
      * Integrators should check 12.1.5 for requirements about distinctive identifiers.
      *
      * @param origin The origin of the application
@@ -411,7 +500,7 @@ public interface IOrbSessionCallback {
     /**
      * The distinctive identifier for origin or a distinctive identifier status string (for statuses
      * see BridgeTypes.DISTINCTIVE_IDENTIFIER_STATUS_*).
-     *
+     * <p>
      * Integrators should check 12.1.5 for requirements about distinctive identifiers.
      *
      * @param origin The origin of the requesting application
@@ -431,6 +520,7 @@ public interface IOrbSessionCallback {
 
     /**
      * TODO(library)
+     *
      * @param q
      * @param offset
      * @param count
@@ -441,6 +531,7 @@ public interface IOrbSessionCallback {
 
     /**
      * TODO(library)
+     *
      * @param queryId
      * @return
      */
@@ -473,7 +564,7 @@ public interface IOrbSessionCallback {
      * Start TEMI timeline monitoring.
      *
      * @param componentTag The component tag of the temi timeline to monitor.
-     * @param timelineId The timeline id of the temi timeline to monitor.
+     * @param timelineId   The timeline id of the temi timeline to monitor.
      * @return The associated filter id upon success, -1 otherwise
      */
     int startTEMITimelineMonitoring(int componentTag, int timelineId);
@@ -518,10 +609,11 @@ public interface IOrbSessionCallback {
      * Get the list of supported DRM System IDs currently available. Once called,
      * the caller can track the availability changes by listening to
      * onDRMSystemStatusChange events. DRM System ID can enter the following states:
-     *    - 0 READY, fully initialised and ready
-     *    - 1 UNKNOWN, no longer available
-     *    - 2 INITIALISING, initialising and not ready to communicate
-     *    - 3 ERROR, in error state
+     * - 0 READY, fully initialised and ready
+     * - 1 UNKNOWN, no longer available
+     * - 2 INITIALISING, initialising and not ready to communicate
+     * - 3 ERROR, in error state
+     *
      * @return List of supported DRM System IDs currently available.
      */
     List<BridgeTypes.DRMSystemStatus> getSupportedDRMSystemIDs();
@@ -530,9 +622,9 @@ public interface IOrbSessionCallback {
      * Checks the availability of a valid license for playing a protected content item.
      *
      * @param DRMPrivateData DRM proprietary private data
-     * @param DRMSystemID ID of the DRM System
+     * @param DRMSystemID    ID of the DRM System
      * @return true if there is a valid license available that may allow playing the
-    content
+     * content
      */
     boolean canPlayContent(String DRMPrivateData, String DRMSystemID);
 
@@ -540,21 +632,21 @@ public interface IOrbSessionCallback {
      * Checks the availability of a valid license for recording a protected content item.
      *
      * @param DRMPrivateData DRM proprietary private data
-     * @param DRMSystemID ID of the DRM System
+     * @param DRMSystemID    ID of the DRM System
      * @return true if there is a valid license available locally that may allow recording
-    the content
+     * the content
      */
     boolean canRecordContent(String DRMPrivateData, String DRMSystemID);
 
     /**
      * Send message to the DRM system.
      *
-     * @param msgId unique ID to identify the message, to be passed as the 'msgID'
-     *        argument for onDRMMessageResult
-     * @param msgType message type as defined by the DRM system
-     * @param msg message to be provided to the underlying DRM system
+     * @param msgId       unique ID to identify the message, to be passed as the 'msgID'
+     *                    argument for onDRMMessageResult
+     * @param msgType     message type as defined by the DRM system
+     * @param msg         message to be provided to the underlying DRM system
      * @param drmSystemID ID of the DRM System
-     * @param block Whether the function needs to block until the reply is received
+     * @param block       Whether the function needs to block until the reply is received
      */
     String sendDRMMessage(String msgId, String msgType, String msg, String drmSystemID, boolean block);
 
@@ -563,14 +655,14 @@ public interface IOrbSessionCallback {
      *
      * @param DRMSystemID ID of the DRM System
      * @return false if the terminal is unable to set the specified DRM system as requested,
-     *         true otherwise
+     * true otherwise
      */
     boolean setActiveDRM(String DRMSystemID);
 
     /**
      * Request file from DSM-CC
      *
-     * @param url DVB Url of requested file
+     * @param url       DVB Url of requested file
      * @param requestId ID of request (returned to DsmccClient.receiveContent)
      */
     boolean requestDsmccDvbContent(String url, int requestId);
@@ -585,8 +677,8 @@ public interface IOrbSessionCallback {
     /**
      * Subscribe to DSM-CC Stream Event with URL and event name
      *
-     * @param url DVB Url of event object
-     * @param name Name of stream event
+     * @param url      DVB Url of event object
+     * @param name     Name of stream event
      * @param listenId ID of subscriber
      */
     boolean subscribeDsmccStreamEventName(String url, String name, int listenId);
@@ -594,10 +686,10 @@ public interface IOrbSessionCallback {
     /**
      * Subscribe to DSM-CC Stream Event with component tag and event ID
      *
-     * @param name Name of stream event
+     * @param name         Name of stream event
      * @param componentTag Component tag for stream event
-     * @param eventId Event Id of stream event
-     * @param listenId ID of subscriber
+     * @param eventId      Event Id of stream event
+     * @param listenId     ID of subscriber
      */
     boolean subscribeDsmccStreamEventId(String name, int componentTag, int eventId, int listenId);
 
@@ -612,7 +704,248 @@ public interface IOrbSessionCallback {
      * Publish a test report (debug build only).
      *
      * @param testSuite A unique test suite name.
-     * @param xml The XML test report.
+     * @param xml       The XML test report.
      */
     void publishTestReport(String testSuite, String xml);
+
+    /**
+     * @since 204
+     *
+     * Request a negotiation for methods
+     */
+    default void onRequestNegotiateMethods() {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
+    /**
+     * @since 204
+     *
+     * Request to subscribe/unsubscribe some particular accessibility features
+     *
+     * @param isSubscribe          The request to subscribe/unsubscribe
+     *                             - true: subscribe
+     *                             - false: unsubscribe
+     *                             User preference change of 8 accessibility features:
+     * @param subtitles            Subtitles
+     * @param dialogueEnhancement  Dialogue enhancement
+     * @param uiMagnifier          Magnification UI
+     * @param highContrastUI       High contrast UI
+     * @param screenReader         Screen reader
+     * @param responseToUserAction Response to user action
+     * @param audioDescription     Audio description
+     * @param inVisionSigning      In-vision signing
+     */
+    default void onRequestSubscribe(boolean isSubscribe,
+                            boolean subtitles, boolean dialogueEnhancement,
+                            boolean uiMagnifier, boolean highContrastUI,
+                            boolean screenReader, boolean responseToUserAction,
+                            boolean audioDescription, boolean inVisionSigning) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
+    /**
+     * @since 204
+     *
+     * Request for a overriding dialogue enhancement
+     *
+     * @param connection              The request and response should have the same value
+     * @param id                      The request and response should have the same value
+     * @param dialogueEnhancementGain The requested gain value in dB of the dialogue enhancement
+     */
+    default void onRequestDialogueEnhancementOverride(int connection, String id,
+                                              int dialogueEnhancementGain) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
+    /**
+     * @since 204
+     *
+     * Request for a trigger response to user action
+     *
+     * @param connection The request and response should have the same value
+     * @param id         The request and response should have the same value
+     * @param magnitude  The magnitude of response to user action
+     */
+    default void onRequestTriggerResponseToUserAction(int connection, String id, String magnitude) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
+    /**
+     * @since 204
+     *
+     * Request for the support information of a feature
+     *
+     * @param connection The request and response should have the same value
+     * @param id         The request and response should have the same value
+     * @param featureId  The index of a particular accessibility feature
+     */
+    default void onRequestFeatureSupportInfo(int connection, String id, int featureId) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
+    /**
+     * @since 204
+     *
+     * Request to query settings of a particular feature
+     *
+     * @param connection The request and response should have the same value
+     * @param id         The request and response should have the same value
+     * @param featureId  The index of a particular accessibility feature
+     */
+    default void onRequestFeatureSettingsQuery(int connection, String id, int featureId) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
+    /**
+     * @since 204
+     *
+     * Request for suppressing the support of a feature
+     *
+     * @param connection The request and response should have the same value
+     * @param id         The request and response should have the same value
+     * @param featureId  The index of a particular accessibility feature
+     */
+    default void onRequestFeatureSuppress(int connection, String id, int featureId) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
+    /**
+     * @since 204
+     *
+     * Receive a response for a request that expresses user intent.
+     *
+     * @param connection The request and response should have the same value
+     * @param id         The request and response should have the same value
+     * @param method     The string value that has the same value as the method of the original request
+     */
+    default void onReceiveIntentConfirm(int connection, String id, String method) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
+    /**
+     * @since 204
+     *
+     * Receive a notification of voice-readiness
+     *
+     * @param isReady The boolean value of the status of voice-readiness
+     *                - true: the application is voice-ready
+     *                - false: not voice-ready
+     */
+    default void onNotifyVoiceReady(boolean isReady) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
+    /**
+     * @since 204
+     *
+     * Receive a notification that describes the state of media presentation by the application at the time
+     *
+     * @param state The description of state with respect to media playback
+     */
+    default void onNotifyStateMedia(String state) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
+    /**
+     * @since 204
+     *
+     * Called to send a response message
+     *
+     * @param info The content of the message
+     */
+    default void onRespondMessage(String info) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
+    /**
+     * @since 204
+     *
+     * Called to send an error message
+     *
+     * @param code    The error code
+     * @param message The error message
+     */
+    default void onReceiveError(int code, String message) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
+    /**
+     * @since 204
+     *
+     * Called to send an error message with some data
+     *
+     * @param code    The error code
+     * @param message The error message
+     * @param method  The method same as in the original request
+     * @param data    The error data
+     */
+    default void onReceiveError(int code, String message,
+                        String method, String data) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
+    /**
+     * @since 204
+     *
+     * Request for the description of the current media on applications
+     *
+     * @return true if this event has been handled, and false if not
+     */
+    default boolean onRequestMediaDescription() {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
+    /**
+     * @since 204
+     *
+     * Request to deliver a text input, from voice command, to applications
+     *
+     * @param input The content of the text
+     * @return true if this event has been handled, and false if not
+     */
+    default boolean onRequestTextInput(String input) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
+    /**
+     * Called to send an intent, from a voice command, to applications
+     *
+     * @param action The index number of the intent, from intent.media.pause to intent.playback
+     * @param info   The value uniquely identifying a piece of content:
+     *               - INTENT_MEDIA_SEEK_WALLCLOCK: a wall clock time
+     *               - INTENT_DISPLAY: a URI
+     *               - INTENT_SEARCH: a search term specified by the user.
+     *               - INTENT_PLAYBACK: a URI
+     * @param anchor The value indicates an anchor point of the content, which is either "start" or "end"
+     * @param offset The number value for the time position, a number of seconds
+     * @return true if this event has been handled, and false if not
+     */
+    default boolean onSendIntentByVoiceCommand(Integer action, String info, String anchor, int offset) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
+    /**
+     * @since 204
+     *
+     * Called to send a send a key press event, from a voice command, to the application 
+     *
+     * @param action The index number of the intent, either pressing a button or showing a log
+     */
+    default boolean onSendKeyPressAction(Integer action) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
+    /**
+     * @since 204
+     *
+     * @param ccid
+     * @param trickplay
+     * @param contentAccessDescriptorURL
+     * @param quiet
+     * @return
+     */
+    default int setChannelToCcid(String ccid, boolean trickplay,
+        String contentAccessDescriptorURL, int quiet) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
 }

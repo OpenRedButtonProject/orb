@@ -39,6 +39,8 @@ hbbtv.objects.Channel = (function() {
         ID_ATSC_T: 30,
         ID_IPTV_SDS: 40,
         ID_IPTV_URI: 41,
+        ID_DVB_I: 50,
+        ID_DVB_DASH: 51,
     });
 
     hbbtv.utils.defineGetterProperties(prototype, {
@@ -94,6 +96,14 @@ hbbtv.objects.Channel = (function() {
             const p = privates.get(this);
             return p.channelData.ipBroadcastID;
         },
+        serviceInstances() {
+            const p = privates.get(this);
+            return p.serviceInstances;
+        },
+        parentService() {
+            const p = privates.get(this);
+            return p.channelData.parentService;
+        },
     });
 
     // Initialise an instance of prototype
@@ -101,6 +111,12 @@ hbbtv.objects.Channel = (function() {
         privates.set(this, {});
         const p = privates.get(this);
         p.channelData = channelData; // Hold reference to caller's object
+        if (channelData.serviceInstances) {
+            for (const instance of channelData.serviceInstances) {
+                instance.parentService = this;
+            }
+            p.serviceInstances = hbbtv.objects.createChannelList(channelData.serviceInstances);
+        }
     }
 
     // Private method to get a copy of the channel data

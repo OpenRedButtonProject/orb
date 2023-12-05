@@ -65,6 +65,7 @@ public class MainActivity extends Activity {
                 MEDIA_SYNC_TS_PORT,
                 APP2APP_LOCAL_PORT,
                 APP2APP_REMOTE_PORT,
+                0,
                 MAIN_ACTIVITY_UUID,
                 USER_AGENT,
                 SANS_SERIF_FONT_FAMILY,

@@ -27,6 +27,8 @@ namespace NetworkServices {
 #define SECS_SINCE_VALID_HANGUP 10
 #define RX_BUFFER_SIZE 4096
 
+static int next_connection_id_ = 0;
+
 void WebSocketService::WebSocketConnection::SendMessage(const std::string &text)
 {
     std::vector<uint8_t> data(text.begin(), text.end());
@@ -95,22 +97,22 @@ WebSocketService::WebSocketService(const std::string &protocol_name, int port, b
 bool WebSocketService::Start()
 {
     bool ret = false;
-    mutex_.lock();
+    connections_mutex_.lock();
     if (context_ == nullptr && (context_ = lws_create_context(&info_)) != nullptr)
     {
         stop_ = false;
         pthread_t thread;
         pthread_create(&thread, nullptr, EnterMainLooper, this);
-        mutex_.unlock();
+        connections_mutex_.unlock();
         ret = true;
     }
-    mutex_.unlock();
+    connections_mutex_.unlock();
     return ret;
 }
 
 void WebSocketService::Stop()
 {
-    mutex_.lock();
+    connections_mutex_.lock();
     stop_ = true;
     if (connections_.size() > 0)
     {
@@ -123,7 +125,7 @@ void WebSocketService::Stop()
     {
         lws_cancel_service(context_);
     }
-    mutex_.unlock();
+    connections_mutex_.unlock();
 }
 
 void * WebSocketService::EnterMainLooper(void *instance)
@@ -134,26 +136,26 @@ void * WebSocketService::EnterMainLooper(void *instance)
 
 void WebSocketService::MainLooper()
 {
-    mutex_.lock();
+    connections_mutex_.lock();
     while (!stop_ || connections_.size() > 0)
     {
-        mutex_.unlock();
+        connections_mutex_.unlock();
         if (lws_service(context_, 0) < 0)
         {
-            mutex_.lock();
+            connections_mutex_.lock();
             stop_ = true;
             connections_.clear();
             lws_cancel_service(context_);
             break;
         }
-        mutex_.lock();
+        connections_mutex_.lock();
     }
     if (context_ != nullptr)
     {
         lws_context_destroy(context_);
         context_ = nullptr;
     }
-    mutex_.unlock();
+    connections_mutex_.unlock();
     OnServiceStopped();
 }
 
@@ -173,7 +175,7 @@ int WebSocketService::LwsCallback(struct lws *wsi, enum lws_callback_reasons rea
     void *user, void *in, size_t len)
 {
     int result = 0;
-    mutex_.lock();
+    connections_mutex_.lock();
     switch (reason)
     {
         case LWS_CALLBACK_PROTOCOL_INIT: {
@@ -261,7 +263,7 @@ int WebSocketService::LwsCallback(struct lws *wsi, enum lws_callback_reasons rea
             break;
         }
     }
-    mutex_.unlock();
+    connections_mutex_.unlock();
     return result;
 }
 
@@ -324,5 +326,11 @@ std::string WebSocketService::Header(struct lws *wsi, enum lws_token_indexes hea
         }
     }
     return "";
+}
+
+WebSocketService::WebSocketConnection::WebSocketConnection(struct lws *wsi, const std::string &uri)
+    : wsi_(wsi), uri_(uri), paired_connection_(nullptr)
+{
+    id_ = next_connection_id_++;
 }
 } // namespace NetworkServices

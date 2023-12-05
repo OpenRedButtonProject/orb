@@ -868,6 +868,10 @@ hbbtv.bridge.configuration = (function() {
      * (required where terminals support a playbackRate with a MediaSource object other than "1.0",
      * null to omit).
      * Valid values as defined by HBBTV 10.2.4.7 for html5_media_variable_rate max.
+     * @property {string|null} jsonRpcServerUrl The URL of the JSON RPC WebSocket server
+     * (required where terminals support HbbTV 204, null to omit).
+     * @property {string|null} jsonRpcServerVersion The version of the JSON RPC WebSocket server
+     * (required where terminals support HbbTV 204, null to omit).
      */
 
     /**

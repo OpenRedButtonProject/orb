@@ -39,6 +39,11 @@ public:
             return uri_;
         }
 
+        int Id() const
+        {
+            return id_;
+        }
+
         void SendMessage(const std::string &text);
         void SendFragment(std::vector<uint8_t> &&data, bool is_first, bool is_final, bool
             is_binary);
@@ -53,15 +58,13 @@ protected:
             bool close;
         };
 
-        WebSocketConnection(struct lws *wsi, const std::string &uri)
-            : wsi_(wsi), uri_(uri), paired_connection_(nullptr)
-        {
-        }
+        WebSocketConnection(struct lws *wsi, const std::string &uri);
 
         struct lws *wsi_;
         std::string uri_;
         std::string text_buffer_;
         std::queue<struct FragmentWriteInfo> write_queue_;
+        int id_;
 
         // Disallow copy and assign
         WebSocketConnection(const WebSocketConnection&) = delete;
@@ -80,7 +83,19 @@ protected:
     virtual void OnDisconnected(WebSocketConnection *connection) = 0;
 
 protected:
+    std::recursive_mutex connections_mutex_;
     std::unordered_map<void *, std::unique_ptr<WebSocketConnection> > connections_;
+    WebSocketConnection* GetConnection(int id)
+    {
+        for (auto &connection : connections_)
+        {
+            if (connection.second->id_ == id)
+            {
+                return connection.second.get();
+            }
+        }
+        return nullptr;
+    }
 
 private:
     static void* EnterMainLooper(void *instance);
@@ -92,7 +107,6 @@ private:
     struct lws_protocols Protocol(const char *protocol_name);
     std::string Header(struct lws *wsi, enum lws_token_indexes header);
 
-    std::recursive_mutex mutex_;
     bool stop_;
     std::string protocol_name_;
     lws_retry_bo_t retry_;

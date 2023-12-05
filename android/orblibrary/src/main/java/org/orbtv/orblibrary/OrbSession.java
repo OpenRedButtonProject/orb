@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 
 import org.json.JSONObject;
@@ -16,9 +17,11 @@ class OrbSession implements IOrbSession {
     private static final String TAG = OrbSession.class.getSimpleName();
 
     private final IOrbSessionCallback mOrbSessionCallback;
+    private final int mOrbHbbTVVersion;
     private ApplicationManager mApplicationManager;
     private OrbSessionFactory.Configuration mConfiguration;
     private MediaSynchroniserManager mMediaSynchroniserManager;
+    private JsonRpc mJsonRpc;
     private Bridge mBridge;
     private BrowserView mBrowserView;
     private DsmccClient mDsmccClient;
@@ -34,9 +37,19 @@ class OrbSession implements IOrbSession {
         mOrbSessionCallback = callback;
         mConfiguration = configuration;
         mApplicationManager = new ApplicationManager(mOrbSessionCallback);
+        mOrbHbbTVVersion = mApplicationManager.getOrbHbbTVVersion();
+        Log.d(TAG, "ORB HbbTV Version: " + mOrbHbbTVVersion);
+
         mMediaSynchroniserManager = new MediaSynchroniserManager(configuration);
+
+        if (mOrbHbbTVVersion >= 204) {
+            mJsonRpc = new JsonRpc(configuration.jsonRpcPort, mOrbSessionCallback);
+        } else {
+            mJsonRpc = null;
+        }
+
         mBridge = new Bridge(this, callback, configuration, mApplicationManager,
-                mMediaSynchroniserManager);
+                mMediaSynchroniserManager, mJsonRpc);
         mDsmccClient = new DsmccClient(callback);
         mBrowserView = new BrowserView(context, mBridge, configuration, mDsmccClient);
 
@@ -390,6 +403,16 @@ class OrbSession implements IOrbSession {
         }
         mApplicationManager.processAitSection(aitPid, serviceId, data);
     }
+    
+    /**
+     * For portals (not DVB-I).
+     *
+     * @param xmlAit
+     */
+    @Override
+    public void processXmlAit(String xmlAit) {
+        processXmlAit(xmlAit, false, "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.1");
+    }
 
     /**
      * TODO(comment)
@@ -397,12 +420,12 @@ class OrbSession implements IOrbSession {
      * @param xmlAit
      */
     @Override
-    public void processXmlAit(String xmlAit) {
+    public void processXmlAit(String xmlAit, boolean isDvbi, String scheme) {
         if (xmlAit == null) {
             Log.e(TAG, "XML AIT is null.");
             return;
         }
-        mApplicationManager.processXmlAit(xmlAit);
+        mApplicationManager.processXmlAit(xmlAit, isDvbi, scheme);
     }
 
     /**
@@ -424,6 +447,25 @@ class OrbSession implements IOrbSession {
     @Override
     public boolean launchTeletextApplication() {
         return mApplicationManager.runTeletextApplication();
+    }
+    
+    /**
+     * Called to Tell the browser to dispatch an key press event.
+     *
+     * @param event The KeyEvent, with an action and a KeyCode, to be handled
+     */
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        return mBrowserView.dispatchKeyEvent(event);
+    }
+
+    /**
+     * Called to Tell the browser to dispatch an text input.
+     *
+     * @param text The content of the text input
+     */
+    public void dispatchTextInput(String text) {
+        mBrowserView.dispatchTextInput(text);
     }
 
     /**
@@ -496,6 +538,16 @@ class OrbSession implements IOrbSession {
             List<BridgeTypes.Programme> programmes = mOrbSessionCallback.getProgrammeList(ccid);
             mMediaSynchroniserManager.updateBroadcastContentStatus(onetId, transId, servId, statusCode, permanentError, programmes);
         }
+    }
+
+    /**
+     * Called when the dvbi client has tuned to a specific instance
+     *
+     * @param index     Index of the currently tuned service instance
+     */
+    @Override
+    public void onServiceInstanceChange(int index) {
+        mBridge.dispatchServiceInstanceChangedEvent(index);
     }
 
     /**
@@ -681,6 +733,474 @@ class OrbSession implements IOrbSession {
     public void close() {
         mApplicationManager.close();
         mBridge.releaseResources();
+        if (mOrbHbbTVVersion >= 204) {
+            mJsonRpc.close();
+        }
         //mOrbSessionCallback.finaliseTEMITimelineMonitoring();
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send a response message for a result of overriding dialogue enhancement
+     *
+     * @param connection              The request and response should have the same value
+     * @param id                      The request and response should have the same value
+     * @param dialogueEnhancementGain The applied gain value in dB of the dialogue enhancement
+     */
+    @Override
+    public void onRespondDialogueEnhancementOverride(int connection, String id,
+                                                     int dialogueEnhancementGain) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onRespondDialogueEnhancementOverride(connection, id,
+                dialogueEnhancementGain);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send a response message for a result of trigger response to user action
+     *
+     * @param connection The request and response should have the same value
+     * @param id         The request and response should have the same value
+     * @param actioned   The result of user action mechanism
+     *                   - true: successfully triggered
+     *                   - false: unsuccessfully triggered
+     */
+    @Override
+    public void onRespondTriggerResponseToUserAction(int connection, String id, boolean actioned) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onRespondTriggerResponseToUserAction(connection, id, actioned);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send a response message for the support information of a feature
+     *
+     * @param connection The request and response should have the same value
+     * @param id         The request and response should have the same value
+     * @param feature    The index of a particular accessibility feature
+     * @param value      The result code of the support for the accessibility feature
+     */
+    @Override
+    public void onRespondFeatureSupportInfo(int connection, String id, int feature, String value) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onRespondFeatureSupportInfo(connection, id, feature, value);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send a response message for suppressing the support of a feature
+     *
+     * @param connection The request and response should have the same value
+     * @param id         The request and response should have the same value
+     * @param feature    The index of a particular accessibility feature
+     * @param value      The result code for suppressing
+     */
+    @Override
+    public void onRespondFeatureSuppress(int connection, String id, int feature, String value) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onRespondFeatureSuppress(connection, id, feature, value);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send an error message
+     *
+     * @param connection The request and response should have the same value
+     * @param id         The request and response should have the same value
+     * @param code       The error code
+     * @param message    The error message
+     */
+    @Override
+    public void onRespondError(int connection, String id, int code, String message) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onRespondError(connection, id, code, message);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send an error message with some data
+     *
+     * @param connection The request and response should have the same value
+     * @param id         The request and response should have the same value
+     * @param code       The error code
+     * @param message    The error message
+     * @param data       The error data
+     */
+    public void onRespondError(int connection, String id, int code, String message, String data) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onRespondError(connection, id, code, message, data);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send a message with the user settings of subtitles
+     *
+     * @param connection        The request and response should have the same value
+     * @param id                The request and response should have the same value
+     *                          - Not empty: a message of user settings query
+     *                          - Empty: a message of notification
+     * @param enabled           Enabled subtitles
+     * @param size              The font size
+     * @param fontFamily        The description of the font family
+     * @param textColour        The text colour in RGB24 format
+     * @param textOpacity       The test opacity with the percentage from 0 to 100
+     * @param edgeType          The description of edge type
+     * @param edgeColour        The edge colour in RGB24 format
+     * @param backgroundColour  The background colour in RGB24 format
+     * @param backgroundOpacity The background opacity with the percentage from 0 to 100
+     * @param windowColour      The window colour in RGB24 format
+     * @param windowOpacity     The window opacity with the percentage from 0 to 100
+     * @param language          The description of language in ISO639-2 3-character code
+     */
+    @Override
+    public void onQuerySubtitles(int connection, String id, boolean enabled,
+                                 int size, String fontFamily, String textColour, int textOpacity,
+                                 String edgeType, String edgeColour,
+                                 String backgroundColour, int backgroundOpacity,
+                                 String windowColour, int windowOpacity, String language) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onQuerySubtitles(connection, id, enabled, size, fontFamily, textColour, textOpacity,
+                edgeType, edgeColour, backgroundColour, backgroundOpacity,
+                windowColour, windowOpacity, language);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send a message with the settings of dialogue enhancement
+     *
+     * @param connection     The request and response should have the same value
+     * @param id             The request and response should have the same value
+     *                       - Not empty: a message of user settings query
+     *                       - Empty: a message of notification
+     * @param gainPreference The dialogue enhancement gain preference in dB
+     * @param gain           The currently-active gain value in dB
+     * @param limitMin       The current allowed minimum gain value in dB
+     * @param limitMax       The current allowed maximum gain value in dB
+     */
+    @Override
+    public void onQueryDialogueEnhancement(int connection, String id, int gainPreference, int gain,
+                                           int limitMin, int limitMax) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onQueryDialogueEnhancement(connection, id,
+                gainPreference, gain, limitMin, limitMax);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send a message with the settings of a user Interface Magnification feature
+     *
+     * @param connection The request and response should have the same value
+     * @param id         The request and response should have the same value
+     *                   - Not empty: a message of user settings query
+     *                   - Empty: a message of notification
+     * @param enabled    Enabled a screen magnification UI setting
+     * @param magType    The description of the type of magnification scheme currently set
+     */
+    @Override
+    public void onQueryUIMagnifier(int connection, String id, boolean enabled, String magType) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onQueryUIMagnifier(connection, id, enabled, magType);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send a message with the settings of a high contrast UI feature
+     *
+     * @param connection The request and response should have the same value
+     * @param id         The request and response should have the same value
+     *                   - Not empty: a message of user settings query
+     *                   - Empty: a message of notification
+     * @param enabled    Enabled a high contrast UI
+     * @param hcType     The description of the type of high contrast scheme currently set
+     */
+    @Override
+    public void onQueryHighContrastUI(int connection, String id, boolean enabled, String hcType) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onQueryHighContrastUI(connection, id, enabled, hcType);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send a message with the settings of a screen reader feature
+     *
+     * @param connection The request and response should have the same value
+     * @param id         The request and response should have the same value
+     *                   - Not empty: a message of user settings query
+     *                   - Empty: a message of notification
+     * @param enabled    Enabled a screen reader preference
+     * @param speed      A percentage scaling factor of the default speech speed, 100% considered normal speed
+     * @param voice      The description of the voice
+     * @param language   The description of language in ISO639-2 3-character code
+     */
+    @Override
+    public void onQueryScreenReader(int connection, String id,
+                                    boolean enabled, int speed, String voice, String language) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onQueryScreenReader(connection, id, enabled, speed, voice, language);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send a message with the settings of a "response to a user action" feature
+     *
+     * @param connection The request and response should have the same value
+     * @param id         The request and response should have the same value
+     *                   - Not empty: a message of user settings query
+     *                   - Empty: a message of notification
+     * @param enabled    Enabled a "response to a user action" preference
+     * @param type       The description of the mechanism the terminal uses to feedback to the user that the user action has occurred.
+     */
+    @Override
+    public void onQueryResponseToUserAction(int connection, String id, boolean enabled, String type) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onQueryResponseToUserAction(connection, id, enabled, type);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send a message with the settings of an audio description feature
+     *
+     * @param connection           The request and response should have the same value
+     * @param id                   The request and response should have the same value
+     *                             - Not empty: a message of user settings query
+     *                             - Empty: a message of notification
+     * @param enabled              Enabled audio description
+     * @param gainPreference       The audio description gain preference set by the user in dB.
+     * @param panAzimuthPreference The degree of the azimuth pan preference set by the user
+     */
+    @Override
+    public void onQueryAudioDescription(int connection, String id, boolean enabled,
+                                        int gainPreference, int panAzimuthPreference) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onQueryAudioDescription(connection, id, enabled, gainPreference, panAzimuthPreference);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send a message with the settings of an in-vision signing feature
+     *
+     * @param connection The request and response should have the same value
+     * @param id         The request and response should have the same value
+     *                   - Not empty: a message of user settings query
+     *                   - Empty: a message of notification
+     * @param enabled    Enabled an in-vision signing preference
+     */
+    @Override
+    public void onQueryInVisionSigning(int connection, String id, boolean enabled) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onQueryInVisionSigning(connection, id, enabled);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send an intent for a request to operate the media playback
+     *
+     * @param cmd The index of a basic intent of media playback
+     *            - 0: pause
+     *            - 1: play
+     *            - 2: fast-forward
+     *            - 3: fast-reverse
+     *            - 4: stop
+     */
+    @Override
+    public void onSendIntentMediaBasics(int cmd) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onSendIntentMediaBasics(cmd);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send an intent for a request to seek a time position relative to the start or end of the media content
+     *
+     * @param anchor The value indicates an anchor point of the content
+     *               - "start": the start or end of the content
+     *               - "end": the start or end of the content
+     * @param offset The number value for the time position, a positive or negative number of seconds
+     */
+    @Override
+    public void onSendIntentMediaSeekContent(String anchor, int offset) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onSendIntentMediaSeekContent(anchor, offset);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send an intent for a request to seek a time position relative to the current time of the media content
+     *
+     * @param offset The number value for the current time position, a positive or negative number of seconds
+     */
+    @Override
+    public void onSendIntentMediaSeekRelative(int offset) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onSendIntentMediaSeekRelative(offset);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send an intent for a request to seek a time position relative to the live edge of the media content
+     *
+     * @param offset The number value for the time position at or before the live edge, zero or negative number of seconds
+     */
+    @Override
+    public void onSendIntentMediaSeekLive(int offset) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onSendIntentMediaSeekLive(offset);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send an intent for a request to seek a time position relating to absolute wall clock time
+     *
+     * @param dateTime The value conveys the wall clock time, in internet date-time format
+     */
+    @Override
+    public void onSendIntentMediaSeekWallclock(String dateTime) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onSendIntentMediaSeekWallclock(dateTime);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send an intent to request a search of content available
+     *
+     * @param query The string value is the search term specified by the user.
+     */
+    @Override
+    public void onSendIntentSearch(String query) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onSendIntentSearch(query);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send an intent to request a display (but not playback) of a specific identified piece of content
+     *
+     * @param mediaId The value for a URI uniquely identifying a piece of content
+     */
+    @Override
+    public void onSendIntentDisplay(String mediaId) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onSendIntentDisplay(mediaId);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Called to send an intent to request immediate playback of a specific identified piece of content
+     *
+     * @param mediaId The value for a URI uniquely identifying a piece of content
+     *                === With meanings as seek-content ===
+     * @param anchor  The value indicates an anchor point of the content
+     *                - "start": the start or end of the content
+     *                - "end": the start or end of the content
+     * @param offset  The number value for the time position, a positive or negative number of seconds
+     *                === With meaning as seek-live ===
+     * @param offset  The number value for the time position at or before the live edge, zero or negative number of seconds
+     */
+    @Override
+    public void onSendIntentPlayback(String mediaId, String anchor, int offset) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onSendIntentPlayback(mediaId, anchor, offset);
+    }
+
+    /**
+     * @since 204
+     * 
+     * Request for the Description of the current media playback on the application
+     */
+    @Override
+    public void onRequestMediaDescription() {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onRequestMediaDescription();
     }
 }

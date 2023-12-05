@@ -186,6 +186,13 @@ JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniInitializ
 }
 
 extern "C"
+JNIEXPORT jint JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniGetOrbHbbTVVersion(JNIEnv *env,
+    jobject object)
+{
+    return ORB_HBBTV_VERSION;
+}
+
+extern "C"
 JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniFinalize(JNIEnv *env, jobject
     object)
 {
@@ -267,10 +274,11 @@ JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniProcessAi
 extern "C"
 JNIEXPORT jboolean JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniProcessXmlAit(
     JNIEnv *env, jobject object,
-    jstring j_data)
+    jstring j_data, jboolean is_dvbi, jstring j_scheme)
 {
     std::string data = JniUtils::MakeStdString(env, j_data);
-    return GetManager(env, object)->ProcessXmlAit(data);
+    std::string scheme = JniUtils::MakeStdString(env, j_scheme);
+    return GetManager(env, object)->ProcessXmlAit(data, is_dvbi, scheme);
 }
 
 extern "C"

@@ -3,6 +3,10 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE := liborg.orbtv.orblibrary.networkservices
 
+ifeq ($(ORB_HBBTV_VERSION),)
+    $(error ORB_HBBTV_VERSION is not defined)
+endif
+
 ifeq ($(ORB_VENDOR), true)
     LOCAL_VENDOR_MODULE := true
     LOCAL_SHARED_LIBRARIES := liblog
@@ -22,6 +26,10 @@ endif
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/media_synchroniser \
                     $(LOCAL_PATH)/app2app
+                    
+ifeq ($(ORB_HBBTV_VERSION),204)
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/json_rpc_server
+endif
 
 LOCAL_SRC_FILES := \
    app2app/app2app_local_service.cpp \
@@ -40,14 +48,19 @@ LOCAL_SRC_FILES := \
    media_synchroniser/CSSUtilities.cpp \
    media_synchroniser/TimelineSyncService.cpp
 
+ifeq ($(ORB_HBBTV_VERSION),204)
+LOCAL_SRC_FILES += \
+    json_rpc/JsonRpcService.cpp
+endif
+
 LOCAL_CFLAGS := \
    -Wno-unused-variable \
    -Wno-unused-function \
    -Wno-reorder-ctor \
    -Wno-unused-parameter \
    -Wno-non-virtual-dtor \
-   -Wno-unused-private-field
-   
+   -Wno-unused-private-field \
+   -DORB_HBBTV_VERSION=$(ORB_HBBTV_VERSION)
 
 LOCAL_CPPFLAGS += -fexceptions \
                   -frtti

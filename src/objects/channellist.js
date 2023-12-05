@@ -41,7 +41,8 @@ hbbtv.objects.ChannelList = (function() {
         const p = privates.get(this);
         const channelData = p.channelDataList
             .filter((channel) => {
-                return channel.ccid === channelID;
+                return (channel.ccid && channel.ccid === channelID)
+                    || (channel.ipBroadcastID && channel.ipBroadcastID === channelID);
             })
             .pop();
         return hbbtv.objects.createChannel(channelData);
@@ -60,16 +61,34 @@ hbbtv.objects.ChannelList = (function() {
     Object.defineProperty(prototype, 'findChannel', {
         writable: false,
         value: function(props) {
-            const p = privates.get(this);
-            const channelData = p.channelDataList.find((channel) => {
-                let match = true;
+            function isMatch(channel) {
                 for (let key in props) {
                     if (props[key] != undefined && props[key] !== channel[key]) {
                         return false;
                     }
                 }
                 return true;
-            });
+            }
+            const p = privates.get(this);
+            let channelData = undefined;
+            for (let channel of p.channelDataList) {
+                if (isMatch(channel)) {
+                    channelData = channel;
+                    break;
+                }
+                else if (channel.serviceInstances) {
+                    for (let instance of channel.serviceInstances) {
+                        if (isMatch(instance)) {
+                            instance.parentService = channel;
+                            channelData = instance;
+                            break;
+                        }
+                    }
+                    if (channelData) {
+                        break;
+                    }
+                }
+            };
             if (channelData) {
                 return hbbtv.objects.createChannel(channelData);
             }
@@ -77,11 +96,16 @@ hbbtv.objects.ChannelList = (function() {
         },
     });
 
-    function initialise() {
+    function initialise(data) {
         privates.set(this, {});
         const p = privates.get(this);
-        // Keeps reference to channel data
-        getChannelList(p, false);
+        if (!data) {
+            // Keeps reference to channel data
+            getChannelList(p, false);
+        }
+        else {
+            p.channelDataList = data;
+        }
     }
 
     function getChannelList(p, thrw) {
@@ -124,8 +148,8 @@ hbbtv.objects.ChannelListProxy = {
     },
 };
 
-hbbtv.objects.createChannelList = function() {
+hbbtv.objects.createChannelList = function(data) {
     const channelList = Object.create(hbbtv.objects.ChannelList.prototype);
-    hbbtv.objects.ChannelList.initialise.call(channelList);
+    hbbtv.objects.ChannelList.initialise.call(channelList, data);
     return new Proxy(channelList, hbbtv.objects.ChannelListProxy);
 };

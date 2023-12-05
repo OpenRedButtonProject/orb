@@ -36,16 +36,18 @@ class Bridge extends AbstractBridge {
     private final OrbSessionFactory.Configuration mConfiguration;
     private final App2AppService mApp2AppService;
     private final MediaSynchroniserManager mMediaSyncManager;
+    private final JsonRpc mJsonRpc;
     private int mNextListenerId = 1;
 
     Bridge(OrbSession tvBrowser, IOrbSessionCallback orbLibraryCallback,
            OrbSessionFactory.Configuration configuration, ApplicationManager applicationManager,
-           MediaSynchroniserManager mediaSyncManager) {
+           MediaSynchroniserManager mediaSyncManager, JsonRpc jsonRpc) {
         mTvBrowserSession = tvBrowser;
         mOrbLibraryCallback = orbLibraryCallback;
         mConfiguration = configuration;
         mApplicationManager = applicationManager;
         mMediaSyncManager = mediaSyncManager;
+        mJsonRpc = jsonRpc;
         mApp2AppService = App2AppService.GetInstance();
         if (!mApp2AppService.Start(mConfiguration.app2appLocalPort, mConfiguration.app2appRemotePort)) {
             Log.w(TAG, "Failed to start App2App service.");
@@ -178,15 +180,9 @@ class Bridge extends AbstractBridge {
     @Override
     protected int Broadcast_setChannelToCcid(BridgeToken token, String ccid, boolean trickplay,
                                              String contentAccessDescriptorURL, int quiet) {
-        BridgeTypes.Channel ch = mOrbLibraryCallback.getChannel(ccid);
         // TODO Add 1:1 method to callback
-        return mOrbLibraryCallback.setChannelByTriplet(
-                ch.idType,
-                ch.onid,
-                ch.tsid,
-                ch.sid,
-                ch.sourceId,
-                ch.ipBroadcastId,
+        return mOrbLibraryCallback.setChannelToCcid(
+                ccid,
                 trickplay,
                 contentAccessDescriptorURL,
                 quiet);
@@ -426,7 +422,7 @@ class Bridge extends AbstractBridge {
                                                    int componentTag, int streamEventId) {
         // TODO Split this method into 2
         int id = mNextListenerId++;
-        if (targetURL.startsWith("dvb:")) {
+        if (streamEventId < 0) { // Is it really invalid for the value of a stream event id to be less than 0?
             if (!mOrbLibraryCallback.subscribeDsmccStreamEventName(targetURL, eventName, id)) {
                 return -1;
             }
@@ -718,7 +714,15 @@ class Bridge extends AbstractBridge {
      */
     @Override
     protected BridgeTypes.Capabilities Configuration_getCapabilities(BridgeToken token) {
-        return mOrbLibraryCallback.getCapabilities();
+        BridgeTypes.Capabilities capabilities = mOrbLibraryCallback.getCapabilities();
+        if (mJsonRpc != null) {
+            capabilities.jsonRpcServerUrl = mJsonRpc.getUrl();
+            capabilities.jsonRpcServerVersion = mJsonRpc.getVersion();
+        } else {
+            capabilities.jsonRpcServerUrl = null;
+            capabilities.jsonRpcServerVersion = null;
+        }
+        return capabilities;
     }
 
     /**
@@ -1046,9 +1050,11 @@ class Bridge extends AbstractBridge {
     }
 
     /**
+     *
      * @param token The token associated with this request.
      * @param id
-     * @param timeline
+     * @param timelineSelector
+     * @param isMaster
      *
      * @return
      */

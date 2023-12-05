@@ -119,6 +119,7 @@ public class BridgeTypes {
         public int sid;
         public boolean hidden;
         public int sourceId;
+        public List<Channel> serviceInstances;
 
         // channelType and idType values. See OIPF spec vol 5 DAE, section 7.13.11.1
         public static final int TYPE_TV = 0;
@@ -134,6 +135,8 @@ public class BridgeTypes {
         public static final int ID_DVB_C2 = 14;
         public static final int ID_DVB_S2 = 15;
         public static final int ID_DVB_T2 = 16;
+        public static final int ID_DVB_I = 50;
+        public static final int ID_DVB_DASH = 51;
         public static final int ID_ISDB_C = 20;
         public static final int ID_ISDB_S = 21;
         public static final int ID_ISDB_T = 22;
@@ -166,7 +169,7 @@ public class BridgeTypes {
          */
         public Channel(boolean valid, String ccid, String name, String dsd, int channelType,
                        int idType, int majorChannel, int terminalChannel, int nid, int onid, int tsid, int sid,
-                       boolean hidden, int sourceId, String ipBroadcastId) {
+                       boolean hidden, int sourceId, String ipBroadcastId, List<Channel> serviceInstances) {
             this.valid = valid;
             this.ccid = ccid;
             this.name = name;
@@ -182,6 +185,7 @@ public class BridgeTypes {
             this.hidden = hidden;
             this.sourceId = sourceId;
             this.ipBroadcastId = ipBroadcastId;
+            this.serviceInstances = serviceInstances;
         }
 
         /**
@@ -196,17 +200,30 @@ public class BridgeTypes {
             o.put("channelType", channelType);
             o.put("idType", idType);
             o.put("ccid", ccid);
-            o.put("dsd", dsd);
-            o.put("nid", nid);
+            if (dsd != null && !dsd.isEmpty()) {
+                o.put("dsd", dsd);
+            }
             o.put("onid", onid);
+            if (nid != 0) {
+                o.put("nid", nid);
+            }
             o.put("tsid", tsid);
             o.put("sid", sid);
             o.put("name", name);
             o.put("majorChannel", majorChannel);
-            o.put("terminalChannel", terminalChannel);
+            if (terminalChannel != -1) {
+                o.put("terminalChannel", terminalChannel);
+            }
             o.put("hidden", hidden);
             o.put("sourceID", sourceId);
             o.put("ipBroadcastID", ipBroadcastId);
+            if (serviceInstances != null) {
+                JSONArray instances = new JSONArray();
+                for (int i = 0; i < serviceInstances.size(); ++i) {
+                    instances.put(i, serviceInstances.get(i).toJSONObject());
+                }
+                o.put("serviceInstances", instances);
+            }
             return o;
         }
     }
@@ -847,6 +864,8 @@ public class BridgeTypes {
         public String audioOutputFormat; // Optional
         public String html5MediaVariableRateMin; // Optional
         public String html5MediaVariableRateMax; // Optional
+        public String jsonRpcServerUrl; // Auto populated by ORB bridge
+        public String jsonRpcServerVersion; // Auto populated by ORB bridge
 
         /**
          * Create a capabilities type that describes the current capabilities of the terminal.
@@ -950,6 +969,12 @@ public class BridgeTypes {
             }
             if (html5MediaVariableRateMax != null) {
                 o.put("html5MediaVariableRateMax", html5MediaVariableRateMax);
+            }
+            if (jsonRpcServerUrl != null) {
+                o.put("jsonRpcServerUrl", jsonRpcServerUrl);
+            }
+            if (jsonRpcServerVersion != null) {
+                o.put("jsonRpcServerVersion", jsonRpcServerVersion);
             }
             return o;
         }

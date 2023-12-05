@@ -150,6 +150,16 @@ public abstract class AbstractBridge {
         mSessionCallback.dispatchEvent("ChannelStatusChanged", properties);
     }
 
+    public void dispatchServiceInstanceChangedEvent(int index) {
+        JSONObject properties = new JSONObject();
+        try {
+            properties.put("serviceInstanceIndex", index);
+        } catch (JSONException ignored) {
+        }
+
+        mSessionCallback.dispatchEvent("ServiceInstanceChanged", properties);
+    }
+
     /**
      * Called when the present/following programme changes on the selected broadcast channel.
      */

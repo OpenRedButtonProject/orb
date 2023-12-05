@@ -39,8 +39,12 @@
 #define AIT_NUM_RECEIVED_SECTION_MASK_BYTES (256 / 8)
 
 #define HBBTV_VERSION_MAJOR 1
-#define HBBTV_VERSION_MINOR 6
+#define HBBTV_VERSION_MINOR 7
 #define HBBTV_VERSION_MICRO 1
+
+#define LINKED_APP_SCHEME_1_1 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.1"
+#define LINKED_APP_SCHEME_1_2 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.2"
+#define LINKED_APP_SCHEME_2 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:2"
 
 class Ait
 {
@@ -157,6 +161,7 @@ public:
         uint8_t numApps;
         std::vector<S_AIT_APP_DESC> appArray;
         bool complete;
+        std::string scheme;
     } S_AIT_TABLE;
 
     /**
@@ -180,6 +185,8 @@ public:
      * @return true if the Get() value was changed (i.e. a table was completed or the service changed)
      */
     bool ProcessSection(const uint8_t *data, uint32_t nbytes);
+
+    void ApplyAitTable(std::unique_ptr<Ait::S_AIT_TABLE> &aitTable);
 
     /**
      *

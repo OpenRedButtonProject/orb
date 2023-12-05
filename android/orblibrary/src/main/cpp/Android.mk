@@ -5,6 +5,10 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE := liborg.orbtv.orblibrary.native
 
+ifeq ($(ORB_HBBTV_VERSION),)
+    $(error ORB_HBBTV_VERSION is not defined)
+endif
+
 ifeq ($(ORB_VENDOR), true)
     LOCAL_VENDOR_MODULE := true
     
@@ -37,12 +41,17 @@ LOCAL_SRC_FILES := \
    application_manager_native.cpp \
    network_services_native.cpp \
    native.cpp
-
+   
 LOCAL_C_INCLUDES := \
    $(LOCAL_PATH)/../symlink.application_manager/ \
    $(LOCAL_PATH)/../symlink.network_services/ \
    $(LOCAL_PATH)/../symlink.network_services/media_synchroniser/ \
    $(LOCAL_PATH)/../symlink.network_services/app2app/
+   
+ifeq ($(ORB_HBBTV_VERSION),204)
+LOCAL_SRC_FILES += json_rpc_native.cpp
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/../symlink.network_services/json_rpc/
+endif
 
 LOCAL_STATIC_LIBRARIES += libxml2
 LOCAL_STATIC_LIBRARIES += libwebsockets
@@ -54,8 +63,8 @@ LOCAL_CFLAGS := -Wno-unused-parameter \
    -Wno-unused-function \
    -Wno-reorder-ctor \
    -Wno-non-virtual-dtor \
-   -Wno-unused-private-field
-   
-LOCAL_CFLAGS += -DBUILD_INFO='"$(LOCAL_MODULE) build $(shell date +"%Y-%m-%d %H:%M:%S")"'
+   -Wno-unused-private-field \
+   -DORB_HBBTV_VERSION=$(ORB_HBBTV_VERSION) \
+   -DBUILD_INFO='"$(LOCAL_MODULE) build $(shell date +"%Y-%m-%d %H:%M:%S")"'
 
 include $(BUILD_SHARED_LIBRARY)

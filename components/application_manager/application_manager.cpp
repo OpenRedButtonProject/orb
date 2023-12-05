@@ -168,7 +168,7 @@ bool ApplicationManager::CreateApplication(uint16_t callingAppId, const std::str
             if (!contents.empty())
             {
                 LOG(LOG_INFO, "Locator resource is XML AIT");
-                result = ProcessXmlAit(contents);
+                result = ProcessXmlAit(contents, false);
             }
             else
             {
@@ -263,7 +263,7 @@ uint16_t ApplicationManager::SetKeySetMask(uint16_t appId, uint16_t keySetMask)
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_app.id == appId)
     {
-        if (!m_app.isActivated)
+        if (!m_app.isActivated && m_ait.Get()->scheme != LINKED_APP_SCHEME_1_2 && m_ait.Get()->scheme != LINKED_APP_SCHEME_2)
         {
             if ((keySetMask & KEY_SET_VCR) != 0)
             {
@@ -395,7 +395,7 @@ void ApplicationManager::ProcessAitSection(uint16_t aitPid, uint16_t serviceId,
  * @param xmlAit The XML AIT contents.
  * @return true if the application can be created, otherwise false
  */
-bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit)
+bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &isDvbi, const std::string &scheme)
 {
     const Ait::S_AIT_APP_DESC *app_description;
     bool result = false;
@@ -409,29 +409,47 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit)
         return false;
     }
 
-    m_xmlAit = std::move(XmlParser::ParseAit(xmlAit.c_str(), xmlAit.length()));
-    if (nullptr == m_xmlAit || m_xmlAit->numApps == 0)
+    std::unique_ptr<Ait::S_AIT_TABLE> aitTable = std::move(XmlParser::ParseAit(xmlAit.c_str(), xmlAit.length()));
+    if (nullptr == aitTable || aitTable->numApps == 0)
     {
         // No AIT or apps parsed, early out
         return false;
     }
+    aitTable->scheme = scheme;
+    Ait::PrintInfo(aitTable.get());
+    if (isDvbi) {
+        m_ait.Clear();
+        m_currentServiceAitPid = UINT16_MAX;
+        m_ait.ApplyAitTable(aitTable);
 
-    Ait::PrintInfo(m_xmlAit.get());
-    app_description = GetAutoStartApp(m_xmlAit.get());
-
-    if (app_description)
-    {
-        auto new_app = App::CreateAppFromAitDesc(app_description, m_currentService,
-            m_isNetworkAvailable, "", false, false);
-        result = RunApp(new_app);
-        if (!result)
+        if (!m_currentServiceReceivedFirstAit)
         {
-            LOG(LOG_ERROR, "Could not find app (org_id=%d, app_id=%d)",
-                app_description->orgId,
-                app_description->appId);
+            m_aitTimeout.stop();
+            m_currentServiceReceivedFirstAit = true;
+            OnSelectedServiceAitReceived();
+        }
+        else
+        {
+            OnSelectedServiceAitUpdated();
+        }
+        result = true;
+    }
+    else {
+        app_description = GetAutoStartApp(aitTable.get());
+
+        if (app_description)
+        {
+            auto new_app = App::CreateAppFromAitDesc(app_description, m_currentService,
+                                                     m_isNetworkAvailable, "", isDvbi, false);
+            result = RunApp(new_app);
+            if (!result)
+            {
+                LOG(LOG_ERROR, "Could not find app (org_id=%d, app_id=%d)",
+                    app_description->orgId,
+                    app_description->appId);
+            }
         }
     }
-
 
     return result;
 }

@@ -146,6 +146,7 @@ class BrowserView extends WebView {
         int androidKeyCode = event.getKeyCode();
         int keyCode = mSessionCallback.getTvBrowserKeyCode(androidKeyCode);
         if (!mSessionCallback.inApplicationKeySet(mAppId, keyCode)) {
+            Log.d(TAG, "Key press event {" + androidKeyCode + "} is not supported in app");
             return false;
         }
         int action = event.getAction();
@@ -196,6 +197,10 @@ class BrowserView extends WebView {
 
     public void dispatchEvent(String type, JSONObject properties) {
         mContext.getMainExecutor().execute(() -> dispatchJavaScriptBridgeEvent(type, properties));
+    }
+
+    public void dispatchTextInput(String text) {
+        dispatchJavaScriptTextInput(text);
     }
 
     private void setHiddenFlag(int flag) {
@@ -252,6 +257,15 @@ class BrowserView extends WebView {
     private void dispatchJavaScriptKeyEvent(String type, int keyCode) {
         evaluateJavascript("document.activeElement.dispatchEvent(new KeyboardEvent('" + type
                 + "', " + "{'keyCode': " + keyCode + ", 'bubbles': true}))", null);
+    }
+
+    private void dispatchJavaScriptTextInput(String text) {
+        String escapedText = JSONObject.quote(text);
+        evaluateJavascript("const tagName = document.activeElement.tagName.toLowerCase();" +
+                "if (tagName === 'input' || tagName === 'textarea')" +
+                "    document.activeElement.value = " + escapedText + ";" +
+                "document.activeElement.dispatchEvent(new Event('input'));" +
+                "document.activeElement.dispatchEvent(new Event('change'));", null);
     }
 
     private static class JavaScriptBridgeInterface {

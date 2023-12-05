@@ -102,6 +102,10 @@ class ApplicationManager {
         mOrbLibraryCallback = orbLibraryCallback;
     }
 
+    int getOrbHbbTVVersion() {
+        return jniGetOrbHbbTVVersion();
+    }
+
     public void setSessionCallback(SessionCallback sessionCallback) {
         synchronized (mLock) {
             mSessionCallback = sessionCallback;
@@ -125,8 +129,8 @@ class ApplicationManager {
         return true;
     }
 
-    public boolean processXmlAit(String str) {
-        boolean result = jniProcessXmlAit(str);
+    public boolean processXmlAit(String str, boolean isDvbi, String scheme) {
+        boolean result = jniProcessXmlAit(str, isDvbi, scheme);
         return result;
     }
 
@@ -203,6 +207,8 @@ class ApplicationManager {
 
     private native void jniInitialize(ApplicationManager applicationManager);
 
+    private native int jniGetOrbHbbTVVersion();
+
     private native void jniFinalize();
 
     private native boolean jniCreateApplication(int callingAppId, String url);
@@ -221,7 +227,7 @@ class ApplicationManager {
 
     private native void jniProcessAitSection(int aitPid, int serviceId, byte[] data);
 
-    private native boolean jniProcessXmlAit(String data);
+    private native boolean jniProcessXmlAit(String data, boolean isDvbi, String scheme);
 
     private native boolean jniIsTeletextApplicationSignalled();
 
@@ -364,4 +370,3 @@ class ApplicationManager {
         return (mOrbLibraryCallback != null) ? mOrbLibraryCallback.getCountryId() : "";
     }
 }
-
