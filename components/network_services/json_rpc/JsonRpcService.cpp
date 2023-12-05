@@ -139,7 +139,7 @@ static int GetAccessibilityFeatureId(const std::string& name);
 
 static std::time_t ConvertISO8601ToSecond(const std::string& input);
 
-static std::string ConvertSecondToISO8601(const long sec);
+static std::string ConvertSecondToISO8601(const int sec);
 
 JsonRpcService::JsonRpcService(
     int port,
@@ -760,38 +760,43 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
     }
     Json::Value start = range["start"];
     Json::Value end = range["end"];
-    long long currentTime = -1;
-    long long startTime = -1;
-    long long endTime = -1;
-    bool isCurrentNum = current.type() == Json::intValue || current.type() == Json::uintValue ||
-        current.type() == Json::realValue;
-    bool isStartNum = start.type() == Json::intValue || start.type() == Json::uintValue ||
-        start.type() == Json::realValue;
-    bool isEndNum = end.type() == Json::intValue || end.type() == Json::uintValue ||
-        end.type() == Json::realValue;
-    if (isCurrentNum && isStartNum && !isEndNum)
+    int biasTime = 0;
+    int systemTime = std::time(nullptr);
+    int currentTime = -1;
+    int startTime = -1;
+    int endTime = -1;
+    bool isCurrentNum = current.type() == Json::intValue || current.type() == Json::realValue;
+    bool isStartNum = start.type() == Json::intValue || start.type() == Json::realValue;
+    bool isEndNum = end.type() == Json::intValue || end.type() == Json::realValue;
+    if (isCurrentNum && isStartNum && isEndNum)
     {
-        int curr = params["currentTime"].asInt();
-        currentTime = std::time(nullptr);
-        int st = start.asInt();
-        int e = end.asInt();
-        startTime = currentTime + (st - curr);
-        endTime = currentTime + (e - curr);
+        double curr = params["currentTime"].asDouble();
+        double st = systemTime + (start.asDouble() - curr);
+        double e = systemTime + (end.asDouble() - curr);
+        if (st < INT_MIN || st > INT_MAX || e < INT_MIN || e > INT_MAX)
+        {
+            LOG(LOG_INFO, "Invalid time and range of media in notification message");
+            return JsonRpcStatus::NOTIFICATION_ERROR;
+        }
+        currentTime = systemTime;
+        startTime = (int) st;
+        endTime = (int) e;
     }
     else if (current.type() == Json::stringValue && current.type() == Json::stringValue &&
              current.type() == Json::stringValue)
     {
         currentTime = ConvertISO8601ToSecond(current.asString());
+        biasTime = currentTime - systemTime;
         startTime = ConvertISO8601ToSecond(start.asString());
         endTime = ConvertISO8601ToSecond(end.asString());
     }
-    if (currentTime == -1 || startTime == -1 || endTime == -1 ||
+    if (systemTime < 0 || currentTime < 0 || startTime < 0 || endTime < 0 ||
         !(currentTime >= startTime && currentTime <= endTime))
     {
         LOG(LOG_INFO, "Invalid time and range of media in notification message");
         return JsonRpcStatus::NOTIFICATION_ERROR;
     }
-    mediaData->currentTime = currentTime;
+    mediaData->biasToSystemTime = biasTime;
     mediaData->startTime = startTime;
     mediaData->endTime = endTime;
 
@@ -1486,28 +1491,28 @@ void JsonRpcService::SendIntentMessage(const std::string& method, Json::Value &p
  */
 void JsonRpcService::AdjustTimeRange(int id, const std::string& method, Json::Value &params)
 {
-    Json::Value current = GetConnectionData(id, ConnectionDataType::CurrentTime);
+    Json::Value bias = GetConnectionData(id, ConnectionDataType::BiasToSystemTime);
     Json::Value start = GetConnectionData(id, ConnectionDataType::StartTime);
     Json::Value end = GetConnectionData(id, ConnectionDataType::EndTime);
-    if (!current.isInt64() || !start.isInt64() || !end.isInt64())
+    if (!bias.isInt() || !start.isInt() || !end.isInt())
     {
         LOG(LOG_INFO, "Warning, connection data lost, parameter has wrong type.");
         return;
     }
-    long currentTime = (long) current.asInt64();
-    long startTime = (long) start.asInt64();
-    long endTime = (long) end.asInt64();
-    if (currentTime == -1 || startTime == -1 || endTime == -1)
+    int biasTime = bias.asInt();
+    int startTime = start.asInt();
+    int endTime = end.asInt();
+    if (startTime == -1 || endTime == -1)
     {
         LOG(LOG_INFO, "Warning, connection data lost, parameter is invalid.");
         return;
     }
-    long setTime;
+    int setTime;
     if (method == MD_INTENT_MEDIA_SEEK_CONTENT || method == MD_INTENT_MEDIA_SEEK_RELATIVE ||
         method == MD_INTENT_MEDIA_SEEK_LIVE || (method == MD_INTENT_PLAYBACK && params.isMember(
             "offset")))
     {
-        long offset = 0, anchorTime = 0;
+        int offset = 0, anchorTime = 0;
         if (params.isMember("anchor") && params["anchor"].asString() == "start")
         {
             anchorTime = startTime;
@@ -1518,10 +1523,7 @@ void JsonRpcService::AdjustTimeRange(int id, const std::string& method, Json::Va
         }
         else
         {
-            anchorTime = currentTime;
-            // TO-DO: real current time
-            // for MD_INTENT_MEDIA_SEEK_RELATIVE, MD_INTENT_MEDIA_SEEK_LIVE & MD_INTENT_PLAYBACK
-            // anchorTime = GetSystemCurrentTime();
+            anchorTime = std::time(nullptr) + biasTime;
         }
         offset = params["offset"].asInt();
         setTime = anchorTime + offset;
@@ -1789,7 +1791,7 @@ void JsonRpcService::SetStateMediaToConnectionData(int connectionId, const
     connectionData.actionSeekRelative = mediaData.actionSeekRelative;
     connectionData.actionSeekLive = mediaData.actionSeekLive;
     connectionData.actionSeekWallclock = mediaData.actionSeekWallclock;
-    connectionData.currentTime = mediaData.currentTime;
+    connectionData.biasToSystemTime = mediaData.biasToSystemTime;
     connectionData.startTime = mediaData.startTime;
     connectionData.endTime = mediaData.endTime;
     connectionData.title = mediaData.title;
@@ -1814,7 +1816,7 @@ void JsonRpcService::SetStateMediaToConnectionData(int connectionId, const
  *   - For VoiceReady, ActionPause, ActionPlay, ActionFastForward, ActionFastReverse, ActionStop,
  *     ActionSeekContent, ActionSeekRelative, ActionSeekLive, and ActionSeekWallclock, the Json::Value
  *     is a boolean value.
- *   - For currentTime, StartTime, EndTime, the value is a long int.
+ *   - For biasToSystemTime, StartTime, EndTime, the value is an int.
  *   - For UnsubscribedMethods, an empty Json::Value is returned (indicating no data).
  */
 Json::Value JsonRpcService::GetConnectionData(int connectionId, ConnectionDataType type)
@@ -1893,17 +1895,16 @@ Json::Value JsonRpcService::GetConnectionData(int connectionId, ConnectionDataTy
             case ConnectionDataType::Synopsis:
                 value = connectionData.synopsis;
                 break;
-            case ConnectionDataType::CurrentTime:
-                // TODO Confirm cast to int is correct
-                value = static_cast<int>(connectionData.currentTime);
+            case ConnectionDataType::BiasToSystemTime:
+                value = static_cast<int>(connectionData.biasToSystemTime);
                 break;
             case ConnectionDataType::StartTime:
-                // TODO Confirm cast to int is correct
                 value = static_cast<int>(connectionData.startTime);
                 break;
             case ConnectionDataType::EndTime:
-                // TODO Confirm cast to int is correct
                 value = static_cast<int>(connectionData.endTime);
+                break;
+            default:
                 break;
         }
     }
@@ -2466,7 +2467,7 @@ std::time_t ConvertISO8601ToSecond(const std::string& input)
  * @param sec time in seconds
  * @return time in ISO8601 format
  */
-std::string ConvertSecondToISO8601(const long sec)
+std::string ConvertSecondToISO8601(const int sec)
 {
     std::time_t input = std::time(nullptr);
     input = sec;
