@@ -129,7 +129,7 @@ hbbtv.objects.AudioTrackList = (function() {
                 if (trackLanguage === p.defaultAudioLanguage ||
                     hbbtv.languageCodes.ISO639_2_to_ISO639_1[trackLanguage] === p.defaultAudioLanguage ||
                     hbbtv.languageCodes.ISO639_2_to_ISO639_1[p.defaultAudioLanguage] === trackLanguage) {
-                        preferredAudioLanguageTrack = this[i];
+                    preferredAudioLanguageTrack = this[i];
                 }
             }
             if (this[i].kind === "alternative" && trackList[i].accessibility === 2) {
