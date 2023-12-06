@@ -257,8 +257,7 @@ hbbtv.objects.AVControl = (function() {
                     // in paused state, and because of that the event listener will not
                     // be triggered, so we call explicitly transitionToState.call(thiz, PLAY_STATE_PAUSED);
                     transitionToState.call(this, PLAY_STATE_PAUSED);
-                }
-                else {
+                } else {
                     priv.onPauseHandler();
                 }
             } else {
@@ -594,8 +593,7 @@ hbbtv.objects.AVControl = (function() {
                             pid: parseInt(videoTrack.id),
                             type: this.COMPONENT_TYPE_VIDEO,
                             encoding: videoTrack.encoding ?
-                                videoTrack.encoding.split('"')[1] :
-                                undefined,
+                                videoTrack.encoding.split('"')[1] : undefined,
                             encrypted: videoTrack.encrypted,
                             aspectRatio: (
                                 videoElement.videoWidth / videoElement.videoHeight
@@ -614,8 +612,8 @@ hbbtv.objects.AVControl = (function() {
                     const mpeg4Audio = parts[1];
                     const objectType = parts[2];
                     if (codecFamily === 'mp4a' && mpeg4Audio === '40') {
-                      const heAacTypes = ['02', '05', '29']; // common HE-AAC object types for MPEG-4
-                      return heAacTypes.includes(objectType);
+                        const heAacTypes = ['02', '05', '29']; // common HE-AAC object types for MPEG-4
+                        return heAacTypes.includes(objectType);
                     }
                 }
                 return false;
@@ -640,7 +638,7 @@ hbbtv.objects.AVControl = (function() {
                         let trackEncoding = audioTrack.encoding ? audioTrack.encoding.split('"')[1] : undefined
                         if (isMPEG4HEAAC(trackEncoding)) {
                             trackEncoding = "HEAAC";
-                        } else if(isEAC3(trackEncoding)) {
+                        } else if (isEAC3(trackEncoding)) {
                             trackEncoding = "E-AC3";
                         }
 
@@ -675,8 +673,7 @@ hbbtv.objects.AVControl = (function() {
                             pid: parseInt(textTrack.id),
                             type: this.COMPONENT_TYPE_SUBTITLE,
                             encoding: textTrack.encoding ?
-                                textTrack.encoding :
-                                'application/ttml+xml',
+                                textTrack.encoding : 'application/ttml+xml',
                             encrypted: false,
                             language: textTrack.language,
                             hearingImpaired: textTrack.kind === 'captions',
@@ -980,8 +977,7 @@ hbbtv.objects.AVControl = (function() {
         if (avsInUse.size <= 0 && bindtoCurrentChannelTimeoutId === -1) {
             hbbtv.objects.VideoBroadcast.prototype.bindToCurrentChannel = __bindToCurrentChannel;
             return __bindToCurrentChannel.apply(this, arguments);
-        }
-        else {
+        } else {
             setTimeout(hbbtv.objects.VideoBroadcast.prototype.bindToCurrentChannel.bind(this, ...Array.from(arguments)), NONIFY_BROADBAND_TIMEOUT);
         }
     }
@@ -1200,8 +1196,7 @@ hbbtv.objects.AVControl = (function() {
             if (startPlaying) {
                 onPlayHandler();
                 startPlaying = false;
-            }
-            else {
+            } else {
                 dispatchEvent.call(thiz, 'PlayPositionChanged', {
                     position: thiz.playPosition,
                 });

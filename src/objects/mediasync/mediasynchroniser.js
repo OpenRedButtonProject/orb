@@ -171,7 +171,7 @@ hbbtv.objects.MediaSynchroniser = (function() {
                         p.moPrototype.load.call(mediaObject);
                         dispatchErrorEvent.call(this, 16, mediaObject); // not in suitable state for sync (permanent)
                     };
-                    mediaObject.removeEventListener('loaded',overridePrototype);
+                    mediaObject.removeEventListener('loaded', overridePrototype);
                     Object.setPrototypeOf(mediaObject, moPrototypeOverride);
                 }
                 p.overridePrototype = overridePrototype;

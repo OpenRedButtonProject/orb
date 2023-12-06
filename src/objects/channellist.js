@@ -41,8 +41,8 @@ hbbtv.objects.ChannelList = (function() {
         const p = privates.get(this);
         const channelData = p.channelDataList
             .filter((channel) => {
-                return (channel.ccid && channel.ccid === channelID)
-                    || (channel.ipBroadcastID && channel.ipBroadcastID === channelID);
+                return (channel.ccid && channel.ccid === channelID) ||
+                    (channel.ipBroadcastID && channel.ipBroadcastID === channelID);
             })
             .pop();
         return hbbtv.objects.createChannel(channelData);
@@ -75,8 +75,7 @@ hbbtv.objects.ChannelList = (function() {
                 if (isMatch(channel)) {
                     channelData = channel;
                     break;
-                }
-                else if (channel.serviceInstances) {
+                } else if (channel.serviceInstances) {
                     for (let instance of channel.serviceInstances) {
                         if (isMatch(instance)) {
                             instance.parentService = channel;
@@ -102,8 +101,7 @@ hbbtv.objects.ChannelList = (function() {
         if (!data) {
             // Keeps reference to channel data
             getChannelList(p, false);
-        }
-        else {
+        } else {
             p.channelDataList = data;
         }
     }

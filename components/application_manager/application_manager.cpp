@@ -263,7 +263,8 @@ uint16_t ApplicationManager::SetKeySetMask(uint16_t appId, uint16_t keySetMask)
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_app.id == appId)
     {
-        if (!m_app.isActivated && m_ait.Get()->scheme != LINKED_APP_SCHEME_1_2 && m_ait.Get()->scheme != LINKED_APP_SCHEME_2)
+        if (!m_app.isActivated && m_ait.Get()->scheme != LINKED_APP_SCHEME_1_2 &&
+            m_ait.Get()->scheme != LINKED_APP_SCHEME_2)
         {
             if ((keySetMask & KEY_SET_VCR) != 0)
             {
@@ -395,7 +396,8 @@ void ApplicationManager::ProcessAitSection(uint16_t aitPid, uint16_t serviceId,
  * @param xmlAit The XML AIT contents.
  * @return true if the application can be created, otherwise false
  */
-bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &isDvbi, const std::string &scheme)
+bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &isDvbi, const
+    std::string &scheme)
 {
     const Ait::S_AIT_APP_DESC *app_description;
     bool result = false;
@@ -409,7 +411,8 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
         return false;
     }
 
-    std::unique_ptr<Ait::S_AIT_TABLE> aitTable = std::move(XmlParser::ParseAit(xmlAit.c_str(), xmlAit.length()));
+    std::unique_ptr<Ait::S_AIT_TABLE> aitTable = std::move(XmlParser::ParseAit(xmlAit.c_str(),
+        xmlAit.length()));
     if (nullptr == aitTable || aitTable->numApps == 0)
     {
         // No AIT or apps parsed, early out
@@ -417,7 +420,8 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
     }
     aitTable->scheme = scheme;
     Ait::PrintInfo(aitTable.get());
-    if (isDvbi) {
+    if (isDvbi)
+    {
         m_ait.Clear();
         m_currentServiceAitPid = UINT16_MAX;
         m_ait.ApplyAitTable(aitTable);
@@ -434,13 +438,14 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
         }
         result = true;
     }
-    else {
+    else
+    {
         app_description = GetAutoStartApp(aitTable.get());
 
         if (app_description)
         {
             auto new_app = App::CreateAppFromAitDesc(app_description, m_currentService,
-                                                     m_isNetworkAvailable, "", isDvbi, false);
+                m_isNetworkAvailable, "", isDvbi, false);
             result = RunApp(new_app);
             if (!result)
             {
@@ -1126,7 +1131,7 @@ uint16_t ApplicationManager::GetKeySet(const uint16_t keyCode)
 
 /**
  * Provide access to the AIT organization id
- * 
+ *
  * @return uint32_t the organization id
  */
 uint32_t ApplicationManager::GetOrganizationId()
