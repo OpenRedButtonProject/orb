@@ -37,8 +37,7 @@ hbbtv.utils = (function() {
 
     function createFinalizationRegistry(callback) {
         return HAS_WEAKREF_SUPPORT ?
-            new FinalizationRegistry(callback) :
-            {
+            new FinalizationRegistry(callback) : {
                 register: () => {},
                 unregister: () => {},
             };
@@ -145,14 +144,13 @@ hbbtv.utils = (function() {
                 thiz.style.margin = 0;
                 thiz.style.position = 'absolute';
             }
-            
+
             /**
              * WPE-2.28 Uses object-fit: contain by default, which results into the video
              * presenting with an offset on the y-axis. We need to override this default style
              * in order for the video to present in the correct y-position.
              */
-            if (hbbtv.native.name === "rdk")
-            {
+            if (hbbtv.native.name === "rdk") {
                 thiz.style.objectFit = "fill";
             }
         }

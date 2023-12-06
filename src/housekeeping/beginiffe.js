@@ -4,5 +4,3 @@
         let hbbtv = {};
 
         const __URL = URL;
-
-        

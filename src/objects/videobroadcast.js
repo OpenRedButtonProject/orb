@@ -1611,8 +1611,8 @@ hbbtv.objects.VideoBroadcast = (function() {
                         if (
                             p.currentChannelData != null &&
                             (event.servId != p.currentChannelData.sid ||
-                            event.onetId != p.currentChannelData.onid ||
-                            event.transId != p.currentChannelData.tsid)
+                                event.onetId != p.currentChannelData.onid ||
+                                event.transId != p.currentChannelData.tsid)
                         ) {
                             try {
                                 p.currentChannelData = hbbtv.objects.createChannel(
