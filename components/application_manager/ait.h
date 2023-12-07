@@ -38,9 +38,18 @@
 
 #define AIT_NUM_RECEIVED_SECTION_MASK_BYTES (256 / 8)
 
-#define HBBTV_VERSION_MAJOR 1
-#define HBBTV_VERSION_MINOR 7
-#define HBBTV_VERSION_MICRO 1
+
+#if ORB_HBBTV_VERSION == 204
+    #define HBBTV_VERSION_MAJOR 1
+    #define HBBTV_VERSION_MINOR 7
+    #define HBBTV_VERSION_MICRO 1
+#elif ORB_HBBTV_VERSION == 203
+    #define HBBTV_VERSION_MAJOR 1
+    #define HBBTV_VERSION_MINOR 6
+    #define HBBTV_VERSION_MICRO 1
+#else
+    #error Unsupported ORB_HBBTV_VERSION
+#endif
 
 #define LINKED_APP_SCHEME_1_1 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.1"
 #define LINKED_APP_SCHEME_1_2 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.2"

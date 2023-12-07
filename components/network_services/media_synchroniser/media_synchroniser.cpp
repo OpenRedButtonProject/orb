@@ -283,8 +283,10 @@ void MediaSynchroniser::updateCssCiiProperties(const std::string &contentId, con
         }
     }
 
-    if (!m_currentCSSId.empty() && m_currentCSSresentationStatus != presentationStatus && m_contentCSSIdStatus != contentIdStatus) {
-       updateAllCIIClients();
+    if (!m_currentCSSId.empty() && m_currentCSSresentationStatus != presentationStatus &&
+        m_contentCSSIdStatus != contentIdStatus)
+    {
+        updateAllCIIClients();
     }
 
     m_currentCSSId = contentId;

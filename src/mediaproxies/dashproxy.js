@@ -163,7 +163,7 @@ hbbtv.objects.DashProxy = (function() {
                         streamType = 'audio';
                         repSwitch = dashMetrics.getCurrentRepresentationSwitch(streamType, true);
                     }
-                    
+
                     var adaptation = dashAdapter.getAdaptationForType(
                         periodIdx,
                         streamType,
@@ -565,7 +565,7 @@ hbbtv.objects.DashProxy = (function() {
         p.periods = e.data.Period_asArray;
         p.mrsUrl = e.data.mrsUrl;
         p.ciAncillaryData = e.data.ciAncillaryData;
-        
+
         // dispatch __orb_timeShiftBufferDepthReceived__ event for seekable property in case of rdk native
         if (hbbtv.native.name === 'rdk') {
             const timeShiftEvt = new Event('__orb_timeShiftBufferDepthReceived__');
@@ -578,10 +578,10 @@ hbbtv.objects.DashProxy = (function() {
                     firstPeriodStart: e.data.Period_asArray[0].start,
                 });
             }
-            
+
             this.dispatchEvent(timeShiftEvt);
         }
-        
+
         const evt = new Event('__orb_startDateUpdated__');
         Object.assign(evt, {
             startDate: Date.parse(e.data.availabilityStartTime),

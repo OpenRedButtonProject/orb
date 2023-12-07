@@ -23,7 +23,7 @@ hbbtv.mediaManager = (function() {
         resolveHostAddress: (hostname) =>
             hbbtv.native.request('Network.resolveHostAddress', {
                 hostname
-            }).result, 
+            }).result,
     };
     window.orbParentalRating = {
         isRatingBlocked: (scheme, region, value) =>
@@ -31,7 +31,7 @@ hbbtv.mediaManager = (function() {
                 "scheme": scheme,
                 "region": region,
                 "value": value
-            }).result, 
+            }).result,
     };
 
     hbbtv.bridge = {
@@ -360,11 +360,11 @@ hbbtv.mediaManager = (function() {
                 start: e.firstPeriodStart,
                 end: media.currentTime,
             });
-        
+
             mediaProxy.callObserverMethod(MEDIA_PROXY_ID, 'setSeekable', [ranges]);
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
         };
-        
+
         const updateBuffered = function(e) {
             const ranges = [];
             for (let i = 0; i < media.buffered.length; ++i) {
@@ -496,8 +496,7 @@ hbbtv.mediaManager = (function() {
                 for (const node of mutation.addedNodes) {
                     if (node.nodeName.toLowerCase() === 'source' && mediaType === undefined) {
                         mediaType = node.type;
-                    }
-                    else if (
+                    } else if (
                         (node.nodeName && node.nodeName.toLowerCase() === 'video') ||
                         node.nodeName.toLowerCase() === 'audio'
                     ) {
