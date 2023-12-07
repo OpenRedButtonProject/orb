@@ -1076,9 +1076,11 @@ void ORBPlatformMockImpl::Dsmcc_UnsubscribeFromStreamEvents(int listenId)
 /**
  * Get the current carouselId signaled from PMT
  *
+ * @param componentTag the componentTag provided via dvburl
+ *
  * @return uint32_t the current carouselId
  */
-uint32_t ORBPlatformMockImpl::Dsmcc_RequestCarouselId()
+uint32_t ORBPlatformMockImpl::Dsmcc_RequestCarouselId(uint32_t componentTag)
 {
     return 1;
 }

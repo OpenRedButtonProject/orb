@@ -564,9 +564,11 @@ public:
     /**
      * Request the carousel id of current service.
      *
+     * @param componentTag the component tag provided via dvburl
+     *
      * @return the carousel id
      */
-    virtual uint32_t Dsmcc_RequestCarouselId() = 0;
+    virtual uint32_t Dsmcc_RequestCarouselId(uint32_t componentTag) = 0;
 
     /******************************************************************************
     ** Manager API

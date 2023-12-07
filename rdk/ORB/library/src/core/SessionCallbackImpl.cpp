@@ -58,12 +58,6 @@ void SessionCallbackImpl::LoadApplication(uint16_t app_id, const char *url)
     size_t found;
     if ((found = urlStr.rfind("dvb://", 0)) == 0)
     {
-        uint8_t carouselId =
-            ORBEngine::GetSharedInstance().GetORBPlatform()->Dsmcc_RequestCarouselId();
-
-        uint32_t orgId = 
-            ORBEngine::GetSharedInstance().GetApplicationManager()->GetOrganizationId();
-
         std::string baseUrl = urlStr;
         std::string path = "";
         found = urlStr.find('/', found + 6);
@@ -73,6 +67,16 @@ void SessionCallbackImpl::LoadApplication(uint16_t app_id, const char *url)
             baseUrl = urlStr.substr(0, found);
         }
 
+        // get component tag from dvburl
+        uint32_t componentTag=0;
+        sscanf(baseUrl.c_str(), "dvb://%*x.%*x.%*x.%x", &componentTag);
+      
+        uint32_t carouselId =
+            ORBEngine::GetSharedInstance().GetORBPlatform()->Dsmcc_RequestCarouselId(componentTag);
+
+        uint32_t orgId = 
+            ORBEngine::GetSharedInstance().GetApplicationManager()->GetOrganizationId();
+        
         std::string carouselUrl = "hbbtv-carousel://" +
             std::to_string(orgId) + ":" +
             std::to_string(carouselId) +
