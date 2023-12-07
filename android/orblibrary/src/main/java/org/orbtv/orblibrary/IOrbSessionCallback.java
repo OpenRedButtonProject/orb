@@ -382,6 +382,16 @@ public interface IOrbSessionCallback {
                         String contentAccessDescriptorURL, int quiet);
 
     /**
+     * @param ccid
+     * @param trickplay
+     * @param contentAccessDescriptorURL
+     * @param quiet
+     * @return
+     */
+    int setChannelToCcid(String ccid, boolean trickplay,
+        String contentAccessDescriptorURL, int quiet);
+
+    /**
      * Get the list of programmes available for a channel.
      *
      * @param ccid CCID for the required channel
@@ -932,20 +942,6 @@ public interface IOrbSessionCallback {
      * @param action The index number of the intent, either pressing a button or showing a log
      */
     default boolean onSendKeyPressAction(Integer action) {
-        throw new UnsupportedOperationException("Unsupported 204 API.");
-    }
-
-    /**
-     * @since 204
-     *
-     * @param ccid
-     * @param trickplay
-     * @param contentAccessDescriptorURL
-     * @param quiet
-     * @return
-     */
-    default int setChannelToCcid(String ccid, boolean trickplay,
-        String contentAccessDescriptorURL, int quiet) {
         throw new UnsupportedOperationException("Unsupported 204 API.");
     }
 }
