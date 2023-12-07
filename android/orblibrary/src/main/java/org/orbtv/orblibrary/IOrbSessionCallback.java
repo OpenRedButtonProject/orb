@@ -380,7 +380,6 @@ public interface IOrbSessionCallback {
      */
     int setChannelByDsd(String dsd, int sid, boolean trickplay,
                         String contentAccessDescriptorURL, int quiet);
-
     /**
      * Get the list of programmes available for a channel.
      *
