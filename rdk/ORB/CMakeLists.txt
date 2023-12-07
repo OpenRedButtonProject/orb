@@ -15,6 +15,14 @@
 #
 cmake_minimum_required(VERSION 2.8)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# provide ORB_HBBTV_VERSION through recipe for 204
+set(ORB_HBBTV_VERSION_VALUE 203)
+if (DEFINED ORB_HBBTV_VERSION)
+   set(ORB_HBBTV_VERSION_VALUE ${ORB_HBBTV_VERSION})
+endif()
+add_definitions(-DORB_HBBTV_VERSION=${ORB_HBBTV_VERSION_VALUE})
+
 add_subdirectory(service/thunder)
 add_subdirectory(library)
 add_subdirectory(platform-mock)
