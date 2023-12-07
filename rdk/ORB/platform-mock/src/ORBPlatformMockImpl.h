@@ -98,7 +98,7 @@ public:
     virtual bool Dsmcc_SubscribeStreamEventId(std::string name, int componentTag, int eventId, int
         listenId) override;
     virtual void Dsmcc_UnsubscribeFromStreamEvents(int listenId) override;
-    virtual uint32_t Dsmcc_RequestCarouselId() override;
+    virtual uint32_t Dsmcc_RequestCarouselId(uint32_t componentTag) override;
 
     // Manager api
     virtual std::string Manager_GetKeyIcon(int keyCode) override;
