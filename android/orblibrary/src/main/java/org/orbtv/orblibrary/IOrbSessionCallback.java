@@ -382,11 +382,15 @@ public interface IOrbSessionCallback {
                         String contentAccessDescriptorURL, int quiet);
 
     /**
-     * @param ccid
-     * @param trickplay
-     * @param contentAccessDescriptorURL
-     * @param quiet
-     * @return
+     * @param ccid The CCID of the channel to set.
+     * @param ccid The CCID of the channel to set.
+     * @param trickplay True if the application has optionally hinted trickplay resources are
+     *    required; or false otherwise. Does not affect the success of this operation.
+     * @param contentAccessDescriptorURL Optionally, additional information for DRM-protected IPTV
+     *    broadcasts; or an empty string otherwise.
+     * @param quiet Type of channel change: 0 for normal; 1 for normal, no UI; 2 for quiet (HbbTV
+     *    A.2.4.3.2).
+     * @return A CHANNEL_STATUS_* code (on success, the code has a value less than 0).
      */
     int setChannelToCcid(String ccid, boolean trickplay,
         String contentAccessDescriptorURL, int quiet);
