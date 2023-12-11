@@ -39,13 +39,13 @@ class OrbSession implements IOrbSession {
         mApplicationManager = new ApplicationManager(mOrbSessionCallback);
         mOrbHbbTVVersion = mApplicationManager.getOrbHbbTVVersion();
         Log.d(TAG, "ORB HbbTV Version: " + mOrbHbbTVVersion);
+
         mMediaSynchroniserManager = new MediaSynchroniserManager(configuration);
         if (mOrbHbbTVVersion >= 204) {
             mJsonRpc = new JsonRpc(configuration.jsonRpcPort, mOrbSessionCallback);
         } else {
             mJsonRpc = null;
         }
-
         mBridge = new Bridge(this, callback, configuration, mApplicationManager,
                 mMediaSynchroniserManager, mJsonRpc);
         mDsmccClient = new DsmccClient(callback);

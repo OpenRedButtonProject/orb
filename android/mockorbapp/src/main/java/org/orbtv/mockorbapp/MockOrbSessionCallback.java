@@ -786,11 +786,6 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         return new BridgeTypes.Channel();
     }
 
-    @Override
-    public int setChannelToCcid(String ccid, boolean trickplay, String contentAccessDescriptorURL, int quiet) {
-        // TODO
-        return 0;
-    }
 
     /**
      * Tune to specified channel. The implementation relies on the 'idType' parameter to
@@ -873,6 +868,31 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         }
 
         return status;
+    }
+
+    /**
+     * @param ccid                       The CCID of the channel to set.
+     * @param trickplay                  True if the application has optionally hinted trickplay resources are
+     *                                   required; or false otherwise. Does not affect the success of this operation.
+     * @param contentAccessDescriptorURL Optionally, additional information for DRM-protected IPTV
+     *                                   broadcasts; or an empty string otherwise.
+     * @param quiet                      Type of channel change: 0 for normal; 1 for normal, no UI; 2 for quiet (HbbTV
+     *                                   A.2.4.3.2).
+     * @return A CHANNEL_STATUS_* code (on success, the code has a value less than 0).
+     */
+    @Override
+    public int setChannelToCcid(String ccid, boolean trickplay, String contentAccessDescriptorURL, int quiet) {
+        BridgeTypes.Channel ch = getChannel(ccid);
+        return setChannelByTriplet(
+                ch.idType,
+                ch.onid,
+                ch.tsid,
+                ch.sid,
+                ch.sourceId,
+                ch.ipBroadcastId,
+                trickplay,
+                contentAccessDescriptorURL,
+                quiet);
     }
 
     /**
