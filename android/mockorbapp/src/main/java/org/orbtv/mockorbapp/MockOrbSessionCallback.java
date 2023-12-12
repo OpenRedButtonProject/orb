@@ -786,11 +786,6 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         return new BridgeTypes.Channel();
     }
 
-    @Override
-    public int setChannelToCcid(String ccid, boolean trickplay, String contentAccessDescriptorURL, int quiet) {
-        // TODO
-        return 0;
-    }
 
     /**
      * Tune to specified channel. The implementation relies on the 'idType' parameter to
