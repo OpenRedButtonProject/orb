@@ -45,6 +45,7 @@ src/mediaproxies/tracklists/texttrack.js \
 src/mediaproxies/tracklists/texttrackcuelist.js \
 src/objects/channel.js \
 src/objects/programme.js \
+src/objects/dashevent.js \
 src/objects/channellist.js \
 src/objects/channelconfig.js \
 src/objects/configuration/oipfconfiguration.js \

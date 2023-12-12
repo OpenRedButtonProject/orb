@@ -122,5 +122,7 @@ public:
      * @return The 3-character country code
      */
     virtual std::string GetParentalControlRegion3() override;
+
+    virtual void DispatchApplicationSchemeUpdatedEvent(uint16_t app_id, const std::string &scheme) override;
 }; // class SessionCallbackImpl
 } // namespace orb

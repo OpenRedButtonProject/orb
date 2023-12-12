@@ -28,7 +28,6 @@
 
 #include "utils.h"
 #include "ait.h"
-#include "app.h"
 
 class App
 {
@@ -45,6 +44,9 @@ public:
         const std::string &urlParams,
         bool isBroadcast,
         bool isTrusted);
+
+    std::string getScheme() const;
+    void setScheme(std::string value);
 
     std::string entryUrl;
     std::string loadedUrl;
@@ -71,6 +73,8 @@ public:
     uint16_t id;
     std::vector<Ait::S_APP_PARENTAL_RATING> parentalRatings;
     uint8_t versionMinor;
+private:
+    std::string m_scheme;
 };
 
 #endif // HBBTV_SERVICE_APP_H

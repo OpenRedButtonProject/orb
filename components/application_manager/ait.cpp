@@ -98,7 +98,6 @@ bool Ait::ProcessSection(const uint8_t *data, uint32_t nbytes)
         if (m_ait != nullptr && m_ait->complete)
         {
             m_aitCompleted = std::make_shared<S_AIT_TABLE>(*m_ait);
-            m_aitCompleted->scheme = LINKED_APP_SCHEME_1_1; // by default all broadcast apps are 1.1 version
             updated = true;
         }
     }
@@ -285,6 +284,7 @@ bool Ait::PrintInfo(const S_AIT_TABLE *parsedAit)
         hAitApp = sTable->appArray[i];
         LOG(LOG_INFO, "\tApplication ID: %d", hAitApp.appId);
         LOG(LOG_INFO, "\tOrganization ID: %d", hAitApp.orgId);
+        LOG(LOG_INFO, "\tClassification scheme: %s", hAitApp.scheme.c_str());
         LOG(LOG_INFO, "\tNumber of transports: %d", hAitApp.numTransports);
         for (int j = 0; j < hAitApp.numTransports; j++)
         {
@@ -362,7 +362,6 @@ bool Ait::PrintInfo(const S_AIT_TABLE *parsedAit)
                 hAitApp.parentalRatings[j].region.c_str());
         }
     }
-    LOG(LOG_INFO, "Classification scheme: %s", sTable->scheme.c_str());
     return true;
 }
 

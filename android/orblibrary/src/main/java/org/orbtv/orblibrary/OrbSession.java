@@ -149,6 +149,11 @@ class OrbSession implements IOrbSession {
                 };
                 handler.post(runnable);
             }
+
+            @Override
+            public void dispatchApplicationSchemeUpdatedEvent(String scheme) {
+                mBridge.dispatchApplicationSchemeUpdatedEvent(scheme);
+            }
         });
 
         mBrowserView.setSessionCallback(new BrowserView.SessionCallback() {
@@ -732,8 +737,8 @@ class OrbSession implements IOrbSession {
      * @param data     Data asssociated with stream event
      */
     @Override
-    public void onDsmccReceiveStreamEvent(int listenId, String name, String data, String text, String status) {
-        mBridge.dispatchStreamEvent(listenId, name, data, text, status);
+    public void onDsmccReceiveStreamEvent(int listenId, String name, String data, String text, String status, BridgeTypes.DASHEvent dashEvent) {
+        mBridge.dispatchStreamEvent(listenId, name, data, text, status, dashEvent);
     }
 
     /**

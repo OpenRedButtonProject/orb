@@ -283,7 +283,7 @@ public interface IOrbSession {
      * @param name     Name of Stream event
      * @param data     Data asssociated with stream event
      */
-    void onDsmccReceiveStreamEvent(int listenId, String name, String data, String text, String status);
+    void onDsmccReceiveStreamEvent(int listenId, String name, String data, String text, String status, BridgeTypes.DASHEvent dashEvent);
 
     /**
      * Called when the dvbi client has tuned to a specific instance

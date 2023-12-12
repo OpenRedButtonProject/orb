@@ -36,7 +36,8 @@
 #define CB_GET_PARENTAL_CONTROL_AGE 8
 #define CB_GET_PARENTAL_CONTROL_REGION 9
 #define CB_GET_PARENTAL_CONTROL_REGION3 10
-#define CB_NUMBER_OF_ITEMS 11
+#define CB_ON_APPLICATION_TYPE_UPDATED 11
+#define CB_NUMBER_OF_ITEMS 12
 
 static jfieldID gJavaManagerPointerField;
 static jmethodID gCb[CB_NUMBER_OF_ITEMS];
@@ -139,6 +140,13 @@ public:
         return region;
     }
 
+    void DispatchApplicationSchemeUpdatedEvent(const std::string &scheme) {
+        JNIEnv *env = JniUtils::GetEnv();
+        jstring j_appType = env->NewStringUTF(scheme.c_str());
+        env->CallVoidMethod(mJavaCbObject, gCb[CB_ON_APPLICATION_TYPE_UPDATED], j_appType);
+        env->DeleteLocalRef(j_appType);
+    }
+
 private:
     jobject mJavaCbObject;
 };
@@ -170,7 +178,9 @@ void InitialiseApplicationManagerNative()
     gCb[CB_GET_PARENTAL_CONTROL_REGION] = env->GetMethodID(managerClass,
         "jniCbonNativeGetParentalControlRegion", "()Ljava/lang/String;");
     gCb[CB_GET_PARENTAL_CONTROL_REGION3] = env->GetMethodID(managerClass,
-        "jniCbonNativeGetParentalControlRegion3", "()Ljava/lang/String;");
+                                                            "jniCbonNativeGetParentalControlRegion3", "()Ljava/lang/String;");
+    gCb[CB_ON_APPLICATION_TYPE_UPDATED] = env->GetMethodID(managerClass,
+                                                            "jniCbonApplicationSchemeUpdated", "(Ljava/lang/String;)V");
 }
 
 extern "C"
@@ -246,6 +256,14 @@ JNIEXPORT jint JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniGetKeySet
     jint calling_app_id)
 {
     return GetManager(env, object)->GetKeySetMask(calling_app_id);
+}
+
+extern "C"
+JNIEXPORT jstring JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniGetApplicationScheme(JNIEnv *env,
+                                                                                     jobject object,
+                                                                                     jint calling_app_id)
+{
+    return env->NewStringUTF(GetManager(env, object)->GetApplicationScheme(calling_app_id).c_str());
 }
 
 extern "C"

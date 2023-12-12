@@ -160,6 +160,7 @@ public:
         uint8_t usageType;
         std::vector<std::string> boundaries;
         std::vector<S_APP_PARENTAL_RATING> parentalRatings;
+        std::string scheme;
     } S_AIT_APP_DESC;
 
     typedef struct
@@ -170,7 +171,6 @@ public:
         uint8_t numApps;
         std::vector<S_AIT_APP_DESC> appArray;
         bool complete;
-        std::string scheme;
     } S_AIT_TABLE;
 
     /**

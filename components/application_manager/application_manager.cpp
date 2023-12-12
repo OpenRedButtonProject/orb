@@ -263,8 +263,8 @@ uint16_t ApplicationManager::SetKeySetMask(uint16_t appId, uint16_t keySetMask)
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_app.id == appId)
     {
-        if (!m_app.isActivated && m_ait.Get()->scheme != LINKED_APP_SCHEME_1_2 &&
-            m_ait.Get()->scheme != LINKED_APP_SCHEME_2)
+        if (!m_app.isActivated && m_app.getScheme() != LINKED_APP_SCHEME_1_2 &&
+            m_app.getScheme()  != LINKED_APP_SCHEME_2)
         {
             if ((keySetMask & KEY_SET_VCR) != 0)
             {
@@ -306,6 +306,16 @@ uint16_t ApplicationManager::GetKeySetMask(uint16_t appId)
         return m_app.keySetMask;
     }
     return 0;
+}
+
+std::string ApplicationManager::GetApplicationScheme(uint16_t appId)
+{
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
+    if (m_app.id == appId)
+    {
+        return m_app.getScheme();
+    }
+    return LINKED_APP_SCHEME_1_1;
 }
 
 /**
@@ -418,7 +428,10 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
         // No AIT or apps parsed, early out
         return false;
     }
-    aitTable->scheme = scheme;
+    for (int index = 0; index != aitTable->numApps; index++)
+    {
+        aitTable->appArray[index].scheme = scheme;
+    }
     Ait::PrintInfo(aitTable.get());
     if (isDvbi)
     {
@@ -744,6 +757,10 @@ void ApplicationManager::OnSelectedServiceAitReceived()
                             "Kill running app (is not signalled in the new AIT with the same transport protocol)");
                         KillRunningApp();
                     }
+                    else
+                    {
+                        m_app.setScheme(signalled->scheme);
+                    }
                 }
             }
             else
@@ -759,6 +776,10 @@ void ApplicationManager::OnSelectedServiceAitReceived()
         if (!m_app.isRunning)
         {
             OnPerformBroadcastAutostart();
+        }
+        else
+        {
+            m_sessionCallback->DispatchApplicationSchemeUpdatedEvent(m_app.getScheme());
         }
     }
 }
@@ -814,11 +835,19 @@ void ApplicationManager::OnSelectedServiceAitUpdated()
             LOG(LOG_INFO, "Kill running app (signalled has control code KILL)");
             KillRunningApp();
         }
+        else
+        {
+            m_app.setScheme(signalled->scheme);
+        }
     }
 
     if (!m_app.isRunning)
     {
         OnPerformBroadcastAutostart();
+    }
+    else
+    {
+        m_sessionCallback->DispatchApplicationSchemeUpdatedEvent(m_app.getScheme());
     }
 }
 

@@ -1167,4 +1167,50 @@ public class BridgeTypes {
         }
         return array;
     }
+
+    public static class DASHEvent implements JSONSerializable {
+        public String Id;
+        public double startTime;
+        public double duration;
+        public String data;
+        public String contentEncoding;
+
+        public DASHEvent(String Id, double startTime, double duration, String data, String contentEncoding) {
+            this.Id = Id;
+            this.startTime = startTime;
+            this.duration = duration;
+            this.data = data;
+            this.contentEncoding = contentEncoding;
+        }
+
+        @Override
+        public JSONObject toJSONObject() throws JSONException {
+            JSONObject o = new JSONObject();
+            if (Id != null) {
+                o.put("Id", Id);
+            }
+            else {
+                o.put("Id", "");
+            }
+            if (data != null) {
+                o.put("data", data);
+            }
+            else {
+                o.put("data", "");
+            }
+            if (contentEncoding != null) {
+                o.put("contentEncoding", contentEncoding);
+            }
+            else {
+                o.put("contentEncoding", "string");
+            }
+            if (startTime >= 0.0) {
+                o.put("startTime", startTime);
+            }
+            if (duration >= 0.0) {
+                o.put("duration", duration);
+            }
+            return o;
+        }
+    }
 }

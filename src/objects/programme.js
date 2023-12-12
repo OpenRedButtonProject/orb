@@ -51,11 +51,7 @@ hbbtv.objects.Programme = (function() {
         },
         longDescription: {
             get: function() {
-                if (privates.get(this).programmeData.longDescription === undefined) {
-                    return privates.get(this).programmeData.description;
-                } else {
-                    return privates.get(this).programmeData.longDescription;
-                }
+                return privates.get(this).programmeData.longDescription;
             },
             set: function(val) {
                 privates.get(this).programmeData.longDescription = val;

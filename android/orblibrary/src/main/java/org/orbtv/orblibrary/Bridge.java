@@ -634,6 +634,10 @@ class Bridge extends AbstractBridge {
         return "";
     }
 
+    protected String Manager_getApplicationScheme(BridgeToken token) {
+        return mApplicationManager.getApplicationScheme(token.getAppId());
+    }
+
     /**
      * Get a list of rating schemes supported by this integration.
      *
@@ -695,14 +699,14 @@ class Bridge extends AbstractBridge {
     protected boolean ParentalControl_isRatingBlocked(BridgeToken token, String scheme, String region,
                                                       int value) {
         // TODO Add 1:1 method to callback
+        int age = mOrbLibraryCallback.getParentalControlAge();
         if (scheme.toLowerCase().equals("dvb-si")) {
             // The value property of the parental rating is equal to
             // the value in DVB-SI rating field + 3 (table A.6 of A.2.28)
             String parentalRegion = mOrbLibraryCallback.getParentalControlRegion().toLowerCase();
-            int age = mOrbLibraryCallback.getParentalControlAge();
             return !parentalRegion.equals(region.toLowerCase()) || age <= value + 3;
         }
-        return false;
+        return age < value;
     }
 
     /**
