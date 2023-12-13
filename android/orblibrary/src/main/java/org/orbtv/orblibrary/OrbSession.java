@@ -1,6 +1,7 @@
 package org.orbtv.orblibrary;
 
 import android.content.Context;
+import android.content.IntentFilter;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -13,9 +14,9 @@ import org.orbtv.orbpolyfill.BridgeTypes;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-class OrbSession implements IOrbSession {
+public class OrbSession implements IOrbSession {
     private static final String TAG = OrbSession.class.getSimpleName();
-
+    private Context mContext;
     private final IOrbSessionCallback mOrbSessionCallback;
     private final int mOrbHbbTVVersion;
     private ApplicationManager mApplicationManager;
@@ -25,6 +26,8 @@ class OrbSession implements IOrbSession {
     private Bridge mBridge;
     private BrowserView mBrowserView;
     private DsmccClient mDsmccClient;
+    private static final int KEY_PRESS_EVENT = -99;
+    private String MOCK_NEW_MEDIA_ID = "urn:broadcaster:programme:1249863457643";
 
     /**
      * TV browser session.
@@ -34,6 +37,7 @@ class OrbSession implements IOrbSession {
      */
     public OrbSession(Context context, final IOrbSessionCallback callback,
                       OrbSessionFactory.Configuration configuration) {
+        mContext = context;
         mOrbSessionCallback = callback;
         mConfiguration = configuration;
         mApplicationManager = new ApplicationManager(mOrbSessionCallback);
@@ -1196,11 +1200,239 @@ class OrbSession implements IOrbSession {
      * Request for the Description of the current media playback on the application
      */
     @Override
-    public void onRequestMediaDescription() {
+    public boolean onRequestMediaDescription() {
         if (mOrbHbbTVVersion < 204) {
             throw new UnsupportedOperationException("Unsupported 204 API.");
         }
 
         mJsonRpc.onRequestMediaDescription();
+        return true;
+    }
+
+    /**
+     * @since 204
+     *
+     * Sends voice commands based on provided actions, messages, anchors, and offsets, where some of the parameters are optional.
+     *
+     * @param action The predefined index number of the intent, from intent.media.pause to intent.playback
+     * @param info   The value uniquely identifying a piece of content:
+     *               - INTENT_MEDIA_SEEK_WALLCLOCK: a wall clock time
+     *               - INTENT_DISPLAY: a URI
+     *               - INTENT_SEARCH: a search term specified by the user.
+     *               - INTENT_PLAYBACK: a URI
+     * @param anchor The value indicates an anchor point of the content...
+     * @param offset The number value for the time position, a number of seconds
+     * @return True if the command is successfully executed; otherwise, handles appropriately.
+     */
+    public boolean sendVoiceCommand(Integer action, String info, String anchor, int offset) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        switch (action) {
+            case INTENT_MEDIA_PAUSE:
+            case INTENT_MEDIA_PLAY:
+            case INTENT_MEDIA_FAST_FORWARD:
+            case INTENT_MEDIA_FAST_REVERSE:
+            case INTENT_MEDIA_STOP:
+            case INTENT_MEDIA_SEEK_CONTENT:
+            case INTENT_MEDIA_SEEK_RELATIVE:
+            case INTENT_MEDIA_SEEK_LIVE:
+            case INTENT_MEDIA_SEEK_WALLCLOCK:
+            case INTENT_SEARCH:
+            case INTENT_DISPLAY:
+            case INTENT_PLAYBACK:
+                return onSendIntentByVoiceCommand(action, info, anchor, offset);
+            case ACT_REQUEST_MEDIA_DESCRIPTION:
+                return onRequestMediaDescription();
+            case ACT_REQUEST_TEXT_INPUT:
+                return onRequestTextInput(info);
+            case LOG_MESSAGE:
+            case LOG_ERROR_NONE_ACTION:
+            case LOG_ERROR_MULTI_ACTIONS:
+            case LOG_ERROR_INTENT_SEND:
+                return true;
+            default:
+                return onSendKeyPressAction(action);
+        }
+    }
+
+
+    /**
+     * @since 204
+     *
+     * Called to send an intent, from a voice command, to applications
+     *
+     * @param action The index number of the intent, from intent.media.pause to intent.playback
+     * @param info   The value uniquely identifying a piece of content:
+     *               - INTENT_MEDIA_SEEK_WALLCLOCK: a wall clock time
+     *               - INTENT_DISPLAY: a URI
+     *               - INTENT_SEARCH: a search term specified by the user.
+     *               - INTENT_PLAYBACK: a URI
+     * @param anchor The value indicates an anchor point of the content, which is either "start" or "end"
+     * @param offset The number value for the time position, a number of seconds
+     * @return true if this event has been handled, and false if not
+     */
+    @Override
+    public boolean onSendIntentByVoiceCommand(Integer action, String info, String anchor,
+                                              int offset) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        String mediaId;
+        switch (action) {
+            case INTENT_MEDIA_PAUSE:
+                onSendIntentMediaBasics(INTENT_MEDIA_PAUSE);
+                return true;
+            case INTENT_MEDIA_PLAY:
+                onSendIntentMediaBasics(INTENT_MEDIA_PLAY);
+                return true;
+            case INTENT_MEDIA_FAST_FORWARD:
+                onSendIntentMediaBasics(INTENT_MEDIA_FAST_FORWARD);
+                return true;
+            case INTENT_MEDIA_FAST_REVERSE:
+                onSendIntentMediaBasics(INTENT_MEDIA_FAST_REVERSE);
+                return true;
+            case INTENT_MEDIA_STOP:
+                onSendIntentMediaBasics(INTENT_MEDIA_STOP);
+                return true;
+            case INTENT_MEDIA_SEEK_CONTENT:
+                if (anchor.equals("start") || anchor.equals("end")) {
+                    onSendIntentMediaSeekContent(anchor, offset);
+                    return true;
+                }
+                break;
+            case INTENT_MEDIA_SEEK_RELATIVE:
+                onSendIntentMediaSeekRelative(offset);
+                return true;
+            case INTENT_MEDIA_SEEK_LIVE:
+                onSendIntentMediaSeekLive(offset);
+                return true;
+            case INTENT_DISPLAY:
+                // TODO - get mediaId by media name
+                mediaId = MOCK_NEW_MEDIA_ID;
+                onSendIntentDisplay(mediaId);
+                return true;
+            case INTENT_MEDIA_SEEK_WALLCLOCK:
+                onSendIntentMediaSeekWallclock(info);
+                return true;
+            case INTENT_SEARCH:
+                onSendIntentSearch(info);
+                return true;
+            case INTENT_PLAYBACK:
+                mediaId = MOCK_NEW_MEDIA_ID;
+                onSendIntentPlayback(mediaId, anchor, offset);
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * @since 204
+     *
+     * Called to send a send a key press event, from a voice command, to the application
+     *
+     * @param action The index number of the intent, either pressing a button or showing a log
+     */
+    @Override
+    public boolean onSendKeyPressAction(Integer action) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        switch (action) {
+            case ACT_PRESS_BUTTON_NUMB_ZERO:
+            case ACT_PRESS_BUTTON_NUMB_ONE:
+            case ACT_PRESS_BUTTON_NUMB_TWO:
+            case ACT_PRESS_BUTTON_NUMB_THREE:
+            case ACT_PRESS_BUTTON_NUMB_FOUR:
+            case ACT_PRESS_BUTTON_NUMB_FIVE:
+            case ACT_PRESS_BUTTON_NUMB_SIX:
+            case ACT_PRESS_BUTTON_NUMB_SEVEN:
+            case ACT_PRESS_BUTTON_NUMB_EIGHT:
+            case ACT_PRESS_BUTTON_NUMB_NINE:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_0 + action - ACT_PRESS_BUTTON_NUMB_ZERO, action);
+            case ACT_PRESS_BUTTON_RED:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_PROG_RED, action);
+            case ACT_PRESS_BUTTON_GREEN:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_PROG_GREEN, action);
+            case ACT_PRESS_BUTTON_YELLOW:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_PROG_YELLOW, action);
+            case ACT_PRESS_BUTTON_BLUE:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_PROG_BLUE, action);
+            case ACT_PRESS_BUTTON_UP:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_DPAD_UP, action);
+            case ACT_PRESS_BUTTON_DOWN:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_DPAD_DOWN, action);
+            case ACT_PRESS_BUTTON_LEFT:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_DPAD_LEFT, action);
+            case ACT_PRESS_BUTTON_RIGHT:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_DPAD_RIGHT, action);
+            case ACT_PRESS_BUTTON_ENTER:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_ENTER, action);
+            case ACT_PRESS_BUTTON_BACK:
+                return dispatchKeyPressEvent(KeyEvent.KEYCODE_DEL, action);
+        }
+        return false;
+    }
+
+    /**
+     * @since 204
+     *
+     * Dispatch a keyUp event and show a message on window log
+     *
+     * @param keyCode The index number of the keyCode
+     * @param action  The index number of actions for pressing a certain button
+     * @return True if the key event is dispatched successfully; otherwise, false
+     */
+    private boolean dispatchKeyPressEvent(int keyCode, int action) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        String buttonName = ACT_BUTTON_NAMES.getOrDefault(action, "invalid");
+        if (buttonName.equals("invalid")) {
+            return false;
+        }
+        KeyEvent event = new KeyEvent(KeyEvent.ACTION_UP, keyCode);
+        return notifyKeyUp(KEY_PRESS_EVENT, event);
+    }
+
+    /**
+     * @since 204
+     *
+     * Request to deliver a text input, from voice command, to applications
+     *
+     * @param input The content of the text
+     * @return true if this event has been handled, and false if not
+     */
+    @Override
+    public boolean onRequestTextInput(String input) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        // Mock function to display the input text
+        dispatchTextInput(input);
+        return true;
+    }
+
+    /**
+     * Notifies the occurrence of a keyUp event, potentially dispatching the event.
+     *
+     * @param keyCode The index number of the keyCode
+     * @param event   The KeyEvent instance representing the key event
+     * @return True if the key event is successfully dispatched; otherwise, false
+     */
+    private boolean notifyKeyUp(int keyCode, KeyEvent event) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        if (keyCode == KEY_PRESS_EVENT) {
+            return dispatchKeyEvent(event);
+        }
+        return false;
     }
 }
