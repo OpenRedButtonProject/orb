@@ -123,6 +123,6 @@ public:
      */
     virtual std::string GetParentalControlRegion3() override;
 
-    virtual void DispatchApplicationSchemeUpdatedEvent(uint16_t app_id, const std::string &scheme) override;
+    virtual void DispatchApplicationSchemeUpdatedEvent(const std::string &scheme) override;
 }; // class SessionCallbackImpl
 } // namespace orb
