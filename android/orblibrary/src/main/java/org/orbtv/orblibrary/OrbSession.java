@@ -610,6 +610,16 @@ class OrbSession implements IOrbSession {
     }
 
     /**
+     * Called when the user changes the audio language
+     *
+     * @param language      The new preferred audio language
+     */
+    @Override
+    public void onPreferredAudioLanguageChanged(String language) {
+        mBridge.dispatchPreferredAudioLanguageChanged(language);
+    }
+
+    /**
      * Called when the user has decided whether the application at origin should be allowed access
      * to a distinctive identifier.
      *
