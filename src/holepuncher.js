@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-hbbtv.holePuncher = (function() {
+ hbbtv.holePuncher = (function() {
     let gRect = {
         x: 0,
         y: 0,
@@ -25,10 +25,11 @@ hbbtv.holePuncher = (function() {
 
     let gObject = null;
     let gObjectInDocument = false;
+    let gFullscreen = false;
 
     const gPunchHoleObserver = new MutationObserver(function(mutations) {
         mutations.forEach(function(mutation) {
-            if (mutation.attributeName === 'style') {
+            if (mutation.attributeName === 'style' || mutation.attributeName === 'class') {
                 matchVideoRectangleToObject(mutation.target);
             }
         });
@@ -37,7 +38,7 @@ hbbtv.holePuncher = (function() {
     function observeObject(object) {
         gPunchHoleObserver.observe(object, {
             attributes: true,
-            attributeFilter: ['style'],
+            attributeFilter: ['style', 'class'],
         });
     }
 
@@ -88,9 +89,18 @@ hbbtv.holePuncher = (function() {
             object.style.width = '1280px';
             object.style.height = '720px';
             setVideoRectangle(0, 0, 1280, 720, false, true);
+            gFullscreen = true;
             return;
         } else {
-            // TODO Restore from full screen
+            // remove the fullscreen style
+            if (gFullscreen === true) {
+                object.style.removeProperty('position');
+                object.style.removeProperty('left');
+                object.style.removeProperty('top');
+                object.style.removeProperty('width');
+                object.style.removeProperty('height');
+                gFullscreen = false;
+            }
         }
 
         if (!(gObjectInDocument || object.offsetWidth || object.offsetHeight)) {
