@@ -526,6 +526,24 @@ hbbtv.objects.MediaElementExtension = (function() {
 
         this.startDate = new Date(NaN);
         this.audioTracks = hbbtv.objects.createAudioTrackList(iframeProxy);
+        hbbtv.bridge.addWeakEventListener('PreferredAudioLanguageChanged', (e) => {
+            const language = e.language;
+            const audiotracks = thiz.audioTracks;
+            let preferredAudioLanguageTrack = null;
+            let trackLanguage = null;
+            for (let i = 0; i < audiotracks.length; ++i) {
+                trackLanguage = audiotracks[i].language;
+                if (trackLanguage === language ||
+                    hbbtv.languageCodes.ISO639_2_to_ISO639_1[trackLanguage] === language ||
+                    hbbtv.languageCodes.ISO639_2_to_ISO639_1[language] === trackLanguage) {
+                    preferredAudioLanguageTrack = audiotracks[i];
+                    if (preferredAudioLanguageTrack.kind === "main") {
+                        preferredAudioLanguageTrack.enabled = true;
+                        return;
+                    }
+                }
+            }
+        });
         this.videoTracks = hbbtv.objects.createVideoTrackList(iframeProxy);
         this.textTracks = hbbtv.objects.createTextTrackList(parent, iframeProxy);
         this.readyState = mediaOwnProperties.readyState.get.call(parent);

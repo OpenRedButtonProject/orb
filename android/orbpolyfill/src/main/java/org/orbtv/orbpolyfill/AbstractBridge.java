@@ -280,6 +280,20 @@ public abstract class AbstractBridge {
     }
 
     /**
+     * Called when the user changes the audio language
+     *
+     * @param language      The new preferred audio language
+     */
+    public void dispatchPreferredAudioLanguageChanged(String language) {
+        JSONObject properties = new JSONObject();
+        try {
+            properties.put("language", language);
+        } catch (JSONException ignored) {
+        }
+        mSessionCallback.dispatchEvent("PreferredAudioLanguageChanged", properties);
+    }
+
+    /**
      * Called when the status of a metadata search changes.
      *
      * @param search The ID from the query string that started the search.

@@ -248,6 +248,13 @@ public interface IOrbSession {
     void onNetworkStatusEvent(boolean connected);
 
     /**
+     * Called when the user changes the audio language
+     *
+     * @param language      The new preferred audio language
+     */
+    void onPreferredAudioLanguageChanged(String language);
+
+    /**
      * Called when the user has decided whether the application at origin should be allowed access to
      * a distinctive identifier.
      *
