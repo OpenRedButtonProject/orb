@@ -101,6 +101,8 @@ public:
         virtual std::string GetParentalControlRegion() = 0;
 
         virtual std::string GetParentalControlRegion3() = 0;
+
+        virtual void DispatchApplicationSchemeUpdatedEvent(const std::string &scheme) = 0;
         /**
          *
          */
@@ -286,6 +288,8 @@ public:
      * @param url The URL of the new page.
      */
     void OnApplicationPageChanged(uint16_t appId, const std::string &url);
+
+    std::string GetApplicationScheme(uint16_t appId);
 
 private:
     /**

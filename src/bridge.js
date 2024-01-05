@@ -757,6 +757,10 @@ hbbtv.bridge.manager = (function() {
         }).result;
     };
 
+    exported.getApplicationScheme = function() {
+        return hbbtv.native.request('Manager.getApplicationScheme').result;
+    }
+
     return exported;
 })();
 

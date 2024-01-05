@@ -1491,7 +1491,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                         text = "";
                         status = "error";
                     }
-                    mSession.onDsmccReceiveStreamEvent(listenId, name, data, text, status);
+                    mSession.onDsmccReceiveStreamEvent(listenId, name, data, text, status, null);
                 }
             }
         }, 2000);

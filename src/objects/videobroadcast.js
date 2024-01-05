@@ -73,8 +73,7 @@ hbbtv.objects.VideoBroadcast = (function() {
 
     const ERROR_TUNER_UNAVAILABLE = 2;
     const ERROR_UNKNOWN_CHANNEL = 5;
-
-    const DASH_STREAM_EVENTS = ["urn:dvb:dash:appsignalling:2016"];
+    const LINKED_APP_SCHEME_1_1 = "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.1";
 
     let gActiveStateOwner = null;
     let gBroadbandAvInUse = false;
@@ -733,16 +732,16 @@ hbbtv.objects.VideoBroadcast = (function() {
                     console.log('Control DVB presentation!');
                     hbbtv.bridge.broadcast.setPresentationSuspended(false);
                     hbbtv.holePuncher.setBroadcastVideoObject(this);
-
+                    const applicationScheme = hbbtv.bridge.manager.getApplicationScheme();
                     let wasPlayStateStopped = false;
-                    if (p.playState === PLAY_STATE_UNREALIZED) {
+                    if (p.playState === PLAY_STATE_UNREALIZED && applicationScheme === LINKED_APP_SCHEME_1_1) {
                         /* DAE vol5 Table 8 state transition #7 */
                         p.playState = PLAY_STATE_PRESENTING;
                     } else {
                         /* PLAY_STATE_STOPPED */
                         /* DAE vol5 Table 8 state transition #17 with HbbTV 2.0.3 modification */
                         p.playState = PLAY_STATE_CONNECTING;
-                        wasPlayStateStopped = true;
+                        wasPlayStateStopped = applicationScheme === LINKED_APP_SCHEME_1_1;
                     }
                     addBridgeEventListeners.call(this);
                     dispatchPlayStateChangeEvent.call(this, p.playState);
@@ -859,6 +858,7 @@ hbbtv.objects.VideoBroadcast = (function() {
         quiet = 0
     ) {
         const p = privates.get(this);
+        const appScheme = hbbtv.bridge.manager.getApplicationScheme();
         let releaseOnError = false;
         // TODO Check state transitions table. Disallow if not connecting or presenting or stopped.
         if (channel === null) {
@@ -970,7 +970,7 @@ hbbtv.objects.VideoBroadcast = (function() {
         /* DAE vol5 Table 8 state transition #1 */
         unregisterAllStreamEventListeners(p);
         p.playState = PLAY_STATE_CONNECTING;
-        p.waitingPlayStateConnectingConfirm = true;
+        p.waitingPlayStateConnectingConfirm = appScheme === LINKED_APP_SCHEME_1_1;
         dispatchPlayStateChangeEvent.call(this, p.playState);
     };
 
@@ -1346,9 +1346,7 @@ hbbtv.objects.VideoBroadcast = (function() {
         /* Extensions to video/broadcast for synchronization: No security restrictions specified */
         const p = privates.get(this);
         if (p.playState == PLAY_STATE_PRESENTING || p.playState == PLAY_STATE_STOPPED) {
-            if (targetURL.startsWith('dvb://') || DASH_STREAM_EVENTS.includes(targetURL)) {
-                registerStreamEventListener(p, targetURL, eventName, listener);
-            } else {
+            if (targetURL.startsWith('dsmcc:')) {
                 let found = false;
                 let componentTag, streamEventId;
                 let request = new XMLHttpRequest();
@@ -1417,6 +1415,9 @@ hbbtv.objects.VideoBroadcast = (function() {
                 });
                 request.open('GET', targetURL);
                 request.send();
+            }
+            else {
+                registerStreamEventListener(p, targetURL, eventName, listener);
             }
         }
     };
@@ -1765,7 +1766,8 @@ hbbtv.objects.VideoBroadcast = (function() {
                     event.name,
                     event.data,
                     event.text,
-                    event.status
+                    event.status,
+                    event.DASHEvent
                 );
             };
 
@@ -1801,6 +1803,19 @@ hbbtv.objects.VideoBroadcast = (function() {
             'TransitionedToBroadcastRelated',
             p.onTransitionedToBroadcastRelated
         );
+
+        if (!p.onApplicationSchemeUpdated) {
+            p.onApplicationSchemeUpdated = (event) => {
+                if (event.scheme !== LINKED_APP_SCHEME_1_1) {
+                    dispatchChannelChangeSucceededEvent.call(this, p.currentChannelData);
+                }
+            }
+
+            hbbtv.bridge.addWeakEventListener(
+                "ApplicationSchemeUpdated",
+                p.onApplicationSchemeUpdated
+            );
+        }
     }
 
     function removeBridgeEventListeners() {
@@ -1850,6 +1865,10 @@ hbbtv.objects.VideoBroadcast = (function() {
         if (p.onDRMRightsError != null) {
             hbbtv.bridge.removeWeakEventListener('DRMRightsError', p.onDRMRightsError);
             p.onDRMRightsError = null;
+        }
+        if (p.onApplicationSchemeUpdated != null) {
+            hbbtv.bridge.removeWeakEventListener('ApplicationSchemeUpdated', p.onApplicationSchemeUpdated);
+            p.onApplicationSchemeUpdated = null;
         }
     }
 
@@ -2108,7 +2127,7 @@ hbbtv.objects.VideoBroadcast = (function() {
         p.eventDispatcher.dispatchEvent(event);
     }
 
-    function dispatchStreamEvent(id, name, data, text, status) {
+    function dispatchStreamEvent(id, name, data, text, status, dashEventData) {
         const p = privates.get(this);
         mandatoryBroadcastRelatedSecurityCheck(p);
         const event = new Event('StreamEvent');
@@ -2117,6 +2136,7 @@ hbbtv.objects.VideoBroadcast = (function() {
             data: data,
             text: text,
             status: status,
+            DASHEvent: (dashEventData ? hbbtv.objects.createDASHEvent(dashEventData) : undefined)
         });
         const listeners = p.streamEventListenerMap.get(id);
         if (listeners) {

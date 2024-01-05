@@ -212,4 +212,7 @@ std::string SessionCallbackImpl::GetParentalControlRegion3()
 {
     return ORBEngine::GetSharedInstance().GetORBPlatform()->ParentalControl_GetRegion3();
 }
+
+void SessionCallbackImpl::DispatchApplicationSchemeUpdatedEvent(const std::string &scheme) { }
+
 } // namespace orb

@@ -336,7 +336,7 @@ public abstract class AbstractBridge {
      * @param text The data associated with the stream event, converted to a UTF-8 string.
      * @param status The status of the stream event.
      */
-    public void dispatchStreamEvent(int id, String name, String data, String text, String status) {
+    public void dispatchStreamEvent(int id, String name, String data, String text, String status, BridgeTypes.DASHEvent dashEvent) {
         JSONObject properties = new JSONObject();
         try {
             properties.put("id", id);
@@ -344,6 +344,9 @@ public abstract class AbstractBridge {
             properties.put("data", data);
             properties.put("text", text);
             properties.put("status", status);
+            if (dashEvent != null) {
+                properties.put("DASHEvent", dashEvent.toJSONObject());
+            }
         } catch (JSONException ignored) {
         }
         mSessionCallback.dispatchEvent("StreamEvent", properties);
@@ -443,6 +446,15 @@ public abstract class AbstractBridge {
         } catch (JSONException ignored) {
         }
         mSessionCallback.dispatchEvent("DRMSystemMessage", properties);
+    }
+
+    public void dispatchApplicationSchemeUpdatedEvent(String scheme) {
+        JSONObject properties = new JSONObject();
+        try {
+            properties.put("scheme", scheme);
+        } catch (JSONException ignored) {
+        }
+        mSessionCallback.dispatchEvent("ApplicationSchemeUpdated", properties);
     }
 
     /**
@@ -864,6 +876,15 @@ public abstract class AbstractBridge {
      * @return A URL of an icon that represents the given key; or null if not available.
      */
     protected abstract String Manager_getKeyIcon(BridgeToken token, int code);
+    
+    /**
+     * Get the currently running application scheme.
+     *
+     * @param token The token associated with this request.
+     *
+     * @return The currently running application scheme.
+     */
+    protected abstract String Manager_getApplicationScheme(BridgeToken token);
 
     /**
      * Get a list of rating schemes supported by this integration.
@@ -1692,6 +1713,12 @@ public abstract class AbstractBridge {
                         token,
                         params.getInt("code")
                 );
+                response.put("result", result);
+                break;
+            }
+
+            case "Manager.getApplicationScheme": {
+                String result = Manager_getApplicationScheme(token);
                 response.put("result", result);
                 break;
             }

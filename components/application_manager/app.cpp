@@ -21,6 +21,9 @@
 #include "app.h"
 #include "log.h"
 
+static std::string getAppSchemeFromUrlParams(const std::string &urlParams);
+static std::string getUrlParamsFromAppScheme(const std::string &scheme);
+
 App App::CreateAppFromUrl(const std::string &url)
 {
     App app;
@@ -42,6 +45,7 @@ App App::CreateAppFromUrl(const std::string &url)
     app.isHidden = false;
 
     app.isRunning = !app.entryUrl.empty();
+    app.setScheme(getAppSchemeFromUrlParams(url));
 
     return app;
 }
@@ -89,5 +93,50 @@ App App::CreateAppFromAitDesc(const Ait::S_AIT_APP_DESC *desc,
         app.names[desc->appName.names[i].langCode] = desc->appName.names[i].name;
     }
 
+    app.setScheme(desc->scheme);
+    if (!desc->scheme.empty())
+    {
+        app.entryUrl = Utils::MergeUrlParams("", app.entryUrl,
+                                             getUrlParamsFromAppScheme(app.getScheme()));
+        app.loadedUrl = app.entryUrl;
+    }
+
     return app;
+}
+
+std::string App::getScheme() const {
+    if (!m_scheme.empty()) {
+        return m_scheme;
+    }
+    return LINKED_APP_SCHEME_1_1;
+}
+
+void App::setScheme(std::string value) {
+    m_scheme = value;
+}
+
+std::string getAppSchemeFromUrlParams(const std::string &urlParams)
+{
+    if (urlParams.find("lloc=service") != std::string::npos)
+    {
+        return LINKED_APP_SCHEME_1_2;
+    }
+    if (urlParams.find("lloc=availability") != std::string::npos)
+    {
+        return LINKED_APP_SCHEME_2;
+    }
+    return LINKED_APP_SCHEME_1_1;
+}
+
+std::string getUrlParamsFromAppScheme(const std::string &scheme)
+{
+    if (scheme == LINKED_APP_SCHEME_1_2)
+    {
+        return "?lloc=service";
+    }
+    if (scheme == LINKED_APP_SCHEME_2)
+    {
+        return "?lloc=availability";
+    }
+    return "";
 }

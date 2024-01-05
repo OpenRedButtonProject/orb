@@ -81,6 +81,8 @@ class ApplicationManager {
          */
         void dispatchTransitionedToBroadcastRelatedEvent();
 
+        void dispatchApplicationSchemeUpdatedEvent(String scheme);
+
         /**
          * Notify that the active key set and optional other keys are changed.
          *
@@ -178,6 +180,10 @@ class ApplicationManager {
         return jniSetKeySetMask(appId, value);
     }
 
+    public String getApplicationScheme(int appId) {
+        return jniGetApplicationScheme(appId);
+    }
+
     public void onNetworkAvailabilityChanged(boolean available) {
         jniOnNetworkAvailabilityChanged(available);
     }
@@ -222,6 +228,8 @@ class ApplicationManager {
     private native int jniSetKeySetMask(int appId, int keySetMask);
 
     private native int jniGetKeySetMask(int appId);
+
+    private native String jniGetApplicationScheme(int appId);
 
     private native boolean jniInKeySet(int appId, int keyCode);
 
@@ -368,5 +376,15 @@ class ApplicationManager {
 
     private String jniCbonNativeGetParentalControlRegion3() {
         return (mOrbLibraryCallback != null) ? mOrbLibraryCallback.getCountryId() : "";
+    }
+
+    private void jniCbonApplicationSchemeUpdated(String scheme) {
+        synchronized (mLock) {
+            if (mSessionCallback != null) {
+                mSessionCallback.dispatchApplicationSchemeUpdatedEvent(scheme);
+            } else {
+                Log.e(TAG, "Presentation listener not set.");
+            }
+        }
     }
 }
