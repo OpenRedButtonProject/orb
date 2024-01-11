@@ -64,6 +64,8 @@ hbbtv.objects.KeySet = (function() {
         get() {
             return false; // Not currently supported.
         },
+        set(ignored) {
+        }
     });
 
     prototype.setValue = function(value, otherKeys) {
