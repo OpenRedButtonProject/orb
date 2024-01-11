@@ -136,8 +136,10 @@ abstract class WebResourceClient {
                 .headers(Headers.of(requestHeaders))
                 .build()).execute();
 
+        boolean isRedirect = (httpResponse.code() >= 301 && httpResponse.code() <= 308);
+
         // Response
-        if (!httpResponse.isSuccessful()) {
+        if (!httpResponse.isSuccessful() && !isRedirect) {
             return null;
         }
         Charset charset = StandardCharsets.UTF_8;
@@ -153,11 +155,13 @@ abstract class WebResourceClient {
             }
         }
 
-        if (HTTP_REDIRECTION_ENABLED) {
-            String location = httpResponse.header("Location");
-            if (location != null) {
-                return new WebResourceResponse("text/html", charset.name(),
-                        new ByteArrayInputStream(mHtmlBuilder.getRedirectPage(charset, Uri.parse(location))));
+        if (isRedirect) {
+            if (HTTP_REDIRECTION_ENABLED) {
+                String location = httpResponse.header("Location");
+                if (location != null) {
+                    return new WebResourceResponse("text/html", charset.name(),
+                            new ByteArrayInputStream(mHtmlBuilder.getRedirectPage(charset, Uri.parse(location))));
+                }
             }
         }
 
