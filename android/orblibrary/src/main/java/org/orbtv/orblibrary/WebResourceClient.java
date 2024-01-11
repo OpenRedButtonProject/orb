@@ -177,7 +177,15 @@ abstract class WebResourceClient {
         }
         WebResourceResponse response = new WebResourceResponse(mimeType, charset.name(), responseStream);
         Map<String, String> responseHeaders = new HashMap<>();
-        httpResponseHeaders.forEach((k, v) -> responseHeaders.put(k, String.join(",", v)));
+
+        httpResponseHeaders.forEach((k, v) -> {
+            String header = String.join(",", v);
+            if (k.equalsIgnoreCase("Content-Security-Policy")) {
+                header = updateCspHeader(header);
+            }
+            responseHeaders.put(k, header);
+        });
+
         response.setResponseHeaders(responseHeaders);
         return response;
     }
@@ -312,6 +320,28 @@ abstract class WebResourceClient {
         WebResourceResponse response = new WebResourceResponse("text/html",
                 charset.toString(), inputStream);
         return response;
+    }
+
+    private static String updateCspHeader(String header) {
+        if (header == null || header.trim().isEmpty()) {
+            return header;
+        }
+        String[] directives = header.split(";\\s*");
+        boolean directiveFound = false;
+        StringBuilder updatedHeader = new StringBuilder();
+        for (String directive : directives) {
+            if (directive.startsWith("frame-src ") || directive.startsWith("default-src ")) {
+                if (!directive.contains(" orb:")) {
+                    directive += " orb:";
+                }
+                directiveFound = true;
+            }
+            updatedHeader.append(directive).append("; ");
+        }
+        if (!directiveFound) {
+            updatedHeader.append("frame-src orb:; ");
+        }
+        return updatedHeader.toString().trim();
     }
 }
 
