@@ -65,6 +65,8 @@ abstract class WebResourceClient {
         protocols.add(Protocol.HTTP_2);
         protocols.add(Protocol.HTTP_1_1);
         mHttpClient = new OkHttpClient.Builder()
+                .followRedirects(false)
+                .followSslRedirects(false)
                 .protocols(protocols)
                 .build();
         mHttpSandboxClient = new OkHttpClient();
