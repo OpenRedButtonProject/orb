@@ -157,6 +157,11 @@ hbbtv.objects.NativeProxy = (function() {
                 for (const key in track) {
                     t[key] = track[key];
                 }
+                // ensure correct form (gstreamer)
+                if (!isNaN(t.id)) 
+                {
+                    t.id = parseInt(track.id).toString();
+                }
                 t.index = videoTrackList.length;
                 t.encoding = undefined;
                 t.encrypted = false;
@@ -175,6 +180,11 @@ hbbtv.objects.NativeProxy = (function() {
                 const t = {};
                 for (const key in track) {
                     t[key] = track[key];
+                }
+                // ensure correct form (gstreamer)
+                if (!isNaN(t.id)) 
+                {
+                    t.id = parseInt(track.id).toString();
                 }
                 t.numChannels = 2;
                 t.index = audioTrackList.length;
