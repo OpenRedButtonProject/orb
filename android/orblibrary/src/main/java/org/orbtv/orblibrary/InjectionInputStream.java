@@ -95,7 +95,9 @@ abstract class InjectionInputStream extends FilterInputStream {
             if (n == 0 && nbytes == -1) {
                 return -1;
             }
-            n += nbytes;
+            if (nbytes > 0) {
+                n += nbytes;
+            }
         }
         return n;
     }
