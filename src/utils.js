@@ -117,6 +117,10 @@ hbbtv.utils = (function() {
         return result;
     }
 
+    function base64Decode(str) {
+        return atob(str);
+    }
+
     function insertAfter(thiz, child, sibling) {
         if (thiz) {
             const nextSibling = sibling.nextSibling;
@@ -292,6 +296,7 @@ hbbtv.utils = (function() {
         defineGetterSetterProperties: defineGetterSetterProperties,
         preventDefaultMediaHandling: preventDefaultMediaHandling,
         base64Encode: base64Encode,
+        base64Decode: base64Decode,
         insertAfter: insertAfter,
         matchElementStyle: matchElementStyle,
         EventDispatcher: EventDispatcher,

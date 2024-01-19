@@ -157,7 +157,11 @@ hbbtv.bridge.broadcast = (function() {
      * @memberof bridge.broadcast#
      */
     exported.getCurrentChannel = function() {
-        return hbbtv.native.request('Broadcast.getCurrentChannel').result;
+        let currentChannel = hbbtv.native.request('Broadcast.getCurrentChannel').result;
+        if (currentChannel.idType === hbbtv.objects.Channel.prototype.ID_DVB_SI_DIRECT) {
+            currentChannel.dsd = hbbtv.utils.base64Decode(currentChannel.dsd);
+        }
+        return currentChannel; 
     };
 
     /**
@@ -175,7 +179,11 @@ hbbtv.bridge.broadcast = (function() {
      * @memberof bridge.broadcast#
      */
     exported.getCurrentChannelForEvent = function() {
-        return hbbtv.native.request('Broadcast.getCurrentChannelForEvent').result;
+        let getCurrentChannelForEvent = hbbtv.native.request('Broadcast.getCurrentChannelForEvent').result;
+        if (getCurrentChannelForEvent.idType === hbbtv.objects.Channel.prototype.ID_DVB_SI_DIRECT) {
+            getCurrentChannelForEvent.dsd = hbbtv.utils.base64Decode(getCurrentChannelForEvent.dsd);
+        }
+        return getCurrentChannelForEvent; 
     };
 
     /**
@@ -190,7 +198,13 @@ hbbtv.bridge.broadcast = (function() {
      * @memberof bridge.broadcast#
      */
     exported.getChannelList = function() {
-        return hbbtv.native.request('Broadcast.getChannelList').result;
+        let channelList = hbbtv.native.request('Broadcast.getChannelList').result;
+        channelList.forEach(channel => {
+            if (channel.idType === hbbtv.objects.Channel.prototype.ID_DVB_SI_DIRECT) {
+                channel.dsd = hbbtv.utils.base64Decode(channel.dsd);
+            }
+        });
+        return channelList;
     };
 
     /**
