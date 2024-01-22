@@ -235,7 +235,7 @@ public:
     void RespondError(int connectionId, const std::string &id, int code,
         const std::string &message, const std::string &data);
 
-    void RequestMediaDescription();
+    void VoiceRequestDescription();
 
     void SendIntentMediaPause();
 

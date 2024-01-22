@@ -723,11 +723,11 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnSendIntentPlayback(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_org_orbtv_orblibrary_JsonRpc_nativeOnRequestMediaDescription(
+Java_org_orbtv_orblibrary_JsonRpc_nativeOnVoiceRequestDescription(
         JNIEnv *env,
         jobject object)
 {
-    GetService(env, object)->RequestMediaDescription();
+    GetService(env, object)->VoiceRequestDescription();
 }
 
 static NetworkServices::JsonRpcService* GetService(JNIEnv *env, jobject object)
