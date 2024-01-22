@@ -670,9 +670,7 @@ public interface IOrbSession {
      * @param offset The number value for the time position, a number of seconds
      * @return True if the command is successfully executed; otherwise, handles appropriately.
      */
-    default boolean sendVoiceCommand(Integer action, String info, String anchor, int offset){
-        throw new UnsupportedOperationException("Unsupported 204 API.");
-    }
+    boolean sendVoiceCommand(Integer action, String info, String anchor, int offset);
 
     /**
      * @since 204
@@ -681,9 +679,7 @@ public interface IOrbSession {
      *
      * @return true if this event has been handled, and false if not
      */
-    default boolean onVoiceRequestDescription() {
-        throw new UnsupportedOperationException("Unsupported 204 API.");
-    }
+    boolean onVoiceRequestDescription();
 
     /**
      * @since 204
@@ -693,9 +689,7 @@ public interface IOrbSession {
      * @param input The content of the text
      * @return true if this event has been handled, and false if not
      */
-    default boolean onVoiceRequestTextInput(String input) {
-        throw new UnsupportedOperationException("Unsupported 204 API.");
-    }
+    boolean onVoiceRequestTextInput(String input);
 
     /**
      * @since 204
@@ -712,9 +706,7 @@ public interface IOrbSession {
      * @param offset The number value for the time position, a number of seconds
      * @return true if this event has been handled, and false if not
      */
-    default boolean onVoiceSendIntent(Integer action, String info, String anchor, int offset) {
-        throw new UnsupportedOperationException("Unsupported 204 API.");
-    }
+    boolean onVoiceSendIntent(Integer action, String info, String anchor, int offset);
 
     /**
      * @since 204
@@ -723,7 +715,5 @@ public interface IOrbSession {
      *
      * @param action The index number of the intent, either pressing a button or showing a log
      */
-    default boolean onVoiceSendKeyAction(Integer action) {
-        throw new UnsupportedOperationException("Unsupported 204 API.");
-    }
+    boolean onVoiceSendKeyAction(Integer action);
 }
