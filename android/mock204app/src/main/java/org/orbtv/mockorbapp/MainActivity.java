@@ -134,7 +134,9 @@ public class MainActivity extends Activity {
                 configuration);
         bindDialService();
         bindVoiceRecognitionService();
-        //frameLayout.addView(mTvBrowserSession.getView());
+        frameLayout.addView(mTvBrowserSession.getView());
+        TableLayout table = findViewById(R.id.log_table);
+        table.bringToFront();
         mTvBrowserSession.onNetworkStatusEvent(true); // TODO(library) Is this good?
         mMockCallback.setConsoleCallback(new MockOrbSessionCallback.ConsoleCallback() {
             public void log(String message) {

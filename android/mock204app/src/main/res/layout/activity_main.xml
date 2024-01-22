@@ -13,7 +13,8 @@
         android:background="@android:color/background_dark"
         android:divider="@android:color/secondary_text_dark"
         android:showDividers="middle"
-        android:layout_gravity="bottom">
+        android:layout_gravity="bottom"
+        android:alpha="0.7">
         <include layout="@layout/log_row" />
         <include layout="@layout/log_row" />
         <include layout="@layout/log_row" />
