@@ -1,0 +1,32 @@
+{
+   "testSuites": [
+      {
+         "name": "example",
+         "scenario": "integration/example/scenario.json",
+         "dsmccData": "",
+         "action": "simulate_successful_tune",
+         "timeout": 0
+      },
+      {
+         "name": "object_creation",
+         "scenario": "integration/object_creation/scenario.json",
+         "dsmccData": "",
+         "action": "simulate_successful_tune",
+         "timeout": 0
+      },
+      {
+         "name": "dsmcc",
+         "scenario": "integration/dsmcc/scenario.json",
+         "dsmccData": "integration/mock/basic/dsmcc.zip",
+         "action": "simulate_successful_tune",
+         "timeout": 0
+      },
+      {
+         "name": "drm",
+         "scenario": "integration/drm/scenario.json",
+         "dsmccData": "",
+         "action": "simulate_successful_tune",
+         "timeout": 0
+      }
+   ]
+}

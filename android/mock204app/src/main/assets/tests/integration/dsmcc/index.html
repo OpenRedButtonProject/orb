@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//HbbTV//1.1.1//EN" "http://www.hbbtv.org/dtd/HbbTV-1.1.1.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>ORB Integration Test Suite - Example</title>
+<meta http-equiv="content-type" content="Content-Type: application/vnd.hbbtv.xhtml+xml; charset=UTF-8" />
+<link rel="stylesheet" type="text/css" href="./common/style.css" />
+<script type="text/javascript" src="../common/orbtest.js"></script>
+</head>
+<body>
+<script>
+//<![CDATA[
+window.onload = () => {
+   orbtest.add({
+      name: "Get dvb:// file with XHR",
+      description: "Expect 'Hello Orb!' text",
+      test: (result) => {
+         const req = new XMLHttpRequest();
+         req.onerror = function() {
+            result.fail(`Got XHR error, status=${req.status}`);
+         };
+         req.onload = function() {
+         console.log(this.responseText);
+            if (this.responseText.startsWith("Hello Orb!")) {
+               result.pass("Got correct response");
+            } else {
+               result.fail("Got incorrect response");
+            }
+         };
+         req.open("GET", "dvb://3.2.1.1/test.txt");
+         req.send();
+      }
+   });
+
+   orbtest.add({
+      name: "Get missing dvb:// file with XHR",
+      description: "Expect status 404 not found",
+      test: (result) => {
+         const req = new XMLHttpRequest();
+         req.onreadystatechange = function() {
+            if (req.readyState == 4) { // Wait for DONE
+               if (req.status === 404) {
+                  result.pass("Got status: 404");
+               } else {
+                  result.fail("Got status: " + req.status);
+               }
+            }
+         };
+         req.open("GET", "dvb://3.2.1.1/missing.txt");
+         req.send();
+      }
+   });
+
+   orbtest.add({
+      name: "Check headers are not returned for dvb: protocol",
+      description: "Expect an empty string from getAllResponseHeaders and null from getResponseHeader",
+      test: (result) => {
+         const req = new XMLHttpRequest();
+         req.onerror = function() {
+            result.fail(`Got XHR error, status=${req.status}`);
+         };
+         req.onload = function() {
+         console.log(this.getAllResponseHeaders());
+            if (this.getAllResponseHeaders() === "") {
+               if (this.getResponseHeader("Content-Type") === null) {
+                  result.pass("Got expected values");
+               } else {
+                  result.fail("Did not get null from getResponseHeader");
+               }
+            } else {
+               result.fail("Did not get empty string from getAllResponseHeaders");
+            }
+         };
+         req.open("GET", "dvb://3.2.1.1/test.txt");
+         req.send();
+      }
+   });
+  
+   // Run!
+   orbtest.run("dsmcc");
+}
+//]]>
+</script>
+</body>
+</html>

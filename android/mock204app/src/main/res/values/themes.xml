@@ -1,0 +1,3 @@
+<resources>
+    <style name="Theme.hbbtv" parent="@style/Theme.Leanback" />
+</resources>

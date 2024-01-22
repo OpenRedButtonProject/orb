@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//HbbTV//1.1.1//EN" "http://www.hbbtv.org/dtd/HbbTV-1.1.1.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>ORB Integration Test Suite - Example</title>
+<meta http-equiv="content-type" content="Content-Type: application/vnd.hbbtv.xhtml+xml; charset=UTF-8" />
+<link rel="stylesheet" type="text/css" href="./common/style.css" />
+<script type="text/javascript" src="../common/orbtest.js"></script>
+</head>
+<body>
+<object id="test1-object" type="video/broadcast"></object>
+<span id="test3-span"></span>
+<span id="test4-span"></span>
+<span id="test5-span"></span>
+<script>
+//<![CDATA[
+window.onload = () => {
+   orbtest.add({
+      name: "On page",
+      description: "Expect VBO",
+      test: (result) => {
+         testVbo(document.getElementById("test1-object"), result);
+      }
+   });
+   
+   orbtest.add({
+      name: "document.createElement",
+      description: "Expect VBO",
+      test: (result) => {
+         var newObj = document.createElement("object");
+         newObj.type = "video/broadcast";
+         testVbo(newObj, result);
+      }
+   });
+   
+   orbtest.add({
+      name: "innerHTML",
+      description: "Expect VBO",
+      test: (result) => {
+         document.getElementById("test3-span").innerHTML =
+            "<object id='test3-object' type='video/broadcast'></object>";
+         testVbo(document.getElementById("test3-object"), result);
+      }
+   });
+   
+   orbtest.add({
+      name: "outerHTML",
+      description: "Expect VBO",
+      test: (result) => {
+         document.getElementById("test4-span").outerHTML =
+            "<object id='test4-object' type='video/broadcast'></object>";
+         testVbo(document.getElementById("test4-object"), result);
+      }
+   });
+   
+   orbtest.add({
+      name: "insertAdjacentHTML",
+      description: "Expect VBO",
+      test: (result) => {
+         document.getElementById("test5-span").insertAdjacentHTML("afterbegin",
+            "<object id='test5-object' type='video/broadcast'></object>");
+         testVbo(document.getElementById("test5-object"), result);
+      }
+   });
+   
+   orbtest.add({
+      name: "window.oipfObjectFactory",
+      description: "Expect VBO",
+      test: (result) => {
+        var newObj2 = window.oipfObjectFactory.createVideoBroadcastObject();
+        testVbo(newObj2, result);
+      }
+   });
+   
+   // Utils
+   function testVbo(object, result) {
+      if (object === undefined) {
+         result.fail("Got undefined");
+      } else if (typeof object.currentChannel.name === "undefined") {
+         result.fail("Got invalid object");
+      } else if (object.currentChannel.name !== "Orb Basic Channel One") {
+         result.fail("Got unexpected value");
+      } else {
+         result.pass("Got VBO");
+      }
+   }
+
+   // Run!
+   orbtest.run("object_creation");
+}
+//]]>
+</script>
+</body>
+</html>

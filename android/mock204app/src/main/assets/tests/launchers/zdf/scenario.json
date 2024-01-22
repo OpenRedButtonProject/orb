@@ -1,0 +1,18 @@
+{
+   "channels": [
+      {
+         "channel": "launchers/zdf/mock/channel1.json",
+         "programmes": "launchers/zdf/mock/programmes.json",
+         "components": "launchers/zdf/mock/components.json",
+         "applications": [
+            {
+               "id": 1,
+               "orgId": 1,
+               "name": "Zdf",
+               "baseUrl": "http://hbbtv.zdf.de/zdfstart/",
+               "initialPath": "index.php"
+            }
+         ]
+      }
+   ]
+}
