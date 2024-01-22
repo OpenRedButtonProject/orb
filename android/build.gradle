@@ -14,7 +14,7 @@ buildscript {
 
 allprojects {
     ext {
-        ORB_HBBTV_VERSION = 203
+        ORB_HBBTV_VERSION = gradle.ext.get('ORB_HBBTV_VERSION')
     }
 
     repositories {

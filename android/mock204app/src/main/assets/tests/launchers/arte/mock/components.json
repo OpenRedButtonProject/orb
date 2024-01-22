@@ -1,0 +1,38 @@
+[
+   {
+      "type": "video",
+      "componentTag": 1,
+      "pid": 1,
+      "encoding": "encoding1",
+      "encrypted": false,
+      "aspectRatio": "16_9",
+      "active": true,
+      "defaultComponent": true
+   },
+   {
+      "type": "audio",
+      "componentTag": 2,
+      "pid": 2,
+      "encoding": "encoding2",
+      "encrypted": false,
+      "language": "deu",
+      "audioDescription": false,
+      "audioChannels": 2,
+      "active": true,
+      "defaultComponent": true,
+      "hidden": false
+   },
+   {
+      "type": "subtitle",
+      "componentTag": 3,
+      "pid": 3,
+      "encoding": "encoding3",
+      "encrypted": false,
+      "language": "deu",
+      "hearingImpaired": false,
+      "label": "label",
+      "active": true,
+      "defaultComponent": true
+   }
+]
+

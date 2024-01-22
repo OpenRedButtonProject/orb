@@ -1,5 +1,13 @@
 rootProject.name = "orb"
+
+// Set the HbbTV version here (203 or 204)
+gradle.ext.ORB_HBBTV_VERSION = 203
+
 include ':orblibrary'
-include ':mockorbapp'
+if (gradle.ext.ORB_HBBTV_VERSION == 203) {
+    include ':mock203app'
+} else if (gradle.ext.ORB_HBBTV_VERSION == 204) {
+    include ':mock204app'
+}
 include ':mockdialservice'
 include ':orbpolyfill'
