@@ -2131,13 +2131,18 @@ hbbtv.objects.VideoBroadcast = (function() {
         const p = privates.get(this);
         mandatoryBroadcastRelatedSecurityCheck(p);
         const event = new Event('StreamEvent');
-        Object.assign(event, {
+        const eventData = {
             name: name,
             data: data,
             text: text,
             status: status,
-            DASHEvent: (dashEventData ? hbbtv.objects.createDASHEvent(dashEventData) : undefined)
-        });
+            DASHEvent: dashEventData
+        };
+        if (dashEventData) {
+            // update the eventData reference
+            hbbtv.objects.createDASHEvent(eventData);
+        }
+        Object.assign(event, eventData);
         const listeners = p.streamEventListenerMap.get(id);
         if (listeners) {
             listeners.forEach((listener) =>

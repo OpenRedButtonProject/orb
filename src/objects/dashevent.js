@@ -21,31 +21,27 @@ hbbtv.objects.DASHEvent = (function() {
     });
 
     // Initialise an instance of prototype
-    function initialise(eventData) {
-        privates.set(this, { eventData });
-        const data = eventData.data;
-        if (data) {
-            if (eventData.contentEncoding === "arrayBuffer") {
-                const uint8Array = new Uint8Array(data.length / 2);
-                for (let i = 0; i < data.length; i += 2) {
-                    uint8Array[i / 2] = parseInt(data.substr(i, 2), 16);
-                }
-                eventData.data = uint8Array;
+    function initialise(streamEvent) {
+        privates.set(this, { 
+            eventData: streamEvent.DASHEvent,
+        });
+        const data = streamEvent.text;
+        if (typeof(data) === "string") {
+            if (streamEvent.DASHEvent.contentEncoding === "binary") {
+                const textEncoder = new TextEncoder();
+                streamEvent.DASHEvent.data = streamEvent.data = textEncoder.encode(data);
             }
             else {
                 try {
                     const parser = new DOMParser();
-                    const xmlDoc = parser.parseFromString(data, "text/xml");
-                    const parseErrors = xmlDoc.getElementsByTagName("parsererror");
-                    if (parseErrors.length === 0) {
-                        eventData.data = xmlDoc;
-                    }
-                  } 
-                  catch (e) { }
+                    streamEvent.DASHEvent.data = streamEvent.data = parser.parseFromString(data, 'text/xml');
+                }
+                catch(e) {
+                    console.warn(e.message);
+                }
             }
         }
-        console.log(eventData.data);
-
+        streamEvent.DASHEvent = this;
     }
 
     return {
@@ -54,8 +50,8 @@ hbbtv.objects.DASHEvent = (function() {
     };
 })();
 
-hbbtv.objects.createDASHEvent = function(eventData) {
+hbbtv.objects.createDASHEvent = function(streamEvent) {
     const obj = Object.create(hbbtv.objects.DASHEvent.prototype);
-    hbbtv.objects.DASHEvent.initialise.call(obj, eventData);
+    hbbtv.objects.DASHEvent.initialise.call(obj, streamEvent);
     return obj;
 };

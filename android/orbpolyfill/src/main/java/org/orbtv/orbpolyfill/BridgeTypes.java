@@ -1172,14 +1172,12 @@ public class BridgeTypes {
         public String Id;
         public double startTime;
         public double duration;
-        public String data;
         public String contentEncoding;
 
-        public DASHEvent(String Id, double startTime, double duration, String data, String contentEncoding) {
+        public DASHEvent(String Id, double startTime, double duration, String contentEncoding) {
             this.Id = Id;
             this.startTime = startTime;
             this.duration = duration;
-            this.data = data;
             this.contentEncoding = contentEncoding;
         }
 
@@ -1191,12 +1189,6 @@ public class BridgeTypes {
             }
             else {
                 o.put("Id", "");
-            }
-            if (data != null) {
-                o.put("data", data);
-            }
-            else {
-                o.put("data", "");
             }
             if (contentEncoding != null) {
                 o.put("contentEncoding", contentEncoding);
