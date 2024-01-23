@@ -219,6 +219,10 @@ std::string ContentIdentificationService::pack(const Json::Value &currentMessage
 
     LOG(LOG_DEBUG, "ContentIdentificationService::pack:: \n%s\n",
         currentMessage.toStyledString().c_str());
+#if JSONCPP_VERSION_1_9_4 == 1
     return Json::writeString(m_wbuilder, currentMessage);
+#else
+    return m_writer.write(currentMessage);
+#endif
 }
 }

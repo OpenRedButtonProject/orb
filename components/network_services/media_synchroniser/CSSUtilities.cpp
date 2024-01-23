@@ -45,6 +45,7 @@ namespace NetworkServices {
 namespace CSSUtilities {
 bool unpack(const std::string &msg, Json::Value &msgToJson)
 {
+#if JSONCPP_VERSION_1_9_4 == 1
     Json::CharReaderBuilder builder = {};
     auto reader = std::unique_ptr<Json::CharReader>(builder.newCharReader());
 
@@ -53,9 +54,21 @@ bool unpack(const std::string &msg, Json::Value &msgToJson)
         msg.c_str() + msg.length(),
         &msgToJson,
         &errors);
+#else
+    Json::Reader reader;
+
+    const auto is_parsed = reader.parse(msg.c_str(),
+        msg.c_str() + msg.length(),
+        msgToJson,
+        false /* Discard comments */);
+#endif
     if (!is_parsed)
     {
+#if JSONCPP_VERSION_1_9_4 == 1
         LOG(LOG_ERROR, "CSSUtilities::unpack ERROR: Could not parse! %s\n", errors.c_str());
+#else
+        LOG(LOG_ERROR, "CSSUtilities::unpack ERROR: Could not parse!\n");
+#endif
         return false;
     }
 
