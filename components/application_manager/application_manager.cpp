@@ -421,8 +421,7 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
         return false;
     }
 
-    std::unique_ptr<Ait::S_AIT_TABLE> aitTable = std::move(XmlParser::ParseAit(xmlAit.c_str(),
-        xmlAit.length()));
+    std::unique_ptr<Ait::S_AIT_TABLE> aitTable = XmlParser::ParseAit(xmlAit.c_str(), xmlAit.length());
     if (nullptr == aitTable || aitTable->numApps == 0)
     {
         // No AIT or apps parsed, early out

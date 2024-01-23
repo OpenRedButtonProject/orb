@@ -234,7 +234,7 @@ std::string Utils::StrGetUrlOrigin(const std::string &url)
 {
     // TODO(C++-ize) This seems overly complex? We do something similar in Java
     uint8_t state = 0; // 0: scheme, 1: '://', 2: domain, 3: port, 4: end, 5: error
-    uint32_t countChars = 0;
+    int countChars = 0;
     const char *ptr;
     std::string retval;
     uint8_t portStr[6] = {0, 0, 0, 0, 0, 0};

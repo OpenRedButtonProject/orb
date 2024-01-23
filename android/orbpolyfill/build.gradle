@@ -3,11 +3,12 @@ plugins {
 }
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 28
 
     defaultConfig {
         minSdkVersion 28
-        targetSdkVersion 31
+        //noinspection ExpiredTargetSdkVersion
+        targetSdkVersion 28
     }
 
     buildTypes {
@@ -22,5 +23,5 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
-    ndkVersion '21.1.6352462'
+    ndkVersion '21.4.7075529'
 }

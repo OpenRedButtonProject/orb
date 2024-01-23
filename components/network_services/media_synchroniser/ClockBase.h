@@ -52,10 +52,9 @@ private:
     std::unordered_map<Notifiable *, bool> mDependants;
 protected:
     bool mAvailability;
-    ClockBase *mParent;
-
     double mTickRate;
     double mSpeed;
+    ClockBase *mParent;
 
 public:
     ClockBase() : mAvailability{true},

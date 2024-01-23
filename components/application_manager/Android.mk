@@ -21,7 +21,6 @@ LOCAL_SRC_FILES := \
 LOCAL_CFLAGS := \
    -Wno-unused-variable \
    -Wno-unused-function \
-   -Wno-reorder-ctor \
    -DORB_HBBTV_VERSION=$(ORB_HBBTV_VERSION)
 
 LOCAL_CPPFLAGS += -fexceptions
