@@ -1,6 +1,15 @@
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
+# Use jsoncpp_ORB or otherwise use default jsoncpp from source tree
+USE_JSONCPP_ORB ?= 1
+
+# Current jsoncpp version is 1.9.4 or above
+JSONCPP_VERSION_1_9_4 ?= 1
+
+# Support libwebsockets version 4.0 and above
+LWS_VERSION_4 ?= 1
+
 LOCAL_MODULE := liborg.orbtv.orblibrary.networkservices
 
 ifeq ($(ORB_HBBTV_VERSION),)
@@ -56,16 +65,29 @@ endif
 LOCAL_CFLAGS := \
    -Wno-unused-variable \
    -Wno-unused-function \
-   -Wno-reorder-ctor \
    -Wno-unused-parameter \
    -Wno-non-virtual-dtor \
    -Wno-unused-private-field \
-   -DORB_HBBTV_VERSION=$(ORB_HBBTV_VERSION)
+   -DORB_HBBTV_VERSION=$(ORB_HBBTV_VERSION) \
+   -Wno-reorder \
+   -Wno-sign-compare \
+   -Wno-pessimizing-move
+
+ifeq ($(USE_JSONCPP_ORB), 1)
+    LOCAL_SHARED_LIBRARIES += libjsoncpp_ORB
+else
+    LOCAL_STATIC_LIBRARIES += libjsoncpp
+endif
+
+LOCAL_CFLAGS +=  \
+   -DJSONCPP_VERSION_1_9_4=$(JSONCPP_VERSION_1_9_4)
+
+LOCAL_CFLAGS += \
+   -DLWS_VERSION_4=$(LWS_VERSION_4)
 
 LOCAL_CPPFLAGS += -fexceptions \
                   -frtti
 
 LOCAL_SHARED_LIBRARIES += libcrypto
-LOCAL_SHARED_LIBRARIES += libjsoncpp_ORB
 
 include $(BUILD_STATIC_LIBRARY)

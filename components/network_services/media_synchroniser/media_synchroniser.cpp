@@ -271,7 +271,7 @@ void MediaSynchroniser::updateCssCiiProperties(const std::string &contentId, con
         properties["mrsUrl"] = mrsUrl;
     }
 
-    for (Json::Value::const_iterator it = properties.begin(); it != properties.end(); ++it)
+    for (auto it = properties.begin(); it != properties.end(); ++it)
     {
         if (it.key().asString() == "contentId")
         {
@@ -791,9 +791,15 @@ void MediaSynchroniser::removeTimeline(const std::string &timelineSelector)
     if (tls != nullptr)
     {
         Json::Value temp = m_ciiProps.getProperty("timelines");
+#if JSONCPP_VERSION_1_9_4 == 1
+#else
+        Json::Value newTimeline;
+        int count = 0;
+#endif
         for (Json::Value::ArrayIndex i = 0; i != temp.size(); i++)
         {
             const Json::Value &jobj = temp[i];
+#if JSONCPP_VERSION_1_9_4 == 1
             if (jobj["timelineSelector"] == timelineSelector)
             {
                 Json::Value removed;
@@ -802,7 +808,22 @@ void MediaSynchroniser::removeTimeline(const std::string &timelineSelector)
                 updateAllCIIClients();
                 break;
             }
+#else
+            if (jobj["timelineSelector"] != timelineSelector)
+            {
+                newTimeline[count] = temp[i];
+                count++;
+            }
+#endif
         }
+#if JSONCPP_VERSION_1_9_4 == 1
+#else
+        if (newTimeline.size() > 0)
+        {
+            m_ciiProps.setProperty("timelines", std::move(newTimeline));
+            updateAllCIIClients();
+        }
+#endif
         CorrelatedClock *clock;
         if (m_masterTimeline == timelineSelector)
         {
