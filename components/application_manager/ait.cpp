@@ -341,7 +341,7 @@ bool Ait::PrintInfo(const S_AIT_TABLE *parsedAit)
         LOG(LOG_INFO, "\t\tVisibility: %d", hAitApp.appDesc.visibility);
         LOG(LOG_INFO, "\t\tPriority: %d", hAitApp.appDesc.priority);
         LOG(LOG_INFO, "\t\tService bound: %d", hAitApp.appDesc.serviceBound);
-        for (int j = 0; j < hAitApp.appDesc.appProfiles.size(); j++)
+        for (unsigned int j = 0; j < hAitApp.appDesc.appProfiles.size(); j++)
         {
             LOG(LOG_INFO, "\t\tProfile(%d): %d, version %d.%d.%d", j,
                 hAitApp.appDesc.appProfiles[j].appProfile,

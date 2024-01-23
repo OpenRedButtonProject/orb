@@ -53,15 +53,14 @@ LOCAL_SRC_FILES += json_rpc_native.cpp
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/../symlink.network_services/json_rpc/
 endif
 
-LOCAL_STATIC_LIBRARIES += libxml2
-LOCAL_STATIC_LIBRARIES += libwebsockets
 LOCAL_STATIC_LIBRARIES += liborg.orbtv.orblibrary.applicationmanager
 LOCAL_STATIC_LIBRARIES += liborg.orbtv.orblibrary.networkservices
+LOCAL_STATIC_LIBRARIES += libxml2
+LOCAL_STATIC_LIBRARIES += libwebsockets
 
 LOCAL_CFLAGS := -Wno-unused-parameter \
    -Wno-unused-variable \
    -Wno-unused-function \
-   -Wno-reorder-ctor \
    -Wno-non-virtual-dtor \
    -Wno-unused-private-field \
    -DORB_HBBTV_VERSION=$(ORB_HBBTV_VERSION) \

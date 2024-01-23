@@ -79,9 +79,6 @@ class DvbInputStream extends InputStream {
         if (!mStatusOK) {
             return -1;
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            Objects.checkFromIndexSize(offset, length, dst.length);
-        }
         if (length == 0) {
             return 0;
         }
