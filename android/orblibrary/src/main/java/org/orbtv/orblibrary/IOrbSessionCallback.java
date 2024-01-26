@@ -16,8 +16,6 @@
 
 package org.orbtv.orblibrary;
 
-import android.util.Log;
-
 import org.orbtv.orbpolyfill.BridgeTypes;
 
 import java.util.List;
@@ -844,6 +842,16 @@ public interface IOrbSessionCallback {
      * @param log The log message to be printed
      */
     default void consoleLog(String log) {
-        Log.d("IOrbSessionCallback", "consoleLog: " + log);
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
+    /**
+     * @since 204
+     *
+     * @param name The media name got from voice command
+     * @return The media id of media name.
+     */
+    default String getMediaId(String name) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
     }
 }

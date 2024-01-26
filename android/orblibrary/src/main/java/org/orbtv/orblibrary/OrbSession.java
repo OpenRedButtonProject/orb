@@ -25,7 +25,6 @@ class OrbSession implements IOrbSession {
     private Bridge mBridge;
     private BrowserView mBrowserView;
     private DsmccClient mDsmccClient;
-    private String MOCK_NEW_MEDIA_ID = "urn:broadcaster:programme:1249863457643";
 
     /**
      * TV browser session.
@@ -1251,9 +1250,9 @@ class OrbSession implements IOrbSession {
      * @param action The index number of the intent, from intent.media.pause to intent.playback
      * @param info   The value uniquely identifying a piece of content:
      *               - INTENT_MEDIA_SEEK_WALLCLOCK: a wall clock time
-     *               - INTENT_DISPLAY: a URI
+     *               - INTENT_DISPLAY: a media name
      *               - INTENT_SEARCH: a search term specified by the user.
-     *               - INTENT_PLAYBACK: a URI
+     *               - INTENT_PLAYBACK: a media name
      * @param anchor The value indicates an anchor point of the content, which is either "start" or "end"
      * @param offset The number value for the time position, a number of seconds
      * @return true if this event has been handled, and false if not
@@ -1304,7 +1303,7 @@ class OrbSession implements IOrbSession {
                 return true;
             case INTENT_DISPLAY:
                 // TODO - get mediaId by media name
-                mediaId = MOCK_NEW_MEDIA_ID;
+                mediaId = mOrbSessionCallback.getMediaId(info);
                 onSendIntentDisplay(mediaId);
                 mOrbSessionCallback.consoleLog("Send an intent, action: display");
                 return true;
@@ -1317,7 +1316,7 @@ class OrbSession implements IOrbSession {
                 mOrbSessionCallback.consoleLog("Send an intent, action: search");
                 return true;
             case INTENT_PLAYBACK:
-                mediaId = MOCK_NEW_MEDIA_ID;
+                mediaId = mOrbSessionCallback.getMediaId(info);
                 onSendIntentPlayback(mediaId, anchor, offset);
                 mOrbSessionCallback.consoleLog("Send an intent, action: playback");
                 return true;

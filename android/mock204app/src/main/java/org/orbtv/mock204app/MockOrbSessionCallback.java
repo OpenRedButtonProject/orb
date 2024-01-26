@@ -159,6 +159,12 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     private String MOCK_RESPONSE_TO_A_USER_ACTION_MAGNITUDE = EMPTY_STRING;
     private int MOCK_AUDIO_DESCRIPTION_GAIN = 0;
     private int MOCK_AUDIO_DESCRIPTION_PAN_AZIMUTH = 90;
+    private String MOCK_NEW_MEDIA_ID = "urn:broadcaster:programme:1249863457643";
+
+    public String getMediaId(String name) {
+        //TODO: Find media id by media name
+        return MOCK_NEW_MEDIA_ID;
+    }
 
     public interface ConsoleCallback {
         void log(String msg);
