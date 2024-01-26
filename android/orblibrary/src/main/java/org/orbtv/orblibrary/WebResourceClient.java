@@ -95,17 +95,15 @@ abstract class WebResourceClient {
 
     private WebResourceResponse shouldInterceptHttpRequest(WebResourceRequest request, int appId) {
         WebResourceResponse response = null;
-        if (request.isForMainFrame()) {
-            try {
-                response = handleHttpRequest(request, appId);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            if (response == null) {
-                onRequestFailed(request, appId);
-            } else {
-                onRequestSucceeded(request, appId);
-            }
+        try {
+            response = handleHttpRequest(request, appId);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (response == null) {
+            onRequestFailed(request, appId);
+        } else {
+            onRequestSucceeded(request, appId);
         }
         return response;
     }
@@ -173,8 +171,13 @@ abstract class WebResourceClient {
         if (HBBTV_MIME_TYPES.contains(mimeType.toLowerCase())) {
             responseStream = createInjectionResponseStream(body.byteStream(), body, charset, request.getUrl(), appId);
         } else {
-            responseStream = createResponseStream(body.byteStream(), body);
+            if (request.isForMainFrame()) {
+                responseStream = createResponseStream(body.byteStream(), body);
+            } else {
+                return null;
+            }
         }
+
         WebResourceResponse response = new WebResourceResponse(mimeType, charset.name(), responseStream);
         Map<String, String> responseHeaders = new HashMap<>();
 

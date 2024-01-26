@@ -43,8 +43,13 @@ hbbtv.native = {
     },
     setDispatchEventCallback: function(callback) {
         // TEMPORARY Dispatch an event and properties. TODO Replace me in events part 2!
-        document.dispatchBridgeEvent = (type, properties) => {
+        window.dispatchBridgeEvent = document.dispatchBridgeEvent = (type, properties) => {
             callback(type, properties);
+            for (const iframe of document.getElementsByTagName("iframe")) {
+                if (typeof(iframe.contentWindow.dispatchBridgeEvent) === "function") {
+                    iframe.contentWindow.dispatchBridgeEvent(type, properties);
+                }
+            }
         };
     },
     isDebugBuild: function() {

@@ -249,7 +249,7 @@ hbbtv.objects.NativeProxy = (function() {
             Object.assign(evt, {
                 error: data,
             });
-
+            console.warn("NariveProxy: An error occurred on src '" + this.src + "':", this.error);
             this.dispatchEvent(evt);
         }
     }
