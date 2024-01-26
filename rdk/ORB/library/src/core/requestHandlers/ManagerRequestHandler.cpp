@@ -31,6 +31,7 @@
 #define MANAGER_SET_KEY_VALUE "setKeyValue"
 #define MANAGER_GET_KEY_MAXIMUM_VALUE "getKeyMaximumValue"
 #define MANAGER_GET_KEY_VALUES "getKeyValues"
+#define MANAGER_GET_APPLICATION_SCHEME "getApplicationScheme"
 
 #define KEY_SET_RED 0x1
 #define KEY_SET_GREEN 0x2
@@ -154,6 +155,11 @@ bool ManagerRequestHandler::Handle(
         int value = ORBEngine::GetSharedInstance().GetApplicationManager()->GetKeySetMask(
             callingAppId);
         response["result"] = value;
+    }
+    else if (method == MANAGER_GET_APPLICATION_SCHEME)
+    {
+        int callingAppId = GetAppIdFromToken(token);
+        response["result"] = ORBEngine::GetSharedInstance().GetApplicationManager()->GetApplicationScheme(callingAppId);
     }
     // UnknownMethod
     else
