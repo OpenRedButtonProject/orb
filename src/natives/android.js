@@ -42,15 +42,28 @@ hbbtv.native = {
         return response;
     },
     setDispatchEventCallback: function(callback) {
+        const FUNCTION_CALL_TYPE = "orb_functionCall";
         // TEMPORARY Dispatch an event and properties. TODO Replace me in events part 2!
-        window.dispatchBridgeEvent = document.dispatchBridgeEvent = (type, properties) => {
+        document.dispatchBridgeEvent = (type, properties) => {
             callback(type, properties);
             for (const iframe of document.getElementsByTagName("iframe")) {
-                if (typeof(iframe.contentWindow.dispatchBridgeEvent) === "function") {
-                    iframe.contentWindow.dispatchBridgeEvent(type, properties);
-                }
+                iframe.contentWindow.postMessage(JSON.stringify({
+                    type: FUNCTION_CALL_TYPE,
+                    name: "dispatchBridgeEvent",
+                    args: [type, properties]
+                }), '*');
             }
         };
+        window.addEventListener("message", (e) => {
+            try {
+                const msg = JSON.parse(e.data);
+                if (msg.type === FUNCTION_CALL_TYPE && msg.name === "dispatchBridgeEvent") {
+                    document.dispatchBridgeEvent(msg.args[0], msg.args[1]);
+                }
+            } catch (error) {
+                console.warn('native: error parsing message data:', e.data);
+            }
+        })
     },
     isDebugBuild: function() {
         return true; // TODO Move
