@@ -203,6 +203,12 @@ class BrowserView extends WebView {
         dispatchJavaScriptTextInput(text);
     }
 
+    public void close() {
+        removeJavascriptInterface("androidBridge");
+        getSettings().setJavaScriptEnabled(false);
+        destroy();
+    }
+
     private void setHiddenFlag(int flag) {
         mHiddenMask |= flag;
         if (mHiddenMask == 0) {
