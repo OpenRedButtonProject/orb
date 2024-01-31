@@ -20,6 +20,7 @@ import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -67,6 +68,7 @@ public class MainActivity extends Activity {
     private IOrbSession mTvBrowserSession = null;
     private MockOrbSessionCallback mMockCallback;
     private IMockDialService mDialService = null;
+    private VoiceServiceReceiver mVoiceReceiver;
     private Intent mVoiceIntent = null;
     private int mDialAppId = -1;
     private int mMaxLogSize = 8;
@@ -143,7 +145,24 @@ public class MainActivity extends Activity {
                 consoleLog(message);
             }
         });
-        mMockCallback.registerVoiceReceiver();
+        registerVoiceReceiver();
+    }
+
+    private void registerVoiceReceiver() {
+        mVoiceReceiver = new VoiceServiceReceiver();
+        registerReceiver(mVoiceReceiver, new IntentFilter("org.orbtv.voiceservice.message"));
+        mVoiceReceiver.setVoiceCallback(new VoiceServiceReceiver.ResultCallback() {
+            @Override
+            public void onReceive(Integer action, String info, String anchor, int offset) {
+                if (!mTvBrowserSession.sendVoiceCommand(action, info, anchor, offset)) {
+                    consoleLog("Error in voice recognition");
+                }
+            }
+        });
+    }
+
+    private void unregisterVoiceReceiver() {
+        unregisterReceiver(mVoiceReceiver);
     }
 
     @Override
@@ -167,7 +186,7 @@ public class MainActivity extends Activity {
         super.onDestroy();
         unbindDialService();
         unbindVoiceRecognitionService();
-        mMockCallback.unregisterVoiceReceiver();
+        unregisterVoiceReceiver();
     }
 
     private final IMockDialServiceCallback.Stub mDialServiceCallback =

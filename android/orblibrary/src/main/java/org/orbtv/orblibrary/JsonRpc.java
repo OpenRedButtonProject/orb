@@ -1,7 +1,5 @@
 package org.orbtv.orblibrary;
 
-import android.util.Log;
-
 import java.util.UUID;
 
 public class JsonRpc {
@@ -136,8 +134,8 @@ public class JsonRpc {
         nativeOnSendIntentPlayback(mediaId, anchor, offset);
     }
 
-    public void onRequestMediaDescription() {
-        nativeOnRequestMediaDescription();
+    public void onVoiceRequestDescription() {
+        nativeOnVoiceRequestDescription();
     }
 
     // Called by native
@@ -275,5 +273,5 @@ public class JsonRpc {
 
     private native void nativeOnSendIntentPlayback(String mediaId, String anchor, int offset);
 
-    private native void nativeOnRequestMediaDescription();
+    private native void nativeOnVoiceRequestDescription();
 }

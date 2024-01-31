@@ -1,16 +1,80 @@
 package org.orbtv.orblibrary;
 
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 
-import org.json.JSONObject;
 import org.orbtv.orbpolyfill.BridgeTypes;
 
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public interface IOrbSession {
+    int INTENT_MEDIA_PAUSE = 0;
+    int INTENT_MEDIA_PLAY = 1;
+    int INTENT_MEDIA_FAST_FORWARD = 2;
+    int INTENT_MEDIA_FAST_REVERSE = 3;
+    int INTENT_MEDIA_STOP = 4;
+    int INTENT_MEDIA_SEEK_CONTENT = 5;
+    int INTENT_MEDIA_SEEK_RELATIVE = 6;
+    int INTENT_MEDIA_SEEK_LIVE = 7;
+    int INTENT_MEDIA_SEEK_WALLCLOCK = 8;
+    int INTENT_SEARCH = 9;
+    int INTENT_DISPLAY = 10;
+    int INTENT_PLAYBACK = 11;
+    int ACT_REQUEST_MEDIA_DESCRIPTION = 18;
+    int ACT_REQUEST_TEXT_INPUT = 19;
+    int LOG_MESSAGE = 99;
+    int LOG_ERROR_NONE_ACTION = 100;
+    int LOG_ERROR_MULTI_ACTIONS = 101;
+    int LOG_ERROR_INTENT_SEND = 102;
+
+    int ACT_PRESS_BUTTON_NUMB_ZERO = 20;
+    int ACT_PRESS_BUTTON_NUMB_ONE = 21;
+    int ACT_PRESS_BUTTON_NUMB_TWO = 22;
+    int ACT_PRESS_BUTTON_NUMB_THREE = 23;
+    int ACT_PRESS_BUTTON_NUMB_FOUR = 24;
+    int ACT_PRESS_BUTTON_NUMB_FIVE = 25;
+    int ACT_PRESS_BUTTON_NUMB_SIX = 26;
+    int ACT_PRESS_BUTTON_NUMB_SEVEN = 27;
+    int ACT_PRESS_BUTTON_NUMB_EIGHT = 28;
+    int ACT_PRESS_BUTTON_NUMB_NINE = 29;
+    int ACT_PRESS_BUTTON_RED = 30;
+    int ACT_PRESS_BUTTON_GREEN = 31;
+    int ACT_PRESS_BUTTON_YELLOW = 32;
+    int ACT_PRESS_BUTTON_BLUE = 33;
+    int ACT_PRESS_BUTTON_UP = 34;
+    int ACT_PRESS_BUTTON_DOWN = 35;
+    int ACT_PRESS_BUTTON_LEFT = 36;
+    int ACT_PRESS_BUTTON_RIGHT = 37;
+    int ACT_PRESS_BUTTON_ENTER = 38;
+    int ACT_PRESS_BUTTON_BACK = 39;
+    Map<Integer, String> ACT_BUTTON_NAMES = new HashMap<Integer, String>() {
+        {
+            put(ACT_PRESS_BUTTON_NUMB_ZERO, "0");
+            put(ACT_PRESS_BUTTON_NUMB_ONE, "1");
+            put(ACT_PRESS_BUTTON_NUMB_TWO, "2");
+            put(ACT_PRESS_BUTTON_NUMB_THREE, "3");
+            put(ACT_PRESS_BUTTON_NUMB_FOUR, "4");
+            put(ACT_PRESS_BUTTON_NUMB_FIVE, "5");
+            put(ACT_PRESS_BUTTON_NUMB_SIX, "6");
+            put(ACT_PRESS_BUTTON_NUMB_SEVEN, "7");
+            put(ACT_PRESS_BUTTON_NUMB_EIGHT, "8");
+            put(ACT_PRESS_BUTTON_NUMB_NINE, "9");
+            put(ACT_PRESS_BUTTON_RED, "RED");
+            put(ACT_PRESS_BUTTON_GREEN, "GREEN");
+            put(ACT_PRESS_BUTTON_YELLOW, "YELLOW");
+            put(ACT_PRESS_BUTTON_BLUE, "BLUE");
+            put(ACT_PRESS_BUTTON_UP, "UP");
+            put(ACT_PRESS_BUTTON_DOWN, "DOWN");
+            put(ACT_PRESS_BUTTON_LEFT, "LEFT");
+            put(ACT_PRESS_BUTTON_RIGHT, "RIGHT");
+            put(ACT_PRESS_BUTTON_ENTER, "ENTER");
+            put(ACT_PRESS_BUTTON_BACK, "BACK");
+        }
+    };
+
     /**
      * Get the View of the TV browser session. This should be added to the content view of the
      * application.
@@ -594,7 +658,62 @@ public interface IOrbSession {
     /**
      * @since 204
      *
-     * Request for the Description of the current media playback on the application
+     * Sends voice commands based on provided actions, messages, anchors, and offsets, where some of the parameters are optional.
+     *
+     * @param action The predefined index number of the intent, from intent.media.pause to intent.playback
+     * @param info   The value uniquely identifying a piece of content:
+     *               - INTENT_MEDIA_SEEK_WALLCLOCK: a wall clock time
+     *               - INTENT_DISPLAY: a URI
+     *               - INTENT_SEARCH: a search term specified by the user.
+     *               - INTENT_PLAYBACK: a URI
+     * @param anchor The value indicates an anchor point of the content...
+     * @param offset The number value for the time position, a number of seconds
+     * @return True if the command is successfully executed; otherwise, handles appropriately.
      */
-    void onRequestMediaDescription();
+    boolean sendVoiceCommand(Integer action, String info, String anchor, int offset);
+
+    /**
+     * @since 204
+     *
+     * Request for the description of the current media on applications
+     *
+     * @return true if this event has been handled, and false if not
+     */
+    boolean onVoiceRequestDescription();
+
+    /**
+     * @since 204
+     *
+     * Request to deliver a text input, from voice command, to applications
+     *
+     * @param input The content of the text
+     * @return true if this event has been handled, and false if not
+     */
+    boolean onVoiceRequestTextInput(String input);
+
+    /**
+     * @since 204
+     *
+     * Called to send an intent, from a voice command, to applications
+     *
+     * @param action The index number of the intent, from intent.media.pause to intent.playback
+     * @param info   The value uniquely identifying a piece of content:
+     *               - INTENT_MEDIA_SEEK_WALLCLOCK: a wall clock time
+     *               - INTENT_DISPLAY: a URI
+     *               - INTENT_SEARCH: a search term specified by the user.
+     *               - INTENT_PLAYBACK: a URI
+     * @param anchor The value indicates an anchor point of the content, which is either "start" or "end"
+     * @param offset The number value for the time position, a number of seconds
+     * @return true if this event has been handled, and false if not
+     */
+    boolean onVoiceSendIntent(Integer action, String info, String anchor, int offset);
+
+    /**
+     * @since 204
+     *
+     * Called to send a send a key press event, from a voice command, to the application
+     *
+     * @param action The index number of the intent, either pressing a button or showing a log
+     */
+    boolean onVoiceSendKeyAction(Integer action);
 }

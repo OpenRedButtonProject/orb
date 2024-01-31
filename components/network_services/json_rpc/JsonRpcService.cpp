@@ -1127,7 +1127,7 @@ void JsonRpcService::RespondError(int connectionId, const std::string &id,
     SendJsonMessageToClient(connectionId, response);
 }
 
-void JsonRpcService::RequestMediaDescription()
+void JsonRpcService::VoiceRequestDescription()
 {
     std::vector<int> connectionIds = GetAllConnectionIds();
     for (int connectionId : connectionIds)
