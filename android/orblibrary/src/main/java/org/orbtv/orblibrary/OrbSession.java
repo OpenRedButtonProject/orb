@@ -747,6 +747,7 @@ class OrbSession implements IOrbSession {
      */
     @Override
     public void close() {
+        mBrowserView.close();
         mApplicationManager.close();
         mBridge.releaseResources();
         if (mOrbHbbTVVersion >= 204) {

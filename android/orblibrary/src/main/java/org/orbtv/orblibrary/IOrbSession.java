@@ -357,7 +357,8 @@ public interface IOrbSession {
     void onServiceInstanceChange(int index);
 
     /**
-     * TODO(library) What makes sense here?
+     * This method should be called after the View (i.e., from IOrbSesssion.getView()) has been
+     * removed from the view system.
      */
     void close();
 
