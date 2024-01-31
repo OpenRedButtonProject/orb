@@ -9,6 +9,7 @@ if (CMAKE_CURRENT_BINARY_DIR MATCHES "debug")
 endif()
 
 add_definitions(-DORB_HBBTV_VERSION=${ORB_HBBTV_VERSION})
+add_definitions(-DLWS_VERSION_4=1)
 
 include_directories(
    build/prebuilts/libxml2/include
