@@ -30,6 +30,9 @@ import android.webkit.WebView;
 import android.webkit.WebSettings;
 import android.webkit.WebViewClient;
 
+import android.util.DisplayMetrics;
+import android.view.WindowManager;
+
 import org.json.JSONObject;
 import org.orbtv.orbpolyfill.BridgeToken;
 
@@ -56,13 +59,24 @@ class BrowserView extends WebView {
         mContext = context;
         mJavaScriptBridgeInterface = new JavaScriptBridgeInterface(bridge);
 
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        if (windowManager != null) {
+            windowManager.getDefaultDisplay().getMetrics(displayMetrics);
+        }
+
+        // Set the display size for the WebView
+        int height = displayMetrics.heightPixels;
+
+        if (height > 0) {
+            setInitialScale((int) (height / 720.0 * 100.0));
+        }
+
         setHiddenFlag(PAGE_HIDDEN_FLAG);
         setBackgroundColor(Color.TRANSPARENT);
         getSettings().setJavaScriptEnabled(true);
         getSettings().setDomStorageEnabled(true);
         getSettings().setMediaPlaybackRequiresUserGesture(false);
-        getSettings().setUseWideViewPort(true);
-        getSettings().setLoadWithOverviewMode(true);
         getSettings().setUserAgentString(configuration.userAgent);
         getSettings().setStandardFontFamily(configuration.sansSerifFontFamily);
         getSettings().setSansSerifFontFamily(configuration.sansSerifFontFamily);
@@ -98,9 +112,11 @@ class BrowserView extends WebView {
             }
 
             @Override
-            public void onScaleChanged(WebView view, float oldScale, float newScale) {
-                BrowserView.this.setInitialScale((int) (BrowserView.this.getHeight() / 720.0 * 100.0));
-            }
+             public void onScaleChanged(WebView view, float oldScale, float newScale) {
+                 if (BrowserView.this.getHeight() > 0) {
+                     BrowserView.this.setInitialScale((int) (BrowserView.this.getHeight() / 720.0 * 100.0));
+                 }
+             }
         });
 
         setWebChromeClient(new WebChromeClient() {
