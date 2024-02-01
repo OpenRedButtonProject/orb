@@ -48,11 +48,13 @@ class BrowserView extends WebView {
     private int mHiddenMask = 0;
     private WebResourceClient mWebResourceClient;
     private SessionCallback mSessionCallback;
+    private JavaScriptBridgeInterface mJavaScriptBridgeInterface;
 
     public BrowserView(Context context, Bridge bridge,
                        OrbSessionFactory.Configuration configuration, DsmccClient dsmccClient) {
         super(context);
         mContext = context;
+        mJavaScriptBridgeInterface = new JavaScriptBridgeInterface(bridge);
 
         setHiddenFlag(PAGE_HIDDEN_FLAG);
         setBackgroundColor(Color.TRANSPARENT);
@@ -66,7 +68,7 @@ class BrowserView extends WebView {
         getSettings().setSansSerifFontFamily(configuration.sansSerifFontFamily);
         getSettings().setFixedFontFamily(configuration.fixedFontFamily);
         getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
-        addJavascriptInterface(new JavaScriptBridgeInterface(bridge), "androidBridge");
+        addJavascriptInterface(mJavaScriptBridgeInterface, "androidBridge");
 
         mWebResourceClient = new WebResourceClient(dsmccClient, new HtmlBuilder(mContext.getAssets()),
                 configuration.doNotTrackEnabled) {
@@ -204,6 +206,9 @@ class BrowserView extends WebView {
     }
 
     public void close() {
+        synchronized (mJavaScriptBridgeInterface.mBridge) {
+            mJavaScriptBridgeInterface.mQuitting = true;
+        }
         removeJavascriptInterface("androidBridge");
         getSettings().setJavaScriptEnabled(false);
         destroy();
@@ -275,7 +280,8 @@ class BrowserView extends WebView {
     }
 
     private static class JavaScriptBridgeInterface {
-        private final Bridge mBridge;
+        public final Bridge mBridge;
+        public boolean mQuitting = false;
 
         JavaScriptBridgeInterface(Bridge bridge) {
             mBridge = bridge;
@@ -289,6 +295,9 @@ class BrowserView extends WebView {
                 JSONObject params = object.getJSONObject("params");
                 BridgeToken token = new BridgeToken(object.getJSONObject("token"));
                 synchronized (mBridge) {
+                    if (mQuitting) {
+                        throw new Exception("Quitting");
+                    }
                     Log.i(TAG, "Bridge request: " + method + "(" + params.toString() + ")");
                     return mBridge.request(method, token, params).toString();
                 }
