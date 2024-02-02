@@ -113,6 +113,20 @@ abstract class WebResourceClient {
         // Request
         String url = request.getUrl().toString();
         Map<String, String> requestHeaders = request.getRequestHeaders();
+
+        if (!request.isForMainFrame()) {
+            String[] mimetypes = requestHeaders.getOrDefault("Accept", "").split(",");
+            boolean found = false;
+            for (String m : mimetypes) {
+                if (HBBTV_MIME_TYPES.contains(m.toLowerCase())) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return null;
+            }
+        }
         requestHeaders.put("Accept", String.join(",", HBBTV_MIME_TYPES));
 
         CookieManager cookieManager;
@@ -171,11 +185,7 @@ abstract class WebResourceClient {
         if (HBBTV_MIME_TYPES.contains(mimeType.toLowerCase())) {
             responseStream = createInjectionResponseStream(body.byteStream(), body, charset, request.getUrl(), appId);
         } else {
-            if (request.isForMainFrame()) {
-                responseStream = createResponseStream(body.byteStream(), body);
-            } else {
-                return null;
-            }
+            responseStream = createResponseStream(body.byteStream(), body);
         }
 
         WebResourceResponse response = new WebResourceResponse(mimeType, charset.name(), responseStream);
