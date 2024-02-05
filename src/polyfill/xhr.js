@@ -27,4 +27,29 @@
             '' :
             _getAllResponseHeaders.call(this);
     };
+
+    if (hbbtv.native.name === "rdk") {
+        const _open = window.XMLHttpRequest.prototype.open;
+        window.XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
+            const baseUrl = (window.document.getElementsByTagName('base')[0] ?? document.createElement('base')).href;
+            if(baseUrl.length > 0) {
+                if(url.startsWith("dvb:/") && !url.startsWith("dvb://")) {
+                    let newbase;
+                    const dvbTag="dvb:";
+                    if(baseUrl.startsWith("dvb://")) {
+                        newbase = baseUrl.substring(0, baseUrl.lastIndexOf("/"));
+                        url = newbase + url.substring(dvbTag.length);
+                    } else {
+                        const dvburlTag = "dvburl=";
+                        const urlIdx = baseUrl.lastIndexOf(dvburlTag);
+                        if(urlIdx) {
+                            newbase = baseUrl.substring(urlIdx + dvburlTag.length);
+                            url = newbase + url.substring(dvbTag.length);
+                        }
+                    }
+                }
+            }
+            return _open.call(this,method,url,async,user,password);
+        };
+    }
 })();
