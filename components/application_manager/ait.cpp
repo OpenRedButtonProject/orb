@@ -25,6 +25,7 @@
 #include <cstring>
 #include <cstdint>
 #include <pthread.h>
+#include <sstream>
 
 #include "log.h"
 #include "utils.h"
@@ -35,6 +36,7 @@
 #define DTAG_TRANSPORT_PROTOCOL 0x02
 #define DTAG_EXT_AUTH 0x05
 #define DTAG_APPLICATION_ICON 0x0b
+#define DTAG_GRAPHICS_CONSTRAINTS 0x14
 #define DTAG_SIMPLE_APP_LOCATION 0x15
 #define DTAG_APP_USAGE 0x16
 #define DTAG_SIMPLE_APP_BOUNDARY 0x17
@@ -360,6 +362,16 @@ bool Ait::PrintInfo(const S_AIT_TABLE *parsedAit)
                 hAitApp.parentalRatings[j].value,
                 hAitApp.parentalRatings[j].scheme.c_str(),
                 hAitApp.parentalRatings[j].region.c_str());
+        }
+        if (!hAitApp.graphicsConstraints.empty())
+        {
+            std::stringstream ss;
+            for (int j = 0; j < hAitApp.graphicsConstraints.size(); ++j)
+            {
+                std::string sep = (j < hAitApp.graphicsConstraints.size() - 1) ? "p, " : "p";
+                ss << std::to_string(hAitApp.graphicsConstraints[j]) << sep;
+            }
+            LOG(LOG_INFO, "\t\tGraphics constraints: %s", ss.str().c_str());
         }
     }
     return true;
@@ -825,6 +837,42 @@ void Ait::ParseParentalRatingDesc(const uint8_t *dataPtr, S_AIT_APP_DESC *appPtr
 }
 
 /**
+ * Parses the Graphics Constraints Descriptors.
+ * @param dataPtr
+ * @param appPtr
+ */
+void Ait::ParseGraphicsConstraints(const uint8_t *dataPtr, S_AIT_APP_DESC *appPtr)
+{
+    if (appPtr->graphicsConstraints.empty())
+    {
+        appPtr->graphicsConstraints.push_back(720);
+        int numGraphics = (*dataPtr) - 1;
+        dataPtr++;
+        for (int i = 0; i < numGraphics; ++i)
+        {
+            dataPtr++;
+            int id = *dataPtr;
+            switch (id)
+            {
+                case 4:
+                    appPtr->graphicsConstraints.push_back(1080);
+                    break;
+                case 5:
+                    appPtr->graphicsConstraints.push_back(2160);
+                    break;
+                case 6:
+                    appPtr->graphicsConstraints.push_back(4320);
+                    break;
+            }
+        }
+    }
+    else
+    {
+        LOG(LOG_DEBUG, "Ait::ParseGraphicsConstraints Already parsed for this app, skipping");
+    }
+}
+
+/**
  *
  * @param data
  * @param len
@@ -880,6 +928,11 @@ void Ait::ParseApplication(const uint8_t *data, uint16_t len, S_AIT_APP_DESC *ap
 
             case DTAG_PARENTAL_RATING: {
                 ParseParentalRatingDesc(data, appPtr);
+                break;
+            }
+
+            case DTAG_GRAPHICS_CONSTRAINTS: {
+                ParseGraphicsConstraints(data, appPtr);
                 break;
             }
 

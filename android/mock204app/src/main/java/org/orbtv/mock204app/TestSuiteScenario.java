@@ -228,6 +228,13 @@ public class TestSuiteScenario {
             application.baseUrl = info.getString("baseUrl").replace("$LOCALHOST",
                     mLocalHost);
             application.initialPath = info.getString("initialPath");
+            application.graphics = new Vector<>();
+            if (info.has("graphics")) {
+                JSONArray graphics = info.getJSONArray("graphics");
+                for (int j = 0; j < graphics.length(); ++j) {
+                    application.graphics.add(graphics.getInt(j));
+                }
+            }
             parsed.add(application);
         }
         return parsed;
