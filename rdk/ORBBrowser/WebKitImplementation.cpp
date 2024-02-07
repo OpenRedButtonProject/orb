@@ -2429,6 +2429,9 @@ private:
         setenv("HBBTV_ENABLED", "1", 1);
         setenv("WPE_DISABLE_XHR_RESPONSE_CACHING_FOR_PROTOCOLS", "dvb,hbbtv-carousel", 1);
 
+        // Set the environment variables needed by WPE 2.38
+        setenv("WPE_WHITELIST_ALL_PORTS_FOR_PROTOCOLS", "dvb,hbbtv-carousel", 1);
+        
         WebKitWebContext *context;
         if (automationEnabled)
         {
