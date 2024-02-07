@@ -577,8 +577,8 @@ hbbtv.objects.AVControl = (function() {
             returnAllComponentTypes = true;
         }
         //TODO propably not all codec & lang strings are oipf profile compatible
-        if (playStates[priv.playState] & 6) {
-            // playing or paused
+        if (playStates[priv.playState] & 22) {
+            // playing or paused or buffering
             const videoTracks = videoElement.videoTracks;
             if (
                 (returnAllComponentTypes || componentType === this.COMPONENT_TYPE_VIDEO) &&
@@ -958,7 +958,7 @@ hbbtv.objects.AVControl = (function() {
             console.log(
                 'A/V Control: Transitioned from state ' + priv.playState + ' to ' + targetState
             );
-            if (priv.playState !== targetState) {
+            if (priv.playState !== targetState || (priv.playState === targetState) && (targetState === 1)) {
                 priv.playState = targetState;
 
                 dispatchEvent.call(this, 'PlayStateChange', {
@@ -1150,7 +1150,7 @@ hbbtv.objects.AVControl = (function() {
                 transitionToState.call(thiz, PLAY_STATE_ERROR);
                 return;
             }
-            transitionToState.call(thiz, PLAY_STATE_BUFFERING);
+            //transitionToState.call(thiz, PLAY_STATE_BUFFERING);
             videoElement.src = thiz.data;
         };
 
@@ -1172,7 +1172,10 @@ hbbtv.objects.AVControl = (function() {
         });
 
         videoElement.addEventListener('loadedmetadata', () =>
-            setMediaSettings.call(this, priv.MediaSettingsConfiguration)
+            {
+                transitionToState.call(this, PLAY_STATE_BUFFERING);
+                setMediaSettings.call(this, priv.MediaSettingsConfiguration);
+            }
         );
 
         videoElement.addEventListener('waiting', () => {
