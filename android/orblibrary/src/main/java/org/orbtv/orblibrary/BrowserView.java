@@ -52,6 +52,7 @@ class BrowserView extends WebView {
     private WebResourceClient mWebResourceClient;
     private SessionCallback mSessionCallback;
     private JavaScriptBridgeInterface mJavaScriptBridgeInterface;
+    private int mRenderingResolution = 720;
 
     public BrowserView(Context context, Bridge bridge,
                        OrbSessionFactory.Configuration configuration, DsmccClient dsmccClient) {
@@ -63,13 +64,6 @@ class BrowserView extends WebView {
         WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         if (windowManager != null) {
             windowManager.getDefaultDisplay().getMetrics(displayMetrics);
-        }
-
-        // Set the display size for the WebView
-        int height = displayMetrics.heightPixels;
-
-        if (height > 0) {
-            setInitialScale((int) (height / 720.0 * 100.0));
         }
 
         setHiddenFlag(PAGE_HIDDEN_FLAG);
@@ -112,11 +106,11 @@ class BrowserView extends WebView {
             }
 
             @Override
-             public void onScaleChanged(WebView view, float oldScale, float newScale) {
-                 if (BrowserView.this.getHeight() > 0) {
-                     BrowserView.this.setInitialScale((int) (BrowserView.this.getHeight() / 720.0 * 100.0));
-                 }
-             }
+            public void onScaleChanged(WebView view, float oldScale, float newScale) {
+                if (BrowserView.this.getHeight() > 0) {
+                    BrowserView.this.setInitialScale((int) (100.0 * BrowserView.this.getHeight() / mRenderingResolution));
+                }
+            }
         });
 
         setWebChromeClient(new WebChromeClient() {
@@ -192,10 +186,12 @@ class BrowserView extends WebView {
         }
     }
 
-    public void loadApplication(int appId, String entryUrl) {
+    public void loadApplication(int appId, String entryUrl, int rendering, int[] graphicsConfigIds) {
         mLoadAppId = appId;
         mContext.getMainExecutor().execute(() -> {
             mAppId = appId;
+            mRenderingResolution = getRenderingResolution(rendering, graphicsConfigIds);
+            setInitialScale((int) (100.0 * getHeight() / mRenderingResolution));
             loadUrl(entryUrl);
             if (entryUrl.equals("about:blank")) {
                 setHiddenFlag(PAGE_HIDDEN_FLAG);
@@ -228,6 +224,26 @@ class BrowserView extends WebView {
         removeJavascriptInterface("androidBridge");
         getSettings().setJavaScriptEnabled(false);
         destroy();
+    }
+
+    public int getRenderingResolution() {
+        return mRenderingResolution;
+    }
+
+    private int getRenderingResolution(int rendering, int[] graphicsConfigIds) {
+        int resolution = 720;
+        if (graphicsConfigIds != null) {
+            Arrays.sort(graphicsConfigIds);
+            int index = Arrays.binarySearch(graphicsConfigIds, rendering);
+            if (index < 0) {
+                index = ~index - 1;
+            }
+            if (index >= 0) {
+                resolution = graphicsConfigIds[index];
+            }
+        }
+        Log.d(TAG, "Rendering resolution is set to " + resolution + "p");
+        return resolution;
     }
 
     private void setHiddenFlag(int flag) {
@@ -336,7 +352,7 @@ class BrowserView extends WebView {
         /**
          * Check whether the key code is in the key set of the application.
          *
-         * @param appId The application ID.
+         * @param appId   The application ID.
          * @param keyCode A TvBrowserTypes.VK_* key code.
          * @return true if it is in the key set, otherwise false
          */
@@ -354,7 +370,7 @@ class BrowserView extends WebView {
          * loaded. For example, when the user follows a link.
          *
          * @param appId The application ID.
-         * @param url The URL of the new page.
+         * @param url   The URL of the new page.
          */
         void notifyApplicationPageChanged(int appId, String url);
     }

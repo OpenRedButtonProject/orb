@@ -710,6 +710,18 @@ class Bridge extends AbstractBridge {
     }
 
     /**
+     * Get the current resolution supported by the terminal.
+     *
+     * @param token The token associated with this request.
+     *
+     * @return An integer value of the rendering resolution.
+     */
+    @Override
+    protected int Configuration_getRenderingResolution(BridgeToken token) {
+        return mTvBrowserSession.getRenderingResolution();
+    }
+
+    /**
      * Get the current capabilities of the terminal.
      *
      * @param token The token associated with this request.

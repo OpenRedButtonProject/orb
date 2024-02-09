@@ -62,8 +62,35 @@ public:
     {
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_entry_url = env->NewStringUTF(entry_url);
-        env->CallVoidMethod(mJavaCbObject, gCb[CB_LOAD_APPLICATION], app_id, j_entry_url);
+        env->CallVoidMethod(mJavaCbObject, gCb[CB_LOAD_APPLICATION], app_id, j_entry_url, nullptr);
         env->DeleteLocalRef(j_entry_url);
+    }
+
+    void LoadApplication(uint16_t app_id, const char *entry_url, int array_size, const std::vector<uint16_t> graphics) override
+    {
+        if (array_size == 0) {
+            LoadApplication(app_id, entry_url);
+        }
+        JNIEnv *env = JniUtils::GetEnv();
+        jstring j_entry_url = env->NewStringUTF(entry_url);
+        jintArray j_array = env->NewIntArray(array_size);
+        jint *int_ptr = static_cast<jint *>(calloc(array_size, sizeof(jint)));
+        if (int_ptr == nullptr)
+        {
+            LoadApplication(app_id, entry_url);
+        }
+        else
+        {
+            for (int i = 0; i < array_size; i++)
+            {
+                int_ptr[i] = graphics[i];
+            }
+            env->SetIntArrayRegion(j_array, 0, array_size, int_ptr);
+            env->CallVoidMethod(mJavaCbObject, gCb[CB_LOAD_APPLICATION], app_id, j_entry_url, j_array);
+        }
+        env->DeleteLocalRef(j_entry_url);
+        env->DeleteLocalRef(j_array);
+        free(int_ptr);
     }
 
     void ShowApplication() override
@@ -162,7 +189,7 @@ void InitialiseApplicationManagerNative()
     gCb[CB_RESET_BROADCAST_PRESENTATION] = env->GetMethodID(managerClass,
         "jniCbResetBroadcastPresentation", "()V");
     gCb[CB_LOAD_APPLICATION] = env->GetMethodID(managerClass,
-        "jniCbLoadApplication", "(ILjava/lang/String;)V");
+        "jniCbLoadApplication", "(ILjava/lang/String;[I)V");
     gCb[CB_SHOW_APPLICATION] = env->GetMethodID(managerClass,
         "jniCbShowApplication", "()V");
     gCb[CB_HIDE_APPLICATION] = env->GetMethodID(managerClass,

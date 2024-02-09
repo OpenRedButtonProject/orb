@@ -81,6 +81,7 @@ public class OrbSessionFactory {
         public final String fixedFontFamily;
         public final boolean doNotTrackEnabled;
         public final boolean cleanAudioEnabled;
+        public final int deviceResolution = 1080;
 
         /**
          *

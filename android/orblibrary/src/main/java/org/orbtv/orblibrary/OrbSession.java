@@ -60,10 +60,11 @@ class OrbSession implements IOrbSession {
              *
              * @param appId The application ID.
              * @param entryUrl The entry page URL.
+             * @param graphics The list of the co-ordinate graphics supported by the application
              */
             @Override
-            public void loadApplication(int appId, String entryUrl) {
-                mBrowserView.loadApplication(appId, entryUrl);
+            public void loadApplication(int appId, String entryUrl, int[] graphics) {
+                mBrowserView.loadApplication(appId, entryUrl, configuration.deviceResolution, graphics);
             }
 
             /**
@@ -366,6 +367,16 @@ class OrbSession implements IOrbSession {
                 mConfiguration.app2appRemotePort +
                 "/hbbtv/" +
                 mConfiguration.mainActivityUuid + "/";
+    }
+
+    /**
+     * Get the current resolution supported by the terminal.
+     *
+     * @return An integer value of the rendering resolution.
+     */
+    @Override
+    public int getRenderingResolution() {
+        return mBrowserView.getRenderingResolution();
     }
 
     /**

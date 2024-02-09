@@ -46,8 +46,9 @@ class ApplicationManager {
          *
          * @param appId The application ID.
          * @param entryUrl The entry page URL.
+         * @param graphics The list of the co-ordinate graphics supported by the application
          */
-        void loadApplication(int appId, String entryUrl);
+        void loadApplication(int appId, String entryUrl, int[] graphics);
 
         /**
          * Tell the browser to show the application.
@@ -275,12 +276,12 @@ class ApplicationManager {
         }
     }
 
-    private void jniCbLoadApplication(int appId, String entryUrl) {
+    private void jniCbLoadApplication(int appId, String entryUrl, int[] graphics) {
         synchronized (mLock) {
             m_entryUrl = entryUrl;
             if (mSessionCallback != null) {
                 mSessionCallback.resetBroadcastPresentation();
-                mSessionCallback.loadApplication(appId, entryUrl);
+                mSessionCallback.loadApplication(appId, entryUrl, graphics);
                 if (m_entryUrl.equals(NOT_STARTED_URL)) {
                     mSessionCallback.notifyApplicationStatusChanged(
                             IOrbSessionCallback.ApplicationStatus.NOT_STARTED);
@@ -338,8 +339,7 @@ class ApplicationManager {
             if (!okResponse.isSuccessful()) {
                 return "";
             }
-            String contents = okResponse.body().string();
-            return contents;
+            return okResponse.body().string();
         } catch (Exception e) {
             e.printStackTrace();
             return "";

@@ -962,6 +962,18 @@ hbbtv.bridge.configuration = (function() {
     };
 
     /**
+     * Get the current resolution supported by the terminal.
+     *
+     * @return {number} The value of rendering resolution.
+     *
+     * @method
+     * @memberof bridge.configuration#
+     */
+    exported.getRenderingResolution = function() {
+        return hbbtv.native.request('Configuration.getRenderingResolution', {}).result;
+    };
+
+    /**
      * Get a list of audio profiles supported by the terminal, as defined by HBBTV 10.2.4.7 for
      * the audio_profile element.
      *

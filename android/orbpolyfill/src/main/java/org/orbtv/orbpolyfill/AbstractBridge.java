@@ -919,6 +919,15 @@ public abstract class AbstractBridge {
     protected abstract boolean ParentalControl_isRatingBlocked(BridgeToken token, String scheme, String region, int value);
 
     /**
+     * Get the current resolution supported by the terminal.
+     *
+     * @param token The token associated with this request.
+     *
+     * @return An integer value of the rendering resolution.
+     */
+    protected abstract int Configuration_getRenderingResolution(BridgeToken token);
+
+    /**
      * Get the current capabilities of the terminal.
      *
      * @param token The token associated with this request.
@@ -1746,6 +1755,14 @@ public abstract class AbstractBridge {
                         params.getString("scheme"),
                         params.getString("region"),
                         params.getInt("value")
+                );
+                response.put("result", result);
+                break;
+            }
+
+            case "Configuration.getRenderingResolution": {
+                int result = Configuration_getRenderingResolution(
+                        token
                 );
                 response.put("result", result);
                 break;

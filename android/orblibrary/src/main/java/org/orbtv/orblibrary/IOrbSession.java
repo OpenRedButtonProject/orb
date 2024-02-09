@@ -105,6 +105,13 @@ public interface IOrbSession {
     String getApp2AppRemoteBaseUrl();
 
     /**
+     * Get the current resolution supported by the terminal.
+     *
+     * @return An integer value of the rendering resolution.
+     */
+    int getRenderingResolution();
+
+    /**
      * Launches a "Broadcast-INDEPENDENT" application, the url could be an XML-AIT file.
      *
      * @param url URL where application is to be found

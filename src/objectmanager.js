@@ -23,6 +23,7 @@ hbbtv.objectManager = (function() {
     let objectMimeTypeTable = [];
     let objectFactoryMethodTable = [];
     let objectUpgradeHandlers = [];
+    let imageFactor = 1;
 
     function initialise() {
         addMetaViewportElement();
@@ -43,6 +44,8 @@ hbbtv.objectManager = (function() {
             }
         );
         upgradeDescendantObjects(document);
+        let resolution = hbbtv.bridge.configuration.getRenderingResolution();
+        imageFactor = resolution / 720;
     }
 
     function registerObject(options) {
@@ -101,12 +104,43 @@ hbbtv.objectManager = (function() {
         }
     }
 
+    function updateImageSrc(imageElement) {
+         let isSetImage = false;
+         let srcsetValue = imageElement.getAttribute('srcset');
+         let sizesValue = imageElement.getAttribute('sizes');
+         if (srcsetValue != null) {
+             let value = (sizesValue != null) ? parseFloat(sizesValue.match(/\d+(\.\d+)?/)) * imageFactor : imageFactor;
+             let sources = srcsetValue.split(',');
+             sources.forEach(function(source) {
+                   source = source.trim();
+                   let parts = source.split(' ');
+                   let widthDescriptor = parseFloat(parts[1].match(/\d+(\.\d+)?/));
+                   if (widthDescriptor === value) {
+                       imageElement.setAttribute('src', parts[0]);
+                       isSetImage = true;
+                   }
+               })
+         }
+         if (isSetImage) {
+             return;
+         }
+        const imageWidth = parseFloat(imageElement.style.width.match(/\d+(\.\d+)?/)) * imageFactor;
+        const imageHeight = parseFloat(imageElement.style.height.match(/\d+(\.\d+)?/)) * imageFactor;
+        if (!isNaN(imageWidth) && !isNaN(imageHeight)) {
+            imageElement.style.width = Math.round(imageWidth) + 'px';
+            imageElement.style.height = Math.round(imageHeight) + 'px';
+        }
+    }
+
     // Mutation observer
     function addMutationIntercept(callbackObjectAdded, callbackObjectRemoved) {
         const observer = new MutationObserver(function(mutationsList) {
             for (const mutation of mutationsList) {
                 if (mutation.type === 'childList') {
                     for (const node of mutation.addedNodes) {
+                        if (imageFactor !== 1 && node.nodeType === Node.ELEMENT_NODE && node.nodeName.toLowerCase() === 'img') {
+                            updateImageSrc(node);
+                        }
                         if (node.nodeName && node.nodeName.toLowerCase() === 'object') {
                             callbackObjectAdded(node);
                         }
