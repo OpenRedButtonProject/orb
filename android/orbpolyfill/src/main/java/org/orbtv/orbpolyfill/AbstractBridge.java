@@ -106,11 +106,14 @@ public abstract class AbstractBridge {
     /**
      * Called when the set of available components on the selected broadcast channel changes.
      *
-     * @param componentType The component type (COMPONENT_TYPE_* code).
+     * @param componentType If the presentation has changed for only one component type, this value
+     * should be set to BridgeTypes.COMPONENT_TYPE_* for that specific type. If the presentation has
+     * changed for more than one component type, this value should be set to
+     * BridgeTypes.COMPONENT_TYPE_ANY.
      */
     public void dispatchComponentChangedEvent(int componentType) {
         JSONObject properties = new JSONObject();
-        // TODO Can this check be moved to the caller?
+        // TODO This check should be unnecessary
         if ((componentType >= 0) && (componentType <= 2)) {
             try {
                 properties.put("componentType", componentType);
