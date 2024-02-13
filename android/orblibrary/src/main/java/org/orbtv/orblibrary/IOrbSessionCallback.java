@@ -31,7 +31,7 @@ public interface IOrbSessionCallback {
         /* The application is running but not currently visible to the user. */
         INVISIBLE,
     }
-    
+
     /**
      * The level of support a TV OS has for a particular Accessibility Feature.
      *
@@ -852,6 +852,20 @@ public interface IOrbSessionCallback {
      * @return The media id of media name.
      */
     default String getMediaId(String name) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
+    /**
+     * @since 204
+     *
+     * Trigger a response to a user action according to different response magnitudes
+     *
+     * @param magnitude The magnitude of trigger response.
+     *                  - triggerPrimary: the most common type of actions.
+     *                  - triggerSecondary: a second type of response that may be used for less common user actions.
+     *                  - triggerException: a user has attempted to navigate to a location that is not supported.
+     */
+    default void respondToAUserAction(String magnitude) {
         throw new UnsupportedOperationException("Unsupported 204 API.");
     }
 }

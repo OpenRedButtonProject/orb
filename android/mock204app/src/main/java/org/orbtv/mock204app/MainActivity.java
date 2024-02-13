@@ -156,7 +156,10 @@ public class MainActivity extends Activity {
             public void onReceive(Integer action, String info, String anchor, int offset) {
                 if (!mTvBrowserSession.sendVoiceCommand(action, info, anchor, offset)) {
                     consoleLog("Error in voice recognition");
+                    mMockCallback.respondToAUserAction("triggerException");
+                    return;
                 }
+                mMockCallback.respondToAUserAction("triggerPrimary");
             }
         });
     }
