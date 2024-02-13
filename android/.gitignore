@@ -8,4 +8,5 @@
 .externalNativeBuild
 .cxx
 /orblibrary/src/main/assets/polyfill/
-/mockorbapp/src/main/assets/tests/
+/mock203app/src/main/assets/tests/
+/mock204app/src/main/assets/tests/
