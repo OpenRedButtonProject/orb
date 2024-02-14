@@ -197,7 +197,10 @@ public interface IOrbSession {
     /**
      * Called when there is a change in the set of components being presented.
      *
-     * @param componentType Type of component whose presentation has changed.
+     * @param componentType If the presentation has changed for only one component type, this value
+     * should be set to BridgeTypes.COMPONENT_TYPE_* for that specific type. If the presentation has
+     * changed for more than one component type, this value should be set to
+     * BridgeTypes.COMPONENT_TYPE_ANY.
      */
     void onComponentChanged(int componentType);
 

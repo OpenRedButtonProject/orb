@@ -67,6 +67,7 @@ hbbtv.objects.VideoBroadcast = (function() {
     const CHANNEL_STATUS_CHANNEL_NOT_IN_TS = 12;
     const CHANNEL_STATUS_UNKNOWN_ERROR = 100;
 
+    const COMPONENT_TYPE_ANY = -1;
     const COMPONENT_TYPE_VIDEO = 0;
     const COMPONENT_TYPE_AUDIO = 1;
     const COMPONENT_TYPE_SUBTITLE = 2;
@@ -556,7 +557,12 @@ hbbtv.objects.VideoBroadcast = (function() {
             p.onComponentChangedDomLevel0 = listener;
             if (listener) {
                 p.onComponentChangedWrapper = (ev) => {
-                    listener(ev.componentType);
+                    // For COMPONENT_TYPE_ANY (more than 1 component changed) use undefined.
+                    let componentType = undefined;
+                    if (ev.componentType != COMPONENT_TYPE_ANY) {
+                        componentType = ev.componentType;
+                    }
+                    listener(componentType);
                 };
                 this.addEventListener('ComponentChanged', p.onComponentChangedWrapper);
             }
@@ -1742,7 +1748,12 @@ hbbtv.objects.VideoBroadcast = (function() {
                 /* Update internal state */
                 try {
                     p.currentChannelComponents = null;
-                    dispatchComponentChanged.call(this, event.componentType);
+                    // For COMPONENT_TYPE_ANY (more than 1 component changed) use undefined.
+                    let componentType = undefined;
+                    if (event.componentType != COMPONENT_TYPE_ANY) {
+                        componentType = event.componentType;
+                    }
+                    dispatchComponentChanged.call(this, componentType);
                 } catch (e) {
                     if (e.name === 'SecurityError') {
                         console.log(
