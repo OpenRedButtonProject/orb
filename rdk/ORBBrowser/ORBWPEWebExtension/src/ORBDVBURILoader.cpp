@@ -111,8 +111,12 @@ void ORBDVBURILoader::Finish()
             ORB_LOG("GInputStream created with dataLength=%d", m_dataLength);
         }
 
-        const gchar *mimeType = nullptr;
-
+        const gchar *uri = webkit_uri_scheme_request_get_uri(m_request);
+        ORB_LOG("The uri is: %s", uri);
+        
+        const gchar *mimeType = ORBWPEWebExtensionHelper::GetSharedInstance().GetMimeTypeFromUrl(uri).c_str();
+        ORB_LOG("The mime type is: %s", mimeType);
+        
         // Signal completion of the DVB URI scheme request
         webkit_uri_scheme_request_finish(m_request, stream, m_dataLength, mimeType);
 

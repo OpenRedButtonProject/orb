@@ -51,6 +51,54 @@ static std::condition_variable cv;
 static std::map<int, std::shared_ptr<ORBDVBURILoader> > s_dvbUriLoaders;
 
 /**
+ * Helper function to get the file extension from the given url
+ *
+ * @param url The url to parse
+ *
+ * @return The extension or empty string if no extension given
+ */
+static std::string GetFileExtensionFromUrl(std::string url) {
+    // skip scheme
+    size_t protocolPos = url.find("://");
+    if (protocolPos != std::string::npos)
+    {
+        url = url.substr(protocolPos + 3);
+    }
+    
+    // only interested in the file ext
+    size_t tokenPos = url.find("?");
+    if (tokenPos != std::string::npos) 
+    {
+        url = url.substr(0, tokenPos);
+    }
+    
+    // path/to/fileDir<lastSlashPos>file.ext
+    size_t lastSlashPos = url.find_last_of('/');
+    if (lastSlashPos != std::string::npos)
+    {
+        url = url.substr(lastSlashPos + 1);
+        if (url.length() > 0)
+        {
+            size_t lastDotPos = url.find_last_of('.');
+            if (lastDotPos != std::string::npos) 
+            {
+                url = url.substr(lastDotPos + 1);
+            }
+            else 
+            {
+                url = "";
+            }
+        }
+    }
+    else
+    {
+        url = "";
+    }
+    
+    return url;
+}
+
+/**
  * Read the specified file contents into a string buffer.
  *
  * @param filePath The absolute file path
@@ -275,6 +323,35 @@ ORBWPEWebExtensionHelper::ORBWPEWebExtensionHelper()
         );
 
     m_orbClient->SubscribeToDvbUrlLoadedNoDataEvent();
+    
+    if (m_mimetypeMap.empty()) {
+        m_mimetypeMap["txt"] = "text/plain";
+        m_mimetypeMap["pdf"] = "application/pdf";
+        m_mimetypeMap["ps"] = "application/postscript";
+        m_mimetypeMap["css"] = "text/css";
+        m_mimetypeMap["html"] = "text/html";
+        m_mimetypeMap["htm"] = "text/html";
+        m_mimetypeMap["xml"] = "text/xml";
+        m_mimetypeMap["xsl"] = "text/xsl";
+        m_mimetypeMap["js"] = "application/x-javascript";
+        m_mimetypeMap["xht"] = "application/xhtml+xml";
+        m_mimetypeMap["xhtml"] = "application/xhtml+xml";
+        m_mimetypeMap["rss"] = "application/rss+xml";
+        m_mimetypeMap["webarchive"] = "application/x-webarchive";
+        m_mimetypeMap["svg"] = "image/svg+xml";
+        m_mimetypeMap["svgz"] = "image/svg+xml";
+        m_mimetypeMap["jpg"] = "image/jpeg";
+        m_mimetypeMap["jpeg"] = "image/jpeg";
+        m_mimetypeMap["png"] = "image/png";
+        m_mimetypeMap["tif"] = "image/tiff";
+        m_mimetypeMap["tiff"] = "image/tiff";
+        m_mimetypeMap["ico"] = "image/ico";
+        m_mimetypeMap["cur"] = "image/ico";
+        m_mimetypeMap["bmp"] = "image/bmp";
+        m_mimetypeMap["wml"] = "text/vnd.wap.wml";
+        m_mimetypeMap["wmlc"] = "application/vnd.wap.wmlc";
+        m_mimetypeMap["m4a"] = "audio/x-m4a";
+    }
 }
 
 /**
@@ -385,4 +462,31 @@ void ORBWPEWebExtensionHelper::SetORBWPEWebExtensionPreferences(WebKitSettings *
     webkit_settings_set_enable_plugins(preferences, false);
     webkit_settings_set_allow_display_of_insecure_content(preferences, true);
 }
+
+/**
+ * Get the mimetype based on the given url
+ *
+ * @param url The url to parse
+ * @return The mimetype or * / * for unkown
+ */
+std::string ORBWPEWebExtensionHelper::GetMimeTypeFromUrl(std::string url)
+{
+    std::string type = "*/*";
+
+    std::string extension = GetFileExtensionFromUrl(url);
+    if (extension != "") 
+    {
+        std::map<std::string, std::string>::iterator it = m_mimetypeMap.find(extension);
+        if (it != m_mimetypeMap.end())
+        {
+            type = m_mimetypeMap[extension];
+        } 
+        else if (extension == "html5" || extension == "cehtml")
+        {
+            type = "text/html";
+        }
+    }
+    return type;
+}
+
 } // namespace orb
