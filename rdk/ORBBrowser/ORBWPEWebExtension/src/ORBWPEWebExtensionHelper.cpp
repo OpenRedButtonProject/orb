@@ -361,6 +361,7 @@ ORBWPEWebExtensionHelper::~ORBWPEWebExtensionHelper()
 {
     ORB_LOG_NO_ARGS();
     m_orbClient->UnsubscribeFromDvbUrlLoadedNoDataEvent();
+    m_mimetypeMap.clear();
 }
 
 /**
