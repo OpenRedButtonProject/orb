@@ -47,9 +47,10 @@
                             url = newbase + url.substring(dvbTag.length);
                         }
                     }
+                    arguments[1] = url;
                 }
             }
-            return _open.call(this,method,url,async,user,password);
+            return _open.apply(this, arguments);
         };
     }
 })();
