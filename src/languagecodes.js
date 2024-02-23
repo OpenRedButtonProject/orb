@@ -205,4 +205,9 @@ hbbtv.languageCodes = {
         zho: 'zh',
         zul: 'zu',
     },
+    makeReverseMapping : function() {
+        return Object.fromEntries(
+            Object.entries(this.ISO639_2_to_ISO639_1).map(([key, value]) => [value, key])
+          );
+    }
 };

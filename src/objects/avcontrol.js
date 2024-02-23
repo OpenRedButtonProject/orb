@@ -641,6 +641,16 @@ hbbtv.objects.AVControl = (function() {
                         } else if (isEAC3(trackEncoding)) {
                             trackEncoding = "E-AC3";
                         }
+                                      
+                        let language = 'und';
+                        if (audioTrack.language) {
+                            if (priv.ISO639_1_to_ISO639_2[audioTrack.language]) {
+                                language = priv.ISO639_1_to_ISO639_2[audioTrack.language];
+                            }
+                            else {
+                                language = audioTrack.language;
+                            }
+                        }
 
                         components.push({
                             // AVComponent properties
@@ -650,7 +660,7 @@ hbbtv.objects.AVControl = (function() {
                             encoding: trackEncoding,
                             encrypted: audioTrack.encrypted,
                             // AVAudioComponent properties
-                            language: audioTrack.language ? audioTrack.language : 'und',
+                            language: language,
                             audioDescription: audioTrack.kind === 'alternate' ||
                                 audioTrack.kind === 'alternative',
                             audioChannels: audioTrack.numChannels,
@@ -1068,6 +1078,7 @@ hbbtv.objects.AVControl = (function() {
         priv.xhr = new XMLHttpRequest();
         const thiz = this;
 
+        priv.ISO639_1_to_ISO639_2 = hbbtv.languageCodes.makeReverseMapping();
         priv.data = Element.prototype.getAttribute.call(this, 'data');
 
         function onPlayHandler() {
