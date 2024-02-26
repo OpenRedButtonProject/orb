@@ -26,6 +26,39 @@ using json = nlohmann::json;
 
 namespace orb
 {
+
+/**
+ * @brief DecodeUrl
+ *
+ * Helper function that returns a dvb:// url in case of hbbtv-carousel:// input, the input url otherwise.
+ *
+ * @param url       The input url which can be http(s):// or hbbtv-carousel://
+ * @return          The resulting url
+ */
+static std::string DecodeUrl(std::string url)
+{
+    ORB_LOG("%s", url.c_str());
+    if (url.rfind("hbbtv-carousel://", 0) == 0)
+    {
+        std::string dvbUrlBase = "";
+        std::size_t dvbUrlPos = url.find("dvburl=");
+        if (dvbUrlPos != std::string::npos)
+        {    
+            dvbUrlBase = url.substr(dvbUrlPos + 7, url.length() - 1);
+        }
+
+        std::string path = "";
+        std::size_t pathPos = url.find('/', 17);
+        if (pathPos != std::string::npos)
+        {
+            path = url.substr(pathPos, dvbUrlPos - pathPos - 1);
+        }
+        url = dvbUrlBase + path;
+        ORB_LOG("Requesting dvburi: %s", url.c_str());
+    }
+    return url;
+}
+
 /**
  * Resolves the object and method from the specified input, which has the following form:
  *
@@ -286,6 +319,8 @@ std::string ORBEngine::CreateToken(std::string uri)
 void ORBEngine::LoadDvbUrl(std::string url, int requestId)
 {
     ORB_LOG("url=%s requestId=%d", url.c_str(), requestId);
+
+    url = DecodeUrl(url);
 
     // Strip query string from the dvb URL
     if (url.rfind("dvb://", 0) == 0)
