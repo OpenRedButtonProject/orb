@@ -30,9 +30,6 @@ import android.webkit.WebView;
 import android.webkit.WebSettings;
 import android.webkit.WebViewClient;
 
-import android.util.DisplayMetrics;
-import android.view.WindowManager;
-
 import org.json.JSONObject;
 import org.orbtv.orbpolyfill.BridgeToken;
 
@@ -53,24 +50,14 @@ class BrowserView extends WebView {
     private SessionCallback mSessionCallback;
     private JavaScriptBridgeInterface mJavaScriptBridgeInterface;
 
+    private int mViewWidth = 0; // Await onLayoutChange to calculate View width
+    private int mAppWidth = 1280; // Apps are 1280 by default
+
     public BrowserView(Context context, Bridge bridge,
                        OrbSessionFactory.Configuration configuration, DsmccClient dsmccClient) {
         super(context);
         mContext = context;
         mJavaScriptBridgeInterface = new JavaScriptBridgeInterface(bridge);
-
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        if (windowManager != null) {
-            windowManager.getDefaultDisplay().getMetrics(displayMetrics);
-        }
-
-        // Set the display size for the WebView
-        int height = displayMetrics.heightPixels;
-
-        if (height > 0) {
-            setInitialScale((int) (height / 720.0 * 100.0));
-        }
 
         setHiddenFlag(PAGE_HIDDEN_FLAG);
         setBackgroundColor(Color.TRANSPARENT);
@@ -83,6 +70,24 @@ class BrowserView extends WebView {
         getSettings().setFixedFontFamily(configuration.fixedFontFamily);
         getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         addJavascriptInterface(mJavaScriptBridgeInterface, "androidBridge");
+
+        /**
+         * Disable support for the 'viewport' HTML meta tag to ensure that the layout width is
+         * always equal to the WebView View's width. The initial scale is determined based on this
+         * width, to scale the 1280x720 app to fit the WebView.
+         */
+        getSettings().setUseWideViewPort(false);
+        addOnLayoutChangeListener(new OnLayoutChangeListener() {
+            @Override
+            public void onLayoutChange(View v, int left, int top, int right, int bottom,
+                    int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                int width = right - left;
+                if (width != mViewWidth) {
+                    mViewWidth = width;
+                    updateScale();
+                }
+            }
+        });
 
         mWebResourceClient = new WebResourceClient(dsmccClient, new HtmlBuilder(mContext.getAssets()),
                 configuration.doNotTrackEnabled) {
@@ -110,13 +115,6 @@ class BrowserView extends WebView {
                 }
                 return mWebResourceClient.shouldInterceptRequest(request, mAppId);
             }
-
-            @Override
-             public void onScaleChanged(WebView view, float oldScale, float newScale) {
-                 if (BrowserView.this.getHeight() > 0) {
-                     BrowserView.this.setInitialScale((int) (BrowserView.this.getHeight() / 720.0 * 100.0));
-                 }
-             }
         });
 
         setWebChromeClient(new WebChromeClient() {
@@ -228,6 +226,17 @@ class BrowserView extends WebView {
         removeJavascriptInterface("androidBridge");
         getSettings().setJavaScriptEnabled(false);
         destroy();
+    }
+
+    private void updateScale() {
+        mContext.getMainExecutor().execute(() -> {
+            int scale = 100;
+            if (mViewWidth != 0) {
+                scale = (mViewWidth * 100) / mAppWidth;
+            }
+            Log.d(TAG, "Set scale to " + scale);
+            setInitialScale(scale);
+        });
     }
 
     private void setHiddenFlag(int flag) {
