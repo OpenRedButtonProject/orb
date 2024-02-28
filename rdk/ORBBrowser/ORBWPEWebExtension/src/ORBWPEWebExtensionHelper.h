@@ -92,6 +92,14 @@ public:
     void SetORBWPEWebExtensionPreferences(WebKitSettings *preferences, std::string
         jsonConfigAsString);
 
+    /**
+    * Get the mimetype based on the given url
+    *
+    * @param url The url to parse
+    * @return The mimetype or * / * for unkown
+    */
+    std::string GetMimeTypeFromUrl(std::string url);
+
     std::shared_ptr<ORBGenericClient> GetORBClient()
     {
         return m_orbClient;
@@ -100,5 +108,6 @@ public:
 private:
 
     std::shared_ptr<ORBGenericClient> m_orbClient;
+    std::map<std::string, std::string> m_mimetypeMap;
 }; // class ORBWPEWebExtensionHelper
 } // namespace orb

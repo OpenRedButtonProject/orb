@@ -2274,11 +2274,23 @@ private:
     static gboolean decidePolicyCallback(WebKitWebView *, WebKitPolicyDecision *decision,
         WebKitPolicyDecisionType type, WebKitImplementation *browser)
     {
+        fprintf(stderr, "[WebKitImplementation::decidePolicyCallback]\n");
         if (type == WEBKIT_POLICY_DECISION_TYPE_RESPONSE)
         {
             // Get response object and uri
             auto *response = webkit_response_policy_decision_get_response(
                 WEBKIT_RESPONSE_POLICY_DECISION(decision));
+
+            gboolean supported = webkit_response_policy_decision_is_mime_type_supported(WEBKIT_RESPONSE_POLICY_DECISION(decision));
+            const gchar *mimetype = webkit_uri_response_get_mime_type(response);
+            fprintf(stderr, "[WebKitImplementation::decidePolicyCallback] The mimetype is : %s\n", mimetype);
+            if (!supported && g_strcmp0(mimetype, "application/vnd.hbbtv.xhtml+xml") != 0)
+            {
+                fprintf(stderr, "[WebKitImplementation::decidePolicyCallback] The mimetype is not supported\n");
+                webkit_policy_decision_ignore(decision);
+                return TRUE;
+                
+            }
             std::string responseUri(webkit_uri_response_get_uri(response));
 
             // Get the current app URL from ORB
