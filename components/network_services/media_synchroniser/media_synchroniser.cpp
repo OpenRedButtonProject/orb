@@ -976,7 +976,7 @@ void MediaSynchroniserManager::updateDvbInfo(const int &onetId, const int &trans
     {
         std::string extractedId = programmeId.substr(semicolonPos + 1);
         char programmeIdBuffer[5];
-        sprintf(programmeIdBuffer, "%04d", std::stoi(extractedId));
+        sprintf(programmeIdBuffer, "%04x", std::stoi(extractedId, nullptr, 16));
         formattedProgrammeId = programmeIdBuffer;
     }
     else
