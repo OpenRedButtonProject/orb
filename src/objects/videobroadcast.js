@@ -1352,7 +1352,7 @@ hbbtv.objects.VideoBroadcast = (function() {
         /* Extensions to video/broadcast for synchronization: No security restrictions specified */
         const p = privates.get(this);
         if (p.playState == PLAY_STATE_PRESENTING || p.playState == PLAY_STATE_STOPPED) {
-            if (targetURL.startsWith('dsmcc:')) {
+            if (targetURL.startsWith('dsmcc:') || targetURL.endsWith('.xse')) {
                 let found = false;
                 let componentTag, streamEventId;
                 let request = new XMLHttpRequest();
