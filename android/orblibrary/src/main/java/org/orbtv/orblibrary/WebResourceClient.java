@@ -56,6 +56,7 @@ abstract class WebResourceClient {
     private final boolean mDoNotTrackEnabled;
     OkHttpClient mHttpClient;
     OkHttpClient mHttpSandboxClient;
+    private String mAcceptValue;
 
     WebResourceClient(DsmccClient dsmccClient, HtmlBuilder htmlBuilder,
                       boolean doNotTrackEnabled) {
@@ -71,6 +72,10 @@ abstract class WebResourceClient {
                 .build();
         mHttpSandboxClient = new OkHttpClient();
         mDoNotTrackEnabled = doNotTrackEnabled;
+        ArrayList<String> accept = new ArrayList<>(HBBTV_MIME_TYPES);
+        // A wildcard MIME type is necessary for some servers when optional parameters are specified
+        accept.add("*/*;q=0.8");
+        mAcceptValue = String.join(",", accept);
     }
 
     public WebResourceResponse shouldInterceptRequest(WebResourceRequest request, int appId) {
@@ -127,7 +132,7 @@ abstract class WebResourceClient {
                 return null;
             }
         }
-        requestHeaders.put("Accept", String.join(",", HBBTV_MIME_TYPES));
+        requestHeaders.put("Accept", mAcceptValue);
 
         CookieManager cookieManager;
         if (HTTP_COOKIES_ENABLED) {
@@ -156,6 +161,11 @@ abstract class WebResourceClient {
         }
         Charset charset = StandardCharsets.UTF_8;
         String mimeType = getMimeType(httpResponse.header("Content-Type", "text/plain"));
+
+        // Strip optional parameters for the comparison
+        String[] parts = mimeType.split(";", 2);
+        mimeType = parts[0];
+
         Map<String, List<String>> httpResponseHeaders = httpResponse.headers().toMultimap();
 
         if (HTTP_COOKIES_ENABLED) {
@@ -253,7 +263,6 @@ abstract class WebResourceClient {
 
     private String getMimeTypeFromUrl(String url) {
         String type = "*/*";
-        ;
         String extension = MimeTypeMap.getFileExtensionFromUrl(url);
         if (extension != null && !extension.equals("")) {
             String fromExtension = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
