@@ -665,7 +665,7 @@ hbbtv.objects.MediaElementExtension = (function() {
                     },
                 });
                 p.iframe.frameBorder = 0;
-                p.iframe.allow = 'encrypted-media';
+                p.iframe.allow = 'encrypted-media *;';
                 p.iframe.addEventListener('load', () => {
                     resetProxySession.call(thiz);
                     if (thiz.src) {
