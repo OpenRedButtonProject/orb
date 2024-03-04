@@ -116,7 +116,7 @@ hbbtv.drmManager = (function() {
                     p.drmSystemIdStatusMap.set(DRMSystemID, status);
                 }
                 if (event.DRMSystem === DRM_SYSTEM_CIPLUS) {
-                    status.ciplusMessages = new Map();
+                    status.ciplusMessages = new defaultEntities.Map();
                     p.CSPGCIPlusDiscovered =
                         event.status === Result.STATUS_READY &&
                         event.protectionGateways !== undefined &&
@@ -253,11 +253,11 @@ hbbtv.drmManager = (function() {
         p.CSPGCIPlusDiscovered = false;
 
         /* Associates msgId with Message data */
-        p.drmMessages = new Map();
+        p.drmMessages = new defaultEntities.Map();
         /* Associates DRMSystem with status */
-        p.drmSystemMap = new Map();
+        p.drmSystemMap = new defaultEntities.Map();
         /* Associates DRMSystemID with status */
-        p.drmSystemIdStatusMap = new Map();
+        p.drmSystemIdStatusMap = new defaultEntities.Map();
         const sysIds = hbbtv.bridge.drm.getSupportedDRMSystemIDs();
         if (sysIds.length != 0) {
             console.log('Current DRM System IDs:');
@@ -265,7 +265,7 @@ hbbtv.drmManager = (function() {
             for (const status of sysIds) {
                 if (status.DRMSystem === DRM_SYSTEM_CIPLUS) {
                     /* Associates transaction_id with Message data */
-                    status.ciplusMessages = new Map();
+                    status.ciplusMessages = new defaultEntities.Map();
                     p.drmSystemMap.set(status.DRMSystem, status);
                     for (const DRMSystemID of status.DRMSystemIDs) {
                         console.log('Associating ' + DRMSystemID + ' to ' + status.DRMSystem);
@@ -514,7 +514,7 @@ hbbtv.drmManager = (function() {
         const send_datatype_nbr = decodedData.charCodeAt(7);
         let index = 8;
         console.log('send_datatype_nbr=0x' + send_datatype_nbr.toString(16));
-        let dataTypes = new Map();
+        let dataTypes = new defaultEntities.Map();
         for (let i = 0; i < send_datatype_nbr; i++) {
             const datatype_id = decodedData.charCodeAt(index);
             console.log('datatype_id=0x' + datatype_id.toString(16));

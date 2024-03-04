@@ -23,7 +23,7 @@ hbbtv.objects.Application = (function() {
         if (privates.get(this).disabled) {
             return null;
         }
-        const url = new __URL(uri, document.location.href);
+        const url = new defaultEntities.URL(uri, document.location.href);
         if (hbbtv.bridge.manager.createApplication(url.href) === true) {
             return hbbtv.objects.createApplication({
                 disabled: true,
