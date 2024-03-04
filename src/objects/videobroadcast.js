@@ -2251,9 +2251,9 @@ hbbtv.objects.VideoBroadcast = (function() {
         const p = privates.get(this);
         p.eventDispatcher = new hbbtv.utils.EventDispatcher(this);
         /* Associates targetURL::eventName with internal ID */
-        p.streamEventListenerIdMap = new Map();
+        p.streamEventListenerIdMap = new defaultEntities.Map();
         /* Associates internal ID with registered listeners */
-        p.streamEventListenerMap = new Map();
+        p.streamEventListenerMap = new defaultEntities.Map();
         p.playState = PLAY_STATE_UNREALIZED;
         p.waitingPlayStateConnectingConfirm = false;
         p.fullScreen = false;

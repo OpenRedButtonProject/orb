@@ -17,13 +17,13 @@
 (function() {
     const _getResponseHeader = window.XMLHttpRequest.prototype.getResponseHeader;
     window.XMLHttpRequest.prototype.getResponseHeader = function(headerName) {
-        return new __URL(this.responseURL).protocol === 'dvb:' ?
+        return new defaultEntities.URL(this.responseURL).protocol === 'dvb:' ?
             null :
             _getResponseHeader.call(this, headerName);
     };
     const _getAllResponseHeaders = window.XMLHttpRequest.prototype.getAllResponseHeaders;
     window.XMLHttpRequest.prototype.getAllResponseHeaders = function() {
-        return new __URL(this.responseURL).protocol === 'dvb:' ?
+        return new defaultEntities.URL(this.responseURL).protocol === 'dvb:' ?
             '' :
             _getAllResponseHeaders.call(this);
     };

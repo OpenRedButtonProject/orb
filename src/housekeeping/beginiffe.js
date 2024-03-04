@@ -1,6 +1,9 @@
 (function() {
 
-        "use strict";
-        let hbbtv = {};
+    "use strict";
+    let hbbtv = {};
 
-        const __URL = URL;
+    const defaultEntities = {
+        URL: URL,
+        Map: Map
+    };
