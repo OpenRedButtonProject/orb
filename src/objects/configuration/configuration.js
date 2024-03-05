@@ -21,8 +21,9 @@ hbbtv.objects.Configuration = (function() {
 
     hbbtv.utils.defineGetterProperties(prototype, {
         preferredAudioLanguage: hbbtv.bridge.configuration.getPreferredAudioLanguage,
-        preferredAudioLanguage47: hbbtv.bridge.configuration.getPreferredAudioLanguage,
+        preferredAudioLanguage47: hbbtv.bridge.configuration.getPreferredAudioLanguage47,
         preferredSubtitleLanguage: hbbtv.bridge.configuration.getPreferredSubtitleLanguage,
+        preferredSubtitleLanguage47: hbbtv.bridge.configuration.getPreferredSubtitleLanguage47,
         preferredUILanguage: hbbtv.bridge.configuration.getPreferredUILanguage,
         countryId: hbbtv.bridge.configuration.getCountryId,
         subtitlesEnabled: hbbtv.bridge.configuration.getSubtitlesEnabled,

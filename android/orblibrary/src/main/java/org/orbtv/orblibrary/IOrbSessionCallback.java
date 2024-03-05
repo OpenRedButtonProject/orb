@@ -147,11 +147,25 @@ public interface IOrbSessionCallback {
     String getPreferredAudioLanguage();
 
     /**
+     * Gets a string containing languages to be used for audio playback, in order of preference.
+     *
+     * @return Comma separated string of languages (IETF BCP47 codes)
+     */
+    String getPreferredAudioLanguage47();
+
+    /**
      * Gets a string containing languages to be used for subtitles, in order of preference.
      *
      * @return Comma separated string of languages (ISO 639-2 codes)
      */
     String getPreferredSubtitleLanguage();
+
+    /**
+     * Gets a string containing languages to be used for subtitles, in order of preference.
+     *
+     * @return Comma separated string of languages (IETF BCP47 codes)
+     */
+    String getPreferredSubtitleLanguage47();
 
     /**
      * Gets a string containing languages to be used for the UI, in order of preference.
