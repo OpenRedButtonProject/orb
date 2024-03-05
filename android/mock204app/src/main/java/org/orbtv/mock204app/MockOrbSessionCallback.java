@@ -575,6 +575,18 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     /**
+     * @since 204
+     *
+     * Gets a string containing languages to be used for audio playback, in order of preference.
+     *
+     * @return Comma separated string of languages (IETF BCP47 codes)
+     */
+    @Override
+    public String getPreferredAudioLanguage47() {
+        return "en-GB,es-ES,de-DE";
+    }
+
+    /**
      * Gets a string containing languages to be used for subtitles, in order of preference.
      *
      * @return Comma separated string of languages (ISO 639-2 codes)
@@ -582,6 +594,18 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     @Override
     public String getPreferredSubtitleLanguage() {
         return "en,eng,spa,gre";
+    }
+
+    /**
+     * @since 204
+     *
+     * Gets a string containing languages to be used for subtitles, in order of preference.
+     *
+     * @return Comma separated string of languages (IETF BCP47 codes)
+     */
+    @Override
+    public String getPreferredSubtitleLanguage47() {
+        return "en-GB,es-ES,de-DE";
     }
 
     /**

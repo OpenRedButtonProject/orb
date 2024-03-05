@@ -147,11 +147,33 @@ public interface IOrbSessionCallback {
     String getPreferredAudioLanguage();
 
     /**
+     * @since 204
+     *
+     * Gets a string containing languages to be used for audio playback, in order of preference.
+     *
+     * @return Comma separated string of languages (IETF BCP47 codes)
+     */
+    default String getPreferredAudioLanguage47() {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
+    /**
      * Gets a string containing languages to be used for subtitles, in order of preference.
      *
      * @return Comma separated string of languages (ISO 639-2 codes)
      */
     String getPreferredSubtitleLanguage();
+
+    /**
+     * @since 204
+     *
+     * Gets a string containing languages to be used for subtitles, in order of preference.
+     *
+     * @return Comma separated string of languages (IETF BCP47 codes)
+     */
+    default String getPreferredSubtitleLanguage47() {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
 
     /**
      * Gets a string containing languages to be used for the UI, in order of preference.
