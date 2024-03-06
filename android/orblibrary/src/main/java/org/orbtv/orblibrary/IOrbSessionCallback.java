@@ -833,25 +833,4 @@ public interface IOrbSessionCallback {
         throw new UnsupportedOperationException("Unsupported 204 API.");
     }
 
-    /**
-     * @since 204
-     *
-     * Prints the log message using Logcat with a default log level of log.d.
-     * Overrides if a window console exists.
-     *
-     * @param log The log message to be printed
-     */
-    default void consoleLog(String log) {
-        throw new UnsupportedOperationException("Unsupported 204 API.");
-    }
-
-    /**
-     * @since 204
-     *
-     * @param name The media name got from voice command
-     * @return The media id of media name.
-     */
-    default String getMediaId(String name) {
-        throw new UnsupportedOperationException("Unsupported 204 API.");
-    }
 }

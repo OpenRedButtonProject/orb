@@ -156,15 +156,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     private String MOCK_SCREEN_READER_VOICE = "male";
     private String MOCK_SCREEN_READER_LANGUAGE = EMPTY_STRING;
     private String MOCK_RESPONSE_TO_A_USER_ACTION_TYPE = "audio";
-    private String MOCK_RESPONSE_TO_A_USER_ACTION_MAGNITUDE = EMPTY_STRING;
     private int MOCK_AUDIO_DESCRIPTION_GAIN = 0;
     private int MOCK_AUDIO_DESCRIPTION_PAN_AZIMUTH = 90;
-    private String MOCK_NEW_MEDIA_ID = "urn:broadcaster:programme:1249863457643";
-
-    public String getMediaId(String name) {
-        //TODO: Find media id by media name
-        return MOCK_NEW_MEDIA_ID;
-    }
 
     public interface ConsoleCallback {
         void log(String msg);
@@ -1621,21 +1614,23 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void onRequestTriggerResponseToUserAction(int connection, String id, String magnitude) {
-        MOCK_RESPONSE_TO_A_USER_ACTION_MAGNITUDE = magnitude;
         consoleLog("Request to trigger response to user action, magnitude: " + magnitude);
+        if (!magnitude.equals("triggerPrimary") && !magnitude.equals("triggerSecondary") &&
+                !magnitude.equals("triggerException")) {
+            magnitude = "";
+        }
         // check the feature is enabled
         boolean isEnabled = Boolean.TRUE.equals(MOCK_ENABLE_STATUS.get(F_RESPONSE_TO_A_USER_ACTION));
-        if (!isEnabled) {
+        if (!isEnabled || magnitude.isEmpty()) {
             consoleLog("Response to User Action is not enabled");
             mSession.onRespondError(connection, id, -25, "Response to User Action failed");
-            return;
+        } else {
+            // If the requested is successfully performed by the terminal,
+            // it shall reply with a non-error response, where the actioned field shall be set to true;
+            boolean actioned = true;
+            mSession.onRespondTriggerResponseToUserAction(connection, id, actioned);
+            consoleLog("Trigger response to user action, isActioned: " + actioned);
         }
-
-        // If the requested is successfully performed by the terminal,
-        // it shall reply with a non-error response, where the actioned field shall be set to true;
-        boolean actioned = true;
-        mSession.onRespondTriggerResponseToUserAction(connection, id, actioned);
-        consoleLog("Trigger response to user action, isActioned: " + actioned);
     }
 
     /**
@@ -1817,8 +1812,13 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         consoleLog("Receive an error, code: " + code + ", method: " + method);
     }
 
-    @Override
-    public void consoleLog(String log) {
+    /**
+     * Prints the log message using Logcat with a default log level of log.d.
+     * Overrides if a window console exists.
+     *
+     * @param log The log message to be printed
+     */
+    private void consoleLog(String log) {
         if (mConsoleCallback != null) {
             mConsoleCallback.log(log);
         }
