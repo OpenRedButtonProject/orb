@@ -101,26 +101,26 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     private static final int IN_VISION_SIGNING_KEY = KeyEvent.KEYCODE_8;
     private final Map<Integer, SupportType> MOCK_SUPPORT_TYPES = new HashMap<Integer, SupportType>() {
         {
-            put(F_SUBTITLES, SupportType.tvosAndHbbTV);
-            put(F_DIALOGUE_ENHANCEMENT, SupportType.tvosAndHbbTV);
-            put(F_UI_MAGNIFIER, SupportType.tvosAndHbbTV);
-            put(F_HIGH_CONTRAST_UI, SupportType.tvosAndHbbTV);
-            put(F_SCREEN_READER, SupportType.tvosAndHbbTV);
-            put(F_RESPONSE_TO_A_USER_ACTION, SupportType.tvosAndHbbTV);
-            put(F_AUDIO_DESCRIPTION, SupportType.tvosAndHbbTV);
-            put(F_IN_VISION_SIGN_LANGUAGE, SupportType.tvosAndHbbTV);
+            put(F_SUBTITLES, SupportType.TVOS_AND_HBBTV);
+            put(F_DIALOGUE_ENHANCEMENT, SupportType.TVOS_AND_HBBTV);
+            put(F_UI_MAGNIFIER, SupportType.TVOS_AND_HBBTV);
+            put(F_HIGH_CONTRAST_UI, SupportType.TVOS_AND_HBBTV);
+            put(F_SCREEN_READER, SupportType.TVOS_AND_HBBTV);
+            put(F_RESPONSE_TO_A_USER_ACTION, SupportType.TVOS_AND_HBBTV);
+            put(F_AUDIO_DESCRIPTION, SupportType.TVOS_AND_HBBTV);
+            put(F_IN_VISION_SIGN_LANGUAGE, SupportType.TVOS_AND_HBBTV);
         }
     };
     private final Map<Integer, SuppressType> MOCK_SUPPRESS_TYPES = new HashMap<Integer, SuppressType>() {
         {
-            put(F_SUBTITLES, SuppressType.none);
-            put(F_DIALOGUE_ENHANCEMENT, SuppressType.none);
-            put(F_UI_MAGNIFIER, SuppressType.none);
-            put(F_HIGH_CONTRAST_UI, SuppressType.none);
-            put(F_SCREEN_READER, SuppressType.none);
-            put(F_RESPONSE_TO_A_USER_ACTION, SuppressType.none);
-            put(F_AUDIO_DESCRIPTION, SuppressType.none);
-            put(F_IN_VISION_SIGN_LANGUAGE, SuppressType.none);
+            put(F_SUBTITLES, SuppressType.NONE);
+            put(F_DIALOGUE_ENHANCEMENT, SuppressType.NONE);
+            put(F_UI_MAGNIFIER, SuppressType.NONE);
+            put(F_HIGH_CONTRAST_UI, SuppressType.NONE);
+            put(F_SCREEN_READER, SuppressType.NONE);
+            put(F_RESPONSE_TO_A_USER_ACTION, SuppressType.NONE);
+            put(F_AUDIO_DESCRIPTION, SuppressType.NONE);
+            put(F_IN_VISION_SIGN_LANGUAGE, SuppressType.NONE);
         }
     };
     private final Map<Integer, Boolean> MOCK_ENABLE_STATUS = new HashMap<Integer, Boolean>() {
@@ -1575,8 +1575,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 "" : ", gain: " + dialogueEnhancementGain;
         consoleLog("Request dialogue enhancement override" + requestedValue);
         // check the feature that is supported
-        SupportType type = MOCK_SUPPORT_TYPES.getOrDefault(F_DIALOGUE_ENHANCEMENT, SupportType.notSupported);
-        if (type == SupportType.notSupported) {
+        SupportType type = MOCK_SUPPORT_TYPES.getOrDefault(F_DIALOGUE_ENHANCEMENT, SupportType.NOT_SUPPORTED);
+        if (type == SupportType.NOT_SUPPORTED) {
             consoleLog("Not supported Dialogue Enhancement");
             mSession.onRespondError(connection, id, -24, "Dialogue Enhancement override failed");
             return;
@@ -1651,13 +1651,14 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
 
         // ToDo, consider other support options
         SupportType result = MOCK_SUPPORT_TYPES.get(featureId);
+        String supportName = SUPPORT_TYPE_NAMES.get(result);
         if (result != null) {
-            mSession.onRespondFeatureSupportInfo(connection, id, featureId, result.name());
+            mSession.onRespondFeatureSupportInfo(connection, id, featureId, supportName);
         } else {
             Log.e(TAG, "Error, unrecognised feature in request");
             return;
         }
-        consoleLog("Respond feature support info for " + featureName + ": " + result.name());
+        consoleLog("Respond feature support info for " + featureName + ": " + supportName);
     }
 
     /**
@@ -1676,8 +1677,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         String featureName = FEATURES[featureId];
         consoleLog("Request feature settings query for " + featureName);
         // check the feature is supported
-        SupportType type = MOCK_SUPPORT_TYPES.getOrDefault(featureId, SupportType.notSupported);
-        if (type == SupportType.notSupported || type == SupportType.supportedNoSetting) {
+        SupportType type = MOCK_SUPPORT_TYPES.getOrDefault(featureId, SupportType.NOT_SUPPORTED);
+        if (type == SupportType.NOT_SUPPORTED || type == SupportType.SUPPORTED_NO_SETTING) {
             consoleLog("Not supported feature: " + featureName);
             mSession.onRespondError(connection, id, -23, "Invalid accessibility settings query");
             return;
@@ -1737,10 +1738,11 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         String featureName = FEATURES[featureId];
         consoleLog("Request suppress for " + featureName);
 
-        setSuppressStatus(featureId, SuppressType.suppressing);
+        setSuppressStatus(featureId, SuppressType.SUPPRESSING);
         SuppressType result = MOCK_SUPPRESS_TYPES.get(featureId);
-        mSession.onRespondFeatureSuppress(connection, id, featureId, result.name());
-        consoleLog("Respond suppress for" + featureName + ", result: " + result.name());
+        String suppressName = SUPPRESS_TYPE_NAMES.get(result);
+        mSession.onRespondFeatureSuppress(connection, id, featureId, suppressName);
+        consoleLog("Respond suppress for" + featureName + ", result: " + suppressName);
     }
 
     /**
@@ -1832,28 +1834,28 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         }
         SupportType supportType = MOCK_SUPPORT_TYPES.get(featureId);
         switch (suppress) {
-            case none:
-                MOCK_SUPPRESS_TYPES.replace(featureId, SuppressType.none);
+            case NONE:
+                MOCK_SUPPRESS_TYPES.replace(featureId, SuppressType.NONE);
                 break;
-            case suppressing:
-            case notSuppressing:
-                if (supportType == SupportType.tvosAndHbbTV ||
-                        supportType == SupportType.supportedNoSetting) {
+            case SUPPRESSING:
+            case NOT_SUPPRESSING:
+                if (supportType == SupportType.TVOS_AND_HBBTV ||
+                        supportType == SupportType.SUPPORTED_NO_SETTING) {
                     // Responses containing "suppressing" or "notSuppressing" are only valid
                     // when the corresponding feature is "tvosAndHbbTV" or "supportedNoSetting".
                     MOCK_SUPPRESS_TYPES.replace(featureId, suppress);
                 } else {
                     // Responses containing "featureNotSupported" are only valid
                     // when the corresponding feature is "notSupported", "tvosOnly", or "tvosSettingOnly".
-                    MOCK_SUPPRESS_TYPES.replace(featureId, SuppressType.featureNotSupported);
+                    MOCK_SUPPRESS_TYPES.replace(featureId, SuppressType.FEATURE_NOT_SUPPORTED);
                 }
                 break;
-            case featureNotSupported:
-                if (supportType == SupportType.tvosAndHbbTV ||
-                        supportType == SupportType.supportedNoSetting) {
+            case FEATURE_NOT_SUPPORTED:
+                if (supportType == SupportType.TVOS_AND_HBBTV ||
+                        supportType == SupportType.SUPPORTED_NO_SETTING) {
                     Log.e(TAG, "Not allowed to set featureNotSupported");
                 } else {
-                    MOCK_SUPPRESS_TYPES.replace(featureId, SuppressType.featureNotSupported);
+                    MOCK_SUPPRESS_TYPES.replace(featureId, SuppressType.FEATURE_NOT_SUPPORTED);
                 }
                 break;
         }

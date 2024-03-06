@@ -18,7 +18,9 @@ package org.orbtv.orblibrary;
 
 import org.orbtv.orbpolyfill.BridgeTypes;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public interface IOrbSessionCallback {
     enum ApplicationStatus {
@@ -34,29 +36,50 @@ public interface IOrbSessionCallback {
 
     /**
      * The level of support a TV OS has for a particular Accessibility Feature.
-     *
-     * TODO Change names to THIS_STYLE.
      */
     enum SupportType {
-        notSupported,
-        tvosSettingOnly,
-        tvosOnly,
-        tvosAndHbbTV,
-        supportedNoSetting
+        NOT_SUPPORTED,
+        TVOS_SETTING_ONLY,
+        TVOS_ONLY,
+        TVOS_AND_HBBTV,
+        SUPPORTED_NO_SETTING
     }
+
+    /**
+     * The string value of the support level by a TV OS.
+     */
+    Map<SupportType, String> SUPPORT_TYPE_NAMES = new HashMap<SupportType, String>() {
+        {
+            put(SupportType.NOT_SUPPORTED, "notSupported");
+            put(SupportType.TVOS_SETTING_ONLY, "tvosSettingOnly");
+            put(SupportType.TVOS_ONLY, "tvosOnly");
+            put(SupportType.TVOS_AND_HBBTV, "tvosAndHbbTV");
+            put(SupportType.SUPPORTED_NO_SETTING, "supportedNoSetting");
+        }
+    };
 
     /**
      * The result of an Application to request that a TV OS suppresses its support for an
      * Accessibility Feature.
-     *
-     * TODO Change names to THIS_STYLE.
      */
     enum SuppressType {
-        none,
-        suppressing,
-        notSuppressing,
-        featureNotSupported
+        NONE,
+        SUPPRESSING,
+        NOT_SUPPRESSING,
+        FEATURE_NOT_SUPPORTED
     }
+
+    /**
+     * The string value of the suppress result from a TV OS.
+     */
+    Map<SuppressType, String> SUPPRESS_TYPE_NAMES = new HashMap<SuppressType, String>() {
+        {
+            put(SuppressType.NONE, "none");
+            put(SuppressType.SUPPRESSING, "suppressing");
+            put(SuppressType.NOT_SUPPRESSING, "notSuppressing");
+            put(SuppressType.FEATURE_NOT_SUPPORTED, "featureNotSupported");
+        }
+    };
 
     /**
      * This method is called once the session is ready to be called by the client and present HbbTV
