@@ -31,7 +31,7 @@ public interface IOrbSessionCallback {
         /* The application is running but not currently visible to the user. */
         INVISIBLE,
     }
-    
+
     /**
      * The level of support a TV OS has for a particular Accessibility Feature.
      *
@@ -685,10 +685,10 @@ public interface IOrbSessionCallback {
      * @param inVisionSigning      In-vision signing
      */
     default void onRequestSubscribe(boolean isSubscribe,
-                            boolean subtitles, boolean dialogueEnhancement,
-                            boolean uiMagnifier, boolean highContrastUI,
-                            boolean screenReader, boolean responseToUserAction,
-                            boolean audioDescription, boolean inVisionSigning) {
+                                    boolean subtitles, boolean dialogueEnhancement,
+                                    boolean uiMagnifier, boolean highContrastUI,
+                                    boolean screenReader, boolean responseToUserAction,
+                                    boolean audioDescription, boolean inVisionSigning) {
         throw new UnsupportedOperationException("Unsupported 204 API.");
     }
 
@@ -702,7 +702,7 @@ public interface IOrbSessionCallback {
      * @param dialogueEnhancementGain The requested gain value in dB of the dialogue enhancement
      */
     default void onRequestDialogueEnhancementOverride(int connection, String id,
-                                              int dialogueEnhancementGain) {
+                                                      int dialogueEnhancementGain) {
         throw new UnsupportedOperationException("Unsupported 204 API.");
     }
 
@@ -829,7 +829,7 @@ public interface IOrbSessionCallback {
      * @param data    The error data
      */
     default void onReceiveError(int code, String message,
-                        String method, String data) {
+                                String method, String data) {
         throw new UnsupportedOperationException("Unsupported 204 API.");
     }
 

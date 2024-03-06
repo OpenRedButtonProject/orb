@@ -1877,10 +1877,37 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         }
     }
 
+    private void notifySubtitles(boolean isEnabled) {
+        if (isEnabled) {
+            mSession.onNotifySubtitles(
+                    true, MOCK_SUBTITLES_SIZE, MOCK_SUBTITLES_FONT_FAMILY,
+                    MOCK_SUBTITLES_TEXT_COLOUR, MOCK_SUBTITLES_TEXT_OPACITY,
+                    MOCK_SUBTITLES_EDGE_TYPE, MOCK_SUBTITLES_EDGE_COLOUR,
+                    MOCK_SUBTITLES_BACKGROUND_COLOUR, MOCK_SUBTITLES_BACKGROUND_OPACITY,
+                    MOCK_SUBTITLES_WINDOW_COLOUR, MOCK_SUBTITLES_WINDOW_OPACITY,
+                    MOCK_SUBTITLES_LANGUAGE);
+        } else {
+            // Not enable when the subtitles is turning off
+            mSession.onNotifySubtitles(
+                    false, EMPTY_INTEGER, EMPTY_STRING, EMPTY_STRING, EMPTY_INTEGER,
+                    EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, EMPTY_INTEGER,
+                    EMPTY_STRING, EMPTY_INTEGER, EMPTY_STRING);
+        }
+    }
+
     private void querySettingDialogueEnhancement(int connection, String id, boolean isEnabled) {
         // If DE is switched off, dialogueEnhancementGain shall be set to 0.
         int gain = isEnabled ? MOCK_DIALOGUE_ENHANCEMENT_GAIN : 0;
         mSession.onQueryDialogueEnhancement(connection, id,
+                MOCK_DIALOGUE_ENHANCEMENT_GAIN_PREFERENCE, gain,
+                MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MIN,
+                MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MAX);
+    }
+
+    private void notifyDialogueEnhancement(boolean isEnabled) {
+        // If DE is switched off, dialogueEnhancementGain shall be set to 0.
+        int gain = isEnabled ? MOCK_DIALOGUE_ENHANCEMENT_GAIN : 0;
+        mSession.onNotifyDialogueEnhancement(
                 MOCK_DIALOGUE_ENHANCEMENT_GAIN_PREFERENCE, gain,
                 MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MIN,
                 MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MAX);
@@ -1895,12 +1922,30 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         }
     }
 
+    private void notifyUiMagnifier(boolean isEnabled) {
+        if (isEnabled) {
+            // "magType" shall be present if the "enabled" parameter is set to "true".
+            mSession.onNotifyUIMagnifier(true, MOCK_UI_MAGNIFIER_MAG_TYPE);
+        } else {
+            mSession.onNotifyUIMagnifier(false, EMPTY_STRING);
+        }
+    }
+
     private void querySettingsHighContrastUI(int connection, String id, boolean isEnabled) {
         if (isEnabled) {
             // "hcType" shall be present if the "enabled" parameter is set to "true".
             mSession.onQueryHighContrastUI(connection, id, true, MOCK_HIGH_CONTRAST_UI_HC_TYPE);
         } else {
             mSession.onQueryHighContrastUI(connection, id, false, EMPTY_STRING);
+        }
+    }
+
+    private void notifyHighContrastUI(boolean isEnabled) {
+        if (isEnabled) {
+            // "hcType" shall be present if the "enabled" parameter is set to "true".
+            mSession.onNotifyHighContrastUI(true, MOCK_HIGH_CONTRAST_UI_HC_TYPE);
+        } else {
+            mSession.onNotifyHighContrastUI(false, EMPTY_STRING);
         }
     }
 
@@ -1918,6 +1963,18 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         }
     }
 
+    private void notifyScreenReader(boolean isEnabled) {
+        if (isEnabled) {
+            mSession.onNotifyScreenReader(true, MOCK_SCREEN_READER_SPEED, MOCK_SCREEN_READER_VOICE,
+                    MOCK_SCREEN_READER_LANGUAGE);
+        } else {
+            // The language value should only be present
+            // if the user has changed this from the default setting.
+            // The voice value should be present if the enabled value is set to true.
+            mSession.onNotifyScreenReader(false, EMPTY_INTEGER, EMPTY_STRING, EMPTY_STRING);
+        }
+    }
+
     private void querySettingsResponseToUserAction(int connection, String id, boolean isEnabled) {
         if (isEnabled) {
             mSession.onQueryResponseToUserAction(connection, id, true,
@@ -1926,6 +1983,15 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
             // If the "enabled" value is set to true, then the "type" field shall be present.
             mSession.onQueryResponseToUserAction(connection, id, false,
                     EMPTY_STRING);
+        }
+    }
+
+    private void notifyResponseToUserAction(boolean isEnabled) {
+        if (isEnabled) {
+            mSession.onNotifyResponseToUserAction(true, MOCK_RESPONSE_TO_A_USER_ACTION_TYPE);
+        } else {
+            // If the "enabled" value is set to true, then the "type" field shall be present.
+            mSession.onNotifyResponseToUserAction(false, EMPTY_STRING);
         }
     }
 
@@ -1940,6 +2006,15 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         }
     }
 
+    private void notifyAudioDescription(boolean isEnabled) {
+        if (isEnabled) {
+            mSession.onNotifyAudioDescription(true, MOCK_AUDIO_DESCRIPTION_GAIN, MOCK_AUDIO_DESCRIPTION_PAN_AZIMUTH);
+        } else {
+            // If it is not enabled, “gainPreference” and “panAzimuthPreference” shall not be present.
+            mSession.onNotifyAudioDescription(false, EMPTY_INTEGER, EMPTY_INTEGER);
+        }
+    }
+
     public boolean onKeyUp(int keyCode, KeyEvent event) {
         boolean isEnabled;
         switch (keyCode) {
@@ -1949,7 +2024,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 MOCK_ENABLE_STATUS.replace(F_SUBTITLES, isEnabled);
 
                 // notification for feature settings
-                querySettingSubtitles(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                notifySubtitles(isEnabled);
                 consoleLog("Notify settings of subtitles, isEnabled: " + isEnabled);
                 break;
             }
@@ -1958,7 +2033,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 isEnabled = Boolean.FALSE.equals(MOCK_ENABLE_STATUS.get(F_DIALOGUE_ENHANCEMENT));
                 MOCK_ENABLE_STATUS.replace(F_DIALOGUE_ENHANCEMENT, isEnabled);
 
-                querySettingDialogueEnhancement(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                notifyDialogueEnhancement(isEnabled);
                 consoleLog("Notify settings of dialogue enhancement, gain: " +
                         (isEnabled ? MOCK_DIALOGUE_ENHANCEMENT_GAIN : 0));
                 break;
@@ -1969,7 +2044,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 MOCK_ENABLE_STATUS.replace(F_UI_MAGNIFIER, isEnabled);
 
                 // notification for feature settings
-                querySettingsUiMagnifier(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                notifyUiMagnifier(isEnabled);
                 consoleLog("Notify settings of UI magnification, isEnabled: " + isEnabled);
                 break;
             }
@@ -1978,7 +2053,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 MOCK_ENABLE_STATUS.replace(F_HIGH_CONTRAST_UI, isEnabled);
 
                 // notification for feature settings
-                querySettingsHighContrastUI(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                notifyHighContrastUI(isEnabled);
                 consoleLog("Notify settings of high contrast UI, isEnabled: " + isEnabled);
                 break;
             }
@@ -1987,7 +2062,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 MOCK_ENABLE_STATUS.replace(F_SCREEN_READER, isEnabled);
 
                 // notification for feature settings
-                querySettingsScreenReader(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                notifyScreenReader(isEnabled);
                 consoleLog("Notify settings of screen reader, isEnabled: " + isEnabled);
                 break;
             }
@@ -1996,7 +2071,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 MOCK_ENABLE_STATUS.replace(F_RESPONSE_TO_A_USER_ACTION, isEnabled);
 
                 // notification for feature settings
-                querySettingsResponseToUserAction(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                notifyResponseToUserAction(isEnabled);
                 consoleLog("Notify settings of response to user action, isEnabled: " + isEnabled);
                 break;
             }
@@ -2006,7 +2081,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 MOCK_ENABLE_STATUS.replace(F_AUDIO_DESCRIPTION, isEnabled);
 
                 // notification for feature settings
-                querySettingsAudioDescription(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                notifyAudioDescription(isEnabled);
                 consoleLog("Notify settings of audio description, isEnabled: " + isEnabled);
                 break;
             }
@@ -2015,7 +2090,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 MOCK_ENABLE_STATUS.replace(F_IN_VISION_SIGN_LANGUAGE, isEnabled);
 
                 // notification for feature settings
-                mSession.onQueryInVisionSigning(EMPTY_INTEGER, EMPTY_STRING, isEnabled);
+                mSession.onNotifyInVisionSigning(isEnabled);
                 consoleLog("Notify settings of in-vision signing, isEnabled: " + isEnabled);
                 break;
             }

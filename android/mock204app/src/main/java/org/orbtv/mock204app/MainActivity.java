@@ -68,45 +68,45 @@ public class MainActivity extends Activity {
     private static final String VOICE_RECOGNITION_CLASS_NAME = "org.orbtv.voicerecognitionservice.VoiceRecognitionService";
 
     private final String MOCK_MEDIA_ID = "urn:broadcaster:programme:1249863457643";
-    private final int  INTENT_MEDIA_PAUSE = 0;
-    private final int  INTENT_MEDIA_PLAY = 1;
-    private final int  INTENT_MEDIA_FAST_FORWARD = 2;
-    private final int  INTENT_MEDIA_FAST_REVERSE = 3;
-    private final int  INTENT_MEDIA_STOP = 4;
-    private final int  INTENT_MEDIA_SEEK_CONTENT = 5;
-    private final int  INTENT_MEDIA_SEEK_RELATIVE = 6;
-    private final int  INTENT_MEDIA_SEEK_LIVE = 7;
-    private final int  INTENT_MEDIA_SEEK_WALLCLOCK = 8;
-    private final int  INTENT_SEARCH = 9;
-    private final int  INTENT_DISPLAY = 10;
-    private final int  INTENT_PLAYBACK = 11;
-    private final int  ACT_REQUEST_MEDIA_DESCRIPTION = 18;
-    private final int  ACT_REQUEST_TEXT_INPUT = 19;
-    private final int  LOG_MESSAGE = 99;
-    private final int  LOG_ERROR_NONE_ACTION = 100;
-    private final int  LOG_ERROR_MULTI_ACTIONS = 101;
-    private final int  LOG_ERROR_INTENT_SEND = 102;
+    private final int INTENT_MEDIA_PAUSE = 0;
+    private final int INTENT_MEDIA_PLAY = 1;
+    private final int INTENT_MEDIA_FAST_FORWARD = 2;
+    private final int INTENT_MEDIA_FAST_REVERSE = 3;
+    private final int INTENT_MEDIA_STOP = 4;
+    private final int INTENT_MEDIA_SEEK_CONTENT = 5;
+    private final int INTENT_MEDIA_SEEK_RELATIVE = 6;
+    private final int INTENT_MEDIA_SEEK_LIVE = 7;
+    private final int INTENT_MEDIA_SEEK_WALLCLOCK = 8;
+    private final int INTENT_SEARCH = 9;
+    private final int INTENT_DISPLAY = 10;
+    private final int INTENT_PLAYBACK = 11;
+    private final int ACT_REQUEST_MEDIA_DESCRIPTION = 18;
+    private final int ACT_REQUEST_TEXT_INPUT = 19;
+    private final int LOG_MESSAGE = 99;
+    private final int LOG_ERROR_NONE_ACTION = 100;
+    private final int LOG_ERROR_MULTI_ACTIONS = 101;
+    private final int LOG_ERROR_INTENT_SEND = 102;
 
     private final int ACT_PRESS_BUTTON_NUMB_ZERO = 20;
-    private final int  ACT_PRESS_BUTTON_NUMB_ONE = 21;
-    private final int  ACT_PRESS_BUTTON_NUMB_TWO = 22;
-    private final int  ACT_PRESS_BUTTON_NUMB_THREE = 23;
-    private final int  ACT_PRESS_BUTTON_NUMB_FOUR = 24;
-    private final int  ACT_PRESS_BUTTON_NUMB_FIVE = 25;
-    private final int  ACT_PRESS_BUTTON_NUMB_SIX = 26;
-    private final int  ACT_PRESS_BUTTON_NUMB_SEVEN = 27;
-    private final int  ACT_PRESS_BUTTON_NUMB_EIGHT = 28;
-    private final int  ACT_PRESS_BUTTON_NUMB_NINE = 29;
-    private final int  ACT_PRESS_BUTTON_RED = 30;
-    private final int  ACT_PRESS_BUTTON_GREEN = 31;
-    private final int  ACT_PRESS_BUTTON_YELLOW = 32;
-    private final int  ACT_PRESS_BUTTON_BLUE = 33;
-    private final int  ACT_PRESS_BUTTON_UP = 34;
-    private final int  ACT_PRESS_BUTTON_DOWN = 35;
-    private final int  ACT_PRESS_BUTTON_LEFT = 36;
-    private final int  ACT_PRESS_BUTTON_RIGHT = 37;
-    private final int  ACT_PRESS_BUTTON_ENTER = 38;
-    private final int  ACT_PRESS_BUTTON_BACK = 39;
+    private final int ACT_PRESS_BUTTON_NUMB_ONE = 21;
+    private final int ACT_PRESS_BUTTON_NUMB_TWO = 22;
+    private final int ACT_PRESS_BUTTON_NUMB_THREE = 23;
+    private final int ACT_PRESS_BUTTON_NUMB_FOUR = 24;
+    private final int ACT_PRESS_BUTTON_NUMB_FIVE = 25;
+    private final int ACT_PRESS_BUTTON_NUMB_SIX = 26;
+    private final int ACT_PRESS_BUTTON_NUMB_SEVEN = 27;
+    private final int ACT_PRESS_BUTTON_NUMB_EIGHT = 28;
+    private final int ACT_PRESS_BUTTON_NUMB_NINE = 29;
+    private final int ACT_PRESS_BUTTON_RED = 30;
+    private final int ACT_PRESS_BUTTON_GREEN = 31;
+    private final int ACT_PRESS_BUTTON_YELLOW = 32;
+    private final int ACT_PRESS_BUTTON_BLUE = 33;
+    private final int ACT_PRESS_BUTTON_UP = 34;
+    private final int ACT_PRESS_BUTTON_DOWN = 35;
+    private final int ACT_PRESS_BUTTON_LEFT = 36;
+    private final int ACT_PRESS_BUTTON_RIGHT = 37;
+    private final int ACT_PRESS_BUTTON_ENTER = 38;
+    private final int ACT_PRESS_BUTTON_BACK = 39;
     private final Map<Integer, String> ACT_BUTTON_NAMES = new HashMap<Integer, String>() {
         {
             put(ACT_PRESS_BUTTON_NUMB_ZERO, "0");
@@ -186,7 +186,7 @@ public class MainActivity extends Activity {
                 FIXED_FONT_FAMILY,
                 getDoNotTrackEnabled(getApplicationContext()),
                 getCleanTracksEnabled(getApplicationContext())
-      );
+        );
 
         setContentView(R.layout.activity_main);
         Bundle extras = getIntent().getExtras();
@@ -315,6 +315,7 @@ public class MainActivity extends Activity {
         public void onServiceConnected(ComponentName className, IBinder binder) {
             Log.d("VoiceRecognition ServiceConnection", "connected");
         }
+
         public void onServiceDisconnected(ComponentName className) {
             Log.d("VoiceRecognition ServiceConnection", "disconnected");
         }
@@ -369,14 +370,14 @@ public class MainActivity extends Activity {
     }
 
     private boolean getCleanTracksEnabled(Context context) {
-      String setting = Settings.Global.getString(context.getContentResolver(), "clean_tracks_enabled");
-      if (setting != null && setting.equals("1")) {
-          Log.d(TAG, "clean_tracks_enabled=1");
-          return true;
-      } else {
-          Log.d(TAG, "clean_tracks_enabled=unset|0");
-          return false;
-      }
+        String setting = Settings.Global.getString(context.getContentResolver(), "clean_tracks_enabled");
+        if (setting != null && setting.equals("1")) {
+            Log.d(TAG, "clean_tracks_enabled=1");
+            return true;
+        } else {
+            Log.d(TAG, "clean_tracks_enabled=unset|0");
+            return false;
+        }
     }
 
     public String getHostAddress() {
@@ -523,7 +524,7 @@ public class MainActivity extends Activity {
      * @return true if this event has been handled, and false if not
      */
     private boolean onVoiceSendIntent(Integer action, String info, String anchor,
-                                     int offset) {
+                                      int offset) {
 
         switch (action) {
             case INTENT_MEDIA_PAUSE:
