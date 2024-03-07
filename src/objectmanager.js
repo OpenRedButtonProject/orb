@@ -43,6 +43,9 @@ hbbtv.objectManager = (function() {
             }
         );
         upgradeDescendantObjects(document);
+        document.addEventListener('DOMContentLoaded', function() {
+            upgradeDescendantObjects(document);
+        });
     }
 
     function registerObject(options) {
