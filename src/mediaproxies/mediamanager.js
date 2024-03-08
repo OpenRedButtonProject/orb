@@ -140,15 +140,16 @@ hbbtv.mediaManager = (function() {
         }
 
         // if no supported extension is found, request the content-type of the source
-        const request = new XMLHttpRequest();
-        request.open('HEAD', src);
-        request.send();
         return new Promise((resolve, reject) => {
+            const request = new XMLHttpRequest();
             request.onabort = request.onerror = () => {
                 reject('An error occurred while requesting the content type.');
             };
+            let timeoutId = -1;
             request.onload = () => {
+                clearTimeout(timeoutId);
                 try {
+                    console.log("marios", request.getAllResponseHeaders());
                     const contentType = request
                         .getAllResponseHeaders()
                         .split('\n')
@@ -171,6 +172,9 @@ hbbtv.mediaManager = (function() {
                     reject(e);
                 }
             };
+            timeoutId = setTimeout(request.onload, 5000);
+            request.open('HEAD', src);
+            request.send();
         });
     }
 
