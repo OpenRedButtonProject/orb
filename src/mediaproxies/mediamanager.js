@@ -39,7 +39,9 @@ hbbtv.mediaManager = (function() {
             getPreferredAudioLanguage: () =>
                 hbbtv.native.request('Configuration.getPreferredAudioLanguage').result,
             getCleanAudioEnabled: () =>
-                hbbtv.native.request('Configuration.getCleanAudioEnabled').result
+                hbbtv.native.request('Configuration.getCleanAudioEnabled').result,
+            getSubtitlesEnabled: () =>
+                hbbtv.native.request('Configuration.getSubtitlesEnabled').result
         },
     };
 
