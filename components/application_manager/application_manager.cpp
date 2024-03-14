@@ -204,10 +204,13 @@ void ApplicationManager::DestroyApplication(uint16_t callingAppId)
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
     LOG(LOG_ERROR, "DestroyApplication");
-
+    if (callingAppId == INVALID_APP_ID) {
+        KillRunningApp();
+        OnRunningAppExited();
+    }
     if (!m_app.isRunning || m_app.id != callingAppId)
     {
-        LOG(LOG_INFO, "Called by non-running app, early out");
+        LOG(LOG_INFO,  "Called by non-running app, early out");
         return;
     }
 

@@ -390,6 +390,14 @@ class OrbSession implements IOrbSession {
     }
 
     /**
+     * When the user presses the exit key, destroy the calling application.
+     */
+    @Override
+    public void onExitKeyPress() {
+        mApplicationManager.destroyApplication(0);
+    }
+
+    /**
      * Requests the HbbTV engine to process the specified AIT. The HbbTV engine expects the
      * relevant AITs only (the first one after HBBTV_Start and when the version/PID changes).
      * If more than one stream is signalled in the PMT for a service with an
