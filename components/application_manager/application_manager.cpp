@@ -63,6 +63,7 @@
 #define VK_NEXT 425
 #define VK_PREV 424
 #define VK_PLAY_PAUSE 402
+#define VK_RECORD 416
 #define VK_PAGE_UP 33
 #define VK_PAGE_DOWN 34
 #define VK_INFO 457
@@ -265,23 +266,27 @@ void ApplicationManager::HideApplication(uint16_t callingAppId)
 uint16_t ApplicationManager::SetKeySetMask(uint16_t appId, uint16_t keySetMask)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
+    std::string currentScheme = m_app.getScheme();
     if (m_app.id == appId)
     {
-        if (!m_app.isActivated && m_app.getScheme() != LINKED_APP_SCHEME_1_2 &&
-            m_app.getScheme() != LINKED_APP_SCHEME_2)
+        if (!m_app.isActivated && currentScheme != LINKED_APP_SCHEME_2)
         {
             if ((keySetMask & KEY_SET_VCR) != 0)
             {
-                // compatibility check for older versions
-                if (m_app.versionMinor > 1)
+                // Key events VK_STOP, VK_PLAY, VK_PAUSE, VK_PLAY_PAUSE, VK_FAST_FWD,
+                // VK_REWIND and VK_RECORD shall always be available to linked applications 
+                // that are controlling media presentation without requiring the application 
+                // to be activated first (2.0.4, App. O.7)
+                bool isException = currentScheme == LINKED_APP_SCHEME_1_2 && m_app.versionMinor == 7;
+
+                if (m_app.versionMinor > 1 && !isException) // Compatibility check for older versions
                 {
                     keySetMask &= ~KEY_SET_VCR;
                 }
             }
-            if ((keySetMask & KEY_SET_NUMERIC) != 0)
+            if ((keySetMask & KEY_SET_NUMERIC) != 0 && currentScheme != LINKED_APP_SCHEME_1_2)
             {
-                // compatibility check for older versions
-                if (m_app.versionMinor > 1)
+                if (m_app.versionMinor > 1) // Compatibility check for older versions
                 {
                     keySetMask &= ~KEY_SET_NUMERIC;
                 }
@@ -295,6 +300,7 @@ uint16_t ApplicationManager::SetKeySetMask(uint16_t appId, uint16_t keySetMask)
     }
     return keySetMask;
 }
+
 
 /**
  * Get the key set mask for an application.
@@ -1204,7 +1210,8 @@ static bool IsKeyVcr(uint16_t code)
            code == VK_REWIND ||
            code == VK_NEXT ||
            code == VK_PREV ||
-           code == VK_PLAY_PAUSE;
+           code == VK_PLAY_PAUSE ||
+           code == VK_RECORD;
 }
 
 static bool IsKeyScroll(uint16_t code)
