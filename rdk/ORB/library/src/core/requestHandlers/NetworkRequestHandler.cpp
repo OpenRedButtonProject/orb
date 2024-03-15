@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 #include "NetworkRequestHandler.h"
+#include "ORBEngine.h"
 
 #include <netdb.h>
 #include <arpa/inet.h>
 
 #define NETWORK_RESOLVE_HOST_ADDRESS "resolveHostAddress"
+#define NETWORK_RESOLVE_NETWORK_ERROR "resolveNetworkError"
 
 namespace orb {
 /**
@@ -62,6 +64,13 @@ bool NetworkRequestHandler::Handle(
         std::string hostName = params["hostname"];
         std::string hostAddress = ResolveHostAddress(hostName);
         response["result"] = hostAddress;
+    }
+    // Network.resolveNetworkError
+    else if (method == NETWORK_RESOLVE_NETWORK_ERROR)
+    {
+        std::string responseText = params.value("responseText", "");
+        std::string dashErrorCode = ORBEngine::GetSharedInstance().GetORBPlatform()->Network_ResolveNetworkError(responseText);
+        response["result"] = dashErrorCode;
     }
     // UnknownMethod
     else

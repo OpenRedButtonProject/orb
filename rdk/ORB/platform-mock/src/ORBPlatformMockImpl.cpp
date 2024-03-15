@@ -199,6 +199,12 @@ bool ORBPlatformMockImpl::Network_IsConnectedToInternet()
     return true;
 }
 
+std::string Network_ResolveNetworkError(std::string responseText)
+{
+    ORB_LOG("%s", responseText.c_str());
+    return "unknown";
+}
+
 /******************************************************************************
 ** Broadcast API
 *****************************************************************************/

@@ -25,6 +25,11 @@ hbbtv.mediaManager = (function() {
             hbbtv.native.request('Network.resolveHostAddress', {
                 hostname
             }).result,
+
+        resolveNetworkError: (responseText) =>
+            hbbtv.native.request('Network.resolveNetworkError', {
+                responseText
+            }).result,
     };
     window.orbParentalRating = {
         isRatingBlocked: (scheme, region, value) =>
