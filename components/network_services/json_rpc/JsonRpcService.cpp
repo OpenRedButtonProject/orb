@@ -565,6 +565,11 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestDialogueEnhancementOverride
         {
             dialogueEnhancementGain = params["dialogueEnhancementGain"].asInt();
         }
+        else
+        {
+            RespondError(connectionId, id, -24, "Dialogue Enhancement override failed");
+            return JsonRpcStatus::NOTIFICATION_ERROR;
+        }
     }
     m_sessionCallback->RequestDialogueEnhancementOverride(connectionId, id,
         dialogueEnhancementGain);

@@ -204,13 +204,14 @@ void ApplicationManager::DestroyApplication(uint16_t callingAppId)
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
     LOG(LOG_ERROR, "DestroyApplication");
-    if (callingAppId == INVALID_APP_ID) {
+    if (callingAppId == INVALID_APP_ID)
+    {
         KillRunningApp();
         OnRunningAppExited();
     }
     if (!m_app.isRunning || m_app.id != callingAppId)
     {
-        LOG(LOG_INFO,  "Called by non-running app, early out");
+        LOG(LOG_INFO, "Called by non-running app, early out");
         return;
     }
 
@@ -267,7 +268,7 @@ uint16_t ApplicationManager::SetKeySetMask(uint16_t appId, uint16_t keySetMask)
     if (m_app.id == appId)
     {
         if (!m_app.isActivated && m_app.getScheme() != LINKED_APP_SCHEME_1_2 &&
-            m_app.getScheme()  != LINKED_APP_SCHEME_2)
+            m_app.getScheme() != LINKED_APP_SCHEME_2)
         {
             if ((keySetMask & KEY_SET_VCR) != 0)
             {
@@ -424,7 +425,8 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
         return false;
     }
 
-    std::unique_ptr<Ait::S_AIT_TABLE> aitTable = XmlParser::ParseAit(xmlAit.c_str(), xmlAit.length());
+    std::unique_ptr<Ait::S_AIT_TABLE> aitTable = XmlParser::ParseAit(xmlAit.c_str(),
+        xmlAit.length());
     if (nullptr == aitTable || aitTable->numApps == 0)
     {
         // No AIT or apps parsed, early out
