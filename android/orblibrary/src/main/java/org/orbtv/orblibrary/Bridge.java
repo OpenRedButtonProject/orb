@@ -1294,6 +1294,16 @@ class Bridge extends AbstractBridge {
     }
 
     /**
+     * Request the soft keyboard.
+     *
+     * @param token The token associated with this request.
+     */
+    protected void SoftKeyboard_show(BridgeToken token) {
+        Log.d(TAG, "Requesting soft keyboard...");
+        mOrbLibraryCallback.showSoftKeyboard();
+    }
+
+    /**
      * Retrieve the public ip address.
      *
      * @param token The token associated with this request.

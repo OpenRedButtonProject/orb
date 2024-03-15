@@ -1386,6 +1386,13 @@ public abstract class AbstractBridge {
      */
     protected abstract String Network_resolveHostAddress(BridgeToken token, String hostname);
 
+    /**
+     * Request the soft keyboard.
+     *
+     * @param token The token associated with this request.
+     */
+    protected abstract void SoftKeyboard_show(BridgeToken token);
+
     public JSONObject request(String method, BridgeToken token, JSONObject params) throws JSONException {
         JSONObject response = new JSONObject();
 
@@ -2183,6 +2190,11 @@ public abstract class AbstractBridge {
                         params.getString("hostname")
                 );
                 response.put("result", result);
+                break;
+            }
+
+            case "SoftKeyboard.show": {
+                SoftKeyboard_show(token);
                 break;
             }
 
