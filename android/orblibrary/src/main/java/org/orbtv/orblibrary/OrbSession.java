@@ -25,6 +25,8 @@ class OrbSession implements IOrbSession {
     private Bridge mBridge;
     private BrowserView mBrowserView;
     private DsmccClient mDsmccClient;
+    private final int EMPTY_INTEGER = -999999;
+    private final String EMPTY_STRING = "";
 
     /**
      * TV browser session.
@@ -409,7 +411,7 @@ class OrbSession implements IOrbSession {
         }
         mApplicationManager.processAitSection(aitPid, serviceId, data);
     }
-    
+
     /**
      * For portals (not DVB-I).
      *
@@ -454,7 +456,7 @@ class OrbSession implements IOrbSession {
     public boolean launchTeletextApplication() {
         return mApplicationManager.runTeletextApplication();
     }
-    
+
     /**
      * Called to Tell the browser to dispatch an key press event.
      *
@@ -882,8 +884,6 @@ class OrbSession implements IOrbSession {
      *
      * @param connection        The request and response should have the same value
      * @param id                The request and response should have the same value
-     *                          - Not empty: a message of user settings query
-     *                          - Empty: a message of notification
      * @param enabled           Enabled subtitles
      * @param size              The font size
      * @param fontFamily        The description of the font family
@@ -914,13 +914,42 @@ class OrbSession implements IOrbSession {
 
     /**
      * @since 204
+     *
+     * Called to send a notification message when the subtitles user settings change
+     *
+     * @param enabled           Enabled subtitles
+     * @param size              The font size
+     * @param fontFamily        The description of the font family
+     * @param textColour        The text colour in RGB24 format
+     * @param textOpacity       The test opacity with the percentage from 0 to 100
+     * @param edgeType          The description of edge type
+     * @param edgeColour        The edge colour in RGB24 format
+     * @param backgroundColour  The background colour in RGB24 format
+     * @param backgroundOpacity The background opacity with the percentage from 0 to 100
+     * @param windowColour      The window colour in RGB24 format
+     * @param windowOpacity     The window opacity with the percentage from 0 to 100
+     * @param language          The description of language in ISO639-2 3-character code
+     */
+    public void onNotifySubtitles(boolean enabled, int size, String fontFamily, String textColour, int textOpacity,
+                                  String edgeType, String edgeColour,
+                                  String backgroundColour, int backgroundOpacity,
+                                  String windowColour, int windowOpacity, String language) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onQuerySubtitles(EMPTY_INTEGER, EMPTY_STRING, enabled, size, fontFamily, textColour, textOpacity,
+                edgeType, edgeColour, backgroundColour, backgroundOpacity,
+                windowColour, windowOpacity, language);
+    }
+
+    /**
+     * @since 204
      * 
      * Called to send a message with the settings of dialogue enhancement
      *
      * @param connection     The request and response should have the same value
      * @param id             The request and response should have the same value
-     *                       - Not empty: a message of user settings query
-     *                       - Empty: a message of notification
      * @param gainPreference The dialogue enhancement gain preference in dB
      * @param gain           The currently-active gain value in dB
      * @param limitMin       The current allowed minimum gain value in dB
@@ -939,13 +968,31 @@ class OrbSession implements IOrbSession {
 
     /**
      * @since 204
+     *
+     * Called to send a notification message when the dialogue enhancement user settings change
+     *
+     * @param gainPreference The dialogue enhancement gain preference in dB
+     * @param gain           The currently-active gain value in dB
+     * @param limitMin       The current allowed minimum gain value in dB
+     * @param limitMax       The current allowed maximum gain value in dB
+     */
+    @Override
+    public void onNotifyDialogueEnhancement(int gainPreference, int gain, int limitMin, int limitMax) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onQueryDialogueEnhancement(EMPTY_INTEGER, EMPTY_STRING,
+                gainPreference, gain, limitMin, limitMax);
+    }
+
+    /**
+     * @since 204
      * 
      * Called to send a message with the settings of a user Interface Magnification feature
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
-     *                   - Not empty: a message of user settings query
-     *                   - Empty: a message of notification
      * @param enabled    Enabled a screen magnification UI setting
      * @param magType    The description of the type of magnification scheme currently set
      */
@@ -960,13 +1007,28 @@ class OrbSession implements IOrbSession {
 
     /**
      * @since 204
+     *
+     * Called to send a notification message when the High Contrast UI user settings change
+     *
+     * @param enabled    Enabled a screen magnification UI setting
+     * @param magType    The description of the type of magnification scheme currently set
+     */
+    @Override
+    public void onNotifyUIMagnifier(boolean enabled, String magType) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onQueryUIMagnifier(EMPTY_INTEGER, EMPTY_STRING, enabled, magType);
+    }
+
+    /**
+     * @since 204
      * 
      * Called to send a message with the settings of a high contrast UI feature
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
-     *                   - Not empty: a message of user settings query
-     *                   - Empty: a message of notification
      * @param enabled    Enabled a high contrast UI
      * @param hcType     The description of the type of high contrast scheme currently set
      */
@@ -981,13 +1043,28 @@ class OrbSession implements IOrbSession {
 
     /**
      * @since 204
+     *
+     * Called to send a notification message when the High Contrast UI user settings change
+     *
+     * @param enabled    Enabled a high contrast UI
+     * @param hcType     The description of the type of high contrast scheme currently set
+     */
+    @Override
+    public void onNotifyHighContrastUI(boolean enabled, String hcType) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onQueryHighContrastUI(EMPTY_INTEGER, EMPTY_STRING, enabled, hcType);
+    }
+
+    /**
+     * @since 204
      * 
      * Called to send a message with the settings of a screen reader feature
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
-     *                   - Not empty: a message of user settings query
-     *                   - Empty: a message of notification
      * @param enabled    Enabled a screen reader preference
      * @param speed      A percentage scaling factor of the default speech speed, 100% considered normal speed
      * @param voice      The description of the voice
@@ -1005,13 +1082,30 @@ class OrbSession implements IOrbSession {
 
     /**
      * @since 204
+     *
+     * Called to send a notification message with the settings of a screen reader feature
+     *
+     * @param enabled    Enabled a screen reader preference
+     * @param speed      A percentage scaling factor of the default speech speed, 100% considered normal speed
+     * @param voice      The description of the voice
+     * @param language   The description of language in ISO639-2 3-character code
+     */
+    @Override
+    public void onNotifyScreenReader(boolean enabled, int speed, String voice, String language) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onQueryScreenReader(EMPTY_INTEGER, EMPTY_STRING, enabled, speed, voice, language);
+    }
+
+    /**
+     * @since 204
      * 
      * Called to send a message with the settings of a "response to a user action" feature
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
-     *                   - Not empty: a message of user settings query
-     *                   - Empty: a message of notification
      * @param enabled    Enabled a "response to a user action" preference
      * @param type       The description of the mechanism the terminal uses to feedback to the user that the user action has occurred.
      */
@@ -1026,13 +1120,28 @@ class OrbSession implements IOrbSession {
 
     /**
      * @since 204
+     *
+     * Called to send a notification message when ‘Response to a User Action’ user settings change
+     *
+     * @param enabled    Enabled a "response to a user action" preference
+     * @param type       The description of the mechanism the terminal uses to feedback to the user that the user action has occurred.
+     */
+    @Override
+    public void onNotifyResponseToUserAction(boolean enabled, String type) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onQueryResponseToUserAction(EMPTY_INTEGER, EMPTY_STRING, enabled, type);
+    }
+
+    /**
+     * @since 204
      * 
      * Called to send a message with the settings of an audio description feature
      *
      * @param connection           The request and response should have the same value
      * @param id                   The request and response should have the same value
-     *                             - Not empty: a message of user settings query
-     *                             - Empty: a message of notification
      * @param enabled              Enabled audio description
      * @param gainPreference       The audio description gain preference set by the user in dB.
      * @param panAzimuthPreference The degree of the azimuth pan preference set by the user
@@ -1049,13 +1158,29 @@ class OrbSession implements IOrbSession {
 
     /**
      * @since 204
+     *
+     * Called to send a notification message when the Audio Description user settings change
+     *
+     * @param enabled              Enabled audio description
+     * @param gainPreference       The audio description gain preference set by the user in dB.
+     * @param panAzimuthPreference The degree of the azimuth pan preference set by the user
+     */
+    @Override
+    public void onNotifyAudioDescription(boolean enabled, int gainPreference, int panAzimuthPreference) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onQueryAudioDescription(EMPTY_INTEGER, EMPTY_STRING, enabled, gainPreference, panAzimuthPreference);
+    }
+
+    /**
+     * @since 204
      * 
      * Called to send a message with the settings of an in-vision signing feature
      *
      * @param connection The request and response should have the same value
      * @param id         The request and response should have the same value
-     *                   - Not empty: a message of user settings query
-     *                   - Empty: a message of notification
      * @param enabled    Enabled an in-vision signing preference
      */
     @Override
@@ -1065,6 +1190,22 @@ class OrbSession implements IOrbSession {
         }
 
         mJsonRpc.onQueryInVisionSigning(connection, id, enabled);
+    }
+
+    /**
+     * @since 204
+     *
+     * Called to send a notification message when the In-Vision Signing user settings change
+     *
+     * @param enabled    Enabled an in-vision signing preference
+     */
+    @Override
+    public void onNotifyInVisionSigning(boolean enabled) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+
+        mJsonRpc.onQueryInVisionSigning(EMPTY_INTEGER, EMPTY_STRING, enabled);
     }
 
     /**
@@ -1221,7 +1362,6 @@ class OrbSession implements IOrbSession {
             throw new UnsupportedOperationException("Unsupported 204 API.");
         }
 
-        mOrbSessionCallback.consoleLog("Request for the information of media playing...");
         mJsonRpc.onVoiceRequestDescription();
         return true;
     }
@@ -1242,207 +1382,7 @@ class OrbSession implements IOrbSession {
 
         // Mock function to display the input text
         dispatchTextInput(input);
-        mOrbSessionCallback.consoleLog("Enter text {" + input + "}");
         return true;
     }
 
-    /**
-     * @since 204
-     *
-     * Called to send an intent, from a voice command, to applications
-     *
-     * @param action The index number of the intent, from intent.media.pause to intent.playback
-     * @param info   The value uniquely identifying a piece of content:
-     *               - INTENT_MEDIA_SEEK_WALLCLOCK: a wall clock time
-     *               - INTENT_DISPLAY: a media name
-     *               - INTENT_SEARCH: a search term specified by the user.
-     *               - INTENT_PLAYBACK: a media name
-     * @param anchor The value indicates an anchor point of the content, which is either "start" or "end"
-     * @param offset The number value for the time position, a number of seconds
-     * @return true if this event has been handled, and false if not
-     */
-    @Override
-    public boolean onVoiceSendIntent(Integer action, String info, String anchor,
-                                     int offset) {
-        if (mOrbHbbTVVersion < 204) {
-            throw new UnsupportedOperationException("Unsupported 204 API.");
-        }
-
-        String mediaId;
-        switch (action) {
-            case INTENT_MEDIA_PAUSE:
-                onSendIntentMediaBasics(INTENT_MEDIA_PAUSE);
-                mOrbSessionCallback.consoleLog("Send an intent, action: pause");
-                return true;
-            case INTENT_MEDIA_PLAY:
-                onSendIntentMediaBasics(INTENT_MEDIA_PLAY);
-                mOrbSessionCallback.consoleLog("Send an intent, action: play");
-                return true;
-            case INTENT_MEDIA_FAST_FORWARD:
-                onSendIntentMediaBasics(INTENT_MEDIA_FAST_FORWARD);
-                mOrbSessionCallback.consoleLog("Send an intent, action: fast-forward");
-                return true;
-            case INTENT_MEDIA_FAST_REVERSE:
-                onSendIntentMediaBasics(INTENT_MEDIA_FAST_REVERSE);
-                mOrbSessionCallback.consoleLog("Send an intent, action: fast-reverse");
-                return true;
-            case INTENT_MEDIA_STOP:
-                onSendIntentMediaBasics(INTENT_MEDIA_STOP);
-                mOrbSessionCallback.consoleLog("Send an intent, action: stop");
-                return true;
-            case INTENT_MEDIA_SEEK_CONTENT:
-                if (anchor.equals("start") || anchor.equals("end")) {
-                    onSendIntentMediaSeekContent(anchor, offset);
-                    mOrbSessionCallback.consoleLog("Send an intent, action: seek-content");
-                    return true;
-                }
-                break;
-            case INTENT_MEDIA_SEEK_RELATIVE:
-                onSendIntentMediaSeekRelative(offset);
-                mOrbSessionCallback.consoleLog("Send an intent, action: seek-relative");
-                return true;
-            case INTENT_MEDIA_SEEK_LIVE:
-                onSendIntentMediaSeekLive(offset);
-                mOrbSessionCallback.consoleLog("Send an intent, action: seek-live");
-                return true;
-            case INTENT_DISPLAY:
-                // TODO - get mediaId by media name
-                mediaId = mOrbSessionCallback.getMediaId(info);
-                onSendIntentDisplay(mediaId);
-                mOrbSessionCallback.consoleLog("Send an intent, action: display");
-                return true;
-            case INTENT_MEDIA_SEEK_WALLCLOCK:
-                onSendIntentMediaSeekWallclock(info);
-                mOrbSessionCallback.consoleLog("Send an intent, action: seek-wallclock");
-                return true;
-            case INTENT_SEARCH:
-                onSendIntentSearch(info);
-                mOrbSessionCallback.consoleLog("Send an intent, action: search");
-                return true;
-            case INTENT_PLAYBACK:
-                mediaId = mOrbSessionCallback.getMediaId(info);
-                onSendIntentPlayback(mediaId, anchor, offset);
-                mOrbSessionCallback.consoleLog("Send an intent, action: playback");
-                return true;
-        }
-        return false;
-    }
-
-    /**
-     * @since 204
-     *
-     * Called to send a send a keyUp event, from a voice command, to the application, potentially dispatching the event and show a message on window log.
-     *
-     * @param action The index number of the intent, either pressing a button or showing a log
-     */
-    @Override
-    public boolean onVoiceSendKeyAction(Integer action) {
-        if (mOrbHbbTVVersion < 204) {
-            throw new UnsupportedOperationException("Unsupported 204 API.");
-        }
-
-        String buttonName = ACT_BUTTON_NAMES.getOrDefault(action, "invalid");
-        if (buttonName.equals("invalid")) {
-            return false;
-        }
-        mOrbSessionCallback.consoleLog("Press " + buttonName + " button");
-        int keyCode;
-        switch (action) {
-            case ACT_PRESS_BUTTON_NUMB_ZERO:
-            case ACT_PRESS_BUTTON_NUMB_ONE:
-            case ACT_PRESS_BUTTON_NUMB_TWO:
-            case ACT_PRESS_BUTTON_NUMB_THREE:
-            case ACT_PRESS_BUTTON_NUMB_FOUR:
-            case ACT_PRESS_BUTTON_NUMB_FIVE:
-            case ACT_PRESS_BUTTON_NUMB_SIX:
-            case ACT_PRESS_BUTTON_NUMB_SEVEN:
-            case ACT_PRESS_BUTTON_NUMB_EIGHT:
-            case ACT_PRESS_BUTTON_NUMB_NINE:
-                keyCode = KeyEvent.KEYCODE_0 + action - ACT_PRESS_BUTTON_NUMB_ZERO;
-                break;
-            case ACT_PRESS_BUTTON_RED:
-                keyCode = KeyEvent.KEYCODE_PROG_RED;
-                break;
-            case ACT_PRESS_BUTTON_GREEN:
-                keyCode = KeyEvent.KEYCODE_PROG_GREEN;
-                break;
-            case ACT_PRESS_BUTTON_YELLOW:
-                keyCode = KeyEvent.KEYCODE_PROG_YELLOW;
-                break;
-            case ACT_PRESS_BUTTON_BLUE:
-                keyCode = KeyEvent.KEYCODE_PROG_BLUE;
-                break;
-            case ACT_PRESS_BUTTON_UP:
-                keyCode = KeyEvent.KEYCODE_DPAD_UP;
-                break;
-            case ACT_PRESS_BUTTON_DOWN:
-                keyCode = KeyEvent.KEYCODE_DPAD_DOWN;
-                break;
-            case ACT_PRESS_BUTTON_LEFT:
-                keyCode = KeyEvent.KEYCODE_DPAD_LEFT;
-                break;
-            case ACT_PRESS_BUTTON_RIGHT:
-                keyCode = KeyEvent.KEYCODE_DPAD_RIGHT;
-                break;
-            case ACT_PRESS_BUTTON_ENTER:
-                keyCode = KeyEvent.KEYCODE_ENTER;
-                break;
-            case ACT_PRESS_BUTTON_BACK:
-                keyCode = KeyEvent.KEYCODE_DEL;
-                break;
-            default:
-                return false;
-        }
-        KeyEvent event = new KeyEvent(KeyEvent.ACTION_UP, keyCode);
-        return dispatchKeyEvent(event);
-    }
-
-    /**
-     * @since 204
-     *
-     * Sends voice commands based on provided actions, messages, anchors, and offsets, where some of the parameters are optional.
-     *
-     * @param action The predefined index number of the intent, from intent.media.pause to intent.playback
-     * @param info   The value uniquely identifying a piece of content:
-     *               - INTENT_MEDIA_SEEK_WALLCLOCK: a wall clock time
-     *               - INTENT_DISPLAY: a URI
-     *               - INTENT_SEARCH: a search term specified by the user.
-     *               - INTENT_PLAYBACK: a URI
-     * @param anchor The value indicates an anchor point of the content...
-     * @param offset The number value for the time position, a number of seconds
-     * @return True if the command is successfully executed; otherwise, handles appropriately.
-     */
-    public boolean sendVoiceCommand(Integer action, String info, String anchor, int offset) {
-        if (mOrbHbbTVVersion < 204) {
-            throw new UnsupportedOperationException("Unsupported 204 API.");
-        }
-
-        switch (action) {
-            case INTENT_MEDIA_PAUSE:
-            case INTENT_MEDIA_PLAY:
-            case INTENT_MEDIA_FAST_FORWARD:
-            case INTENT_MEDIA_FAST_REVERSE:
-            case INTENT_MEDIA_STOP:
-            case INTENT_MEDIA_SEEK_CONTENT:
-            case INTENT_MEDIA_SEEK_RELATIVE:
-            case INTENT_MEDIA_SEEK_LIVE:
-            case INTENT_MEDIA_SEEK_WALLCLOCK:
-            case INTENT_SEARCH:
-            case INTENT_DISPLAY:
-            case INTENT_PLAYBACK:
-                return onVoiceSendIntent(action, info, anchor, offset);
-            case ACT_REQUEST_MEDIA_DESCRIPTION:
-                return onVoiceRequestDescription();
-            case ACT_REQUEST_TEXT_INPUT:
-                return onVoiceRequestTextInput(info);
-            case LOG_MESSAGE:
-            case LOG_ERROR_NONE_ACTION:
-            case LOG_ERROR_MULTI_ACTIONS:
-            case LOG_ERROR_INTENT_SEND:
-                mOrbSessionCallback.consoleLog(info);
-                return true;
-            default:
-                return onVoiceSendKeyAction(action);
-        }
-    }
 }

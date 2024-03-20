@@ -18,7 +18,9 @@ package org.orbtv.orblibrary;
 
 import org.orbtv.orbpolyfill.BridgeTypes;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public interface IOrbSessionCallback {
     enum ApplicationStatus {
@@ -31,32 +33,53 @@ public interface IOrbSessionCallback {
         /* The application is running but not currently visible to the user. */
         INVISIBLE,
     }
-    
+
     /**
      * The level of support a TV OS has for a particular Accessibility Feature.
-     *
-     * TODO Change names to THIS_STYLE.
      */
     enum SupportType {
-        notSupported,
-        tvosSettingOnly,
-        tvosOnly,
-        tvosAndHbbTV,
-        supportedNoSetting
+        NOT_SUPPORTED,
+        TVOS_SETTING_ONLY,
+        TVOS_ONLY,
+        TVOS_AND_HBBTV,
+        SUPPORTED_NO_SETTING
     }
+
+    /**
+     * The string value of the support level by a TV OS.
+     */
+    Map<SupportType, String> SUPPORT_TYPE_NAMES = new HashMap<SupportType, String>() {
+        {
+            put(SupportType.NOT_SUPPORTED, "notSupported");
+            put(SupportType.TVOS_SETTING_ONLY, "tvosSettingOnly");
+            put(SupportType.TVOS_ONLY, "tvosOnly");
+            put(SupportType.TVOS_AND_HBBTV, "tvosAndHbbTV");
+            put(SupportType.SUPPORTED_NO_SETTING, "supportedNoSetting");
+        }
+    };
 
     /**
      * The result of an Application to request that a TV OS suppresses its support for an
      * Accessibility Feature.
-     *
-     * TODO Change names to THIS_STYLE.
      */
     enum SuppressType {
-        none,
-        suppressing,
-        notSuppressing,
-        featureNotSupported
+        NONE,
+        SUPPRESSING,
+        NOT_SUPPRESSING,
+        FEATURE_NOT_SUPPORTED
     }
+
+    /**
+     * The string value of the suppress result from a TV OS.
+     */
+    Map<SuppressType, String> SUPPRESS_TYPE_NAMES = new HashMap<SuppressType, String>() {
+        {
+            put(SuppressType.NONE, "none");
+            put(SuppressType.SUPPRESSING, "suppressing");
+            put(SuppressType.NOT_SUPPRESSING, "notSuppressing");
+            put(SuppressType.FEATURE_NOT_SUPPORTED, "featureNotSupported");
+        }
+    };
 
     /**
      * This method is called once the session is ready to be called by the client and present HbbTV
@@ -707,10 +730,10 @@ public interface IOrbSessionCallback {
      * @param inVisionSigning      In-vision signing
      */
     default void onRequestSubscribe(boolean isSubscribe,
-                            boolean subtitles, boolean dialogueEnhancement,
-                            boolean uiMagnifier, boolean highContrastUI,
-                            boolean screenReader, boolean responseToUserAction,
-                            boolean audioDescription, boolean inVisionSigning) {
+                                    boolean subtitles, boolean dialogueEnhancement,
+                                    boolean uiMagnifier, boolean highContrastUI,
+                                    boolean screenReader, boolean responseToUserAction,
+                                    boolean audioDescription, boolean inVisionSigning) {
         throw new UnsupportedOperationException("Unsupported 204 API.");
     }
 
@@ -724,7 +747,7 @@ public interface IOrbSessionCallback {
      * @param dialogueEnhancementGain The requested gain value in dB of the dialogue enhancement
      */
     default void onRequestDialogueEnhancementOverride(int connection, String id,
-                                              int dialogueEnhancementGain) {
+                                                      int dialogueEnhancementGain) {
         throw new UnsupportedOperationException("Unsupported 204 API.");
     }
 
@@ -851,29 +874,8 @@ public interface IOrbSessionCallback {
      * @param data    The error data
      */
     default void onReceiveError(int code, String message,
-                        String method, String data) {
+                                String method, String data) {
         throw new UnsupportedOperationException("Unsupported 204 API.");
     }
 
-    /**
-     * @since 204
-     *
-     * Prints the log message using Logcat with a default log level of log.d.
-     * Overrides if a window console exists.
-     *
-     * @param log The log message to be printed
-     */
-    default void consoleLog(String log) {
-        throw new UnsupportedOperationException("Unsupported 204 API.");
-    }
-
-    /**
-     * @since 204
-     *
-     * @param name The media name got from voice command
-     * @return The media id of media name.
-     */
-    default String getMediaId(String name) {
-        throw new UnsupportedOperationException("Unsupported 204 API.");
-    }
 }
