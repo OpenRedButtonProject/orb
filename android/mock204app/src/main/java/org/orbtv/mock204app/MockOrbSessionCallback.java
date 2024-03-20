@@ -1853,6 +1853,12 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         }
     }
 
+    /**
+     * Show the soft keyboard.
+     */
+    @Override
+    public void showSoftKeyboard() { }
+
     private void setSuppressStatus(int featureId, SuppressType suppress) {
         if (featureId < 0 || featureId >= MOCK_SUPPRESS_TYPES.size() ||
                 featureId >= MOCK_SUPPORT_TYPES.size()) {
