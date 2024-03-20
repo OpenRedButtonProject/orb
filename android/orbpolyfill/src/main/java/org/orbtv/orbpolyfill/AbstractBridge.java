@@ -1020,6 +1020,15 @@ public abstract class AbstractBridge {
     protected abstract String Configuration_getPreferredAudioLanguage(BridgeToken token);
 
     /**
+     * Get preferred languages to be used for audio playback on this system.
+     *
+     * @param token The token associated with this request.
+     *
+     * @return Comma separated string of languages (IETF BCP47 codes), in order of preference.
+     */
+    protected abstract String Configuration_getPreferredAudioLanguage47(BridgeToken token);
+
+    /**
      * Get preferred languages to be used for subtitles on this system.
      *
      * @param token The token associated with this request.
@@ -1027,6 +1036,15 @@ public abstract class AbstractBridge {
      * @return Comma separated string of languages (ISO 639-2 codes), in order of preference.
      */
     protected abstract String Configuration_getPreferredSubtitleLanguage(BridgeToken token);
+
+    /**
+     * Get preferred languages to be used for subtitles on this system.
+     *
+     * @param token The token associated with this request.
+     *
+     * @return Comma separated string of languages (IETF BCP47 codes), in order of preference.
+     */
+    protected abstract String Configuration_getPreferredSubtitleLanguage47(BridgeToken token);
 
     /**
      * Get preferred languages to be used for the user-interface on this system.
@@ -1826,8 +1844,24 @@ public abstract class AbstractBridge {
                 break;
             }
 
+            case "Configuration.getPreferredAudioLanguage47": {
+                String result = Configuration_getPreferredAudioLanguage47(
+                        token
+                );
+                response.put("result", result);
+                break;
+            }
+
             case "Configuration.getPreferredSubtitleLanguage": {
                 String result = Configuration_getPreferredSubtitleLanguage(
+                        token
+                );
+                response.put("result", result);
+                break;
+            }
+
+            case "Configuration.getPreferredSubtitleLanguage47": {
+                String result = Configuration_getPreferredSubtitleLanguage47(
                         token
                 );
                 response.put("result", result);

@@ -1076,6 +1076,19 @@ hbbtv.bridge.configuration = (function() {
     };
 
     /**
+     * Get preferred languages to be used for audio playback on this system.
+     *
+     * @return {string} Comma separated string of languages (IETF BCP47 codes), in order of
+     *    preference.
+     *
+     * @method
+     * @memberof bridge.configuration#
+     */
+    exported.getPreferredAudioLanguage47 = function() {
+        return hbbtv.native.request('Configuration.getPreferredAudioLanguage47').result;
+    };
+
+    /**
      * Get preferred languages to be used for the user-interface on this system.
      *
      * @return {string} Comma separated string of languages (ISO 639-2 codes), in order of
@@ -1086,6 +1099,19 @@ hbbtv.bridge.configuration = (function() {
      */
     exported.getPreferredSubtitleLanguage = function() {
         return hbbtv.native.request('Configuration.getPreferredSubtitleLanguage').result;
+    };
+
+    /**
+     * Get preferred languages to be used for the user-interface on this system.
+     *
+     * @return {string} Comma separated string of languages (IETF BCP47 codes), in order of
+     *    preference.
+     *
+     * @method
+     * @memberof bridge.configuration#
+     */
+    exported.getPreferredSubtitleLanguage47 = function() {
+        return hbbtv.native.request('Configuration.getPreferredSubtitleLanguage47').result;
     };
 
     /**

@@ -843,6 +843,18 @@ class Bridge extends AbstractBridge {
     }
 
     /**
+     * Get preferred languages to be used for audio playback on this system.
+     *
+     * @param token The token associated with this request.
+     *
+     * @return Comma separated string of languages (IETF BCP47 codes), in order of preference.
+     */
+    @Override
+    protected String Configuration_getPreferredAudioLanguage47(BridgeToken token) {
+        return mOrbLibraryCallback.getPreferredAudioLanguage47();
+    }
+
+    /**
      * Get preferred languages to be used for subtitles on this system.
      *
      * @param token The token associated with this request.
@@ -852,6 +864,18 @@ class Bridge extends AbstractBridge {
     @Override
     protected String Configuration_getPreferredSubtitleLanguage(BridgeToken token) {
         return mOrbLibraryCallback.getPreferredSubtitleLanguage();
+    }
+
+    /**
+     * Get preferred languages to be used for subtitles on this system.
+     *
+     * @param token The token associated with this request.
+     *
+     * @return Comma separated string of languages (IETF BCP47 codes), in order of preference.
+     */
+    @Override
+    protected String Configuration_getPreferredSubtitleLanguage47(BridgeToken token) {
+        return mOrbLibraryCallback.getPreferredSubtitleLanguage47();
     }
 
     /**
