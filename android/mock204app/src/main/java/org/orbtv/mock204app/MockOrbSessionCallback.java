@@ -1624,7 +1624,10 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
             // the requested gain value shall be applied.
             appliedGain = dialogueEnhancementGain;
         }
-        MOCK_DIALOGUE_ENHANCEMENT_GAIN = appliedGain;
+        if (MOCK_DIALOGUE_ENHANCEMENT_GAIN != appliedGain) {
+            MOCK_DIALOGUE_ENHANCEMENT_GAIN = appliedGain;
+            onRequestFeatureSettingsQuery(connection, id, F_DIALOGUE_ENHANCEMENT);
+        }
         mSession.onRespondDialogueEnhancementOverride(connection, id, appliedGain);
         consoleLog("Apply dialogue enhancement override, gain: " + appliedGain);
     }
@@ -2119,6 +2122,9 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 mSession.onNotifyInVisionSigning(isEnabled);
                 consoleLog("Notify settings of in-vision signing, isEnabled: " + isEnabled);
                 break;
+            }
+            case KeyEvent.KEYCODE_ESCAPE: {
+                mSession.onExitKeyPress();
             }
             default:
                 return false;
