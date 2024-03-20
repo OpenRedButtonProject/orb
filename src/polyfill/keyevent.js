@@ -52,6 +52,7 @@
             Object.defineProperty(window.KeyEvent, key, {
                 value: keys[key],
                 writable: false,
+                enumerable: true,
             });
         }
     }
