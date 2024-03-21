@@ -703,6 +703,11 @@ public interface IOrbSessionCallback {
     void publishTestReport(String testSuite, String xml);
 
     /**
+     * Show the soft keyboard.
+     */
+    void showSoftKeyboard();
+
+    /**
      * @since 204
      *
      * Request a negotiation for methods

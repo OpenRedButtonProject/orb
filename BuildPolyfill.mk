@@ -80,13 +80,14 @@ src/objects/mediasync/mediaelementtsclient.js \
 src/objects/csmanager.js \
 src/objects/oipfdrmagent.js \
 src/objects/oipfgatewayinfo.js \
+src/extensions/textinputextension.js \
 src/mediaproxies/mediaerror.js \
 src/mediaproxies/timeranges.js \
 src/mediaproxies/eme/mediakeysystemaccess.js \
 src/mediaproxies/eme/mediakeys.js \
 src/mediaproxies/eme/mediakeysession.js \
 src/mediaproxies/iframeobjectproxy.js \
-src/mediaproxies/mediaelementextension.js)
+src/extensions/mediaelementextension.js)
 
 $(eval polyfill_proprietary_bbc_srcs = \
 src/proprietary/bbc/bbc.js)

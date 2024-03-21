@@ -1407,6 +1407,12 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         mTestSuiteRunner.onTestReportPublished(testSuite, xml);
     }
 
+    /**
+     * Show the soft keyboard.
+     */
+    @Override
+    public void showSoftKeyboard() { }
+
     private static byte[] getAssetBytes(Context context, String asset) {
         byte[] buffer;
         try {
