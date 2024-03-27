@@ -160,6 +160,7 @@ public:
         uint8_t usageType;
         std::vector<std::string> boundaries;
         std::vector<S_APP_PARENTAL_RATING> parentalRatings;
+        std::vector<uint16_t> graphicsConstraints;
         std::string scheme;
     } S_AIT_APP_DESC;
 
@@ -308,6 +309,8 @@ private:
     static void ParseSimpleAppBoundaryDesc(const uint8_t *dataPtr, S_AIT_APP_DESC *appPtr);
 
     static void ParseParentalRatingDesc(const uint8_t *dataPtr, S_AIT_APP_DESC *appPtr);
+
+    static void ParseGraphicsConstraints(const uint8_t *dataPtr, S_AIT_APP_DESC *appPtr);
 
     /**
      *

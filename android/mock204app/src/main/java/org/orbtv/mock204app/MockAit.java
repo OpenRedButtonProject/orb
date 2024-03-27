@@ -27,6 +27,7 @@ class MockAit {
         public String name;
         public String baseUrl;
         public String initialPath;
+        public Vector<Integer> graphics;
     }
 
     private final Vector<Byte> bytes = new Vector<>();
@@ -37,8 +38,8 @@ class MockAit {
 
         int appLoopLength = 0;
         for (MockAit.Application application : applications) {
-            appLoopLength += 35 + application.name.length() + application.baseUrl.length() +
-                    application.initialPath.length();
+            appLoopLength += 38 + application.name.length() + application.baseUrl.length() +
+                    application.initialPath.length() + application.graphics.size();
         }
 
         insert(0x74, 8); // table_id
@@ -60,8 +61,8 @@ class MockAit {
 
         // applications
         for (MockAit.Application application : applications) {
-            int descLoopLength = 26 + application.name.length() + application.baseUrl.length() +
-                    application.initialPath.length();
+            int descLoopLength = 29 + application.name.length() + application.baseUrl.length() +
+                    application.initialPath.length() + application.graphics.size();
 
             insert(application.orgId, 32); // application_identifier/organisation_id
             insert(application.id, 16); // application_identifier/application_id
@@ -111,6 +112,17 @@ class MockAit {
             insert(application.initialPath.length(), 8); // descriptor_length
             for (char ch : application.initialPath.toCharArray()) {
                 insert(ch, 8);
+            }
+
+            // graphics_constraints_descriptor
+            insert(0x14, 8); // descriptor_tag
+            insert(1 + application.graphics.size(), 8); // descriptor_length
+            insert(0b11111, 5); // reserved_future_use
+            insert(0, 1); // can_run_without_visible_ui
+            insert(0, 1); // handles_configuration_changed
+            insert(0, 1); // handles_externally_controlled_video
+            for (Integer i : application.graphics) {
+                insert(i, 8);  // graphics_configuration_byte
             }
         }
 

@@ -959,7 +959,8 @@ bool ApplicationManager::RunApp(const App &app)
             }
         }
 
-        m_sessionCallback->LoadApplication(m_app.id, m_app.entryUrl.c_str());
+        m_sessionCallback->LoadApplication(m_app.id, m_app.entryUrl.c_str(),
+            m_app.graphicsConstraints.size(), m_app.graphicsConstraints);
 
         if (!m_app.isHidden)
         {

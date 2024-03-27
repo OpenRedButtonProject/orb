@@ -62,10 +62,17 @@ class OrbSession implements IOrbSession {
              *
              * @param appId The application ID.
              * @param entryUrl The entry page URL.
+             *
+             * @since 204
+             * @param graphics The list of the co-ordinate graphics supported by the application
              */
             @Override
-            public void loadApplication(int appId, String entryUrl) {
-                mBrowserView.loadApplication(appId, entryUrl);
+            public void loadApplication(int appId, String entryUrl, int[] graphics) {
+                if (mOrbHbbTVVersion >= 204) {
+                    mBrowserView.loadApplication(appId, entryUrl, graphics);
+                } else {
+                    mBrowserView.loadApplication(appId, entryUrl, null);
+                }
             }
 
             /**
