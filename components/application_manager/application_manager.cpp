@@ -261,46 +261,47 @@ void ApplicationManager::HideApplication(uint16_t callingAppId)
  *
  * @param appId The application.
  * @param keySetMask The key set mask.
+ * @param otherKeys optional other keys
  * @return The key set mask for the application.
  */
-uint16_t ApplicationManager::SetKeySetMask(uint16_t appId, uint16_t keySetMask)
-{
+uint16_t ApplicationManager::SetKeySetMask(uint16_t appId, uint16_t keySetMask, std::vector<uint16_t> otherKeys) {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    std::string currentScheme = m_app.getScheme();
-    if (m_app.id == appId)
-    {
-        if (!m_app.isActivated && currentScheme != LINKED_APP_SCHEME_2)
-        {
-            if ((keySetMask & KEY_SET_VCR) != 0)
-            {
-                // Key events VK_STOP, VK_PLAY, VK_PAUSE, VK_PLAY_PAUSE, VK_FAST_FWD,
-                // VK_REWIND and VK_RECORD shall always be available to linked applications 
-                // that are controlling media presentation without requiring the application 
-                // to be activated first (2.0.4, App. O.7)
-                bool isException = currentScheme == LINKED_APP_SCHEME_1_2 && m_app.versionMinor == 7;
 
-                if (m_app.versionMinor > 1 && !isException) // Compatibility check for older versions
-                {
-                    keySetMask &= ~KEY_SET_VCR;
-                }
-            }
-            if ((keySetMask & KEY_SET_NUMERIC) != 0 && currentScheme != LINKED_APP_SCHEME_1_2)
-            {
-                if (m_app.versionMinor > 1) // Compatibility check for older versions
-                {
-                    keySetMask &= ~KEY_SET_NUMERIC;
-                }
-            }
+    if (m_app.id != appId) {
+        return 0;
+    }
+
+    std::string currentScheme = m_app.getScheme();
+
+    // Compatibility check for older versions
+    bool isOldVersion = m_app.versionMinor > 1; 
+    bool isLinkedAppScheme12 = currentScheme == LINKED_APP_SCHEME_1_2;
+
+    // Key events VK_STOP, VK_PLAY, VK_PAUSE, VK_PLAY_PAUSE, VK_FAST_FWD,
+    // VK_REWIND and VK_RECORD shall always be available to linked applications 
+    // that are controlling media presentation without requiring the application 
+    // to be activated first (2.0.4, App. O.7)
+    bool isException = isLinkedAppScheme12 && m_app.versionMinor == 7;
+
+    if (!m_app.isActivated && currentScheme != LINKED_APP_SCHEME_2) {
+        if ((keySetMask & KEY_SET_VCR) != 0 && isOldVersion && !isException) {
+            keySetMask &= ~KEY_SET_VCR;
         }
-        m_app.keySetMask = keySetMask;
+        if ((keySetMask & KEY_SET_NUMERIC) != 0 && !isLinkedAppScheme12 && isOldVersion) {
+            keySetMask &= ~KEY_SET_NUMERIC;
+        }
+        if ((keySetMask & KEY_SET_OTHER) != 0 && !isLinkedAppScheme12 && isOldVersion) {
+            keySetMask &= ~KEY_SET_OTHER;
+        }
     }
-    else
-    {
-        keySetMask = 0;
+
+    m_app.keySetMask = keySetMask;
+    if ((keySetMask & KEY_SET_OTHER) != 0) {
+        m_app.otherKeys = otherKeys; // Survived all checks
     }
+
     return keySetMask;
 }
-
 
 /**
  * Get the key set mask for an application.
@@ -316,6 +317,22 @@ uint16_t ApplicationManager::GetKeySetMask(uint16_t appId)
         return m_app.keySetMask;
     }
     return 0;
+}
+
+/**
+ * Get the other keys for an application.
+ *
+ * @param appId The application.
+ * @return The other keys for the application.
+ */
+std::vector<uint16_t> ApplicationManager::GetOtherKeyValues(uint16_t appId)
+{
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
+    if (m_app.id == appId)
+    {
+        return m_app.otherKeys;
+    }
+    return std::vector<uint16_t>();
 }
 
 std::string ApplicationManager::GetApplicationScheme(uint16_t appId)
@@ -339,10 +356,17 @@ std::string ApplicationManager::GetApplicationScheme(uint16_t appId)
 bool ApplicationManager::InKeySet(uint16_t appId, uint16_t keyCode)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
+    bool otherFound = false;
     if (m_app.id == appId)
     {
         if ((m_app.keySetMask & GetKeySet(keyCode)) != 0)
         {
+            if ((m_app.keySetMask & KEY_SET_OTHER) != 0) {
+                auto it = std::find(m_app.otherKeys.begin(), m_app.otherKeys.end(), keyCode);
+                if (it == m_app.otherKeys.end()) {
+                    return false;
+                }
+            }
             if (!m_app.isActivated)
             {
                 m_app.isActivated = true;
@@ -1166,8 +1190,12 @@ uint16_t ApplicationManager::GetKeySet(const uint16_t keyCode)
     {
         return KEY_SET_INFO;
     }
+    else if (keyCode == VK_RECORD)
+    {
+        return KEY_SET_OTHER;
+    }
 
-    return KEY_SET_OTHER;
+    return 0;
 }
 
 /**
@@ -1210,8 +1238,7 @@ static bool IsKeyVcr(uint16_t code)
            code == VK_REWIND ||
            code == VK_NEXT ||
            code == VK_PREV ||
-           code == VK_PLAY_PAUSE ||
-           code == VK_RECORD;
+           code == VK_PLAY_PAUSE;
 }
 
 static bool IsKeyScroll(uint16_t code)
