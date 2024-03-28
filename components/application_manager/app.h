@@ -58,6 +58,7 @@ public:
     uint16_t appId;
 
     uint16_t keySetMask;
+    std::vector<uint16_t> otherKeys;
 
     bool isTrusted;
     bool isBroadcast;
