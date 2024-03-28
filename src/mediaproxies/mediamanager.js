@@ -18,7 +18,6 @@ hbbtv.mediaManager = (function() {
     let objectHandlers = {};
     let fallbackHandlers = undefined;
     let mediaType = undefined;
-    let rdk__orb_timeShiftBufferDepthReceived = undefined;
 
     const mediaProxy = hbbtv.objects.createIFrameObjectProxy();
     window.orbNetwork = {
