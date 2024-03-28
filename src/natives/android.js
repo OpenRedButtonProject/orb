@@ -16,8 +16,22 @@
 
 hbbtv.native = {
     name: 'android',
+    media: undefined,
+    mediaProxy: undefined,
+    dashProxy: undefined,
+
     initialise: function() {
         this.token = Object.assign({}, document.token);
+    },
+    // setters
+    setMedia: function(media) {
+        this.media = media;
+    },
+    setMediaProxy: function(mediaProxy) {
+        this.mediaProxy = mediaProxy;
+    },
+    setDashProxy: function(dashProxy) {
+        this.dashProxy = dashProxy;
     },
     request: function(method, params) {
         const body = {
@@ -74,4 +88,27 @@ hbbtv.native = {
         }
         return false;
     },
+    // Polling events
+    getSeekablePollingEvent: function() {
+        return 'progress';
+    },
+    getBufferedPollingEvent: function() {
+        return 'progress';
+    },
+     // Event handlers
+    updateSeekable: function(e) {
+        const ranges = [];
+        const media = this.media;
+        const mediaProxy = this.mediaProxy;
+        const MEDIA_PROXY_ID = 'HTMLMediaElement';
+
+        for (let i = 0; i < media.seekable.length; ++i) {
+            ranges.push({
+                start: media.seekable.start(i),
+                end: media.seekable.end(i),
+            });
+        }
+        mediaProxy.callObserverMethod(MEDIA_PROXY_ID, 'setSeekable', [ranges]);
+        mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
+    }
 };

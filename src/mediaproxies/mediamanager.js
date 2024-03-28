@@ -18,6 +18,7 @@ hbbtv.mediaManager = (function() {
     let objectHandlers = {};
     let fallbackHandlers = undefined;
     let mediaType = undefined;
+
     const mediaProxy = hbbtv.objects.createIFrameObjectProxy();
     window.orbNetwork = {
         resolveHostAddress: (hostname) =>
@@ -360,17 +361,6 @@ hbbtv.mediaManager = (function() {
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
         };
 
-        const updateSeekablePeriod = function(e) {
-            const ranges = [];
-            ranges.push({
-                start: e.firstPeriodStart,
-                end: media.currentTime,
-            });
-
-            mediaProxy.callObserverMethod(MEDIA_PROXY_ID, 'setSeekable', [ranges]);
-            mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
-        };
-
         const updateBuffered = function(e) {
             const ranges = [];
             for (let i = 0; i < media.buffered.length; ++i) {
@@ -426,30 +416,9 @@ hbbtv.mediaManager = (function() {
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e)
         );
 
-        // in case of dynamic mpd, update the seekable property based on timeupdate
-        // remove the handling after MPD@timeShiftBufferDepth seconds passed, since dash
-        // updates the seekable property continuously. Use this in case of rdk.
-        if (hbbtv.native.name === 'rdk') {
-            media.addEventListener('__orb_timeShiftBufferDepthReceived__', (e) => {
-                const data = e;
-                if (data.hasOwnProperty('timeShiftBufferDepth')) {
-                    media.addEventListener('timeupdate', updateSeekable);
-                    setTimeout(() => {
-                        media.removeEventListener('timeupdate', updateSeekable);
-                    }, (e.timeShiftBufferDepth - 1) * 1000);
-                } else {
-                    media.addEventListener('timeupdate', () => {
-                        updateSeekablePeriod(data);
-                    });
-                }
-            });
-        }
-
         media.addEventListener('play', (e) => {
             // some tests ask for the seekable property just after the playing event
-            if (hbbtv.native.name === 'rdk') {
-                updateSeekable(e);
-            }
+            hbbtv.native.updateSeekable(e);
             let evt = new Event('__orb_onplayspeedchanged__');
             Object.assign(evt, {
                 speed: media.playbackRate
@@ -487,8 +456,13 @@ hbbtv.mediaManager = (function() {
             });
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e);
         });
-        media.addEventListener('progress', updateSeekable);
-        media.addEventListener('progress', updateBuffered);
+        hbbtv.native.setMedia(media);
+        hbbtv.native.setMediaProxy(mediaProxy);
+        // add extra event handlers that native requires
+        hbbtv.native.addMediaNativeListeners?.();
+        media.addEventListener(hbbtv.native.getSeekablePollingEvent(), (e) => hbbtv.native.updateSeekable(e));
+        media.addEventListener(hbbtv.native.getBufferedPollingEvent(), updateBuffered);
+        
         media.addEventListener('timeupdate', makeCallback('currentTime'));
         media.addTextTrack = function() {
             return textTracks.orb_addTextTrack.apply(textTracks, arguments);

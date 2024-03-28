@@ -565,28 +565,15 @@ hbbtv.objects.DashProxy = (function() {
         p.periods = e.data.Period_asArray;
         p.mrsUrl = e.data.mrsUrl;
         p.ciAncillaryData = e.data.ciAncillaryData;
-
-        // dispatch __orb_timeShiftBufferDepthReceived__ event for seekable property in case of rdk native
-        if (hbbtv.native.name === 'rdk') {
-            const timeShiftEvt = new Event('__orb_timeShiftBufferDepthReceived__');
-            if (e.data.hasOwnProperty('timeShiftBufferDepth')) {
-                Object.assign(timeShiftEvt, {
-                    timeShiftBufferDepth: e.data.timeShiftBufferDepth,
-                });
-            } else {
-                Object.assign(timeShiftEvt, {
-                    firstPeriodStart: e.data.Period_asArray[0].start,
-                });
-            }
-
-            this.dispatchEvent(timeShiftEvt);
-        }
-
+        
         const evt = new Event('__orb_startDateUpdated__');
         Object.assign(evt, {
             startDate: Date.parse(e.data.availabilityStartTime),
         });
         this.dispatchEvent(evt);
+        
+        hbbtv.native.dispatchManifestNativeEvents?.(e);
+
         console.log(
             'manifest availability start time:',
             e.data.availabilityStartTime,
@@ -703,6 +690,7 @@ hbbtv.objects.DashProxy = (function() {
                     },
                 },
             });
+            hbbtv.native.setDashProxy(this);
             p.player.initialize(this, src, false);
             p.player.on('error', p.onError);
             p.player.on('manifestLoaded', p.onManifestLoaded);
