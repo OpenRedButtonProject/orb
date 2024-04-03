@@ -1608,28 +1608,30 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
 
         int appliedGain;
         if (dialogueEnhancementGain == EMPTY_INTEGER) {
+            MOCK_ENABLE_STATUS.put(F_DIALOGUE_ENHANCEMENT, true);
             // If the value is not specified, it shall be reset to the user preference.
             appliedGain = MOCK_DIALOGUE_ENHANCEMENT_GAIN_PREFERENCE;
         } else if (dialogueEnhancementGain == 0) {
             MOCK_ENABLE_STATUS.put(F_DIALOGUE_ENHANCEMENT, false);
-            appliedGain = MOCK_DIALOGUE_ENHANCEMENT_GAIN;
-        } else if (dialogueEnhancementGain >= MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MAX) {
-            // If the value is is outside the allowed value range,
-            // it shall be restricted in the allowed range.
-            appliedGain = MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MAX;
-        } else if (dialogueEnhancementGain <= MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MIN) {
-            // same as LIMIT_MAX
-            appliedGain = MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MIN;
-        } else {
-            // the requested gain value shall be applied.
             appliedGain = dialogueEnhancementGain;
+        } else {
+            MOCK_ENABLE_STATUS.put(F_DIALOGUE_ENHANCEMENT, true);
+            // If the value is is outside the allowed value range,
+            // it should be restricted in the LIMIT_MIN and LIMIT_MAX.
+            appliedGain = Math.min(
+                    Math.max(dialogueEnhancementGain, MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MIN),
+                    MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MAX);
         }
-        if (MOCK_DIALOGUE_ENHANCEMENT_GAIN != appliedGain) {
-            MOCK_DIALOGUE_ENHANCEMENT_GAIN = appliedGain;
-            onRequestFeatureSettingsQuery(connection, id, F_DIALOGUE_ENHANCEMENT);
-        }
+
         mSession.onRespondDialogueEnhancementOverride(connection, id, appliedGain);
         consoleLog("Apply dialogue enhancement override, gain: " + appliedGain);
+        if (MOCK_DIALOGUE_ENHANCEMENT_GAIN != appliedGain) {
+            MOCK_DIALOGUE_ENHANCEMENT_GAIN = appliedGain;
+            boolean isEnabled = Boolean.TRUE.equals(MOCK_ENABLE_STATUS.get(F_DIALOGUE_ENHANCEMENT));
+            notifyDialogueEnhancement(isEnabled);
+            consoleLog("Notify settings of dialogue enhancement, gain: "
+                    + (isEnabled ? MOCK_DIALOGUE_ENHANCEMENT_GAIN : 0));
+        }
     }
 
     /**
