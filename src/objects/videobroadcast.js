@@ -1731,6 +1731,14 @@ hbbtv.objects.VideoBroadcast = (function() {
             p.onParentalRatingChange = (event) => {
                 console.log('Received ParentalRatingChange');
                 console.log(event);
+                if (event.blocked && p.waitingPlayStateConnectingConfirm) {
+                    p.playState = PLAY_STATE_CONNECTING;
+                    dispatchChannelChangeSucceededEvent.call(
+                        this,
+                        p.currentChannelData
+                    );
+                    dispatchPlayStateChangeEvent.call(this, p.playState);
+                }
                 dispatchParentalRatingChange.call(
                     this,
                     event.contentID,
