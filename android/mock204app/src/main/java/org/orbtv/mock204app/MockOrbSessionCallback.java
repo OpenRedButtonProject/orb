@@ -91,6 +91,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
             "inVisionSigning"};
     private final int EMPTY_INTEGER = -999999;
     private final String EMPTY_STRING = "";
+    private Boolean RICH_SETTINGS_MODE = true;
+    private static final int SWITCHING_SETTINGS_MODES_KEY = KeyEvent.KEYCODE_0;
     private static final int SUBTITLES_KEY = KeyEvent.KEYCODE_1;
     private static final int DIALOGUE_ENHANCEMENT_KEY = KeyEvent.KEYCODE_2;
     private static final int UI_MAGNIFIER_KEY = KeyEvent.KEYCODE_3;
@@ -1898,13 +1900,21 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
 
     private void querySettingSubtitles(int connection, String id, boolean isEnabled) {
         if (isEnabled) {
-            mSession.onQuerySubtitles(connection, id,
-                    true, MOCK_SUBTITLES_SIZE, MOCK_SUBTITLES_FONT_FAMILY,
-                    MOCK_SUBTITLES_TEXT_COLOUR, MOCK_SUBTITLES_TEXT_OPACITY,
-                    MOCK_SUBTITLES_EDGE_TYPE, MOCK_SUBTITLES_EDGE_COLOUR,
-                    MOCK_SUBTITLES_BACKGROUND_COLOUR, MOCK_SUBTITLES_BACKGROUND_OPACITY,
-                    MOCK_SUBTITLES_WINDOW_COLOUR, MOCK_SUBTITLES_WINDOW_OPACITY,
-                    MOCK_SUBTITLES_LANGUAGE);
+            if (RICH_SETTINGS_MODE) {
+                mSession.onQuerySubtitles(connection, id,
+                        true, MOCK_SUBTITLES_SIZE, MOCK_SUBTITLES_FONT_FAMILY,
+                        MOCK_SUBTITLES_TEXT_COLOUR, MOCK_SUBTITLES_TEXT_OPACITY,
+                        MOCK_SUBTITLES_EDGE_TYPE, MOCK_SUBTITLES_EDGE_COLOUR,
+                        MOCK_SUBTITLES_BACKGROUND_COLOUR, MOCK_SUBTITLES_BACKGROUND_OPACITY,
+                        MOCK_SUBTITLES_WINDOW_COLOUR, MOCK_SUBTITLES_WINDOW_OPACITY,
+                        MOCK_SUBTITLES_LANGUAGE);
+            } else {
+                // only query one enabled item for the simple subtitle settings mode
+                mSession.onQuerySubtitles(connection, id,
+                        true, EMPTY_INTEGER, EMPTY_STRING, EMPTY_STRING, EMPTY_INTEGER,
+                        EMPTY_STRING, EMPTY_STRING, EMPTY_STRING, EMPTY_INTEGER,
+                        EMPTY_STRING, EMPTY_INTEGER, EMPTY_STRING);
+            }
         } else {
             // Not enable when the subtitles is turning off
             mSession.onQuerySubtitles(connection, id,
@@ -2055,6 +2065,11 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     public boolean onKeyUp(int keyCode, KeyEvent event) {
         boolean isEnabled;
         switch (keyCode) {
+            case SWITCHING_SETTINGS_MODES_KEY: {
+                RICH_SETTINGS_MODE = !RICH_SETTINGS_MODE;
+                consoleLog("Rich mode of settings query: " + (RICH_SETTINGS_MODE? "ON" : "OFF"));
+                break;
+            }
             case SUBTITLES_KEY:
             case KeyEvent.KEYCODE_CAPTIONS: {
                 isEnabled = Boolean.FALSE.equals(MOCK_ENABLE_STATUS.get(F_SUBTITLES));
