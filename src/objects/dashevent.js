@@ -6,8 +6,8 @@ hbbtv.objects.DASHEvent = (function() {
         pauseOnExit() {
             return false;
         },
-        Id() {
-            return privates.get(this).eventData.Id || "";
+        id() {
+            return privates.get(this).eventData.id || "";
         },
         startTime() {
             return privates.get(this).eventData.startTime || 0;
@@ -22,7 +22,7 @@ hbbtv.objects.DASHEvent = (function() {
 
     // Initialise an instance of prototype
     function initialise(streamEvent) {
-        privates.set(this, { 
+        privates.set(this, {
             eventData: streamEvent.DASHEvent,
         });
         const data = streamEvent.text;

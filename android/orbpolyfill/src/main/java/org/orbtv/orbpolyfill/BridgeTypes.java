@@ -1169,13 +1169,13 @@ public class BridgeTypes {
     }
 
     public static class DASHEvent implements JSONSerializable {
-        public String Id;
+        public String id;
         public double startTime;
         public double duration;
         public String contentEncoding;
 
-        public DASHEvent(String Id, double startTime, double duration, String contentEncoding) {
-            this.Id = Id;
+        public DASHEvent(String id, double startTime, double duration, String contentEncoding) {
+            this.id = id;
             this.startTime = startTime;
             this.duration = duration;
             this.contentEncoding = contentEncoding;
@@ -1184,11 +1184,11 @@ public class BridgeTypes {
         @Override
         public JSONObject toJSONObject() throws JSONException {
             JSONObject o = new JSONObject();
-            if (Id != null) {
-                o.put("Id", Id);
+            if (id != null) {
+                o.put("id", id);
             }
             else {
-                o.put("Id", "");
+                o.put("id", "");
             }
             if (contentEncoding != null) {
                 o.put("contentEncoding", contentEncoding);
