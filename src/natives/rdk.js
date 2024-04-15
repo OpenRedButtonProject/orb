@@ -144,6 +144,19 @@ hbbtv.native = {
             }
         }
 
+        /**
+         * Cover cases where the MPD is dynamic and the media element is paused until the start is greater than currentTime.
+         * In this case, an error event should be generated of type MEDIA_ERR_NETWORK (error.code = 2). DashProxy will dispatch
+         * this error event.
+         */
+        if (this.media.currentTime < ranges[0].start) {
+            const e = new Event('error');
+            e.error = {}; 
+            e.error.code = 2;
+            e.error.message = '';
+            this.dashProxy.dispatchEvent(e);
+        }
+        // console.log(`[RDK-NATIVE::updateSeekable] ${ranges[0].start} ${ranges[0].end}`);
         mediaProxy.callObserverMethod(MEDIA_PROXY_ID, 'setSeekable', [ranges]);
         mediaProxy.dispatchEvent(MEDIA_PROXY_ID, data);
     }
