@@ -125,7 +125,13 @@ public:
     virtual bool Network_IsConnectedToInternet() = 0;
 
 
-
+    /**
+     * Resolves netrwork error by passing the response status text received.
+     * 
+     * @param responseText 
+     * @return std::string the dash DVBError code
+     */
+    virtual std::string Network_ResolveNetworkError(std::string responseText) = 0;
     /******************************************************************************
     ** Broadcast API
     *****************************************************************************/

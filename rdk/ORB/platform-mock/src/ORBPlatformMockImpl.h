@@ -43,6 +43,8 @@ public:
     // Network api
     virtual bool Network_IsConnectedToInternet() override;
 
+    virtual std::string Network_ResolveNetworkError(std::string responseText) override;
+
     // Broadcast api
     virtual void Broadcast_SetVideoRectangle(int x, int y, int width, int height) override;
     virtual std::shared_ptr<Channel> Broadcast_GetCurrentChannel() override;
