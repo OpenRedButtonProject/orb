@@ -93,15 +93,15 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     private final int EMPTY_INTEGER = -999999;
     private final String EMPTY_STRING = "";
     private Boolean RICH_SETTINGS_MODE = true;
-    private static final int SWITCHING_SETTINGS_MODES_KEY = KeyEvent.KEYCODE_0;
-    private static final int SUBTITLES_KEY = KeyEvent.KEYCODE_1;
-    private static final int DIALOGUE_ENHANCEMENT_KEY = KeyEvent.KEYCODE_2;
-    private static final int UI_MAGNIFIER_KEY = KeyEvent.KEYCODE_3;
-    private static final int HIGH_CONTRAST_UI_KEY = KeyEvent.KEYCODE_4;
-    private static final int SCREEN_READER_KEY = KeyEvent.KEYCODE_5;
-    private static final int RESPONSE_TO_USER_ACTION_KEY = KeyEvent.KEYCODE_6;
-    private static final int AUDIO_DESCRIPTION_KEY = KeyEvent.KEYCODE_7;
-    private static final int IN_VISION_SIGNING_KEY = KeyEvent.KEYCODE_8;
+    private static final int SWITCHING_SETTINGS_MODES_KEY = KeyEvent.KEYCODE_F10;
+    private static final int SUBTITLES_KEY = KeyEvent.KEYCODE_F1;
+    private static final int DIALOGUE_ENHANCEMENT_KEY = KeyEvent.KEYCODE_F2;
+    private static final int UI_MAGNIFIER_KEY = KeyEvent.KEYCODE_F3;
+    private static final int HIGH_CONTRAST_UI_KEY = KeyEvent.KEYCODE_F4;
+    private static final int SCREEN_READER_KEY = KeyEvent.KEYCODE_F5;
+    private static final int RESPONSE_TO_USER_ACTION_KEY = KeyEvent.KEYCODE_F6;
+    private static final int AUDIO_DESCRIPTION_KEY = KeyEvent.KEYCODE_F7;
+    private static final int IN_VISION_SIGNING_KEY = KeyEvent.KEYCODE_F8;
     private final Map<Integer, SupportType> MOCK_SUPPORT_TYPES = new HashMap<Integer, SupportType>() {
         {
             put(F_SUBTITLES, SupportType.TVOS_AND_HBBTV);
