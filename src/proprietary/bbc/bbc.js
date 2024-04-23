@@ -19,4 +19,6 @@
     window.getPrimaryDisplay = function() {
         return hbbtv.bridge.configuration.getPrimaryDisplay();
     };
+
+    hbbtv.native.setProprietary(true);
 })();

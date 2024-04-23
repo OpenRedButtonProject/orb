@@ -1090,7 +1090,13 @@ hbbtv.objects.VideoBroadcast = (function() {
             p.playState = PLAY_STATE_STOPPED;
             hbbtv.holePuncher.setBroadcastVideoObject(null);
             hbbtv.bridge.broadcast.setPresentationSuspended(true);
-            dispatchPlayStateChangeEvent.call(this, p.playState);
+            if (hbbtv.native.name === 'rdk' && hbbtv.native.getProprietary()) {
+                // support poorly implemented portals by delaying the event dispatch
+                setTimeout(() => {dispatchPlayStateChangeEvent.call(this, p.playState);}, 0); 
+            }
+            else {
+                dispatchPlayStateChangeEvent.call(this, p.playState);
+            }
         }
     };
 

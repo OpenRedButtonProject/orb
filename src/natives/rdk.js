@@ -4,7 +4,9 @@ hbbtv.native = {
     media: undefined,
     mediaProxy: undefined,
     dashProxy: undefined,
+    proprietary: false,
     orb_timeShiftBufferDepthReceived: undefined,
+   
     initialise: function() {
         this.token = Object.assign({}, document.token);
     },
@@ -23,6 +25,16 @@ hbbtv.native = {
         console.log('[RDK-Native::setDashProxy]');
         console.log(dashProxy);
         this.dashProxy = dashProxy;
+    },
+    setProprietary: function(proprietary) {
+        console.log('[RDK-Native::setProprietary]');
+        console.log(proprietary);
+        this.proprietary = proprietary;
+    },
+    getProprietary: function() {
+        console.log('[RDK-Native::getProprietary]');
+        console.log(this.proprietary);
+        return this.proprietary;
     },
     request: function(method, params) {
         const body = {
@@ -61,7 +73,7 @@ hbbtv.native = {
         }
         return false;
     },
-    // optional methdod to add native specific event listeners on mediamanager
+    // optional method to add native specific event listeners on mediamanager
     addMediaNativeListeners: function() {
         console.log('[RDK-Native::addMediaNativeListeners] Adding media native listeners');
         // in case of dynamic mpd, update the seekable property based on timeupdate
