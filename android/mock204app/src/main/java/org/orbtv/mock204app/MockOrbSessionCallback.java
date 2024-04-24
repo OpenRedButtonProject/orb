@@ -1943,19 +1943,21 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     private void querySettingDialogueEnhancement(int connection, String id, boolean isEnabled) {
-        // If DE is switched off, dialogueEnhancementGain shall be set to 0.
+        // If DE is switched off, dialogueEnhancementGain and dialogueEnhancementGainPreference shall be set to 0.
         int gain = isEnabled ? MOCK_DIALOGUE_ENHANCEMENT_GAIN : 0;
+        int gainPreference = isEnabled ? MOCK_DIALOGUE_ENHANCEMENT_GAIN_PREFERENCE : 0;
         mSession.onQueryDialogueEnhancement(connection, id,
-                MOCK_DIALOGUE_ENHANCEMENT_GAIN_PREFERENCE, gain,
+                gainPreference, gain,
                 MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MIN,
                 MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MAX);
     }
 
     private void notifyDialogueEnhancement(boolean isEnabled) {
-        // If DE is switched off, dialogueEnhancementGain shall be set to 0.
+        // If DE is switched off, dialogueEnhancementGain and dialogueEnhancementGainPreference shall be set to 0.
         int gain = isEnabled ? MOCK_DIALOGUE_ENHANCEMENT_GAIN : 0;
+        int gainPreference = isEnabled ? MOCK_DIALOGUE_ENHANCEMENT_GAIN_PREFERENCE : 0;
         mSession.onNotifyDialogueEnhancement(
-                MOCK_DIALOGUE_ENHANCEMENT_GAIN_PREFERENCE, gain,
+                gainPreference, gain,
                 MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MIN,
                 MOCK_DIALOGUE_ENHANCEMENT_GAIN_LIMIT_MAX);
     }
