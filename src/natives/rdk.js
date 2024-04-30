@@ -161,18 +161,21 @@ hbbtv.native = {
      */
     dispatchManifestNativeEvents: function(e) {
         // dispatch __orb_timeShiftBufferDepthReceived__ event for seekable property in case of rdk native
-        const timeShiftEvt = new Event('__orb_timeShiftBufferDepthReceived__');
-        if (e.data.hasOwnProperty('timeShiftBufferDepth')) {
-            Object.assign(timeShiftEvt, {
-                timeShiftBufferDepth: e.data.timeShiftBufferDepth,
-            });
-        } else {
-            Object.assign(timeShiftEvt, {
-                firstPeriodStart: e.data.Period_asArray[0].start,
-            });
+  
+        if (e.data.type === 'dynamic') {
+            const timeShiftEvt = new Event('__orb_timeShiftBufferDepthReceived__');
+            if (e.data.hasOwnProperty('timeShiftBufferDepth')) {
+                Object.assign(timeShiftEvt, {
+                    timeShiftBufferDepth: e.data.timeShiftBufferDepth,
+                });
+            } else {
+                Object.assign(timeShiftEvt, {
+                    firstPeriodStart: e.data.Period_asArray[0].start,
+                });
+            }
+            console.log('[RDK-Native] Dipsatching __orb_timeShiftBufferDepthReceived__');
+            this.dashProxy.dispatchEvent(timeShiftEvt);
         }
-        console.log('[RDK-Native] Dipsatching __orb_timeShiftBufferDepthReceived__');
-        this.dashProxy.dispatchEvent(timeShiftEvt);
 
         // check for event stream state
         if (this.metadataDelta({periodData: e.data.Period_asArray[0]}, 'EventStream')  === -1) {
