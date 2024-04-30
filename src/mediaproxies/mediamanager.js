@@ -461,6 +461,14 @@ hbbtv.mediaManager = (function() {
         media.addTextTrack = function() {
             return textTracks.orb_addTextTrack.apply(textTracks, arguments);
         };
+
+        media.addTrackEvent = function() {
+            return textTracks.orb_addTrackEvent.apply(textTracks);
+        };
+        media.removeTrackEvent = function() {
+            return textTracks.orb_removeTrackEvent.apply(textTracks);
+        };
+     
     }
 
     // Mutation observer
