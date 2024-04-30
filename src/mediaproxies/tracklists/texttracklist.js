@@ -105,6 +105,17 @@ hbbtv.objects.TextTrackList = (function() {
         }
     };
 
+    // helper methods for addtrack, removetrack events
+    prototype.orb_addTrackEvent = function() {
+        const p = privates.get(this);
+        p.eventTarget.dispatchEvent(new TrackEvent('addtrack'));
+    };
+
+    prototype.orb_removeTrackEvent = function() {
+        const p = privates.get(this);
+        p.eventTarget.dispatchEvent(new TrackEvent('removetrack'));
+    };
+
     function initialise(mediaElement, proxy) {
         const TEXT_TRACK_LIST_KEY = 'TextTrackList';
         privates.set(this, {

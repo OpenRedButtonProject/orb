@@ -6,7 +6,8 @@ hbbtv.native = {
     dashProxy: undefined,
     proprietary: false,
     orb_timeShiftBufferDepthReceived: undefined,
-   
+    currentPeriod: undefined,
+    currentRepresentation: undefined,
     initialise: function() {
         this.token = Object.assign({}, document.token);
     },
@@ -73,6 +74,55 @@ hbbtv.native = {
         }
         return false;
     },
+    // private methods used for internal logic
+    /**
+     * This method will return:
+     *     -1     if the key argument was removed in the latest mpd period/representation received
+     *      0     if the key argument remains
+     *      1     if the key argument was added in the latest mpd period/representation received 
+     */
+    metadataDelta: function({periodData, representationData} = {}, key) {
+        console.log('[RDK-Native::metadataDelta]');
+        let result = 0;
+
+        // latest mpd period or representation
+        let currentObj;
+        if (periodData !== undefined) {
+            currentObj = this.currentPeriod;
+        }
+        else {
+            currentObj = this.currentRepresentation;
+        }
+
+        // new mpd period or representation
+        let searchObj = 
+            periodData !== undefined ? periodData : representationData;
+
+        // check for delta
+        if (currentObj !== undefined 
+            && currentObj.hasOwnProperty(key) 
+            && !searchObj.hasOwnProperty(key))
+        {
+            console.log(`RDK-Native::metadataDelta] ${key} Removed`);
+            result = -1;
+        }
+        else if (currentObj !== undefined 
+            && !currentObj.hasOwnProperty(key) 
+            && searchObj.hasOwnProperty(key))
+        {
+            console.log(`RDK-Native::metadataDelta] ${key} Removed`);
+            result = 1;
+        }
+        
+        // finally, store the period or representation as the latest
+        if (periodData !== undefined) {
+            this.currentPeriod = periodData;
+        } if (representationData !== undefined) {
+            this.currentRepresentation = representationData;
+        }
+     
+        return result;
+    },
     // optional method to add native specific event listeners on mediamanager
     addMediaNativeListeners: function() {
         console.log('[RDK-Native::addMediaNativeListeners] Adding media native listeners');
@@ -84,9 +134,31 @@ hbbtv.native = {
             this.orb_timeShiftBufferDepthReceived = e;
         });
         console.log('[RDK-Native::addMediaNativeListeners] Added __orb_timeShiftBufferDepthReceived__ listener');
+
+        this.media.addEventListener('__orb_eventStreamReceived__', (e) => {
+            console.log('[RDK-Native::__orb_eventStreamReceived__]');
+            this.media.removeTrackEvent();
+        });
+        console.log('[RDK-Native::addMediaNativeListeners] Added __orb_eventStreamReceived__ listener');
+
+        this.media.addEventListener('__orb_inbandEventStreamReceived__', (e) => {
+            console.log('[RDK-Native::__orb_inbandEventStreamReceived__]');
+            console.log(e);
+            if (e.delta === -1) {
+                console.log('[RDK-Native::addMediaNativeListeners] Dispatching RemoveTrack for Representation');
+                this.media.removeTrackEvent();
+            } else if (e.delta === 1) {
+                console.log('[RDK-Native::addMediaNativeListeners] Dispatching AddTrack for Representation');
+                this.media.addTrackEvent();
+            }
+        });
+        console.log('[RDK-Native::addMediaNativeListeners] Added __orb_inbandEventStreamReceived__ listener');
     },
 
-    // optional method to dispatch native specific events from dashproxy
+    // optional methods to dispatch native specific events
+    /**
+     * This method is called each time the manifest is received
+     */
     dispatchManifestNativeEvents: function(e) {
         // dispatch __orb_timeShiftBufferDepthReceived__ event for seekable property in case of rdk native
         const timeShiftEvt = new Event('__orb_timeShiftBufferDepthReceived__');
@@ -101,6 +173,25 @@ hbbtv.native = {
         }
         console.log('[RDK-Native] Dipsatching __orb_timeShiftBufferDepthReceived__');
         this.dashProxy.dispatchEvent(timeShiftEvt);
+
+        // check for event stream state
+        if (this.metadataDelta({periodData: e.data.Period_asArray[0]}, 'EventStream')  === -1) {
+            const eventStreamReceivedEvt = new Event('__orb_eventStreamReceived__');
+            console.log('[RDK-Native] Dipsatching __orb_eventStreamReceived__');
+            this.dashProxy.dispatchEvent(eventStreamReceivedEvt);
+        }
+    },
+
+    /**
+     * This method is called each time the representation is changed
+     */
+    dispatchRepresentationNativeEvents: function(representation) {
+        const inbandEventStreamEvt = new Event('__orb_inbandEventStreamReceived__');
+        Object.assign(inbandEventStreamEvt, {
+            delta: this.metadataDelta({representationData: representation}, 'InbandEventStream') 
+        }); 
+        console.log('[RDK-Native] Dipsatching __orb_inbandEventStreamReceived__');
+        this.dashProxy.dispatchEvent(inbandEventStreamEvt);
     },
 
     // Polling events

@@ -696,6 +696,9 @@ hbbtv.objects.DashProxy = (function() {
             p.player.on('manifestLoaded', p.onManifestLoaded);
             p.player.on('periodSwitchCompleted', p.onPeriodChanged);
             p.player.on('streamUpdated', p.onStreamUpdated);
+            p.player.on('representationSwitch', (e) => {
+                hbbtv.native.dispatchRepresentationNativeEvents?.(e.currentRepresentation);
+            });
 
             for (const scheme of PARENTAL_CONTROL_EVENT_SCHEMES) {
                 p.player.on(scheme, p.onParentalRatingChange);
