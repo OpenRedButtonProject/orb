@@ -161,7 +161,7 @@ hbbtv.bridge.broadcast = (function() {
         if (currentChannel.idType === hbbtv.objects.Channel.prototype.ID_DVB_SI_DIRECT) {
             currentChannel.dsd = hbbtv.utils.base64Decode(currentChannel.dsd);
         }
-        return currentChannel; 
+        return currentChannel;
     };
 
     /**
@@ -183,7 +183,7 @@ hbbtv.bridge.broadcast = (function() {
         if (getCurrentChannelForEvent.idType === hbbtv.objects.Channel.prototype.ID_DVB_SI_DIRECT) {
             getCurrentChannelForEvent.dsd = hbbtv.utils.base64Decode(getCurrentChannelForEvent.dsd);
         }
-        return getCurrentChannelForEvent; 
+        return getCurrentChannelForEvent;
     };
 
     /**
@@ -223,6 +223,31 @@ hbbtv.bridge.broadcast = (function() {
      */
     exported.setChannelToNull = function(quiet) {
         return hbbtv.native.request('Broadcast.setChannelToNull').result;
+    };
+
+    /**
+     * Returns the actual volume level set.
+     *
+     * @returns {number} Integer value between 0 up to and including 100 to indicate volume level.
+     *
+     * @method
+     * @memberof bridge.broadcast#
+     */
+    exported.getVolume = function() {
+        return hbbtv.native.request('Broadcast.getVolume').result;
+    };
+
+    /**
+     * Adjusts the volume of the currently playing media to the volume as indicated by volume.
+     *
+     * @param {number} volume Integer value between 0 up to and including 100 to indicate volume level.
+     * @returns {Boolean} true if the volume has changed. false if the volume has not changed.
+     *
+     * @method
+     * @memberof bridge.broadcast#
+     */
+    exported.setVolume = function(volume) {
+        return hbbtv.native.request('Broadcast.setVolume', {volume: volume}).result;
     };
 
     /**

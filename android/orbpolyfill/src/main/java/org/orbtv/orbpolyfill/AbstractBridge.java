@@ -758,6 +758,23 @@ public abstract class AbstractBridge {
                                                                boolean presentationSuspended);
 
     /**
+     * Returns the actual volume level set.
+     *
+     * @param token The token associated with this request.
+     * @return Integer value between 0 up to and including 100 to indicate volume level.
+     */
+    protected abstract int Broadcast_getVolume(BridgeToken token);
+
+    /**
+     * Adjusts the volume of the currently playing media to the volume as indicated by volume.
+     *
+     * @param token The token associated with this request.
+     * @param volume Integer value between 0 up to and including 100 to indicate volume level.
+     * @return true if the volume has changed. false if the volume has not changed.
+     */
+    protected abstract boolean Broadcast_setVolume(BridgeToken token, int volume);
+
+    /**
      * Get the parental rating of the current broadcast programme.
      *
      * @param token The token associated with this request.
@@ -879,7 +896,7 @@ public abstract class AbstractBridge {
      * @return A URL of an icon that represents the given key; or null if not available.
      */
     protected abstract String Manager_getKeyIcon(BridgeToken token, int code);
-    
+
     /**
      * Get the currently running application scheme.
      *
@@ -1650,6 +1667,18 @@ public abstract class AbstractBridge {
                         token,
                         params.getBoolean("presentationSuspended")
                 );
+                break;
+            }
+
+            case "Broadcast.getVolume": {
+                int result = Broadcast_getVolume(token);
+                response.put("result", result);
+                break;
+            }
+
+            case "Broadcast.setVolume": {
+                boolean result = Broadcast_setVolume(token, params.getInt("volume"));
+                response.put("result", result);
                 break;
             }
 
