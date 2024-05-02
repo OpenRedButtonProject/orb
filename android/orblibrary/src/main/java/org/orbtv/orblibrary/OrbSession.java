@@ -163,6 +163,15 @@ class OrbSession implements IOrbSession {
             public void dispatchApplicationSchemeUpdatedEvent(String scheme) {
                 mBridge.dispatchApplicationSchemeUpdatedEvent(scheme);
             }
+
+            /**
+             * Returns true if the provided triplet is in an instance within the
+             * currently playing service, otherwise false.
+             */
+            @Override
+            public boolean isInstanceInCurrentService(int onid, int tsid, int sid) {
+                return mOrbSessionCallback.isInstanceInCurrentService(onid, tsid, sid);
+            }
         });
 
         mBrowserView.setSessionCallback(new BrowserView.SessionCallback() {
