@@ -262,4 +262,10 @@ std::string SessionCallbackImpl::GetParentalControlRegion3()
 
 void SessionCallbackImpl::DispatchApplicationSchemeUpdatedEvent(const std::string &scheme) { }
 
+/**
+ * Returns true if the provided triplet is in an instance within the
+ * currently playing service, otherwise false.
+ */
+bool isInstanceInCurrentService(const Utils::S_DVB_TRIPLET &triplet) { return false; }
+
 } // namespace orb
