@@ -37,7 +37,8 @@
 #define CB_GET_PARENTAL_CONTROL_REGION 9
 #define CB_GET_PARENTAL_CONTROL_REGION3 10
 #define CB_ON_APPLICATION_TYPE_UPDATED 11
-#define CB_NUMBER_OF_ITEMS 12
+#define CB_IS_INSTANCES_OF_CURRENT_SERVICE 12
+#define CB_NUMBER_OF_ITEMS 13
 
 static jfieldID gJavaManagerPointerField;
 static jmethodID gCb[CB_NUMBER_OF_ITEMS];
@@ -174,6 +175,11 @@ public:
         env->DeleteLocalRef(j_appType);
     }
 
+    virtual bool isInstanceInCurrentService(const Utils::S_DVB_TRIPLET &triplet) {
+        JNIEnv *env = JniUtils::GetEnv();
+        return env->CallBooleanMethod(mJavaCbObject, gCb[CB_IS_INSTANCES_OF_CURRENT_SERVICE], triplet.originalNetworkId, triplet.transportStreamId, triplet.serviceId);
+    }
+
 private:
     jobject mJavaCbObject;
 };
@@ -208,6 +214,8 @@ void InitialiseApplicationManagerNative()
                                                             "jniCbonNativeGetParentalControlRegion3", "()Ljava/lang/String;");
     gCb[CB_ON_APPLICATION_TYPE_UPDATED] = env->GetMethodID(managerClass,
                                                             "jniCbonApplicationSchemeUpdated", "(Ljava/lang/String;)V");
+    gCb[CB_IS_INSTANCES_OF_CURRENT_SERVICE] = env->GetMethodID(managerClass,
+                                                            "jniCbisInstanceInCurrentService", "(III)Z");
 }
 
 extern "C"

@@ -106,6 +106,12 @@ class ApplicationManager {
          * @param status The application status.
          */
         void notifyApplicationStatusChanged(IOrbSessionCallback.ApplicationStatus status);
+
+        /**
+         * Returns true if the provided triplet is in an instance within the
+         * currently playing service, otherwise false.
+         */
+        boolean isInstanceInCurrentService(int onid, int tsid, int sid);
     }
 
     ApplicationManager(final IOrbSessionCallback orbLibraryCallback) {
@@ -430,5 +436,16 @@ class ApplicationManager {
                 Log.e(TAG, "Presentation listener not set.");
             }
         }
+    }
+
+    private boolean jniCbisInstanceInCurrentService(int onid, int tsid, int sid) {
+        synchronized (mLock) {
+            if (mSessionCallback != null) {
+                return mSessionCallback.isInstanceInCurrentService(onid, tsid, sid);
+            } else {
+                Log.e(TAG, "Presentation listener not set.");
+            }
+        }
+        return false;
     }
 }
