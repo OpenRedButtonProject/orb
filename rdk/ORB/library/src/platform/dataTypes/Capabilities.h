@@ -161,6 +161,7 @@ struct Capabilities
     std::string m_displaySizeHeight;                // Required
     std::string m_displaySizeMeasurementType;       // Required
     std::string m_audioOutputFormat;                // Optional
+    bool m_passThroughStatus;                       // Optional
     std::string m_html5MediaVariableRateMin;        // Optional
     std::string m_html5MediaVariableRateMax;        // Optional
 
@@ -194,6 +195,10 @@ struct Capabilities
      *                                   terminals support multi-channel audio, null to omit).
      *                                   Valid values as defined by HBBTV 10.2.4.7 for audio_system
      *                                   audio_output_format.
+     * @param passThroughStatus          True when the terminal's audio outputs are operating in a
+     *                                   pass-through mode in which broadcast or broadband audio
+     *                                   bitstreams are output directly by the terminal without
+     *                                   modification. False otherwise.
      * @param html5MediaVariableRateMin  Minimum supported forward playback rate (required where
      *                                   terminals support a playbackRate with a MediaSource object
      *                                   other than "1.0", null to omit).
@@ -215,6 +220,7 @@ struct Capabilities
         std::string displaySizeHeight,
         std::string displaySizeMeasurementType,
         std::string audioOutputFormat,
+        bool passThroughStatus,
         std::string html5MediaVariableRateMin,
         std::string html5MediaVariableRateMax)
         : m_optionStrings(optionStrings)
@@ -226,6 +232,7 @@ struct Capabilities
         , m_displaySizeHeight(displaySizeHeight)
         , m_displaySizeMeasurementType(displaySizeMeasurementType)
         , m_audioOutputFormat(audioOutputFormat)
+        , m_passThroughStatus(passThroughStatus)
         , m_html5MediaVariableRateMin(html5MediaVariableRateMin)
         , m_html5MediaVariableRateMax(html5MediaVariableRateMax)
     {

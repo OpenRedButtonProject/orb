@@ -593,6 +593,7 @@ std::shared_ptr<Capabilities> ORBPlatformMockImpl::Configuration_GetCapabilities
     std::string displaySizeHeight = "39.9"; // Mock 32" TV
     std::string displaySizeMeasurementType = "built-in"; // hdmi-accurate, hdmi-other
     std::string audioOutputFormat = "stereo"; // multichannel, multichannel-preferred
+    bool passThroughStatus = false;
     std::string html5MediaVariableRateMin = "0.5";
     std::string html5MediaVariableRateMax = "5.0";
 
@@ -606,6 +607,7 @@ std::shared_ptr<Capabilities> ORBPlatformMockImpl::Configuration_GetCapabilities
         displaySizeHeight,
         displaySizeMeasurementType,
         audioOutputFormat,
+        passThroughStatus,
         html5MediaVariableRateMin,
         html5MediaVariableRateMax);
 

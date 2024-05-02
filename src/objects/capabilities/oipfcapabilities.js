@@ -293,6 +293,9 @@ hbbtv.objects.OipfCapabilities = (function() {
         if (typeof capabilities.audioOutputFormat === 'string') {
             const element = doc.createElementNS(ns, 'audio_system');
             element.setAttribute('audio_output_format', capabilities.audioOutputFormat);
+            if (typeof capabilities.passThroughStatus === 'boolean') {
+                element.setAttribute('pass_through', capabilities.passThroughStatus);
+            }
             doc.documentElement.appendChild(element);
         }
 
