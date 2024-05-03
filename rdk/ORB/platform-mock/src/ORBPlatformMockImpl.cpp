@@ -589,8 +589,8 @@ std::shared_ptr<Capabilities> ORBPlatformMockImpl::Configuration_GetCapabilities
     //broadcastUrns.push_back("urn:dvb:broadcast:ird:audio:AC-4_channel_based_immersive_personalized");
     //broadcastUrns.push_back("urn:dvb:broadcast:ird:audio:MPEG-H");
 
-    std::string displaySizeWidth = "70.9"; // Mock 32" TV
-    std::string displaySizeHeight = "39.9"; // Mock 32" TV
+    std::string displaySizeWidth = "71"; // Mock 32" TV
+    std::string displaySizeHeight = "40"; // Mock 32" TV
     std::string displaySizeMeasurementType = "built-in"; // hdmi-accurate, hdmi-other
     std::string audioOutputFormat = "stereo"; // multichannel, multichannel-preferred
     bool passThroughStatus = false;

@@ -275,7 +275,7 @@ hbbtv.objects.OipfCapabilities = (function() {
                 element.setAttribute('frame_rate', format.frameRate);
                 element.setAttribute('bit_depth', format.bitDepth);
                 element.setAttribute('colorimetry', format.colorimetry);
-                doc.documentElement.appendChild(element);
+                extElement.appendChild(element);
             });
         }
 
@@ -287,7 +287,7 @@ hbbtv.objects.OipfCapabilities = (function() {
             'measurement_type',
             capabilities.displaySizeMeasurementType
         );
-        doc.documentElement.appendChild(displaySizeElement);
+        extElement.appendChild(displaySizeElement);
 
         // audio_system
         if (typeof capabilities.audioOutputFormat === 'string') {
@@ -296,7 +296,7 @@ hbbtv.objects.OipfCapabilities = (function() {
             if (typeof capabilities.passThroughStatus === 'boolean') {
                 element.setAttribute('pass_through', capabilities.passThroughStatus);
             }
-            doc.documentElement.appendChild(element);
+            extElement.appendChild(element);
         }
 
         // html5_media_variable_rate
@@ -307,7 +307,7 @@ hbbtv.objects.OipfCapabilities = (function() {
             const element = doc.createElementNS(ns, 'html5_media_variable_rate');
             element.setAttribute('min', capabilities.html5MediaVariableRateMin);
             element.setAttribute('max', capabilities.html5MediaVariableRateMax);
-            doc.documentElement.appendChild(element);
+            extElement.appendChild(element);
         }
 
         // json_rpc_server
@@ -318,7 +318,7 @@ hbbtv.objects.OipfCapabilities = (function() {
             const element = doc.createElementNS(ns, 'json_rpc_server');
             element.setAttribute('url', capabilities.jsonRpcServerUrl);
             element.setAttribute('version', capabilities.jsonRpcServerVersion);
-            doc.documentElement.appendChild(element);
+            extElement.appendChild(element);
         }
 
         return doc;
