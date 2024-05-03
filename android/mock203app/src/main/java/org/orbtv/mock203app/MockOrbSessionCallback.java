@@ -177,8 +177,8 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         //broadcastUrns.add("urn:dvb:broadcast:ird:audio:AC-4_channel_based_immersive_personalized");
         //broadcastUrns.add("urn:dvb:broadcast:ird:audio:MPEG-H");
 
-        String displaySizeWidth = "70.9"; // Mock 32" TV
-        String displaySizeHeight = "39.9"; // Mock 32" TV
+        String displaySizeWidth = "71"; // Mock 32" TV
+        String displaySizeHeight = "40"; // Mock 32" TV
         String displaySizeMeasurementType = "built-in"; // hdmi-accurate, hdmi-other
         String audioOutputFormat = "stereo"; // multichannel, multichannel-preferred
         String html5MediaVariableRateMin = "0.5";
