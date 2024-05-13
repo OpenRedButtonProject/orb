@@ -854,6 +854,9 @@ static void XmlParseApplication(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
                     XmlParseAppLocation(node, app_ptr);
                 }
             }
+            else if (xmlStrEqual(cptr, (const xmlChar *)"GraphicsConstraints")) {
+                XmlParseAppDescGraphics(node, app_ptr);
+            }
         }
         node = node->next;
     }
