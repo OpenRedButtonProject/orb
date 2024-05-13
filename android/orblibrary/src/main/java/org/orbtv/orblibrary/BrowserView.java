@@ -252,7 +252,7 @@ class BrowserView extends WebView {
         } else if (resolution <= 1080) {
             mAppWidth = 1920;
         } else {
-            mAppWidth = 3480;
+            mAppWidth = 3840;
         }
         updateScale();
     }
