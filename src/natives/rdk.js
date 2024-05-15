@@ -8,6 +8,7 @@ hbbtv.native = {
     orb_timeShiftBufferDepthReceived: undefined,
     currentPeriod: undefined,
     currentRepresentation: undefined,
+    pausedDelta: false,
     initialise: function() {
         this.token = Object.assign({}, document.token);
     },
@@ -36,6 +37,10 @@ hbbtv.native = {
         console.log('[RDK-Native::getProprietary]');
         console.log(this.proprietary);
         return this.proprietary;
+    },
+    setPausedDelta: function(pausedDelta) {
+        console.log(`[RDK-Native::getProprietary] PausedDelta = ${this.pausedDelta}`);
+        this.pausedDelta = pausedDelta;
     },
     request: function(method, params) {
         const body = {
@@ -255,15 +260,20 @@ hbbtv.native = {
          * In this case, an error event should be generated of type MEDIA_ERR_NETWORK (error.code = 2). DashProxy will dispatch
          * this error event.
          */
-        if (this.media.currentTime < ranges[0].start) {
+        if (this.pausedDelta && this.media.currentTime < ranges[0].start) {
             const e = new Event('error');
             e.error = {}; 
             e.error.code = 2;
             e.error.message = '';
             this.dashProxy.dispatchEvent(e);
+            this.pausedDelta = false;
         }
-        // console.log(`[RDK-NATIVE::updateSeekable] ${ranges[0].start} ${ranges[0].end}`);
+        
+        // console.log(`CT = ${media.currentTime}`);
+        // console.log(`RANGE = ${ranges[0].start} ${ranges[0].end}`);
+
+        // make sure to dispatch the event with defined data
         mediaProxy.callObserverMethod(MEDIA_PROXY_ID, 'setSeekable', [ranges]);
-        mediaProxy.dispatchEvent(MEDIA_PROXY_ID, data);
+        mediaProxy.dispatchEvent(MEDIA_PROXY_ID, data !== undefined ? data : e);
     }
 };
