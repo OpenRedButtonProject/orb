@@ -425,6 +425,7 @@ hbbtv.mediaManager = (function() {
             Object.assign(evt, {
                 speed: 0
             });
+            hbbtv.native.setPausedDelta?.(true);
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, evt);
             propsUpdateCallback(e);
         });
