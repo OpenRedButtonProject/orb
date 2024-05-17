@@ -862,6 +862,7 @@ public class BridgeTypes {
         public String displaySizeHeight;
         public String displaySizeMeasurementType;
         public String audioOutputFormat; // Optional
+        public boolean passThroughStatus; // Optional
         public String html5MediaVariableRateMin; // Optional
         public String html5MediaVariableRateMax; // Optional
         public String jsonRpcServerUrl; // Auto populated by ORB bridge
@@ -893,6 +894,9 @@ public class BridgeTypes {
          * @param audioOutputFormat The current multi-channel audio capabilities (required where
          * terminals support multi-channel audio, null to omit).
          * Valid values as defined by HBBTV 10.2.4.7 for audio_system audio_output_format.
+         * @param passThroughStatus True when the terminal's audio outputs are operating in a
+         * pass-through mode in which broadcast or broadband audio bitstreams are output directly by
+         * the terminal without modification. False otherwise.
          * @param html5MediaVariableRateMin Minimum supported forward playback rate (required where
          * terminals support a playbackRate with a MediaSource object other than "1.0", null to omit).
          * Valid values as defined by HBBTV 10.2.4.7 for html5_media_variable_rate min.
@@ -911,6 +915,7 @@ public class BridgeTypes {
                 String displaySizeHeight,
                 String displaySizeMeasurementType,
                 String audioOutputFormat,
+                boolean passThroughStatus,
                 String html5MediaVariableRateMin,
                 String html5MediaVariableRateMax) throws IllegalArgumentException {
             if (optionStrings == null) {
@@ -943,6 +948,7 @@ public class BridgeTypes {
             }
             this.displaySizeMeasurementType = displaySizeMeasurementType;
             this.audioOutputFormat = audioOutputFormat;
+            this.passThroughStatus = passThroughStatus;
             this.html5MediaVariableRateMin = html5MediaVariableRateMin;
             this.html5MediaVariableRateMax = html5MediaVariableRateMax;
         }
@@ -963,6 +969,7 @@ public class BridgeTypes {
             o.put("displaySizeMeasurementType", displaySizeMeasurementType);
             if (audioOutputFormat != null) {
                 o.put("audioOutputFormat", audioOutputFormat);
+                o.put("passThroughStatus", passThroughStatus);
             }
             if (html5MediaVariableRateMin != null) {
                 o.put("html5MediaVariableRateMin", html5MediaVariableRateMin);

@@ -878,6 +878,9 @@ hbbtv.bridge.configuration = (function() {
      * @property {string|null} audioOutputFormat The current multi-channel audio capabilities
      * (required where terminals support multi-channel audio, null to omit).
      * Valid values as defined by HBBTV 10.2.4.7 for audio_system audio_output_format.
+     * @property {boolean|null} passThroughStatus True when the terminal's audio outputs are
+     * operating in a pass-through mode in which broadcast or broadband audio bitstreams are output
+     * directly by the terminal without modification. False otherwise.
      * @property {string|null} html5MediaVariableRateMin Minimum supported forward playback rate
      * (required where terminals support a playbackRate with a MediaSource object other than "1.0",
      * null to omit).
