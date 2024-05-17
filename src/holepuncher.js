@@ -142,6 +142,9 @@
             source.setAttribute('type', 'video/holepunch');
             source.setAttribute('id', 'src_elem');
             video.appendChild(source);
+            // Workaround: Ensure parent object display is set to "block" to allow correct results for getBoundingClientRect()
+            // as default is "inline"
+            object.style.display="block";
             object.appendChild(video);
         }
         if (object.parentNode) {
