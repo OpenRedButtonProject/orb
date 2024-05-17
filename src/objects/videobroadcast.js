@@ -1088,7 +1088,6 @@ hbbtv.objects.VideoBroadcast = (function() {
         if (p.playState === PLAY_STATE_CONNECTING || p.playState === PLAY_STATE_PRESENTING) {
             /* DAE vol5 Table 8 state transition #14 */
             p.playState = PLAY_STATE_STOPPED;
-            hbbtv.holePuncher.setBroadcastVideoObject(null);
             hbbtv.bridge.broadcast.setPresentationSuspended(true);
             if (hbbtv.native.name === 'rdk' && hbbtv.native.getProprietary()) {
                 // support poorly implemented portals by delaying the event dispatch
