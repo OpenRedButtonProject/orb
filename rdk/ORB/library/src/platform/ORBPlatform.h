@@ -510,6 +510,14 @@ public:
      */
     virtual std::string Configuration_GetUserAgentString() = 0;
 
+
+    /**
+     * Get whether clean audio is enabled on this system.
+     *
+     * @return True if clean audio is enabled; or false otherwise.
+     */
+    virtual bool Configuration_GetCleanAudioEnabled() = 0;
+
 #ifdef BBC_API_ENABLE
     /**
      * Get a report of the device's primary display capabilities in accordance with the BBC TV

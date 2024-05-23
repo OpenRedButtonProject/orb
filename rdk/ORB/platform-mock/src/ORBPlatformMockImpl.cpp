@@ -995,6 +995,17 @@ std::string ORBPlatformMockImpl::Configuration_GetUserAgentString()
     return userAgentString;
 }
 
+/**
+ * Get whether clean audio is enabled on this system.
+ *
+ * @return True if clean audio is enabled; or false otherwise.
+ */
+bool ORBPlatformMockImpl::Configuration_GetCleanAudioEnabled()
+{
+    ORB_LOG_NO_ARGS();
+    return false;
+}
+
 #ifdef BBC_API_ENABLE
 /**
  * Get a report of the device's primary display capabilities in accordance with the BBC TV

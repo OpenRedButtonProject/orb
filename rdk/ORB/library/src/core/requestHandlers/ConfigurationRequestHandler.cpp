@@ -39,6 +39,7 @@
 #define CONFIGURATION_REQUEST_ACCESS_TO_DISTINCTIVE_IDENTIFIER \
     "requestAccessToDistinctiveIdentifier"
 #define CONFIGURATION_GET_PRIMARY_DISPLAY "getPrimaryDisplay"
+#define CONFIGURATION_GET_CLEAN_AUDIO_ENABLED "getCleanAudioEnabled"
 
 namespace orb {
 /**
@@ -193,6 +194,15 @@ bool ConfigurationRequestHandler::Handle(
             ORBEngine::GetSharedInstance().GetApplicationManager()->GetCurrentAppNames();
         ORBEngine::GetSharedInstance().GetORBPlatform()->
         Configuration_RequestAccessToDistinctiveIdentifier(origin, appNames);
+    }
+        // Configuration.getCleanAudioEnabled
+    else if (method == CONFIGURATION_GET_CLEAN_AUDIO_ENABLED)
+    {
+        json jsonPayload = token["payload"];
+        std::string origin = jsonPayload.value("origin", "");
+        bool enabled =
+            ORBEngine::GetSharedInstance().GetORBPlatform()->Configuration_GetCleanAudioEnabled();
+        response["result"] = enabled;
     }
 #ifdef BBC_API_ENABLE
     // Configuration.getPrimaryDisplay
