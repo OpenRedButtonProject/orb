@@ -182,6 +182,14 @@ hbbtv.objects.AVControl = (function() {
         console.log('A/V Control: Play title ' + this.data + ' with speed ' + speed);
         if (speed === undefined) speed = 1;
 
+        function updateCurrentTime(speed) {
+            const elapsed = new Date().getTime() - priv.rewindStartSystemTime;
+            videoElement.currentTime = Math.max(
+                priv.rewindStartVideoTime - (elapsed * -speed) / 1000.0,
+                0
+            );
+        }
+
         if ((playStates[priv.playState] & 97) && (speed !== 0)) {
             // stopped, finished or error
             if (priv.playState !== PLAY_STATE_FINISHED) {
@@ -253,6 +261,7 @@ hbbtv.objects.AVControl = (function() {
             } else if (speed == 0) {
                 videoElement.pause();
                 if (priv.targetSpeed <= 0) {
+                    updateCurrentTime(priv.targetSpeed);
                     // here, because we are in rewind mode or stopped, the videoElement is already
                     // in paused state, and because of that the event listener will not
                     // be triggered, so we call explicitly transitionToState.call(thiz, PLAY_STATE_PAUSED);
@@ -276,15 +285,13 @@ hbbtv.objects.AVControl = (function() {
                         // return to paused state
                         this.play(0);
                     } else {
-                        const elapsed = new Date().getTime() - priv.rewindStartSystemTime;
-                        videoElement.currentTime = Math.max(
-                            priv.rewindStartVideoTime - (elapsed * -speed) / 1000.0,
-                            0
-                        );
+                        updateCurrentTime(speed);
                     }
-                }, 200);
+                }, 1000);
 
+                priv.speed = speed;
                 transitionToState.call(this, PLAY_STATE_PLAYING);
+                dispatchEvent.call(this, 'PlaySpeedChanged', { speed: speed });
             }
         }
         priv.targetSpeed = speed;
@@ -641,7 +648,7 @@ hbbtv.objects.AVControl = (function() {
                         } else if (isEAC3(trackEncoding)) {
                             trackEncoding = "E-AC3";
                         }
-                                      
+
                         let language = 'und';
                         if (audioTrack.language) {
                             if (priv.ISO639_1_to_ISO639_2[audioTrack.language]) {
@@ -1067,6 +1074,7 @@ hbbtv.objects.AVControl = (function() {
 
     function initialise() {
         let startPlaying = false;
+        let seeking = false;
         let priv = privates.get(this);
         if (priv) {
             return; // already initialised
@@ -1191,14 +1199,29 @@ hbbtv.objects.AVControl = (function() {
 
         videoElement.addEventListener('waiting', () => {
             transitionToState.call(thiz, PLAY_STATE_BUFFERING);
-            videoElement.oncanplaythrough = () => {
-                videoElement.oncanplaythrough = undefined;
-                startPlaying = true;
-            };
+            if (!seeking) {
+                videoElement.oncanplaythrough = () => {
+                    videoElement.oncanplaythrough = undefined;
+                    startPlaying = true;
+                };
+            }
         });
 
         videoElement.addEventListener('play', () => {
             startPlaying = true;
+        });
+
+        videoElement.addEventListener('seeking', () => {
+            if (!startPlaying && !seeking) {
+                seeking = true;
+            }
+        });
+
+        videoElement.addEventListener('seeked', () => {
+            seeking = false;
+            if (priv.targetSpeed > 0) {
+                transitionToState.call(thiz, PLAY_STATE_PLAYING);
+            }
         });
 
         videoElement.addEventListener('durationchange', () => {
@@ -1210,7 +1233,7 @@ hbbtv.objects.AVControl = (function() {
             if (startPlaying) {
                 onPlayHandler();
                 startPlaying = false;
-            } else {
+            } else if (!seeking) {
                 dispatchEvent.call(thiz, 'PlayPositionChanged', {
                     position: thiz.playPosition,
                 });
@@ -1250,13 +1273,16 @@ hbbtv.objects.AVControl = (function() {
         });
 
         videoElement.addEventListener('__orb_onplayspeedchanged__', (e) => {
-            priv.speed = e.speed;
-            if (e.speed) {
-                priv.targetSpeed = e.speed;
+            /* Rely on videoElement.onpause to trigger PlaySpeedChanged. It is undefined when simulating rewind. */
+            if (videoElement.onpause) {
+                priv.speed = e.speed;
+                if (e.speed) {
+                    priv.targetSpeed = e.speed;
+                }
+                dispatchEvent.call(this, 'PlaySpeedChanged', {
+                    speed: e.speed,
+                });
             }
-            dispatchEvent.call(this, 'PlaySpeedChanged', {
-                speed: e.speed,
-            });
         });
 
         videoElement.addEventListener('__orb_onparentalratingchange__', (e) => {
