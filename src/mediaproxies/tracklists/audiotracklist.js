@@ -201,10 +201,12 @@ hbbtv.objects.AudioTrackList = (function() {
 
     function initialise(proxy) {
         const AUDIO_TRACK_LIST_KEY = 'AudioTrackList';
+        const prefLang = hbbtv.bridge.configuration.getPreferredAudioLanguage();
+
         privates.set(this, {
             length: 0,
             eventTarget: document.createDocumentFragment(),
-            defaultAudioLanguage: hbbtv.bridge.configuration.getPreferredAudioLanguage(),
+            defaultAudioLanguage: prefLang.includes(',') ? prefLang.split(',')[0] : prefLang,
             cleanAudioEnabled: hbbtv.bridge.configuration.getCleanAudioEnabled(),
             proxy,
         });
