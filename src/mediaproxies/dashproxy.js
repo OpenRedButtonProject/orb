@@ -326,6 +326,9 @@ hbbtv.objects.DashProxy = (function() {
                 this.dispatchEvent(nativeEvt);
                 data.code = 5; // content not available
                 break;
+            case DOWNLOAD_ERROR_ID_XLINK_CODE:
+                // xlink:href couldn't be fetched. Xlink attributes are simply removed by dash.js
+                return;
             default:
                 data.code = 2; // Unidentified error
                 break;
