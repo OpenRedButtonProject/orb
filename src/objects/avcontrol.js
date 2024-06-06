@@ -642,7 +642,7 @@ hbbtv.objects.AVControl = (function() {
                 for (let i = 0; i < audioTracks.length; ++i) {
                     const audioTrack = audioTracks[i];
                     if (!onlyActive || audioTrack.enabled) {
-                        let trackEncoding = audioTrack.encoding ? audioTrack.encoding.split('"')[1] : undefined
+                        let trackEncoding = audioTrack.encoding ? audioTrack.encoding.split('"')[1] : undefined;
                         if (isMPEG4HEAAC(trackEncoding)) {
                             trackEncoding = "HEAAC";
                         } else if (isEAC3(trackEncoding)) {
@@ -651,10 +651,11 @@ hbbtv.objects.AVControl = (function() {
 
                         let language = 'und';
                         if (audioTrack.language) {
-                            if (priv.ISO639_1_to_ISO639_2[audioTrack.language]) {
-                                language = priv.ISO639_1_to_ISO639_2[audioTrack.language];
-                            }
-                            else {
+                            let lang;
+                            if ((this.type !== 'application/dash+xml') &&
+                                (lang = priv.ISO639_1_to_ISO639_2[audioTrack.language])) {
+                                    language = lang;
+                            } else {
                                 language = audioTrack.language;
                             }
                         }
