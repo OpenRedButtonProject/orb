@@ -10,7 +10,8 @@
                "orgId": 1,
                "name": "example",
                "baseUrl": "$LOCALHOST/debug/json_rpc/",
-               "initialPath": "index.html"
+               "initialPath": "index.html",
+               "graphics": [3]
             }
          ]
       }

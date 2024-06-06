@@ -472,6 +472,51 @@ static void XmlParseAppDescProfile(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr
  * @param node
  * @param app_ptr
  */
+static void XmlParseAppDescGraphics(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
+{
+    const xmlChar *cptr;
+    xmlChar *dptr;
+
+    node = node->xmlChildrenNode;
+    app_ptr->graphicsConstraints.push_back(720);
+    while (node != nullptr)
+    {
+        if (node->type == XML_ELEMENT_NODE)
+        {
+            cptr = node->name;
+            if (xmlStrEqual(cptr, (const xmlChar *)"GraphicsConfiguration"))
+            {
+                NODE_CONTENT_GET(node, dptr);
+                if (dptr)
+                {
+                    if (xmlStrEqual(dptr, (const
+                                           xmlChar *)"urn:hbbtv:graphics:resolution:1920x1080"))
+                    {
+                        app_ptr->graphicsConstraints.push_back(1080);
+                    }
+                    else if (xmlStrEqual(dptr, (const
+                                                xmlChar *)"urn:hbbtv:graphics:resolution:3840x2160"))
+                    {
+                        app_ptr->graphicsConstraints.push_back(2160);
+                    }
+                    else if (xmlStrEqual(dptr, (const
+                                                xmlChar *)"urn:hbbtv:graphics:resolution:7680x4320"))
+                    {
+                        app_ptr->graphicsConstraints.push_back(4320);
+                    }
+                    NODE_CONTENT_RELEASE();
+                }
+            }
+        }
+        node = node->next;
+    }
+}
+
+/**
+ *
+ * @param node
+ * @param app_ptr
+ */
 static void XmlParseAppDesc(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
 {
     const xmlChar *cptr;
@@ -537,6 +582,10 @@ static void XmlParseAppDesc(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
                 }
                 pr.value = (uint8_t)XmlGetContentInt(node);
                 app_ptr->parentalRatings.push_back(pr);
+            }
+            else if (xmlStrEqual(cptr, (const xmlChar *)"GraphicsConstraints"))
+            {
+                XmlParseAppDescGraphics(node, app_ptr);
             }
         }
         node = node->next;
@@ -804,6 +853,9 @@ static void XmlParseApplication(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
                 {
                     XmlParseAppLocation(node, app_ptr);
                 }
+            }
+            else if (xmlStrEqual(cptr, (const xmlChar *)"GraphicsConstraints")) {
+                XmlParseAppDescGraphics(node, app_ptr);
             }
         }
         node = node->next;

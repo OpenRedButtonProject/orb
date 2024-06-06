@@ -190,11 +190,12 @@ class BrowserView extends WebView {
         }
     }
 
-    public void loadApplication(int appId, String entryUrl) {
+    public void loadApplication(int appId, String entryUrl, int[] graphicsConfigIds) {
         mLoadAppId = appId;
         mContext.getMainExecutor().execute(() -> {
             mAppId = appId;
             loadUrl(entryUrl);
+            updateAppResolution(graphicsConfigIds);
             if (entryUrl.equals("about:blank")) {
                 setHiddenFlag(PAGE_HIDDEN_FLAG);
             } else {
@@ -237,6 +238,23 @@ class BrowserView extends WebView {
             Log.d(TAG, "Set scale to " + scale);
             setInitialScale(scale);
         });
+    }
+
+    private void updateAppResolution(int[] graphicsConfigIds) {
+        int resolution = 720;
+        if (graphicsConfigIds != null && graphicsConfigIds.length != 0) {
+            Arrays.sort(graphicsConfigIds);
+            resolution = graphicsConfigIds[graphicsConfigIds.length -1];
+        }
+        Log.d(TAG, "Rendering resolution is set to " + resolution + "p");
+        if (resolution <= 720) {
+            mAppWidth = 1280;
+        } else if (resolution <= 1080) {
+            mAppWidth = 1920;
+        } else {
+            mAppWidth = 3840;
+        }
+        updateScale();
     }
 
     private void setHiddenFlag(int flag) {
@@ -345,7 +363,7 @@ class BrowserView extends WebView {
         /**
          * Check whether the key code is in the key set of the application.
          *
-         * @param appId The application ID.
+         * @param appId   The application ID.
          * @param keyCode A TvBrowserTypes.VK_* key code.
          * @return true if it is in the key set, otherwise false
          */
@@ -363,7 +381,7 @@ class BrowserView extends WebView {
          * loaded. For example, when the user follows a link.
          *
          * @param appId The application ID.
-         * @param url The URL of the new page.
+         * @param url   The URL of the new page.
          */
         void notifyApplicationPageChanged(int appId, String url);
     }
