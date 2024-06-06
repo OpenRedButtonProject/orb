@@ -252,6 +252,21 @@ public interface IOrbSessionCallback {
     void setPresentationSuspended(boolean presentationSuspended);
 
     /**
+     * Returns the actual volume level set.
+     *
+     * @return Integer value between 0 up to and including 100 to indicate volume level.
+     */
+    int getVolume();
+
+    /**
+     * Adjusts the volume of the currently playing media to the volume as indicated by volume.
+     *
+     * @param volume Integer value between 0 up to and including 100 to indicate volume level.
+     * @return true if the volume has changed. false if the volume has not changed.
+     */
+    boolean setVolume(int volume);
+
+    /**
      * Override the default component selection of the terminal for the specified type.
      * <p>
      * If id is empty, no component shall be selected for presentation (presentation is explicitly

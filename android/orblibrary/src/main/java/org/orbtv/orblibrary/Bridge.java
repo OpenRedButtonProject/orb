@@ -465,6 +465,29 @@ class Bridge extends AbstractBridge {
     }
 
     /**
+     * Returns the actual volume level set.
+     *
+     * @param token The token associated with this request.
+     * @return Integer value between 0 up to and including 100 to indicate volume level.
+     */
+    @Override
+    protected int Broadcast_getVolume(BridgeToken token) {
+        return mOrbLibraryCallback.getVolume();
+    }
+
+    /**
+     * Adjusts the volume of the currently playing media to the volume as indicated by volume.
+     *
+     * @param token The token associated with this request.
+     * @param volume Integer value between 0 up to and including 100 to indicate volume level.
+     * @return true if the volume has changed. false if the volume has not changed.
+     */
+    @Override
+    protected boolean Broadcast_setVolume(BridgeToken token, int volume) {
+        return mOrbLibraryCallback.setVolume(volume);
+    }
+
+    /**
      * Get the parental rating of the current broadcast programme.
      *
      * @param token The token associated with this request.

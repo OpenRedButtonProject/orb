@@ -67,6 +67,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     private final MockHttpServer mServer;
 
     private IOrbSession mSession = null;
+    private int mVolume = 100;
     private TestSuiteRunner mTestSuiteRunner = null;
     private TestSuiteScenario mTestSuiteScenario;
 
@@ -1123,6 +1124,29 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
      */
     @Override
     public void setPresentationSuspended(boolean presentationSuspended) {
+    }
+
+    /**
+     * Returns the actual volume level set.
+     *
+     * @return Integer value between 0 up to and including 100 to indicate volume level.
+     */
+    public int getVolume() {
+        return mVolume;
+    }
+
+    /**
+     * Adjusts the volume of the currently playing media to the volume as indicated by volume.
+     *
+     * @param volume Integer value between 0 up to and including 100 to indicate volume level.
+     * @return true if the volume has changed. false if the volume has not changed.
+     */
+    public boolean setVolume(int volume) {
+        if (mVolume == volume) {
+            return false;
+        }
+        mVolume = volume;
+        return true;
     }
 
     private void delaySelectComponent(final int componentType, final boolean restoreDefault,

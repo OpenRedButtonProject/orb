@@ -1038,6 +1038,40 @@ hbbtv.objects.VideoBroadcast = (function() {
     /**
      * Specifications:
      * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+     * HBBTV 10.2.12 Audio level adjustment for audio mixing
+     * <p>
+     * Security: none.
+     *
+     * @returns {number} Integer value between 0 up to and including 100 to indicate volume level.
+     *
+     * @method
+     * @memberof VideoBroadcast#
+     */
+    prototype.getVolume = function() {
+        return hbbtv.bridge.broadcast.getVolume();
+    }
+
+    /**
+     * Specifications:
+     * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
+     * HBBTV 10.2.12 Audio level adjustment for audio mixing
+     * <p>
+     * Security: none.
+     *
+     * @param {number} volume Integer value between 0 up to and including 100 to indicate volume level.
+     *
+     * @returns {boolean} true if the volume has changed. false if the volume has not changed.
+     *
+     * @method
+     * @memberof VideoBroadcast#
+     */
+    prototype.setVolume = function(volume) {
+        return hbbtv.bridge.broadcast.setVolume(volume);
+    }
+
+    /**
+     * Specifications:
+     * HBBTV A.1/OIPF DAE 7.13.1 (The video/broadcast embedded object);
      * HBBTV A.2.4 (Extensions to the video/broadcast object).
      * <p>
      * Security: none.
@@ -1091,7 +1125,7 @@ hbbtv.objects.VideoBroadcast = (function() {
             hbbtv.bridge.broadcast.setPresentationSuspended(true);
             if (hbbtv.native.name === 'rdk' && hbbtv.native.getProprietary()) {
                 // support poorly implemented portals by delaying the event dispatch
-                setTimeout(() => {dispatchPlayStateChangeEvent.call(this, p.playState);}, 0); 
+                setTimeout(() => {dispatchPlayStateChangeEvent.call(this, p.playState);}, 0);
             }
             else {
                 dispatchPlayStateChangeEvent.call(this, p.playState);
