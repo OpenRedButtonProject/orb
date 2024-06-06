@@ -114,6 +114,30 @@ void SessionCallbackImpl::LoadApplication(uint16_t app_id, const char *url)
 }
 
 /**
+ * Tell the browser to load an application. If the entry page fails to load, the browser
+ * should call ApplicationManager::OnLoadApplicationFailed.
+ *
+ * @param appId The application ID.
+ * @param entryUrl The entry page URL.
+ * @param size The number of the co-ordinate graphics
+ * @param graphics The list of the co-ordinate graphics supported by the application
+ */
+void SessionCallbackImpl::LoadApplication(uint16_t appId, const char *entryUrl, int size, const std::vector<uint16_t> graphics)
+{
+    ORB_LOG("HbbTV Version: %d\n",ORB_HBBTV_VERSION);
+
+    if (ORB_HBBTV_VERSION == 203)
+    {
+        LoadApplication(appId, entryUrl);
+    } 
+    else
+    {
+        // TODO: Support 204
+        ORB_LOG("204 not supported\n");
+    }
+}
+
+/**
  * @brief SessionCallbackImpl::ShowApplication
  *
  * Tell the browser to show the loaded application.
