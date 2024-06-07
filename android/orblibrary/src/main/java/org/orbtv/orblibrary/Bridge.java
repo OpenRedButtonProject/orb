@@ -23,6 +23,8 @@ import org.orbtv.orbpolyfill.BridgeToken;
 import org.orbtv.orbpolyfill.BridgeTypes;
 
 import java.net.InetAddress;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
@@ -1337,18 +1339,28 @@ class Bridge extends AbstractBridge {
      */
     @Override
     protected String Network_resolveHostAddress(BridgeToken token, String hostname) {
+        InetAddress finalAddr = null;
         Log.d(TAG, "Resolve hostname " + hostname);
         // Must only handle requests with a publicly routable host or HbbTV test URL
         try {
-            InetAddress addr = InetAddress.getByName(hostname);
-            if (addr.isSiteLocalAddress() || addr.isLoopbackAddress() || addr.isLinkLocalAddress()) {
-                // Is private (10/8, 172.16/12, 192.168/16), loopback (127/8) or link local (169.254/16)
-                if (!hostname.matches("^([a-c]\\.)?hbbtv[1-3].test$")) {
-                    throw new UnknownHostException();
+            InetAddress[] addresses =  InetAddress.getAllByName(hostname);
+            for (InetAddress addr : addresses) {
+                if (addr instanceof Inet4Address) {
+                    finalAddr = addr;
+                    break;
+                }
+                if ((addr instanceof Inet6Address) && (finalAddr == null)) {
+                    finalAddr = addr;
                 }
             }
-            if (addr != null) {
-                return addr.getHostAddress();
+            if (finalAddr != null) {
+                if (finalAddr.isSiteLocalAddress() || finalAddr.isLoopbackAddress() || finalAddr.isLinkLocalAddress()) {
+                    // Is private (10/8, 172.16/12, 192.168/16), loopback (127/8) or link local (169.254/16)
+                    if (!hostname.matches("^([a-c]\\.)?hbbtv[1-3].test$")) {
+                        throw new UnknownHostException();
+                    }
+                }
+                return finalAddr.getHostAddress();
             }
         } catch (UnknownHostException e) {
             Log.d(TAG, "Unknown hostname: " + hostname);
