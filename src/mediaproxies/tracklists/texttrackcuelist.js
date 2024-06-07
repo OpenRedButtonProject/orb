@@ -44,6 +44,18 @@ hbbtv.objects.TextTrackCueList = (function() {
             }
         }
         const p = privates.get(this);
+        
+        // cue data needs to be an array of char codes
+        if (Array.isArray(cue.data)) {
+            cue.data = cue.data.map((e) => {
+                if (typeof e === 'number') {
+                    return e;
+                }
+                else {
+                    return e.charCodeAt();
+                }
+            });
+        }
         this[p.length] = cue;
         ++p.length;
     };
