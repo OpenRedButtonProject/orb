@@ -335,7 +335,9 @@ std::vector<int> ConfigurationRequestHandler::GetDttNetworkIds()
     std::vector<int> dttNetworkIds;
     std::vector<Channel> channelList =
         ORBEngine::GetSharedInstance().GetORBPlatform()->Broadcast_GetChannelList();
-    for (auto channel : channelList)
+    dttNetworkIds.reserve(channelList.size());
+
+    for (const auto& channel : channelList)
     {
         int idType = channel.GetIdType();
         if (idType == Channel::IdType::CHANNEL_ID_DVB_T || idType ==
@@ -348,6 +350,11 @@ std::vector<int> ConfigurationRequestHandler::GetDttNetworkIds()
             }
         }
     }
+    // sort and remove duplicates
+    std::sort(dttNetworkIds.begin(), dttNetworkIds.end());
+    auto last = std::unique(dttNetworkIds.begin(), dttNetworkIds.end());
+    dttNetworkIds.erase(last, dttNetworkIds.end());
+    
     return dttNetworkIds;
 }
 } // namespace orb
