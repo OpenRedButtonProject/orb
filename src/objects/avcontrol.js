@@ -356,7 +356,11 @@ hbbtv.objects.AVControl = (function() {
                 position > 0 &&
                 priv.videoElement.duration > position / 1000.0
             ) {
-                priv.videoElement.currentTime = position / 1000.0;
+                if (priv.startDate) { /* dynamic DASH MPD */
+                    priv.videoElement.currentTime = (priv.startDate + position) / 1000.0;
+                } else {
+                    priv.videoElement.currentTime = position / 1000.0;
+                }
 
                 // needed in case we are in rewind mode
                 priv.rewindStartSystemTime = new Date().getTime();
@@ -1257,6 +1261,10 @@ hbbtv.objects.AVControl = (function() {
                     unloadSource.call(thiz);
                 }
             }
+        });
+
+        videoElement.addEventListener('__orb_startDateUpdated__', (e) => {
+            priv.startDate = e.startDate;
         });
 
         videoElement.addEventListener('__orb_onerror__', (e) => {
