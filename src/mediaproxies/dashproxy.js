@@ -661,6 +661,7 @@ hbbtv.objects.DashProxy = (function() {
                     dispatchEvent: false,
                 },
                 streaming: {
+                    fragmentRequestTimeout: 20000,
                     trackSwitchMode: {
                         audio: 'alwaysReplace',
                         video: 'neverReplace',
