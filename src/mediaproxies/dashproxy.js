@@ -214,6 +214,7 @@ hbbtv.objects.DashProxy = (function() {
     prototype.load = function() {
         const p = privates.get(this);
         if (p) {
+            delete p.startDate;
             if (!this.src) {
                 // in this case, the source url is removed
                 // so we call the original load() in order to
@@ -568,13 +569,19 @@ hbbtv.objects.DashProxy = (function() {
         p.periods = e.data.Period_asArray;
         p.mrsUrl = e.data.mrsUrl;
         p.ciAncillaryData = e.data.ciAncillaryData;
-        
+        if (!p.startDate) {
+            p.startDate = Date.parse(e.data.availabilityStartTime);
+            if ((p.periods.length > 0) && (p.periods[0].start)) {
+                p.startDate += p.periods[0].start * 1000;
+            }
+        }
+
         const evt = new Event('__orb_startDateUpdated__');
         Object.assign(evt, {
-            startDate: Date.parse(e.data.availabilityStartTime),
+            startDate: p.startDate
         });
         this.dispatchEvent(evt);
-        
+
         hbbtv.native.dispatchManifestNativeEvents?.(e);
 
         console.log(
