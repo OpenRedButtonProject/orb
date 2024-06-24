@@ -74,6 +74,16 @@ hbbtv.objects.TextTrackList = (function() {
 
     prototype.orb_addTextTrack = function(kind, label, language) {
         const p = privates.get(this);
+
+        for (let i = 0; i < p.length; i++) {
+            const track = this[i];
+            if ((track.kind === kind) && (track.label === label) && (track.language === language)) {
+                if (track.mode === 'showing') {
+                    track.mode = track.mode;
+                }
+                return track;
+            }
+        }
         const track = hbbtv.objects.createTextTrack(
             p.mediaElement,
             p.proxy,
@@ -124,6 +134,11 @@ hbbtv.objects.TextTrackList = (function() {
             proxy,
             mediaElement,
         });
+
+        for (let i = 0; i < mediaElement.textTracks.length; i++) {
+            const track = mediaElement.textTracks[i];
+            this.orb_addTextTrack(track.kind, track.label, track.language);
+        }
         proxy.registerObserver(TEXT_TRACK_LIST_KEY, this);
 
         // We create a new Proxy object which we return in order to avoid ping-pong calls
