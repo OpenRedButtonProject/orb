@@ -137,7 +137,7 @@ hbbtv.objects.TextTrackList = (function() {
 
         for (let i = 0; i < mediaElement.textTracks.length; i++) {
             const track = mediaElement.textTracks[i];
-            this.orb_addTextTrack(track.kind, track.label, track.language);
+            this.orb_addTextTrack(track.kind, track.id, track.language);
         }
         proxy.registerObserver(TEXT_TRACK_LIST_KEY, this);
 
