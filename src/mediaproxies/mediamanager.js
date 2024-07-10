@@ -73,13 +73,16 @@ hbbtv.mediaManager = (function() {
         // when calling play() immediately after setting the src attribute
         HTMLMediaElement.prototype.play = function() {
             const thiz = this;
+
             return new Promise((resolve, reject) => {
                 if (thiz.readyState < 2) {
                     const playFcn = function() {
-                        thiz.removeEventListener('loadeddata', playFcn);
+                        thiz.removeEventListener('loadeddata', playFcn, true);
+                        thiz.removeEventListener('progress', playFcn, true);
                         __play.call(thiz).then(resolve, reject);
                     };
                     thiz.addEventListener('loadeddata', playFcn, true);
+                    thiz.addEventListener('progress', playFcn, true);
                 } else {
                     __play.call(thiz).then(resolve, reject);
                 }
@@ -457,7 +460,7 @@ hbbtv.mediaManager = (function() {
         hbbtv.native.addMediaNativeListeners?.();
         media.addEventListener(hbbtv.native.getSeekablePollingEvent(), (e) => hbbtv.native.updateSeekable(e));
         media.addEventListener(hbbtv.native.getBufferedPollingEvent(), updateBuffered);
-        
+
         media.addEventListener('timeupdate', makeCallback('currentTime'));
         media.addTextTrack = function() {
             return textTracks.orb_addTextTrack.apply(textTracks, arguments);
@@ -469,7 +472,7 @@ hbbtv.mediaManager = (function() {
         media.removeTrackEvent = function() {
             return textTracks.orb_removeTrackEvent.apply(textTracks);
         };
-     
+
     }
 
     // Mutation observer
