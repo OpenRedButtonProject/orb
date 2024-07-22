@@ -595,13 +595,15 @@ bool BroadcastRequestHandler::IsRequestAllowed(json token, ApplicationManager::M
  */
 void BroadcastRequestHandler::CancelSearch(int queryId)
 {
-    std::shared_ptr<MetadataSearchTask> searchTask =
-        ORBEngine::GetSharedInstance().GetMetadataSearchTask(queryId);
+    ORBEngine &engine = ORBEngine::GetSharedInstance();
+    std::shared_ptr<MetadataSearchTask> searchTask = engine.GetMetadataSearchTask(queryId);
     if (searchTask)
     {
         ORB_LOG("Aborting existing search task");
         searchTask->Stop();
-        ORBEngine::GetSharedInstance().RemoveMetadataSearchTask(queryId);
+        // REMARK: this is safe as the detached thread has its own shared_ptr ensuring that
+        //         the task is not destroyed while it is running.
+        engine.RemoveMetadataSearchTask(queryId);
     }
 }
 } // namespace orb

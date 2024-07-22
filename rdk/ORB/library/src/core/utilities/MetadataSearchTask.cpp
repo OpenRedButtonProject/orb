@@ -21,8 +21,6 @@
 #include "ORBLogging.h"
 
 namespace orb {
-std::thread s_thread;
-pthread_t s_nativeThreadHandle;
 
 static
 std::string ToLowerCase(std::string s)
@@ -100,9 +98,8 @@ void MetadataSearchTask::OnMetadataSearchCompleted(int search, int status,
 void MetadataSearchTask::Start()
 {
     ORB_LOG_NO_ARGS();
-    s_thread = std::thread(&MetadataSearchTask::Worker, this);
-    s_nativeThreadHandle = s_thread.native_handle();
-    s_thread.detach();
+    auto thread = std::thread(&MetadataSearchTask::Worker, shared_from_this());
+    thread.detach();
 }
 
 /**
@@ -111,7 +108,7 @@ void MetadataSearchTask::Start()
 void MetadataSearchTask::Stop()
 {
     ORB_LOG_NO_ARGS();
-    pthread_cancel(s_nativeThreadHandle);
+    m_cancelled.store(true, std::memory_order_relaxed);
 }
 
 /**
@@ -124,11 +121,38 @@ void MetadataSearchTask::Stop()
 void MetadataSearchTask::Worker()
 {
     ORB_LOG_NO_ARGS();
+
+    auto hasBeenCancelled = [this]() -> bool
+    {
+        return m_cancelled.load(std::memory_order_relaxed);
+    };
+
+    struct TaskReleaser
+    {
+        int m_queryId;
+
+        explicit TaskReleaser(int mQueryId) : m_queryId(mQueryId) {}
+
+        ~TaskReleaser()
+        {
+            ORB_LOG("Removing search task");
+            ORBEngine::GetSharedInstance().RemoveMetadataSearchTask(m_queryId);
+        }
+    };
+
+    const auto queryId = m_query->GetQueryId();
+    const TaskReleaser taskReleaser{queryId};
+
     // Get pointer to platform implementation
     ORBPlatform *platform = ORBEngine::GetSharedInstance().GetORBPlatform();
     if (platform == nullptr)
     {
         ORB_LOG("ERROR: ORB platform implementation not available");
+        return;
+    }
+
+    if(hasBeenCancelled())
+    {
         return;
     }
 
@@ -147,6 +171,11 @@ void MetadataSearchTask::Worker()
     // For each channel, if searchable, get programmes
     for (auto channel : channelList)
     {
+        if(hasBeenCancelled())
+        {
+            return;
+        }
+
         if (channel.IsHidden())
         {
             continue;
@@ -190,14 +219,16 @@ void MetadataSearchTask::Worker()
         }
     }
 
+    if(hasBeenCancelled())
+    {
+        return;
+    }
+
     m_offset = initialOffset;
 
     // Trigger notification
-    OnMetadataSearchCompleted(m_query->GetQueryId(), SEARCH_STATUS_COMPLETED, m_searchResults,
-        m_offset, totalSize);
-
-    // Remove search task
-    ORBEngine::GetSharedInstance().RemoveMetadataSearchTask(m_query->GetQueryId());
+    OnMetadataSearchCompleted(queryId, SEARCH_STATUS_COMPLETED, m_searchResults,
+                              m_offset, totalSize);
 }
 
 /**

@@ -26,6 +26,7 @@
 
 #include <map>
 #include <memory>
+#include <mutex>
 
 namespace orb
 {
@@ -232,16 +233,19 @@ public:
     // orb metadata search task pool handling
     void AddMetadataSearchTask(int queryId, std::shared_ptr<MetadataSearchTask> searchTask)
     {
+        std::lock_guard<std::mutex> lock{m_mutex};
         m_metadataSearchTasks[queryId] = searchTask;
     }
 
     void RemoveMetadataSearchTask(int queryId)
     {
+        std::lock_guard<std::mutex> lock{m_mutex};
         m_metadataSearchTasks.erase(queryId);
     }
 
     std::shared_ptr<MetadataSearchTask> GetMetadataSearchTask(int queryId)
     {
+        std::lock_guard<std::mutex> lock{m_mutex};
         return m_metadataSearchTasks[queryId];
     }
 
@@ -269,5 +273,6 @@ private:
     std::string m_currentAppUrl;
     bool m_started;
     std::string m_preferredUiLanguage;
+    mutable std::mutex m_mutex;
 }; // class ORBEngine
 } // namespace orb

@@ -22,6 +22,7 @@
 #include "Programme.h"
 #include "Query.h"
 #include <thread>
+#include <atomic>
 
 // Supported search status values
 #define SEARCH_STATUS_COMPLETED   0
@@ -35,7 +36,7 @@ namespace orb {
  * in its own dedicated thread. The search results shall be sent to the JavaScript
  * context asynchronously by means of the 'MetadataSearch' bridge event.
  */
-class MetadataSearchTask {
+class MetadataSearchTask : public std::enable_shared_from_this<MetadataSearchTask> {
 public:
 
     /**
@@ -133,5 +134,6 @@ private:
     int m_count;
     std::vector<std::string> m_channelConstraints;
     std::vector<std::string> m_searchResults;
+    std::atomic<bool> m_cancelled{false};
 }; // class MetadataSearchTask
 } // namespace orb
