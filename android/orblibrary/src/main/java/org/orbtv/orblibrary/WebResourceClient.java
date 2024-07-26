@@ -142,11 +142,11 @@ abstract class WebResourceClient {
                 requestHeaders.put("Cookie", cookie);
             }
         }
-        
+
         if (mDoNotTrackEnabled) {
             requestHeaders.put("DNT", "1");
         }
-        
+
         Response httpResponse = mHttpClient.newCall(new Request.Builder()
                 .url(url)
                 .method(request.getMethod(), null)
@@ -268,8 +268,10 @@ abstract class WebResourceClient {
             String fromExtension = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
             if (fromExtension != null) {
                 type = fromExtension;
-            } else if ((extension.equals("html5")) || (extension.equals("cehtml"))) {
+            } else if (extension.equals("html5")) {
                 type = "text/html";
+            } else if (extension.equals("cehtml")) {
+                type = "application/xhtml+xml";
             }
         }
         return type;
