@@ -19,12 +19,16 @@ hbbtv.objects = {};
 
 hbbtv.objectManager = (function() {
     const __createElement = document.createElement;
+    const __getElementById = document.getElementById;
 
     let objectMimeTypeTable = [];
     let objectFactoryMethodTable = [];
     let objectUpgradeHandlers = [];
 
     function initialise() {
+        // Override getElementById while app is loading to upgrade HbbTV objects before they are used
+        document.getElementById = getElementByIdOverride;
+
         addMetaViewportElement();
         addOipfObjectFactory();
         addHTMLManipulationIntercept(function(manipulatedElement) {
@@ -44,6 +48,9 @@ hbbtv.objectManager = (function() {
         );
         upgradeDescendantObjects(document);
         document.addEventListener('DOMContentLoaded', function() {
+            if (document.getElementById === getElementByIdOverride) {
+                document.getElementById = __getElementById;
+            }
             upgradeDescendantObjects(document);
         });
     }
@@ -227,6 +234,17 @@ hbbtv.objectManager = (function() {
             meta.content = 'width=device-width, initial-scale=1.0';
             document.getElementsByTagName('head')[0] ?.appendChild(meta);
         }
+    }
+
+    function getElementByIdOverride(id) {
+        const element = __getElementById.call(document, id);
+        if (element) {
+            const objectType = element.getAttribute('type');
+            if (objectType) {
+                upgradeObject(element, objectType);
+            }
+        }
+        return element;
     }
 
     return {
