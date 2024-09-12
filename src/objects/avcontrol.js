@@ -1078,6 +1078,7 @@ hbbtv.objects.AVControl = (function() {
     }
 
     function initialise() {
+        let initialising = true;
         let startPlaying = false;
         let seeking = false;
         let priv = privates.get(this);
@@ -1207,25 +1208,27 @@ hbbtv.objects.AVControl = (function() {
             if (!seeking) {
                 videoElement.oncanplaythrough = () => {
                     videoElement.oncanplaythrough = undefined;
+                    initialising = false;
                     startPlaying = true;
                 };
             }
         });
 
         videoElement.addEventListener('play', () => {
+            initialising = false;
             startPlaying = true;
         });
 
         videoElement.addEventListener('seeking', () => {
-            if (!startPlaying && !seeking) {
+            if (!initialising && !startPlaying && !seeking) {
                 seeking = true;
             }
         });
 
         videoElement.addEventListener('seeked', () => {
-            seeking = false;
-            if (priv.targetSpeed > 0) {
+            if (seeking && (priv.targetSpeed > 0)) {
                 transitionToState.call(thiz, PLAY_STATE_PLAYING);
+                seeking = false;
             }
         });
 
