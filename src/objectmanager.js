@@ -26,7 +26,8 @@ hbbtv.objectManager = (function() {
     let objectUpgradeHandlers = [];
 
     function initialise() {
-        // Override getElementById while app is loading to upgrade HbbTV objects before they are used
+        // Override getElementById while app is loading to upgrade HbbTV objects before they are used.
+        // This is a WORKAROUND for apps that incorrectly use 'getElementById' before 'window.onload'.
         document.getElementById = getElementByIdOverride;
 
         addMetaViewportElement();
