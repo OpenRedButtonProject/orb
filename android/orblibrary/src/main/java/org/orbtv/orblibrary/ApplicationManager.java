@@ -17,6 +17,9 @@
 package org.orbtv.orblibrary;
 
 import android.util.Log;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import okhttp3.*;
 
@@ -32,6 +35,9 @@ class ApplicationManager {
     private final static int KEY_SET_NAVIGATION = 0x10;
     private final static int KEY_SET_VCR = 0x20;
     private final static int KEY_SET_NUMERIC = 0x100;
+    private final static Map<String, Integer> KEY_OTHERS = new HashMap<String, Integer>() {{
+        put("VK_RECORD", 0x416);
+    }};
 
     private final Object mLock = new Object();
     private SessionCallback mSessionCallback;
@@ -159,8 +165,20 @@ class ApplicationManager {
         return jniIsRequestAllowed(callingAppId, callingPageUrl, methodRequirement);
     }
 
+    public int[] getOtherKeyValues(int appId) {
+        return jniGetOtherKeyValues(appId);
+    }
+
     public int getKeyValues(int appId) {
         return jniGetKeySetMask(appId);
+    }
+
+    public int getKeyMaximumOtherKeys() {
+        int result = 0;
+        for (Integer value : KEY_OTHERS.values()) {
+            result |= value;
+        }
+        return result;
     }
 
     public int getKeyMaximumValue() {
@@ -177,10 +195,31 @@ class ApplicationManager {
         return jniInKeySet(appId, keyCode);
     }
 
-    public int setKeyValue(int appId, int value) {
-        int[] otherKeys = new int[0];
-        mSessionCallback.notifyKeySetChanged(value, otherKeys);
-        return jniSetKeySetMask(appId, value);
+    public int setKeyValue(int appId, int value, List<String> otherKeysList) {
+        synchronized (mLock) {
+            int[] otherKeysArray;
+            int kMask = 0;
+            if (mSessionCallback != null) {
+                if (otherKeysList == null || otherKeysList.isEmpty()) {
+                    otherKeysArray = new int[0];
+                } else {
+                    otherKeysArray = new int[otherKeysList.size()];
+                    for (int i = 0; i < otherKeysList.size(); i++) {
+                        try {
+                            otherKeysArray[i] = Integer.parseInt(otherKeysList.get(i));
+                        } catch (NumberFormatException e) {
+                            continue;
+                        }
+                    }
+                }
+                kMask = jniSetKeySetMask(appId, value, otherKeysArray);
+                if (kMask > 0)
+                {
+                    mSessionCallback.notifyKeySetChanged(value, otherKeysArray);
+                }
+            }
+            return kMask;
+        }
     }
 
     public String getApplicationScheme(int appId) {
@@ -228,9 +267,11 @@ class ApplicationManager {
 
     private native void jniHideApplication(int callingAppId);
 
-    private native int jniSetKeySetMask(int appId, int keySetMask);
+    private native int jniSetKeySetMask(int appId, int keySetMask, int[] otherKeys);
 
     private native int jniGetKeySetMask(int appId);
+
+    private native int[] jniGetOtherKeyValues(int appId);
 
     private native String jniGetApplicationScheme(int appId);
 

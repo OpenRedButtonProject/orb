@@ -272,9 +272,27 @@ JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniHideAppli
 extern "C"
 JNIEXPORT jint JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniSetKeySetMask(JNIEnv *env,
     jobject object,
-    jint calling_app_id, jint key_set_mask)
+    jint calling_app_id, jint key_set_mask, jintArray other_keys)
 {
-    return GetManager(env, object)->SetKeySetMask(calling_app_id, key_set_mask);
+    int result = 0;
+    jsize length = 0;
+    std::vector<uint16_t> otherKeys;
+    jint* otherKeysNative = nullptr;
+
+    if (other_keys != nullptr) {
+        otherKeysNative = env->GetIntArrayElements(other_keys, nullptr);
+        length = env->GetArrayLength(other_keys);
+        if (otherKeysNative != nullptr && length > 0) {
+            otherKeys.assign(otherKeysNative, otherKeysNative + length);
+        }
+    }
+
+    result = GetManager(env, object)->SetKeySetMask(calling_app_id, key_set_mask, otherKeys);
+    if (other_keys != nullptr && otherKeysNative != nullptr) {
+        env->ReleaseIntArrayElements(other_keys, otherKeysNative, 0);
+    }
+
+    return result;
 }
 
 extern "C"
@@ -283,6 +301,20 @@ JNIEXPORT jint JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniGetKeySet
     jint calling_app_id)
 {
     return GetManager(env, object)->GetKeySetMask(calling_app_id);
+}
+
+extern "C"
+JNIEXPORT jintArray JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniGetOtherKeyValues(JNIEnv *env,
+    jobject object,
+    jint calling_app_id)
+{
+    std::vector<uint16_t> values = GetManager(env, object)->GetOtherKeyValues(calling_app_id);
+    jintArray resultArray = env->NewIntArray(values.size());
+    if (resultArray != nullptr) {
+        env->SetIntArrayRegion(resultArray, 0, values.size(), reinterpret_cast<const jint*>(values.data()));
+    }
+
+    return resultArray;
 }
 
 extern "C"

@@ -93,6 +93,7 @@ public class BridgeTypes {
     public static final int VK_PLAY_PAUSE = 402;
     public static final int VK_FAST_FWD = 417;
     public static final int VK_REWIND = 412;
+    public static final int VK_RECORD = 416;
     public static final int VK_TELETEXT = 459;
 
     // Codes used to indicate search status. See OIPF spec vol 5 DAE, section 7.12.1.1

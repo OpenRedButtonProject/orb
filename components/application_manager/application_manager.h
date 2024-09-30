@@ -175,9 +175,10 @@ public:
      *
      * @param appId The application.
      * @param keySetMask The key set mask.
+     * @param otherKeys optional other keys
      * @return The key set mask for the application.
      */
-    uint16_t SetKeySetMask(uint16_t appId, uint16_t keySetMask);
+    uint16_t SetKeySetMask(uint16_t appId, uint16_t keySetMask, std::vector<uint16_t> otherKeys);
 
     /**
      * Get the key set mask for an application.
@@ -186,6 +187,14 @@ public:
      * @return The key set mask for the application.
      */
     uint16_t GetKeySetMask(uint16_t appId);
+
+    /**
+     * Get the other keys for an application.
+     *
+     * @param appId The application.
+     * @return The other keys for the application.
+     */
+    std::vector<uint16_t> GetOtherKeyValues(uint16_t appId);
 
     /**
      * Check the key code is accepted by the current key mask. Activate the app as a result if the

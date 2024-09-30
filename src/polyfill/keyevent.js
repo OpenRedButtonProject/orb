@@ -46,6 +46,7 @@
         VK_PLAY_PAUSE: 402,
         VK_FAST_FWD: 417,
         VK_REWIND: 412,
+        VK_RECORD: 416,
     };
     for (const key in keys) {
         if (!window.KeyEvent.hasOwnProperty(key)) {
