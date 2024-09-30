@@ -898,4 +898,13 @@ public interface IOrbSessionCallback {
         throw new UnsupportedOperationException("Unsupported 204 API.");
     }
 
+    /**
+     * @since 204
+     * 
+     * Returns true if the provided triplet is in an instance within the
+     * currently playing service, otherwise false.
+     */
+    default boolean isInstanceInCurrentService(int onid, int tsid, int sid) {
+        return false;
+    }
 }
