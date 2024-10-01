@@ -70,7 +70,7 @@ hbbtv.objects.TextTrack = (function() {
         set(value) {
             const p = privates.get(this);
             if (
-                value !== p.properties.enabled && [TRACK_MODE_DISABLED, TRACK_MODE_HIDDEN, TRACK_MODE_SHOWING].includes(value) &&
+                value !== p.properties.mode && [TRACK_MODE_DISABLED, TRACK_MODE_HIDDEN, TRACK_MODE_SHOWING].includes(value) &&
                 hbbtv.bridge.configuration.getSubtitlesEnabled()
             ) {
                 if (value !== TRACK_MODE_DISABLED) {
@@ -86,6 +86,7 @@ hbbtv.objects.TextTrack = (function() {
                     p.properties.activeCues.orb_clear();
                     p.mediaElement.removeEventListener('timeupdate', p.onTimeUpdate, true);
                 }
+                console.log("Updated mode property value to", value);
                 p.properties.mode = value;
                 p.mediaElement.textTracks.dispatchEvent(new Event('change'));
             }
@@ -137,7 +138,7 @@ hbbtv.objects.TextTrack = (function() {
         privates.delete(this);
     };
 
-    function initialise(mediaElement, proxy, id, kind, label, language) {
+    function initialise(mediaElement, proxy, id, kind, label, language, mode) {
         const thiz = this;
         const observerId = 'TextTrack_' + id;
         const properties = {
@@ -238,7 +239,7 @@ hbbtv.objects.TextTrack = (function() {
             trackProxy,
         });
 
-        this.mode = TRACK_MODE_HIDDEN;
+        this.mode = mode;
         return trackProxy;
     }
 
@@ -248,7 +249,7 @@ hbbtv.objects.TextTrack = (function() {
     };
 })();
 
-hbbtv.objects.createTextTrack = function(mediaElement, proxy, index, kind, label, language) {
+hbbtv.objects.createTextTrack = function(mediaElement, proxy, index, kind, label, language, mode) {
     const track = Object.create(hbbtv.objects.TextTrack.prototype);
     return hbbtv.objects.TextTrack.initialise.call(
         track,
@@ -257,6 +258,7 @@ hbbtv.objects.createTextTrack = function(mediaElement, proxy, index, kind, label
         index,
         kind,
         label,
-        language
+        language,
+        mode
     );
 };
