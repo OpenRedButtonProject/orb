@@ -72,7 +72,7 @@ hbbtv.objects.TextTrackList = (function() {
         }
     };
 
-    prototype.orb_addTextTrack = function(kind, label, language) {
+    prototype.orb_addTextTrack = function(kind, label, language, mode) {
         const p = privates.get(this);
 
         for (let i = 0; i < p.length; i++) {
@@ -90,7 +90,8 @@ hbbtv.objects.TextTrackList = (function() {
             label !== undefined ? label.toString() : '',
             kind,
             label,
-            language
+            language,
+            mode
         );
         this[p.length++] = track;
         const evt = new TrackEvent('addtrack');
@@ -137,7 +138,7 @@ hbbtv.objects.TextTrackList = (function() {
 
         for (let i = 0; i < mediaElement.textTracks.length; i++) {
             const track = mediaElement.textTracks[i];
-            this.orb_addTextTrack(track.kind, track.label, track.language);
+            this.orb_addTextTrack(track.kind, track.id, track.language, track.mode);
         }
         proxy.registerObserver(TEXT_TRACK_LIST_KEY, this);
 
