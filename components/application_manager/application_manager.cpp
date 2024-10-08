@@ -784,6 +784,10 @@ void ApplicationManager::OnSelectedServiceAitReceived()
         }
         else
         {
+            auto signalled = Ait::FindApp(ait, m_app.orgId, m_app.appId);
+            if (signalled != nullptr) {
+                m_app.setScheme(signalled->scheme);
+            }
             m_sessionCallback->DispatchApplicationSchemeUpdatedEvent(m_app.getScheme());
         }
     }
