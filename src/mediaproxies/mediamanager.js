@@ -160,7 +160,6 @@ hbbtv.mediaManager = (function() {
             request.onload = () => {
                 clearTimeout(timeoutId);
                 try {
-                    console.log("marios", request.getAllResponseHeaders());
                     const contentType = request
                         .getAllResponseHeaders()
                         .split('\n')
