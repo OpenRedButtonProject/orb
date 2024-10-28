@@ -56,4 +56,64 @@
             });
         }
     }
+
+    const keyLabels = {
+        VK_BACK: "BrowserBack",
+        VK_EXIT: "Exit",
+        VK_CHANNELS: "ChannelList",
+        VK_PLAY_PAUSE: "MediaPlayPause",
+        VK_RED: "ColorF0Red",
+        VK_GREEN: "ColorF1Green",
+        VK_YELLOW: "ColorF2Yellow",
+        VK_BLUE: "ColorF3Blue",
+        VK_STOP: "MediaStop",
+        VK_PLAY: "MediaPlay",
+        VK_PAUSE: "MediaPause",
+        VK_FAST_FWD: "MediaFastForward",
+        VK_REWIND: "MediaRewind",
+        VK_RECORD: "MediaRecord",
+        VK_0: "Digit0",
+        VK_1: "Digit1",
+        VK_2: "Digit2",
+        VK_3: "Digit3",
+        VK_4: "Digit4",
+        VK_5: "Digit5",
+        VK_6: "Digit6",
+        VK_7: "Digit7",
+        VK_8: "Digit8",
+        VK_9: "Digit9",
+        VK_CHANNEL_UP: "ChannelUp",
+        VK_CHANNEL_DOWN: "ChannelDown",
+        VK_SUBTITLE: "Subtitle",
+        VK_GUIDE: "Guide",
+        VK_CHANNELS: "ChannelList",
+        VK_INFO: "Info",
+        VK_LEFT: "ArrowLeft",
+        VK_RIGHT: "ArrowRight",
+        VK_UP: "ArrowUp",
+        VK_DOWN: "ArrowDown",
+        VK_ENTER: "Enter",
+        VK_MUTE: "AudioVolumeMute",
+        VK_VOLUME_UP: "AudioVolumeUp",
+        VK_VOLUME_DOWN: "AudioVolumeDown",
+    };
+
+    function keyHandler(originalEvent) {
+        if(originalEvent.code === "") {
+            originalEvent.preventDefault();
+            originalEvent.stopImmediatePropagation();
+            const keyLabel = Object.keys(keys).find(key => keys[key] === originalEvent.keyCode);
+            const newEvent = new KeyboardEvent(originalEvent.type, {
+                keyCode: originalEvent.keyCode,
+                code: keyLabels[keyLabel] || "0",
+                bubbles: true
+            });
+
+            window.dispatchEvent(newEvent);
+        }
+    }
+
+    window.addEventListener('keydown', keyHandler);
+    window.addEventListener('keyup', keyHandler);
+    window.addEventListener('keypress', keyHandler);
 })();
