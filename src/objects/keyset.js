@@ -44,7 +44,10 @@ hbbtv.objects.KeySet = (function() {
 
     Object.defineProperty(prototype, 'otherKeys', {
         get() {
-            return [];
+            if (privates.get(this).disabled) {
+                return [];
+            }
+            return hbbtv.bridge.manager.getOtherKeyValues();
         },
     });
 
@@ -56,7 +59,7 @@ hbbtv.objects.KeySet = (function() {
 
     Object.defineProperty(prototype, 'maximumOtherKeys', {
         get() {
-            return 0;
+            return hbbtv.bridge.manager.getKeyMaximumOtherKeys();
         },
     });
 

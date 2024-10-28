@@ -750,6 +750,20 @@ hbbtv.bridge.manager = (function() {
     };
 
     /**
+     * Get the other for this application.
+     *
+     * The calling application is identified by the token associated with the request.
+     *
+     * @return {number} The other keys for this application.
+     *
+     * @method
+     * @memberof bridge.manager#
+     */
+    exported.getOtherKeyValues = function() {
+        return hbbtv.native.request('Manager.getOtherKeyValues').result;
+    };
+
+    /**
      * Get the maximum keyset available to applications.
      *
      * @return {number} }he maximum keyset available to applications.
@@ -759,6 +773,18 @@ hbbtv.bridge.manager = (function() {
      */
     exported.getKeyMaximumValue = function() {
         return hbbtv.native.request('Manager.getKeyMaximumValue').result;
+    };
+
+    /**
+     * Get the maximum other keys available to applications.
+     *
+     * @return {number} The maximum other keys available to applications.
+     *
+     * @method
+     * @memberof bridge.manager#
+     */
+    exported.getKeyMaximumValue = function() {
+        return hbbtv.native.request('Manager.getKeyMaximumOtherKeys').result;
     };
 
     /**

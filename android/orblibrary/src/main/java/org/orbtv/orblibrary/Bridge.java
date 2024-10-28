@@ -619,6 +619,20 @@ class Bridge extends AbstractBridge {
     }
 
     /**
+     * Get the other keys for this application.
+     *
+     * The calling application is identified by the token associated with the request.
+     *
+     * @param token The token associated with this request.
+     *
+     * @return The other keys for this application.
+     */
+    @Override
+    protected int[] Manager_getOtherKeyValues(BridgeToken token) {
+        return mApplicationManager.getOtherKeyValues(token.getAppId());
+    }
+
+    /**
      * Get the maximum keyset available to applications.
      *
      * @param token The token associated with this request.
@@ -631,18 +645,33 @@ class Bridge extends AbstractBridge {
     }
 
     /**
+     * Get the maximum other keys available to applications.
+     *
+     * @param token The token associated with this request.
+     *
+     * @return The maximum other keys available to applications.
+     */
+    @Override
+    protected int Manager_getKeyMaximumOtherKeys(BridgeToken token) {
+        return mApplicationManager.getKeyMaximumOtherKeys();
+    }
+
+    /**
      * Set the keyset for this application.
      *
      * The calling application is identified by the token associated with the request.
      *
      * @param token The token associated with this request.
      * @param value The keyset to set for this application.
+     * @param otherKeys The key events which are available to the browser & are not 
+     *    included in one of the keySet constants 
      *
      * @return The keyset for this application.
      */
     @Override
-    protected int Manager_setKeyValue(BridgeToken token, int value) {
-        return mApplicationManager.setKeyValue(token.getAppId(), value);
+    protected int Manager_setKeyValue(BridgeToken token, int value, List<String> otherKeys)
+    {
+        return mApplicationManager.setKeyValue(token.getAppId(), value, otherKeys);
     }
 
     /**

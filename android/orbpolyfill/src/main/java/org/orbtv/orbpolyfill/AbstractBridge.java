@@ -867,6 +867,17 @@ public abstract class AbstractBridge {
     protected abstract int Manager_getKeyValues(BridgeToken token);
 
     /**
+     * Get the other keys for this application.
+     *
+     * The calling application is identified by the token associated with the request.
+     *
+     * @param token The token associated with this request.
+     *
+     * @return The other keys for this application.
+     */
+    protected abstract int[] Manager_getOtherKeyValues(BridgeToken token);
+
+    /**
      * Get the maximum keyset available to applications.
      *
      * @param token The token associated with this request.
@@ -876,16 +887,27 @@ public abstract class AbstractBridge {
     protected abstract int Manager_getKeyMaximumValue(BridgeToken token);
 
     /**
+     * Get the maximum other keys available to applications.
+     *
+     * @param token The token associated with this request.
+     *
+     * @return The maximum other keys available to applications.
+     */
+    protected abstract int Manager_getKeyMaximumOtherKeys(BridgeToken token);
+
+    /**
      * Set the keyset for this application.
      *
      * The calling application is identified by the token associated with the request.
      *
      * @param token The token associated with this request.
      * @param value The keyset to set for this application.
+     * @param otherKeys The key events which are available to the browser & are not 
+     *    included in one of the keySet constants 
      *
      * @return The keyset for this application.
      */
-    protected abstract int Manager_setKeyValue(BridgeToken token, int value);
+    protected abstract int Manager_setKeyValue(BridgeToken token, int value, List<String> otherKeys);
 
     /**
      * Get the URL of an icon that represents the given key.
@@ -1748,6 +1770,18 @@ public abstract class AbstractBridge {
                 break;
             }
 
+            case "Manager.getOtherKeyValues": {
+                int[] resultOtherKeys = Manager_getOtherKeyValues(
+                        token
+                );
+                JSONArray result = new JSONArray();
+                for (int i : resultOtherKeys) {
+                    result.put(i);
+                }
+                response.put("result", result);
+                break;
+            }
+
             case "Manager.getKeyMaximumValue": {
                 int result = Manager_getKeyMaximumValue(
                         token
@@ -1756,10 +1790,27 @@ public abstract class AbstractBridge {
                 break;
             }
 
+            case "Manager.getKeyMaximumOtherKeys": {
+                int result = Manager_getKeyMaximumOtherKeys(
+                        token
+                );
+                response.put("result", result);
+                break;
+            }
+
             case "Manager.setKeyValue": {
+                List<String> otherKeysList = new ArrayList<>();
+                if (!params.isNull("otherKeys")) {
+                    JSONArray otherKeys = params.getJSONArray("otherKeys");
+                    for (int i = 0; i < otherKeys.length(); i++) {
+                        otherKeysList.add(otherKeys.getString(i));
+                    }
+                }
+
                 int result = Manager_setKeyValue(
                         token,
-                        params.getInt("value")
+                        params.getInt("value"),
+                        otherKeysList
                 );
                 response.put("result", result);
                 break;
