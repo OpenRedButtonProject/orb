@@ -382,47 +382,32 @@ bool Ait::PrintInfo(const S_AIT_TABLE *parsedAit)
  * @param appDescription
  * @return
  */
-std::string Ait::GetBaseURL(const Ait::S_AIT_APP_DESC *appDescription,
-    const Utils::S_DVB_TRIPLET currentService, const bool isNetworkAvailable,
-    uint16_t *protocolIdSelected)
+std::string Ait::ExtractBaseURL(const Ait::S_AIT_APP_DESC &appDescription,
+    const Utils::S_DVB_TRIPLET currentService, const bool isNetworkAvailable)
 {
     std::string result;
-    int ti;
     char tmp_url[256]; // TODO(C++-ize)
 
-    if (protocolIdSelected != nullptr)
+    for (int ti = 0; ti != appDescription.numTransports; ti++)
     {
-        *protocolIdSelected = 0;
-    }
-
-    for (ti = 0; ti != appDescription->numTransports; ti++)
-    {
-        if (appDescription->transportArray[ti].protocolId == AIT_PROTOCOL_HTTP &&
-            !appDescription->transportArray[ti].failedToLoad &&
+        if (appDescription.transportArray[ti].protocolId == AIT_PROTOCOL_HTTP &&
+            !appDescription.transportArray[ti].failedToLoad &&
             isNetworkAvailable)
         {
-            if (protocolIdSelected != nullptr)
-            {
-                *protocolIdSelected = AIT_PROTOCOL_HTTP;
-            }
-            result = appDescription->transportArray[ti].url.baseUrl;
+            result = appDescription.transportArray[ti].url.baseUrl;
             break;
         }
-        else if (appDescription->transportArray[ti].protocolId == AIT_PROTOCOL_OBJECT_CAROUSEL &&
-                 !appDescription->transportArray[ti].failedToLoad)
+        else if (appDescription.transportArray[ti].protocolId == AIT_PROTOCOL_OBJECT_CAROUSEL &&
+                 !appDescription.transportArray[ti].failedToLoad)
         {
-            if (protocolIdSelected != nullptr)
-            {
-                *protocolIdSelected = AIT_PROTOCOL_OBJECT_CAROUSEL;
-            }
             strcpy(tmp_url, "dvb://");
-            if (appDescription->transportArray[ti].oc.remoteConnection)
+            if (appDescription.transportArray[ti].oc.remoteConnection)
             {
                 sprintf(tmp_url + 6, "%x.%x.%x.%x",
-                    appDescription->transportArray[ti].oc.dvb.originalNetworkId,
-                    appDescription->transportArray[ti].oc.dvb.transportStreamId,
-                    appDescription->transportArray[ti].oc.dvb.serviceId,
-                    appDescription->transportArray[ti].oc.componentTag);
+                    appDescription.transportArray[ti].oc.dvb.originalNetworkId,
+                    appDescription.transportArray[ti].oc.dvb.transportStreamId,
+                    appDescription.transportArray[ti].oc.dvb.serviceId,
+                    appDescription.transportArray[ti].oc.componentTag);
                 strcat(tmp_url, "/");
             }
             else
@@ -431,7 +416,7 @@ std::string Ait::GetBaseURL(const Ait::S_AIT_APP_DESC *appDescription,
                     currentService.originalNetworkId,
                     currentService.transportStreamId,
                     currentService.serviceId,
-                    appDescription->transportArray[ti].oc.componentTag);
+                    appDescription.transportArray[ti].oc.componentTag);
                 strcat(tmp_url, "/");
             }
 
@@ -445,6 +430,26 @@ std::string Ait::GetBaseURL(const Ait::S_AIT_APP_DESC *appDescription,
     }
 
     return result;
+}
+
+uint16_t Ait::ExtractProtocolId(const Ait::S_AIT_APP_DESC &appDescription, const bool isNetworkAvailable)
+{
+    for (int ti = 0; ti != appDescription.numTransports; ti++)
+    {
+        if (appDescription.transportArray[ti].protocolId == AIT_PROTOCOL_HTTP &&
+            !appDescription.transportArray[ti].failedToLoad &&
+            isNetworkAvailable)
+        {
+            return AIT_PROTOCOL_HTTP;
+        }
+        else if (appDescription.transportArray[ti].protocolId == AIT_PROTOCOL_OBJECT_CAROUSEL &&
+                 !appDescription.transportArray[ti].failedToLoad)
+        {
+            return AIT_PROTOCOL_OBJECT_CAROUSEL;
+        }
+    }
+
+    return 0;
 }
 
 /**

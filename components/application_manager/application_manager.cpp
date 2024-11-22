@@ -26,57 +26,32 @@
 #include <cstring>
 #include <iostream>
 #include <string>
+#include <stdexcept>
 
 #include "ait.h"
 #include "log.h"
 #include "utils.h"
 #include "xml_parser.h"
 
+class AppSessionCallback : public App::SessionCallback
+{
+public:
+    AppSessionCallback(ApplicationManager::SessionCallback *sessionCallback, uint16_t *currentAppId)
+        : m_sessionCallback(sessionCallback), m_currentAppId(currentAppId)
+    { }
+    
+    void ShowApplication(uint16_t appId) { if (appId == *m_currentAppId) m_sessionCallback->ShowApplication(); }
+    void HideApplication(uint16_t appId) { if (appId == *m_currentAppId) m_sessionCallback->HideApplication(); }
+    void DispatchTransitionedToBroadcastRelatedEvent(uint16_t appId) { if (appId == *m_currentAppId) m_sessionCallback->DispatchTransitionedToBroadcastRelatedEvent(); }
+    void DispatchApplicationSchemeUpdatedEvent(uint16_t appId, const std::string &scheme) { if (appId == *m_currentAppId) m_sessionCallback->DispatchApplicationSchemeUpdatedEvent(scheme); }
+    int GetParentalControlAge() { return m_sessionCallback->GetParentalControlAge(); }
+    std::string GetParentalControlRegion() { return m_sessionCallback->GetParentalControlRegion(); }
+    std::string GetParentalControlRegion3() { return m_sessionCallback->GetParentalControlRegion3(); }
 
-#define KEY_SET_RED 0x1
-#define KEY_SET_GREEN 0x2
-#define KEY_SET_YELLOW 0x4
-#define KET_SET_BLUE 0x8
-#define KEY_SET_NAVIGATION 0x10
-#define KEY_SET_VCR 0x20
-#define KEY_SET_SCROLL 0x40
-#define KEY_SET_INFO 0x80
-#define KEY_SET_NUMERIC 0x100
-#define KEY_SET_ALPHA 0x200
-#define KEY_SET_OTHER 0x400
-
-#define VK_RED 403
-#define VK_GREEN 404
-#define VK_YELLOW 405
-#define VK_BLUE 406
-#define VK_UP 38
-#define VK_DOWN 40
-#define VK_LEFT 37
-#define VK_RIGHT 39
-#define VK_ENTER 13
-#define VK_BACK 461
-#define VK_PLAY 415
-#define VK_STOP 413
-#define VK_PAUSE 19
-#define VK_FAST_FWD 417
-#define VK_REWIND 412
-#define VK_NEXT 425
-#define VK_PREV 424
-#define VK_PLAY_PAUSE 402
-#define VK_RECORD 416
-#define VK_PAGE_UP 33
-#define VK_PAGE_DOWN 34
-#define VK_INFO 457
-#define VK_NUMERIC_START 48
-#define VK_NUMERIC_END 57
-#define VK_ALPHA_START 65
-#define VK_ALPHA_END 90
-
-static bool IsKeyNavigation(uint16_t code);
-static bool IsKeyNumeric(uint16_t code);
-static bool IsKeyAlpha(uint16_t code);
-static bool IsKeyVcr(uint16_t code);
-static bool IsKeyScroll(uint16_t code);
+private:
+    ApplicationManager::SessionCallback *m_sessionCallback;
+    uint16_t *m_currentAppId;
+};
 
 /**
  * Application manager
@@ -85,10 +60,11 @@ static bool IsKeyScroll(uint16_t code);
  */
 ApplicationManager::ApplicationManager(std::unique_ptr<SessionCallback> sessionCallback) :
     m_sessionCallback(std::move(sessionCallback)),
-    m_nextAppId(0),
     m_aitTimeout([&] {
-    OnSelectedServiceAitTimeout();
-}, std::chrono::milliseconds(Utils::AIT_TIMEOUT))
+        OnSelectedServiceAitTimeout();
+    },
+    std::chrono::milliseconds(Utils::AIT_TIMEOUT)),
+    m_appSessionCallback(std::shared_ptr<App::SessionCallback>(new AppSessionCallback(m_sessionCallback.get(), &m_appId)))
 {
     m_sessionCallback->HideApplication();
 }
@@ -119,13 +95,10 @@ bool ApplicationManager::CreateApplication(uint16_t callingAppId, const std::str
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
     LOG(LOG_INFO, "CreateApplication");
-    if (callingAppId != INVALID_APP_ID)
+    if (m_apps.count(callingAppId) <= 0)
     {
-        if (!m_app.isRunning || m_app.id != callingAppId)
-        {
-            LOG(LOG_INFO, "Called by non-running app, early out");
-            return false;
-        }
+        LOG(LOG_INFO, "Called by non-running app, early out");
+        return false;
     }
     if (url.empty())
     {
@@ -148,9 +121,17 @@ bool ApplicationManager::CreateApplication(uint16_t callingAppId, const std::str
             appDescription = Ait::FindApp(m_ait.Get(), info.orgId, info.appId);
             if (appDescription)
             {
-                auto new_app = App::CreateAppFromAitDesc(appDescription, m_currentService,
-                    m_isNetworkAvailable, info.parameters, true, false);
-                result = RunApp(new_app);
+                try
+                {
+                    App *new_app = new App(*appDescription, m_currentService,
+                        m_isNetworkAvailable, info.parameters, true, false, m_appSessionCallback);
+                    RunApp(new_app);
+                    result = true;
+                }
+                catch(const std::exception& e)
+                {
+                    LOG(LOG_ERROR, "%s", e.what());
+                }
             }
             else
             {
@@ -174,7 +155,15 @@ bool ApplicationManager::CreateApplication(uint16_t callingAppId, const std::str
             else
             {
                 LOG(LOG_INFO, "Locator resource is ENTRY PAGE");
-                result = RunApp(App::CreateAppFromUrl(url));
+                try
+                {
+                    RunApp(new App(url, m_appSessionCallback));
+                    result = true;
+                }
+                catch (const std::runtime_error& e)
+                {
+                    LOG(LOG_ERROR, "Error creating app: %s", e.what());
+                }
             }
             break;
         }
@@ -210,7 +199,7 @@ void ApplicationManager::DestroyApplication(uint16_t callingAppId)
         KillRunningApp();
         OnRunningAppExited();
     }
-    if (!m_app.isRunning || m_app.id != callingAppId)
+    if (m_apps.count(callingAppId) <= 0)
     {
         LOG(LOG_INFO, "Called by non-running app, early out");
         return;
@@ -228,13 +217,9 @@ void ApplicationManager::DestroyApplication(uint16_t callingAppId)
 void ApplicationManager::ShowApplication(uint16_t callingAppId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    if (m_app.id == callingAppId)
+    if (m_apps.count(callingAppId) > 0)
     {
-        m_app.isHidden = false;
-        if (m_app.isRunning)
-        {
-            m_sessionCallback->ShowApplication();
-        }
+        m_apps[callingAppId]->SetState(App::FOREGROUND_STATE);
     }
 }
 
@@ -246,13 +231,9 @@ void ApplicationManager::ShowApplication(uint16_t callingAppId)
 void ApplicationManager::HideApplication(uint16_t callingAppId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    if (m_app.id == callingAppId)
+    if (m_apps.count(callingAppId) > 0)
     {
-        m_app.isHidden = true;
-        if (m_app.isRunning)
-        {
-            m_sessionCallback->HideApplication();
-        }
+        m_apps[callingAppId]->SetState(App::BACKGROUND_STATE);
     }
 }
 
@@ -264,43 +245,16 @@ void ApplicationManager::HideApplication(uint16_t callingAppId)
  * @param otherKeys optional other keys
  * @return The key set mask for the application.
  */
-uint16_t ApplicationManager::SetKeySetMask(uint16_t appId, uint16_t keySetMask, std::vector<uint16_t> otherKeys) {
+uint16_t ApplicationManager::SetKeySetMask(uint16_t appId, uint16_t keySetMask, std::vector<uint16_t> otherKeys)
+{
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
-    if (m_app.id != appId) {
+    if (m_apps.count(appId) <= 0)
+    {
         return 0;
     }
 
-    std::string currentScheme = m_app.getScheme();
-
-    // Compatibility check for older versions
-    bool isOldVersion = m_app.versionMinor > 1; 
-    bool isLinkedAppScheme12 = currentScheme == LINKED_APP_SCHEME_1_2;
-
-    // Key events VK_STOP, VK_PLAY, VK_PAUSE, VK_PLAY_PAUSE, VK_FAST_FWD,
-    // VK_REWIND and VK_RECORD shall always be available to linked applications 
-    // that are controlling media presentation without requiring the application 
-    // to be activated first (2.0.4, App. O.7)
-    bool isException = isLinkedAppScheme12 && m_app.versionMinor == 7;
-
-    if (!m_app.isActivated && currentScheme != LINKED_APP_SCHEME_2) {
-        if ((keySetMask & KEY_SET_VCR) != 0 && isOldVersion && !isException) {
-            keySetMask &= ~KEY_SET_VCR;
-        }
-        if ((keySetMask & KEY_SET_NUMERIC) != 0 && !isLinkedAppScheme12 && isOldVersion) {
-            keySetMask &= ~KEY_SET_NUMERIC;
-        }
-        if ((keySetMask & KEY_SET_OTHER) != 0 && !isLinkedAppScheme12 && isOldVersion) {
-            keySetMask &= ~KEY_SET_OTHER;
-        }
-    }
-
-    m_app.keySetMask = keySetMask;
-    if ((keySetMask & KEY_SET_OTHER) != 0) {
-        m_app.otherKeys = otherKeys; // Survived all checks
-    }
-
-    return keySetMask;
+    return m_apps[appId]->SetKeySetMask(keySetMask, otherKeys);
 }
 
 /**
@@ -312,9 +266,9 @@ uint16_t ApplicationManager::SetKeySetMask(uint16_t appId, uint16_t keySetMask, 
 uint16_t ApplicationManager::GetKeySetMask(uint16_t appId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    if (m_app.id == appId)
+    if (m_apps.count(appId) > 0)
     {
-        return m_app.keySetMask;
+        return m_apps[appId]->GetKeySetMask();
     }
     return 0;
 }
@@ -328,9 +282,9 @@ uint16_t ApplicationManager::GetKeySetMask(uint16_t appId)
 std::vector<uint16_t> ApplicationManager::GetOtherKeyValues(uint16_t appId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    if (m_app.id == appId)
+    if (m_apps.count(appId) > 0)
     {
-        return m_app.otherKeys;
+        return m_apps[appId]->GetOtherKeyValues();
     }
     return std::vector<uint16_t>();
 }
@@ -338,9 +292,9 @@ std::vector<uint16_t> ApplicationManager::GetOtherKeyValues(uint16_t appId)
 std::string ApplicationManager::GetApplicationScheme(uint16_t appId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    if (m_app.id == appId)
+    if (m_apps.count(appId) > 0)
     {
-        return m_app.getScheme();
+        return m_apps[appId]->GetScheme();
     }
     return LINKED_APP_SCHEME_1_1;
 }
@@ -356,24 +310,11 @@ std::string ApplicationManager::GetApplicationScheme(uint16_t appId)
 bool ApplicationManager::InKeySet(uint16_t appId, uint16_t keyCode)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    bool otherFound = false;
-    if (m_app.id == appId)
+    if (m_apps.count(appId) > 0)
     {
-        if ((m_app.keySetMask & GetKeySet(keyCode)) != 0)
-        {
-            if ((m_app.keySetMask & KEY_SET_OTHER) != 0) {
-                auto it = std::find(m_app.otherKeys.begin(), m_app.otherKeys.end(), keyCode);
-                if (it == m_app.otherKeys.end()) {
-                    return false;
-                }
-            }
-            if (!m_app.isActivated)
-            {
-                m_app.isActivated = true;
-            }
-            return true;
-        }
+        return m_apps[appId]->InKeySet(keyCode);
     }
+    LOG(LOG_INFO, "InKeySet(): No app with id %d found. Returning false.", appId);
     return false;
 }
 
@@ -491,9 +432,18 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
 
         if (app_description)
         {
-            auto new_app = App::CreateAppFromAitDesc(app_description, m_currentService,
-                m_isNetworkAvailable, "", isDvbi, false);
-            result = RunApp(new_app);
+            try
+            {
+                auto new_app = new App(*app_description, m_currentService,
+                    m_isNetworkAvailable, "", isDvbi, false, m_appSessionCallback);
+                RunApp(new_app);
+                result = true;
+            }
+            catch (const std::runtime_error& e)
+            {
+                LOG(LOG_ERROR, "Error creating app: %s", e.what());
+            }
+
             if (!result)
             {
                 LOG(LOG_ERROR, "Could not find app (org_id=%d, app_id=%d)",
@@ -544,11 +494,19 @@ bool ApplicationManager::RunTeletextApplication()
 
         return false;
     }
-
-    auto newApp = App::CreateAppFromAitDesc(appDescription, m_currentService,
-        m_isNetworkAvailable,
-        "", true, false);
-    return RunApp(newApp);
+    try
+    {
+        auto newApp = new App(*appDescription, m_currentService,
+            m_isNetworkAvailable,
+            "", true, false, m_appSessionCallback);
+        RunApp(newApp);
+        return true;
+    }
+    catch (const std::runtime_error& e)
+    {
+        LOG(LOG_ERROR, "Error creating app: %s", e.what());
+    }
+    return false;
 }
 
 /**
@@ -565,7 +523,7 @@ bool ApplicationManager::IsRequestAllowed(uint16_t callingAppId, const
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
-    if (!m_app.isRunning || m_app.id != callingAppId)
+    if (m_apps.count(m_appId) <= 0 || m_appId != callingAppId)
     {
         return false;
     }
@@ -583,7 +541,7 @@ bool ApplicationManager::IsRequestAllowed(uint16_t callingAppId, const
         }
         case MethodRequirement::FOR_BROADCAST_APP_ONLY:
         {
-            return m_app.isBroadcast;
+            return m_apps[m_appId]->IsBroadcast();
         }
         case MethodRequirement::FOR_BROADCAST_OR_TRANSITIONING_APP_ONLY:
         {
@@ -592,11 +550,11 @@ bool ApplicationManager::IsRequestAllowed(uint16_t callingAppId, const
         case MethodRequirement::FOR_TRUSTED_APP_ONLY:
         {
             // Check document URL is inside app boundaries
-            if (!Utils::CheckBoundaries(callingPageUrl, m_app.entryUrl, m_app.boundaries))
+            if (!Utils::CheckBoundaries(callingPageUrl, m_apps[m_appId]->GetEntryUrl(), m_apps[m_appId]->GetAitDescription().boundaries))
             {
                 return false;
             }
-            return m_app.isTrusted;
+            return m_apps[m_appId]->IsTrusted();
         }
         default:
         {
@@ -614,18 +572,22 @@ std::map<std::string, std::string> ApplicationManager::GetCurrentAppNames()
 {
     std::map<std::string, std::string> result;
     LOG(LOG_DEBUG, "GetCurrentAppNames");
-    std::map<uint32_t, std::string>::iterator it = m_app.names.begin();
-    while (it != m_app.names.end())
+    if (m_apps.count(m_appId) > 0)
     {
-        uint32_t lang_code = it->first;
-        std::string name = it->second;
-        std::string langCodeString("");
-        langCodeString += static_cast<char>((lang_code >> 16) & 0xff);
-        langCodeString += static_cast<char>((lang_code >> 8) & 0xff);
-        langCodeString += static_cast<char>((lang_code & 0xff));
-        result[langCodeString] = name;
-        LOG(LOG_DEBUG, "lang=%s name=%s", langCodeString.c_str(), name.c_str());
-        it++;
+        std::map<uint32_t, std::string> names = m_apps[m_appId]->GetNames();
+        std::map<uint32_t, std::string>::iterator it = names.begin();
+        while (it != names.end())
+        {
+            uint32_t lang_code = it->first;
+            std::string name = it->second;
+            std::string langCodeString("");
+            langCodeString += static_cast<char>((lang_code >> 16) & 0xff);
+            langCodeString += static_cast<char>((lang_code >> 8) & 0xff);
+            langCodeString += static_cast<char>((lang_code & 0xff));
+            result[langCodeString] = name;
+            LOG(LOG_DEBUG, "lang=%s name=%s", langCodeString.c_str(), name.c_str());
+            it++;
+        }
     }
     return result;
 }
@@ -708,18 +670,16 @@ void ApplicationManager::OnLoadApplicationFailed(uint16_t appId)
         return;
     }
 
-    if (!m_app.isRunning || m_app.id != appId)
+    if (m_apps.count(appId) <= 0)
     {
         return;
     }
     auto ait = m_ait.Get();
-    if (ait != nullptr && m_app.isRunning && m_app.appId != 0 && m_app.orgId != 0)
+    Ait::S_AIT_APP_DESC aitDesc = m_apps[appId]->GetAitDescription();
+    if (ait != nullptr && aitDesc.appId != 0 && aitDesc.orgId != 0)
     {
-        Ait::S_AIT_APP_DESC *app = Ait::FindApp(ait, m_app.orgId, m_app.appId);
-        if (app != nullptr)
-        {
-            Ait::AppSetTransportFailedToLoad(app, m_app.protocolId);
-        }
+        Ait::S_AIT_APP_DESC *app = Ait::FindApp(ait, aitDesc.orgId, aitDesc.appId);
+        Ait::AppSetTransportFailedToLoad(app, m_apps[appId]->GetProtocolId());
     }
     KillRunningApp();
     OnPerformBroadcastAutostart();
@@ -735,9 +695,9 @@ void ApplicationManager::OnLoadApplicationFailed(uint16_t appId)
 void ApplicationManager::OnApplicationPageChanged(uint16_t appId, const std::string &url)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    if (m_app.isRunning && m_app.id == appId)
+    if (m_apps.count(appId) > 0)
     {
-        m_app.loadedUrl = url;
+        m_apps[appId]->loadedUrl = url;
         if (!Utils::IsInvalidDvbTriplet(m_currentService) && 
             url.find("https://www.live.bbctvapps.co.uk/tap/iplayer") == std::string::npos)
         {
@@ -762,20 +722,21 @@ void ApplicationManager::OnSelectedServiceAitReceived()
     {
         LOG(LOG_INFO, "New service selected and first AIT received");
 
-        if (m_app.isRunning)
+        if (m_apps.count(m_appId) > 0)
         {
-            if (m_app.isBroadcast)
+            if (m_apps[m_appId]->IsBroadcast())
             {
+                Ait::S_AIT_APP_DESC aitDesc = m_apps[m_appId]->GetAitDescription();
                 LOG(LOG_INFO,
                     "OnSelectedServiceAitReceived: Pre-existing broadcast-related app already running");
-                if (m_app.isServiceBound)
+                if (aitDesc.appDesc.serviceBound)
                 {
                     LOG(LOG_INFO, "Kill running app (is service bound)");
                     KillRunningApp();
                 }
                 else
                 {
-                    auto signalled = Ait::FindApp(ait, m_app.orgId, m_app.appId);
+                    auto signalled = Ait::FindApp(ait, aitDesc.orgId, aitDesc.appId);
                     if (signalled == nullptr)
                     {
                         LOG(LOG_INFO, "Kill running app (is not signalled in the new AIT)");
@@ -786,7 +747,7 @@ void ApplicationManager::OnSelectedServiceAitReceived()
                         LOG(LOG_INFO, "Kill running app (signalled with control code KILL)");
                         KillRunningApp();
                     }
-                    else if (!Ait::AppHasTransport(signalled, m_app.protocolId))
+                    else if (!Ait::AppHasTransport(signalled, m_apps[m_appId]->GetProtocolId()))
                     {
                         LOG(LOG_INFO,
                             "Kill running app (is not signalled in the new AIT with the same transport protocol)");
@@ -794,7 +755,7 @@ void ApplicationManager::OnSelectedServiceAitReceived()
                     }
                     else
                     {
-                        m_app.setScheme(signalled->scheme);
+                        m_apps[m_appId]->Update(*signalled, m_isNetworkAvailable);
                     }
                 }
             }
@@ -808,13 +769,17 @@ void ApplicationManager::OnSelectedServiceAitReceived()
                 }
             }
         }
-        if (!m_app.isRunning)
+        if (m_apps.count(m_appId) <= 0)
         {
             OnPerformBroadcastAutostart();
         }
         else
         {
-            m_sessionCallback->DispatchApplicationSchemeUpdatedEvent(m_app.getScheme());
+            Ait::S_AIT_APP_DESC aitDesc = m_apps[m_appId]->GetAitDescription();
+            auto signalled = Ait::FindApp(ait, aitDesc.orgId, aitDesc.appId);
+            if (signalled != nullptr) {
+                m_apps[m_appId]->Update(*signalled, m_isNetworkAvailable);
+            }
         }
     }
 }
@@ -842,24 +807,25 @@ void ApplicationManager::OnSelectedServiceAitUpdated()
         return;
     }
 
-    if (m_app.isRunning)
+    if (m_apps.count(m_appId) > 0)
     {
-        if (!m_app.isBroadcast)
+        if (!m_apps[m_appId]->IsBroadcast())
         {
             // If the running app is not broadcast-related, we should not be tuned to broadcast
             LOG(LOG_ERROR, "Unexpected condition (AIT updated but app is not broadcast-related)");
             return;
         }
 
+        Ait::S_AIT_APP_DESC aitDesc = m_apps[m_appId]->GetAitDescription();
         LOG(LOG_INFO,
             "OnSelectedServiceAitUpdated: Pre-existing broadcast-related app already running");
-        auto signalled = Ait::FindApp(ait, m_app.orgId, m_app.appId);
+        auto signalled = Ait::FindApp(ait, aitDesc.orgId, aitDesc.appId);
         if (signalled == nullptr)
         {
             LOG(LOG_INFO, "Kill running app (is not signalled in the updated AIT)");
             KillRunningApp();
         }
-        else if (!Ait::AppHasTransport(signalled, m_app.protocolId))
+        else if (!Ait::AppHasTransport(signalled, m_apps[m_appId]->GetProtocolId()))
         {
             LOG(LOG_INFO,
                 "Kill running app (is not signalled in the updated AIT with the same transport protocol)");
@@ -872,17 +838,13 @@ void ApplicationManager::OnSelectedServiceAitUpdated()
         }
         else
         {
-            m_app.setScheme(signalled->scheme);
+            m_apps[m_appId]->Update(*signalled, m_isNetworkAvailable);
         }
     }
 
-    if (!m_app.isRunning)
+    if (m_apps.count(m_appId) <= 0)
     {
         OnPerformBroadcastAutostart();
-    }
-    else
-    {
-        m_sessionCallback->DispatchApplicationSchemeUpdatedEvent(m_app.getScheme());
     }
 }
 
@@ -925,11 +887,15 @@ void ApplicationManager::OnPerformBroadcastAutostart()
     {
         LOG(LOG_ERROR, "OnPerformAutostart Start autostart app.");
 
-        auto newApp = App::CreateAppFromAitDesc(app_desc, m_currentService, m_isNetworkAvailable,
-            "", true, false);
-        if (!RunApp(newApp))
+        try
         {
-            LOG(LOG_ERROR, "OnPerformAutostart Failed to create autostart app.");
+            auto newApp = new App(*app_desc, m_currentService, m_isNetworkAvailable,
+            "", true, false, m_appSessionCallback);
+            RunApp(newApp);
+        }
+        catch(const std::exception& e)
+        {
+            LOG(LOG_ERROR, "%s", e.what());
         }
     }
     else
@@ -944,62 +910,32 @@ void ApplicationManager::OnPerformBroadcastAutostart()
  * @param app The app to run.
  * @return True on success, false on failure.
  */
-bool ApplicationManager::RunApp(const App &app)
+void ApplicationManager::RunApp(App *app)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    if (!app.entryUrl.empty())
+
+    m_apps.erase(m_appId);
+    if (!app->IsBroadcast() && !Utils::IsInvalidDvbTriplet(m_currentService))
     {
-        /* Note: XML AIt uses the alpha-2 region codes as defined in ISO 3166-1.
-         * DVB's parental_rating_descriptor uses the 3-character code as specified in ISO 3166. */
-        std::string parental_control_region = m_sessionCallback->GetParentalControlRegion();
-        std::string parental_control_region3 = m_sessionCallback->GetParentalControlRegion3();
-        int parental_control_age = m_sessionCallback->GetParentalControlAge();
-        //if none of the parental ratings provided in the broadcast AIT or XML AIT are supported
-        //by the terminal), the request to launch the application shall fail.
-        if (Ait::IsAgeRestricted(app.parentalRatings, parental_control_age,
-            parental_control_region, parental_control_region3))
-        {
-            LOG(LOG_ERROR, "%s, Parental Control Age RESTRICTED for %s: only %d content accepted",
-                app.loadedUrl.c_str(), parental_control_region.c_str(), parental_control_age);
-            return false;
-        }
-
-        if (++m_nextAppId == 0)
-        {
-            ++m_nextAppId;
-        }
-
-        m_app = app;
-        m_app.id = m_nextAppId;
-        m_app.isRunning = true;
-
-        if (m_app.isHidden)
-        {
-            m_sessionCallback->HideApplication();
-        }
-
-        if (!app.isBroadcast)
-        {
-            // The app is broadcast-independent (e.g. created from a URL), stop the broadcast if there
-            // is a current service.
-            if (!Utils::IsInvalidDvbTriplet(m_currentService))
-            {
-                m_sessionCallback->StopBroadcast();
-                m_currentService = Utils::MakeInvalidDvbTriplet();
-            }
-        }
-
-        m_sessionCallback->LoadApplication(m_app.id, m_app.entryUrl.c_str(),
-            m_app.graphicsConstraints.size(), m_app.graphicsConstraints);
-
-        if (!m_app.isHidden)
-        {
-            m_sessionCallback->ShowApplication();
-        }
-
-        return true;
+        m_sessionCallback->StopBroadcast();
+        m_currentService = Utils::MakeInvalidDvbTriplet();
     }
-    return false;
+    
+    m_sessionCallback->LoadApplication(app->GetId(), app->GetEntryUrl().c_str(),
+        app->GetAitDescription().graphicsConstraints.size(), app->GetAitDescription().graphicsConstraints);
+
+    m_appId = app->GetId();
+    m_apps[m_appId] = std::unique_ptr<App>(app);
+
+    // Call explicitly Show/Hide 
+    if (m_apps[m_appId]->GetState() != App::BACKGROUND_STATE)
+    {
+        m_sessionCallback->ShowApplication();
+    }
+    else
+    {
+        m_sessionCallback->HideApplication();
+    }
 }
 
 /**
@@ -1009,12 +945,8 @@ void ApplicationManager::KillRunningApp()
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     m_sessionCallback->HideApplication();
-    if (++m_nextAppId == 0)
-    {
-        ++m_nextAppId;
-    }
-    m_sessionCallback->LoadApplication(m_nextAppId, "about:blank");
-    m_app.isRunning = false;
+    m_sessionCallback->LoadApplication(INVALID_APP_ID, "about:blank");
+    m_appId = INVALID_APP_ID;
 }
 
 /**
@@ -1032,71 +964,28 @@ bool ApplicationManager::TransitionRunningAppToBroadcastRelated()
         LOG(LOG_INFO, "Cannot transition to broadcast (no broadcast AIT)");
         return false;
     }
-    if (!m_app.isRunning || (m_app.appId == 0) || (m_app.orgId == 0))
+    if (m_apps.count(m_appId) <= 0)
     {
-        LOG(LOG_INFO, "Cannot transition to broadcast (no running app or app/org id is 0)");
+        LOG(LOG_INFO, "Cannot transition to broadcast (no running app)");
         return false;
     }
-    const Ait::S_AIT_APP_DESC *app = Ait::FindApp(ait, m_app.orgId, m_app.appId);
+    Ait::S_AIT_APP_DESC aitDesc = m_apps[m_appId]->GetAitDescription();
+    if (aitDesc.appId == 0 || aitDesc.orgId == 0)
+    {
+        LOG(LOG_INFO, "Cannot transition to broadcast (app/org id is 0)");
+        return false;
+    }
+    // get the latest ait description from the ait table
+    const Ait::S_AIT_APP_DESC *app = Ait::FindApp(ait, aitDesc.orgId, aitDesc.appId);
     if (app == nullptr)
     {
         LOG(LOG_INFO, "Cannot transition to broadcast (app is not signalled in the new AIT)");
         return false;
     }
-    if (app->controlCode != Ait::APP_CTL_AUTOSTART && app->controlCode != Ait::APP_CTL_PRESENT)
-    {
-        LOG(LOG_INFO,
-            "Cannot transition to broadcast (app is not signalled in the new AIT as AUTOSTART or PRESENT)");
-        return false;
-    }
-
-    // Try and find entry URL in boundaries
-    uint8_t i;
-    bool entry_url_in_boundaries = false;
-    for (i = 0; i < app->numTransports; i++)
-    {
-        if (app->transportArray[i].protocolId == AIT_PROTOCOL_HTTP)
-        {
-            if (Utils::CheckBoundaries(m_app.entryUrl, app->transportArray[i].url.baseUrl,
-                app->boundaries))
-            {
-                entry_url_in_boundaries = true;
-                break;
-            }
-        }
-    }
-    if (!entry_url_in_boundaries)
-    {
-        LOG(LOG_INFO, "Cannot transition to broadcast (entry URL is not in boundaries)");
-        return false;
-    }
-
-    // Try and find loaded URL in boundaries
-    bool loadedUrlInBoundaries = false;
-    for (i = 0; i < app->numTransports; i++)
-    {
-        if (app->transportArray[i].protocolId == AIT_PROTOCOL_HTTP)
-        {
-            if (Utils::CheckBoundaries(m_app.loadedUrl, app->transportArray[i].url.baseUrl,
-                app->boundaries))
-            {
-                loadedUrlInBoundaries = true;
-                break;
-            }
-        }
-    }
-    if (!loadedUrlInBoundaries)
-    {
-        LOG(LOG_INFO, "Cannot transition to broadcast (loaded URL is not in boundaries)");
-        return false;
-    }
-
-    m_app.isBroadcast = true;
-    m_app.isServiceBound = app->appDesc.serviceBound;
+    m_apps[m_appId]->Update(*app, m_isNetworkAvailable);
+    
     /* Note: what about app.is_trusted, app.parental_ratings, ... */
-    m_sessionCallback->DispatchTransitionedToBroadcastRelatedEvent();
-
-    return true;
+    return m_apps[m_appId]->TransitionToBroadcastRelated();
 }
 
 /**
@@ -1106,7 +995,11 @@ bool ApplicationManager::TransitionRunningAppToBroadcastRelated()
  */
 bool ApplicationManager::TransitionRunningAppToBroadcastIndependent()
 {
-    m_app.isBroadcast = false;
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
+    if (m_apps.count(m_appId) > 0)
+    {
+        return m_apps[m_appId]->TransitionToBroadcastIndependent();
+    }
     return true;
 }
 
@@ -1143,106 +1036,17 @@ const Ait::S_AIT_APP_DESC * ApplicationManager::GetAutoStartApp(const Ait::S_AIT
 }
 
 /**
- * Return the KeySet a key code belongs to.
- *
- * @param keyCode The key code.
- * @return The key set.
- */
-uint16_t ApplicationManager::GetKeySet(const uint16_t keyCode)
-{
-    if (IsKeyNavigation(keyCode))
-    {
-        return KEY_SET_NAVIGATION;
-    }
-    else if (IsKeyNumeric(keyCode))
-    {
-        return KEY_SET_NUMERIC;
-    }
-    else if (IsKeyAlpha(keyCode))
-    {
-        return KEY_SET_ALPHA;
-    }
-    else if (IsKeyVcr(keyCode))
-    {
-        return KEY_SET_VCR;
-    }
-    else if (IsKeyScroll(keyCode))
-    {
-        return KEY_SET_SCROLL;
-    }
-    else if (keyCode == VK_RED)
-    {
-        return KEY_SET_RED;
-    }
-    else if (keyCode == VK_GREEN)
-    {
-        return KEY_SET_GREEN;
-    }
-    else if (keyCode == VK_YELLOW)
-    {
-        return KEY_SET_YELLOW;
-    }
-    else if (keyCode == VK_BLUE)
-    {
-        return KET_SET_BLUE;
-    }
-    else if (keyCode == VK_INFO)
-    {
-        return KEY_SET_INFO;
-    }
-    else if (keyCode == VK_RECORD)
-    {
-        return KEY_SET_OTHER;
-    }
-
-    return 0;
-}
-
-/**
  * Provide access to the AIT organization id
  *
  * @return uint32_t the organization id
  */
 uint32_t ApplicationManager::GetOrganizationId()
 {
-    LOG(LOG_INFO, "The organization id is %d\n", m_app.orgId);
-    return m_app.orgId;
-}
-
-static bool IsKeyNavigation(uint16_t code)
-{
-    return code == VK_UP ||
-           code == VK_DOWN ||
-           code == VK_LEFT ||
-           code == VK_RIGHT ||
-           code == VK_ENTER ||
-           code == VK_BACK;
-}
-
-static bool IsKeyNumeric(uint16_t code)
-{
-    return code >= VK_NUMERIC_START && code <= VK_NUMERIC_END;
-}
-
-static bool IsKeyAlpha(uint16_t code)
-{
-    return code >= VK_ALPHA_START && code <= VK_ALPHA_END;
-}
-
-static bool IsKeyVcr(uint16_t code)
-{
-    return code == VK_PLAY ||
-           code == VK_STOP ||
-           code == VK_PAUSE ||
-           code == VK_FAST_FWD ||
-           code == VK_REWIND ||
-           code == VK_NEXT ||
-           code == VK_PREV ||
-           code == VK_PLAY_PAUSE;
-}
-
-static bool IsKeyScroll(uint16_t code)
-{
-    return code == VK_PAGE_UP ||
-           code == VK_PAGE_DOWN;
+    if (m_apps.count(m_appId) > 0)
+    {
+        LOG(LOG_INFO, "The organization id is %d\n", m_apps[m_appId]->GetAitDescription().orgId);
+        return m_apps[m_appId]->GetAitDescription().orgId;
+    }
+    LOG(LOG_INFO, "Cannot retrieve organization id (no running app). Returning -1.\n");
+    return -1;
 }

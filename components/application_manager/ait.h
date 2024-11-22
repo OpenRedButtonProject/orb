@@ -88,21 +88,21 @@ public:
 
     typedef struct
     {
-        uint32_t langCode;
+        uint32_t langCode = 0;
         std::string name;
     } S_LANG_STRING;
 
     typedef struct
     {
-        uint8_t numLangs;
+        uint8_t numLangs = 0;
         std::vector<S_LANG_STRING> names;
     } S_APP_NAME_DESC;
 
     typedef struct
     {
         Utils::S_DVB_TRIPLET dvb;
-        uint8_t componentTag;
-        bool remoteConnection;
+        uint8_t componentTag = 0;
+        bool remoteConnection = false;
     } S_OC_SELECTOR_BYTES;
 
     typedef struct
@@ -113,11 +113,11 @@ public:
 
     typedef struct
     {
-        uint16_t protocolId;
-        uint8_t transportProtocolLabel;
+        uint16_t protocolId = 0;
+        uint8_t transportProtocolLabel = 0;
         S_OC_SELECTOR_BYTES oc;
         S_URL_SELECTOR_BYTES url;
-        bool failedToLoad;
+        bool failedToLoad = false;
     } S_TRANSPORT_PROTOCOL_DESC;
 
     typedef struct
@@ -130,34 +130,34 @@ public:
 
     typedef struct
     {
-        uint8_t visibility;
-        uint8_t priority;
-        uint8_t numLabels;
+        uint8_t visibility = 0;
+        uint8_t priority = 0;
+        uint8_t numLabels = 0;
         std::vector<S_APP_PROFILE> appProfiles;
         std::vector<uint8_t> transportProtocolLabels;
-        bool serviceBound;
+        bool serviceBound = false;
     } S_APP_DESC;
 
     typedef struct
     {
         std::string scheme;
         std::string region;
-        uint8_t value;
+        uint8_t value = 0;
     } S_APP_PARENTAL_RATING;
 
     typedef struct
     {
-        uint32_t orgId;
-        uint16_t appId;
-        uint8_t controlCode;
-        uint8_t numTransports;
+        uint32_t orgId = 0;
+        uint16_t appId = 0;
+        uint8_t controlCode = APP_CTL_UNKNOWN;
+        uint8_t numTransports = 0;
         S_TRANSPORT_PROTOCOL_DESC transportArray[AIT_MAX_NUM_PROTOCOLS];
         std::string location;
         S_APP_NAME_DESC appName;
         S_APP_DESC appDesc;
-        uint8_t xmlType;
-        uint8_t xmlVersion;
-        uint8_t usageType;
+        uint8_t xmlType = XML_TYP_UNKNOWN;
+        uint8_t xmlVersion = 0;
+        uint8_t usageType = 0;
         std::vector<std::string> boundaries;
         std::vector<S_APP_PARENTAL_RATING> parentalRatings;
         std::vector<uint16_t> graphicsConstraints;
@@ -237,9 +237,11 @@ public:
      * @param appDescription
      * @return
      */
-    static std::string GetBaseURL(const Ait::S_AIT_APP_DESC *appDescription,
-        const Utils::S_DVB_TRIPLET currentService, const bool isNetworkAvailable,
-        uint16_t *protocolIdSelected);
+    static std::string ExtractBaseURL(const Ait::S_AIT_APP_DESC &appDescription,
+        const Utils::S_DVB_TRIPLET currentService, const bool isNetworkAvailable);
+
+    static uint16_t ExtractProtocolId(const Ait::S_AIT_APP_DESC &appDescription,
+        const bool isNetworkAvailable);
 
 /**
  * Determine whether the application has a transport with a certain protocol.
