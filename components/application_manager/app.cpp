@@ -108,6 +108,10 @@ App::App(const Ait::S_AIT_APP_DESC &desc,
     m_baseUrl = Ait::ExtractBaseURL(desc, m_service, isNetworkAvailable);
     m_entryUrl = Utils::MergeUrlParams(m_baseUrl, desc.location, urlParams);
     loadedUrl = m_entryUrl;
+    
+    // Broadcast-related applications need to call show.
+    m_state = isBroadcast ? BACKGROUND_STATE : FOREGROUND_STATE;
+
     Update(desc, isNetworkAvailable);
 }
 
