@@ -40,13 +40,33 @@ public:
         : m_sessionCallback(sessionCallback), m_currentAppId(currentAppId)
     { }
     
-    void ShowApplication(uint16_t appId) { if (appId == *m_currentAppId) m_sessionCallback->ShowApplication(); }
-    void HideApplication(uint16_t appId) { if (appId == *m_currentAppId) m_sessionCallback->HideApplication(); }
-    void DispatchTransitionedToBroadcastRelatedEvent(uint16_t appId) { if (appId == *m_currentAppId) m_sessionCallback->DispatchTransitionedToBroadcastRelatedEvent(); }
-    void DispatchApplicationSchemeUpdatedEvent(uint16_t appId, const std::string &scheme) { if (appId == *m_currentAppId) m_sessionCallback->DispatchApplicationSchemeUpdatedEvent(scheme); }
-    int GetParentalControlAge() { return m_sessionCallback->GetParentalControlAge(); }
-    std::string GetParentalControlRegion() { return m_sessionCallback->GetParentalControlRegion(); }
-    std::string GetParentalControlRegion3() { return m_sessionCallback->GetParentalControlRegion3(); }
+    void ShowApplication(uint16_t appId) {
+        if (appId == *m_currentAppId) m_sessionCallback->ShowApplication();
+    }
+
+    void HideApplication(uint16_t appId) {
+        if (appId == *m_currentAppId) m_sessionCallback->HideApplication();
+    }
+    
+    void DispatchTransitionedToBroadcastRelatedEvent(uint16_t appId) { 
+        if (appId == *m_currentAppId) m_sessionCallback->DispatchTransitionedToBroadcastRelatedEvent();
+    }
+    
+    void DispatchApplicationSchemeUpdatedEvent(uint16_t appId, const std::string &scheme) {
+        if (appId == *m_currentAppId) m_sessionCallback->DispatchApplicationSchemeUpdatedEvent(scheme);
+    }
+    
+    int GetParentalControlAge() {
+        return m_sessionCallback->GetParentalControlAge();
+    }
+    
+    std::string GetParentalControlRegion() {
+        return m_sessionCallback->GetParentalControlRegion();
+    }
+    
+    std::string GetParentalControlRegion3() {
+        return m_sessionCallback->GetParentalControlRegion3();
+    }
 
 private:
     ApplicationManager::SessionCallback *m_sessionCallback;
