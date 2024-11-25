@@ -755,7 +755,14 @@ void ApplicationManager::OnSelectedServiceAitReceived()
                     }
                     else
                     {
-                        m_apps[m_appId]->Update(*signalled, m_isNetworkAvailable);
+                        try
+                        {
+                            m_apps[m_appId]->Update(*signalled, m_isNetworkAvailable);
+                        }
+                        catch(const std::exception& e)
+                        {
+                            KillRunningApp();
+                        }
                     }
                 }
             }
@@ -778,7 +785,14 @@ void ApplicationManager::OnSelectedServiceAitReceived()
             Ait::S_AIT_APP_DESC aitDesc = m_apps[m_appId]->GetAitDescription();
             auto signalled = Ait::FindApp(ait, aitDesc.orgId, aitDesc.appId);
             if (signalled != nullptr) {
-                m_apps[m_appId]->Update(*signalled, m_isNetworkAvailable);
+                try
+                {
+                    m_apps[m_appId]->Update(*signalled, m_isNetworkAvailable);
+                }
+                catch(const std::exception& e)
+                {
+                    KillRunningApp();
+                }
             }
         }
     }
@@ -838,7 +852,14 @@ void ApplicationManager::OnSelectedServiceAitUpdated()
         }
         else
         {
-            m_apps[m_appId]->Update(*signalled, m_isNetworkAvailable);
+            try
+            {
+                m_apps[m_appId]->Update(*signalled, m_isNetworkAvailable);
+            }
+            catch(const std::exception& e)
+            {
+                KillRunningApp();
+            }
         }
     }
 
@@ -982,7 +1003,15 @@ bool ApplicationManager::TransitionRunningAppToBroadcastRelated()
         LOG(LOG_INFO, "Cannot transition to broadcast (app is not signalled in the new AIT)");
         return false;
     }
-    m_apps[m_appId]->Update(*app, m_isNetworkAvailable);
+
+    try
+    {
+        m_apps[m_appId]->Update(*app, m_isNetworkAvailable);
+    }
+    catch(const std::exception& e)
+    {
+        return false;
+    }
     
     /* Note: what about app.is_trusted, app.parental_ratings, ... */
     return m_apps[m_appId]->TransitionToBroadcastRelated();
