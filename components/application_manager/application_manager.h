@@ -337,13 +337,20 @@ private:
      */
     void OnPerformBroadcastAutostart();
 
+    bool CreateAndRunApp(std::string url);
+
+    bool CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc,
+        const std::string &urlParams,
+        bool isBroadcast,
+        bool isTrusted);
+
     /**
      * Run the app.
      *
      * @param app The app to run.
      * @return True on success, false on failure.
      */
-    void RunApp(App *app);
+    void RunApp(std::unique_ptr<App> app);
 
     /**
      * Kill the running app.

@@ -141,17 +141,7 @@ bool ApplicationManager::CreateApplication(uint16_t callingAppId, const std::str
             appDescription = Ait::FindApp(m_ait.Get(), info.orgId, info.appId);
             if (appDescription)
             {
-                try
-                {
-                    App *new_app = new App(*appDescription, m_currentService,
-                        m_isNetworkAvailable, info.parameters, true, false, m_appSessionCallback);
-                    RunApp(new_app);
-                    result = true;
-                }
-                catch(const std::exception& e)
-                {
-                    LOG(LOG_ERROR, "%s", e.what());
-                }
+                result = CreateAndRunApp(*appDescription, info.parameters, true, false);
             }
             else
             {
@@ -175,15 +165,7 @@ bool ApplicationManager::CreateApplication(uint16_t callingAppId, const std::str
             else
             {
                 LOG(LOG_INFO, "Locator resource is ENTRY PAGE");
-                try
-                {
-                    RunApp(new App(url, m_appSessionCallback));
-                    result = true;
-                }
-                catch (const std::runtime_error& e)
-                {
-                    LOG(LOG_ERROR, "Error creating app: %s", e.what());
-                }
+                result = CreateAndRunApp(url);
             }
             break;
         }
@@ -452,18 +434,7 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
 
         if (app_description)
         {
-            try
-            {
-                auto new_app = new App(*app_description, m_currentService,
-                    m_isNetworkAvailable, "", isDvbi, false, m_appSessionCallback);
-                RunApp(new_app);
-                result = true;
-            }
-            catch (const std::runtime_error& e)
-            {
-                LOG(LOG_ERROR, "Error creating app: %s", e.what());
-            }
-
+            result = CreateAndRunApp(*app_description, "", isDvbi, false);
             if (!result)
             {
                 LOG(LOG_ERROR, "Could not find app (org_id=%d, app_id=%d)",
@@ -514,19 +485,7 @@ bool ApplicationManager::RunTeletextApplication()
 
         return false;
     }
-    try
-    {
-        auto newApp = new App(*appDescription, m_currentService,
-            m_isNetworkAvailable,
-            "", true, false, m_appSessionCallback);
-        RunApp(newApp);
-        return true;
-    }
-    catch (const std::runtime_error& e)
-    {
-        LOG(LOG_ERROR, "Error creating app: %s", e.what());
-    }
-    return false;
+    return CreateAndRunApp(*appDescription, "", true, false);
 }
 
 /**
@@ -927,22 +886,48 @@ void ApplicationManager::OnPerformBroadcastAutostart()
     if (app_desc != nullptr)
     {
         LOG(LOG_ERROR, "OnPerformAutostart Start autostart app.");
-
-        try
-        {
-            auto newApp = new App(*app_desc, m_currentService, m_isNetworkAvailable,
-            "", true, false, m_appSessionCallback);
-            RunApp(newApp);
-        }
-        catch(const std::exception& e)
-        {
-            LOG(LOG_ERROR, "%s", e.what());
-        }
+        CreateAndRunApp(*app_desc, "", true, false);
     }
     else
     {
         LOG(LOG_INFO, "OnPerformAutostart No autostart app found.");
     }
+}
+
+bool ApplicationManager::CreateAndRunApp(std::string url)
+{
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
+    try
+    {
+        RunApp(std::make_unique<App>(url, m_appSessionCallback));
+    }
+    catch(const std::exception& e)
+    {
+        LOG(LOG_ERROR, "%s", e.what());
+        return false;
+    }
+    return true;
+}
+
+bool ApplicationManager::CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc, const std::string &urlParams, bool isBroadcast, bool isTrusted)
+{
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
+    try
+    {
+        RunApp(std::make_unique<App>(desc,
+            m_currentService,
+            m_isNetworkAvailable,
+            urlParams,
+            isBroadcast,
+            isTrusted,
+            m_appSessionCallback));
+    }
+    catch(const std::exception& e)
+    {
+        LOG(LOG_ERROR, "%s", e.what());
+        return false;
+    }
+    return true;
 }
 
 /**
@@ -951,7 +936,7 @@ void ApplicationManager::OnPerformBroadcastAutostart()
  * @param app The app to run.
  * @return True on success, false on failure.
  */
-void ApplicationManager::RunApp(App *app)
+void ApplicationManager::RunApp(std::unique_ptr<App> app)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
@@ -966,7 +951,7 @@ void ApplicationManager::RunApp(App *app)
         app->GetAitDescription().graphicsConstraints.size(), app->GetAitDescription().graphicsConstraints);
 
     m_appId = app->GetId();
-    m_apps[m_appId] = std::unique_ptr<App>(app);
+    m_apps[m_appId] = std::move(app);
 
     // Call explicitly Show/Hide 
     if (m_apps[m_appId]->GetState() != App::BACKGROUND_STATE)
