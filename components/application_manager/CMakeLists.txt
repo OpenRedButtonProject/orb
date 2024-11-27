@@ -27,6 +27,7 @@ link_libraries(
 add_library(applicationmanager SHARED
   ait.cpp
   app.cpp
+  opapp.cpp
   application_manager.cpp
   utils.cpp
   xml_parser.cpp

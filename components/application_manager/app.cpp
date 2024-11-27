@@ -107,7 +107,7 @@ App::App(const Ait::S_AIT_APP_DESC &desc,
     const std::string &urlParams,
     bool isBroadcast,
     bool isTrusted,
-    std::shared_ptr<SessionCallback> sessionCallback)
+    std::shared_ptr<App::SessionCallback> sessionCallback)
         : m_service(currentService),
         m_isTrusted(isTrusted),
         m_isBroadcast(isBroadcast),
@@ -295,7 +295,7 @@ bool App::InKeySet(uint16_t keyCode)
 void App::SetState(const E_APP_STATE &state)
 {
     // HbbTV apps can go only to background or foreground state
-    if (state != m_state)
+    if (state != m_state && (state == BACKGROUND_STATE || state == FOREGROUND_STATE))
     {
         m_state = state;
         if (state == BACKGROUND_STATE)

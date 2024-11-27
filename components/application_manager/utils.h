@@ -126,9 +126,8 @@ public:
 
     class Timeout {
 public:
-        Timeout(std::function<void(void)> callback, std::chrono::milliseconds timeout) :
+        Timeout(std::function<void(void)> callback) :
             m_callback(callback),
-            m_timeout(timeout),
             m_stopped(true)
         {
         }
@@ -142,10 +141,12 @@ public:
 
         Timeout& operator=(const Timeout&) = delete;
 
-        void start()
+        void start(std::chrono::milliseconds timeout)
         {
             stop();
+            m_startTimestamp = std::chrono::system_clock::now();
             m_stopped = false;
+            m_timeout = timeout;
             m_thread = std::thread([&]
             {
                 std::unique_lock<std::mutex> lock(m_cvm);
@@ -172,13 +173,40 @@ public:
             }
         }
 
+        std::chrono::milliseconds elapsed() const
+        {
+            std::lock_guard<std::mutex> lock(m_cvm);
+            if (m_stopped)
+            {
+                return std::chrono::milliseconds(0);
+            }
+            return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - m_startTimestamp);
+        }
+
+        std::chrono::milliseconds remaining() const
+        {
+            std::lock_guard<std::mutex> lock(m_cvm);
+            if (m_stopped)
+            {
+                return std::chrono::milliseconds(0);
+            }
+            return m_timeout - elapsed();
+        }
+
+        bool isStopped() const
+        {
+            std::lock_guard<std::mutex> lock(m_cvm);
+            return m_stopped;
+        }
+
 private:
         std::function<void(void)> m_callback;
-        std::chrono::milliseconds m_timeout;
         bool m_stopped;
         std::thread m_thread;
         std::condition_variable m_cv;
-        std::mutex m_cvm;
+        mutable std::mutex m_cvm;
+        std::chrono::system_clock::time_point m_startTimestamp;
+        std::chrono::milliseconds m_timeout;
     };
 };
 

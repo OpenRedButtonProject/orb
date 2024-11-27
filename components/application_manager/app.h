@@ -21,7 +21,6 @@
 #ifndef HBBTV_SERVICE_APP_H
 #define HBBTV_SERVICE_APP_H
 
-#include <memory>
 #include <vector>
 #include <map>
 #include <cstdint>
@@ -43,7 +42,11 @@ public:
     typedef enum
     {
         FOREGROUND_STATE = 1,
-        BACKGROUND_STATE = 1 << 1
+        BACKGROUND_STATE = 1 << 1,
+        TRANSIENT_STATE = 1 << 2,
+        OVERLAID = 1 << 3, // only for use with other states as below
+        OVERLAID_FOREGROUND_STATE = OVERLAID | FOREGROUND_STATE,
+        OVERLAID_TRANSIENT_STATE = OVERLAID | TRANSIENT_STATE
     } E_APP_STATE;
 
     class SessionCallback
@@ -64,7 +67,7 @@ public:
      * 
      * @throws std::runtime_error
      */
-    App(const std::string &url, std::shared_ptr<SessionCallback> sessionCallback);
+    App(const std::string &url, std::shared_ptr<App::SessionCallback> sessionCallback);
 
     /**
      * Create app from Ait description.
@@ -77,7 +80,7 @@ public:
         const std::string &urlParams,
         bool isBroadcast,
         bool isTrusted,
-        std::shared_ptr<SessionCallback> sessionCallback);
+        std::shared_ptr<App::SessionCallback> sessionCallback);
     
     App(const App&) = delete;
     App &operator=(const App&) = delete;
@@ -184,7 +187,7 @@ protected:
     uint8_t m_versionMinor = 0;
     E_APP_STATE m_state = FOREGROUND_STATE;
 
-    std::shared_ptr<SessionCallback> m_sessionCallback;
+    std::shared_ptr<App::SessionCallback> m_sessionCallback;
 
 private:
     uint16_t m_id;

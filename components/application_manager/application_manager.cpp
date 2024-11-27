@@ -78,13 +78,12 @@ private:
  *
  * @param sessionCallback Implementation of ApplicationManager::SessionCallback interface.
  */
-ApplicationManager::ApplicationManager(std::unique_ptr<SessionCallback> sessionCallback) :
+ApplicationManager::ApplicationManager(std::unique_ptr<ApplicationManager::SessionCallback> sessionCallback) :
     m_sessionCallback(std::move(sessionCallback)),
     m_aitTimeout([&] {
         OnSelectedServiceAitTimeout();
-    },
-    std::chrono::milliseconds(Utils::AIT_TIMEOUT)),
-    m_appSessionCallback(std::shared_ptr<App::SessionCallback>(new AppSessionCallback(m_sessionCallback.get(), &m_appId)))
+    }),
+    m_appSessionCallback(std::make_shared<AppSessionCallback>(m_sessionCallback.get(), &m_appId))
 {
     m_sessionCallback->HideApplication();
 }
@@ -611,7 +610,7 @@ void ApplicationManager::OnChannelChanged(uint16_t originalNetworkId,
     m_currentServiceReceivedFirstAit = false;
     m_currentServiceAitPid = 0;
     m_ait.Clear();
-    m_aitTimeout.start();
+    m_aitTimeout.start(std::chrono::milliseconds(Utils::AIT_TIMEOUT));
     m_currentService = {
         .originalNetworkId = originalNetworkId,
         .transportStreamId = transportStreamId,
