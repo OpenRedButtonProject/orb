@@ -60,12 +60,16 @@ public:
     };
 
     /**
-     * Create app from url
+     * Create app from url.
+     * 
+     * @throws std::runtime_error
      */
     App(const std::string &url, std::shared_ptr<SessionCallback> sessionCallback);
 
     /**
-     * Create app from Ait description
+     * Create app from Ait description.
+     * 
+     * @throws std::runtime_error
      */
     App(const Ait::S_AIT_APP_DESC &desc,
         const Utils::S_DVB_TRIPLET currentService,
@@ -80,6 +84,18 @@ public:
 
     virtual ~App() = default;
 
+    /**
+     * Updates the app's state. Meant to be called by the ApplicationManager
+     * when it receives a new AIT table or when the network availability is 
+     * changed.
+     * 
+     * @param desc The model that the App will use to extract info about its
+     *      state.
+     * @param isNetworkAvailable The network availability. Will be used to
+     *      determine the protocolId.
+     * 
+     * @throws std::runtime_error
+     */
     void Update(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable);
 
     virtual bool TransitionToBroadcastRelated();
@@ -146,7 +162,7 @@ public:
     std::string loadedUrl;
 
 protected:
-    void CheckParentalRating() const;
+    bool IsAllowedByParentalControl(const Ait::S_AIT_APP_DESC &desc) const;
 
     uint16_t m_keySetMask = 0;
     std::vector<uint16_t> m_otherKeys;

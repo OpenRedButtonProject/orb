@@ -337,8 +337,26 @@ private:
      */
     void OnPerformBroadcastAutostart();
 
+    /**
+     * Create and run an App by url.
+     * 
+     * @param url The url the of the App. 
+     * 
+     * @return True on success, false on failure.
+     */
     bool CreateAndRunApp(std::string url);
 
+    /**
+     * Create and run an App by AIT description.
+     * 
+     * @param desc The AIT description the new App will use to set its initial state.
+     * @param urlParams Additional url parameters that will be concatenated with the
+     *      loaded url of the new App.
+     * @param isBroadcast Is the new App broadcast related?
+     * @param isTrusted Is the new App trusted?
+     * 
+     * @return True on success, false on failure.
+     */
     bool CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc,
         const std::string &urlParams,
         bool isBroadcast,
@@ -348,9 +366,17 @@ private:
      * Run the app.
      *
      * @param app The app to run.
-     * @return True on success, false on failure.
      */
     void RunApp(std::unique_ptr<App> app);
+
+    /**
+     * Update the running app.
+     * 
+     * @param desc The AIT description the running App will use to update its state.
+     * 
+     * @return True on success, false on failure.
+     */
+    bool UpdateRunningApp(const Ait::S_AIT_APP_DESC &desc);
 
     /**
      * Kill the running app.

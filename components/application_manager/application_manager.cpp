@@ -732,16 +732,9 @@ void ApplicationManager::OnSelectedServiceAitReceived()
                             "Kill running app (is not signalled in the new AIT with the same transport protocol)");
                         KillRunningApp();
                     }
-                    else
+                    else if (!UpdateRunningApp(*signalled))
                     {
-                        try
-                        {
-                            m_apps[m_appId]->Update(*signalled, m_isNetworkAvailable);
-                        }
-                        catch(const std::exception& e)
-                        {
-                            KillRunningApp();
-                        }
+                        KillRunningApp();
                     }
                 }
             }
@@ -763,15 +756,9 @@ void ApplicationManager::OnSelectedServiceAitReceived()
         {
             Ait::S_AIT_APP_DESC aitDesc = m_apps[m_appId]->GetAitDescription();
             auto signalled = Ait::FindApp(ait, aitDesc.orgId, aitDesc.appId);
-            if (signalled != nullptr) {
-                try
-                {
-                    m_apps[m_appId]->Update(*signalled, m_isNetworkAvailable);
-                }
-                catch(const std::exception& e)
-                {
-                    KillRunningApp();
-                }
+            if (signalled != nullptr && !UpdateRunningApp(*signalled))
+            {
+                KillRunningApp();
             }
         }
     }
@@ -829,16 +816,9 @@ void ApplicationManager::OnSelectedServiceAitUpdated()
             LOG(LOG_INFO, "Kill running app (signalled has control code KILL)");
             KillRunningApp();
         }
-        else
+        else if (!UpdateRunningApp(*signalled))
         {
-            try
-            {
-                m_apps[m_appId]->Update(*signalled, m_isNetworkAvailable);
-            }
-            catch(const std::exception& e)
-            {
-                KillRunningApp();
-            }
+            KillRunningApp();
         }
     }
 
@@ -894,6 +874,13 @@ void ApplicationManager::OnPerformBroadcastAutostart()
     }
 }
 
+/**
+ * Create and run an App by url.
+ * 
+ * @param url The url the of the App. 
+ * 
+ * @return True on success, false on failure.
+ */
 bool ApplicationManager::CreateAndRunApp(std::string url)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
@@ -909,6 +896,17 @@ bool ApplicationManager::CreateAndRunApp(std::string url)
     return true;
 }
 
+/**
+ * Create and run an App by AIT description.
+ * 
+ * @param desc The AIT description the new App will use to set its initial state.
+ * @param urlParams Additional url parameters that will be concatenated with the
+ *      loaded url of the new App.
+ * @param isBroadcast Is the new App broadcast related?
+ * @param isTrusted Is the new App trusted?
+ * 
+ * @return True on success, false on failure.
+ */
 bool ApplicationManager::CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc, const std::string &urlParams, bool isBroadcast, bool isTrusted)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
@@ -934,7 +932,6 @@ bool ApplicationManager::CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc, const 
  * Run the app.
  *
  * @param app The app to run.
- * @return True on success, false on failure.
  */
 void ApplicationManager::RunApp(std::unique_ptr<App> app)
 {
@@ -965,8 +962,28 @@ void ApplicationManager::RunApp(std::unique_ptr<App> app)
 }
 
 /**
- * Kill the running app.
+ * Update the running app.
+ * 
+ * @param desc The AIT description the running App will use to update its state.
+ * 
+ * @return True on success, false on failure.
  */
+bool ApplicationManager::UpdateRunningApp(const Ait::S_AIT_APP_DESC &desc)
+{
+    try
+    {
+        m_apps[m_appId]->Update(desc, m_isNetworkAvailable);
+    }
+    catch(const std::exception& e)
+    {
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Kill the running app.
+ */   
 void ApplicationManager::KillRunningApp()
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
@@ -1009,11 +1026,7 @@ bool ApplicationManager::TransitionRunningAppToBroadcastRelated()
         return false;
     }
 
-    try
-    {
-        m_apps[m_appId]->Update(*app, m_isNetworkAvailable);
-    }
-    catch(const std::exception& e)
+    if (!UpdateRunningApp(*app))
     {
         return false;
     }

@@ -43,9 +43,9 @@ public:
 
     typedef struct
     {
-        uint16_t originalNetworkId = 0;
-        uint16_t transportStreamId = 0;
-        uint16_t serviceId = 0;
+        uint16_t originalNetworkId;
+        uint16_t transportStreamId;
+        uint16_t serviceId;
     } S_DVB_TRIPLET;
 
     struct CreateLocatorInfo

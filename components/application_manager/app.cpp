@@ -81,6 +81,11 @@ static bool IsKeyAlpha(const uint16_t &code);
 static bool IsKeyVcr(const uint16_t &code);
 static bool IsKeyScroll(const uint16_t &code);
 
+/**
+ * Create app from url.
+ * 
+ * @throws std::runtime_error
+ */
 App::App(const std::string &url, std::shared_ptr<SessionCallback> sessionCallback)
     : loadedUrl(url), m_entryUrl(url), m_baseUrl(url), m_sessionCallback(sessionCallback), m_id(++g_id)
 {
@@ -91,6 +96,11 @@ App::App(const std::string &url, std::shared_ptr<SessionCallback> sessionCallbac
     m_scheme = getAppSchemeFromUrlParams(url);
 }
 
+/**
+ * Create app from Ait description.
+ * 
+ * @throws std::runtime_error
+ */
 App::App(const Ait::S_AIT_APP_DESC &desc,
     const Utils::S_DVB_TRIPLET currentService,
     bool isNetworkAvailable,
@@ -115,8 +125,24 @@ App::App(const Ait::S_AIT_APP_DESC &desc,
     Update(desc, isNetworkAvailable);
 }
 
+/**
+ * Updates the app's state. Meant to be called by the ApplicationManager
+ * when it receives a new AIT table or when the network availability is 
+ * changed.
+ * 
+ * @param desc The model that the App will use to extract info about its
+ *      state.
+ * @param isNetworkAvailable The network availability. Will be used to
+ *      determine the protocolId.
+ * 
+ * @throws std::runtime_error
+ */
 void App::Update(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable)
-{
+{   
+    if (!IsAllowedByParentalControl(desc))
+    {
+        throw std::runtime_error("App with loaded url '" + loadedUrl + "' is not allowed by Parental Control.");
+    }
     m_protocolId = Ait::ExtractProtocolId(desc, isNetworkAvailable);
     m_aitDesc = desc;
 
@@ -134,7 +160,7 @@ void App::Update(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable)
     }
 
     /* AUTOSTARTED apps are activated when they receive a key event */
-    m_isActivated = !(desc.controlCode == Ait::APP_CTL_AUTOSTART);
+    m_isActivated = desc.controlCode != Ait::APP_CTL_AUTOSTART;
     m_scheme = desc.scheme;
     if (!m_scheme.empty())
     {
@@ -151,8 +177,6 @@ void App::Update(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable)
             m_aitDesc.appId, m_aitDesc.orgId, m_aitDesc.controlCode, m_protocolId, m_baseUrl.c_str(), m_entryUrl.c_str(), loadedUrl.c_str());
     
     m_sessionCallback->DispatchApplicationSchemeUpdatedEvent(GetId(), m_scheme);
-            
-    CheckParentalRating();
 }
 
 bool App::TransitionToBroadcastRelated()
@@ -285,7 +309,7 @@ void App::SetState(const E_APP_STATE &state)
     }
 }
 
-void App::CheckParentalRating() const
+bool App::IsAllowedByParentalControl(const Ait::S_AIT_APP_DESC &desc) const
 {
     /* Note: XML AIt uses the alpha-2 region codes as defined in ISO 3166-1.
      * DVB's parental_rating_descriptor uses the 3-character code as specified in ISO 3166. */
@@ -294,12 +318,14 @@ void App::CheckParentalRating() const
     int parental_control_age = m_sessionCallback->GetParentalControlAge();
     //if none of the parental ratings provided in the broadcast AIT or XML AIT are supported
     //by the terminal), the request to launch the application shall fail.
-    if (Ait::IsAgeRestricted(m_aitDesc.parentalRatings, parental_control_age,
+    if (Ait::IsAgeRestricted(desc.parentalRatings, parental_control_age,
         parental_control_region, parental_control_region3))
     {
-        throw std::runtime_error(loadedUrl + ", Parental Control Age RESTRICTED for " +
-            parental_control_region + ": only " + std::to_string(parental_control_age) + " content accepted");
+        LOG(LOG_INFO, "%s, Parental Control Age RESTRICTED for %s: only %d content accepted",
+            loadedUrl.c_str(), parental_control_region.c_str(), parental_control_age);
+        return false;
     }
+    return true;
 }
 
 static std::string getAppSchemeFromUrlParams(const std::string &urlParams)
