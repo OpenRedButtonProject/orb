@@ -27,12 +27,11 @@
 #include <cstdint>
 #include <alloca.h>
 #include <mutex>
+#include <unordered_map>
 
 #include "utils.h"
 #include "ait.h"
 #include "app.h"
-
-#define INVALID_APP_ID 0
 
 class ApplicationManager {
 public:
@@ -339,12 +338,45 @@ private:
     void OnPerformBroadcastAutostart();
 
     /**
+     * Create and run an App by url.
+     * 
+     * @param url The url the of the App. 
+     * 
+     * @return True on success, false on failure.
+     */
+    bool CreateAndRunApp(std::string url);
+
+    /**
+     * Create and run an App by AIT description.
+     * 
+     * @param desc The AIT description the new App will use to set its initial state.
+     * @param urlParams Additional url parameters that will be concatenated with the
+     *      loaded url of the new App.
+     * @param isBroadcast Is the new App broadcast related?
+     * @param isTrusted Is the new App trusted?
+     * 
+     * @return True on success, false on failure.
+     */
+    bool CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc,
+        const std::string &urlParams,
+        bool isBroadcast,
+        bool isTrusted);
+
+    /**
      * Run the app.
      *
      * @param app The app to run.
+     */
+    void RunApp(std::unique_ptr<App> app);
+
+    /**
+     * Update the running app.
+     * 
+     * @param desc The AIT description the running App will use to update its state.
+     * 
      * @return True on success, false on failure.
      */
-    bool RunApp(const App &app);
+    bool UpdateRunningApp(const Ait::S_AIT_APP_DESC &desc);
 
     /**
      * Kill the running app.
@@ -390,15 +422,16 @@ private:
     uint16_t GetKeySet(const uint16_t keyCode);
 
     std::unique_ptr<SessionCallback> m_sessionCallback;
-    uint16_t m_nextAppId;
     Ait m_ait;
-    App m_app;
+    std::unordered_map<uint16_t, std::unique_ptr<App>> m_apps;
+    uint16_t m_appId = INVALID_APP_ID;
     Utils::S_DVB_TRIPLET m_currentService = Utils::MakeInvalidDvbTriplet();
     uint16_t m_currentServiceReceivedFirstAit = false;
     uint16_t m_currentServiceAitPid = 0;
     bool m_isNetworkAvailable = false;
     std::recursive_mutex m_lock;
     Utils::Timeout m_aitTimeout;
+    std::shared_ptr<App::SessionCallback> m_appSessionCallback;
 };
 
 #endif // HBBTV_SERVICE_MANAGER_H

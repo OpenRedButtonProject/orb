@@ -237,9 +237,11 @@ public:
      * @param appDescription
      * @return
      */
-    static std::string GetBaseURL(const Ait::S_AIT_APP_DESC *appDescription,
-        const Utils::S_DVB_TRIPLET currentService, const bool isNetworkAvailable,
-        uint16_t *protocolIdSelected);
+    static std::string ExtractBaseURL(const Ait::S_AIT_APP_DESC &appDescription,
+        const Utils::S_DVB_TRIPLET currentService, const bool isNetworkAvailable);
+
+    static uint16_t ExtractProtocolId(const Ait::S_AIT_APP_DESC &appDescription,
+        const bool isNetworkAvailable);
 
 /**
  * Determine whether the application has a transport with a certain protocol.
