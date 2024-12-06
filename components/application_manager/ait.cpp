@@ -282,7 +282,7 @@ bool Ait::PrintInfo(const S_AIT_TABLE *parsedAit)
     LOG(LOG_INFO, "Available apps: %d", sTable->numApps);
     for (int i = 0; i < sTable->numApps; i++)
     {
-        LOG(LOG_INFO, "App(%d):", i);
+        LOG(LOG_INFO, "HbbTVApp(%d):", i);
         hAitApp = sTable->appArray[i];
         LOG(LOG_INFO, "\tApplication ID: %d", hAitApp.appId);
         LOG(LOG_INFO, "\tOrganization ID: %d", hAitApp.orgId);

@@ -3,7 +3,7 @@
 
 #define COUNT_DOWN_TIMEOUT 60000
 
-static std::string opAppStateToString(const App::E_APP_STATE &state);
+static std::string opAppStateToString(const HbbTVApp::E_APP_STATE &state);
 
 /**
  * Create opapp from url.
@@ -11,10 +11,9 @@ static std::string opAppStateToString(const App::E_APP_STATE &state);
  * @throws std::runtime_error
  */
 OpApp::OpApp(const std::string &url, std::shared_ptr<OpApp::SessionCallback> sessionCallback)
-    : App(url, sessionCallback)
-{ 
-    m_state = BACKGROUND_STATE; // ETSI TS 103 606 V1.2.1 (2024-03) page 36
-}
+    : HbbTVApp(url, sessionCallback),
+    m_state(BACKGROUND_STATE) // ETSI TS 103 606 V1.2.1 (2024-03) page 36
+{ }
 
 /**
  * Create opapp from Ait description.
@@ -22,7 +21,7 @@ OpApp::OpApp(const std::string &url, std::shared_ptr<OpApp::SessionCallback> ses
  * @throws std::runtime_error
  */
 OpApp::OpApp(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable, std::shared_ptr<OpApp::SessionCallback> sessionCallback)
-    : App(
+    : HbbTVApp(
         desc,
         Utils::MakeInvalidDvbTriplet(),
         isNetworkAvailable,
@@ -30,10 +29,9 @@ OpApp::OpApp(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable, std::shar
         true,
         false,
         sessionCallback
-    )
-{ 
-    m_state = BACKGROUND_STATE; // ETSI TS 103 606 V1.2.1 (2024-03) page 36
-}
+    ),
+    m_state(BACKGROUND_STATE) // ETSI TS 103 606 V1.2.1 (2024-03) page 36
+{ }
 
 /**
  * Create opapp from url and inherit another opapp's state (ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.1).
@@ -41,18 +39,24 @@ OpApp::OpApp(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable, std::shar
  * @throws std::runtime_error
  */
 OpApp::OpApp(const OpApp &other, const std::string &url)
-    : OpApp(url, other.m_sessionCallback)
+    : OpApp(url, other.m_sessionCallback),
+    m_state(other.GetState())
 {
-    m_state = other.GetState();
     if (!other.m_countdown.isStopped())
     {
         m_countdown.start(other.m_countdown.remaining());
     }
 }
 
-void OpApp::SetState(const E_APP_STATE &state)
+/**
+ * Set the application state.
+ * 
+ * @param state The desired state to transition to.
+ * @returns true if transitioned successfully to the desired state, false otherwise.
+ */
+bool OpApp::SetState(const E_APP_STATE &state)
 {
-    if (state != OVERLAID && CanTransitionToState(state))
+    if (CanTransitionToState(state))
     {
         if (state != m_state)
         {
@@ -70,6 +74,7 @@ void OpApp::SetState(const E_APP_STATE &state)
                 m_sessionCallback->ShowApplication(GetId());
             }
         }
+        
         if ((state | TRANSIENT_STATE) != 0)
         {
             m_countdown.start(std::chrono::milliseconds(COUNT_DOWN_TIMEOUT));
@@ -78,11 +83,10 @@ void OpApp::SetState(const E_APP_STATE &state)
         {
             m_countdown.stop();
         }
+        return true;
     }
-    else
-    {
-        LOG(LOG_INFO, "Invalid state transition: %d -> %d", m_state, state);
-    }
+    LOG(LOG_INFO, "Invalid state transition: %d -> %d", m_state, state);
+    return false;
 }
 
 bool OpApp::TransitionToBroadcastRelated()
@@ -90,13 +94,18 @@ bool OpApp::TransitionToBroadcastRelated()
     // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.2 Note 2
     if (m_state == FOREGROUND_STATE)
     {
-        return App::TransitionToBroadcastRelated();
+        return HbbTVApp::TransitionToBroadcastRelated();
     }
     return false;
 }
 
 bool OpApp::CanTransitionToState(const E_APP_STATE &state)
 {
+    if (state == OVERLAID) {
+        // State meant to be used together with FOREGROUND and BACKGROUND.
+        // Not to be transitioned.
+        return false;
+    }
     if (state != m_state)
     {
         switch (m_state)
@@ -115,15 +124,15 @@ bool OpApp::CanTransitionToState(const E_APP_STATE &state)
     return true;
 }
 
-static std::string opAppStateToString(const App::E_APP_STATE &state)
+static std::string opAppStateToString(const HbbTVApp::E_APP_STATE &state)
 {
     switch (state)
     {
-        case App::BACKGROUND_STATE: return "background";
-        case App::FOREGROUND_STATE: return "foreground";
-        case App::TRANSIENT_STATE: return "transient";
-        case App::OVERLAID_TRANSIENT_STATE: return "overlaid-transient";
-        case App::OVERLAID_FOREGROUND_STATE: return "overlaid-foreground";
+        case HbbTVApp::BACKGROUND_STATE: return "background";
+        case HbbTVApp::FOREGROUND_STATE: return "foreground";
+        case HbbTVApp::TRANSIENT_STATE: return "transient";
+        case HbbTVApp::OVERLAID_TRANSIENT_STATE: return "overlaid-transient";
+        case HbbTVApp::OVERLAID_FOREGROUND_STATE: return "overlaid-foreground";
         default: break;
     }
     // should never get here

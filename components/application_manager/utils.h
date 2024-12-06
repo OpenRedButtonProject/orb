@@ -126,78 +126,21 @@ public:
 
     class Timeout {
 public:
-        Timeout(std::function<void(void)> callback) :
-            m_callback(callback),
-            m_stopped(true)
-        {
-        }
-
-        ~Timeout()
-        {
-            stop();
-        }
+        Timeout(std::function<void(void)> callback);
+        ~Timeout();
 
         Timeout(const Timeout&) = delete;
-
         Timeout& operator=(const Timeout&) = delete;
 
-        void start(std::chrono::milliseconds timeout)
-        {
-            stop();
-            m_startTimestamp = std::chrono::system_clock::now();
-            m_stopped = false;
-            m_timeout = timeout;
-            m_thread = std::thread([&]
-            {
-                std::unique_lock<std::mutex> lock(m_cvm);
-                if (!m_cv.wait_for(lock, m_timeout, [&] {
-                    return m_stopped;
-                }))
-                {
-                    m_callback();
-                }
-            });
-        }
+        void start(std::chrono::milliseconds timeout);
 
-        void stop()
-        {
-            if (m_thread.joinable())
-            {
-                if (!m_stopped)
-                {
-                    std::lock_guard<std::mutex> lock(m_cvm);
-                    m_stopped = true;
-                }
-                m_cv.notify_all();
-                m_thread.join();
-            }
-        }
+        void stop();
 
-        std::chrono::milliseconds elapsed() const
-        {
-            std::lock_guard<std::mutex> lock(m_cvm);
-            if (m_stopped)
-            {
-                return std::chrono::milliseconds(0);
-            }
-            return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - m_startTimestamp);
-        }
+        std::chrono::milliseconds elapsed() const;
 
-        std::chrono::milliseconds remaining() const
-        {
-            std::lock_guard<std::mutex> lock(m_cvm);
-            if (m_stopped)
-            {
-                return std::chrono::milliseconds(0);
-            }
-            return m_timeout - elapsed();
-        }
+        std::chrono::milliseconds remaining() const;
 
-        bool isStopped() const
-        {
-            std::lock_guard<std::mutex> lock(m_cvm);
-            return m_stopped;
-        }
+        bool isStopped() const;
 
 private:
         std::function<void(void)> m_callback;

@@ -18,8 +18,8 @@
  * Note: This file is part of the platform-agnostic application manager library.
  */
 
-#ifndef HBBTV_SERVICE_APP_H
-#define HBBTV_SERVICE_APP_H
+#ifndef HBBTV_APP_H
+#define HBBTV_APP_H
 
 #include <vector>
 #include <map>
@@ -30,7 +30,7 @@
 
 #define INVALID_APP_ID 0
 
-class App
+class HbbTVApp
 {
 public:
     typedef enum
@@ -67,25 +67,25 @@ public:
      * 
      * @throws std::runtime_error
      */
-    App(const std::string &url, std::shared_ptr<App::SessionCallback> sessionCallback);
+    HbbTVApp(const std::string &url, std::shared_ptr<HbbTVApp::SessionCallback> sessionCallback);
 
     /**
      * Create app from Ait description.
      * 
      * @throws std::runtime_error
      */
-    App(const Ait::S_AIT_APP_DESC &desc,
+    HbbTVApp(const Ait::S_AIT_APP_DESC &desc,
         const Utils::S_DVB_TRIPLET currentService,
         bool isNetworkAvailable,
         const std::string &urlParams,
         bool isBroadcast,
         bool isTrusted,
-        std::shared_ptr<App::SessionCallback> sessionCallback);
+        std::shared_ptr<HbbTVApp::SessionCallback> sessionCallback);
     
-    App(const App&) = delete;
-    App &operator=(const App&) = delete;
+    HbbTVApp(const HbbTVApp&) = delete;
+    HbbTVApp &operator=(const HbbTVApp&) = delete;
 
-    virtual ~App() = default;
+    virtual ~HbbTVApp() = default;
 
     /**
      * Updates the app's state. Meant to be called by the ApplicationManager
@@ -150,7 +150,13 @@ public:
 
     E_APP_STATE GetState() const { return m_state; }
     
-    virtual void SetState(const E_APP_STATE &state);
+    /**
+     * Set the application state.
+     * 
+     * @param state The desired state to transition to.
+     * @returns true if transitioned successfully to the desired state, false otherwise.
+     */
+    virtual bool SetState(const E_APP_STATE &state);
 
     /**
      * Get the other keys for an application.
@@ -187,10 +193,10 @@ protected:
     uint8_t m_versionMinor = 0;
     E_APP_STATE m_state = FOREGROUND_STATE;
 
-    std::shared_ptr<App::SessionCallback> m_sessionCallback;
+    std::shared_ptr<HbbTVApp::SessionCallback> m_sessionCallback;
 
 private:
     uint16_t m_id;
 };
 
-#endif // HBBTV_SERVICE_APP_H
+#endif // HBBTV_APP_H

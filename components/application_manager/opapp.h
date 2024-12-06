@@ -18,15 +18,15 @@
  * Note: This file is part of the platform-agnostic application manager library.
  */
 
-#ifndef HBBTV_SERVICE_OPAPP_H
-#define HBBTV_SERVICE_OPAPP_H
+#ifndef OPAPP_H
+#define OPAPP_H
 
-#include "app.h"
+#include "hbbtv_app.h"
 
 class OpApp : public App
 {
 public:
-    class SessionCallback : public App::SessionCallback
+    class SessionCallback : public HbbTVApp::SessionCallback
     {
 public:
         virtual void DispatchOperatorApplicationStateChange(uint16_t appId, const std::string &oldState, const std::string &newState) = 0;
@@ -59,24 +59,25 @@ public:
     
     virtual ~OpApp() = default;
 
-    OpApp(const App&) = delete;
+    OpApp(const HbbTVApp&) = delete;
     OpApp &operator=(const OpApp&) = delete;
     
-    void SetState(const E_APP_STATE &state) override;
+    /**
+     * Set the application state.
+     * 
+     * @param state The desired state to transition to.
+     * @returns true if transitioned successfully to the desired state, false otherwise.
+     */
+    bool SetState(const E_APP_STATE &state) override;
     
-    E_APP_TYPE GetType() const override { return App::E_APP_TYPE::OPAPP_TYPE; }
+    E_APP_TYPE GetType() const override { return HbbTVApp::E_APP_TYPE::OPAPP_TYPE; }
     
     bool TransitionToBroadcastRelated() override;
 
 private:
     bool CanTransitionToState(const E_APP_STATE &state);
 
-    Utils::Timeout m_countdown = Utils::Timeout([&] { 
-        if (m_state == TRANSIENT_STATE || m_state == OVERLAID_TRANSIENT_STATE)
-        {
-            SetState(BACKGROUND_STATE);
-        }
-    });
+    Utils::Timeout m_countdown = Utils::Timeout([&]() -> void { SetState(BACKGROUND_STATE); });
 };
 
-#endif // HBBTV_SERVICE_OPAPP_H
+#endif // OPAPP_H

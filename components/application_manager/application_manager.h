@@ -31,7 +31,7 @@
 
 #include "utils.h"
 #include "ait.h"
-#include "app.h"
+#include "hbbtv_app.h"
 
 class ApplicationManager {
 public:
@@ -367,7 +367,7 @@ private:
      *
      * @param app The app to run.
      */
-    void RunApp(std::unique_ptr<App> app);
+    void RunApp(std::unique_ptr<HbbTVApp> app);
 
     /**
      * Update the running app.
@@ -423,7 +423,7 @@ private:
 
     std::unique_ptr<SessionCallback> m_sessionCallback;
     Ait m_ait;
-    std::unordered_map<uint16_t, std::unique_ptr<App>> m_apps;
+    std::unordered_map<uint16_t, std::unique_ptr<HbbTVApp>> m_apps;
     uint16_t m_appId = INVALID_APP_ID;
     Utils::S_DVB_TRIPLET m_currentService = Utils::MakeInvalidDvbTriplet();
     uint16_t m_currentServiceReceivedFirstAit = false;
@@ -431,7 +431,7 @@ private:
     bool m_isNetworkAvailable = false;
     std::recursive_mutex m_lock;
     Utils::Timeout m_aitTimeout;
-    std::shared_ptr<App::SessionCallback> m_appSessionCallback;
+    std::shared_ptr<HbbTVApp::SessionCallback> m_appSessionCallback;
 };
 
 #endif // HBBTV_SERVICE_MANAGER_H

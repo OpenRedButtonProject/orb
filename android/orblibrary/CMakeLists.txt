@@ -47,7 +47,7 @@ add_library(
    src/main/symlink.application_manager/utils.cpp
    src/main/symlink.application_manager/ait.cpp
    src/main/symlink.application_manager/xml_parser.cpp
-   src/main/symlink.application_manager/app.cpp
+   src/main/symlink.application_manager/hbbtv_app.cpp
 )
 target_link_libraries(
    org.orbtv.orblibrary.applicationmanager

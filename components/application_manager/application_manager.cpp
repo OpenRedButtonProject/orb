@@ -33,7 +33,7 @@
 #include "utils.h"
 #include "xml_parser.h"
 
-class AppSessionCallback : public App::SessionCallback
+class AppSessionCallback : public HbbTVApp::SessionCallback
 {
 public:
     AppSessionCallback(ApplicationManager::SessionCallback *sessionCallback, uint16_t *currentAppId)
@@ -220,7 +220,7 @@ void ApplicationManager::ShowApplication(uint16_t callingAppId)
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_apps.count(callingAppId) > 0)
     {
-        m_apps[callingAppId]->SetState(App::FOREGROUND_STATE);
+        m_apps[callingAppId]->SetState(HbbTVApp::FOREGROUND_STATE);
     }
 }
 
@@ -234,7 +234,7 @@ void ApplicationManager::HideApplication(uint16_t callingAppId)
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_apps.count(callingAppId) > 0)
     {
-        m_apps[callingAppId]->SetState(App::BACKGROUND_STATE);
+        m_apps[callingAppId]->SetState(HbbTVApp::BACKGROUND_STATE);
     }
 }
 
@@ -885,7 +885,7 @@ bool ApplicationManager::CreateAndRunApp(std::string url)
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     try
     {
-        RunApp(std::make_unique<App>(url, m_appSessionCallback));
+        RunApp(std::make_unique<HbbTVApp>(url, m_appSessionCallback));
     }
     catch(const std::exception& e)
     {
@@ -911,7 +911,7 @@ bool ApplicationManager::CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc, const 
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     try
     {
-        RunApp(std::make_unique<App>(desc,
+        RunApp(std::make_unique<HbbTVApp>(desc,
             m_currentService,
             m_isNetworkAvailable,
             urlParams,
@@ -932,7 +932,7 @@ bool ApplicationManager::CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc, const 
  *
  * @param app The app to run.
  */
-void ApplicationManager::RunApp(std::unique_ptr<App> app)
+void ApplicationManager::RunApp(std::unique_ptr<HbbTVApp> app)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
@@ -950,7 +950,7 @@ void ApplicationManager::RunApp(std::unique_ptr<App> app)
     m_apps[m_appId] = std::move(app);
 
     // Call explicitly Show/Hide 
-    if (m_apps[m_appId]->GetState() != App::BACKGROUND_STATE)
+    if (m_apps[m_appId]->GetState() != HbbTVApp::BACKGROUND_STATE)
     {
         m_sessionCallback->ShowApplication();
     }
