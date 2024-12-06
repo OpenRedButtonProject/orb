@@ -41,12 +41,11 @@ public:
 
     typedef enum
     {
-        FOREGROUND_STATE = 1,
-        BACKGROUND_STATE = 1 << 1,
-        TRANSIENT_STATE = 1 << 2,
-        OVERLAID = 1 << 3, // only for use with other states as below
-        OVERLAID_FOREGROUND_STATE = OVERLAID | FOREGROUND_STATE,
-        OVERLAID_TRANSIENT_STATE = OVERLAID | TRANSIENT_STATE
+        FOREGROUND_STATE,
+        BACKGROUND_STATE,
+        TRANSIENT_STATE,
+        OVERLAID_FOREGROUND_STATE,
+        OVERLAID_TRANSIENT_STATE
     } E_APP_STATE;
 
     class SessionCallback

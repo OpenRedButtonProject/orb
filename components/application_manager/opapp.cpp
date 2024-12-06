@@ -75,7 +75,7 @@ bool OpApp::SetState(const E_APP_STATE &state)
             }
         }
         
-        if ((state | TRANSIENT_STATE) != 0)
+        if (state == TRANSIENT_STATE || state == OVERLAID_TRANSIENT_STATE)
         {
             m_countdown.start(std::chrono::milliseconds(COUNT_DOWN_TIMEOUT));
         }
@@ -101,28 +101,34 @@ bool OpApp::TransitionToBroadcastRelated()
 
 bool OpApp::CanTransitionToState(const E_APP_STATE &state)
 {
-    if (state == OVERLAID) {
-        // State meant to be used together with FOREGROUND and BACKGROUND.
-        // Not to be transitioned.
-        return false;
-    }
     if (state != m_state)
     {
         switch (m_state)
         {
             case FOREGROUND_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.2 Page 38
-                return (state & (BACKGROUND_STATE | TRANSIENT_STATE)) != 0;
+                // Allowed transitions from FOREGROUND_STATE
+                if (state == BACKGROUND_STATE || state == TRANSIENT_STATE) {
+                    return true;
+                }
+                break;
+
             case TRANSIENT_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.4 Page 41 
             case OVERLAID_TRANSIENT_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.6 Page 42 
             case OVERLAID_FOREGROUND_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.5 Page 41 
-                return (state & (FOREGROUND_STATE | BACKGROUND_STATE)) != 0;
-            
+                // Allowed transitions from these states
+                if (state == FOREGROUND_STATE || state == BACKGROUND_STATE) {
+                    return true;
+                }
+                break;
+
             default:
                 break;
         }
+        return false;
     }
     return true;
 }
+
 
 static std::string opAppStateToString(const HbbTVApp::E_APP_STATE &state)
 {
