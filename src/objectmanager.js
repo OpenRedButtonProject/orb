@@ -20,10 +20,41 @@ hbbtv.objects = {};
 hbbtv.objectManager = (function() {
     const __createElement = document.createElement;
     const __getElementById = document.getElementById;
+    const __context = {};
 
     let objectMimeTypeTable = [];
     let objectFactoryMethodTable = [];
     let objectUpgradeHandlers = [];
+
+    const _addEventListener = EventTarget.prototype.addEventListener;
+    const _removeEventListener = EventTarget.prototype.removeEventListener;
+
+    // WeakMap to store the mapping of original listeners to their wrappers
+    const listenerMap = new WeakMap();
+
+    EventTarget.prototype.addEventListener = function (type, listener, options) {
+        if (typeof listener !== "function") {
+            return _addEventListener.call(this, type, listener, options);
+        }
+
+        const wrapper = function () {
+            __context.event = {
+                type: type,
+                args: [...arguments]
+            };
+            listener.call(this, ...arguments);
+            __context.event = undefined;
+        };
+
+        listenerMap.set(listener, wrapper);
+        _addEventListener.call(this, type, wrapper, options);
+    };
+
+    EventTarget.prototype.removeEventListener = function (type, listener, options) {
+        const wrapper = listenerMap.get(listener) || listener;
+        _removeEventListener.call(this, type, wrapper, options);
+        listenerMap.delete(listener);
+    };
 
     function initialise() {
         // Override getElementById while app is loading to upgrade HbbTV objects before they are used.
@@ -252,5 +283,6 @@ hbbtv.objectManager = (function() {
         initialise: initialise,
         registerObject: registerObject,
         createRdkVideoElement: createRdkVideoElement,
+        context: __context,
     };
 })();
