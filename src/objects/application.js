@@ -21,6 +21,8 @@ hbbtv.objects.Application = (function() {
     const prototype = {};
     const privates = new WeakMap();
     const gGarbageCollectionBlocked = new Set();
+    
+    // store created apps by their url as key
     const gApps = {};
 
     prototype.createApplication = function(uri) {

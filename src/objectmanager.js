@@ -20,36 +20,48 @@ hbbtv.objects = {};
 hbbtv.objectManager = (function() {
     const __createElement = document.createElement;
     const __getElementById = document.getElementById;
+    
+    // general-purpose storage for information during the application's runtime. 
+    // It can be used to hold flags, intermediate results, or contextual data 
+    // required by specific functions or processes.
     const __context = {};
 
     let objectMimeTypeTable = [];
     let objectFactoryMethodTable = [];
     let objectUpgradeHandlers = [];
 
+    // Keep references to the original add/removeEventListener methods
     const _addEventListener = EventTarget.prototype.addEventListener;
     const _removeEventListener = EventTarget.prototype.removeEventListener;
 
     // WeakMap to store the mapping of original listeners to their wrappers
     const listenerMap = new WeakMap();
 
+    // Override addEventListener in order to store context information
+    // regarding the dispatched event.
     EventTarget.prototype.addEventListener = function (type, listener, options) {
         if (typeof listener !== "function") {
             return _addEventListener.call(this, type, listener, options);
         }
 
-        const wrapper = function () {
-            __context.event = {
-                type: type,
-                args: [...arguments]
-            };
-            listener.call(this, ...arguments);
+        // wrapper which will be used with the original addEventListener
+        const wrapper = function (...args) {
+            __context.event = { type, args };
+            listener.call(this, ...args);
             __context.event = undefined;
         };
 
+        // store the wrapper in the WeakMap with the callback argument as key
+        // in order to remove it listener when removeEventListener is being called
+        // with the same callback
         listenerMap.set(listener, wrapper);
+
+        // add the wrapper as the handler for the desired event
         _addEventListener.call(this, type, wrapper, options);
     };
 
+    // override removeEventListener in order to remove the wrapper handler
+    // which was mapped to callback when addEventListener was called
     EventTarget.prototype.removeEventListener = function (type, listener, options) {
         const wrapper = listenerMap.get(listener) || listener;
         _removeEventListener.call(this, type, wrapper, options);
