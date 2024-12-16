@@ -130,7 +130,7 @@ install(FILES
 
 add_library(applicationmanager STATIC
    ../../../components/application_manager/ait.cpp
-   ../../../components/application_manager/app.cpp
+   ../../../components/application_manager/hbbtv_app.cpp
    ../../../components/application_manager/application_manager.cpp
    ../../../components/application_manager/utils.cpp
    ../../../components/application_manager/xml_parser.cpp

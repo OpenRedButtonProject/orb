@@ -18,7 +18,7 @@
  * Note: This file is part of the platform-agnostic application manager library.
  */
 
-#include "app.h"
+#include "hbbtv_app.h"
 #include "log.h"
 
 #include <stdexcept>
@@ -86,7 +86,7 @@ static bool IsKeyScroll(const uint16_t &code);
  * 
  * @throws std::runtime_error
  */
-App::App(const std::string &url, std::shared_ptr<SessionCallback> sessionCallback)
+HbbTVApp::HbbTVApp(const std::string &url, std::shared_ptr<SessionCallback> sessionCallback)
     : loadedUrl(url), m_entryUrl(url), m_baseUrl(url), m_sessionCallback(sessionCallback), m_id(++g_id)
 {
     if (url.empty())
@@ -101,13 +101,13 @@ App::App(const std::string &url, std::shared_ptr<SessionCallback> sessionCallbac
  * 
  * @throws std::runtime_error
  */
-App::App(const Ait::S_AIT_APP_DESC &desc,
+HbbTVApp::HbbTVApp(const Ait::S_AIT_APP_DESC &desc,
     const Utils::S_DVB_TRIPLET currentService,
     bool isNetworkAvailable,
     const std::string &urlParams,
     bool isBroadcast,
     bool isTrusted,
-    std::shared_ptr<SessionCallback> sessionCallback)
+    std::shared_ptr<HbbTVApp::SessionCallback> sessionCallback)
         : m_service(currentService),
         m_isTrusted(isTrusted),
         m_isBroadcast(isBroadcast),
@@ -137,7 +137,7 @@ App::App(const Ait::S_AIT_APP_DESC &desc,
  * 
  * @throws std::runtime_error
  */
-void App::Update(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable)
+void HbbTVApp::Update(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable)
 {   
     if (!IsAllowedByParentalControl(desc))
     {
@@ -179,7 +179,7 @@ void App::Update(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable)
     m_sessionCallback->DispatchApplicationSchemeUpdatedEvent(GetId(), m_scheme);
 }
 
-bool App::TransitionToBroadcastRelated()
+bool HbbTVApp::TransitionToBroadcastRelated()
 {
     if (m_aitDesc.controlCode != Ait::APP_CTL_AUTOSTART && m_aitDesc.controlCode != Ait::APP_CTL_PRESENT)
     {
@@ -212,13 +212,13 @@ bool App::TransitionToBroadcastRelated()
     return true;
 }
 
-bool App::TransitionToBroadcastIndependent()
+bool HbbTVApp::TransitionToBroadcastIndependent()
 {
     m_isBroadcast = false;
     return true;
 }
 
-std::string App::GetScheme() const {
+std::string HbbTVApp::GetScheme() const {
     if (!m_scheme.empty()) {
         return m_scheme;
     }
@@ -232,7 +232,7 @@ std::string App::GetScheme() const {
  * @param otherKeys optional other keys
  * @return The key set mask for the application.
  */
-uint16_t App::SetKeySetMask(uint16_t keySetMask, const std::vector<uint16_t> &otherKeys) {
+uint16_t HbbTVApp::SetKeySetMask(uint16_t keySetMask, const std::vector<uint16_t> &otherKeys) {
     std::string currentScheme = GetScheme();
 
     // Compatibility check for older versions
@@ -273,7 +273,7 @@ uint16_t App::SetKeySetMask(uint16_t keySetMask, const std::vector<uint16_t> &ot
  * @param keyCode The key code to check.
  * @return The supplied key_code is accepted by the current app's key set.
  */
-bool App::InKeySet(uint16_t keyCode)
+bool HbbTVApp::InKeySet(uint16_t keyCode)
 {
     if ((m_keySetMask & GetKeySetMaskForKeyCode(keyCode)) != 0)
     {
@@ -292,24 +292,36 @@ bool App::InKeySet(uint16_t keyCode)
     return false;
 }
 
-void App::SetState(const E_APP_STATE &state)
+/**
+ * Set the application state.
+ * 
+ * @param state The desired state to transition to.
+ * @returns true if transitioned successfully to the desired state, false otherwise.
+ */
+bool HbbTVApp::SetState(const E_APP_STATE &state)
 {
     // HbbTV apps can go only to background or foreground state
-    if (state != m_state)
+    if (state == BACKGROUND_STATE || state == FOREGROUND_STATE)
     {
-        m_state = state;
-        if (state == BACKGROUND_STATE)
+        if (state != m_state)
         {
-            m_sessionCallback->HideApplication(GetId());
+            m_state = state;
+            if (state == BACKGROUND_STATE)
+            {
+                m_sessionCallback->HideApplication(GetId());
+            }
+            else
+            {
+                m_sessionCallback->ShowApplication(GetId());
+            }
         }
-        else
-        {
-            m_sessionCallback->ShowApplication(GetId());
-        }
+        return true;
     }
+    LOG(LOG_INFO, "Invalid state transition: %d -> %d", m_state, state);
+    return false;
 }
 
-bool App::IsAllowedByParentalControl(const Ait::S_AIT_APP_DESC &desc) const
+bool HbbTVApp::IsAllowedByParentalControl(const Ait::S_AIT_APP_DESC &desc) const
 {
     /* Note: XML AIt uses the alpha-2 region codes as defined in ISO 3166-1.
      * DVB's parental_rating_descriptor uses the 3-character code as specified in ISO 3166. */

@@ -405,3 +405,72 @@ std::string Utils::MergeUrlParams(const std::string &base, const std::string &lo
     }
     return result;
 }
+
+
+Utils::Timeout::Timeout(std::function<void(void)> callback) :
+    m_callback(callback),
+    m_stopped(true)
+{ }
+
+Utils::Timeout::~Timeout()
+{
+    stop();
+}
+
+void Utils::Timeout::start(std::chrono::milliseconds timeout)
+{
+    stop();
+    m_startTimestamp = std::chrono::system_clock::now();
+    m_stopped = false;
+    m_timeout = timeout;
+    m_thread = std::thread([&]
+    {
+        std::unique_lock<std::mutex> lock(m_cvm);
+        if (!m_cv.wait_for(lock, m_timeout, [&] {
+            return m_stopped;
+        }))
+        {
+            m_callback();
+        }
+    });
+}
+
+void Utils::Timeout::stop()
+{
+    if (m_thread.joinable())
+    {
+        if (!m_stopped)
+        {
+            std::lock_guard<std::mutex> lock(m_cvm);
+            m_stopped = true;
+        }
+        m_cv.notify_all();
+        m_thread.join();
+    }
+}
+
+std::chrono::milliseconds Utils::Timeout::elapsed() const
+{
+    std::lock_guard<std::mutex> lock(m_cvm);
+    if (m_stopped)
+    {
+        return std::chrono::milliseconds(0);
+    }
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - m_startTimestamp);
+}
+
+std::chrono::milliseconds Utils::Timeout::remaining() const
+{
+    std::lock_guard<std::mutex> lock(m_cvm);
+    if (m_stopped)
+    {
+        return std::chrono::milliseconds(0);
+    }
+    return m_timeout - elapsed();
+}
+
+bool Utils::Timeout::isStopped() const
+{
+    std::lock_guard<std::mutex> lock(m_cvm);
+    return m_stopped;
+}
