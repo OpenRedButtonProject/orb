@@ -20,10 +20,112 @@ hbbtv.objects = {};
 hbbtv.objectManager = (function() {
     const __createElement = document.createElement;
     const __getElementById = document.getElementById;
+    
+    // general-purpose storage for information during the application's runtime. 
+    // It can be used to hold flags, intermediate results, or contextual data 
+    // required by specific functions or processes.
+    const __context = {};
 
     let objectMimeTypeTable = [];
     let objectFactoryMethodTable = [];
     let objectUpgradeHandlers = [];
+
+    // Keep references to the original add/removeEventListener methods
+    const _addEventListener = EventTarget.prototype.addEventListener;
+    const _removeEventListener = EventTarget.prototype.removeEventListener;
+
+    const callbackWrappers = new WeakMap();
+
+    EventTarget.prototype.addEventListener = function (type, listener, options) {
+        // if listener is not a function, let the browser handle it
+        if (typeof listener !== "function") {
+            return _addEventListener.call(this, type, listener, options);
+        }
+    
+        // wrapper for the incoming callback to update event context
+        const wrapper = function (...args) {
+            __context.event = { type, args };
+            listener.call(this, ...args);
+            __context.event = undefined;
+        };
+
+        // First call the original addEventListener and pass the wrapper as handler.
+        // We call it first in case some exception is thrown.
+        _addEventListener.call(this, type, wrapper, options);
+    
+        // get a reference to the events objects that hold information
+        // per event
+        let events = callbackWrappers.get(this);
+        if (!events) {
+            // if this is the first time addEventListener is called on
+            // this object, create an entry in the WeakMap with it as key
+            events = {};
+            callbackWrappers.set(this, events);
+        }
+
+        if (!events[type]) {
+            // if this is the first time addEventListener is called on
+            // this object for type, create a new Map entry with type as key.
+            events[type] = new Map();
+        }
+    
+        // create an array of objects that will store the wrappers
+        // and the options for the combination of type/listener
+        const listenerInfo = events[type].get(listener) || [];
+        listenerInfo.push({
+            wrapper,
+            options: options || {}
+        });
+
+        // create an entry in the events[type] Map with the listener as key
+        events[type].set(listener, listenerInfo);
+
+        console.log(`[ObjectManager]: Called addEventListener("${type}, ${listener.name}, ${options})`);
+    };
+    
+    EventTarget.prototype.removeEventListener = function (type, listener, options) {
+        const events = callbackWrappers.get(this);
+
+        if (events?.[type]?.has(listener)) {
+            const listenerInfo = events[type].get(listener);
+            const opt = options || {};
+
+            // find the index in the added listeners for event type that
+            // matches the listener and options parameters
+            const index = listenerInfo.findIndex((info) => {
+                const infoOptions = info.options;
+                if (Object.keys(opt).length !== Object.keys(infoOptions).length) {
+                    return false;
+                }
+                for (const key in opt) {
+                    if (opt[key] !== infoOptions[key]) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+    
+            if (index !== -1) {
+                // if the index is found, call the original removeEventListener
+                // with the wrapper created when addEventListener was called as
+                // argument
+                _removeEventListener.call(this, type, listenerInfo[index].wrapper, options);
+
+                // clean up
+                listenerInfo.splice(index, 1);
+                if (listenerInfo.length === 0) {
+                    events[type].delete(listener);
+                    if (events[type].size === 0) {
+                        delete events[type];
+                    }
+                }
+            }
+            console.log(`[ObjectManager]: Called removeEventListener("${type}, ${listener.name}, ${options})`);
+        } else {
+            _removeEventListener.call(this, type, listener, options);
+        }
+    };
+    
 
     function initialise() {
         // Override getElementById while app is loading to upgrade HbbTV objects before they are used.
@@ -252,5 +354,6 @@ hbbtv.objectManager = (function() {
         initialise: initialise,
         registerObject: registerObject,
         createRdkVideoElement: createRdkVideoElement,
+        context: __context,
     };
 })();

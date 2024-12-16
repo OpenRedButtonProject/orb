@@ -16,8 +16,14 @@
  */
 
 hbbtv.objects.Application = (function() {
+    const LINKED_APP_SCHEME_1_2 = "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.2";
+    const LINKED_APP_SCHEME_2 = "urn:dvb:metadata:cs:LinkedApplicationCS:2019:2";
     const prototype = {};
     const privates = new WeakMap();
+    const gGarbageCollectionBlocked = new Set();
+    
+    // store created apps by their url as key
+    const gApps = {};
 
     prototype.createApplication = function(uri) {
         if (privates.get(this).disabled) {
@@ -65,24 +71,84 @@ hbbtv.objects.Application = (function() {
         }
     };
 
+    prototype.addEventListener = function(type, listener) {
+        if (privates.get(this).eventDispatcher.addCountedEventListener(type, listener) > 0) {
+            gGarbageCollectionBlocked.add(this);
+        }
+    };
+
+    prototype.removeEventListener = function(type, listener) {
+        if (privates.get(this).eventDispatcher.removeCountedEventListener(type, listener) == 0) {
+            gGarbageCollectionBlocked.delete(this);
+        }
+    };
+
     Object.defineProperty(prototype, 'privateData', {
         get() {
             return privates.get(this).privateData;
         },
     });
 
+    // Internal listeners
+    function addBridgeEventListeners() {
+        var p = privates.get(this);
+        p.onApplicationSchemeUpdated = (event) => {
+            console.log('onApplicationSchemeUpdated', event.scheme);
+            const currentURL = new URL(window.location.href);
+            switch (event.scheme) {
+                case LINKED_APP_SCHEME_1_2:
+                    currentURL.searchParams.set("lloc", "service");
+                    break;
+                case LINKED_APP_SCHEME_2:
+                    currentURL.searchParams.set("lloc", "availability");
+                    break;
+                default:
+                    return;
+            }
+            window.history.replaceState(null, null, currentURL);
+        };
+        hbbtv.bridge.addWeakEventListener('ApplicationSchemeUpdated', p.onApplicationSchemeUpdated);
+    }
+
+    function getOwnerApplication(doc) {
+        try {
+            console.log("Application: Request owner application with url:", doc.documentURI);
+            if (doc.documentURI in gApps) {
+                return gApps[doc.documentURI];
+            }
+            // TODO: Applications should be populated by the application manager
+            // upon its construction. Move the following to the application manager
+            // initialization when the logic of retrieving running applications
+            // from native code is done.
+            return hbbtv.objects.createApplication({
+                disabled: false,
+                url: doc.documentURI
+            });
+        }
+        catch(e) {
+            console.error("Application:", e);
+        }
+        return null;
+    }
+
     function initialise(data) {
-        privates.set(this, {});
-        const p = privates.get(this);
-        p.disabled = data.disabled;
-        p.privateData = hbbtv.objects.createPrivateData({
-            disabled: p.disabled,
+        privates.set(this, {
+            id: data.id,
+            url: data.url,
+            disabled: data.disabled,
+            eventDispatcher: new hbbtv.utils.EventDispatcher(this),
+            privateData: hbbtv.objects.createPrivateData({
+                disabled: data.disabled,
+            })
         });
+        addBridgeEventListeners.call(this);
+        gApps[data.url] = this;
     }
 
     return {
         prototype: prototype,
         initialise: initialise,
+        getOwnerApplication: getOwnerApplication,
     };
 })();
 
