@@ -123,7 +123,8 @@ public class TestSuiteScenario {
                 info.getBoolean("hidden"),
                 -1,
                 null,
-                null
+                null,
+                -1
         );
     }
 
