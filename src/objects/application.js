@@ -24,14 +24,41 @@ hbbtv.objects.Application = (function() {
     
     // store created apps by their url as key
     const gApps = {};
+    const gEvents = [
+        'OperatorApplicationStateChange',
+        'OperatorApplicationStateChangeCompleted',
+        'OperatorApplicationContextChange',
+        'OpAppUpdate'
+    ];
 
-    prototype.createApplication = function(uri) {
+    // define intrinsic events
+    for (const event of gEvents) {
+        var onEvent = 'on' + event;
+        Object.defineProperty(prototype, onEvent, {
+            set(value) {
+                const p = privates.get(this);
+                if (p[onEvent]) {
+                    this.removeEventListener(event, p[onEvent]);
+                }
+                p[onEvent] = value;
+                if (value) {
+                    this.addEventListener(event, p[onEvent]);
+                }
+            },
+            get() {
+                return privates.get(this)[onEvent];
+            },
+        });
+    }
+
+    prototype.createApplication = function(uri, createChild, runAsOpApp) {
         if (privates.get(this).disabled) {
             return null;
         }
         const url = new defaultEntities.URL(uri, document.location.href);
-        if (hbbtv.bridge.manager.createApplication(url.href) === true) {
+        if (hbbtv.bridge.manager.createApplication(url.href, runAsOpApp) === true) {
             return hbbtv.objects.createApplication({
+                url: url.href,
                 disabled: true,
             });
         }
@@ -43,6 +70,7 @@ hbbtv.objects.Application = (function() {
             return;
         }
         hbbtv.bridge.manager.destroyApplication();
+        delete gApps[p.url];
     };
 
     prototype.show = function() {
@@ -71,6 +99,62 @@ hbbtv.objects.Application = (function() {
         }
     };
 
+    prototype.opAppRequestTransient = function() {
+        // Allowed events in which their handler called this method from.
+        // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.4
+        const allowedEvents = ["ChannelChangeSucceeded", "ChannelChangeError",
+            "keydown", "keyup", "keypress", "click", "OperatorApplicationContextChange",
+            "load", "PlayStateChange", "onProgrammesChanged", "ApplicationUnloaded",
+            "onMessage"];
+        if (hbbtv.objectManager.context.event?.type in allowedEvents)
+        {
+            return hbbtv.bridge.manager.opAppRequestTransient();
+        }
+        return false;
+    }
+
+    prototype.opAppRequestForeground = function() {
+        // Allowed events in which their handler called this method from.
+        // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.2
+        const allowedEvents = ["keydown", "keyup", "keypress", "click",
+            "OperatorApplicationContextChange", "load", "PlayStateChange",
+            "ApplicationUnloaded", "onMessage"];
+        if (hbbtv.objectManager.context.event?.type in allowedEvents)
+        {
+            return hbbtv.bridge.manager.opAppRequestForeground();
+        }
+        return false;
+    }
+
+    prototype.opAppRequestBackground = function() {
+        hbbtv.bridge.manager.opAppRequestBackground();
+    }
+
+    prototype.opAppRequestUpdate = function(immediate, params) {
+        hbbtv.bridge.manager.opAppRequestBackground(immediate, params);
+    }
+
+    prototype.opAppUpdateStatus = function() {
+        return hbbtv.bridge.manager.opAppUpdateStatus();
+    }
+
+    prototype.opAppUninstall = function() {
+        return hbbtv.bridge.manager.opAppUninstall();
+    }
+
+    prototype.getPrivateLocalStorage = function() {
+        // TODO: return Web Storage object
+        return undefined;
+    }
+
+    prototype.getOpApp2AppBaseURL = function() {
+        return hbbtv.bridge.manager.getOpApp2AppBaseURL();
+    }
+
+    prototype.getApp2OpAppBaseURL = function() {
+        return hbbtv.bridge.manager.getApp2OpAppBaseURL();
+    }
+
     prototype.addEventListener = function(type, listener) {
         if (privates.get(this).eventDispatcher.addCountedEventListener(type, listener) > 0) {
             gGarbageCollectionBlocked.add(this);
@@ -87,6 +171,12 @@ hbbtv.objects.Application = (function() {
         get() {
             return privates.get(this).privateData;
         },
+    });
+
+    Object.defineProperty(prototype, 'opAppState', {
+        get() {            
+            return hbbtv.bridge.manager.getOpAppState();
+        }
     });
 
     // Internal listeners
