@@ -115,6 +115,13 @@ public:
         virtual std::string GetParentalControlRegion3() = 0;
 
         virtual void DispatchApplicationSchemeUpdatedEvent(const std::string &scheme) = 0;
+
+        /**
+         * Returns true if the provided triplet is in an instance within the
+         * currently playing service, otherwise false.
+         */
+        virtual bool isInstanceInCurrentService(const Utils::S_DVB_TRIPLET &triplet) = 0;
+        
         /**
          *
          */
@@ -394,6 +401,7 @@ private:
     Ait m_ait;
     App m_app;
     Utils::S_DVB_TRIPLET m_currentService = Utils::MakeInvalidDvbTriplet();
+    Utils::S_DVB_TRIPLET m_previousService = Utils::MakeInvalidDvbTriplet();
     uint16_t m_currentServiceReceivedFirstAit = false;
     uint16_t m_currentServiceAitPid = 0;
     bool m_isNetworkAvailable = false;

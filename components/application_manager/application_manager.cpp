@@ -643,7 +643,7 @@ void ApplicationManager::OnBroadcastStopped()
     m_currentServiceReceivedFirstAit = false;
     m_currentServiceAitPid = 0;
     m_ait.Clear();
-    m_currentService = Utils::MakeInvalidDvbTriplet();
+    m_previousService = m_currentService = Utils::MakeInvalidDvbTriplet();
     if (!TransitionRunningAppToBroadcastIndependent())
     {
         LOG(LOG_INFO, "Kill running app (could not transition to broadcast-independent)");
@@ -671,6 +671,7 @@ void ApplicationManager::OnChannelChanged(uint16_t originalNetworkId,
     m_currentServiceAitPid = 0;
     m_ait.Clear();
     m_aitTimeout.start();
+    m_previousService = m_currentService;
     m_currentService = {
         .originalNetworkId = originalNetworkId,
         .transportStreamId = transportStreamId,
@@ -768,7 +769,7 @@ void ApplicationManager::OnSelectedServiceAitReceived()
             {
                 LOG(LOG_INFO,
                     "OnSelectedServiceAitReceived: Pre-existing broadcast-related app already running");
-                if (m_app.isServiceBound)
+                if (m_app.isServiceBound && !m_sessionCallback->isInstanceInCurrentService(m_previousService))
                 {
                     LOG(LOG_INFO, "Kill running app (is service bound)");
                     KillRunningApp();
@@ -989,7 +990,7 @@ bool ApplicationManager::RunApp(const App &app)
             if (!Utils::IsInvalidDvbTriplet(m_currentService))
             {
                 m_sessionCallback->StopBroadcast();
-                m_currentService = Utils::MakeInvalidDvbTriplet();
+                m_previousService = m_currentService = Utils::MakeInvalidDvbTriplet();
             }
         }
 
