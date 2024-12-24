@@ -4,20 +4,18 @@ plugins {
 
 android {
     compileSdkVersion 31
-    buildToolsVersion '30.0.3'
+    buildToolsVersion '32.0.0'
 
     defaultConfig {
-        applicationId "org.orbtv.mock204app"
+        applicationId "org.orbtv.orbservice"
         minSdkVersion 30
         targetSdkVersion 31
         versionCode 1
         versionName "1.0"
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-    }
-
-    sourceSets {
-        main {
-            aidl.srcDirs += 'build/generated/mockdialservice_aidl'
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_STL=c++_shared", "-DORB_HBBTV_VERSION=" + ORB_HBBTV_VERSION
+            }
         }
     }
 
@@ -40,26 +38,6 @@ android {
     }
 }
 
-preBuild.dependsOn ":orblibrary:build"
-
-task copyAidl(type: Copy) {
-    from "${projectDir}/../mockdialservice/src/main/aidl"
-    into file("${projectDir}/build/generated/mockdialservice_aidl")
-}
-preBuild.dependsOn(copyAidl)
-
-task copyTests(type: Copy) {
-    from "${projectDir}/../../tests"
-    into file("${projectDir}/src/main/assets/tests")
-}
-preBuild.dependsOn(copyTests)
-
-task copyOrbSource(type: Copy) {
-    from "${projectDir}/../orbservice/src/main/cpp/aidl/include"
-    into file("${projectDir}/src/main/cpp/aidl/include")
-}
-preBuild.dependsOn(copyOrbSource)
-
 task compileAidlNdk() {
     doLast {
         def aidl = [android.sdkDirectory, 'build-tools', android.buildToolsVersion,
@@ -69,12 +47,12 @@ task compileAidlNdk() {
 
         def headerOutDir = [projectDir.absolutePath, 'src', 'main', 'cpp', 'generated'].join(File.separator)
 
-        def searchPathForImports = [project(':orbservice').projectDir.absolutePath, 'src', 'main', 'cpp', 'aidl'].join(File.separator)
+        def searchPathForImports = [projectDir.absolutePath, 'src', 'main', 'cpp', 'aidl'].join(File.separator)
 
-        def aidlFile1 = [project(':orbservice').projectDir.absolutePath, 'src', 'main', 'cpp', 'aidl',
+        def aidlFile1 = [projectDir.absolutePath, 'src', 'main', 'cpp', 'aidl',
                          'org', 'orbtv', 'orbservice', "IOrbcSession.aidl"].join(File.separator)
 
-        def aidlFile2 = [project(':orbservice').projectDir.absolutePath, 'src', 'main', 'cpp', 'aidl',
+        def aidlFile2 = [projectDir.absolutePath, 'src', 'main', 'cpp', 'aidl',
                          'org', 'orbtv', 'orbservice', "IDvbiSession.aidl"].join(File.separator)
 
         exec {
@@ -94,10 +72,5 @@ clean.doLast {
     file(aidlOutDir).deleteDir()
 }
 
-
 dependencies {
-    implementation project(path: ':orblibrary')
-    implementation 'androidx.leanback:leanback:1.0.0'
-    implementation 'com.squareup.okhttp3:mockwebserver:3.10.0'
-    implementation project(path: ':orbpolyfill')
 }

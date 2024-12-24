@@ -4,19 +4,15 @@ plugins {
 
 android {
     compileSdkVersion 31
+    buildToolsVersion '32.0.0'
 
     defaultConfig {
         applicationId "org.orbtv.mock203app"
-        minSdkVersion 28
+        minSdkVersion 30
         targetSdkVersion 31
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        externalNativeBuild {
-            cmake {
-                arguments "-DANDROID_STL=c++_shared"
-            }
-        }
     }
 
     sourceSets {
@@ -36,6 +32,12 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
+        }
+    }
 }
 
 preBuild.dependsOn ":orblibrary:build"
@@ -51,6 +53,47 @@ task copyTests(type: Copy) {
     into file("${projectDir}/src/main/assets/tests")
 }
 preBuild.dependsOn(copyTests)
+
+task copyOrbSource(type: Copy) {
+    from "${projectDir}/../orbservice/src/main/cpp/aidl/include"
+    into file("${projectDir}/src/main/cpp/aidl/include")
+}
+preBuild.dependsOn(copyOrbSource)
+
+task compileAidlNdk() {
+    doLast {
+        def aidl = [android.sdkDirectory, 'build-tools', android.buildToolsVersion,
+                    'aidl'].join(File.separator)
+
+        def outDir = [projectDir.absolutePath, 'src', 'main', 'cpp', 'generated/aidl'].join(File.separator)
+
+        def headerOutDir = [projectDir.absolutePath, 'src', 'main', 'cpp', 'generated'].join(File.separator)
+
+        def searchPathForImports = [project(':orbservice').projectDir.absolutePath, 'src', 'main', 'cpp', 'aidl'].join(File.separator)
+
+        def aidlFile1 = [project(':orbservice').projectDir.absolutePath, 'src', 'main', 'cpp', 'aidl',
+                         'org', 'orbtv', 'orbservice', "IOrbcSession.aidl"].join(File.separator)
+
+        def aidlFile2 = [project(':orbservice').projectDir.absolutePath, 'src', 'main', 'cpp', 'aidl',
+                         'org', 'orbtv', 'orbservice', "IDvbiSession.aidl"].join(File.separator)
+
+        exec {
+            executable(aidl)
+            args('--lang=ndk', '-o', outDir, '-h', headerOutDir, '-I', searchPathForImports, aidlFile1, aidlFile2)
+        }
+    }
+}
+
+afterEvaluate {
+    preBuild.dependsOn(compileAidlNdk)
+}
+
+clean.doLast {
+    def aidlOutDir = [projectDir.absolutePath, 'src', 'main', 'cpp', 'generated'].join(File.separator)
+
+    file(aidlOutDir).deleteDir()
+}
+
 
 dependencies {
     implementation project(path: ':orblibrary')

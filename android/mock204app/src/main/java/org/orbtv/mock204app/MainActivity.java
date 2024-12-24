@@ -64,6 +64,9 @@ public class MainActivity extends Activity {
     private static final String DIAL_PACKAGE_NAME = "org.orbtv.mockdialservice";
     private static final String DIAL_CLASS_NAME = "org.orbtv.mockdialservice.MockDialService";
 
+    private static final String ORB_PACKAGE_NAME = "org.orbtv.orbservice";
+    private static final String ORB_CLASS_NAME = "org.orbtv.orbservice.OrbService";
+
     private static final String VOICE_RECOGNITION_PACKAGE_NAME = "org.orbtv.voicerecognitionservice";
     private static final String VOICE_RECOGNITION_CLASS_NAME = "org.orbtv.voicerecognitionservice.VoiceRecognitionService";
 
@@ -131,6 +134,10 @@ public class MainActivity extends Activity {
             put(ACT_PRESS_BUTTON_BACK, "BACK");
         }
     };
+
+    public native void nativeServiceConnected(IBinder binder);
+    public native void nativeServiceDisconnected();
+    public native void nativeTest();
 
     private IOrbSession mTvBrowserSession = null;
     private MockOrbSessionCallback mMockCallback;
@@ -201,6 +208,7 @@ public class MainActivity extends Activity {
         FrameLayout frameLayout = findViewById(R.id.frameLayout);
         mTvBrowserSession = OrbSessionFactory.createSession(getApplicationContext(), mMockCallback,
                 configuration);
+        bindOrbService();
         bindDialService();
         bindVoiceRecognitionService();
         frameLayout.addView(mTvBrowserSession.getView());
@@ -254,6 +262,35 @@ public class MainActivity extends Activity {
         unbindDialService();
         unbindVoiceRecognitionService();
         unregisterVoiceReceiver();
+        unbindOrbService();
+    }
+
+    private final ServiceConnection mOrbServiceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder binder) {
+            Log.d(TAG, "ORB service connected");
+            nativeServiceConnected(binder);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    nativeTest();
+                }
+            });
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            Log.e(TAG, "ORB service disconnected");
+            nativeServiceDisconnected();
+        }
+    };
+
+    private void bindOrbService() {
+        ComponentName component = new ComponentName(ORB_PACKAGE_NAME, ORB_CLASS_NAME);
+        Intent intent = new Intent().setComponent(component);
+        Log.d(TAG, "Try to resolve ORB service intent: " +
+                getApplicationContext().getPackageManager().queryIntentServices(intent, 0));
+        getApplicationContext().bindService(intent, mOrbServiceConnection, Context.BIND_AUTO_CREATE);
     }
 
     private final IMockDialServiceCallback.Stub mDialServiceCallback =
@@ -358,6 +395,10 @@ public class MainActivity extends Activity {
         getApplicationContext().unbindService(mVoiceRecognitionServiceConnection);
     }
 
+    private void unbindOrbService() {
+         getApplicationContext().unbindService(mOrbServiceConnection);
+    }
+    
     private boolean getDoNotTrackEnabled(Context context) {
         String setting = Settings.Global.getString(context.getContentResolver(), "do_not_track_enabled");
         if (setting != null && setting.equals("1")) {
@@ -580,5 +621,9 @@ public class MainActivity extends Activity {
                 return true;
         }
         return false;
+    }
+
+    static {
+        System.loadLibrary("org.orbtv.mock204app.native");
     }
 }

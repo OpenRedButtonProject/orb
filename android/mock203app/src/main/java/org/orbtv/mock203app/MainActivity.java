@@ -50,6 +50,13 @@ public class MainActivity extends Activity {
     private static final String DIAL_PACKAGE_NAME = "org.orbtv.mockdialservice";
     private static final String DIAL_CLASS_NAME = "org.orbtv.mockdialservice.MockDialService";
 
+    private static final String ORB_PACKAGE_NAME = "org.orbtv.orbservice";
+    private static final String ORB_CLASS_NAME = "org.orbtv.orbservice.OrbService";
+
+    public native void nativeServiceConnected(IBinder binder);
+    public native void nativeServiceDisconnected();
+    public native void nativeTest();
+
     private IOrbSession mTvBrowserSession = null;
     private MockOrbSessionCallback mMockCallback;
     private IMockDialService mDialService = null;
@@ -87,6 +94,7 @@ public class MainActivity extends Activity {
         FrameLayout frameLayout = findViewById(R.id.frameLayout);
         mTvBrowserSession = OrbSessionFactory.createSession(getApplicationContext(), mMockCallback,
                 configuration);
+        bindOrbService();
         bindDialService();
         frameLayout.addView(mTvBrowserSession.getView());
         mTvBrowserSession.onNetworkStatusEvent(true); // TODO(library) Is this good?
@@ -96,6 +104,35 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         unbindDialService();
+        unbindOrbService();
+    }
+
+    private final ServiceConnection mOrbServiceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder binder) {
+            Log.d(TAG, "ORB service connected");
+            nativeServiceConnected(binder);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    nativeTest();
+                }
+            });
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            Log.e(TAG, "ORB service disconnected");
+            nativeServiceDisconnected();
+        }
+    };
+
+    private void bindOrbService() {
+        ComponentName component = new ComponentName(ORB_PACKAGE_NAME, ORB_CLASS_NAME);
+        Intent intent = new Intent().setComponent(component);
+        Log.d(TAG, "Try to resolve ORB service intent: " +
+                getApplicationContext().getPackageManager().queryIntentServices(intent, 0));
+        getApplicationContext().bindService(intent, mOrbServiceConnection, Context.BIND_AUTO_CREATE);
     }
 
     private final IMockDialServiceCallback.Stub mDialServiceCallback =
@@ -172,6 +209,10 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void unbindOrbService() {
+         getApplicationContext().unbindService(mOrbServiceConnection);
+    }
+    
     private boolean getDoNotTrackEnabled(Context context) {
         String setting = Settings.Global.getString(context.getContentResolver(), "do_not_track_enabled");
         if (setting != null && setting.equals("1")) {
@@ -207,5 +248,8 @@ public class MainActivity extends Activity {
             ip = "127.0.0.1";
         }
         return ip;
+    }
+    static {
+        System.loadLibrary("org.orbtv.mock203app.native");
     }
 }

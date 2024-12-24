@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="org.orbtv.orbservice">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application
+        android:label="orbservice"
+        android:usesCleartextTraffic="true">
+        <service 
+           android:name=".OrbService" 
+           android:exported="true">
+        </service>
+    </application>
+</manifest>

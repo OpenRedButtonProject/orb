@@ -1,1 +1,4 @@
 /build
+/src/main/cpp/generated/
+/src/main/cpp/aidl/
+/local.properties

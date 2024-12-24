@@ -12,6 +12,7 @@
 
     <queries>
         <package android:name="org.orbtv.mockdialservice" />
+        <package android:name="org.orbtv.orbservice" />
         <package android:name="org.orbtv.voicerecognitionservice" />
     </queries>
     <application

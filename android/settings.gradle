@@ -11,3 +11,4 @@ if (gradle.ext.ORB_HBBTV_VERSION == 203) {
 }
 include ':mockdialservice'
 include ':orbpolyfill'
+include ':orbservice'
