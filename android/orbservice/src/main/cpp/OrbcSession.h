@@ -3,7 +3,6 @@
 #include "org/orbtv/orbservice/BnOrbcSession.h"
 #include <android/binder_auto_utils.h>
 #include "org/orbtv/orbservice/IDvbiSession.h"
-#include "DataBuffer.h"
 
 #ifdef NDK_AIDL
 #define STATUS ndk::ScopedAStatus
@@ -22,7 +21,7 @@ namespace org::orbtv::orbservice {
 class OrbcSession : public BnOrbcSession {
 public:
   STATUS initialise(const SH_PTR<IDvbiSession>& in_dvb) override;
-  STATUS processAIT(int32_t in_aitPid, int32_t in_serviceId, const DataBuffer& in_data) override;
+  STATUS processAIT(int32_t in_aitPid, int32_t in_serviceId, const std::vector<uint8_t>& in_data) override;
   STATUS onServiceListChanged() override;
   STATUS onParentalRatingChanged(bool in_blocked) override;
 

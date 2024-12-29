@@ -3,7 +3,6 @@
 package org.orbtv.orbservice;
 
 import org.orbtv.orbservice.IDvbiSession;
-import org.orbtv.orbservice.DataBuffer;
 
 interface IOrbcSession {
 
@@ -20,7 +19,7 @@ interface IOrbcSession {
      * @param serviceId Service ID the AIT refers to
      * @param data      The buffer containing the AIT row data
      */
-    void processAIT(int aitPid, int serviceId, in DataBuffer data);
+    void processAIT(int aitPid, int serviceId, in byte[] data);
 
     /**
      * Called when the service list has changed.

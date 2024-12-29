@@ -32,7 +32,6 @@ add_library(
    # sources...
    src/main/cpp/generated/aidl/org/orbtv/orbservice/IDvbiSession.cpp
    src/main/cpp/generated/aidl/org/orbtv/orbservice/IOrbcSession.cpp
-   src/main/cpp/aidl/include/ndk/DataBuffer.cpp
    src/main/cpp/native.cpp
    src/main/cpp/jni_utils.cpp
    src/main/cpp/DvbiSession.cpp

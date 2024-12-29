@@ -24,7 +24,6 @@
 #endif
 #include "OrbcSession.h"
 #include "org/orbtv/orbservice/IDvbiSession.h"
-#include "DataBuffer.h"
 
 #define TAG                "OrbcSession"
 #define LOGI(x, ...)    __android_log_print(ANDROID_LOG_INFO, TAG, "%s:%u " x "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__);
@@ -36,7 +35,6 @@ namespace aidl {
 
 using org::orbtv::orbservice::OrbcSession;
 using org::orbtv::orbservice::IDvbiSession;
-using org::orbtv::orbservice::DataBuffer;
 using namespace std;
 
 static SH_PTR<IDvbiSession> g_dvb_session;
@@ -78,7 +76,7 @@ OrbcSession::initialise(const SH_PTR<IDvbiSession>& dvb)
 }
 
 STATUS
-OrbcSession::processAIT(int32_t aitPid, int32_t serviceId, const DataBuffer& data)
+OrbcSession::processAIT(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& in_data)
 {
    STATUS status;
 #ifdef NDK_AIDL

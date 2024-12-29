@@ -30,7 +30,6 @@
 using aidl::org::orbtv::orbservice::IOrbcSession;
 using aidl::org::orbtv::orbservice::IDvbiSession;
 using aidl::org::orbtv::orbservice::DvbiSession;
-using aidl::org::orbtv::orbservice::DataBuffer;
 using ndk::ScopedAStatus;
 using namespace std;
 
@@ -83,8 +82,7 @@ Java_org_orbtv_mock203app_MainActivity_nativeTest(
         jobject /* this */)
 {
    ScopedAStatus status;
-   int8_t data[4] = { 40, 0, 60, 70 };
-   DataBuffer buffer(3, data);
+   vector<uint8_t> buffer(4);
 
    status = g_orb_session->onServiceListChanged();
    if (status.isOk())

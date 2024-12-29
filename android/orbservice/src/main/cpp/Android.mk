@@ -10,7 +10,6 @@ LOCAL_AIDL_INCLUDES := $(LOCAL_PATH)/aidl
 LOCAL_SRC_FILES := \
    aidl/org/orbtv/orbservice/IDvbiSession.aidl \
    aidl/org/orbtv/orbservice/IOrbcSession.aidl \
-   aidl/include/cpp/DataBuffer.cpp \
    native.cpp \
    jni_utils.cpp \
    OrbcSession.cpp
