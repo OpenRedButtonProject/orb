@@ -14,16 +14,9 @@
  * limitations under the License.
  */
 
-#include <jni.h>
-#include <pthread.h>
 #include <android/log.h>
 
-#include <android/binder_ibinder_jni.h>
-#ifndef NDK_AIDL
-#include <android/binder_libbinder.h>
-#endif
 #include "OrbcSession.h"
-#include "org/orbtv/orbservice/IDvbiSession.h"
 
 #define TAG                "OrbcSession"
 #define LOGI(x, ...)    __android_log_print(ANDROID_LOG_INFO, TAG, "%s:%u " x "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__);
@@ -35,23 +28,26 @@ namespace aidl {
 
 using org::orbtv::orbservice::OrbcSession;
 using org::orbtv::orbservice::IDvbiSession;
-using namespace std;
 
 static SH_PTR<IDvbiSession> g_dvb_session;
 
-extern "C" JNIEXPORT jobject JNICALL
-Java_org_orbtv_orbservice_OrbService_createBinder(
-        JNIEnv* env,
-        jobject /* this */)
+OrbcSession* OrbcSession::s_instance = nullptr;
+mutex OrbcSession::s_mtx;
+
+OrbcSession* OrbcSession::getInstance()
 {
-   static OrbcSession orb_session;
-   LOGI("")
-#ifdef NDK_AIDL
-   AIBinder* binder = orb_session.asBinder().get();
-#else
-   AIBinder* binder = AIBinder_fromPlatformBinder(android::IInterface::asBinder(&orb_session));
-#endif
-   return env->NewGlobalRef(AIBinder_toJavaBinder(env, binder));
+    if (s_instance == nullptr) {
+        lock_guard<mutex> lock(s_mtx);
+        if (s_instance == nullptr) {
+          #ifdef NDK_AIDL
+            static OrbcSession orb_session;
+            s_instance = &orb_session;
+          #else
+            s_instance = new OrbcSession();
+          #endif
+        }
+    }
+    return s_instance;
 }
 
 STATUS

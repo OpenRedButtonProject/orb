@@ -17,19 +17,44 @@
 #include <jni.h>
 #include <android/log.h>
 
+#include <android/binder_ibinder_jni.h>
+#ifndef NDK_AIDL
+#include <android/binder_libbinder.h>
+#endif
+
 #include "jni_utils.h"
+#include "OrbcSession.h"
 
 #define TAG                "orbservice/native"
-#define DBGPRINT(x, ...)    __android_log_print(ANDROID_LOG_INFO, TAG, "%s:%u " x "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__);
-#define ERRPRINT(x, ...)    __android_log_print(ANDROID_LOG_ERROR, TAG, "%s:%u " x "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__);
+#define LOGI(x, ...)    __android_log_print(ANDROID_LOG_INFO, TAG, "%s:%u " x "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__);
+#define LOGE(x, ...)    __android_log_print(ANDROID_LOG_ERROR, TAG, "%s:%u " x "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__);
+
+#ifdef NDK_AIDL
+using namespace aidl;
+#endif
+using namespace org::orbtv::orbservice;
 
 extern "C"
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *)
 {
-    DBGPRINT("")
+    LOGI("")
 
     JniUtils::Init(vm, JNI_VERSION_1_6);
 
     return JNI_VERSION_1_6;
+}
+
+extern "C" JNIEXPORT jobject JNICALL
+Java_org_orbtv_orbservice_OrbService_createBinder(
+        JNIEnv* env,
+        jobject /* this */)
+{
+   LOGI("")
+#ifdef NDK_AIDL
+   AIBinder* binder = OrbcSession::getInstance()->asBinder().get();
+#else
+   AIBinder* binder = AIBinder_fromPlatformBinder(android::IInterface::asBinder(OrbcSession::getInstance()));
+#endif
+   return env->NewGlobalRef(AIBinder_toJavaBinder(env, binder));
 }
 
