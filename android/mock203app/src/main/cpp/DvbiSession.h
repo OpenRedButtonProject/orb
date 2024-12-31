@@ -18,6 +18,7 @@
 
 #include "aidl/org/orbtv/orbservice/BnDvbiSession.h"
 
+using namespace std;
 using ndk::ScopedAStatus;
 
 namespace aidl::org::orbtv::orbservice {
@@ -27,11 +28,11 @@ public:
    DvbiSession();
 
 public:
-   ScopedAStatus getPreferredUILanguage(std::string* _aidl_return) override;
-   ScopedAStatus getCountryId(std::string* _aidl_return) override;
+   ScopedAStatus getPreferredUILanguage(vector<uint8_t>* _aidl_return) override;
+   ScopedAStatus getCountryId(vector<uint8_t>* _aidl_return) override;
    ScopedAStatus getSubtitlesEnabled(bool* _aidl_return) override;
    ScopedAStatus getAudioDescriptionEnabled(bool* _aidl_return) override;
-   ScopedAStatus getCurrentCcid(std::string* _aidl_return) override;
+   ScopedAStatus getCurrentCcid(vector<uint8_t>* _aidl_return) override;
 
 };
 

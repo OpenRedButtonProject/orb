@@ -31,12 +31,11 @@ using aidl::org::orbtv::orbservice::IOrbcSession;
 using aidl::org::orbtv::orbservice::IDvbiSession;
 using aidl::org::orbtv::orbservice::DvbiSession;
 using ndk::ScopedAStatus;
-using namespace std;
 
 std::shared_ptr<IOrbcSession> g_orb_session;
 static DvbiSession g_dvb_session;
 static const char g_lang[4] = {"eng"};
-static const char g_cnty[3] = {"uk"};
+static const char g_cnty[4] = {"gbr"};
 static const char g_ccid[8] = {"ccid:01"};
 
 
@@ -124,37 +123,39 @@ DvbiSession::DvbiSession()
 {
 }
 
-ScopedAStatus DvbiSession::getPreferredUILanguage(std::string* lang)
+ScopedAStatus DvbiSession::getPreferredUILanguage(vector<uint8_t>* lang)
 {
-   ScopedAStatus status;
+    ScopedAStatus status;
+    vector<uint8_t> lng(g_lang, g_lang + 3);
 
-   LOGI("")
-   *lang =  std::string(g_lang);
+    LOGI("")
+    *lang =  lng;
 
-   status.set(AStatus_fromStatus(STATUS_OK));
-   return status;
+    status.set(AStatus_fromStatus(STATUS_OK));
+    return status;
 }
 
-ScopedAStatus DvbiSession::getCountryId(std::string* country_id)
+ScopedAStatus DvbiSession::getCountryId(vector<uint8_t>* country_id)
 {
-   ScopedAStatus status;
+    ScopedAStatus status;
+    vector<uint8_t> cid(g_cnty, g_cnty + 3);
 
-   LOGI("")
-   *country_id = std::string(g_cnty);
+    LOGI("")
+    *country_id = cid;
 
-   status.set(AStatus_fromStatus(STATUS_OK));
-   return status;
+    status.set(AStatus_fromStatus(STATUS_OK));
+    return status;
 }
 
 ScopedAStatus DvbiSession::getSubtitlesEnabled(bool* enabled)
 {
-   ScopedAStatus status;
+    ScopedAStatus status;
 
-   LOGI("")
-   *enabled = false;
+    LOGI("")
+    *enabled = false;
 
-   status.set(AStatus_fromStatus(STATUS_OK));
-   return status;
+    status.set(AStatus_fromStatus(STATUS_OK));
+    return status;
 }
 
 
@@ -169,13 +170,14 @@ ScopedAStatus DvbiSession::getAudioDescriptionEnabled(bool* enabled)
    return status;
 }
 
-ScopedAStatus DvbiSession::getCurrentCcid(std::string *ccid)
+ScopedAStatus DvbiSession::getCurrentCcid(vector<uint8_t> *pccid)
 {
-   ScopedAStatus status;
+    ScopedAStatus status;
+    vector<uint8_t> ccid(g_ccid, g_ccid + 7);
 
-   LOGI("")
-   *ccid = std::string(g_ccid);
+    LOGI("")
+    *pccid = ccid;
 
-   status.set(AStatus_fromStatus(STATUS_OK));
-   return status;
+    status.set(AStatus_fromStatus(STATUS_OK));
+    return status;
 }

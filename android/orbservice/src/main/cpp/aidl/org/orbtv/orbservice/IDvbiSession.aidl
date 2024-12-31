@@ -9,7 +9,7 @@ interface IDvbiSession {
      *
      * @return Comma separated string of languages (ISO 639-2 codes)
      */
-    String getPreferredUILanguage();
+    byte[] getPreferredUILanguage();
 
     /**
      * Gets a string containing the three character country code identifying the country in which the
@@ -17,7 +17,7 @@ interface IDvbiSession {
      *
      * @return Country code (ISO 3166 alpha-3) string
      */
-    String getCountryId();
+    byte[] getCountryId();
 
     /**
      * Gets whether subtitles are enabled in the TV context. So HbbTV knows to start subtitle
@@ -39,6 +39,6 @@ interface IDvbiSession {
      *
      * @return A CCID on success, an empty string otherwise
      */
-   String getCurrentCcid();
+   byte[] getCurrentCcid();
 
 }

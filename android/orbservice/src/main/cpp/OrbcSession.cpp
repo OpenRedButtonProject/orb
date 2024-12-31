@@ -79,11 +79,8 @@ STATUS
 OrbcSession::processAIT(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& in_data)
 {
    STATUS status;
-#ifdef NDK_AIDL
-   std::string ccid;
-#else
-   ::android::String16 ccid;
-#endif
+   string ccid;
+   vector<uint8_t> vccid;
 
    LOGI("(%d, %d)", aitPid, serviceId)
 
@@ -93,10 +90,11 @@ OrbcSession::processAIT(int32_t aitPid, int32_t serviceId, const std::vector<uin
    }
    else
    {
-      status = g_dvb_session->getCurrentCcid(&ccid);
+      status = g_dvb_session->getCurrentCcid(&vccid);
       if (status.isOk())
       {
-         LOGI("ccid ok")
+          std::string ccid( vccid.begin(), vccid.end() );
+          LOGI("ccid ok %s", ccid.c_str())
       }
    }
 
