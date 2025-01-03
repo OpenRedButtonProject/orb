@@ -36,6 +36,9 @@ else
         liblog
 endif
 
+LOCAL_SHARED_LIBRARIES += \
+   libnativehelper
+
 LOCAL_SRC_FILES := \
    jni_utils.cpp \
    application_manager_native.cpp \
