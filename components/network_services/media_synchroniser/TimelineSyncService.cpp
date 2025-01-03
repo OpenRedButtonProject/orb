@@ -536,7 +536,7 @@ void TimelineSyncService::updateClient(WebSocketService::WebSocketConnection *co
             m_connectionPreviousControlTimestamp[connection] = ct;
             LOG(LOG_DEBUG, "Current Control timestamp: %s\n",
                 ct.value().pack().toStyledString().c_str());
-#if JSONCPP_VERSION_1_9_4 == 1
+#if JSONCPP_VERSION_HEXA > 0x01080200
             connection->SendMessage(Json::writeString(m_wbuilder, ct.value().pack()));
 #else
             connection->SendMessage(m_writer.write(ct.value().pack()));
