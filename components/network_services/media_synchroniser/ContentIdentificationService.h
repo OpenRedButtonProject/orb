@@ -93,7 +93,8 @@ public:
 private:
     ContentIdentificationProperties *m_properties;
     Json::Value m_previousMessage;
-#if JSONCPP_VERSION_1_9_4 == 1
+// Use version define in jsoncpp header 'json/version.h'
+#if JSONCPP_VERSION_HEXA > 0x01080200
     Json::StreamWriterBuilder m_wbuilder;
 #else
     Json::FastWriter m_writer;
