@@ -67,7 +67,7 @@ WebSocketService::WebSocketService(const std::string &protocol_name, int port, b
     protocol_name_(protocol_name),
     use_ssl_(use_ssl),
     interface_name_(interface_name),
-#if LWS_VERSION_4 == 1
+#if LWS_LIBRARY_VERSION_NUMBER > 4000000
     retry_{.secs_since_valid_ping = SECS_SINCE_VALID_PING, .secs_since_valid_hangup =
                SECS_SINCE_VALID_HANGUP},
 #endif
@@ -81,7 +81,7 @@ WebSocketService::WebSocketService(const std::string &protocol_name, int port, b
         .options = LWS_SERVER_OPTION_HTTP_HEADERS_SECURITY_BEST_PRACTICES_ENFORCE
             /* | LWS_SERVER_OPTION_VHOST_UPG_STRICT_HOST_CHECK */,
         .vhost_name = VHOST_NAME,
-#if LWS_VERSION_4 == 1
+#if LWS_LIBRARY_VERSION_NUMBER > 4000000
         .retry_and_idle_policy = &retry_,
 #endif
     };

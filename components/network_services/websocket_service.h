@@ -109,7 +109,9 @@ private:
 
     bool stop_;
     std::string protocol_name_;
+#if LWS_LIBRARY_VERSION_NUMBER > 4000000
     lws_retry_bo_t retry_;
+#endif
     struct lws_protocols protocols_[2];
     struct lws_context_creation_info info_;
     bool use_ssl_;
