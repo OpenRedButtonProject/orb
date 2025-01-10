@@ -136,5 +136,11 @@ public:
     virtual std::string GetParentalControlRegion3() override;
 
     virtual void DispatchApplicationSchemeUpdatedEvent(const std::string &scheme) override;
+    
+    /**
+     * Returns true if the provided triplet is in an instance within the
+     * currently playing service, otherwise false.
+     */
+    virtual bool isInstanceInCurrentService(const Utils::S_DVB_TRIPLET &triplet) override;
 }; // class SessionCallbackImpl
 } // namespace orb
