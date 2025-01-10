@@ -583,7 +583,7 @@ void ApplicationManager::OnBroadcastStopped()
     m_currentServiceReceivedFirstAit = false;
     m_currentServiceAitPid = 0;
     m_ait.Clear();
-    m_currentService = Utils::MakeInvalidDvbTriplet();
+    m_previousService = m_currentService = Utils::MakeInvalidDvbTriplet();
     if (!TransitionRunningAppToBroadcastIndependent())
     {
         LOG(LOG_INFO, "Kill running app (could not transition to broadcast-independent)");
@@ -611,6 +611,7 @@ void ApplicationManager::OnChannelChanged(uint16_t originalNetworkId,
     m_currentServiceAitPid = 0;
     m_ait.Clear();
     m_aitTimeout.start(std::chrono::milliseconds(Utils::AIT_TIMEOUT));
+    m_previousService = m_currentService;
     m_currentService = {
         .originalNetworkId = originalNetworkId,
         .transportStreamId = transportStreamId,
@@ -707,7 +708,7 @@ void ApplicationManager::OnSelectedServiceAitReceived()
                 Ait::S_AIT_APP_DESC aitDesc = m_apps[m_appId]->GetAitDescription();
                 LOG(LOG_INFO,
                     "OnSelectedServiceAitReceived: Pre-existing broadcast-related app already running");
-                if (aitDesc.appDesc.serviceBound)
+                if (aitDesc.appDesc.serviceBound && !m_sessionCallback->isInstanceInCurrentService(m_previousService))
                 {
                     LOG(LOG_INFO, "Kill running app (is service bound)");
                     KillRunningApp();
@@ -940,7 +941,7 @@ void ApplicationManager::RunApp(std::unique_ptr<HbbTVApp> app)
     if (!app->IsBroadcast() && !Utils::IsInvalidDvbTriplet(m_currentService))
     {
         m_sessionCallback->StopBroadcast();
-        m_currentService = Utils::MakeInvalidDvbTriplet();
+        m_previousService = m_currentService = Utils::MakeInvalidDvbTriplet();
     }
     
     m_sessionCallback->LoadApplication(app->GetId(), app->GetEntryUrl().c_str(),
