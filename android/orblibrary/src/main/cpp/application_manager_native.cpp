@@ -180,6 +180,12 @@ public:
         return env->CallBooleanMethod(mJavaCbObject, gCb[CB_IS_INSTANCES_OF_CURRENT_SERVICE], triplet.originalNetworkId, triplet.transportStreamId, triplet.serviceId);
     }
 
+
+    void DispatchOperatorApplicationStateChange(const std::string &oldState, const std::string &newState) { /* TODO */ }
+    void DispatchOperatorApplicationStateChangeCompleted(const std::string &oldState, const std::string &newState) { /* TODO */ }
+    void DispatchOperatorApplicationContextChange(const std::string &startupLocation, const std::string &launchLocation = "") { /* TODO */ }
+    void DispatchOpAppUpdate(const std::string &updateEvent) { /* TODO */ }
+
 private:
     jobject mJavaCbObject;
 };
@@ -250,7 +256,7 @@ JNIEXPORT jboolean JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniCreat
     jint calling_app_id, jstring j_url)
 {
     std::string url = JniUtils::MakeStdString(env, j_url);
-    return GetManager(env, object)->CreateApplication(calling_app_id, url);
+    return GetManager(env, object)->CreateApplication(calling_app_id, url, false);
 }
 
 extern "C"

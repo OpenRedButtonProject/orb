@@ -32,6 +32,7 @@
 #include "utils.h"
 #include "ait.h"
 #include "hbbtv_app.h"
+#include "opapp.h"
 
 class ApplicationManager {
 public:
@@ -114,6 +115,11 @@ public:
         virtual std::string GetParentalControlRegion3() = 0;
 
         virtual void DispatchApplicationSchemeUpdatedEvent(const std::string &scheme) = 0;
+        
+        virtual void DispatchOperatorApplicationStateChange(const std::string &oldState, const std::string &newState) = 0;
+        virtual void DispatchOperatorApplicationStateChangeCompleted(const std::string &oldState, const std::string &newState) = 0;
+        virtual void DispatchOperatorApplicationContextChange(const std::string &startupLocation, const std::string &launchLocation = "") = 0;
+        virtual void DispatchOpAppUpdate(const std::string &updateEvent) = 0;
 
         /**
          * Returns true if the provided triplet is in an instance within the
@@ -144,6 +150,7 @@ public:
      *
      * @param callingAppId The calling app ID or INVALID_APP_ID if not called by an app.
      * @param url A HTTP/HTTPS or DVB URL.
+     * @param runAsOpApp Whether the newly created app will be launched as an OpApp.
      *
      * A HTTP/HTTPS URL may refer to the entry page or XML AIT of a broadcast-independent app.
      *
@@ -153,7 +160,7 @@ public:
      *
      * @return true if the application can be created, otherwise false
      */
-    bool CreateApplication(uint16_t callingAppId, const std::string &url);
+    bool CreateApplication(uint16_t callingAppId, const std::string &url, bool runAsOpApp);
 
     /**
      * Destroy the calling application.
@@ -351,7 +358,7 @@ private:
      * 
      * @return True on success, false on failure.
      */
-    bool CreateAndRunApp(std::string url);
+    bool CreateAndRunApp(std::string url, bool runAsOpApp = false);
 
     /**
      * Create and run an App by AIT description.
@@ -367,7 +374,8 @@ private:
     bool CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc,
         const std::string &urlParams,
         bool isBroadcast,
-        bool isTrusted);
+        bool isTrusted,
+        bool runAsOpApp = false);
 
     /**
      * Run the app.
@@ -388,7 +396,7 @@ private:
     /**
      * Kill the running app.
      */
-    void KillRunningApp();
+    void KillRunningApp(uint16_t appid);
 
     /**
      * Transition the running app to broadcast-related, if conditions permit.
@@ -431,7 +439,8 @@ private:
     std::unique_ptr<SessionCallback> m_sessionCallback;
     Ait m_ait;
     std::unordered_map<uint16_t, std::unique_ptr<HbbTVApp>> m_apps;
-    uint16_t m_appId = INVALID_APP_ID;
+    uint16_t m_hbbtvAppId = INVALID_APP_ID;
+    uint16_t m_opAppId = INVALID_APP_ID;
     Utils::S_DVB_TRIPLET m_currentService = Utils::MakeInvalidDvbTriplet();
     Utils::S_DVB_TRIPLET m_previousService = Utils::MakeInvalidDvbTriplet();
     uint16_t m_currentServiceReceivedFirstAit = false;
@@ -439,7 +448,8 @@ private:
     bool m_isNetworkAvailable = false;
     std::recursive_mutex m_lock;
     Utils::Timeout m_aitTimeout;
-    std::shared_ptr<HbbTVApp::SessionCallback> m_appSessionCallback;
+    std::shared_ptr<HbbTVApp::SessionCallback> m_hbbtvAppSessionCallback;
+    std::shared_ptr<OpApp::SessionCallback> m_opAppSessionCallback;
 };
 
 #endif // HBBTV_SERVICE_MANAGER_H

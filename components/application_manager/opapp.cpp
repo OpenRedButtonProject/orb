@@ -11,9 +11,10 @@ static std::string opAppStateToString(const HbbTVApp::E_APP_STATE &state);
  * @throws std::runtime_error
  */
 OpApp::OpApp(const std::string &url, std::shared_ptr<OpApp::SessionCallback> sessionCallback)
-    : HbbTVApp(url, sessionCallback),
-    m_state(BACKGROUND_STATE) // ETSI TS 103 606 V1.2.1 (2024-03) page 36
-{ }
+    : HbbTVApp(url, sessionCallback)
+{
+    m_state = BACKGROUND_STATE; // ETSI TS 103 606 V1.2.1 (2024-03) page 36
+}
 
 /**
  * Create opapp from Ait description.
@@ -29,9 +30,10 @@ OpApp::OpApp(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable, std::shar
         true,
         false,
         sessionCallback
-    ),
-    m_state(BACKGROUND_STATE) // ETSI TS 103 606 V1.2.1 (2024-03) page 36
-{ }
+    )
+{
+    m_state = BACKGROUND_STATE; // ETSI TS 103 606 V1.2.1 (2024-03) page 36
+}
 
 /**
  * Create opapp from url and inherit another opapp's state (ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.1).
@@ -39,9 +41,9 @@ OpApp::OpApp(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable, std::shar
  * @throws std::runtime_error
  */
 OpApp::OpApp(const OpApp &other, const std::string &url)
-    : OpApp(url, other.m_sessionCallback),
-    m_state(other.GetState())
+    : HbbTVApp(url, other.m_sessionCallback)
 {
+    m_state = other.GetState();
     if (!other.m_countdown.isStopped())
     {
         m_countdown.start(other.m_countdown.remaining());

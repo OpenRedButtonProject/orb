@@ -23,7 +23,7 @@
 
 #include "hbbtv_app.h"
 
-class OpApp : public App
+class OpApp : public HbbTVApp
 {
 public:
     class SessionCallback : public HbbTVApp::SessionCallback
