@@ -16,24 +16,39 @@
 
 #include <android/binder_auto_utils.h>
 
-#include "aidl/org/orbtv/orbservice/BnDvbiSession.h"
+#include "org/orbtv/orbservice/BnDvbiSession.h"
+
+#ifdef NDK_AIDL
+#define STATUS ndk::ScopedAStatus
+#define SH_PTR std::shared_ptr
+#else
+#define STATUS ::android::binder::Status
+#define SH_PTR ::android::sp
+#endif
 
 using namespace std;
-using ndk::ScopedAStatus;
 
-namespace aidl::org::orbtv::orbservice {
+#ifdef NDK_AIDL
+namespace aidl {
+#endif
+
+namespace org::orbtv::orbservice {
 
 class DvbiSession : public BnDvbiSession {
 public:
    DvbiSession();
 
 public:
-   ScopedAStatus getPreferredUILanguage(vector<uint8_t>* _aidl_return) override;
-   ScopedAStatus getCountryId(vector<uint8_t>* _aidl_return) override;
-   ScopedAStatus getSubtitlesEnabled(bool* _aidl_return) override;
-   ScopedAStatus getAudioDescriptionEnabled(bool* _aidl_return) override;
-   ScopedAStatus getCurrentCcid(vector<uint8_t>* _aidl_return) override;
+   STATUS getPreferredUILanguage(vector<uint8_t>* _aidl_return) override;
+   STATUS getCountryId(vector<uint8_t>* _aidl_return) override;
+   STATUS getSubtitlesEnabled(bool* _aidl_return) override;
+   STATUS getAudioDescriptionEnabled(bool* _aidl_return) override;
+   STATUS getCurrentCcid(vector<uint8_t>* _aidl_return) override;
 
 };
 
-} // namespace aidl::org::orbtv::orbservice
+} // namespace org::orbtv::orbservice
+
+#ifdef NDK_AIDL
+} // namespace aidl
+#endif

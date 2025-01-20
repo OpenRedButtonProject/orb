@@ -18,8 +18,11 @@
 #include <android/log.h>
 
 #include <android/binder_ibinder_jni.h>
-#include "generated/aidl/org/orbtv/orbservice/IOrbcSession.h"
-#include "generated/aidl/org/orbtv/orbservice/IDvbiSession.h"
+#include "org/orbtv/orbservice/IOrbcSession.h"
+#include "org/orbtv/orbservice/IDvbiSession.h"
+#ifndef NDK_AIDL
+#include <android/binder_libbinder.h>
+#endif
 
 #include "DvbiSession.h"
 
@@ -27,13 +30,16 @@
 #define LOGI(x, ...) __android_log_print(ANDROID_LOG_INFO, TAG, "%s:%u " x "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__);
 #define LOGE(x, ...) __android_log_print(ANDROID_LOG_ERROR, TAG, "%s:%u " x "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__);
 
-using aidl::org::orbtv::orbservice::IOrbcSession;
-using aidl::org::orbtv::orbservice::IDvbiSession;
-using aidl::org::orbtv::orbservice::DvbiSession;
-using ndk::ScopedAStatus;
+#ifdef NDK_AIDL
+namespace aidl {
+#endif
 
-std::shared_ptr<IOrbcSession> g_orb_session;
-static DvbiSession g_dvb_session;
+using org::orbtv::orbservice::IOrbcSession;
+using org::orbtv::orbservice::IDvbiSession;
+using org::orbtv::orbservice::DvbiSession;
+
+static SH_PTR<IOrbcSession> g_orb_session;
+static SH_PTR<DvbiSession> g_dvb_session;
 static const char g_lang[4] = {"eng"};
 static const char g_cnty[4] = {"gbr"};
 static const char g_ccid[8] = {"ccid:01"};
@@ -47,19 +53,14 @@ Java_org_orbtv_mock203app_MainActivity_nativeServiceConnected(
 {
    AIBinder* pBinder = AIBinder_fromJavaBinder(env, binder);
 
+#ifdef NDK_AIDL
    const ::ndk::SpAIBinder spBinder(pBinder);
    g_orb_session = IOrbcSession::fromBinder(spBinder);
-
-   ::ndk::SpAIBinder dvbbinder = g_dvb_session.asBinder();
-   std::shared_ptr<IDvbiSession> idvb = aidl::org::orbtv::orbservice::DvbiSession::fromBinder(dvbbinder);
-   if (aidl::org::orbtv::orbservice::DvbiSession::setDefaultImpl(idvb))
-   {
-      LOGI("set default ok")
-   }
-   else
-   {
-      LOGE("set default failed")
-   }
+   g_dvb_session = SharedRefBase::make<DvbiSession>();
+#else
+   g_orb_session = IOrbcSession::asInterface(AIBinder_toPlatformBinder(pBinder));
+   g_dvb_session = new DvbiSession();
+#endif
 
    LOGI("[cpp] onServiceConnected");
 }
@@ -80,7 +81,7 @@ Java_org_orbtv_mock203app_MainActivity_nativeTest(
         JNIEnv* env,
         jobject /* this */)
 {
-   ScopedAStatus status;
+   STATUS status;
    vector<uint8_t> buffer(4);
 
    status = g_orb_session->onServiceListChanged();
@@ -92,12 +93,7 @@ Java_org_orbtv_mock203app_MainActivity_nativeTest(
    {
       LOGI("onServiceListChanged failed")
    }
-   std::shared_ptr<IDvbiSession> idvb = DvbiSession::getDefaultImpl();
-   if (idvb == nullptr)
-   {
-       LOGE("idvb is null")
-   }
-   status = g_orb_session->initialise(idvb);
+   status = g_orb_session->initialise(g_dvb_session);
    if (status.isOk())
    {
       LOGI("intialise() success")
@@ -123,61 +119,60 @@ DvbiSession::DvbiSession()
 {
 }
 
-ScopedAStatus DvbiSession::getPreferredUILanguage(vector<uint8_t>* lang)
+// ----------------------------------------------------------------------------------
+//              Start of Interface functions required by ORB
+// ----------------------------------------------------------------------------------
+
+STATUS DvbiSession::getPreferredUILanguage(vector<uint8_t>* lang)
 {
-    ScopedAStatus status;
+    STATUS status;
     vector<uint8_t> lng(g_lang, g_lang + 3);
 
     LOGI("")
     *lang =  lng;
 
-    status.set(AStatus_fromStatus(STATUS_OK));
     return status;
 }
 
-ScopedAStatus DvbiSession::getCountryId(vector<uint8_t>* country_id)
+STATUS DvbiSession::getCountryId(vector<uint8_t>* country_id)
 {
-    ScopedAStatus status;
+    STATUS status;
     vector<uint8_t> cid(g_cnty, g_cnty + 3);
 
     LOGI("")
     *country_id = cid;
 
-    status.set(AStatus_fromStatus(STATUS_OK));
     return status;
 }
 
-ScopedAStatus DvbiSession::getSubtitlesEnabled(bool* enabled)
+STATUS DvbiSession::getSubtitlesEnabled(bool* enabled)
 {
-    ScopedAStatus status;
+    STATUS status;
 
     LOGI("")
     *enabled = false;
 
-    status.set(AStatus_fromStatus(STATUS_OK));
     return status;
 }
 
 
-ScopedAStatus DvbiSession::getAudioDescriptionEnabled(bool* enabled)
+STATUS DvbiSession::getAudioDescriptionEnabled(bool* enabled)
 {
-   ScopedAStatus status;
+   STATUS status;
 
    LOGI("")
    *enabled = false;
 
-   status.set(AStatus_fromStatus(STATUS_OK));
    return status;
 }
 
-ScopedAStatus DvbiSession::getCurrentCcid(vector<uint8_t> *pccid)
+STATUS DvbiSession::getCurrentCcid(vector<uint8_t> *pccid)
 {
-    ScopedAStatus status;
+    STATUS status;
     vector<uint8_t> ccid(g_ccid, g_ccid + 7);
 
     LOGI("")
     *pccid = ccid;
 
-    status.set(AStatus_fromStatus(STATUS_OK));
     return status;
 }

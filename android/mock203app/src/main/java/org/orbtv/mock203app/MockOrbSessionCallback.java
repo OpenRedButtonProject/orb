@@ -463,7 +463,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
                 true,
                 "OBS",
                 "Mock",
-                BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ")",
+                "build version? ()",
                 "0.0.0"
         );
     }
@@ -1420,16 +1420,13 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     /**
-     * Publish a test report (debug build only).
+     * Publish a test report.
      *
      * @param testSuite A unique test suite name.
      * @param xml The XML test report.
      */
     @Override
     public void publishTestReport(String testSuite, String xml) {
-        if (!BuildConfig.DEBUG) {
-            return;
-        }
         mTestSuiteRunner.onTestReportPublished(testSuite, xml);
     }
 

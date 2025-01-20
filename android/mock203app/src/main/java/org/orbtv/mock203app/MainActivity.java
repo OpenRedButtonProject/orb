@@ -212,7 +212,7 @@ public class MainActivity extends Activity {
     private void unbindOrbService() {
          getApplicationContext().unbindService(mOrbServiceConnection);
     }
-    
+
     private boolean getDoNotTrackEnabled(Context context) {
         String setting = Settings.Global.getString(context.getContentResolver(), "do_not_track_enabled");
         if (setting != null && setting.equals("1")) {
