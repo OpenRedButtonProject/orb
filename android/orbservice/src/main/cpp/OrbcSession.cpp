@@ -31,17 +31,16 @@ using org::orbtv::orbservice::IDvbiSession;
 
 static SH_PTR<IDvbiSession> g_dvb_session;
 
-OrbcSession* OrbcSession::s_instance = nullptr;
+SH_PTR<OrbcSession> OrbcSession::s_instance = nullptr;
 mutex OrbcSession::s_mtx;
 
-OrbcSession* OrbcSession::getInstance()
+SH_PTR<OrbcSession> OrbcSession::getInstance()
 {
     if (s_instance == nullptr) {
         lock_guard<mutex> lock(s_mtx);
         if (s_instance == nullptr) {
           #ifdef NDK_AIDL
-            static OrbcSession orb_session;
-            s_instance = &orb_session;
+            s_instance = SharedRefBase::make<OrbcSession>();
           #else
             s_instance = new OrbcSession();
           #endif
@@ -50,8 +49,7 @@ OrbcSession* OrbcSession::getInstance()
     return s_instance;
 }
 
-STATUS
-OrbcSession::initialise(const SH_PTR<IDvbiSession>& dvb)
+STATUS OrbcSession::initialise(const SH_PTR<IDvbiSession>& dvb)
 {
    STATUS status;
    bool enabled;
@@ -71,8 +69,7 @@ OrbcSession::initialise(const SH_PTR<IDvbiSession>& dvb)
    return STATUS::ok();
 }
 
-STATUS
-OrbcSession::processAIT(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& in_data)
+STATUS OrbcSession::processAIT(int32_t aitPid, int32_t serviceId, const vector<uint8_t>& in_data)
 {
    STATUS status;
    string ccid;
@@ -97,21 +94,16 @@ OrbcSession::processAIT(int32_t aitPid, int32_t serviceId, const std::vector<uin
    return STATUS::ok();
 }
 
-STATUS
-OrbcSession::onServiceListChanged()
+STATUS OrbcSession::onServiceListChanged()
 {
-   STATUS status;
-
    LOGI("")
 
-   //status.set(AStatus_fromStatus(STATUS_OK));
-   return status;
+   return STATUS::ok();
 }
 
-STATUS
-OrbcSession::onParentalRatingChanged(bool in_blocked)
+STATUS OrbcSession::onParentalRatingChanged(bool blocked)
 {
-   LOGI("blk?=%d", in_blocked)
+   LOGI("blk?=%d", blocked)
 
    return STATUS::ok();
 }

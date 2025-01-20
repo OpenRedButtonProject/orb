@@ -25,14 +25,15 @@ namespace org::orbtv::orbservice {
 
 class OrbcSession : public BnOrbcSession {
 private:
-    static OrbcSession* s_instance;
+    static SH_PTR<OrbcSession> s_instance;
     static mutex s_mtx;
-    OrbcSession() {}
 
 public:
     OrbcSession(const OrbcSession& obj) = delete; // prevent copies
     void operator=(const OrbcSession &) = delete; // prevent assignments
-    static OrbcSession* getInstance();
+    static SH_PTR<OrbcSession> getInstance();
+
+    OrbcSession() {}
 
 public:
   STATUS initialise(const SH_PTR<IDvbiSession>& in_dvb) override;

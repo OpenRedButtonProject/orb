@@ -53,7 +53,7 @@ Java_org_orbtv_orbservice_OrbService_createBinder(
 #ifdef NDK_AIDL
    AIBinder* binder = OrbcSession::getInstance()->asBinder().get();
 #else
-   AIBinder* binder = AIBinder_fromPlatformBinder(android::IInterface::asBinder(OrbcSession::getInstance()));
+   AIBinder* binder = AIBinder_fromPlatformBinder(OrbcSession::getInstance());
 #endif
    return env->NewGlobalRef(AIBinder_toJavaBinder(env, binder));
 }
