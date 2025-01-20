@@ -22,7 +22,7 @@ ifeq ($(ORB_VENDOR), true)
         libcap \
         libssl \
         libcrypto_static \
-        libjsoncpp_ORB
+        libjsoncpp
 
     LOCAL_HEADER_LIBRARIES := jni_headers
 else
@@ -30,7 +30,7 @@ else
         libcap \
         libssl \
         libcrypto \
-        libjsoncpp_ORB
+        libjsoncpp
 
     LOCAL_STATIC_LIBRARIES := \
         liblog
