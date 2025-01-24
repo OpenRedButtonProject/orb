@@ -29,10 +29,10 @@ public:
     class SessionCallback : public HbbTVApp::SessionCallback
     {
 public:
-        virtual void DispatchOperatorApplicationStateChange(uint16_t appId, const std::string &oldState, const std::string &newState) = 0;
-        virtual void DispatchOperatorApplicationStateChangeCompleted(uint16_t appId, const std::string &oldState, const std::string &newState) = 0;
-        virtual void DispatchOperatorApplicationContextChange(uint16_t appId, const std::string &startupLocation, const std::string &launchLocation = "") = 0;
-        virtual void DispatchOpAppUpdate(uint16_t appId, const std::string &updateEvent) = 0;
+        virtual void DispatchOperatorApplicationStateChange(int appId, const std::string &oldState, const std::string &newState) = 0;
+        virtual void DispatchOperatorApplicationStateChangeCompleted(int appId, const std::string &oldState, const std::string &newState) = 0;
+        virtual void DispatchOperatorApplicationContextChange(int appId, const std::string &startupLocation, const std::string &launchLocation = "") = 0;
+        virtual void DispatchOpAppUpdate(int appId, const std::string &updateEvent) = 0;
         virtual ~SessionCallback() = default;
     };
 

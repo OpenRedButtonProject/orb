@@ -36,23 +36,23 @@
 class AppSessionCallback : public OpApp::SessionCallback
 {
 public:
-    AppSessionCallback(ApplicationManager::SessionCallback *sessionCallback, uint16_t &currentAppId)
+    AppSessionCallback(ApplicationManager::SessionCallback *sessionCallback, int &currentAppId)
         : m_sessionCallback(sessionCallback), m_currentAppId(currentAppId)
     { }
     
-    void ShowApplication(uint16_t appId) {
+    void ShowApplication(int appId) {
         if (appId == m_currentAppId) m_sessionCallback->ShowApplication();
     }
 
-    void HideApplication(uint16_t appId) {
+    void HideApplication(int appId) {
         if (appId == m_currentAppId) m_sessionCallback->HideApplication();
     }
     
-    void DispatchTransitionedToBroadcastRelatedEvent(uint16_t appId) { 
+    void DispatchTransitionedToBroadcastRelatedEvent(int appId) { 
         if (appId == m_currentAppId) m_sessionCallback->DispatchTransitionedToBroadcastRelatedEvent();
     }
     
-    void DispatchApplicationSchemeUpdatedEvent(uint16_t appId, const std::string &scheme) {
+    void DispatchApplicationSchemeUpdatedEvent(int appId, const std::string &scheme) {
         if (appId == m_currentAppId) m_sessionCallback->DispatchApplicationSchemeUpdatedEvent(scheme);
     }
     
@@ -68,25 +68,25 @@ public:
         return m_sessionCallback->GetParentalControlRegion3();
     }
 
-    void DispatchOperatorApplicationStateChange(uint16_t appId, const std::string &oldState, const std::string &newState) {
+    void DispatchOperatorApplicationStateChange(int appId, const std::string &oldState, const std::string &newState) {
         if (appId == m_currentAppId) m_sessionCallback->DispatchOperatorApplicationStateChange(oldState, newState);
     }
 
-    void DispatchOperatorApplicationStateChangeCompleted(uint16_t appId, const std::string &oldState, const std::string &newState) {
+    void DispatchOperatorApplicationStateChangeCompleted(int appId, const std::string &oldState, const std::string &newState) {
         if (appId == m_currentAppId) m_sessionCallback->DispatchOperatorApplicationStateChangeCompleted(oldState, newState);
     }
 
-    void DispatchOperatorApplicationContextChange(uint16_t appId, const std::string &startupLocation, const std::string &launchLocation = "") {
+    void DispatchOperatorApplicationContextChange(int appId, const std::string &startupLocation, const std::string &launchLocation = "") {
         if (appId == m_currentAppId) m_sessionCallback->DispatchOperatorApplicationContextChange(startupLocation, launchLocation);
     }
 
-    void DispatchOpAppUpdate(uint16_t appId, const std::string &updateEvent) {
+    void DispatchOpAppUpdate(int appId, const std::string &updateEvent) {
         if (appId == m_currentAppId) m_sessionCallback->DispatchOpAppUpdate(updateEvent);
     }
 
 private:
     ApplicationManager::SessionCallback *m_sessionCallback;
-    uint16_t &m_currentAppId;
+    const int &m_currentAppId;
 };
 
 /**
@@ -127,9 +127,9 @@ ApplicationManager::~ApplicationManager() = default;
  *
  * @return true if the application can be created, otherwise false
  */
-bool ApplicationManager::CreateApplication(uint16_t callingAppId, const std::string &url, bool runAsOpApp)
+int ApplicationManager::CreateApplication(int callingAppId, const std::string &url, bool runAsOpApp)
 {
-    bool result = false;
+    int result = INVALID_APP_ID;
     const Ait::S_AIT_APP_DESC *appDescription;
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
@@ -137,19 +137,19 @@ bool ApplicationManager::CreateApplication(uint16_t callingAppId, const std::str
     if (m_apps.count(callingAppId) <= 0)
     {
         LOG(LOG_INFO, "Called by non-running app, early out");
-        return false;
+        return INVALID_APP_ID;
     }
     if (url.empty())
     {
         LOG(LOG_INFO, "Called with empty URL, early out");
         m_sessionCallback->DispatchApplicationLoadErrorEvent();
-        return false;
+        return INVALID_APP_ID;
     }
 
     if (runAsOpApp && m_apps[callingAppId]->GetType() != HbbTVApp::OPAPP_TYPE)
     {
         LOG(LOG_INFO, "Called with runAsOpApp=true from a non-opapp, early out");
-        return false;
+        return INVALID_APP_ID;
     }
 
     Utils::CreateLocatorInfo info = Utils::ParseCreateLocatorInfo(url, m_currentService);
@@ -198,12 +198,12 @@ bool ApplicationManager::CreateApplication(uint16_t callingAppId, const std::str
         case Utils::CreateLocatorType::UNKNOWN_LOCATOR:
         {
             LOG(LOG_INFO, "Do not create for UNKNOWN_LOCATOR (url=%s)", url.c_str());
-            result = false;
+            result = INVALID_APP_ID;
             break;
         }
     }
 
-    if (!result)
+    if (result == INVALID_APP_ID)
     {
         m_sessionCallback->DispatchApplicationLoadErrorEvent();
     }
@@ -216,7 +216,7 @@ bool ApplicationManager::CreateApplication(uint16_t callingAppId, const std::str
  *
  * @param callingAppId The calling app ID.
  */
-void ApplicationManager::DestroyApplication(uint16_t callingAppId)
+void ApplicationManager::DestroyApplication(int callingAppId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
@@ -241,7 +241,7 @@ void ApplicationManager::DestroyApplication(uint16_t callingAppId)
  *
  * @param callingAppId The calling app ID.
  */
-void ApplicationManager::ShowApplication(uint16_t callingAppId)
+void ApplicationManager::ShowApplication(int callingAppId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_apps.count(callingAppId) > 0)
@@ -255,7 +255,7 @@ void ApplicationManager::ShowApplication(uint16_t callingAppId)
  *
  * @param callingAppId The calling app ID.
  */
-void ApplicationManager::HideApplication(uint16_t callingAppId)
+void ApplicationManager::HideApplication(int callingAppId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_apps.count(callingAppId) > 0)
@@ -272,7 +272,7 @@ void ApplicationManager::HideApplication(uint16_t callingAppId)
  * @param otherKeys optional other keys
  * @return The key set mask for the application.
  */
-uint16_t ApplicationManager::SetKeySetMask(uint16_t appId, uint16_t keySetMask, std::vector<uint16_t> otherKeys)
+uint16_t ApplicationManager::SetKeySetMask(int appId, uint16_t keySetMask, std::vector<uint16_t> otherKeys)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
@@ -290,7 +290,7 @@ uint16_t ApplicationManager::SetKeySetMask(uint16_t appId, uint16_t keySetMask, 
  * @param appId The application.
  * @return The key set mask for the application.
  */
-uint16_t ApplicationManager::GetKeySetMask(uint16_t appId)
+uint16_t ApplicationManager::GetKeySetMask(int appId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_apps.count(appId) > 0)
@@ -306,7 +306,7 @@ uint16_t ApplicationManager::GetKeySetMask(uint16_t appId)
  * @param appId The application.
  * @return The other keys for the application.
  */
-std::vector<uint16_t> ApplicationManager::GetOtherKeyValues(uint16_t appId)
+std::vector<uint16_t> ApplicationManager::GetOtherKeyValues(int appId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_apps.count(appId) > 0)
@@ -316,7 +316,7 @@ std::vector<uint16_t> ApplicationManager::GetOtherKeyValues(uint16_t appId)
     return std::vector<uint16_t>();
 }
 
-std::string ApplicationManager::GetApplicationScheme(uint16_t appId)
+std::string ApplicationManager::GetApplicationScheme(int appId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_apps.count(appId) > 0)
@@ -324,6 +324,29 @@ std::string ApplicationManager::GetApplicationScheme(uint16_t appId)
         return m_apps[appId]->GetScheme();
     }
     return LINKED_APP_SCHEME_1_1;
+}
+
+std::vector<int> ApplicationManager::GetRunningAppsIds()
+{
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
+    std::vector<int> ids;
+    for (const auto& pair : m_apps)
+    {
+        LOG(LOG_INFO, "GetRunningAppsIds(): %d", pair.first);
+        ids.push_back(pair.first);
+    }
+    return ids;
+}
+
+std::string ApplicationManager::GetApplicationUrl(int appId)
+{
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
+    if (m_apps.count(appId) > 0)
+    {
+        LOG(LOG_INFO, "GetApplicationUrl(%d): %s", appId, m_apps[appId]->loadedUrl.c_str());
+        return m_apps[appId]->loadedUrl;
+    }
+    return std::string();
 }
 
 /**
@@ -334,7 +357,7 @@ std::string ApplicationManager::GetApplicationScheme(uint16_t appId)
  * @param keyCode The key code to check.
  * @return The supplied key_code is accepted by the current app's key set.
  */
-bool ApplicationManager::InKeySet(uint16_t appId, uint16_t keyCode)
+bool ApplicationManager::InKeySet(int appId, uint16_t keyCode)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_apps.count(appId) > 0)
@@ -408,11 +431,11 @@ void ApplicationManager::ProcessAitSection(uint16_t aitPid, uint16_t serviceId,
  * @param xmlAit The XML AIT contents.
  * @return true if the application can be created, otherwise false
  */
-bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &isDvbi, const
+int ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &isDvbi, const
     std::string &scheme)
 {
     const Ait::S_AIT_APP_DESC *app_description;
-    bool result = false;
+    bool result = INVALID_APP_ID;
 
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
@@ -420,7 +443,7 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
 
     if (xmlAit.empty())
     {
-        return false;
+        return INVALID_APP_ID;
     }
 
     std::unique_ptr<Ait::S_AIT_TABLE> aitTable = XmlParser::ParseAit(xmlAit.c_str(),
@@ -428,7 +451,7 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
     if (nullptr == aitTable || aitTable->numApps == 0)
     {
         // No AIT or apps parsed, early out
-        return false;
+        return INVALID_APP_ID;
     }
     for (int index = 0; index != aitTable->numApps; index++)
     {
@@ -451,7 +474,7 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
         {
             OnSelectedServiceAitUpdated();
         }
-        result = true;
+        result = m_hbbtvAppId;
     }
     else
     {
@@ -460,7 +483,7 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
         if (app_description)
         {
             result = CreateAndRunApp(*app_description, "", isDvbi, false);
-            if (!result)
+            if (result == INVALID_APP_ID)
             {
                 LOG(LOG_ERROR, "Could not find app (org_id=%d, app_id=%d)",
                     app_description->orgId,
@@ -521,7 +544,7 @@ bool ApplicationManager::RunTeletextApplication()
  * @param methodRequirement Any additional requirement of the method.
  * @return true if the request is allowed, otherwise false
  */
-bool ApplicationManager::IsRequestAllowed(uint16_t callingAppId, const
+bool ApplicationManager::IsRequestAllowed(int callingAppId, const
     std::string &callingPageUrl,
     MethodRequirement methodRequirement)
 {
@@ -662,7 +685,7 @@ void ApplicationManager::OnNetworkAvailabilityChanged(bool available)
  *
  * @param appId The application ID of the application that failed to load.
  */
-void ApplicationManager::OnLoadApplicationFailed(uint16_t appId)
+void ApplicationManager::OnLoadApplicationFailed(int appId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
@@ -697,7 +720,7 @@ void ApplicationManager::OnLoadApplicationFailed(uint16_t appId)
  * @param appId The application ID.
  * @param url The URL of the new page.
  */
-void ApplicationManager::OnApplicationPageChanged(uint16_t appId, const std::string &url)
+void ApplicationManager::OnApplicationPageChanged(int appId, const std::string &url)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_apps.count(appId) > 0)
@@ -907,26 +930,26 @@ void ApplicationManager::OnPerformBroadcastAutostart()
  * 
  * @return True on success, false on failure.
  */
-bool ApplicationManager::CreateAndRunApp(std::string url, bool runAsOpApp)
+int ApplicationManager::CreateAndRunApp(std::string url, bool runAsOpApp)
 {
+    int result = INVALID_APP_ID;
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     try
     {
         if (runAsOpApp)
         {
-            RunApp(std::make_unique<OpApp>(url, m_opAppSessionCallback));
+            result = RunApp(std::make_unique<OpApp>(url, m_opAppSessionCallback));
         }
         else
         {
-            RunApp(std::make_unique<HbbTVApp>(url, m_hbbtvAppSessionCallback));
+            result = RunApp(std::make_unique<HbbTVApp>(url, m_hbbtvAppSessionCallback));
         }
     }
     catch(const std::exception& e)
     {
         LOG(LOG_ERROR, "%s", e.what());
-        return false;
     }
-    return true;
+    return result;
 }
 
 /**
@@ -940,21 +963,22 @@ bool ApplicationManager::CreateAndRunApp(std::string url, bool runAsOpApp)
  * 
  * @return True on success, false on failure.
  */
-bool ApplicationManager::CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc, const std::string &urlParams, bool isBroadcast, bool isTrusted, bool runAsOpApp)
+int ApplicationManager::CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc, const std::string &urlParams, bool isBroadcast, bool isTrusted, bool runAsOpApp)
 {
+    int result = INVALID_APP_ID;
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     try
     {
         // ETSI TS 103 606 V1.2.1 (2024-03) Table 7: XML AIT Profile
         if (runAsOpApp || desc.appUsage == "urn:hbbtv:opapp:privileged:2017" || desc.appUsage == "urn:hbbtv:opapp:opspecific:2017")
         {
-            RunApp(std::make_unique<OpApp>(desc,
+            result = RunApp(std::make_unique<OpApp>(desc,
                 m_isNetworkAvailable,
                 m_opAppSessionCallback));
         }
         else
         {
-            RunApp(std::make_unique<HbbTVApp>(desc,
+            result = RunApp(std::make_unique<HbbTVApp>(desc,
                 m_currentService,
                 m_isNetworkAvailable,
                 urlParams,
@@ -966,9 +990,8 @@ bool ApplicationManager::CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc, const 
     catch(const std::exception& e)
     {
         LOG(LOG_ERROR, "%s", e.what());
-        return false;
     }
-    return true;
+    return result;
 }
 
 /**
@@ -976,10 +999,10 @@ bool ApplicationManager::CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc, const 
  *
  * @param app The app to run.
  */
-void ApplicationManager::RunApp(std::unique_ptr<HbbTVApp> app)
+int ApplicationManager::RunApp(std::unique_ptr<HbbTVApp> app)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    uint16_t *appId = &m_hbbtvAppId;
+    int *appId = &m_hbbtvAppId;
     if (app->GetType() == HbbTVApp::OPAPP_TYPE)
     {
         appId = &m_opAppId;
@@ -1007,6 +1030,7 @@ void ApplicationManager::RunApp(std::unique_ptr<HbbTVApp> app)
     {
         m_sessionCallback->HideApplication();
     }
+    return *appId;
 }
 
 /**
@@ -1032,7 +1056,7 @@ bool ApplicationManager::UpdateRunningApp(const Ait::S_AIT_APP_DESC &desc)
 /**
  * Kill the running app.
  */   
-void ApplicationManager::KillRunningApp(uint16_t appid)
+void ApplicationManager::KillRunningApp(int appid)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if ((m_hbbtvAppId == appid || m_opAppId == appid) && m_apps.erase(appid) > 0)

@@ -62,7 +62,7 @@
 #define VK_ALPHA_START 65
 #define VK_ALPHA_END 90
 
-static uint16_t g_id = INVALID_APP_ID;
+static int g_id = INVALID_APP_ID;
 
 static std::string getAppSchemeFromUrlParams(const std::string &urlParams);
 static std::string getUrlParamsFromAppScheme(const std::string &scheme);

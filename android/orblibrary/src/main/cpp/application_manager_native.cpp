@@ -59,7 +59,7 @@ public:
         env->DeleteGlobalRef(mJavaCbObject);
     }
 
-    void LoadApplication(uint16_t app_id, const char *entry_url) override
+    void LoadApplication(int app_id, const char *entry_url) override
     {
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_entry_url = env->NewStringUTF(entry_url);
@@ -67,7 +67,7 @@ public:
         env->DeleteLocalRef(j_entry_url);
     }
 
-    void LoadApplication(uint16_t app_id, const char *entry_url, int array_size, const std::vector<uint16_t> graphics) override
+    void LoadApplication(int app_id, const char *entry_url, int array_size, const std::vector<uint16_t> graphics) override
     {
         if (array_size == 0) {
             LoadApplication(app_id, entry_url);
@@ -251,7 +251,7 @@ JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniFinalize(
 }
 
 extern "C"
-JNIEXPORT jboolean JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniCreateApplication(
+JNIEXPORT jint JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniCreateApplication(
     JNIEnv *env, jobject object,
     jint calling_app_id, jstring j_url)
 {
@@ -337,6 +337,27 @@ JNIEXPORT jstring JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniGetApp
                                                                                      jint calling_app_id)
 {
     return env->NewStringUTF(GetManager(env, object)->GetApplicationScheme(calling_app_id).c_str());
+}
+
+extern "C"
+JNIEXPORT jstring JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniGetApplicationUrl(JNIEnv *env,
+                                                                                     jobject object,
+                                                                                     jint calling_app_id)
+{
+    return env->NewStringUTF(GetManager(env, object)->GetApplicationUrl(calling_app_id).c_str());
+}
+
+extern "C"
+JNIEXPORT jintArray JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniGetRunningAppsIds(JNIEnv *env,
+    jobject object)
+{
+    std::vector<int> values = GetManager(env, object)->GetRunningAppsIds();
+    jintArray resultArray = env->NewIntArray(values.size());
+    if (resultArray != nullptr) {
+        env->SetIntArrayRegion(resultArray, 0, values.size(), reinterpret_cast<const jint*>(values.data()));
+    }
+
+    return resultArray;
 }
 
 extern "C"

@@ -129,11 +129,11 @@ class ApplicationManager {
         }
     }
 
-    public boolean createApplication(String url) {
+    public int createApplication(String url) {
         return jniCreateApplication(0, url);
     }
 
-    public boolean createApplication(int callingAppId, String url) {
+    public int createApplication(int callingAppId, String url) {
         return jniCreateApplication(callingAppId, url);
     }
 
@@ -232,6 +232,14 @@ class ApplicationManager {
         return jniGetApplicationScheme(appId);
     }
 
+    public String getApplicationUrl(int appId) {
+        return jniGetApplicationUrl(appId);
+    }
+
+    public int[] getRunningAppsIds() {
+        return jniGetRunningAppsIds();
+    }
+
     public void onNetworkAvailabilityChanged(boolean available) {
         jniOnNetworkAvailabilityChanged(available);
     }
@@ -265,7 +273,7 @@ class ApplicationManager {
 
     private native void jniFinalize();
 
-    private native boolean jniCreateApplication(int callingAppId, String url);
+    private native int jniCreateApplication(int callingAppId, String url);
 
     private native void jniDestroyApplication(int callingAppId);
 
@@ -280,6 +288,10 @@ class ApplicationManager {
     private native int[] jniGetOtherKeyValues(int appId);
 
     private native String jniGetApplicationScheme(int appId);
+
+    private native String jniGetApplicationUrl(int appId);
+
+    private native int[] jniGetRunningAppsIds();
 
     private native boolean jniInKeySet(int appId, int keyCode);
 

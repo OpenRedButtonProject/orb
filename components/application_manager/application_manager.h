@@ -54,7 +54,7 @@ public:
          * @param appId The application ID.
          * @param entryUrl The entry page URL.
          */
-        virtual void LoadApplication(uint16_t appId, const char *entryUrl) = 0;
+        virtual void LoadApplication(int appId, const char *entryUrl) = 0;
 
         /**
          * Tell the browser to load an application. If the entry page fails to load, the browser
@@ -65,7 +65,7 @@ public:
          * @param size The number of the co-ordinate graphics
          * @param graphics The list of the co-ordinate graphics supported by the application
          */
-        virtual void LoadApplication(uint16_t appId, const char *entryUrl, int size, const
+        virtual void LoadApplication(int appId, const char *entryUrl, int size, const
             std::vector<uint16_t> graphics) = 0;
 
         /**
@@ -160,28 +160,28 @@ public:
      *
      * @return true if the application can be created, otherwise false
      */
-    bool CreateApplication(uint16_t callingAppId, const std::string &url, bool runAsOpApp);
+    int CreateApplication(int callingAppId, const std::string &url, bool runAsOpApp);
 
     /**
      * Destroy the calling application.
      *
      * @param callingAppId The calling app ID.
      */
-    void DestroyApplication(uint16_t callingAppId);
+    void DestroyApplication(int callingAppId);
 
     /**
      * Show the calling application.
      *
      * @param callingAppId The calling app ID.
      */
-    void ShowApplication(uint16_t callingAppId);
+    void ShowApplication(int callingAppId);
 
     /**
      * Hide the calling application.
      *
      * @param callingAppId The calling app ID.
      */
-    void HideApplication(uint16_t callingAppId);
+    void HideApplication(int callingAppId);
 
     /**
      * Set the key set mask for an application.
@@ -191,7 +191,7 @@ public:
      * @param otherKeys optional other keys
      * @return The key set mask for the application.
      */
-    uint16_t SetKeySetMask(uint16_t appId, uint16_t keySetMask, std::vector<uint16_t> otherKeys);
+    uint16_t SetKeySetMask(int appId, uint16_t keySetMask, std::vector<uint16_t> otherKeys);
 
     /**
      * Get the key set mask for an application.
@@ -199,7 +199,7 @@ public:
      * @param appId The application.
      * @return The key set mask for the application.
      */
-    uint16_t GetKeySetMask(uint16_t appId);
+    uint16_t GetKeySetMask(int appId);
 
     /**
      * Get the other keys for an application.
@@ -207,7 +207,7 @@ public:
      * @param appId The application.
      * @return The other keys for the application.
      */
-    std::vector<uint16_t> GetOtherKeyValues(uint16_t appId);
+    std::vector<uint16_t> GetOtherKeyValues(int appId);
 
     /**
      * Check the key code is accepted by the current key mask. Activate the app as a result if the
@@ -217,7 +217,7 @@ public:
      * @param keyCode The key code to check.
      * @return The supplied key_code is accepted by the current app's key set.
      */
-    bool InKeySet(uint16_t appId, uint16_t keyCode);
+    bool InKeySet(int appId, uint16_t keyCode);
 
     /**
      * Process an AIT section. The table will be processed when it is completed or updated.
@@ -236,7 +236,7 @@ public:
      * @param xmlAit The XML AIT contents.
      * @return true if the application can be created, otherwise false
      */
-    bool ProcessXmlAit(const std::string &xmlAit, const bool &isDvbi = false, const
+    int ProcessXmlAit(const std::string &xmlAit, const bool &isDvbi = false, const
         std::string &scheme = LINKED_APP_SCHEME_1_1);
 
     /**
@@ -261,7 +261,7 @@ public:
      * @param methodRequirement Any additional requirement of the method.
      * @return true if the request is allowed, otherwise false
      */
-    bool IsRequestAllowed(uint16_t callingAppId, const std::string &callingPageUrl,
+    bool IsRequestAllowed(int callingAppId, const std::string &callingPageUrl,
         MethodRequirement methodRequirement);
 
     /**
@@ -312,7 +312,7 @@ public:
      *
      * @param appId The application ID of the application that failed to load.
      */
-    void OnLoadApplicationFailed(uint16_t appId);
+    void OnLoadApplicationFailed(int appId);
 
     /**
      * Notify the application manager of application page changed, before the new page is
@@ -321,9 +321,13 @@ public:
      * @param appId The application ID.
      * @param url The URL of the new page.
      */
-    void OnApplicationPageChanged(uint16_t appId, const std::string &url);
+    void OnApplicationPageChanged(int appId, const std::string &url);
 
-    std::string GetApplicationScheme(uint16_t appId);
+    std::string GetApplicationScheme(int appId);
+
+    std::string GetApplicationUrl(int appId);
+
+    std::vector<int> GetRunningAppsIds();
 
 private:
     /**
@@ -358,7 +362,7 @@ private:
      * 
      * @return True on success, false on failure.
      */
-    bool CreateAndRunApp(std::string url, bool runAsOpApp = false);
+    int CreateAndRunApp(std::string url, bool runAsOpApp = false);
 
     /**
      * Create and run an App by AIT description.
@@ -371,7 +375,7 @@ private:
      * 
      * @return True on success, false on failure.
      */
-    bool CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc,
+    int CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc,
         const std::string &urlParams,
         bool isBroadcast,
         bool isTrusted,
@@ -382,7 +386,7 @@ private:
      *
      * @param app The app to run.
      */
-    void RunApp(std::unique_ptr<HbbTVApp> app);
+    int RunApp(std::unique_ptr<HbbTVApp> app);
 
     /**
      * Update the running app.
@@ -396,7 +400,7 @@ private:
     /**
      * Kill the running app.
      */
-    void KillRunningApp(uint16_t appid);
+    void KillRunningApp(int appid);
 
     /**
      * Transition the running app to broadcast-related, if conditions permit.
@@ -438,9 +442,9 @@ private:
 
     std::unique_ptr<SessionCallback> m_sessionCallback;
     Ait m_ait;
-    std::unordered_map<uint16_t, std::unique_ptr<HbbTVApp>> m_apps;
-    uint16_t m_hbbtvAppId = INVALID_APP_ID;
-    uint16_t m_opAppId = INVALID_APP_ID;
+    std::unordered_map<int, std::unique_ptr<HbbTVApp>> m_apps;
+    int m_hbbtvAppId = INVALID_APP_ID;
+    int m_opAppId = INVALID_APP_ID;
     Utils::S_DVB_TRIPLET m_currentService = Utils::MakeInvalidDvbTriplet();
     Utils::S_DVB_TRIPLET m_previousService = Utils::MakeInvalidDvbTriplet();
     uint16_t m_currentServiceReceivedFirstAit = false;

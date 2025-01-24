@@ -51,10 +51,10 @@ public:
     class SessionCallback
     {
 public:
-        virtual void ShowApplication(uint16_t appId) = 0;
-        virtual void HideApplication(uint16_t appId) = 0;
-        virtual void DispatchTransitionedToBroadcastRelatedEvent(uint16_t appId) = 0;
-        virtual void DispatchApplicationSchemeUpdatedEvent(uint16_t appId, const std::string &scheme) = 0;
+        virtual void ShowApplication(int appId) = 0;
+        virtual void HideApplication(int appId) = 0;
+        virtual void DispatchTransitionedToBroadcastRelatedEvent(int appId) = 0;
+        virtual void DispatchApplicationSchemeUpdatedEvent(int appId, const std::string &scheme) = 0;
         virtual int GetParentalControlAge() = 0;
         virtual std::string GetParentalControlRegion() = 0;
         virtual std::string GetParentalControlRegion3() = 0;
@@ -165,7 +165,7 @@ public:
      */
     std::vector<uint16_t> GetOtherKeyValues() const { return m_otherKeys; }
 
-    uint16_t GetId() const { return m_id; }
+    int GetId() const { return m_id; }
 
     std::string loadedUrl;
 
@@ -195,7 +195,7 @@ protected:
     std::shared_ptr<HbbTVApp::SessionCallback> m_sessionCallback;
 
 private:
-    uint16_t m_id;
+    int m_id;
 };
 
 #endif // HBBTV_APP_H
