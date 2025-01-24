@@ -402,7 +402,7 @@ class OrbSession implements IOrbSession {
                 mApplicationManager.createApplication(url);
             }).start();
         } else {
-            launch = mApplicationManager.createApplication(url);
+            launch = mApplicationManager.createApplication(url) != 0;
         }
         return launch;
     }

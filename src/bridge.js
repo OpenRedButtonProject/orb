@@ -866,6 +866,14 @@ hbbtv.bridge.manager = (function() {
         return hbbtv.native.request('Manager.getOpAppState').result;
     }
 
+    exported.getRunningAppsIds = function() {
+        return hbbtv.native.request('Manager.getRunningAppsIds').result;
+    }
+
+    exported.getApplicationUrl = function(id) {
+        return hbbtv.native.request('Manager.getApplicationUrl', { id }).result;
+    }
+
     return exported;
 })();
 

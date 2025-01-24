@@ -162,6 +162,7 @@ public:
         std::vector<S_APP_PARENTAL_RATING> parentalRatings;
         std::vector<uint16_t> graphicsConstraints;
         std::string scheme;
+        std::string appUsage;
     } S_AIT_APP_DESC;
 
     typedef struct
