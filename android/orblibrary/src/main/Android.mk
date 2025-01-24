@@ -7,7 +7,13 @@ ifeq ($(ORB_VENDOR), true)
 else
     LOCAL_PRIVATE_PLATFORM_APIS := true
 endif
-LOCAL_SRC_FILES := $(call all-subdir-java-files)
+ORB_AIDL_PATH := ../../../orbservice/src/main/cpp/aidl
+
+LOCAL_SRC_FILES := $(call all-subdir-java-files) \
+	$(ORB_AIDL_PATH)/org/orbtv/orbservice/IBridgeSession.aidl \
+	$(ORB_AIDL_PATH)/org/orbtv/orbservice/IBrowserSession.aidl
+
+LOCAL_AIDL_INCLUDES := $(LOCAL_PATH)/$(ORB_AIDL_PATH)
 LOCAL_JNI_SHARED_LIBRARIES := liborg.orbtv.orblibrary.native
 LOCAL_STATIC_JAVA_LIBRARIES += okio-1.17.2
 LOCAL_STATIC_JAVA_LIBRARIES += okhttp-3.14.9
