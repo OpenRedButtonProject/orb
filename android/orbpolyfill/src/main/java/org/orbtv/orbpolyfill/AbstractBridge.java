@@ -928,7 +928,7 @@ public abstract class AbstractBridge {
      */
     protected abstract String Manager_getApplicationScheme(BridgeToken token);
     protected abstract String Manager_getApplicationUrl(int id);
-    protected abstract int[] Manager_getRunningAppsIds();
+    protected abstract int[] Manager_getRunningAppIds();
 
     /**
      * Get a list of rating schemes supported by this integration.
@@ -1839,8 +1839,8 @@ public abstract class AbstractBridge {
                 break;
             }
 
-            case "Manager.getRunningAppsIds": {
-                int[] ids = Manager_getRunningAppsIds();
+            case "Manager.getRunningAppIds": {
+                int[] ids = Manager_getRunningAppIds();
                 JSONArray result = new JSONArray();
                 for (int i : ids) {
                     result.put(i);

@@ -236,8 +236,8 @@ class ApplicationManager {
         return jniGetApplicationUrl(appId);
     }
 
-    public int[] getRunningAppsIds() {
-        return jniGetRunningAppsIds();
+    public int[] getRunningAppIds() {
+        return jniGetRunningAppIds();
     }
 
     public void onNetworkAvailabilityChanged(boolean available) {
@@ -291,7 +291,7 @@ class ApplicationManager {
 
     private native String jniGetApplicationUrl(int appId);
 
-    private native int[] jniGetRunningAppsIds();
+    private native int[] jniGetRunningAppIds();
 
     private native boolean jniInKeySet(int appId, int keyCode);
 

@@ -326,13 +326,13 @@ std::string ApplicationManager::GetApplicationScheme(int appId)
     return LINKED_APP_SCHEME_1_1;
 }
 
-std::vector<int> ApplicationManager::GetRunningAppsIds()
+std::vector<int> ApplicationManager::GetRunningAppIds()
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     std::vector<int> ids;
     for (const auto& pair : m_apps)
     {
-        LOG(LOG_INFO, "GetRunningAppsIds(): %d", pair.first);
+        LOG(LOG_INFO, "GetRunningAppIds(): %d", pair.first);
         ids.push_back(pair.first);
     }
     return ids;

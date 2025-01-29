@@ -348,10 +348,10 @@ JNIEXPORT jstring JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniGetApp
 }
 
 extern "C"
-JNIEXPORT jintArray JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniGetRunningAppsIds(JNIEnv *env,
+JNIEXPORT jintArray JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniGetRunningAppIds(JNIEnv *env,
     jobject object)
 {
-    std::vector<int> values = GetManager(env, object)->GetRunningAppsIds();
+    std::vector<int> values = GetManager(env, object)->GetRunningAppIds();
     jintArray resultArray = env->NewIntArray(values.size());
     if (resultArray != nullptr) {
         env->SetIntArrayRegion(resultArray, 0, values.size(), reinterpret_cast<const jint*>(values.data()));

@@ -98,7 +98,7 @@ hbbtv.objects.ApplicationManager = (function() {
         const p = privates.get(this);
         p.eventDispatcher = new hbbtv.utils.EventDispatcher(this);
         addBridgeEventListeners.call(this);
-        for (const id of hbbtv.bridge.manager.getRunningAppsIds()) {
+        for (const id of hbbtv.bridge.manager.getRunningAppIds()) {
             hbbtv.objects.createApplication({ id });
         }
     }

@@ -696,8 +696,8 @@ class Bridge extends AbstractBridge {
         return mApplicationManager.getApplicationUrl(id);
     }
 
-    protected int[] Manager_getRunningAppsIds() {
-        return mApplicationManager.getRunningAppsIds();
+    protected int[] Manager_getRunningAppIds() {
+        return mApplicationManager.getRunningAppIds();
     }
 
     /**

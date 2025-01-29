@@ -327,7 +327,7 @@ public:
 
     std::string GetApplicationUrl(int appId);
 
-    std::vector<int> GetRunningAppsIds();
+    std::vector<int> GetRunningAppIds();
 
 private:
     /**
