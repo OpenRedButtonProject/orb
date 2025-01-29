@@ -553,7 +553,7 @@ class Bridge extends AbstractBridge {
      * @return True if the application can be created; false otherwise.
      */
     @Override
-    protected boolean Manager_createApplication(BridgeToken token, String url) {
+    protected int Manager_createApplication(BridgeToken token, String url) {
         return mApplicationManager.createApplication(token.getAppId(), url);
     }
 
@@ -690,6 +690,14 @@ class Bridge extends AbstractBridge {
 
     protected String Manager_getApplicationScheme(BridgeToken token) {
         return mApplicationManager.getApplicationScheme(token.getAppId());
+    }
+
+    protected String Manager_getApplicationUrl(int id) {
+        return mApplicationManager.getApplicationUrl(id);
+    }
+
+    protected int[] Manager_getRunningAppIds() {
+        return mApplicationManager.getRunningAppIds();
     }
 
     /**

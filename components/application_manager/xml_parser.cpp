@@ -159,6 +159,25 @@ static bool XmlGetContentBool(xmlNodePtr node)
     return result;
 }
 
+/**
+ *
+ * @param node
+ * @return
+ */
+static std::string XmlGetContentString(xmlNodePtr node)
+{
+    xmlChar *dptr;
+    std::string result;
+
+    NODE_CONTENT_GET(node, dptr);
+    if (dptr)
+    {
+        result = std::string(reinterpret_cast<char *>(dptr), xmlStrlen(dptr));
+        NODE_CONTENT_RELEASE();
+    }
+    return result;
+}
+
 #ifndef USE_XML_API_FUNC
 /**
  *
@@ -287,6 +306,30 @@ static void XmlParseAppId(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
             else if (xmlStrEqual(cptr, (const xmlChar *)"appId"))
             {
                 app_ptr->appId = (uint16_t)XmlGetContentInt(node);
+            }
+        }
+        node = node->next;
+    }
+}
+
+/**
+ *
+ * @param node
+ * @param app_ptr
+ */
+static void XmlParseAppUsage(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
+{
+    const xmlChar *cptr;
+
+    node = node->xmlChildrenNode;
+    while (node != nullptr)
+    {
+        if (node->type == XML_ELEMENT_NODE)
+        {
+            cptr = node->name;
+            if (xmlStrEqual(cptr, (const xmlChar *)"ApplicationUsage"))
+            {
+                app_ptr->appUsage = XmlGetContentString(node);
             }
         }
         node = node->next;
@@ -840,6 +883,10 @@ static void XmlParseApplication(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
                 else if (xmlStrEqual(cptr, (const xmlChar *)"Descriptor"))
                 {
                     XmlParseAppDesc(node, app_ptr);
+                }
+                else if (xmlStrEqual(cptr, (const xmlChar *)"UsageDescriptor"))
+                {
+                    XmlParseAppUsage(node, app_ptr);
                 }
                 else if (xmlStrEqual(cptr, (const xmlChar *)"Boundary"))
                 {
