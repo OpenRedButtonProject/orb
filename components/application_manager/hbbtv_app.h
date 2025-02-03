@@ -27,8 +27,11 @@
 
 #include "utils.h"
 #include "ait.h"
+#include "application_session_callback.h"
 
 #define INVALID_APP_ID 0
+
+class ApplicationManager;
 
 class HbbTVApp
 {
@@ -48,25 +51,12 @@ public:
         OVERLAID_TRANSIENT_STATE
     } E_APP_STATE;
 
-    class SessionCallback
-    {
-public:
-        virtual void ShowApplication(int appId) = 0;
-        virtual void HideApplication(int appId) = 0;
-        virtual void DispatchTransitionedToBroadcastRelatedEvent(int appId) = 0;
-        virtual void DispatchApplicationSchemeUpdatedEvent(int appId, const std::string &scheme) = 0;
-        virtual int GetParentalControlAge() = 0;
-        virtual std::string GetParentalControlRegion() = 0;
-        virtual std::string GetParentalControlRegion3() = 0;
-        virtual ~SessionCallback() = default;
-    };
-
     /**
      * Create app from url.
      * 
      * @throws std::runtime_error
      */
-    HbbTVApp(const std::string &url, std::shared_ptr<HbbTVApp::SessionCallback> sessionCallback);
+    HbbTVApp(const std::string &url, std::shared_ptr<ApplicationSessionCallback> sessionCallback);
 
     /**
      * Create app from Ait description.
@@ -79,7 +69,7 @@ public:
         const std::string &urlParams,
         bool isBroadcast,
         bool isTrusted,
-        std::shared_ptr<HbbTVApp::SessionCallback> sessionCallback);
+        std::shared_ptr<ApplicationSessionCallback> sessionCallback);
     
     HbbTVApp(const HbbTVApp&) = delete;
     HbbTVApp &operator=(const HbbTVApp&) = delete;
@@ -192,7 +182,7 @@ protected:
     uint8_t m_versionMinor = 0;
     E_APP_STATE m_state = FOREGROUND_STATE;
 
-    std::shared_ptr<HbbTVApp::SessionCallback> m_sessionCallback;
+    std::shared_ptr<ApplicationSessionCallback> m_sessionCallback;
 
 private:
     int m_id;

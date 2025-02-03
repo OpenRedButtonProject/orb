@@ -1,5 +1,6 @@
 #include "opapp.h"
 #include "log.h"
+#include "application_manager.h"
 
 #define COUNT_DOWN_TIMEOUT 60000
 
@@ -10,7 +11,7 @@ static std::string opAppStateToString(const HbbTVApp::E_APP_STATE &state);
  * 
  * @throws std::runtime_error
  */
-OpApp::OpApp(const std::string &url, std::shared_ptr<OpApp::SessionCallback> sessionCallback)
+OpApp::OpApp(const std::string &url, std::shared_ptr<ApplicationSessionCallback> sessionCallback)
     : HbbTVApp(url, sessionCallback)
 {
     m_state = BACKGROUND_STATE; // ETSI TS 103 606 V1.2.1 (2024-03) page 36
@@ -21,7 +22,7 @@ OpApp::OpApp(const std::string &url, std::shared_ptr<OpApp::SessionCallback> ses
  * 
  * @throws std::runtime_error
  */
-OpApp::OpApp(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable, std::shared_ptr<OpApp::SessionCallback> sessionCallback)
+OpApp::OpApp(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable, std::shared_ptr<ApplicationSessionCallback> sessionCallback)
     : HbbTVApp(
         desc,
         Utils::MakeInvalidDvbTriplet(),
@@ -65,7 +66,7 @@ bool OpApp::SetState(const E_APP_STATE &state)
             std::string previous = opAppStateToString(m_state);
             std::string next = opAppStateToString(state);
             m_state = state;
-            static_cast<SessionCallback*>(m_sessionCallback.get())->DispatchOperatorApplicationStateChange(GetId(), previous, next);
+            m_sessionCallback->DispatchOperatorApplicationStateChange(GetId(), previous, next);
             
             if (state == BACKGROUND_STATE)
             {

@@ -33,6 +33,7 @@
 #include "ait.h"
 #include "hbbtv_app.h"
 #include "opapp.h"
+#include "application_session_callback.h"
 
 class ApplicationManager {
 public:
@@ -44,101 +45,12 @@ public:
         FOR_TRUSTED_APP_ONLY = 3
     };
 
-    class SessionCallback
-    {
-public:
-        /**
-         * Tell the browser to load an application. If the entry page fails to load, the browser
-         * should call ApplicationManager::OnLoadApplicationFailed.
-         *
-         * @param appId The application ID.
-         * @param entryUrl The entry page URL.
-         */
-        virtual void LoadApplication(int appId, const char *entryUrl) = 0;
-
-        /**
-         * Tell the browser to load an application. If the entry page fails to load, the browser
-         * should call ApplicationManager::OnLoadApplicationFailed.
-         *
-         * @param appId The application ID.
-         * @param entryUrl The entry page URL.
-         * @param size The number of the co-ordinate graphics
-         * @param graphics The list of the co-ordinate graphics supported by the application
-         */
-        virtual void LoadApplication(int appId, const char *entryUrl, int size, const
-            std::vector<uint16_t> graphics) = 0;
-
-        /**
-         * Tell the browser to show the loaded application.
-         */
-        virtual void ShowApplication() = 0;
-
-        /**
-         * Tell the browser to hide the loaded application.
-         */
-        virtual void HideApplication() = 0;
-
-        /**
-         * Tell the broadcast-integration to stop presenting any broadcast component, equivalent to
-         * selecting a null service.
-         */
-        virtual void StopBroadcast() = 0;
-
-        /**
-         * Tell the broadcast-integration to reset any calls by HbbTV to suspend presentation, set
-         * the video rectangle or set the presented components.
-         */
-        virtual void ResetBroadcastPresentation() = 0;
-
-        /**
-         *  Tell the bridge to dispatch ApplicationLoadError to the loaded application.
-         */
-        virtual void DispatchApplicationLoadErrorEvent() = 0;
-
-        /**
-         *  Tell the bridge to dispatch TransitionedToBroadcastRelated to the loaded application.
-         */
-        virtual void DispatchTransitionedToBroadcastRelatedEvent() = 0;
-
-        /**
-         * Perform a HTTP GET request and return the contents, which should be an XML AIT resource.
-         *
-         * @param url The URL to get.
-         * @return The contents of the resource at URL.
-         */
-        virtual std::string GetXmlAitContents(const std::string &url) = 0;
-
-        virtual int GetParentalControlAge() = 0;
-
-        virtual std::string GetParentalControlRegion() = 0;
-
-        virtual std::string GetParentalControlRegion3() = 0;
-
-        virtual void DispatchApplicationSchemeUpdatedEvent(const std::string &scheme) = 0;
-        
-        virtual void DispatchOperatorApplicationStateChange(const std::string &oldState, const std::string &newState) = 0;
-        virtual void DispatchOperatorApplicationStateChangeCompleted(const std::string &oldState, const std::string &newState) = 0;
-        virtual void DispatchOperatorApplicationContextChange(const std::string &startupLocation, const std::string &launchLocation = "") = 0;
-        virtual void DispatchOpAppUpdate(const std::string &updateEvent) = 0;
-
-        /**
-         * Returns true if the provided triplet is in an instance within the
-         * currently playing service, otherwise false.
-         */
-        virtual bool isInstanceInCurrentService(const Utils::S_DVB_TRIPLET &triplet) = 0;
-        
-        /**
-         *
-         */
-        virtual ~SessionCallback() = default;
-    };
-
     /**
      * Application manager
      *
-     * @param sessionCallback Implementation of ApplicationManager::SessionCallback interface.
+     * @param sessionCallback Implementation of ApplicationSessionCallback interface.
      */
-    ApplicationManager(std::unique_ptr<SessionCallback> sessionCallback);
+    ApplicationManager(std::shared_ptr<ApplicationSessionCallback> sessionCallback);
 
     /**
      *
@@ -158,7 +70,7 @@ public:
      * will result in the signalled URL being loaded, which may be HTTP/HTTPS for broadband or DVB
      * for carousel.
      *
-     * @return true if the application can be created, otherwise false
+     * @return The id of the newly created application. In case of failure, INVALID_APP_ID is returned.
      */
     int CreateApplication(int callingAppId, const std::string &url, bool runAsOpApp);
 
@@ -360,7 +272,7 @@ private:
      * 
      * @param url The url the of the App. 
      * 
-     * @return True on success, false on failure.
+     * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
      */
     int CreateAndRunApp(std::string url, bool runAsOpApp = false);
 
@@ -373,7 +285,7 @@ private:
      * @param isBroadcast Is the new App broadcast related?
      * @param isTrusted Is the new App trusted?
      * 
-     * @return True on success, false on failure.
+     * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
      */
     int CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc,
         const std::string &urlParams,
@@ -385,6 +297,8 @@ private:
      * Run the app.
      *
      * @param app The app to run.
+     * 
+     * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
      */
     int RunApp(std::unique_ptr<HbbTVApp> app);
 
@@ -440,7 +354,7 @@ private:
      */
     uint16_t GetKeySet(const uint16_t keyCode);
 
-    std::unique_ptr<SessionCallback> m_sessionCallback;
+    std::shared_ptr<ApplicationSessionCallback> m_sessionCallback;
     Ait m_ait;
     std::unordered_map<int, std::unique_ptr<HbbTVApp>> m_apps;
     int m_hbbtvAppId = INVALID_APP_ID;
@@ -452,8 +366,6 @@ private:
     bool m_isNetworkAvailable = false;
     std::recursive_mutex m_lock;
     Utils::Timeout m_aitTimeout;
-    std::shared_ptr<HbbTVApp::SessionCallback> m_hbbtvAppSessionCallback;
-    std::shared_ptr<OpApp::SessionCallback> m_opAppSessionCallback;
 };
 
 #endif // HBBTV_SERVICE_MANAGER_H

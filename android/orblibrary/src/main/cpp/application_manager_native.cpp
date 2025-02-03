@@ -45,7 +45,7 @@ static jmethodID gCb[CB_NUMBER_OF_ITEMS];
 
 static ApplicationManager* GetManager(JNIEnv *env, jobject object);
 
-class AndroidSessionCallback : public ApplicationManager::SessionCallback {
+class AndroidSessionCallback : public ApplicationSessionCallback {
 public:
     explicit AndroidSessionCallback(jobject callbackObject)
     {
@@ -94,13 +94,13 @@ public:
         free(int_ptr);
     }
 
-    void ShowApplication() override
+    void ShowApplication(int app_id) override
     {
         JNIEnv *env = JniUtils::GetEnv();
         env->CallVoidMethod(mJavaCbObject, gCb[CB_SHOW_APPLICATION]);
     }
 
-    void HideApplication() override
+    void HideApplication(int app_id) override
     {
         JNIEnv *env = JniUtils::GetEnv();
         env->CallVoidMethod(mJavaCbObject, gCb[CB_HIDE_APPLICATION]);
@@ -124,7 +124,7 @@ public:
         env->CallVoidMethod(mJavaCbObject, gCb[CB_ON_APPLICATION_LOAD_ERROR]);
     }
 
-    void DispatchTransitionedToBroadcastRelatedEvent() override
+    void DispatchTransitionedToBroadcastRelatedEvent(int app_id) override
     {
         JNIEnv *env = JniUtils::GetEnv();
         env->CallVoidMethod(mJavaCbObject, gCb[CB_ON_TRANSITIONED_TO_BROADCAST_RELATED]);
@@ -168,7 +168,7 @@ public:
         return region;
     }
 
-    void DispatchApplicationSchemeUpdatedEvent(const std::string &scheme) {
+    void DispatchApplicationSchemeUpdatedEvent(int app_id, const std::string &scheme) {
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_appType = env->NewStringUTF(scheme.c_str());
         env->CallVoidMethod(mJavaCbObject, gCb[CB_ON_APPLICATION_TYPE_UPDATED], j_appType);
@@ -181,10 +181,10 @@ public:
     }
 
 
-    void DispatchOperatorApplicationStateChange(const std::string &oldState, const std::string &newState) { /* TODO */ }
-    void DispatchOperatorApplicationStateChangeCompleted(const std::string &oldState, const std::string &newState) { /* TODO */ }
-    void DispatchOperatorApplicationContextChange(const std::string &startupLocation, const std::string &launchLocation = "") { /* TODO */ }
-    void DispatchOpAppUpdate(const std::string &updateEvent) { /* TODO */ }
+    void DispatchOperatorApplicationStateChange(int app_id, const std::string &oldState, const std::string &newState) { /* TODO */ }
+    void DispatchOperatorApplicationStateChangeCompleted(int app_id, const std::string &oldState, const std::string &newState) { /* TODO */ }
+    void DispatchOperatorApplicationContextChange(int app_id, const std::string &startupLocation, const std::string &launchLocation = "") { /* TODO */ }
+    void DispatchOpAppUpdate(int app_id, const std::string &updateEvent) { /* TODO */ }
 
 private:
     jobject mJavaCbObject;

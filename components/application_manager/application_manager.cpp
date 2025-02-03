@@ -33,78 +33,18 @@
 #include "utils.h"
 #include "xml_parser.h"
 
-class AppSessionCallback : public OpApp::SessionCallback
-{
-public:
-    AppSessionCallback(ApplicationManager::SessionCallback *sessionCallback, int &currentAppId)
-        : m_sessionCallback(sessionCallback), m_currentAppId(currentAppId)
-    { }
-    
-    void ShowApplication(int appId) {
-        if (appId == m_currentAppId) m_sessionCallback->ShowApplication();
-    }
-
-    void HideApplication(int appId) {
-        if (appId == m_currentAppId) m_sessionCallback->HideApplication();
-    }
-    
-    void DispatchTransitionedToBroadcastRelatedEvent(int appId) { 
-        if (appId == m_currentAppId) m_sessionCallback->DispatchTransitionedToBroadcastRelatedEvent();
-    }
-    
-    void DispatchApplicationSchemeUpdatedEvent(int appId, const std::string &scheme) {
-        if (appId == m_currentAppId) m_sessionCallback->DispatchApplicationSchemeUpdatedEvent(scheme);
-    }
-    
-    int GetParentalControlAge() {
-        return m_sessionCallback->GetParentalControlAge();
-    }
-    
-    std::string GetParentalControlRegion() {
-        return m_sessionCallback->GetParentalControlRegion();
-    }
-    
-    std::string GetParentalControlRegion3() {
-        return m_sessionCallback->GetParentalControlRegion3();
-    }
-
-    void DispatchOperatorApplicationStateChange(int appId, const std::string &oldState, const std::string &newState) {
-        if (appId == m_currentAppId) m_sessionCallback->DispatchOperatorApplicationStateChange(oldState, newState);
-    }
-
-    void DispatchOperatorApplicationStateChangeCompleted(int appId, const std::string &oldState, const std::string &newState) {
-        if (appId == m_currentAppId) m_sessionCallback->DispatchOperatorApplicationStateChangeCompleted(oldState, newState);
-    }
-
-    void DispatchOperatorApplicationContextChange(int appId, const std::string &startupLocation, const std::string &launchLocation = "") {
-        if (appId == m_currentAppId) m_sessionCallback->DispatchOperatorApplicationContextChange(startupLocation, launchLocation);
-    }
-
-    void DispatchOpAppUpdate(int appId, const std::string &updateEvent) {
-        if (appId == m_currentAppId) m_sessionCallback->DispatchOpAppUpdate(updateEvent);
-    }
-
-private:
-    ApplicationManager::SessionCallback *m_sessionCallback;
-    const int &m_currentAppId;
-};
-
 /**
  * Application manager
  *
- * @param sessionCallback Implementation of ApplicationManager::SessionCallback interface.
+ * @param sessionCallback Implementation of ApplicationSessionCallback interface.
  */
-ApplicationManager::ApplicationManager(std::unique_ptr<ApplicationManager::SessionCallback> sessionCallback) :
-    m_sessionCallback(std::move(sessionCallback)),
+ApplicationManager::ApplicationManager(std::shared_ptr<ApplicationSessionCallback> sessionCallback) :
+    m_sessionCallback(sessionCallback),
     m_aitTimeout([&] {
         OnSelectedServiceAitTimeout();
-    }),
-    // TODO: most likely, there will be a need to add separate session callback for opapps,
-    // but for now, use the same on both regular HbbTV apps and OpApps
-    m_hbbtvAppSessionCallback(std::make_shared<AppSessionCallback>(m_sessionCallback.get(), m_hbbtvAppId)),
-    m_opAppSessionCallback(std::make_shared<AppSessionCallback>(m_sessionCallback.get(), m_opAppId))
+    })
 {
-    m_sessionCallback->HideApplication();
+    m_sessionCallback->HideApplication(INVALID_APP_ID);
 }
 
 /**
@@ -125,7 +65,7 @@ ApplicationManager::~ApplicationManager() = default;
  * will result in the signalled URL being loaded, which may be HTTP/HTTPS for broadband or DVB
  * for carousel.
  *
- * @return true if the application can be created, otherwise false
+ * @return The id of the newly created application. In case of failure, INVALID_APP_ID is returned.
  */
 int ApplicationManager::CreateApplication(int callingAppId, const std::string &url, bool runAsOpApp)
 {
@@ -928,7 +868,7 @@ void ApplicationManager::OnPerformBroadcastAutostart()
  * 
  * @param url The url the of the App. 
  * 
- * @return True on success, false on failure.
+ * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
  */
 int ApplicationManager::CreateAndRunApp(std::string url, bool runAsOpApp)
 {
@@ -938,11 +878,11 @@ int ApplicationManager::CreateAndRunApp(std::string url, bool runAsOpApp)
     {
         if (runAsOpApp)
         {
-            result = RunApp(std::make_unique<OpApp>(url, m_opAppSessionCallback));
+            result = RunApp(std::make_unique<OpApp>(url, m_sessionCallback));
         }
         else
         {
-            result = RunApp(std::make_unique<HbbTVApp>(url, m_hbbtvAppSessionCallback));
+            result = RunApp(std::make_unique<HbbTVApp>(url, m_sessionCallback));
         }
     }
     catch(const std::exception& e)
@@ -961,7 +901,7 @@ int ApplicationManager::CreateAndRunApp(std::string url, bool runAsOpApp)
  * @param isBroadcast Is the new App broadcast related?
  * @param isTrusted Is the new App trusted?
  * 
- * @return True on success, false on failure.
+ * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
  */
 int ApplicationManager::CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc, const std::string &urlParams, bool isBroadcast, bool isTrusted, bool runAsOpApp)
 {
@@ -974,7 +914,7 @@ int ApplicationManager::CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc, const s
         {
             result = RunApp(std::make_unique<OpApp>(desc,
                 m_isNetworkAvailable,
-                m_opAppSessionCallback));
+                m_sessionCallback));
         }
         else
         {
@@ -984,7 +924,7 @@ int ApplicationManager::CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc, const s
                 urlParams,
                 isBroadcast,
                 isTrusted,
-                m_hbbtvAppSessionCallback));
+                m_sessionCallback));
         }
     }
     catch(const std::exception& e)
@@ -998,6 +938,8 @@ int ApplicationManager::CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc, const s
  * Run the app.
  *
  * @param app The app to run.
+ * 
+ * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
  */
 int ApplicationManager::RunApp(std::unique_ptr<HbbTVApp> app)
 {
@@ -1024,11 +966,11 @@ int ApplicationManager::RunApp(std::unique_ptr<HbbTVApp> app)
     // Call explicitly Show/Hide 
     if (m_apps[*appId]->GetState() != HbbTVApp::BACKGROUND_STATE)
     {
-        m_sessionCallback->ShowApplication();
+        m_sessionCallback->ShowApplication(*appId);
     }
     else
     {
-        m_sessionCallback->HideApplication();
+        m_sessionCallback->HideApplication(*appId);
     }
     return *appId;
 }
@@ -1061,7 +1003,7 @@ void ApplicationManager::KillRunningApp(int appid)
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if ((m_hbbtvAppId == appid || m_opAppId == appid) && m_apps.erase(appid) > 0)
     {
-        m_sessionCallback->HideApplication();
+        m_sessionCallback->HideApplication(appid);
         m_sessionCallback->LoadApplication(INVALID_APP_ID, "about:blank");
         if (appid == m_hbbtvAppId)
         {
