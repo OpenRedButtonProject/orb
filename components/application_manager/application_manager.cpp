@@ -38,8 +38,8 @@
  *
  * @param sessionCallback Implementation of ApplicationSessionCallback interface.
  */
-ApplicationManager::ApplicationManager(std::shared_ptr<ApplicationSessionCallback> sessionCallback) :
-    m_sessionCallback(sessionCallback),
+ApplicationManager::ApplicationManager(std::unique_ptr<ApplicationSessionCallback> sessionCallback) :
+    m_sessionCallback(std::move(sessionCallback)),
     m_aitTimeout([&] {
         OnSelectedServiceAitTimeout();
     })
@@ -74,7 +74,7 @@ int ApplicationManager::CreateApplication(int callingAppId, const std::string &u
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
     LOG(LOG_INFO, "CreateApplication");
-    if (m_apps.count(callingAppId) <= 0)
+    if (m_apps.count(callingAppId) == 0)
     {
         LOG(LOG_INFO, "Called by non-running app, early out");
         return INVALID_APP_ID;
@@ -166,7 +166,7 @@ void ApplicationManager::DestroyApplication(int callingAppId)
         KillRunningApp(callingAppId);
         OnRunningAppExited();
     }
-    if (m_apps.count(callingAppId) <= 0)
+    if (m_apps.count(callingAppId) == 0)
     {
         LOG(LOG_INFO, "Called by non-running app, early out");
         return;
@@ -216,7 +216,7 @@ uint16_t ApplicationManager::SetKeySetMask(int appId, uint16_t keySetMask, std::
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
-    if (m_apps.count(appId) <= 0)
+    if (m_apps.count(appId) == 0)
     {
         return 0;
     }
@@ -369,11 +369,16 @@ void ApplicationManager::ProcessAitSection(uint16_t aitPid, uint16_t serviceId,
  * Process an XML AIT and create and run a new broadcast-independent application.
  *
  * @param xmlAit The XML AIT contents.
+ * @param isDvbi true when the caller a DVB-I application.
+ * @param scheme The linked application scheme. 
+ * 
  * @return true if the application can be created, otherwise false
  */
-int ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &isDvbi, const
-    std::string &scheme)
-{
+int ApplicationManager::ProcessXmlAit(
+    const std::string &xmlAit,
+    const bool isDvbi,
+    const std::string &scheme
+){
     const Ait::S_AIT_APP_DESC *app_description;
     bool result = INVALID_APP_ID;
 
@@ -490,7 +495,7 @@ bool ApplicationManager::IsRequestAllowed(int callingAppId, const
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
-    if (m_apps.count(m_hbbtvAppId) <= 0 || m_hbbtvAppId != callingAppId)
+    if (m_apps.count(m_hbbtvAppId) == 0 || m_hbbtvAppId != callingAppId)
     {
         return false;
     }
@@ -638,7 +643,7 @@ void ApplicationManager::OnLoadApplicationFailed(int appId)
         return;
     }
 
-    if (m_apps.count(appId) <= 0)
+    if (m_apps.count(appId) == 0)
     {
         return;
     }
@@ -737,7 +742,7 @@ void ApplicationManager::OnSelectedServiceAitReceived()
                 }
             }
         }
-        if (m_apps.count(m_hbbtvAppId) <= 0)
+        if (m_apps.count(m_hbbtvAppId) == 0)
         {
             OnPerformBroadcastAutostart();
         }
@@ -811,7 +816,7 @@ void ApplicationManager::OnSelectedServiceAitUpdated()
         }
     }
 
-    if (m_apps.count(m_hbbtvAppId) <= 0)
+    if (m_apps.count(m_hbbtvAppId) == 0)
     {
         OnPerformBroadcastAutostart();
     }
@@ -867,6 +872,8 @@ void ApplicationManager::OnPerformBroadcastAutostart()
  * Create and run an App by url.
  * 
  * @param url The url the of the App. 
+ * @param runAsOpApp When true, the newly created app will be lauched as an OpApp,
+ *      otherwise as an HbbTVApp.
  * 
  * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
  */
@@ -878,11 +885,11 @@ int ApplicationManager::CreateAndRunApp(std::string url, bool runAsOpApp)
     {
         if (runAsOpApp)
         {
-            result = RunApp(std::make_unique<OpApp>(url, m_sessionCallback));
+            result = RunApp(std::make_unique<OpApp>(url, m_sessionCallback.get()));
         }
         else
         {
-            result = RunApp(std::make_unique<HbbTVApp>(url, m_sessionCallback));
+            result = RunApp(std::make_unique<HbbTVApp>(url, m_sessionCallback.get()));
         }
     }
     catch(const std::exception& e)
@@ -900,21 +907,29 @@ int ApplicationManager::CreateAndRunApp(std::string url, bool runAsOpApp)
  *      loaded url of the new App.
  * @param isBroadcast Is the new App broadcast related?
  * @param isTrusted Is the new App trusted?
+ * @param runAsOpApp When true, the newly created app will be lauched as an OpApp,
+ *      otherwise as an HbbTVApp.
  * 
  * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
  */
-int ApplicationManager::CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc, const std::string &urlParams, bool isBroadcast, bool isTrusted, bool runAsOpApp)
-{
+int ApplicationManager::CreateAndRunApp(
+    const Ait::S_AIT_APP_DESC &desc,
+    const std::string &urlParams,
+    bool isBroadcast,
+    bool isTrusted,
+    bool runAsOpApp
+){
     int result = INVALID_APP_ID;
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     try
     {
         // ETSI TS 103 606 V1.2.1 (2024-03) Table 7: XML AIT Profile
-        if (runAsOpApp || desc.appUsage == "urn:hbbtv:opapp:privileged:2017" || desc.appUsage == "urn:hbbtv:opapp:opspecific:2017")
+        if (runAsOpApp || desc.appUsage == "urn:hbbtv:opapp:privileged:2017" ||
+            desc.appUsage == "urn:hbbtv:opapp:opspecific:2017")
         {
             result = RunApp(std::make_unique<OpApp>(desc,
                 m_isNetworkAvailable,
-                m_sessionCallback));
+                m_sessionCallback.get()));
         }
         else
         {
@@ -924,7 +939,7 @@ int ApplicationManager::CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc, const s
                 urlParams,
                 isBroadcast,
                 isTrusted,
-                m_sessionCallback));
+                m_sessionCallback.get()));
         }
     }
     catch(const std::exception& e)
@@ -1031,7 +1046,7 @@ bool ApplicationManager::TransitionRunningAppToBroadcastRelated()
         LOG(LOG_INFO, "Cannot transition to broadcast (no broadcast AIT)");
         return false;
     }
-    if (m_apps.count(m_hbbtvAppId) <= 0)
+    if (m_apps.count(m_hbbtvAppId) == 0)
     {
         LOG(LOG_INFO, "Cannot transition to broadcast (no running app)");
         return false;

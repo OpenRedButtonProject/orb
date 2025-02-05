@@ -50,7 +50,7 @@ public:
      *
      * @param sessionCallback Implementation of ApplicationSessionCallback interface.
      */
-    ApplicationManager(std::shared_ptr<ApplicationSessionCallback> sessionCallback);
+    ApplicationManager(std::unique_ptr<ApplicationSessionCallback> sessionCallback);
 
     /**
      *
@@ -146,10 +146,13 @@ public:
      * Process an XML AIT and create and run a new broadcast-independent application.
      *
      * @param xmlAit The XML AIT contents.
+     * @param isDvbi true when the caller a DVB-I application.
+     * @param scheme The linked application scheme. 
+     * 
      * @return true if the application can be created, otherwise false
      */
-    int ProcessXmlAit(const std::string &xmlAit, const bool &isDvbi = false, const
-        std::string &scheme = LINKED_APP_SCHEME_1_1);
+    int ProcessXmlAit(const std::string &xmlAit, const bool isDvbi = false,
+        const std::string &scheme = LINKED_APP_SCHEME_1_1);
 
     /**
      * Check whether a Teletext application is signalled.
@@ -270,7 +273,9 @@ private:
     /**
      * Create and run an App by url.
      * 
-     * @param url The url the of the App. 
+     * @param url The url the of the App.
+     * @param runAsOpApp When true, the newly created app will be lauched as an OpApp,
+     *      otherwise as an HbbTVApp.
      * 
      * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
      */
@@ -284,6 +289,8 @@ private:
      *      loaded url of the new App.
      * @param isBroadcast Is the new App broadcast related?
      * @param isTrusted Is the new App trusted?
+     * @param runAsOpApp When true, the newly created app will be lauched as an OpApp,
+     *      otherwise as an HbbTVApp.
      * 
      * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
      */
@@ -354,7 +361,7 @@ private:
      */
     uint16_t GetKeySet(const uint16_t keyCode);
 
-    std::shared_ptr<ApplicationSessionCallback> m_sessionCallback;
+    std::unique_ptr<ApplicationSessionCallback> m_sessionCallback;
     Ait m_ait;
     std::unordered_map<int, std::unique_ptr<HbbTVApp>> m_apps;
     int m_hbbtvAppId = INVALID_APP_ID;

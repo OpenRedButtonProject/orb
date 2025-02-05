@@ -31,14 +31,14 @@ public:
      * 
      * @throws std::runtime_error
      */
-    OpApp(const std::string &url, std::shared_ptr<ApplicationSessionCallback> sessionCallback);
+    OpApp(const std::string &url, ApplicationSessionCallback *sessionCallback);
 
     /**
      * Create opapp from Ait description.
      * 
      * @throws std::runtime_error
      */
-    OpApp(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable, std::shared_ptr<ApplicationSessionCallback> sessionCallback);
+    OpApp(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable, ApplicationSessionCallback *sessionCallback);
 
     /**
      * Create opapp from url and inherit another opapp's state (ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.1).

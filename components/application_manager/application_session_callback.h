@@ -20,8 +20,9 @@
 
 #ifndef APPLICATION_SESSION_CALLBACK_H
 #define APPLICATION_SESSION_CALLBACK_H
+
 class ApplicationSessionCallback
-    {
+{
 public:
     /**
      * Tell the browser to load an application. If the entry page fails to load, the browser
@@ -30,7 +31,7 @@ public:
      * @param appId The application ID.
      * @param entryUrl The entry page URL.
      */
-    virtual void LoadApplication(int appId, const char *entryUrl) = 0;
+    virtual void LoadApplication(const int appId, const char *entryUrl) = 0;
 
     /**
      * Tell the browser to load an application. If the entry page fails to load, the browser
@@ -41,18 +42,18 @@ public:
      * @param size The number of the co-ordinate graphics
      * @param graphics The list of the co-ordinate graphics supported by the application
      */
-    virtual void LoadApplication(int appId, const char *entryUrl, int size, const
+    virtual void LoadApplication(const int appId, const char *entryUrl, int size, const
         std::vector<uint16_t> graphics) = 0;
 
     /**
      * Tell the browser to show the loaded application.
      */
-    virtual void ShowApplication(int appId) = 0;
+    virtual void ShowApplication(const int appId) = 0;
 
     /**
      * Tell the browser to hide the loaded application.
      */
-    virtual void HideApplication(int appId) = 0;
+    virtual void HideApplication(const int appId) = 0;
 
     /**
      * Tell the broadcast-integration to stop presenting any broadcast component, equivalent to
@@ -74,7 +75,7 @@ public:
     /**
      *  Tell the bridge to dispatch TransitionedToBroadcastRelated to the loaded application.
      */
-    virtual void DispatchTransitionedToBroadcastRelatedEvent(int appId) = 0;
+    virtual void DispatchTransitionedToBroadcastRelatedEvent(const int appId) = 0;
 
     /**
      * Perform a HTTP GET request and return the contents, which should be an XML AIT resource.
@@ -90,12 +91,12 @@ public:
 
     virtual std::string GetParentalControlRegion3() = 0;
 
-    virtual void DispatchApplicationSchemeUpdatedEvent(int appId, const std::string &scheme) = 0;
+    virtual void DispatchApplicationSchemeUpdatedEvent(const int appId, const std::string &scheme) = 0;
     
-    virtual void DispatchOperatorApplicationStateChange(int appId, const std::string &oldState, const std::string &newState) = 0;
-    virtual void DispatchOperatorApplicationStateChangeCompleted(int appId, const std::string &oldState, const std::string &newState) = 0;
-    virtual void DispatchOperatorApplicationContextChange(int appId, const std::string &startupLocation, const std::string &launchLocation = "") = 0;
-    virtual void DispatchOpAppUpdate(int appId, const std::string &updateEvent) = 0;
+    virtual void DispatchOperatorApplicationStateChange(const int appId, const std::string &oldState, const std::string &newState) = 0;
+    virtual void DispatchOperatorApplicationStateChangeCompleted(const int appId, const std::string &oldState, const std::string &newState) = 0;
+    virtual void DispatchOperatorApplicationContextChange(const int appId, const std::string &startupLocation, const std::string &launchLocation = "") = 0;
+    virtual void DispatchOpAppUpdate(const int appId, const std::string &updateEvent) = 0;
 
     /**
      * Returns true if the provided triplet is in an instance within the

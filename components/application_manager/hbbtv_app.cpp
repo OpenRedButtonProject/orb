@@ -87,7 +87,7 @@ static bool IsKeyScroll(const uint16_t &code);
  * 
  * @throws std::runtime_error
  */
-HbbTVApp::HbbTVApp(const std::string &url, std::shared_ptr<ApplicationSessionCallback> sessionCallback)
+HbbTVApp::HbbTVApp(const std::string &url, ApplicationSessionCallback *sessionCallback)
     : loadedUrl(url), m_entryUrl(url), m_baseUrl(url), m_sessionCallback(sessionCallback), m_id(++g_id)
 {
     if (url.empty())
@@ -108,7 +108,7 @@ HbbTVApp::HbbTVApp(const Ait::S_AIT_APP_DESC &desc,
     const std::string &urlParams,
     bool isBroadcast,
     bool isTrusted,
-    std::shared_ptr<ApplicationSessionCallback> sessionCallback)
+    ApplicationSessionCallback *sessionCallback)
         : m_service(currentService),
         m_isTrusted(isTrusted),
         m_isBroadcast(isBroadcast),

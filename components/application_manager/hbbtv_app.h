@@ -56,7 +56,7 @@ public:
      * 
      * @throws std::runtime_error
      */
-    HbbTVApp(const std::string &url, std::shared_ptr<ApplicationSessionCallback> sessionCallback);
+    HbbTVApp(const std::string &url, ApplicationSessionCallback *sessionCallback);
 
     /**
      * Create app from Ait description.
@@ -69,7 +69,7 @@ public:
         const std::string &urlParams,
         bool isBroadcast,
         bool isTrusted,
-        std::shared_ptr<ApplicationSessionCallback> sessionCallback);
+        ApplicationSessionCallback *sessionCallback);
     
     HbbTVApp(const HbbTVApp&) = delete;
     HbbTVApp &operator=(const HbbTVApp&) = delete;
@@ -182,7 +182,7 @@ protected:
     uint8_t m_versionMinor = 0;
     E_APP_STATE m_state = FOREGROUND_STATE;
 
-    std::shared_ptr<ApplicationSessionCallback> m_sessionCallback;
+    ApplicationSessionCallback *m_sessionCallback;
 
 private:
     int m_id;
