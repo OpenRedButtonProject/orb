@@ -31,8 +31,6 @@
 
 #define INVALID_APP_ID 0
 
-class ApplicationManager;
-
 class HbbTVApp
 {
 public:
