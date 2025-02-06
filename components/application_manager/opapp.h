@@ -23,32 +23,22 @@
 
 #include "hbbtv_app.h"
 
-class OpApp : public App
+class OpApp : public HbbTVApp
 {
 public:
-    class SessionCallback : public HbbTVApp::SessionCallback
-    {
-public:
-        virtual void DispatchOperatorApplicationStateChange(uint16_t appId, const std::string &oldState, const std::string &newState) = 0;
-        virtual void DispatchOperatorApplicationStateChangeCompleted(uint16_t appId, const std::string &oldState, const std::string &newState) = 0;
-        virtual void DispatchOperatorApplicationContextChange(uint16_t appId, const std::string &startupLocation, const std::string &launchLocation = "") = 0;
-        virtual void DispatchOpAppUpdate(uint16_t appId, const std::string &updateEvent) = 0;
-        virtual ~SessionCallback() = default;
-    };
-
     /**
      * Create opapp from url.
      * 
      * @throws std::runtime_error
      */
-    OpApp(const std::string &url, std::shared_ptr<OpApp::SessionCallback> sessionCallback);
+    OpApp(const std::string &url, ApplicationSessionCallback *sessionCallback);
 
     /**
      * Create opapp from Ait description.
      * 
      * @throws std::runtime_error
      */
-    OpApp(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable, std::shared_ptr<OpApp::SessionCallback> sessionCallback);
+    OpApp(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable, ApplicationSessionCallback *sessionCallback);
 
     /**
      * Create opapp from url and inherit another opapp's state (ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.1).

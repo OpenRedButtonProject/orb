@@ -27,6 +27,7 @@
 
 #include "utils.h"
 #include "ait.h"
+#include "application_session_callback.h"
 
 #define INVALID_APP_ID 0
 
@@ -48,25 +49,12 @@ public:
         OVERLAID_TRANSIENT_STATE
     } E_APP_STATE;
 
-    class SessionCallback
-    {
-public:
-        virtual void ShowApplication(uint16_t appId) = 0;
-        virtual void HideApplication(uint16_t appId) = 0;
-        virtual void DispatchTransitionedToBroadcastRelatedEvent(uint16_t appId) = 0;
-        virtual void DispatchApplicationSchemeUpdatedEvent(uint16_t appId, const std::string &scheme) = 0;
-        virtual int GetParentalControlAge() = 0;
-        virtual std::string GetParentalControlRegion() = 0;
-        virtual std::string GetParentalControlRegion3() = 0;
-        virtual ~SessionCallback() = default;
-    };
-
     /**
      * Create app from url.
      * 
      * @throws std::runtime_error
      */
-    HbbTVApp(const std::string &url, std::shared_ptr<HbbTVApp::SessionCallback> sessionCallback);
+    HbbTVApp(const std::string &url, ApplicationSessionCallback *sessionCallback);
 
     /**
      * Create app from Ait description.
@@ -79,7 +67,7 @@ public:
         const std::string &urlParams,
         bool isBroadcast,
         bool isTrusted,
-        std::shared_ptr<HbbTVApp::SessionCallback> sessionCallback);
+        ApplicationSessionCallback *sessionCallback);
     
     HbbTVApp(const HbbTVApp&) = delete;
     HbbTVApp &operator=(const HbbTVApp&) = delete;
@@ -165,7 +153,7 @@ public:
      */
     std::vector<uint16_t> GetOtherKeyValues() const { return m_otherKeys; }
 
-    uint16_t GetId() const { return m_id; }
+    int GetId() const { return m_id; }
 
     std::string loadedUrl;
 
@@ -192,10 +180,10 @@ protected:
     uint8_t m_versionMinor = 0;
     E_APP_STATE m_state = FOREGROUND_STATE;
 
-    std::shared_ptr<HbbTVApp::SessionCallback> m_sessionCallback;
+    ApplicationSessionCallback *m_sessionCallback;
 
 private:
-    uint16_t m_id;
+    int m_id;
 };
 
 #endif // HBBTV_APP_H

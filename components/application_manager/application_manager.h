@@ -32,6 +32,8 @@
 #include "utils.h"
 #include "ait.h"
 #include "hbbtv_app.h"
+#include "opapp.h"
+#include "application_session_callback.h"
 
 class ApplicationManager {
 public:
@@ -43,96 +45,12 @@ public:
         FOR_TRUSTED_APP_ONLY = 3
     };
 
-    class SessionCallback
-    {
-public:
-        /**
-         * Tell the browser to load an application. If the entry page fails to load, the browser
-         * should call ApplicationManager::OnLoadApplicationFailed.
-         *
-         * @param appId The application ID.
-         * @param entryUrl The entry page URL.
-         */
-        virtual void LoadApplication(uint16_t appId, const char *entryUrl) = 0;
-
-        /**
-         * Tell the browser to load an application. If the entry page fails to load, the browser
-         * should call ApplicationManager::OnLoadApplicationFailed.
-         *
-         * @param appId The application ID.
-         * @param entryUrl The entry page URL.
-         * @param size The number of the co-ordinate graphics
-         * @param graphics The list of the co-ordinate graphics supported by the application
-         */
-        virtual void LoadApplication(uint16_t appId, const char *entryUrl, int size, const
-            std::vector<uint16_t> graphics) = 0;
-
-        /**
-         * Tell the browser to show the loaded application.
-         */
-        virtual void ShowApplication() = 0;
-
-        /**
-         * Tell the browser to hide the loaded application.
-         */
-        virtual void HideApplication() = 0;
-
-        /**
-         * Tell the broadcast-integration to stop presenting any broadcast component, equivalent to
-         * selecting a null service.
-         */
-        virtual void StopBroadcast() = 0;
-
-        /**
-         * Tell the broadcast-integration to reset any calls by HbbTV to suspend presentation, set
-         * the video rectangle or set the presented components.
-         */
-        virtual void ResetBroadcastPresentation() = 0;
-
-        /**
-         *  Tell the bridge to dispatch ApplicationLoadError to the loaded application.
-         */
-        virtual void DispatchApplicationLoadErrorEvent() = 0;
-
-        /**
-         *  Tell the bridge to dispatch TransitionedToBroadcastRelated to the loaded application.
-         */
-        virtual void DispatchTransitionedToBroadcastRelatedEvent() = 0;
-
-        /**
-         * Perform a HTTP GET request and return the contents, which should be an XML AIT resource.
-         *
-         * @param url The URL to get.
-         * @return The contents of the resource at URL.
-         */
-        virtual std::string GetXmlAitContents(const std::string &url) = 0;
-
-        virtual int GetParentalControlAge() = 0;
-
-        virtual std::string GetParentalControlRegion() = 0;
-
-        virtual std::string GetParentalControlRegion3() = 0;
-
-        virtual void DispatchApplicationSchemeUpdatedEvent(const std::string &scheme) = 0;
-
-        /**
-         * Returns true if the provided triplet is in an instance within the
-         * currently playing service, otherwise false.
-         */
-        virtual bool isInstanceInCurrentService(const Utils::S_DVB_TRIPLET &triplet) = 0;
-        
-        /**
-         *
-         */
-        virtual ~SessionCallback() = default;
-    };
-
     /**
      * Application manager
      *
-     * @param sessionCallback Implementation of ApplicationManager::SessionCallback interface.
+     * @param sessionCallback Implementation of ApplicationSessionCallback interface.
      */
-    ApplicationManager(std::unique_ptr<SessionCallback> sessionCallback);
+    ApplicationManager(std::unique_ptr<ApplicationSessionCallback> sessionCallback);
 
     /**
      *
@@ -144,6 +62,7 @@ public:
      *
      * @param callingAppId The calling app ID or INVALID_APP_ID if not called by an app.
      * @param url A HTTP/HTTPS or DVB URL.
+     * @param runAsOpApp Whether the newly created app will be launched as an OpApp.
      *
      * A HTTP/HTTPS URL may refer to the entry page or XML AIT of a broadcast-independent app.
      *
@@ -151,30 +70,30 @@ public:
      * will result in the signalled URL being loaded, which may be HTTP/HTTPS for broadband or DVB
      * for carousel.
      *
-     * @return true if the application can be created, otherwise false
+     * @return The id of the newly created application. In case of failure, INVALID_APP_ID is returned.
      */
-    bool CreateApplication(uint16_t callingAppId, const std::string &url);
+    int CreateApplication(int callingAppId, const std::string &url, bool runAsOpApp);
 
     /**
      * Destroy the calling application.
      *
      * @param callingAppId The calling app ID.
      */
-    void DestroyApplication(uint16_t callingAppId);
+    void DestroyApplication(int callingAppId);
 
     /**
      * Show the calling application.
      *
      * @param callingAppId The calling app ID.
      */
-    void ShowApplication(uint16_t callingAppId);
+    void ShowApplication(int callingAppId);
 
     /**
      * Hide the calling application.
      *
      * @param callingAppId The calling app ID.
      */
-    void HideApplication(uint16_t callingAppId);
+    void HideApplication(int callingAppId);
 
     /**
      * Set the key set mask for an application.
@@ -184,7 +103,7 @@ public:
      * @param otherKeys optional other keys
      * @return The key set mask for the application.
      */
-    uint16_t SetKeySetMask(uint16_t appId, uint16_t keySetMask, std::vector<uint16_t> otherKeys);
+    uint16_t SetKeySetMask(int appId, uint16_t keySetMask, std::vector<uint16_t> otherKeys);
 
     /**
      * Get the key set mask for an application.
@@ -192,7 +111,7 @@ public:
      * @param appId The application.
      * @return The key set mask for the application.
      */
-    uint16_t GetKeySetMask(uint16_t appId);
+    uint16_t GetKeySetMask(int appId);
 
     /**
      * Get the other keys for an application.
@@ -200,7 +119,7 @@ public:
      * @param appId The application.
      * @return The other keys for the application.
      */
-    std::vector<uint16_t> GetOtherKeyValues(uint16_t appId);
+    std::vector<uint16_t> GetOtherKeyValues(int appId);
 
     /**
      * Check the key code is accepted by the current key mask. Activate the app as a result if the
@@ -210,7 +129,7 @@ public:
      * @param keyCode The key code to check.
      * @return The supplied key_code is accepted by the current app's key set.
      */
-    bool InKeySet(uint16_t appId, uint16_t keyCode);
+    bool InKeySet(int appId, uint16_t keyCode);
 
     /**
      * Process an AIT section. The table will be processed when it is completed or updated.
@@ -227,10 +146,13 @@ public:
      * Process an XML AIT and create and run a new broadcast-independent application.
      *
      * @param xmlAit The XML AIT contents.
+     * @param isDvbi true when the caller a DVB-I application.
+     * @param scheme The linked application scheme. 
+     * 
      * @return true if the application can be created, otherwise false
      */
-    bool ProcessXmlAit(const std::string &xmlAit, const bool &isDvbi = false, const
-        std::string &scheme = LINKED_APP_SCHEME_1_1);
+    int ProcessXmlAit(const std::string &xmlAit, const bool isDvbi = false,
+        const std::string &scheme = LINKED_APP_SCHEME_1_1);
 
     /**
      * Check whether a Teletext application is signalled.
@@ -254,7 +176,7 @@ public:
      * @param methodRequirement Any additional requirement of the method.
      * @return true if the request is allowed, otherwise false
      */
-    bool IsRequestAllowed(uint16_t callingAppId, const std::string &callingPageUrl,
+    bool IsRequestAllowed(int callingAppId, const std::string &callingPageUrl,
         MethodRequirement methodRequirement);
 
     /**
@@ -305,7 +227,7 @@ public:
      *
      * @param appId The application ID of the application that failed to load.
      */
-    void OnLoadApplicationFailed(uint16_t appId);
+    void OnLoadApplicationFailed(int appId);
 
     /**
      * Notify the application manager of application page changed, before the new page is
@@ -314,9 +236,13 @@ public:
      * @param appId The application ID.
      * @param url The URL of the new page.
      */
-    void OnApplicationPageChanged(uint16_t appId, const std::string &url);
+    void OnApplicationPageChanged(int appId, const std::string &url);
 
-    std::string GetApplicationScheme(uint16_t appId);
+    std::string GetApplicationScheme(int appId);
+
+    std::string GetApplicationUrl(int appId);
+
+    std::vector<int> GetRunningAppIds();
 
 private:
     /**
@@ -347,11 +273,13 @@ private:
     /**
      * Create and run an App by url.
      * 
-     * @param url The url the of the App. 
+     * @param url The url the of the App.
+     * @param runAsOpApp When true, the newly created app will be lauched as an OpApp,
+     *      otherwise as an HbbTVApp.
      * 
-     * @return True on success, false on failure.
+     * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
      */
-    bool CreateAndRunApp(std::string url);
+    int CreateAndRunApp(std::string url, bool runAsOpApp = false);
 
     /**
      * Create and run an App by AIT description.
@@ -361,20 +289,25 @@ private:
      *      loaded url of the new App.
      * @param isBroadcast Is the new App broadcast related?
      * @param isTrusted Is the new App trusted?
+     * @param runAsOpApp When true, the newly created app will be lauched as an OpApp,
+     *      otherwise as an HbbTVApp.
      * 
-     * @return True on success, false on failure.
+     * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
      */
-    bool CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc,
+    int CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc,
         const std::string &urlParams,
         bool isBroadcast,
-        bool isTrusted);
+        bool isTrusted,
+        bool runAsOpApp = false);
 
     /**
      * Run the app.
      *
      * @param app The app to run.
+     * 
+     * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
      */
-    void RunApp(std::unique_ptr<HbbTVApp> app);
+    int RunApp(std::unique_ptr<HbbTVApp> app);
 
     /**
      * Update the running app.
@@ -388,7 +321,7 @@ private:
     /**
      * Kill the running app.
      */
-    void KillRunningApp();
+    void KillRunningApp(int appid);
 
     /**
      * Transition the running app to broadcast-related, if conditions permit.
@@ -428,10 +361,11 @@ private:
      */
     uint16_t GetKeySet(const uint16_t keyCode);
 
-    std::unique_ptr<SessionCallback> m_sessionCallback;
+    std::unique_ptr<ApplicationSessionCallback> m_sessionCallback;
     Ait m_ait;
-    std::unordered_map<uint16_t, std::unique_ptr<HbbTVApp>> m_apps;
-    uint16_t m_appId = INVALID_APP_ID;
+    std::unordered_map<int, std::unique_ptr<HbbTVApp>> m_apps;
+    int m_hbbtvAppId = INVALID_APP_ID;
+    int m_opAppId = INVALID_APP_ID;
     Utils::S_DVB_TRIPLET m_currentService = Utils::MakeInvalidDvbTriplet();
     Utils::S_DVB_TRIPLET m_previousService = Utils::MakeInvalidDvbTriplet();
     uint16_t m_currentServiceReceivedFirstAit = false;
@@ -439,7 +373,6 @@ private:
     bool m_isNetworkAvailable = false;
     std::recursive_mutex m_lock;
     Utils::Timeout m_aitTimeout;
-    std::shared_ptr<HbbTVApp::SessionCallback> m_appSessionCallback;
 };
 
 #endif // HBBTV_SERVICE_MANAGER_H

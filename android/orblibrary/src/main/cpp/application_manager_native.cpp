@@ -45,7 +45,7 @@ static jmethodID gCb[CB_NUMBER_OF_ITEMS];
 
 static ApplicationManager* GetManager(JNIEnv *env, jobject object);
 
-class AndroidSessionCallback : public ApplicationManager::SessionCallback {
+class AndroidSessionCallback : public ApplicationSessionCallback {
 public:
     explicit AndroidSessionCallback(jobject callbackObject)
     {
@@ -59,18 +59,18 @@ public:
         env->DeleteGlobalRef(mJavaCbObject);
     }
 
-    void LoadApplication(uint16_t app_id, const char *entry_url) override
+    void LoadApplication(const int appId, const char *entry_url) override
     {
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_entry_url = env->NewStringUTF(entry_url);
-        env->CallVoidMethod(mJavaCbObject, gCb[CB_LOAD_APPLICATION], app_id, j_entry_url, nullptr);
+        env->CallVoidMethod(mJavaCbObject, gCb[CB_LOAD_APPLICATION], appId, j_entry_url, nullptr);
         env->DeleteLocalRef(j_entry_url);
     }
 
-    void LoadApplication(uint16_t app_id, const char *entry_url, int array_size, const std::vector<uint16_t> graphics) override
+    void LoadApplication(const int appId, const char *entry_url, int array_size, const std::vector<uint16_t> graphics) override
     {
         if (array_size == 0) {
-            LoadApplication(app_id, entry_url);
+            LoadApplication(appId, entry_url);
         }
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_entry_url = env->NewStringUTF(entry_url);
@@ -78,7 +78,7 @@ public:
         jint *int_ptr = static_cast<jint *>(calloc(array_size, sizeof(jint)));
         if (int_ptr == nullptr)
         {
-            LoadApplication(app_id, entry_url);
+            LoadApplication(appId, entry_url);
         }
         else
         {
@@ -87,20 +87,20 @@ public:
                 int_ptr[i] = graphics[i];
             }
             env->SetIntArrayRegion(j_array, 0, array_size, int_ptr);
-            env->CallVoidMethod(mJavaCbObject, gCb[CB_LOAD_APPLICATION], app_id, j_entry_url, j_array);
+            env->CallVoidMethod(mJavaCbObject, gCb[CB_LOAD_APPLICATION], appId, j_entry_url, j_array);
         }
         env->DeleteLocalRef(j_entry_url);
         env->DeleteLocalRef(j_array);
         free(int_ptr);
     }
 
-    void ShowApplication() override
+    void ShowApplication(const int appId) override
     {
         JNIEnv *env = JniUtils::GetEnv();
         env->CallVoidMethod(mJavaCbObject, gCb[CB_SHOW_APPLICATION]);
     }
 
-    void HideApplication() override
+    void HideApplication(const int appId) override
     {
         JNIEnv *env = JniUtils::GetEnv();
         env->CallVoidMethod(mJavaCbObject, gCb[CB_HIDE_APPLICATION]);
@@ -124,7 +124,7 @@ public:
         env->CallVoidMethod(mJavaCbObject, gCb[CB_ON_APPLICATION_LOAD_ERROR]);
     }
 
-    void DispatchTransitionedToBroadcastRelatedEvent() override
+    void DispatchTransitionedToBroadcastRelatedEvent(const int appId) override
     {
         JNIEnv *env = JniUtils::GetEnv();
         env->CallVoidMethod(mJavaCbObject, gCb[CB_ON_TRANSITIONED_TO_BROADCAST_RELATED]);
@@ -168,7 +168,7 @@ public:
         return region;
     }
 
-    void DispatchApplicationSchemeUpdatedEvent(const std::string &scheme) {
+    void DispatchApplicationSchemeUpdatedEvent(const int appId, const std::string &scheme) {
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_appType = env->NewStringUTF(scheme.c_str());
         env->CallVoidMethod(mJavaCbObject, gCb[CB_ON_APPLICATION_TYPE_UPDATED], j_appType);
@@ -179,6 +179,12 @@ public:
         JNIEnv *env = JniUtils::GetEnv();
         return env->CallBooleanMethod(mJavaCbObject, gCb[CB_IS_INSTANCES_OF_CURRENT_SERVICE], triplet.originalNetworkId, triplet.transportStreamId, triplet.serviceId);
     }
+
+
+    void DispatchOperatorApplicationStateChange(const int appId, const std::string &oldState, const std::string &newState) { /* TODO */ }
+    void DispatchOperatorApplicationStateChangeCompleted(const int appId, const std::string &oldState, const std::string &newState) { /* TODO */ }
+    void DispatchOperatorApplicationContextChange(const int appId, const std::string &startupLocation, const std::string &launchLocation = "") { /* TODO */ }
+    void DispatchOpAppUpdate(const int appId, const std::string &updateEvent) { /* TODO */ }
 
 private:
     jobject mJavaCbObject;
@@ -245,12 +251,12 @@ JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniFinalize(
 }
 
 extern "C"
-JNIEXPORT jboolean JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniCreateApplication(
+JNIEXPORT jint JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniCreateApplication(
     JNIEnv *env, jobject object,
     jint calling_app_id, jstring j_url)
 {
     std::string url = JniUtils::MakeStdString(env, j_url);
-    return GetManager(env, object)->CreateApplication(calling_app_id, url);
+    return GetManager(env, object)->CreateApplication(calling_app_id, url, false);
 }
 
 extern "C"
@@ -331,6 +337,27 @@ JNIEXPORT jstring JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniGetApp
                                                                                      jint calling_app_id)
 {
     return env->NewStringUTF(GetManager(env, object)->GetApplicationScheme(calling_app_id).c_str());
+}
+
+extern "C"
+JNIEXPORT jstring JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniGetApplicationUrl(JNIEnv *env,
+                                                                                     jobject object,
+                                                                                     jint calling_app_id)
+{
+    return env->NewStringUTF(GetManager(env, object)->GetApplicationUrl(calling_app_id).c_str());
+}
+
+extern "C"
+JNIEXPORT jintArray JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniGetRunningAppIds(JNIEnv *env,
+    jobject object)
+{
+    std::vector<int> values = GetManager(env, object)->GetRunningAppIds();
+    jintArray resultArray = env->NewIntArray(values.size());
+    if (resultArray != nullptr) {
+        env->SetIntArrayRegion(resultArray, 0, values.size(), reinterpret_cast<const jint*>(values.data()));
+    }
+
+    return resultArray;
 }
 
 extern "C"

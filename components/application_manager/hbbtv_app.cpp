@@ -20,6 +20,7 @@
 
 #include "hbbtv_app.h"
 #include "log.h"
+#include "application_manager.h"
 
 #include <stdexcept>
 
@@ -62,7 +63,7 @@
 #define VK_ALPHA_START 65
 #define VK_ALPHA_END 90
 
-static uint16_t g_id = INVALID_APP_ID;
+static int g_id = INVALID_APP_ID;
 
 static std::string getAppSchemeFromUrlParams(const std::string &urlParams);
 static std::string getUrlParamsFromAppScheme(const std::string &scheme);
@@ -86,7 +87,7 @@ static bool IsKeyScroll(const uint16_t &code);
  * 
  * @throws std::runtime_error
  */
-HbbTVApp::HbbTVApp(const std::string &url, std::shared_ptr<SessionCallback> sessionCallback)
+HbbTVApp::HbbTVApp(const std::string &url, ApplicationSessionCallback *sessionCallback)
     : loadedUrl(url), m_entryUrl(url), m_baseUrl(url), m_sessionCallback(sessionCallback), m_id(++g_id)
 {
     if (url.empty())
@@ -107,7 +108,7 @@ HbbTVApp::HbbTVApp(const Ait::S_AIT_APP_DESC &desc,
     const std::string &urlParams,
     bool isBroadcast,
     bool isTrusted,
-    std::shared_ptr<HbbTVApp::SessionCallback> sessionCallback)
+    ApplicationSessionCallback *sessionCallback)
         : m_service(currentService),
         m_isTrusted(isTrusted),
         m_isBroadcast(isBroadcast),

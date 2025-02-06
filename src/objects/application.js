@@ -21,6 +21,7 @@ hbbtv.objects.Application = (function() {
     const prototype = {};
     const privates = new WeakMap();
     const gGarbageCollectionBlocked = new Set();
+    const INVALID_APP_ID = 0;
     
     // store created apps by their url as key
     const gApps = {};
@@ -52,49 +53,46 @@ hbbtv.objects.Application = (function() {
     }
 
     prototype.createApplication = function(uri, createChild, runAsOpApp) {
-        if (privates.get(this).disabled) {
-            return null;
-        }
-        const url = new defaultEntities.URL(uri, document.location.href);
-        if (hbbtv.bridge.manager.createApplication(url.href, runAsOpApp) === true) {
-            return hbbtv.objects.createApplication({
-                url: url.href,
-                disabled: true,
-            });
+        if (privates.get(this).id in gApps) {
+            const url = new defaultEntities.URL(uri, document.location.href);
+            const appId = hbbtv.bridge.manager.createApplication(url.href, runAsOpApp);
+            console.log("Application: creating application... url:", url.href, "id:", appId);
+            if (appId !== INVALID_APP_ID) {
+                return hbbtv.objects.createApplication({
+                    id: appId
+                });
+            }
         }
         return null;
     };
 
     prototype.destroyApplication = function() {
-        if (privates.get(this).disabled) {
-            return;
+        if (privates.get(this).id in gApps) {
+            hbbtv.bridge.manager.destroyApplication();
+            delete gApps[p.url];
         }
-        hbbtv.bridge.manager.destroyApplication();
-        delete gApps[p.url];
     };
 
     prototype.show = function() {
-        if (privates.get(this).disabled) {
-            return;
-        }
-        try {
-            hbbtv.bridge.manager.showApplication();
-        } catch (e) {
-            if (e.message !== 'NotRunning') {
-                throw e;
+        if (privates.get(this).id in gApps) {
+            try {
+                hbbtv.bridge.manager.showApplication();
+            } catch (e) {
+                if (e.message !== 'NotRunning') {
+                    throw e;
+                }
             }
         }
     };
 
     prototype.hide = function() {
-        if (privates.get(this).disabled) {
-            return;
-        }
-        try {
-            hbbtv.bridge.manager.hideApplication();
-        } catch (e) {
-            if (e.message !== 'NotRunning') {
-                throw e;
+        if (privates.get(this).id in gApps) {
+            try {
+                hbbtv.bridge.manager.hideApplication();
+            } catch (e) {
+                if (e.message !== 'NotRunning') {
+                    throw e;
+                }
             }
         }
     };
@@ -203,17 +201,8 @@ hbbtv.objects.Application = (function() {
     function getOwnerApplication(doc) {
         try {
             console.log("Application: Request owner application with url:", doc.documentURI);
-            if (doc.documentURI in gApps) {
-                return gApps[doc.documentURI];
-            }
-            // TODO: Applications should be populated by the application manager
-            // upon its construction. Move the following to the application manager
-            // initialization when the logic of retrieving running applications
-            // from native code is done.
-            return hbbtv.objects.createApplication({
-                disabled: false,
-                url: doc.documentURI
-            });
+            const app = Object.values(gApps).find(app => hbbtv.bridge.manager.getApplicationUrl(privates.get(app).id) === doc.documentURI);
+            return app ? app : null;
         }
         catch(e) {
             console.error("Application:", e);
@@ -222,17 +211,19 @@ hbbtv.objects.Application = (function() {
     }
 
     function initialise(data) {
+        data.id = data.id || INVALID_APP_ID;
         privates.set(this, {
             id: data.id,
-            url: data.url,
-            disabled: data.disabled,
             eventDispatcher: new hbbtv.utils.EventDispatcher(this),
             privateData: hbbtv.objects.createPrivateData({
-                disabled: data.disabled,
+                disabled: data.id === INVALID_APP_ID,
             })
         });
-        addBridgeEventListeners.call(this);
-        gApps[data.url] = this;
+        if (data.id !== INVALID_APP_ID)
+        {
+            addBridgeEventListeners.call(this);
+            gApps[data.id] = this;
+        }
     }
 
     return {

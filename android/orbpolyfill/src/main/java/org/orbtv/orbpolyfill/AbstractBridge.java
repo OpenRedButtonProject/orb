@@ -817,7 +817,7 @@ public abstract class AbstractBridge {
      *
      * @return True if the application can be created; false otherwise.
      */
-    protected abstract boolean Manager_createApplication(BridgeToken token, String url);
+    protected abstract int Manager_createApplication(BridgeToken token, String url);
 
     /**
      * Destroy the calling application.
@@ -927,6 +927,8 @@ public abstract class AbstractBridge {
      * @return The currently running application scheme.
      */
     protected abstract String Manager_getApplicationScheme(BridgeToken token);
+    protected abstract String Manager_getApplicationUrl(int id);
+    protected abstract int[] Manager_getRunningAppIds();
 
     /**
      * Get a list of rating schemes supported by this integration.
@@ -1725,7 +1727,7 @@ public abstract class AbstractBridge {
             }
 
             case "Manager.createApplication": {
-                boolean result = Manager_createApplication(
+                int result = Manager_createApplication(
                         token,
                         params.getString("url")
                 );
@@ -1827,6 +1829,22 @@ public abstract class AbstractBridge {
 
             case "Manager.getApplicationScheme": {
                 String result = Manager_getApplicationScheme(token);
+                response.put("result", result);
+                break;
+            }
+
+            case "Manager.getApplicationUrl": {
+                String result = Manager_getApplicationUrl(params.getInt("id"));
+                response.put("result", result);
+                break;
+            }
+
+            case "Manager.getRunningAppIds": {
+                int[] ids = Manager_getRunningAppIds();
+                JSONArray result = new JSONArray();
+                for (int i : ids) {
+                    result.put(i);
+                }
                 response.put("result", result);
                 break;
             }

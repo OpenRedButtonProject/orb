@@ -86,9 +86,7 @@ hbbtv.objects.ApplicationManager = (function() {
             const ev = new Event('ApplicationLoadError');
             // TODO: assign the actual application that triggered the event (by its id maybe?)
             Object.assign(ev, {
-                appl: hbbtv.objects.createApplication({
-                    disabled: true,
-                }),
+                appl: hbbtv.objects.createApplication({}),
             });
             privates.get(this).eventDispatcher.dispatchEvent(ev);
         };
@@ -100,6 +98,9 @@ hbbtv.objects.ApplicationManager = (function() {
         const p = privates.get(this);
         p.eventDispatcher = new hbbtv.utils.EventDispatcher(this);
         addBridgeEventListeners.call(this);
+        for (const id of hbbtv.bridge.manager.getRunningAppIds()) {
+            hbbtv.objects.createApplication({ id });
+        }
     }
 
     return {

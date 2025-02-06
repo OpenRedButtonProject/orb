@@ -16,7 +16,8 @@ LOCAL_SRC_FILES := \
    utils.cpp \
    ait.cpp \
    xml_parser.cpp \
-   hbbtv_app.cpp
+   hbbtv_app.cpp \
+   opapp.cpp
 
 LOCAL_CFLAGS := \
    -Wno-unused-variable \

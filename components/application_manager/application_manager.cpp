@@ -33,59 +33,17 @@
 #include "utils.h"
 #include "xml_parser.h"
 
-class AppSessionCallback : public HbbTVApp::SessionCallback
-{
-public:
-    AppSessionCallback(ApplicationManager::SessionCallback *sessionCallback, uint16_t *currentAppId)
-        : m_sessionCallback(sessionCallback), m_currentAppId(currentAppId)
-    { }
-    
-    void ShowApplication(uint16_t appId) {
-        if (appId == *m_currentAppId) m_sessionCallback->ShowApplication();
-    }
-
-    void HideApplication(uint16_t appId) {
-        if (appId == *m_currentAppId) m_sessionCallback->HideApplication();
-    }
-    
-    void DispatchTransitionedToBroadcastRelatedEvent(uint16_t appId) { 
-        if (appId == *m_currentAppId) m_sessionCallback->DispatchTransitionedToBroadcastRelatedEvent();
-    }
-    
-    void DispatchApplicationSchemeUpdatedEvent(uint16_t appId, const std::string &scheme) {
-        if (appId == *m_currentAppId) m_sessionCallback->DispatchApplicationSchemeUpdatedEvent(scheme);
-    }
-    
-    int GetParentalControlAge() {
-        return m_sessionCallback->GetParentalControlAge();
-    }
-    
-    std::string GetParentalControlRegion() {
-        return m_sessionCallback->GetParentalControlRegion();
-    }
-    
-    std::string GetParentalControlRegion3() {
-        return m_sessionCallback->GetParentalControlRegion3();
-    }
-
-private:
-    ApplicationManager::SessionCallback *m_sessionCallback;
-    uint16_t *m_currentAppId;
-};
-
 /**
  * Application manager
  *
- * @param sessionCallback Implementation of ApplicationManager::SessionCallback interface.
+ * @param sessionCallback Implementation of ApplicationSessionCallback interface.
  */
-ApplicationManager::ApplicationManager(std::unique_ptr<ApplicationManager::SessionCallback> sessionCallback) :
+ApplicationManager::ApplicationManager(std::unique_ptr<ApplicationSessionCallback> sessionCallback) :
     m_sessionCallback(std::move(sessionCallback)),
     m_aitTimeout([&] {
         OnSelectedServiceAitTimeout();
-    }),
-    m_appSessionCallback(std::make_shared<AppSessionCallback>(m_sessionCallback.get(), &m_appId))
+    })
 {
-    m_sessionCallback->HideApplication();
 }
 
 /**
@@ -98,6 +56,7 @@ ApplicationManager::~ApplicationManager() = default;
  *
  * @param callingAppId The calling app ID or INVALID_APP_ID if not called by an app.
  * @param url A HTTP/HTTPS or DVB URL.
+ * @param runAsOpApp Whether the newly created app will be launched as an OpApp.
  *
  * A HTTP/HTTPS URL may refer to the entry page or XML AIT of a broadcast-independent app.
  *
@@ -105,25 +64,31 @@ ApplicationManager::~ApplicationManager() = default;
  * will result in the signalled URL being loaded, which may be HTTP/HTTPS for broadband or DVB
  * for carousel.
  *
- * @return true if the application can be created, otherwise false
+ * @return The id of the newly created application. In case of failure, INVALID_APP_ID is returned.
  */
-bool ApplicationManager::CreateApplication(uint16_t callingAppId, const std::string &url)
+int ApplicationManager::CreateApplication(int callingAppId, const std::string &url, bool runAsOpApp)
 {
-    bool result = false;
+    int result = INVALID_APP_ID;
     const Ait::S_AIT_APP_DESC *appDescription;
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
     LOG(LOG_INFO, "CreateApplication");
-    if (m_apps.count(callingAppId) <= 0)
+    if (m_apps.count(callingAppId) == 0)
     {
         LOG(LOG_INFO, "Called by non-running app, early out");
-        return false;
+        return INVALID_APP_ID;
     }
     if (url.empty())
     {
         LOG(LOG_INFO, "Called with empty URL, early out");
         m_sessionCallback->DispatchApplicationLoadErrorEvent();
-        return false;
+        return INVALID_APP_ID;
+    }
+
+    if (runAsOpApp && m_apps[callingAppId]->GetType() != HbbTVApp::OPAPP_TYPE)
+    {
+        LOG(LOG_INFO, "Called with runAsOpApp=true from a non-opapp, early out");
+        return INVALID_APP_ID;
     }
 
     Utils::CreateLocatorInfo info = Utils::ParseCreateLocatorInfo(url, m_currentService);
@@ -140,7 +105,7 @@ bool ApplicationManager::CreateApplication(uint16_t callingAppId, const std::str
             appDescription = Ait::FindApp(m_ait.Get(), info.orgId, info.appId);
             if (appDescription)
             {
-                result = CreateAndRunApp(*appDescription, info.parameters, true, false);
+                result = CreateAndRunApp(*appDescription, info.parameters, true, false, runAsOpApp);
             }
             else
             {
@@ -164,7 +129,7 @@ bool ApplicationManager::CreateApplication(uint16_t callingAppId, const std::str
             else
             {
                 LOG(LOG_INFO, "Locator resource is ENTRY PAGE");
-                result = CreateAndRunApp(url);
+                result = CreateAndRunApp(url, runAsOpApp);
             }
             break;
         }
@@ -172,12 +137,12 @@ bool ApplicationManager::CreateApplication(uint16_t callingAppId, const std::str
         case Utils::CreateLocatorType::UNKNOWN_LOCATOR:
         {
             LOG(LOG_INFO, "Do not create for UNKNOWN_LOCATOR (url=%s)", url.c_str());
-            result = false;
+            result = INVALID_APP_ID;
             break;
         }
     }
 
-    if (!result)
+    if (result == INVALID_APP_ID)
     {
         m_sessionCallback->DispatchApplicationLoadErrorEvent();
     }
@@ -190,23 +155,23 @@ bool ApplicationManager::CreateApplication(uint16_t callingAppId, const std::str
  *
  * @param callingAppId The calling app ID.
  */
-void ApplicationManager::DestroyApplication(uint16_t callingAppId)
+void ApplicationManager::DestroyApplication(int callingAppId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
     LOG(LOG_ERROR, "DestroyApplication");
     if (callingAppId == INVALID_APP_ID)
     {
-        KillRunningApp();
+        KillRunningApp(callingAppId);
         OnRunningAppExited();
     }
-    if (m_apps.count(callingAppId) <= 0)
+    if (m_apps.count(callingAppId) == 0)
     {
         LOG(LOG_INFO, "Called by non-running app, early out");
         return;
     }
 
-    KillRunningApp();
+    KillRunningApp(callingAppId);
     OnRunningAppExited();
 }
 
@@ -215,7 +180,7 @@ void ApplicationManager::DestroyApplication(uint16_t callingAppId)
  *
  * @param callingAppId The calling app ID.
  */
-void ApplicationManager::ShowApplication(uint16_t callingAppId)
+void ApplicationManager::ShowApplication(int callingAppId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_apps.count(callingAppId) > 0)
@@ -229,7 +194,7 @@ void ApplicationManager::ShowApplication(uint16_t callingAppId)
  *
  * @param callingAppId The calling app ID.
  */
-void ApplicationManager::HideApplication(uint16_t callingAppId)
+void ApplicationManager::HideApplication(int callingAppId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_apps.count(callingAppId) > 0)
@@ -246,11 +211,11 @@ void ApplicationManager::HideApplication(uint16_t callingAppId)
  * @param otherKeys optional other keys
  * @return The key set mask for the application.
  */
-uint16_t ApplicationManager::SetKeySetMask(uint16_t appId, uint16_t keySetMask, std::vector<uint16_t> otherKeys)
+uint16_t ApplicationManager::SetKeySetMask(int appId, uint16_t keySetMask, std::vector<uint16_t> otherKeys)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
-    if (m_apps.count(appId) <= 0)
+    if (m_apps.count(appId) == 0)
     {
         return 0;
     }
@@ -264,7 +229,7 @@ uint16_t ApplicationManager::SetKeySetMask(uint16_t appId, uint16_t keySetMask, 
  * @param appId The application.
  * @return The key set mask for the application.
  */
-uint16_t ApplicationManager::GetKeySetMask(uint16_t appId)
+uint16_t ApplicationManager::GetKeySetMask(int appId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_apps.count(appId) > 0)
@@ -280,7 +245,7 @@ uint16_t ApplicationManager::GetKeySetMask(uint16_t appId)
  * @param appId The application.
  * @return The other keys for the application.
  */
-std::vector<uint16_t> ApplicationManager::GetOtherKeyValues(uint16_t appId)
+std::vector<uint16_t> ApplicationManager::GetOtherKeyValues(int appId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_apps.count(appId) > 0)
@@ -290,7 +255,7 @@ std::vector<uint16_t> ApplicationManager::GetOtherKeyValues(uint16_t appId)
     return std::vector<uint16_t>();
 }
 
-std::string ApplicationManager::GetApplicationScheme(uint16_t appId)
+std::string ApplicationManager::GetApplicationScheme(int appId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_apps.count(appId) > 0)
@@ -298,6 +263,29 @@ std::string ApplicationManager::GetApplicationScheme(uint16_t appId)
         return m_apps[appId]->GetScheme();
     }
     return LINKED_APP_SCHEME_1_1;
+}
+
+std::vector<int> ApplicationManager::GetRunningAppIds()
+{
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
+    std::vector<int> ids;
+    for (const auto& pair : m_apps)
+    {
+        LOG(LOG_INFO, "GetRunningAppIds(): %d", pair.first);
+        ids.push_back(pair.first);
+    }
+    return ids;
+}
+
+std::string ApplicationManager::GetApplicationUrl(int appId)
+{
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
+    if (m_apps.count(appId) > 0)
+    {
+        LOG(LOG_INFO, "GetApplicationUrl(%d): %s", appId, m_apps[appId]->loadedUrl.c_str());
+        return m_apps[appId]->loadedUrl;
+    }
+    return std::string();
 }
 
 /**
@@ -308,7 +296,7 @@ std::string ApplicationManager::GetApplicationScheme(uint16_t appId)
  * @param keyCode The key code to check.
  * @return The supplied key_code is accepted by the current app's key set.
  */
-bool ApplicationManager::InKeySet(uint16_t appId, uint16_t keyCode)
+bool ApplicationManager::InKeySet(int appId, uint16_t keyCode)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_apps.count(appId) > 0)
@@ -380,13 +368,18 @@ void ApplicationManager::ProcessAitSection(uint16_t aitPid, uint16_t serviceId,
  * Process an XML AIT and create and run a new broadcast-independent application.
  *
  * @param xmlAit The XML AIT contents.
+ * @param isDvbi true when the caller a DVB-I application.
+ * @param scheme The linked application scheme. 
+ * 
  * @return true if the application can be created, otherwise false
  */
-bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &isDvbi, const
-    std::string &scheme)
-{
+int ApplicationManager::ProcessXmlAit(
+    const std::string &xmlAit,
+    const bool isDvbi,
+    const std::string &scheme
+){
     const Ait::S_AIT_APP_DESC *app_description;
-    bool result = false;
+    bool result = INVALID_APP_ID;
 
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
@@ -394,7 +387,7 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
 
     if (xmlAit.empty())
     {
-        return false;
+        return INVALID_APP_ID;
     }
 
     std::unique_ptr<Ait::S_AIT_TABLE> aitTable = XmlParser::ParseAit(xmlAit.c_str(),
@@ -402,7 +395,7 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
     if (nullptr == aitTable || aitTable->numApps == 0)
     {
         // No AIT or apps parsed, early out
-        return false;
+        return INVALID_APP_ID;
     }
     for (int index = 0; index != aitTable->numApps; index++)
     {
@@ -425,7 +418,7 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
         {
             OnSelectedServiceAitUpdated();
         }
-        result = true;
+        result = m_hbbtvAppId;
     }
     else
     {
@@ -434,7 +427,7 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
         if (app_description)
         {
             result = CreateAndRunApp(*app_description, "", isDvbi, false);
-            if (!result)
+            if (result == INVALID_APP_ID)
             {
                 LOG(LOG_ERROR, "Could not find app (org_id=%d, app_id=%d)",
                     app_description->orgId,
@@ -495,13 +488,13 @@ bool ApplicationManager::RunTeletextApplication()
  * @param methodRequirement Any additional requirement of the method.
  * @return true if the request is allowed, otherwise false
  */
-bool ApplicationManager::IsRequestAllowed(uint16_t callingAppId, const
+bool ApplicationManager::IsRequestAllowed(int callingAppId, const
     std::string &callingPageUrl,
     MethodRequirement methodRequirement)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
-    if (m_apps.count(m_appId) <= 0 || m_appId != callingAppId)
+    if (m_apps.count(m_hbbtvAppId) == 0 || m_hbbtvAppId != callingAppId)
     {
         return false;
     }
@@ -519,7 +512,7 @@ bool ApplicationManager::IsRequestAllowed(uint16_t callingAppId, const
         }
         case MethodRequirement::FOR_BROADCAST_APP_ONLY:
         {
-            return m_apps[m_appId]->IsBroadcast();
+            return m_apps[m_hbbtvAppId]->IsBroadcast();
         }
         case MethodRequirement::FOR_BROADCAST_OR_TRANSITIONING_APP_ONLY:
         {
@@ -528,11 +521,11 @@ bool ApplicationManager::IsRequestAllowed(uint16_t callingAppId, const
         case MethodRequirement::FOR_TRUSTED_APP_ONLY:
         {
             // Check document URL is inside app boundaries
-            if (!Utils::CheckBoundaries(callingPageUrl, m_apps[m_appId]->GetEntryUrl(), m_apps[m_appId]->GetAitDescription().boundaries))
+            if (!Utils::CheckBoundaries(callingPageUrl, m_apps[m_hbbtvAppId]->GetEntryUrl(), m_apps[m_hbbtvAppId]->GetAitDescription().boundaries))
             {
                 return false;
             }
-            return m_apps[m_appId]->IsTrusted();
+            return m_apps[m_hbbtvAppId]->IsTrusted();
         }
         default:
         {
@@ -550,9 +543,9 @@ std::map<std::string, std::string> ApplicationManager::GetCurrentAppNames()
 {
     std::map<std::string, std::string> result;
     LOG(LOG_DEBUG, "GetCurrentAppNames");
-    if (m_apps.count(m_appId) > 0)
+    if (m_apps.count(m_hbbtvAppId) > 0)
     {
-        std::map<uint32_t, std::string> names = m_apps[m_appId]->GetNames();
+        std::map<uint32_t, std::string> names = m_apps[m_hbbtvAppId]->GetNames();
         std::map<uint32_t, std::string>::iterator it = names.begin();
         while (it != names.end())
         {
@@ -587,7 +580,7 @@ void ApplicationManager::OnBroadcastStopped()
     if (!TransitionRunningAppToBroadcastIndependent())
     {
         LOG(LOG_INFO, "Kill running app (could not transition to broadcast-independent)");
-        KillRunningApp();
+        KillRunningApp(m_hbbtvAppId);
     }
 }
 
@@ -636,7 +629,7 @@ void ApplicationManager::OnNetworkAvailabilityChanged(bool available)
  *
  * @param appId The application ID of the application that failed to load.
  */
-void ApplicationManager::OnLoadApplicationFailed(uint16_t appId)
+void ApplicationManager::OnLoadApplicationFailed(int appId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
@@ -649,7 +642,7 @@ void ApplicationManager::OnLoadApplicationFailed(uint16_t appId)
         return;
     }
 
-    if (m_apps.count(appId) <= 0)
+    if (m_apps.count(appId) == 0)
     {
         return;
     }
@@ -660,7 +653,7 @@ void ApplicationManager::OnLoadApplicationFailed(uint16_t appId)
         Ait::S_AIT_APP_DESC *app = Ait::FindApp(ait, aitDesc.orgId, aitDesc.appId);
         Ait::AppSetTransportFailedToLoad(app, m_apps[appId]->GetProtocolId());
     }
-    KillRunningApp();
+    KillRunningApp(appId);
     OnPerformBroadcastAutostart();
 }
 
@@ -671,7 +664,7 @@ void ApplicationManager::OnLoadApplicationFailed(uint16_t appId)
  * @param appId The application ID.
  * @param url The URL of the new page.
  */
-void ApplicationManager::OnApplicationPageChanged(uint16_t appId, const std::string &url)
+void ApplicationManager::OnApplicationPageChanged(int appId, const std::string &url)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_apps.count(appId) > 0)
@@ -701,17 +694,17 @@ void ApplicationManager::OnSelectedServiceAitReceived()
     {
         LOG(LOG_INFO, "New service selected and first AIT received");
 
-        if (m_apps.count(m_appId) > 0)
+        if (m_apps.count(m_hbbtvAppId) > 0)
         {
-            if (m_apps[m_appId]->IsBroadcast())
+            if (m_apps[m_hbbtvAppId]->IsBroadcast())
             {
-                Ait::S_AIT_APP_DESC aitDesc = m_apps[m_appId]->GetAitDescription();
+                Ait::S_AIT_APP_DESC aitDesc = m_apps[m_hbbtvAppId]->GetAitDescription();
                 LOG(LOG_INFO,
                     "OnSelectedServiceAitReceived: Pre-existing broadcast-related app already running");
                 if (aitDesc.appDesc.serviceBound && !m_sessionCallback->isInstanceInCurrentService(m_previousService))
                 {
                     LOG(LOG_INFO, "Kill running app (is service bound)");
-                    KillRunningApp();
+                    KillRunningApp(m_hbbtvAppId);
                 }
                 else
                 {
@@ -719,22 +712,22 @@ void ApplicationManager::OnSelectedServiceAitReceived()
                     if (signalled == nullptr)
                     {
                         LOG(LOG_INFO, "Kill running app (is not signalled in the new AIT)");
-                        KillRunningApp();
+                        KillRunningApp(m_hbbtvAppId);
                     }
                     else if (signalled->controlCode == Ait::APP_CTL_KILL)
                     {
                         LOG(LOG_INFO, "Kill running app (signalled with control code KILL)");
-                        KillRunningApp();
+                        KillRunningApp(m_hbbtvAppId);
                     }
-                    else if (!Ait::AppHasTransport(signalled, m_apps[m_appId]->GetProtocolId()))
+                    else if (!Ait::AppHasTransport(signalled, m_apps[m_hbbtvAppId]->GetProtocolId()))
                     {
                         LOG(LOG_INFO,
                             "Kill running app (is not signalled in the new AIT with the same transport protocol)");
-                        KillRunningApp();
+                        KillRunningApp(m_hbbtvAppId);
                     }
                     else if (!UpdateRunningApp(*signalled))
                     {
-                        KillRunningApp();
+                        KillRunningApp(m_hbbtvAppId);
                     }
                 }
             }
@@ -744,21 +737,21 @@ void ApplicationManager::OnSelectedServiceAitReceived()
                 if (!TransitionRunningAppToBroadcastRelated())
                 {
                     LOG(LOG_INFO, "Kill running app (could not transition to broadcast-related)");
-                    KillRunningApp();
+                    KillRunningApp(m_hbbtvAppId);
                 }
             }
         }
-        if (m_apps.count(m_appId) <= 0)
+        if (m_apps.count(m_hbbtvAppId) == 0)
         {
             OnPerformBroadcastAutostart();
         }
         else
         {
-            Ait::S_AIT_APP_DESC aitDesc = m_apps[m_appId]->GetAitDescription();
+            Ait::S_AIT_APP_DESC aitDesc = m_apps[m_hbbtvAppId]->GetAitDescription();
             auto signalled = Ait::FindApp(ait, aitDesc.orgId, aitDesc.appId);
             if (signalled != nullptr && !UpdateRunningApp(*signalled))
             {
-                KillRunningApp();
+                KillRunningApp(m_hbbtvAppId);
             }
         }
     }
@@ -771,7 +764,7 @@ void ApplicationManager::OnSelectedServiceAitTimeout()
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     LOG(LOG_INFO, "OnSelectedServiceAitTimeout");
-    KillRunningApp();
+    KillRunningApp(m_hbbtvAppId);
 }
 
 /**
@@ -787,42 +780,42 @@ void ApplicationManager::OnSelectedServiceAitUpdated()
         return;
     }
 
-    if (m_apps.count(m_appId) > 0)
+    if (m_apps.count(m_hbbtvAppId) > 0)
     {
-        if (!m_apps[m_appId]->IsBroadcast())
+        if (!m_apps[m_hbbtvAppId]->IsBroadcast())
         {
             // If the running app is not broadcast-related, we should not be tuned to broadcast
             LOG(LOG_ERROR, "Unexpected condition (AIT updated but app is not broadcast-related)");
             return;
         }
 
-        Ait::S_AIT_APP_DESC aitDesc = m_apps[m_appId]->GetAitDescription();
+        Ait::S_AIT_APP_DESC aitDesc = m_apps[m_hbbtvAppId]->GetAitDescription();
         LOG(LOG_INFO,
             "OnSelectedServiceAitUpdated: Pre-existing broadcast-related app already running");
         auto signalled = Ait::FindApp(ait, aitDesc.orgId, aitDesc.appId);
         if (signalled == nullptr)
         {
             LOG(LOG_INFO, "Kill running app (is not signalled in the updated AIT)");
-            KillRunningApp();
+            KillRunningApp(m_hbbtvAppId);
         }
-        else if (!Ait::AppHasTransport(signalled, m_apps[m_appId]->GetProtocolId()))
+        else if (!Ait::AppHasTransport(signalled, m_apps[m_hbbtvAppId]->GetProtocolId()))
         {
             LOG(LOG_INFO,
                 "Kill running app (is not signalled in the updated AIT with the same transport protocol)");
-            KillRunningApp();
+            KillRunningApp(m_hbbtvAppId);
         }
         else if (signalled->controlCode == Ait::APP_CTL_KILL)
         {
             LOG(LOG_INFO, "Kill running app (signalled has control code KILL)");
-            KillRunningApp();
+            KillRunningApp(m_hbbtvAppId);
         }
         else if (!UpdateRunningApp(*signalled))
         {
-            KillRunningApp();
+            KillRunningApp(m_hbbtvAppId);
         }
     }
 
-    if (m_apps.count(m_appId) <= 0)
+    if (m_apps.count(m_hbbtvAppId) == 0)
     {
         OnPerformBroadcastAutostart();
     }
@@ -878,22 +871,31 @@ void ApplicationManager::OnPerformBroadcastAutostart()
  * Create and run an App by url.
  * 
  * @param url The url the of the App. 
+ * @param runAsOpApp When true, the newly created app will be lauched as an OpApp,
+ *      otherwise as an HbbTVApp.
  * 
- * @return True on success, false on failure.
+ * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
  */
-bool ApplicationManager::CreateAndRunApp(std::string url)
+int ApplicationManager::CreateAndRunApp(std::string url, bool runAsOpApp)
 {
+    int result = INVALID_APP_ID;
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     try
     {
-        RunApp(std::make_unique<HbbTVApp>(url, m_appSessionCallback));
+        if (runAsOpApp)
+        {
+            result = RunApp(std::make_unique<OpApp>(url, m_sessionCallback.get()));
+        }
+        else
+        {
+            result = RunApp(std::make_unique<HbbTVApp>(url, m_sessionCallback.get()));
+        }
     }
     catch(const std::exception& e)
     {
         LOG(LOG_ERROR, "%s", e.what());
-        return false;
     }
-    return true;
+    return result;
 }
 
 /**
@@ -904,40 +906,65 @@ bool ApplicationManager::CreateAndRunApp(std::string url)
  *      loaded url of the new App.
  * @param isBroadcast Is the new App broadcast related?
  * @param isTrusted Is the new App trusted?
+ * @param runAsOpApp When true, the newly created app will be lauched as an OpApp,
+ *      otherwise as an HbbTVApp.
  * 
- * @return True on success, false on failure.
+ * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
  */
-bool ApplicationManager::CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc, const std::string &urlParams, bool isBroadcast, bool isTrusted)
-{
+int ApplicationManager::CreateAndRunApp(
+    const Ait::S_AIT_APP_DESC &desc,
+    const std::string &urlParams,
+    bool isBroadcast,
+    bool isTrusted,
+    bool runAsOpApp
+){
+    int result = INVALID_APP_ID;
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     try
     {
-        RunApp(std::make_unique<HbbTVApp>(desc,
-            m_currentService,
-            m_isNetworkAvailable,
-            urlParams,
-            isBroadcast,
-            isTrusted,
-            m_appSessionCallback));
+        // ETSI TS 103 606 V1.2.1 (2024-03) Table 7: XML AIT Profile
+        if (runAsOpApp || desc.appUsage == "urn:hbbtv:opapp:privileged:2017" ||
+            desc.appUsage == "urn:hbbtv:opapp:opspecific:2017")
+        {
+            result = RunApp(std::make_unique<OpApp>(desc,
+                m_isNetworkAvailable,
+                m_sessionCallback.get()));
+        }
+        else
+        {
+            result = RunApp(std::make_unique<HbbTVApp>(desc,
+                m_currentService,
+                m_isNetworkAvailable,
+                urlParams,
+                isBroadcast,
+                isTrusted,
+                m_sessionCallback.get()));
+        }
     }
     catch(const std::exception& e)
     {
         LOG(LOG_ERROR, "%s", e.what());
-        return false;
     }
-    return true;
+    return result;
 }
 
 /**
  * Run the app.
  *
  * @param app The app to run.
+ * 
+ * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
  */
-void ApplicationManager::RunApp(std::unique_ptr<HbbTVApp> app)
+int ApplicationManager::RunApp(std::unique_ptr<HbbTVApp> app)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
+    int *appId = &m_hbbtvAppId;
+    if (app->GetType() == HbbTVApp::OPAPP_TYPE)
+    {
+        appId = &m_opAppId;
+    }
 
-    m_apps.erase(m_appId);
+    m_apps.erase(*appId);
     if (!app->IsBroadcast() && !Utils::IsInvalidDvbTriplet(m_currentService))
     {
         m_sessionCallback->StopBroadcast();
@@ -947,18 +974,19 @@ void ApplicationManager::RunApp(std::unique_ptr<HbbTVApp> app)
     m_sessionCallback->LoadApplication(app->GetId(), app->GetEntryUrl().c_str(),
         app->GetAitDescription().graphicsConstraints.size(), app->GetAitDescription().graphicsConstraints);
 
-    m_appId = app->GetId();
-    m_apps[m_appId] = std::move(app);
+    *appId = app->GetId();
+    m_apps[*appId] = std::move(app);
 
     // Call explicitly Show/Hide 
-    if (m_apps[m_appId]->GetState() != HbbTVApp::BACKGROUND_STATE)
+    if (m_apps[*appId]->GetState() != HbbTVApp::BACKGROUND_STATE)
     {
-        m_sessionCallback->ShowApplication();
+        m_sessionCallback->ShowApplication(*appId);
     }
     else
     {
-        m_sessionCallback->HideApplication();
+        m_sessionCallback->HideApplication(*appId);
     }
+    return *appId;
 }
 
 /**
@@ -972,7 +1000,7 @@ bool ApplicationManager::UpdateRunningApp(const Ait::S_AIT_APP_DESC &desc)
 {
     try
     {
-        m_apps[m_appId]->Update(desc, m_isNetworkAvailable);
+        m_apps[m_hbbtvAppId]->Update(desc, m_isNetworkAvailable);
     }
     catch(const std::exception& e)
     {
@@ -984,12 +1012,22 @@ bool ApplicationManager::UpdateRunningApp(const Ait::S_AIT_APP_DESC &desc)
 /**
  * Kill the running app.
  */   
-void ApplicationManager::KillRunningApp()
+void ApplicationManager::KillRunningApp(int appid)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    m_sessionCallback->HideApplication();
-    m_sessionCallback->LoadApplication(INVALID_APP_ID, "about:blank");
-    m_appId = INVALID_APP_ID;
+    if ((m_hbbtvAppId == appid || m_opAppId == appid) && m_apps.erase(appid) > 0)
+    {
+        m_sessionCallback->HideApplication(appid);
+        m_sessionCallback->LoadApplication(INVALID_APP_ID, "about:blank");
+        if (appid == m_hbbtvAppId)
+        {
+            m_hbbtvAppId = INVALID_APP_ID;
+        }
+        else
+        {
+            m_opAppId = INVALID_APP_ID;
+        }
+    }
 }
 
 /**
@@ -1007,12 +1045,12 @@ bool ApplicationManager::TransitionRunningAppToBroadcastRelated()
         LOG(LOG_INFO, "Cannot transition to broadcast (no broadcast AIT)");
         return false;
     }
-    if (m_apps.count(m_appId) <= 0)
+    if (m_apps.count(m_hbbtvAppId) == 0)
     {
         LOG(LOG_INFO, "Cannot transition to broadcast (no running app)");
         return false;
     }
-    Ait::S_AIT_APP_DESC aitDesc = m_apps[m_appId]->GetAitDescription();
+    Ait::S_AIT_APP_DESC aitDesc = m_apps[m_hbbtvAppId]->GetAitDescription();
     if (aitDesc.appId == 0 || aitDesc.orgId == 0)
     {
         LOG(LOG_INFO, "Cannot transition to broadcast (app/org id is 0)");
@@ -1032,7 +1070,7 @@ bool ApplicationManager::TransitionRunningAppToBroadcastRelated()
     }
     
     /* Note: what about app.is_trusted, app.parental_ratings, ... */
-    return m_apps[m_appId]->TransitionToBroadcastRelated();
+    return m_apps[m_hbbtvAppId]->TransitionToBroadcastRelated();
 }
 
 /**
@@ -1043,9 +1081,9 @@ bool ApplicationManager::TransitionRunningAppToBroadcastRelated()
 bool ApplicationManager::TransitionRunningAppToBroadcastIndependent()
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    if (m_apps.count(m_appId) > 0)
+    if (m_apps.count(m_hbbtvAppId) > 0)
     {
-        return m_apps[m_appId]->TransitionToBroadcastIndependent();
+        return m_apps[m_hbbtvAppId]->TransitionToBroadcastIndependent();
     }
     return true;
 }
@@ -1089,10 +1127,10 @@ const Ait::S_AIT_APP_DESC * ApplicationManager::GetAutoStartApp(const Ait::S_AIT
  */
 uint32_t ApplicationManager::GetOrganizationId()
 {
-    if (m_apps.count(m_appId) > 0)
+    if (m_apps.count(m_hbbtvAppId) > 0)
     {
-        LOG(LOG_INFO, "The organization id is %d\n", m_apps[m_appId]->GetAitDescription().orgId);
-        return m_apps[m_appId]->GetAitDescription().orgId;
+        LOG(LOG_INFO, "The organization id is %d\n", m_apps[m_hbbtvAppId]->GetAitDescription().orgId);
+        return m_apps[m_hbbtvAppId]->GetAitDescription().orgId;
     }
     LOG(LOG_INFO, "Cannot retrieve organization id (no running app). Returning -1.\n");
     return -1;
