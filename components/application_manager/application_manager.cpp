@@ -44,7 +44,6 @@ ApplicationManager::ApplicationManager(std::unique_ptr<ApplicationSessionCallbac
         OnSelectedServiceAitTimeout();
     })
 {
-    m_sessionCallback->HideApplication(INVALID_APP_ID);
 }
 
 /**
