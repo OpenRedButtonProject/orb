@@ -681,8 +681,9 @@ hbbtv.bridge.manager = (function() {
      * @method
      * @memberof bridge.manager#
      */
-    exported.createApplication = function(url, runAsOpApp) {
+    exported.createApplication = function(id, url, runAsOpApp) {
         return hbbtv.native.request('Manager.createApplication', {
+            id: id,
             url: url,
             runAsOpApp: runAsOpApp,
         }).result;
@@ -696,8 +697,8 @@ hbbtv.bridge.manager = (function() {
      * @method
      * @memberof bridge.manager#
      */
-    exported.destroyApplication = function() {
-        hbbtv.native.request('Manager.destroyApplication');
+    exported.destroyApplication = function(id) {
+        hbbtv.native.request('Manager.destroyApplication', { id });
     };
 
     /**
@@ -708,8 +709,8 @@ hbbtv.bridge.manager = (function() {
      * @method
      * @memberof bridge.manager#
      */
-    exported.showApplication = function() {
-        hbbtv.native.request('Manager.showApplication');
+    exported.showApplication = function(id) {
+        hbbtv.native.request('Manager.showApplication', { id });
     };
 
     /**
@@ -720,8 +721,8 @@ hbbtv.bridge.manager = (function() {
      * @method
      * @memberof bridge.manager#
      */
-    exported.hideApplication = function() {
-        hbbtv.native.request('Manager.hideApplication');
+    exported.hideApplication = function(id) {
+        hbbtv.native.request('Manager.hideApplication', { id });
     };
 
     /**
@@ -827,43 +828,44 @@ hbbtv.bridge.manager = (function() {
         return hbbtv.native.request('Manager.getApplicationScheme').result;
     }
 
-    exported.opAppRequestTransient = function() {
-        return hbbtv.native.request('Manager.opAppRequestTransient').result;
+    exported.opAppRequestTransient = function(id) {
+        return hbbtv.native.request('Manager.opAppRequestTransient', { id }).result;
     }
 
-    exported.opAppRequestForeground = function() {
-        return hbbtv.native.request('Manager.opAppRequestForeground').result;
+    exported.opAppRequestForeground = function(id) {
+        return hbbtv.native.request('Manager.opAppRequestForeground', { id }).result;
     }
 
-    exported.opAppRequestBackground = function() {
-        hbbtv.native.request('Manager.opAppRequestBackground');
+    exported.opAppRequestBackground = function(id) {
+        hbbtv.native.request('Manager.opAppRequestBackground', { id });
     }
 
-    exported.opAppRequestUpdate = function(immediate, params) {
+    exported.opAppRequestUpdate = function(id, immediate, params) {
         hbbtv.native.request('Manager.opAppRequestUpdate', {
+            id,
             immediate,
             params
         });
     }
 
-    exported.opAppUpdateStatus = function() {
-        return hbbtv.native.request('Manager.opAppUpdateStatus').result;
+    exported.opAppUpdateStatus = function(id) {
+        return hbbtv.native.request('Manager.opAppUpdateStatus', { id }).result;
     }
 
-    exported.opAppUninstall = function() {
-        return hbbtv.native.request('Manager.opAppUninstall').result;
+    exported.opAppUninstall = function(id) {
+        return hbbtv.native.request('Manager.opAppUninstall', { id }).result;
     }
 
-    exported.getOpApp2AppBaseURL = function() {
-        return hbbtv.native.request('Manager.getOpApp2AppBaseURL').result;
+    exported.getOpApp2AppBaseURL = function(id) {
+        return hbbtv.native.request('Manager.getOpApp2AppBaseURL', { id }).result;
     }
 
-    exported.getApp2OpAppBaseURL = function() {
-        return hbbtv.native.request('Manager.getApp2OpAppBaseURL').result;
+    exported.getApp2OpAppBaseURL = function(id) {
+        return hbbtv.native.request('Manager.getApp2OpAppBaseURL', { id }).result;
     }
 
-    exported.getOpAppState = function() {
-        return hbbtv.native.request('Manager.getOpAppState').result;
+    exported.getOpAppState = function(id) {
+        return hbbtv.native.request('Manager.getOpAppState', { id }).result;
     }
 
     exported.getRunningAppIds = function() {
