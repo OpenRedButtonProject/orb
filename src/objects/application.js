@@ -153,7 +153,7 @@ hbbtv.objects.Application = (function() {
         if (id in gApps) {
             return hbbtv.bridge.manager.opAppUpdateStatus(id);
         }
-        return -2; // ETSI TS 103 606 V1.2.1 (2024-03) page 128
+        return -2; // ETSI TS 103 606 V1.2.1 (2024-03) A.2.2.2
     }
 
     prototype.opAppUninstall = function() {
@@ -174,7 +174,7 @@ hbbtv.objects.Application = (function() {
         if (id in gApps) {
             return hbbtv.bridge.manager.getOpApp2AppBaseURL(id);
         }
-        return null; // ETSI TS 103 606 V1.2.1 (2024-03) page 128
+        return null; // ETSI TS 103 606 V1.2.1 (2024-03) A.2.2.2
     }
 
     prototype.getApp2OpAppBaseURL = function() {
@@ -182,7 +182,7 @@ hbbtv.objects.Application = (function() {
         if (id in gApps) {
             return hbbtv.bridge.manager.getApp2OpAppBaseURL(id);
         }
-        return null; // ETSI TS 103 606 V1.2.1 (2024-03) page 129
+        return null; // ETSI TS 103 606 V1.2.1 (2024-03) A.2.2.2
     }
 
     prototype.addEventListener = function(type, listener) {
@@ -209,7 +209,7 @@ hbbtv.objects.Application = (function() {
             if (id in gApps) {     
                 return hbbtv.bridge.manager.getOpAppState(id);
             }
-            return null; // ETSI TS 103 606 V1.2.1 (2024-03) page 125
+            return null; // ETSI TS 103 606 V1.2.1 (2024-03) A.2.2.1
         }
     });
 
