@@ -817,7 +817,7 @@ public abstract class AbstractBridge {
      *
      * @return True if the application can be created; false otherwise.
      */
-    protected abstract int Manager_createApplication(BridgeToken token, String url);
+    protected abstract int Manager_createApplication(int id, String url, boolean runAsOpApp);
 
     /**
      * Destroy the calling application.
@@ -826,7 +826,7 @@ public abstract class AbstractBridge {
      *
      * @param token The token associated with this request.
      */
-    protected abstract void Manager_destroyApplication(BridgeToken token);
+    protected abstract void Manager_destroyApplication(int id);
 
     /**
      * Show the calling application.
@@ -835,7 +835,7 @@ public abstract class AbstractBridge {
      *
      * @param token The token associated with this request.
      */
-    protected abstract void Manager_showApplication(BridgeToken token);
+    protected abstract void Manager_showApplication(int id);
 
     /**
      * Hide the calling application.
@@ -844,7 +844,7 @@ public abstract class AbstractBridge {
      *
      * @param token The token associated with this request.
      */
-    protected abstract void Manager_hideApplication(BridgeToken token);
+    protected abstract void Manager_hideApplication(int id);
 
     /**
      * Get the free memory available to the application.
@@ -1728,8 +1728,10 @@ public abstract class AbstractBridge {
 
             case "Manager.createApplication": {
                 int result = Manager_createApplication(
-                        token,
-                        params.getString("url")
+                        params.getInt("id"),
+                        params.getString("url"),
+                        params.getBoolean("runAsOpApp")
+
                 );
                 response.put("result", result);
                 break;
@@ -1737,21 +1739,21 @@ public abstract class AbstractBridge {
 
             case "Manager.destroyApplication": {
                 Manager_destroyApplication(
-                        token
+                        params.getInt("id")
                 );
                 break;
             }
 
             case "Manager.showApplication": {
                 Manager_showApplication(
-                        token
+                        params.getInt("id")
                 );
                 break;
             }
 
             case "Manager.hideApplication": {
                 Manager_hideApplication(
-                        token
+                        params.getInt("id")
                 );
                 break;
             }

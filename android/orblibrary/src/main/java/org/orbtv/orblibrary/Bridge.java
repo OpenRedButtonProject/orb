@@ -553,8 +553,8 @@ class Bridge extends AbstractBridge {
      * @return True if the application can be created; false otherwise.
      */
     @Override
-    protected int Manager_createApplication(BridgeToken token, String url) {
-        return mApplicationManager.createApplication(token.getAppId(), url);
+    protected int Manager_createApplication(int id, String url, boolean runAsOpApp) {
+        return mApplicationManager.createApplication(id, url, runAsOpApp);
     }
 
     /**
@@ -565,8 +565,8 @@ class Bridge extends AbstractBridge {
      * @param token The token associated with this request.
      */
     @Override
-    protected void Manager_destroyApplication(BridgeToken token) {
-        mApplicationManager.destroyApplication(token.getAppId());
+    protected void Manager_destroyApplication(int id) {
+        mApplicationManager.destroyApplication(id);
     }
 
     /**
@@ -577,8 +577,8 @@ class Bridge extends AbstractBridge {
      * @param token The token associated with this request.
      */
     @Override
-    protected void Manager_showApplication(BridgeToken token) {
-        mApplicationManager.showApplication(token.getAppId());
+    protected void Manager_showApplication(int id) {
+        mApplicationManager.showApplication(id);
     }
 
     /**
@@ -589,8 +589,8 @@ class Bridge extends AbstractBridge {
      * @param token The token associated with this request.
      */
     @Override
-    protected void Manager_hideApplication(BridgeToken token) {
-        mApplicationManager.hideApplication(token.getAppId());
+    protected void Manager_hideApplication(int id) {
+        mApplicationManager.hideApplication(id);
     }
 
     /**

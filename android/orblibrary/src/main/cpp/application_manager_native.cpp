@@ -253,10 +253,10 @@ JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniFinalize(
 extern "C"
 JNIEXPORT jint JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniCreateApplication(
     JNIEnv *env, jobject object,
-    jint calling_app_id, jstring j_url)
+    jint calling_app_id, jstring j_url, jboolean runAsOpApp)
 {
     std::string url = JniUtils::MakeStdString(env, j_url);
-    return GetManager(env, object)->CreateApplication(calling_app_id, url, false);
+    return GetManager(env, object)->CreateApplication(calling_app_id, url, runAsOpApp);
 }
 
 extern "C"

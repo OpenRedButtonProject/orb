@@ -130,11 +130,11 @@ class ApplicationManager {
     }
 
     public int createApplication(String url) {
-        return jniCreateApplication(0, url);
+        return jniCreateApplication(0, url, false);
     }
 
-    public int createApplication(int callingAppId, String url) {
-        return jniCreateApplication(callingAppId, url);
+    public int createApplication(int callingAppId, String url, boolean runAsOpApp) {
+        return jniCreateApplication(callingAppId, url, runAsOpApp);
     }
 
     public void destroyApplication(int callingAppId) {
@@ -273,7 +273,7 @@ class ApplicationManager {
 
     private native void jniFinalize();
 
-    private native int jniCreateApplication(int callingAppId, String url);
+    private native int jniCreateApplication(int callingAppId, String url, boolean runAsOpApp);
 
     private native void jniDestroyApplication(int callingAppId);
 

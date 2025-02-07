@@ -53,9 +53,10 @@ hbbtv.objects.Application = (function() {
     }
 
     prototype.createApplication = function(uri, createChild, runAsOpApp) {
-        if (privates.get(this).id in gApps) {
+        const id = privates.get(this).id;
+        if (id in gApps) {
             const url = new defaultEntities.URL(uri, document.location.href);
-            const appId = hbbtv.bridge.manager.createApplication(url.href, runAsOpApp);
+            const appId = hbbtv.bridge.manager.createApplication(id, url.href, runAsOpApp || false);
             console.log("Application: creating application... url:", url.href, "id:", appId);
             if (appId !== INVALID_APP_ID) {
                 return hbbtv.objects.createApplication({
@@ -67,16 +68,18 @@ hbbtv.objects.Application = (function() {
     };
 
     prototype.destroyApplication = function() {
-        if (privates.get(this).id in gApps) {
-            hbbtv.bridge.manager.destroyApplication();
+        const id = privates.get(this).id;
+        if (id in gApps) {
+            hbbtv.bridge.manager.destroyApplication(id);
             delete gApps[p.url];
         }
     };
 
     prototype.show = function() {
-        if (privates.get(this).id in gApps) {
+        const id = privates.get(this).id;
+        if (id in gApps) {
             try {
-                hbbtv.bridge.manager.showApplication();
+                hbbtv.bridge.manager.showApplication(id);
             } catch (e) {
                 if (e.message !== 'NotRunning') {
                     throw e;
@@ -86,9 +89,10 @@ hbbtv.objects.Application = (function() {
     };
 
     prototype.hide = function() {
-        if (privates.get(this).id in gApps) {
+        const id = privates.get(this).id;
+        if (id in gApps) {
             try {
-                hbbtv.bridge.manager.hideApplication();
+                hbbtv.bridge.manager.hideApplication(id);
             } catch (e) {
                 if (e.message !== 'NotRunning') {
                     throw e;
@@ -98,46 +102,66 @@ hbbtv.objects.Application = (function() {
     };
 
     prototype.opAppRequestTransient = function() {
-        // Allowed events in which their handler called this method from.
-        // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.4
-        const allowedEvents = ["ChannelChangeSucceeded", "ChannelChangeError",
-            "keydown", "keyup", "keypress", "click", "OperatorApplicationContextChange",
-            "load", "PlayStateChange", "onProgrammesChanged", "ApplicationUnloaded",
-            "onMessage"];
-        if (hbbtv.objectManager.context.event?.type in allowedEvents)
-        {
-            return hbbtv.bridge.manager.opAppRequestTransient();
+        const id = privates.get(this).id;
+        if (id in gApps) {
+            // Allowed events in which their handler called this method from.
+            // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.4
+            const allowedEvents = ["ChannelChangeSucceeded", "ChannelChangeError",
+                "keydown", "keyup", "keypress", "click", "OperatorApplicationContextChange",
+                "load", "PlayStateChange", "onProgrammesChanged", "ApplicationUnloaded",
+                "onMessage"];
+            if (hbbtv.objectManager.context.event?.type in allowedEvents)
+            {
+                return hbbtv.bridge.manager.opAppRequestTransient(id);
+            }
         }
         return false;
     }
 
     prototype.opAppRequestForeground = function() {
-        // Allowed events in which their handler called this method from.
-        // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.2
-        const allowedEvents = ["keydown", "keyup", "keypress", "click",
-            "OperatorApplicationContextChange", "load", "PlayStateChange",
-            "ApplicationUnloaded", "onMessage"];
-        if (hbbtv.objectManager.context.event?.type in allowedEvents)
-        {
-            return hbbtv.bridge.manager.opAppRequestForeground();
+        const id = privates.get(this).id;
+        if (id in gApps) {
+            // Allowed events in which their handler called this method from.
+            // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.2
+            const allowedEvents = ["keydown", "keyup", "keypress", "click",
+                "OperatorApplicationContextChange", "load", "PlayStateChange",
+                "ApplicationUnloaded", "onMessage"];
+            if (hbbtv.objectManager.context.event?.type in allowedEvents)
+            {
+                return hbbtv.bridge.manager.opAppRequestForeground(id);
+            }
         }
         return false;
     }
 
     prototype.opAppRequestBackground = function() {
-        hbbtv.bridge.manager.opAppRequestBackground();
+        const id = privates.get(this).id;
+        if (id in gApps) {
+            hbbtv.bridge.manager.opAppRequestBackground(id);
+        }
     }
 
     prototype.opAppRequestUpdate = function(immediate, params) {
-        hbbtv.bridge.manager.opAppRequestBackground(immediate, params);
+        const id = privates.get(this).id;
+        if (id in gApps) {
+            hbbtv.bridge.manager.opAppRequestBackground(id, immediate, params);
+        }
     }
 
     prototype.opAppUpdateStatus = function() {
-        return hbbtv.bridge.manager.opAppUpdateStatus();
+        const id = privates.get(this).id;
+        if (id in gApps) {
+            return hbbtv.bridge.manager.opAppUpdateStatus(id);
+        }
+        return -2; // ETSI TS 103 606 V1.2.1 (2024-03) A.2.2.2
     }
 
     prototype.opAppUninstall = function() {
-        return hbbtv.bridge.manager.opAppUninstall();
+        const id = privates.get(this).id;
+        if (id in gApps) {
+            return hbbtv.bridge.manager.opAppUninstall(id);
+        }
+        return false;
     }
 
     prototype.getPrivateLocalStorage = function() {
@@ -146,11 +170,19 @@ hbbtv.objects.Application = (function() {
     }
 
     prototype.getOpApp2AppBaseURL = function() {
-        return hbbtv.bridge.manager.getOpApp2AppBaseURL();
+        const id = privates.get(this).id;
+        if (id in gApps) {
+            return hbbtv.bridge.manager.getOpApp2AppBaseURL(id);
+        }
+        return null; // ETSI TS 103 606 V1.2.1 (2024-03) A.2.2.2
     }
 
     prototype.getApp2OpAppBaseURL = function() {
-        return hbbtv.bridge.manager.getApp2OpAppBaseURL();
+        const id = privates.get(this).id;
+        if (id in gApps) {
+            return hbbtv.bridge.manager.getApp2OpAppBaseURL(id);
+        }
+        return null; // ETSI TS 103 606 V1.2.1 (2024-03) A.2.2.2
     }
 
     prototype.addEventListener = function(type, listener) {
@@ -172,8 +204,12 @@ hbbtv.objects.Application = (function() {
     });
 
     Object.defineProperty(prototype, 'opAppState', {
-        get() {            
-            return hbbtv.bridge.manager.getOpAppState();
+        get() {      
+            const id = privates.get(this).id; 
+            if (id in gApps) {     
+                return hbbtv.bridge.manager.getOpAppState(id);
+            }
+            return null; // ETSI TS 103 606 V1.2.1 (2024-03) A.2.2.1
         }
     });
 
