@@ -22,6 +22,7 @@
 
 #include "jni_utils.h"
 #include "BridgeSession.h"
+#include "DvbBrokerSession.h"
 
 #define TAG                "orbservice/native"
 #define LOGI(x, ...)    __android_log_print(ANDROID_LOG_INFO, TAG, "%s:%u " x "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__);
@@ -49,4 +50,15 @@ Java_org_orbtv_orbservice_BridgeService_createBinder(
    AIBinder* binder = AIBinder_fromPlatformBinder(BridgeSession::getInstance());
    return env->NewGlobalRef(AIBinder_toJavaBinder(env, binder));
 }
+
+extern "C" JNIEXPORT jobject JNICALL
+Java_org_orbtv_orbservice_DvbBrokerService_createBinder(
+        JNIEnv* env,
+        jobject /* this */)
+{
+   LOGI("")
+   AIBinder* binder = AIBinder_fromPlatformBinder(DvbBrokerSession::getInstance());
+   return env->NewGlobalRef(AIBinder_toJavaBinder(env, binder));
+}
+
 

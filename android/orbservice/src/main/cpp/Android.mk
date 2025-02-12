@@ -11,7 +11,13 @@ LOCAL_SRC_FILES := \
    $(call all-subdir-Iaidl-files) \
    native.cpp \
    jni_utils.cpp \
-   BridgeSession.cpp
+   BridgeSession.cpp \
+   BrowserCallback.cpp \
+   DvbBrokerSession.cpp \
+   DvbClientCallback.cpp
+
+LOCAL_C_INCLUDES := \
+	$(LOCAL_PATH)/../../../../../orblibrary/include
 
 LOCAL_CFLAGS := -Wno-unused-parameter \
    -Wno-unused-variable \
@@ -21,7 +27,8 @@ LOCAL_CFLAGS := -Wno-unused-parameter \
    -Wno-unused-private-field
 
 LOCAL_STATIC_LIBRARIES := \
-   liblog
+   liblog \
+   liborb
 
 LOCAL_SHARED_LIBRARIES := \
    libbinder_ndk \

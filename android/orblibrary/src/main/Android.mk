@@ -11,7 +11,9 @@ ORB_AIDL_PATH := ../../../orbservice/src/main/cpp/aidl
 
 LOCAL_SRC_FILES := $(call all-subdir-java-files) \
 	$(ORB_AIDL_PATH)/org/orbtv/orbservice/IBridgeSession.aidl \
-	$(ORB_AIDL_PATH)/org/orbtv/orbservice/IBrowserSession.aidl
+	$(ORB_AIDL_PATH)/org/orbtv/orbservice/IBrowserSession.aidl \
+	$(ORB_AIDL_PATH)/org/orbtv/orbservice/IDvbBrokerSession.aidl \
+	$(ORB_AIDL_PATH)/org/orbtv/orbservice/IDvbClientSession.aidl
 
 LOCAL_AIDL_INCLUDES := $(LOCAL_PATH)/$(ORB_AIDL_PATH)
 LOCAL_JNI_SHARED_LIBRARIES := liborg.orbtv.orblibrary.native

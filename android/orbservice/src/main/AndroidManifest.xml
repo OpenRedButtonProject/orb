@@ -5,6 +5,11 @@
     <application
         android:label="orbservice"
         android:usesCleartextTraffic="true">
+        <service 
+           android:name=".DvbBrokerService" 
+           android:exported="true">
+        </service>
+        <service 
            android:name=".BridgeService" 
            android:exported="true">
         </service>

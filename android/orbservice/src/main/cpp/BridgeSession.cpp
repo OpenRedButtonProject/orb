@@ -17,6 +17,8 @@
 #include <android/log.h>
 
 #include "BridgeSession.h"
+#include "BrowserCallback.h"
+#include "OrbInterface.h"
 
 #define TAG                "BridgeSession"
 #define LOGI(x, ...)    __android_log_print(ANDROID_LOG_INFO, TAG, "%s:%u " x "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__);
@@ -24,6 +26,7 @@
 
 using org::orbtv::orbservice::BridgeSession;
 using org::orbtv::orbservice::IBrowserSession;
+using org::orbtv::orbservice::BrowserCallback;
 
 static ::android::sp<IBrowserSession> g_browser_session;
 
@@ -52,17 +55,24 @@ mutex BridgeSession::s_mtx;
    }
    else
    {
-      g_browser_session = browser;
-      LOGI("")
+       orb::Moderator* moderator = orb::OrbInterface::instance().getHbbTvModerator();
+       moderator->setBrowserCallback(new BrowserCallback(browser));
+       LOGI("")
    }
 
    return ::android::binder::Status::ok();
 }
 
-::android::binder::Status BridgeSession::executeRequest(const vector<uint8_t>& jsonstr, vector<uint8_t>* result)
+::android::binder::Status BridgeSession::executeRequest(const vector<uint8_t>& jsonstr, vector<uint8_t>* rtn)
 {
-    std::string json_request(jsonstr.begin(), jsonstr.end());
+    string json_request(jsonstr.begin(), jsonstr.end());
+    orb::Moderator* moderator = orb::OrbInterface::instance().getHbbTvModerator();
+
     LOGI("json_request=%s", json_request.c_str());
+
+    string result = moderator->executeRequest(json_request);
+
+    rtn->assign(result.begin(), result.end());
 
     return ::android::binder::Status::ok();
 }
