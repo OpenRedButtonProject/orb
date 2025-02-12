@@ -17,5 +17,7 @@ LOCAL_CERTIFICATE := platform
 LOCAL_PROGUARD_ENABLED := disabled
 
 include $(BUILD_PACKAGE)
-include $(call all-makefiles-under, $(LOCAL_PATH))
 
+ORB_MODERATOR_PATH := $(LOCAL_PATH)/../../../../orblibrary
+include $(LOCAL_PATH)/cpp/Android.mk
+include $(ORB_MODERATOR_PATH)/Android.mk
