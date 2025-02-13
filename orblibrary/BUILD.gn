@@ -1,0 +1,41 @@
+# Useful references: https://gn.googlesource.com/gn/+/main/docs/reference.md
+
+# This is done by the calling script already
+# import("//build/config/BUILDCONFIG.gn")
+
+# Define the actual library target
+static_library("orb") {
+  sources = [
+    "moderator/OrbInterface.cpp",
+    "moderator/DvbBroker.cpp",
+    "moderator/Moderator.cpp",
+  ]
+
+  if (is_android) {
+    configs += [ ":android_system_libs"]
+  }
+
+  deps = [
+    "//base", # For logging dependency
+  ]
+
+  public_deps = []
+  
+  public_configs = [ ":external_lib_config" ]
+}
+
+# Expose the include directory
+config("external_lib_config") {
+  include_dirs = [ "include" ]
+
+  defines = [ "IS_CHROMIUM", "ORB_HBBTV_VERSION=203"]
+}
+
+if (is_android) {
+  config("android_system_libs") {
+    libs = [
+      "android",
+      "log",  # Used by logging.cc.
+    ] 
+  } 
+} 

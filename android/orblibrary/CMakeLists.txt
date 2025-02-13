@@ -14,11 +14,11 @@ add_definitions(-DLWS_VERSION_4=1)
 include_directories(
    build/prebuilts/libxml2/include
    build/prebuilts/libwebsockets/include
-   src/main/symlink.network_services
-   src/main/symlink.network_services/media_synchroniser
-   src/main/symlink.network_services/app2app
-   src/main/symlink.network_services/json_rpc
-   src/main/symlink.application_manager
+   ../../components/network_services
+   ../../components/network_services/media_synchroniser
+   ../../components/network_services/app2app
+   ../../components/network_services/json_rpc
+   ../../components/application_manager
 )
 
 find_library(log-lib log)
@@ -43,11 +43,11 @@ set_target_properties(
 add_library(
    org.orbtv.orblibrary.applicationmanager STATIC
    # sources...
-   src/main/symlink.application_manager/application_manager.cpp
-   src/main/symlink.application_manager/utils.cpp
-   src/main/symlink.application_manager/ait.cpp
-   src/main/symlink.application_manager/xml_parser.cpp
-   src/main/symlink.application_manager/hbbtv_app.cpp
+   ../../components/application_manager/application_manager.cpp
+   ../../components/application_manager/utils.cpp
+   ../../components/application_manager/ait.cpp
+   ../../components/application_manager/xml_parser.cpp
+   ../../components/application_manager/hbbtv_app.cpp
 )
 target_link_libraries(
    org.orbtv.orblibrary.applicationmanager
@@ -55,29 +55,29 @@ target_link_libraries(
 
 set(
     NETWORK_SERVICES_SOURCE_FILES
-    "src/main/symlink.network_services/app2app/app2app_local_service.cpp"
-    "src/main/symlink.network_services/app2app/app2app_remote_service.cpp"
-    "src/main/symlink.network_services/media_synchroniser/media_synchroniser.cpp"
-    "src/main/symlink.network_services/media_synchroniser/Correlation.cpp"
-    "src/main/symlink.network_services/media_synchroniser/CorrelatedClock.cpp"
-    "src/main/symlink.network_services/media_synchroniser/ClockBase.cpp"
-    "src/main/symlink.network_services/media_synchroniser/SysClock.cpp"
-    "src/main/symlink.network_services/media_synchroniser/ClockUtilities.cpp"
-    "src/main/symlink.network_services/service_manager.cpp"
-    "src/main/symlink.network_services/UdpSocketService.cpp"
-    "src/main/symlink.network_services/websocket_service.cpp"
-    "src/main/symlink.network_services/media_synchroniser/WallClockService.cpp"
-    "src/main/symlink.network_services/media_synchroniser/Nullable.h"
-    "src/main/symlink.network_services/media_synchroniser/ContentIdentificationService.cpp"
-    "src/main/symlink.network_services/media_synchroniser/CSSUtilities.cpp"
-    "src/main/symlink.network_services/media_synchroniser/TimelineSyncService.cpp"
+    "../../components/network_services/app2app/app2app_local_service.cpp"
+    "../../components/network_services/app2app/app2app_remote_service.cpp"
+    "../../components/network_services/media_synchroniser/media_synchroniser.cpp"
+    "../../components/network_services/media_synchroniser/Correlation.cpp"
+    "../../components/network_services/media_synchroniser/CorrelatedClock.cpp"
+    "../../components/network_services/media_synchroniser/ClockBase.cpp"
+    "../../components/network_services/media_synchroniser/SysClock.cpp"
+    "../../components/network_services/media_synchroniser/ClockUtilities.cpp"
+    "../../components/network_services/service_manager.cpp"
+    "../../components/network_services/UdpSocketService.cpp"
+    "../../components/network_services/websocket_service.cpp"
+    "../../components/network_services/media_synchroniser/WallClockService.cpp"
+    "../../components/network_services/media_synchroniser/Nullable.h"
+    "../../components/network_services/media_synchroniser/ContentIdentificationService.cpp"
+    "../../components/network_services/media_synchroniser/CSSUtilities.cpp"
+    "../../components/network_services/media_synchroniser/TimelineSyncService.cpp"
 )
 
 if(DEFINED ORB_HBBTV_VERSION AND ORB_HBBTV_VERSION GREATER_EQUAL 204)
     list(
         APPEND NETWORK_SERVICES_SOURCE_FILES
-        "src/main/symlink.network_services/json_rpc/JsonRpcService.h"
-        "src/main/symlink.network_services/json_rpc/JsonRpcService.cpp"
+        "../../components/network_services/json_rpc/JsonRpcService.h"
+        "../../components/network_services/json_rpc/JsonRpcService.cpp"
     )
 endif()
 
