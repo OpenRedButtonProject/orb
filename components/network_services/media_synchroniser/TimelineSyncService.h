@@ -354,7 +354,7 @@ private:
     std::unordered_map<WebSocketConnection *, SetupTSData> m_connectionSetupData;
     std::unordered_map<WebSocketConnection *,
                        Nullable<ControlTimestamp> > m_connectionPreviousControlTimestamp;
-#if JSONCPP_VERSION_1_9_4 == 1
+#if JSONCPP_VERSION_HEXA > 0x01080200
     Json::StreamWriterBuilder m_wbuilder;
 #else
     Json::FastWriter m_writer;
