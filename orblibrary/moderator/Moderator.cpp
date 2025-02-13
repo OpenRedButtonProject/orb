@@ -18,7 +18,7 @@
  */
 
 #include "Moderator.h"
-#include "mlog.h"
+#include "log.h"
 
 using namespace std;
 
