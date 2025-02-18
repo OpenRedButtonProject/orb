@@ -3,9 +3,16 @@ group("orb_library_deps")
 {
   deps = [
     "orblibrary:orb",
-    ":build_polyfill_iframe"
+    ":build_polyfill_iframe",
+    ":build_polyfill_dash",
+    ":build_polyfill_hbbtv",
+    ":build_polyfill_copy_playerpage"
   ]
 }
+
+# TODO Pass these variables in properly
+target_platform = "android"
+bbc_api_enable = true
 
 action("build_polyfill_iframe") {
   sources = [
@@ -13,7 +20,7 @@ action("build_polyfill_iframe") {
     "src/housekeeping/beginiffe.js",
     "src/languagecodes.js",
     "src/mediaproxies/init.js",
-    "src/natives/android.js",
+    "src/natives/$target_platform.js",
     "src/mediaproxies/tracklists/audiotracklist.js",
     "src/mediaproxies/tracklists/videotracklist.js",
     "src/mediaproxies/tracklists/texttracklist.js",
@@ -37,4 +44,112 @@ action("build_polyfill_iframe") {
   foreach(source, sources) {
     args += [ rebase_path(source, root_build_dir) ]
   }
+}
+
+action("build_polyfill_dash") {
+  sources = [
+    "external/dash.all.min.js"
+  ]
+
+  outputs = ["$target_gen_dir/dash.all.min.js"]
+
+  script = "scripts/concat.py"
+
+  args = [ "--output", rebase_path(outputs[0], root_build_dir) ]
+
+  foreach(source, sources) {
+    args += [ rebase_path(source, root_build_dir) ]
+  }
+}
+
+action("build_polyfill_hbbtv") {
+  sources = [
+    "src/housekeeping/banner.js",
+    "src/housekeeping/beginiffe.js",
+    "src/languagecodes.js",
+    "src/utils.js",
+    "src/core.js",
+    "src/bridge.js",
+    "src/holepuncher.js",
+    "src/objectmanager.js",
+    "src/drmmanager.js",
+    "src/natives/$target_platform.js",
+    "src/polyfill/xhr.js",
+    "src/polyfill/close.js",
+    "src/polyfill/debug.js",
+    "src/polyfill/keyevent.js",
+    "src/polyfill/orbdebug.js",
+    "src/objects/collection.js",
+    "src/mediaproxies/tracklists/audiotracklist.js",
+    "src/mediaproxies/tracklists/videotracklist.js",
+    "src/mediaproxies/tracklists/texttracklist.js",
+    "src/mediaproxies/tracklists/texttrack.js",
+    "src/mediaproxies/tracklists/texttrackcuelist.js",
+    "src/objects/channel.js",
+    "src/objects/programme.js",
+    "src/objects/dashevent.js",
+    "src/objects/channellist.js",
+    "src/objects/channelconfig.js",
+    "src/objects/configuration/oipfconfiguration.js",
+    "src/objects/configuration/configuration.js",
+    "src/objects/configuration/localsystem.js",
+    "src/objects/capabilities/oipfcapabilities.js",
+    "src/objects/videobroadcast.js",
+    "src/objects/avcomponent.js",
+    "src/objects/avvideocomponent.js",
+    "src/objects/avaudiocomponent.js",
+    "src/objects/avsubtitlecomponent.js",
+    "src/objects/keyset.js",
+    "src/objects/privatedata.js",
+    "src/objects/application.js",
+    "src/objects/applicationmanager.js",
+    "src/objects/avcontrol.js",
+    "src/objects/oipfgatewayinfo.js",
+    "src/objects/oipfdrmagent.js",
+    "src/objects/parentalcontrol/oipfparentalcontrolmanager.js",
+    "src/objects/parentalcontrol/parentalratingscheme.js",
+    "src/objects/parentalcontrol/parentalratingschemecollection.js",
+    "src/objects/parentalcontrol/parentalrating.js",
+    "src/objects/parentalcontrol/parentalratingcollection.js",
+    "src/objects/searchmanager/oipfsearchmanager.js",
+    "src/objects/searchmanager/metadatasearch.js",
+    "src/objects/searchmanager/query.js",
+    "src/objects/searchmanager/searchresults.js",
+    "src/objects/mediasync/mediasynchroniser.js",
+    "src/objects/mediasync/mediaelementobserver.js",
+    "src/objects/mediasync/broadcastobserver.js",
+    "src/objects/mediasync/mediaelementtsclient.js",
+    "src/objects/csmanager.js",
+    "src/objects/oipfdrmagent.js",
+    "src/objects/oipfgatewayinfo.js",
+    "src/extensions/textinputextension.js",
+    "src/mediaproxies/mediaerror.js",
+    "src/mediaproxies/timeranges.js",
+    "src/mediaproxies/eme/mediakeysystemaccess.js",
+    "src/mediaproxies/eme/mediakeys.js",
+    "src/mediaproxies/eme/mediakeysession.js",
+    "src/mediaproxies/iframeobjectproxy.js",
+    "src/extensions/mediaelementextension.js",
+    "src/proprietary/bbc/bbc.js", # Proprietary
+    "src/run.js",
+    "src/housekeeping/endiffe.js"
+  ]
+
+  outputs = [ "$target_gen_dir/hbbtv.js" ]
+
+  script = "scripts/concat.py"
+
+  args = [ "--output", rebase_path(outputs[0], root_build_dir) ]
+
+  foreach(source, sources) {
+    if (source != "src/proprietary/bbc/bbc.js" || bbc_api_enable) {
+      args += [ rebase_path(source, root_build_dir) ]
+    }
+  }
+}
+
+copy("build_polyfill_copy_playerpage")
+{
+  sources = [ "external/playerpage.html" ]
+  outputs = [ "$target_gen_dir/playerpage.html" ]
 }
