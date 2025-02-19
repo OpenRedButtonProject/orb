@@ -12,7 +12,8 @@ static std::string opAppStateToString(const HbbTVApp::E_APP_STATE &state);
  * @throws std::runtime_error
  */
 OpApp::OpApp(const std::string &url, ApplicationSessionCallback *sessionCallback)
-    : HbbTVApp(url, sessionCallback)
+    : HbbTVApp(url, sessionCallback),
+    m_countdown([&] () { SetState(BACKGROUND_STATE); })
 {
     m_state = BACKGROUND_STATE; // ETSI TS 103 606 V1.2.1 (2024-03) page 36
 }
