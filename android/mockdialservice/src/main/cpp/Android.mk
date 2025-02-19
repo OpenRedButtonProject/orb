@@ -5,6 +5,8 @@ LOCAL_MODULE := liborg.orbtv.mockdialservice.mockdialservice-jni
 
 LOCAL_PRIVATE_PLATFORM_APIS := true
 
+LOCAL_HEADER_LIBRARIES := jni_headers
+
 LOCAL_SRC_FILES := \
    mock_dial_service_native.cpp \
    jni_utils.cpp

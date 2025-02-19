@@ -34,7 +34,8 @@ UdpSocketService::UdpSocketService(const std::string &protocol_name, int port,
     stop_(true),
     protocol_name_(protocol_name),
     use_ssl_(use_ssl),
-#if LWS_VERSION_4 == 1
+// Use version define in libwebsockets header 'lws_config.h'
+#if LWS_LIBRARY_VERSION_NUMBER > 4000000
     retry_{.secs_since_valid_ping = SECS_SINCE_VALID_PING, .secs_since_valid_hangup =
                SECS_SINCE_VALID_HANGUP},
 #endif
@@ -50,7 +51,7 @@ UdpSocketService::UdpSocketService(const std::string &protocol_name, int port,
         .options = LWS_SERVER_OPTION_EXPLICIT_VHOSTS
             /* | LWS_SERVER_OPTION_VHOST_UPG_STRICT_HOST_CHECK */,
         .vhost_name = VHOST_NAME,
-#if LWS_VERSION_4 == 1
+#if LWS_LIBRARY_VERSION_NUMBER > 4000000
         .retry_and_idle_policy = &retry_,
 #endif
     };
@@ -79,10 +80,13 @@ bool UdpSocketService::Start()
         vhost_ = lws_create_vhost(context_, &info_);
         if (vhost_)
         {
-#if LWS_VERSION_4 == 1
+#if LWS_LIBRARY_VERSION_NUMBER > 4002000
             if (lws_create_adopt_udp(vhost_, NULL, port_, LWS_CAUDP_BIND,
                 protocols_[0].name, NULL, NULL, NULL, NULL,
                 "user"))
+#elif LWS_LIBRARY_VERSION_NUMBER > 4000000
+            if (lws_create_adopt_udp(vhost_, NULL, port_, LWS_CAUDP_BIND,
+                protocols_[0].name, NULL, NULL, NULL, NULL))
 #else
             if (lws_create_adopt_udp(vhost_, port_, LWS_CAUDP_BIND,
                 protocols_[0].name, NULL))
@@ -218,7 +222,7 @@ int UdpSocketService::LwsCallback(struct lws *wsi, enum lws_callback_reasons rea
                     struct lws_udp udp = *(lws_get_udp(wsi));
                     void *d = std::get<0>(data);
                     int size = std::get<1>(data);
-#if LWS_VERSION_4 == 1
+#if LWS_LIBRARY_VERSION_NUMBER > 4002000
                     size_t bytesSent = sendto(fd, d, size, 0,
                         sa46_sockaddr(&udp.sa46),
                         sa46_socklen(&udp.sa46));
