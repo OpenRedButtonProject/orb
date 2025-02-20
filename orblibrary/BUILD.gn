@@ -27,6 +27,21 @@ config("external_lib_config") {
   defines = [ "IS_CHROMIUM", "ORB_HBBTV_VERSION=203"]
 }
 
+static_library("orb_polyfill") {
+  sources = [
+    "polyfill/HtmlBuilder.cpp",
+  ]
+
+  deps = [
+    "//base", # For logging dependency
+    "../:orb_polyfill_js"
+  ]
+
+  public_deps = []
+
+  public_configs = [ ":external_lib_config" ]
+}
+
 executable("test_orb_polyfill")
 {
   sources = [ "polyfill/polyfill_unittest.cpp" ]
@@ -34,7 +49,7 @@ executable("test_orb_polyfill")
   deps = [
     "//testing/gtest",
     "//testing/gtest:gtest_main",
-    "../:orb_polyfill_js"
+    ":orb_polyfill"
   ]
 
   testonly = true

@@ -2,22 +2,11 @@
 #include <string>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "HtmlBuilder.h"
 
-extern "C" {
-__attribute__((visibility(
-    "default"))) extern const char _binary_gen_third_party_orb_hbbtv_js_start[];
-__attribute__((visibility(
-    "default"))) extern const char _binary_gen_third_party_orb_hbbtv_js_end[];
-}
-
-std::string getEmbeddedJS() {
-  return std::string(_binary_gen_third_party_orb_hbbtv_js_start,
-                     _binary_gen_third_party_orb_hbbtv_js_end -
-                         _binary_gen_third_party_orb_hbbtv_js_start - 1);
-}
 
 TEST(OrbPolyfill, TestPolyfillExists) {
-  std::string js_polyfill_str = getEmbeddedJS();
+  std::string js_polyfill_str = orb::polyfill::HtmlBuilder::getHbbtvInjection();
 
   EXPECT_GT(js_polyfill_str.size(), 0u);
 
@@ -47,4 +36,7 @@ TEST(OrbPolyfill, TestPolyfillExists) {
     R"(hbbtv.core.initialise();)");
 
   EXPECT_EQ(js_polyfill_str.find(run_js), 573429u); // Care: these values can change!!
+
+  // Check the very last character, typically a newline
+  EXPECT_EQ(js_polyfill_str.back(), '\n');
 }
