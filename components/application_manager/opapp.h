@@ -28,46 +28,46 @@ class OpApp : public HbbTVApp
 public:
     /**
      * Create opapp from url.
-     * 
+     *
      * @throws std::runtime_error
      */
     OpApp(const std::string &url, ApplicationSessionCallback *sessionCallback);
 
     /**
      * Create opapp from Ait description.
-     * 
+     *
      * @throws std::runtime_error
      */
     OpApp(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable, ApplicationSessionCallback *sessionCallback);
 
     /**
      * Create opapp from url and inherit another opapp's state (ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.1).
-     * 
+     *
      * @throws std::runtime_error
      */
     OpApp(const OpApp &other, const std::string &url);
-    
+
     virtual ~OpApp() = default;
 
     OpApp(const HbbTVApp&) = delete;
     OpApp &operator=(const OpApp&) = delete;
-    
+
     /**
      * Set the application state.
-     * 
+     *
      * @param state The desired state to transition to.
      * @returns true if transitioned successfully to the desired state, false otherwise.
      */
     bool SetState(const E_APP_STATE &state) override;
-    
+
     E_APP_TYPE GetType() const override { return HbbTVApp::E_APP_TYPE::OPAPP_TYPE; }
-    
+
     bool TransitionToBroadcastRelated() override;
 
 private:
     bool CanTransitionToState(const E_APP_STATE &state);
 
-    Utils::Timeout m_countdown = Utils::Timeout([&]() -> void { SetState(BACKGROUND_STATE); });
+    Utils::Timeout m_countdown;
 };
 
 #endif // OPAPP_H

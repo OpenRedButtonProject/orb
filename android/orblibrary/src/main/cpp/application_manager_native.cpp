@@ -168,23 +168,40 @@ public:
         return region;
     }
 
-    void DispatchApplicationSchemeUpdatedEvent(const int appId, const std::string &scheme) {
+    void DispatchApplicationSchemeUpdatedEvent(const int appId, const std::string &scheme) override
+    {
         JNIEnv *env = JniUtils::GetEnv();
         jstring j_appType = env->NewStringUTF(scheme.c_str());
         env->CallVoidMethod(mJavaCbObject, gCb[CB_ON_APPLICATION_TYPE_UPDATED], j_appType);
         env->DeleteLocalRef(j_appType);
     }
 
-    virtual bool isInstanceInCurrentService(const Utils::S_DVB_TRIPLET &triplet) {
+    bool isInstanceInCurrentService(const Utils::S_DVB_TRIPLET &triplet) override
+    {
         JNIEnv *env = JniUtils::GetEnv();
         return env->CallBooleanMethod(mJavaCbObject, gCb[CB_IS_INSTANCES_OF_CURRENT_SERVICE], triplet.originalNetworkId, triplet.transportStreamId, triplet.serviceId);
     }
 
 
-    void DispatchOperatorApplicationStateChange(const int appId, const std::string &oldState, const std::string &newState) { /* TODO */ }
-    void DispatchOperatorApplicationStateChangeCompleted(const int appId, const std::string &oldState, const std::string &newState) { /* TODO */ }
-    void DispatchOperatorApplicationContextChange(const int appId, const std::string &startupLocation, const std::string &launchLocation = "") { /* TODO */ }
-    void DispatchOpAppUpdate(const int appId, const std::string &updateEvent) { /* TODO */ }
+    void DispatchOperatorApplicationStateChange(const int appId, const std::string &oldState, const std::string &newState) override
+    {
+        /* TODO */
+    }
+
+    void DispatchOperatorApplicationStateChangeCompleted(const int appId, const std::string &oldState, const std::string &newState) override
+    {
+        /* TODO */
+    }
+
+    void DispatchOperatorApplicationContextChange(const int appId, const std::string &startupLocation, const std::string &launchLocation = "") override
+    {
+        /* TODO */
+    }
+
+    void DispatchOpAppUpdate(const int appId, const std::string &updateEvent) override
+    {
+        /* TODO */
+    }
 
 private:
     jobject mJavaCbObject;

@@ -8,18 +8,19 @@ static std::string opAppStateToString(const HbbTVApp::E_APP_STATE &state);
 
 /**
  * Create opapp from url.
- * 
+ *
  * @throws std::runtime_error
  */
 OpApp::OpApp(const std::string &url, ApplicationSessionCallback *sessionCallback)
-    : HbbTVApp(url, sessionCallback)
+    : HbbTVApp(url, sessionCallback),
+    m_countdown([&] () { SetState(BACKGROUND_STATE); })
 {
     m_state = BACKGROUND_STATE; // ETSI TS 103 606 V1.2.1 (2024-03) page 36
 }
 
 /**
  * Create opapp from Ait description.
- * 
+ *
  * @throws std::runtime_error
  */
 OpApp::OpApp(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable, ApplicationSessionCallback *sessionCallback)
@@ -31,18 +32,20 @@ OpApp::OpApp(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable, Applicati
         true,
         false,
         sessionCallback
-    )
+    ),
+    m_countdown([&] () { SetState(BACKGROUND_STATE); })
 {
     m_state = BACKGROUND_STATE; // ETSI TS 103 606 V1.2.1 (2024-03) page 36
 }
 
 /**
  * Create opapp from url and inherit another opapp's state (ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.1).
- * 
+ *
  * @throws std::runtime_error
  */
 OpApp::OpApp(const OpApp &other, const std::string &url)
-    : HbbTVApp(url, other.m_sessionCallback)
+    : HbbTVApp(url, other.m_sessionCallback),
+    m_countdown([&] () { SetState(BACKGROUND_STATE); })
 {
     m_state = other.GetState();
     if (!other.m_countdown.isStopped())
@@ -53,7 +56,7 @@ OpApp::OpApp(const OpApp &other, const std::string &url)
 
 /**
  * Set the application state.
- * 
+ *
  * @param state The desired state to transition to.
  * @returns true if transitioned successfully to the desired state, false otherwise.
  */
@@ -67,7 +70,7 @@ bool OpApp::SetState(const E_APP_STATE &state)
             std::string next = opAppStateToString(state);
             m_state = state;
             m_sessionCallback->DispatchOperatorApplicationStateChange(GetId(), previous, next);
-            
+
             if (state == BACKGROUND_STATE)
             {
                 m_sessionCallback->HideApplication(GetId());
@@ -77,7 +80,7 @@ bool OpApp::SetState(const E_APP_STATE &state)
                 m_sessionCallback->ShowApplication(GetId());
             }
         }
-        
+
         if (state == TRANSIENT_STATE || state == OVERLAID_TRANSIENT_STATE)
         {
             m_countdown.start(std::chrono::milliseconds(COUNT_DOWN_TIMEOUT));
@@ -115,9 +118,9 @@ bool OpApp::CanTransitionToState(const E_APP_STATE &state)
                 }
                 break;
 
-            case TRANSIENT_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.4 Page 41 
-            case OVERLAID_TRANSIENT_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.6 Page 42 
-            case OVERLAID_FOREGROUND_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.5 Page 41 
+            case TRANSIENT_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.4 Page 41
+            case OVERLAID_TRANSIENT_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.6 Page 42
+            case OVERLAID_FOREGROUND_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.5 Page 41
                 // Allowed transitions from these states
                 if (state == FOREGROUND_STATE || state == BACKGROUND_STATE) {
                     return true;

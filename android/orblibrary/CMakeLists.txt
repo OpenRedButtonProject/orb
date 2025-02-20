@@ -48,6 +48,7 @@ add_library(
    ../../components/application_manager/ait.cpp
    ../../components/application_manager/xml_parser.cpp
    ../../components/application_manager/hbbtv_app.cpp
+   ../../components/application_manager/opapp.cpp
 )
 target_link_libraries(
    org.orbtv.orblibrary.applicationmanager
