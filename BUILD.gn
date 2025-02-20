@@ -171,9 +171,11 @@ action("build_polyfill_hbbtv_obj")
     current_cpu ]
 }
 
-shared_library ("orb_polyfill_js")
+static_library ("orb_polyfill_js")
 {
   deps = [ ":build_polyfill_hbbtv_obj" ]
 
   sources = [ hbbtv_js_obj ]
+
+  include_dirs = [ "." ]
 }

@@ -25,6 +25,8 @@ if arch not in arch_flags:
 cmd = [
     "ld",
     "-r",
+    "--no-warn-rwx-segments",
+    "-z", "noexecstack",
     arch_flags[arch],
     "-b", "binary",  # Treat input as raw binary data
     "-o", output_object,
