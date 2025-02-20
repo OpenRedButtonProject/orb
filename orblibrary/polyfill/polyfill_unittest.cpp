@@ -6,7 +6,7 @@
 
 
 TEST(OrbPolyfill, TestPolyfillExists) {
-  std::string js_polyfill_str = orb::polyfill::HtmlBuilder::getHbbtvInjection();
+  std::string js_polyfill_str = orb::polyfill::HtmlBuilder::getHbbtvJs();
 
   EXPECT_GT(js_polyfill_str.size(), 0u);
 
@@ -39,4 +39,17 @@ TEST(OrbPolyfill, TestPolyfillExists) {
 
   // Check the very last character, typically a newline
   EXPECT_EQ(js_polyfill_str.back(), '\n');
+}
+
+TEST(OrbPolyfill, TestPolyfillInjection)
+{
+  orb::polyfill::HtmlBuilder builder;
+
+  const std::string polyfill_injection = builder.getHbbtvInjection();
+
+  EXPECT_EQ(polyfill_injection.find(
+    orb::polyfill::HtmlBuilder::script_tag_open), 0u);
+  EXPECT_EQ(polyfill_injection.find(
+    orb::polyfill::HtmlBuilder::script_tag_close),
+    polyfill_injection.length() - orb::polyfill::HtmlBuilder::script_tag_close.length());
 }
