@@ -11,16 +11,12 @@ static_library("orb") {
     "moderator/Moderator.cpp",
   ]
 
-  if (is_android) {
-    configs += [ ":android_system_libs"]
-  }
-
   deps = [
     "//base", # For logging dependency
   ]
 
   public_deps = []
-  
+
   public_configs = [ ":external_lib_config" ]
 }
 
@@ -31,11 +27,30 @@ config("external_lib_config") {
   defines = [ "IS_CHROMIUM", "ORB_HBBTV_VERSION=203"]
 }
 
-if (is_android) {
-  config("android_system_libs") {
-    libs = [
-      "android",
-      "log",  # Used by logging.cc.
-    ] 
-  } 
-} 
+static_library("orb_polyfill") {
+  sources = [
+    "polyfill/HtmlBuilder.cpp",
+  ]
+
+  deps = [
+    "//base", # For logging dependency
+    "../:orb_polyfill_js"
+  ]
+
+  public_deps = []
+
+  public_configs = [ ":external_lib_config" ]
+}
+
+executable("test_orb_polyfill")
+{
+  sources = [ "polyfill/polyfill_unittest.cpp" ]
+
+  deps = [
+    "//testing/gtest",
+    "//testing/gtest:gtest_main",
+    ":orb_polyfill"
+  ]
+
+  testonly = true
+}
