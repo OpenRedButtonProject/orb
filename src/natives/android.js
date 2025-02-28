@@ -44,7 +44,7 @@ hbbtv.native = {
             method: method,
             params: params || {},
         };
-        const responseText = androidBridge.request(JSON.stringify(body));
+        const responseText = Orb.request(JSON.stringify(body));
         if (typeof responseText !== 'string') {
             console.debug('Invalid response');
             return false;
