@@ -7,6 +7,9 @@ LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH)/include
 
 LOCAL_SRC_FILES := \
+	moderator/AppManager.cpp \
+	moderator/Network.cpp \
+	moderator/MediaSynchroniser.cpp \
 	moderator/Moderator.cpp \
 	moderator/DvbBroker.cpp \
 	moderator/OrbInterface.cpp
@@ -22,12 +25,10 @@ LOCAL_CFLAGS := \
    -Wno-sign-compare \
    -Wno-pessimizing-move
 
-LOCAL_STATIC_LIBRARIES += \
-   libjsoncpp
-
 LOCAL_SHARED_LIBRARIES := \
    libbase \
-   libandroid
+   libandroid \
+   libjsoncpp
 
 #LOCAL_CPPFLAGS += -fexceptions \
 #                  -frtti
