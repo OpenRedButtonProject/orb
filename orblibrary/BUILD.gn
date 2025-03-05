@@ -9,10 +9,14 @@ static_library("orb") {
     "moderator/OrbInterface.cpp",
     "moderator/DvbBroker.cpp",
     "moderator/Moderator.cpp",
+    "moderator/AppManager.cpp",
+    "moderator/Network.cpp",
+    "moderator/MediaSynchroniser.cpp",
   ]
 
   deps = [
     "//base", # For logging dependency
+    "//third_party/jsoncpp"
   ]
 
   public_deps = []
