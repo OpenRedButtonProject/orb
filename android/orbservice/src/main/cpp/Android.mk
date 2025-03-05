@@ -35,6 +35,7 @@ LOCAL_SHARED_LIBRARIES := \
    libbinder \
    libbase \
    libutils \
-   libandroid
+   libandroid \
+   libjsoncpp
 
 include $(BUILD_SHARED_LIBRARY)

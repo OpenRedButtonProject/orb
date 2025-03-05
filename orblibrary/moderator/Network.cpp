@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * ORB OrbInterface
+ * ORB Network
  *
  */
 
-#include "OrbInterface.h"
+#include <sys/sysinfo.h>
+
+#include "Network.hpp"
 #include "log.h"
 
 using namespace std;
@@ -25,30 +27,32 @@ using namespace std;
 namespace orb
 {
 
-OrbInterface& OrbInterface::instance()
-{
-    static OrbInterface s_interface;
-    return s_interface;
-}
-
-OrbInterface::OrbInterface()
+Network::Network()
 {
 }
 
-OrbInterface::~OrbInterface()
+
+Network::~Network()
 {
 }
 
-Moderator* OrbInterface::getHbbTvModerator()
+string Network::request(string method, Json::Value token, Json::Value params)
 {
-    return &mHbbTvModerator;
+    string response = "{\"error\": \"Request not implemented\"}";
+
+    LOGI("method: " << method)
+
+    if (method == "resolveHostAddress")
+    {
+        LOGI("")
+    }
+    else // Unknown Method
+    {
+        LOGE("")
+    }
+
+    return response;
 }
 
-DvbBroker* OrbInterface::connectDvb(IDvbClient *dvb_client)
-{
-    mDvbBroker.setDvbClient(dvb_client);
-    mHbbTvModerator.setDvbClient(dvb_client);
-    return &mDvbBroker;
-}
 
 } // namespace orb
