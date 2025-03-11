@@ -58,3 +58,16 @@ executable("test_orb_polyfill")
 
   testonly = true
 }
+
+executable("test_orb_moderator")
+{
+  sources = [ "test/moderator_unittest.cpp"]
+
+  deps = [
+    "//testing/gtest",
+    "//testing/gtest:gtest_main",
+    ":orb"
+  ]
+
+  testonly = true
+}
