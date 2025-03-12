@@ -16,9 +16,14 @@
 #pragma once
 
 #include "IBrowser.h"
+#include "IDvbClient.h"
 
 namespace orb
 {
+
+class AppManager;
+class Network;
+class MediaSynchroniser;
 
 class Moderator
 {
@@ -28,6 +33,9 @@ public:
 
     // Set Browser callback object
     void setBrowserCallback(IBrowser* browser);
+
+    // Set DVB integration callback object
+    void setDvbClient(IDvbClient *dvb_client);
 
     // Execute the given request from browser.
     // The request is a string representation of a JSON object with the following form:
@@ -55,6 +63,10 @@ public:
 
 private:
     IBrowser* mBrowser;
+    IDvbClient* mDvbClient;
+    AppManager* mAppManager;
+    Network* mNetwork;
+    MediaSynchroniser* mMediaSynchroniser;
 
 }; // class Moderator
 

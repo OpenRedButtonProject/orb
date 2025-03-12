@@ -12,43 +12,25 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * ORB OrbInterface
- *
  */
+#pragma once
 
-#include "OrbInterface.h"
-#include "log.h"
-
-using namespace std;
+#include <string>
+#include <json/json.h>
 
 namespace orb
 {
 
-OrbInterface& OrbInterface::instance()
+class Network
 {
-    static OrbInterface s_interface;
-    return s_interface;
-}
+public:
+    Network();
+    ~Network();
 
-OrbInterface::OrbInterface()
-{
-}
+    std::string request(std::string method, Json::Value token, Json::Value params);
 
-OrbInterface::~OrbInterface()
-{
-}
+private:
 
-Moderator* OrbInterface::getHbbTvModerator()
-{
-    return &mHbbTvModerator;
-}
-
-DvbBroker* OrbInterface::connectDvb(IDvbClient *dvb_client)
-{
-    mDvbBroker.setDvbClient(dvb_client);
-    mHbbTvModerator.setDvbClient(dvb_client);
-    return &mDvbBroker;
-}
+}; // class Network
 
 } // namespace orb
