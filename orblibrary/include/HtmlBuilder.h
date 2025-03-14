@@ -9,8 +9,8 @@ namespace orb::polyfill
 class HtmlBuilder
 {
 public:
-  static constexpr std::string_view script_tag_open = "<script type=\"text/javascript\">\n//<![CDATA[\n";
-  static constexpr std::string_view script_tag_close = "\n//]]>\n</script>";
+  static constexpr std::string_view script_tag_open = "//<![CDATA[\n";
+  static constexpr std::string_view script_tag_close = "\n//]]>\n";
 
   HtmlBuilder();
   ~HtmlBuilder() = default;
