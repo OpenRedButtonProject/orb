@@ -9,7 +9,7 @@ group("orb_library_deps")
 
 # TODO Pass these variables in properly
 target_platform = "android"
-bbc_api_enable = true
+bbc_api_enable = false
 
 ## To Do - how is this used in the code?
 action("build_polyfill_iframe") {
