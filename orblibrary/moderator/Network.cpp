@@ -26,33 +26,21 @@ using namespace std;
 
 namespace orb
 {
-
-Network::Network()
-{
-}
-
-
-Network::~Network()
-{
-}
-
 string Network::request(string method, Json::Value token, Json::Value params)
 {
-    string response = "{\"error\": \"Request not implemented\"}";
-
-    LOGI("method: " << method)
+    string response = R"({"Response": "Network request [)" + method + R"(] not implemented"})";
 
     if (method == "resolveHostAddress")
     {
-        LOGI("")
+        LOGI("method: " << method);
     }
     else // Unknown Method
     {
-        LOGE("")
+        response = R"({"error": "Network request [)" + method + R"(] invalid method"})";
+        LOGE("Invalid Method [" + method +"]");
     }
 
     return response;
 }
-
 
 } // namespace orb

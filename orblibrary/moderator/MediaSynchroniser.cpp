@@ -26,104 +26,94 @@ using namespace std;
 
 namespace orb
 {
-
-MediaSynchroniser::MediaSynchroniser()
-{
-}
-
-
-MediaSynchroniser::~MediaSynchroniser()
-{
-}
-
 string MediaSynchroniser::request(string method, Json::Value token, Json::Value params)
 {
-    string response;
+    // TODO Set up proper responses
+    string response = R"({"Response": "MediaSynchroniser request [)" + method + R"(] not implemented"})";
 
-    LOGI("method: " << method)
-
+    LOGI("Request with method [" + method + "] received");
     if (method == "instantiate")
     {
         // integer response
-        LOGI("")
+        LOGI("");
     }
     else if (method == "initialise")
     {
         // boolean response
-        LOGI("")
+        LOGI("");
     }
     else if (method == "destroy")
     {
         // no response
-        LOGI("")
+        LOGI("");
     }
     else if (method == "enableInterDeviceSync")
     {
         // boolean response
-        LOGI("")
+        LOGI("");
     }
     else if (method == "disableInterDeviceSync")
     {
         // no response
-        LOGI("")
+        LOGI("");
     }
     else if (method == "nrOfSlaves")
     {
         // integer response
-        LOGI("")
+        LOGI("");
     }
     else if (method == "interDeviceSyncEnabled")
     {
         // boolean response
-        LOGI("")
+        LOGI("");
     }
     else if (method == "getContentIdOverride")
     {
         // string response
-        LOGI("")
+        LOGI("");
     }
     else if (method == "getBroadcastCurrentTime")
     {
         // long integer response
-        LOGI("")
+        LOGI("");
     }
     else if (method == "startTimelineMonitoring")
     {
         // boolean response
-        LOGI("")
+        LOGI("");
     }
     else if (method == "stopTimelineMonitoring")
     {
         // no response
-        LOGI("")
+        LOGI("");
     }
     else if (method == "setContentIdOverride")
     {
         // no response
-        LOGI("")
+        LOGI("");
     }
     else if (method == "setContentTimeAndSpeed")
     {
         // no response
-        LOGI("")
+        LOGI("");
     }
     else if (method == "updateCssCiiProperties")
     {
         // no response
-        LOGI("")
+        LOGI("");
     }
     else if (method == "setTimelineAvailability")
     {
         // boolean response
-        LOGI("")
+        LOGI("");
     }
     else // Unknown Method
     {
-        LOGE("")
+        response = R"({"error": "MediaSynchroniser request [)" + method + R"(] invalid method"})";
+        LOGE("Invalid Method [" + method +"]");
     }
 
     return response;
 }
-
 
 } // namespace orb

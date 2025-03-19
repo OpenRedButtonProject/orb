@@ -18,18 +18,15 @@
 #include <string>
 #include <json/json.h>
 
+#include "ComponentBase.hpp"
+
 namespace orb
 {
 
-class Network
+class Network : ComponentBase
 {
 public:
-    Network();
-    ~Network();
-
-    std::string request(std::string method, Json::Value token, Json::Value params);
-
-private:
+    std::string request(std::string method, Json::Value token, Json::Value params) override;
 
 }; // class Network
 

@@ -18,18 +18,24 @@
 #include <string>
 #include <json/json.h>
 
+#include "ComponentBase.hpp"
+
 namespace orb
 {
 
-class MediaSynchroniser
+class MediaSynchroniser : ComponentBase
 {
 public:
-    MediaSynchroniser();
-    ~MediaSynchroniser();
-
-    std::string request(std::string method, Json::Value token, Json::Value params);
-
-private:
+    /**
+     * MediaSynchroniser request
+     *
+     * @param method Media Synchroniser method
+     * @param token TODO to be replaced by application ID
+     * @param params JSON params. TODO add details
+     *
+     * @return JSON encoded response string
+     */
+    std::string request(std::string method, Json::Value token, Json::Value params) override;
 
 }; // class MediaSynchroniser
 

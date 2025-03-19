@@ -19,18 +19,23 @@
 //#include <map>
 #include <json/json.h>
 
-//#include "Application.hpp"
+#include "ComponentBase.hpp"
 
 namespace orb
 {
-
-class AppManager
+class AppManager : ComponentBase
 {
 public:
-    AppManager();
-    ~AppManager();
-
-    std::string request(std::string method, Json::Value token, Json::Value params);
+    /**
+     * AppManager request
+     *
+     * @param method Application Manager method
+     * @param token TODO to be replaced by application ID
+     * @param params JSON params. TODO add details
+     *
+     * @return JSON encoded response string
+     */
+    std::string request(std::string method, Json::Value token, Json::Value params) override;
 
 private:
 //    std::map<std::string, Application*> mAppMap;

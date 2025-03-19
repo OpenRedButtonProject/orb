@@ -28,85 +28,76 @@ using namespace std;
 
 namespace orb
 {
-
-AppManager::AppManager()
-{
-}
-
-
-AppManager::~AppManager()
-{
-}
-
 string AppManager::request(string method, Json::Value token, Json::Value params)
 {
-    string response = "{\"error\": \"Request not implemented\"}";
+    // TODO Set up proper responses
+    string response = R"({"Response": "AppManager request [)" + method + R"(] not implemented"})";
 
-    LOGI("method: " << method)
-
+    LOGI("Request with method [" + method + "] received");
     if (method == "createApplication")
     {
-        LOGI("")
+        LOGI("");
     }
     else if (method == "destroyApplication")
     {
         // no response
-        LOGI("")
+        LOGI("");
     }
     else if (method == "showApplication")
     {
         // no response
-        LOGI("")
+        LOGI("");
     }
     else if (method == "hideApplication")
     {
         // no response
-        LOGI("")
+        LOGI("");
     }
     else if (method == "searchOwner")
     {
-        LOGI("")
+        LOGI("");
     }
     else if (method == "getFreeMem")
     {
         // TODO: ask DVB client for this
-        LOGI("")
+        LOGI("");
     }
     else if (method == "getKeyIcon")
     {
-        LOGI("")
+        LOGI("");
     }
     else if (method == "setKeyValue")
     {
-        LOGI("")
+        LOGI("");
     }
     else if (method == "getKeyMaximumValue")
     {
-        LOGI("")
+        LOGI("");
     }
     else if (method == "getKeyValues")
     {
-        LOGI("")
+        LOGI("");
     }
     else if (method == "getApplicationScheme")
     {
-        LOGI("")
+        LOGI("");
     }
     else if (method == "getApplicationUrl")
     {
-        LOGI("")
+        LOGI("");
     }
     else if (method == "getRunningAppIds")
     {
         // TODO: string array?
-        LOGI("")
+        LOGI("");
     }
     else // Unknown Method
     {
-        LOGE("")
+        response = R"({"error": "AppManager request [)" + method + R"(] invalid method"})";
+        LOGE("Invalid Method [" + method +"]");
     }
 
-    LOGI("Response: " << response)
+    LOGI("Response: " << response);
 
     return response;
 }

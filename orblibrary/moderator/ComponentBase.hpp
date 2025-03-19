@@ -12,41 +12,35 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * ORB OrbInterface
- *
  */
+#pragma once
 
-#include "OrbInterface.h"
-#include "log.h"
+#include <string>
+#include <json/json.h>
 
 namespace orb
 {
 
-OrbInterface& OrbInterface::instance()
+class ComponentBase
 {
-    static OrbInterface s_interface;
-    return s_interface;
-}
+public:
+    ComponentBase() {}
+    virtual ~ComponentBase() {}
 
-OrbInterface::OrbInterface()
-{
-}
+    ComponentBase (const ComponentBase&) = delete;
+    ComponentBase& operator= (const ComponentBase&) = delete;
 
-OrbInterface::~OrbInterface()
-{
-}
+    /**
+     * ComponentBase request
+     *
+     * @param method ComponentBase's method
+     * @param token TODO to be replaced by application ID
+     * @param params JSON params. TODO add details
+     *
+     * @return JSON encoded response string
+     */
+    virtual std::string request(std::string method, Json::Value token, Json::Value params);
 
-Moderator* OrbInterface::getHbbTvModerator()
-{
-    return &mHbbTvModerator;
-}
-
-DvbBroker* OrbInterface::connectDvb(IDvbClient *dvb_client)
-{
-    mDvbBroker.setDvbClient(dvb_client);
-    mHbbTvModerator.setDvbClient(dvb_client);
-    return &mDvbBroker;
-}
+}; // class ComponentBase
 
 } // namespace orb
