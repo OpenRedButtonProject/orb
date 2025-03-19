@@ -35,7 +35,7 @@ TEST(OrbPolyfill, TestPolyfillExists) {
   const std::string run_js(
     R"(hbbtv.core.initialise();)");
 
-  EXPECT_EQ(js_polyfill_str.find(run_js), 573429u); // Care: these values can change!!
+  EXPECT_EQ(js_polyfill_str.find(run_js), 573419u); // Care: these values can change!!
 
   // Check the very last character, typically a newline
   EXPECT_EQ(js_polyfill_str.back(), '\n');
