@@ -17,15 +17,80 @@
  *
  */
 
+#include <json/json.h>
+
 #include "Moderator.h"
+#include "AppManager.hpp"
+#include "Network.hpp"
+#include "MediaSynchroniser.hpp"
 #include "log.h"
 
 using namespace std;
 
 namespace orb
 {
+/**
+ * Check if a JSON object has a specified parameter with a certain data type.
+ *
+ * @param json The JSON object to check for the presence of the parameter.
+ * @param param The name of the parameter to search for within the JSON object.
+ * @param type The expected data type of the parameter.
+ * @return 'true' if the parameter 'param' exists within the JSON object
+ *          and has the specified data type, 'false' otherwise.
+ */
+static bool HasParam(const Json::Value &json, const string &param, const Json::ValueType& type)
+{
+    return json.isMember(param) && json[param].type() == type;
+}
+
+/**
+ * Check if a JSON object has a specified parameter with a json data type.
+ *
+ * @param json The JSON object to check for the presence of the parameter.
+ * @param param The name of the parameter to search for within the JSON object.
+ * @return 'true' if the parameter 'param' exists within the JSON object
+ *          and has the json data type, 'false' otherwise.
+ */
+static bool HasJsonParam(const Json::Value &json, const string &param)
+{
+    return json.isMember(param) && json[param].isObject();
+}
+
+/**
+ * Resolves the component and method from the specified input, which has the following form:
+ *
+ * <component>.<method>
+ *
+ * @param input  (in)  The input string
+ * @param component (out) Holds the resolved component in success
+ * @param method (out) Holds the resolved method in success
+ *
+ * @return true in success, otherwise false
+ */
+static bool ResolveMethod(string input, string& component, string& method)
+{
+    vector<string> tokens;
+    for (auto i = strtok(&input[0], "."); i != NULL; i = strtok(NULL, "."))
+    {
+        tokens.push_back(i);
+    }
+    if (tokens.size() != 2)
+    {
+        return false;
+    }
+
+    component = tokens[0];
+    method = tokens[1];
+
+    return true;
+}
 
 Moderator::Moderator()
+    : mBrowser(nullptr)
+    , mDvbClient(nullptr)
+    , mAppManager(std::make_unique<AppManager>())
+    , mNetwork(std::make_unique<Network>())
+    , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
 {
 }
 
@@ -37,37 +102,96 @@ Moderator::~Moderator()
 void Moderator::setBrowserCallback(IBrowser* browser)
 {
     mBrowser = browser;
-    LOGI("HbbTV version " << ORB_HBBTV_VERSION)
+    LOGI("HbbTV version " << ORB_HBBTV_VERSION);
 }
 
-string Moderator::executeRequest(string jsonRequest)
+// Set DVB Client callback object
+void Moderator::setDvbClient(IDvbClient* dvb_client)
 {
-    string response = "{\"error\": \"Request not implemented\"}";
+    mDvbClient = dvb_client;
+}
 
-    LOGI("json: " << jsonRequest)
+string Moderator::executeRequest(string jsonRqst)
+{
+    Json::Value jsonval;
+    Json::CharReaderBuilder builder;
+    const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
+    string err;
+    int rlen = static_cast<int>(jsonRqst.length());
 
-    return response;
+    LOGI("json: " << jsonRqst);
+
+    if (!reader->parse(jsonRqst.c_str(), jsonRqst.c_str() + rlen, &jsonval, &err))
+    {
+        LOGE("Json parsing failed: " << err);
+        return "{\"error\": \"Invalid Request\"}";
+    }
+
+    if (HasJsonParam(jsonval, "error"))
+    {
+        LOGE("Json request reports error");
+        return "{\"error\": \"Error Request\"}";
+    }
+
+    if (!HasParam(jsonval, "method", Json::stringValue))
+    {
+        LOGE("Request has no method");
+        return "{\"error\": \"No method\"}";
+    }
+
+    string component;
+    string method;
+    if (!ResolveMethod(jsonval["method"].asString(), component, method))
+    {
+        return "{\"error\": \"Invalid method\"}";
+    }
+
+    if (component == "Manager")
+    {
+        LOGI("App Manager, method: " << method);
+        return mAppManager->request(method, jsonval["token"], jsonval["params"]);
+    }
+    else if (component == "Network")
+    {
+        LOGI("Network, method: " << method);
+        return mNetwork->request(method, jsonval["token"], jsonval["params"]);
+    }
+    else if (component == "MediaSynchroniser")
+    {
+        LOGI("MediaSynchroniser, method: " << method);
+        return mMediaSynchroniser->request(method, jsonval["token"], jsonval["params"]);
+    }
+
+    LOGI("Passing request to TIS component: [" << component << "], method: [" << method << "]");
+    // Call the DVB Integration callback
+    if (mDvbClient == nullptr)
+    {
+        LOGE("No DVB Client");
+        return "{\"error\": \"No Dvb Client\"}";
+    }
+
+    return mDvbClient->request(jsonRqst);
 }
 
 void Moderator::notifyApplicationPageChanged(string url)
 {
-    LOGI("url: " << url)
+    LOGI("url: " << url);
 }
 
 void Moderator::notifyApplicationLoadFailed(string url, string errorText)
 {
-    LOGI("url: " << url << " err: " << errorText)
+    LOGI("url: " << url << " err: " << errorText);
 }
 
 void Moderator::getDvbContent(string url)
 {
-    LOGI("url: " << url)
+    LOGI("url: " << url);
 }
 
 string Moderator::getUserAgentString()
 {
-    string user_agent = "todo";
-    LOGI("")
+    std::string user_agent = "todo";
+    LOGI("");
     return user_agent;
 }
 

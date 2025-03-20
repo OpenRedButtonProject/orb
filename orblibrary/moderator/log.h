@@ -29,6 +29,7 @@
 #error Not Chromium or Android build
 #endif
 
-#define LOGI(str)   LOG(INFO) << __FUNCTION__ << ": " << str;
+#define LOGI(str)   LOG(INFO) << __FUNCTION__ << "," << __LINE__ << ": " << str
+#define LOGE(str)   LOG(ERROR) << __FUNCTION__ << "," << __LINE__ << ": " << str
 
 #endif // _MODERATOR_LOG_H

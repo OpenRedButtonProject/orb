@@ -42,17 +42,17 @@ void DvbBroker::setDvbClient(IDvbClient* dvb_client)
 
 void DvbBroker::processAitSection(int32_t aitPid, int32_t serviceId, const vector<uint8_t>& data)
 {
-    LOGI("pid: " << aitPid << "serviceId: " << serviceId)
+    LOGI("pid: " << aitPid << "serviceId: " << serviceId);
 }
 
 void DvbBroker::processXmlAit(const vector<uint8_t>& data)
 {
-    LOGI("")
+    LOGI("");
 }
 
 void DvbBroker::receiveDsmccContent(int requestId, const vector<uint8_t>& content)
 {
-    LOGI("requestId: " << requestId)
+    LOGI("requestId: " << requestId);
 }
 
 } // namespace orb

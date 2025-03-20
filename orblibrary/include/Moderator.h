@@ -15,10 +15,17 @@
  */
 #pragma once
 
+#include <memory>
+
 #include "IBrowser.h"
+#include "IDvbClient.h"
 
 namespace orb
 {
+
+class AppManager;
+class Network;
+class MediaSynchroniser;
 
 class Moderator
 {
@@ -26,21 +33,28 @@ public:
     Moderator();
     ~Moderator();
 
+    Moderator (const Moderator&) = delete;
+    Moderator& operator= (const Moderator&) = delete;
+
     // Set Browser callback object
     void setBrowserCallback(IBrowser* browser);
 
-    // Execute the given request from browser.
-    // The request is a string representation of a JSON object with the following form:
-    // {
-    //    "token": <app_id>
-    //    "method": <method>
-    //    "params": <params>
-    // }
-    //
-    // The response is also a string representation of a JSON object containing the results, if any.
-    //
-    // @param jsonRequest String representation of the JSON request
-    // @return A string representation of the JSON response
+    // Set DVB integration callback object
+    void setDvbClient(IDvbClient *dvb_client);
+
+    /** Execute the given request from browser.
+     * The request is a string representation of a JSON object with the following form:
+     * {
+     *    "token": <app_id>
+     *    "method": <method>
+     *    "params": <params>
+     * }
+     *
+     * The response is also a string representation of a JSON object containing the results, if any.
+     *
+     * @param jsonRequest String representation of the JSON request
+     * @return A string representation of the JSON response
+     */
     std::string executeRequest(std::string jsonRequest);
 
     // Notify that URL has been loaded for an application
@@ -54,7 +68,11 @@ public:
     std::string getUserAgentString();
 
 private:
-    IBrowser* mBrowser;
+    IBrowser *mBrowser;
+    IDvbClient* mDvbClient;
+    std::unique_ptr<AppManager> mAppManager;
+    std::unique_ptr<Network> mNetwork;
+    std::unique_ptr<MediaSynchroniser> mMediaSynchroniser;
 
 }; // class Moderator
 
