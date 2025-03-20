@@ -117,7 +117,6 @@ string Moderator::executeRequest(string jsonRqst)
     Json::CharReaderBuilder builder;
     const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
     string err;
-    string response;
     int rlen = static_cast<int>(jsonRqst.length());
 
     LOGI("json: " << jsonRqst);
@@ -150,38 +149,28 @@ string Moderator::executeRequest(string jsonRqst)
     if (component == "Manager")
     {
         LOGI("App Manager, method: " << method);
-
-        response = mAppManager->request(method, jsonval["token"], jsonval["params"]);
+        return mAppManager->request(method, jsonval["token"], jsonval["params"]);
     }
     else if (component == "Network")
     {
         LOGI("Network, method: " << method);
-
-        response = mNetwork->request(method, jsonval["token"], jsonval["params"]);
+        return mNetwork->request(method, jsonval["token"], jsonval["params"]);
     }
     else if (component == "MediaSynchroniser")
     {
         LOGI("MediaSynchroniser, method: " << method);
-
-        response = mMediaSynchroniser->request(method, jsonval["token"], jsonval["params"]);
+        return mMediaSynchroniser->request(method, jsonval["token"], jsonval["params"]);
     }
-    else if (mDvbClient == nullptr)
+
+    LOGI("Passing request to TIS component: [" << component << "], method: [" << method << "]");
+    // Call the DVB Integration callback
+    if (mDvbClient == nullptr)
     {
         LOGE("No DVB Client");
-        response = "{\"error\": \"No Dvb Client\"}";
-    }
-    else
-    {
-        // FREE-86 What is the "component" value that allows this branch?
-        LOGI("Passing to TIS component:  " << component << ", method: " << method);
-
-        // Call the DVB Integration callback
-        response = mDvbClient->request(jsonRqst);
+        return "{\"error\": \"No Dvb Client\"}";
     }
 
-    LOGI("Response: " << response);
-
-    return response;
+    return mDvbClient->request(jsonRqst);
 }
 
 void Moderator::notifyApplicationPageChanged(string url)
