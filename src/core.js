@@ -16,6 +16,7 @@
 
 hbbtv.core = (function() {
     function initialise() {
+        hbbtv.mediaManager.initialise();
         hbbtv.native.initialise();
         hbbtv.bridge.initialise();
         hbbtv.objectManager.initialise();

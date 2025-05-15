@@ -51,6 +51,38 @@ hbbtv.objects.NativeProxy = (function() {
         return Promise.resolve();
     };
 
+    prototype.orb_invalidate = function() {
+        const p = privates.get(this);
+        if (p) {
+            this.textTracks.removeEventListener('change', p.onTextTrackChange);
+            p.audioTracks.removeEventListener('change', p.onAudioTrackChange);
+            p.videoTracks.removeEventListener('change', p.onVideoTrackChange);
+            this.removeEventListener('loadedmetadata', p.onLoadedMetadata, true);
+            this.removeEventListener('error', p.onError, true);
+
+            if (p.subs.parentNode) {
+                p.subs.parentNode.removeChild(p.subs);
+            }
+            if (p.textTracks) {
+                p.textTracks.deleteAllTextTracks();
+            }
+            console.log('NativeProxy: Cleaning up...');
+            privates.delete(this);
+        }
+    };
+
+    Object.defineProperty(prototype, 'audioTracks', {
+        get() {
+            return privates.get(this).audioTracks;
+        },
+    });
+
+    Object.defineProperty(prototype, 'videoTracks', {
+        get() {
+            return privates.get(this).videoTracks;
+        },
+    });
+
     function onLoadedMetadata(e) {
         if (e.orb_handled) {
             return;
@@ -114,13 +146,6 @@ hbbtv.objects.NativeProxy = (function() {
                             textTracks.addTextTrack(textTrackInfo);
                             resolve();
                         };
-                        if (!src.startsWith('http')) {
-                            src =
-                                document.baseURI.substring(
-                                    document.baseURI.indexOf('base=') + 5,
-                                    document.baseURI.lastIndexOf('/') + 1
-                                ) + src;
-                        }
                         xhr.open('GET', src);
                         xhr.send();
                     })
@@ -263,6 +288,17 @@ hbbtv.objects.NativeProxy = (function() {
                 break;
             }
         }
+        if (index !== -1) {
+            if (this.parentNode && !p.subs.parentNode) {
+                if (this.nextSibling) {
+                    this.parentNode.insertBefore(p.subs, this.nextSibling);
+                } else {
+                    this.parentNode.appendChild(p.subs);
+                }
+            }
+        } else if (p.subs.parentNode) {
+            p.subs.parentNode.removeChild(p.subs);
+        }
         if (p.textTracks) {
             p.textTracks.setCurrentTrackIdx(index);
         }
@@ -291,27 +327,36 @@ hbbtv.objects.NativeProxy = (function() {
     }
 
     function initialise(src) {
-        Element.prototype.setAttribute.call(this, 'src', src);
-        Object.setPrototypeOf(this, prototype);
-        privates.set(this, {});
-        const p = privates.get(this);
-        p.onTextTrackChange = onTextTrackChange.bind(this);
-        p.onAudioTrackChange = onAudioTrackChange.bind(this);
-        p.onVideoTrackChange = onVideoTrackChange.bind(this);
-        p.onLoadedMetadata = onLoadedMetadata.bind(this);
-        p.onError = onError.bind(this);
-        p.videoModel = orb_dashjs.VideoModel(window).getInstance();
-        p.videoModel.setElement(this);
-        p.videoModel.setTTMLRenderingDiv(document.getElementById('orb_subsPH'));
-        p.ttmlParser = orb_dashjs.TTMLParser(window).getInstance();
+        if (!privates.get(this)) {
+            this.orb_invalidate?.();
+            Element.prototype.setAttribute.call(this, 'src', src);
+            Object.setPrototypeOf(this, prototype);
+            privates.set(this, {});
+            const p = privates.get(this);
+            const subtitlesRenderDiv = document.createElement('div');
+            p.subs = subtitlesRenderDiv;
+            p.audioTracks = hbbtv.objects.createAudioTrackList();
+            p.videoTracks = hbbtv.objects.createVideoTrackList();
+            p.onTextTrackChange = onTextTrackChange.bind(this);
+            p.onAudioTrackChange = onAudioTrackChange.bind(this);
+            p.onVideoTrackChange = onVideoTrackChange.bind(this);
+            p.onLoadedMetadata = onLoadedMetadata.bind(this);
+            p.onError = onError.bind(this);
+            p.videoModel = orb_dashjs.VideoModel(window).getInstance();
+            p.videoModel.setElement(this);
+            p.videoModel.setTTMLRenderingDiv(subtitlesRenderDiv);
+            p.ttmlParser = orb_dashjs.TTMLParser(window).getInstance();
 
-        this.textTracks.addEventListener('change', p.onTextTrackChange);
-        this.audioTracks.addEventListener('change', p.onAudioTrackChange);
-        this.videoTracks.addEventListener('change', p.onVideoTrackChange);
-        this.addEventListener('loadedmetadata', p.onLoadedMetadata, true);
-        this.addEventListener('error', p.onError, true);
+            this.textTracks.addEventListener('change', p.onTextTrackChange);
+            this.audioTracks.addEventListener('change', p.onAudioTrackChange);
+            this.videoTracks.addEventListener('change', p.onVideoTrackChange);
+            this.addEventListener('loadedmetadata', p.onLoadedMetadata, true);
+            this.addEventListener('error', p.onError, true);
 
-        console.log('NativeProxy: Initialised NativeProxy.');
+            console.log('NativeProxy: Initialised NativeProxy.');
+        } else {
+            console.log('NativeProxy: Already initialised. Skipping...');
+        }
     }
 
     return {

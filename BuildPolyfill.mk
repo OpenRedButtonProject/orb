@@ -98,6 +98,5 @@ cat $(addprefix $(1)/,$(polyfill_dash_srcs)) > $(2)/dash.all.min.js; \
 cat $(addprefix $(1)/,$(polyfill_hbbtv_srcs)) > $(2)/hbbtv.js; \
 if [ $(4) -eq 1 ]; then cat $(addprefix $(1)/,$(polyfill_proprietary_bbc_srcs)) >> $(2)/hbbtv.js; fi; \
 cat $(addprefix $(1)/,src/run.js) >> $(2)/hbbtv.js; \
-cat $(addprefix $(1)/,src/housekeeping/endiffe.js) >> $(2)/hbbtv.js; \
-cp $(addprefix $(1)/,external/playerpage.html) $(2)/playerpage.html;)
+cat $(addprefix $(1)/,src/housekeeping/endiffe.js) >> $(2)/hbbtv.js;)
 endef

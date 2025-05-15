@@ -209,6 +209,18 @@ hbbtv.objects.DashProxy = (function() {
         },
     });
 
+    Object.defineProperty(prototype, 'audioTracks', {
+        get() {
+            return privates.get(this).audioTracks;
+        },
+    });
+
+    Object.defineProperty(prototype, 'videoTracks', {
+        get() {
+            return privates.get(this).videoTracks;
+        },
+    });
+
     // we override load() for the DASH playback as we receive an internal
     // error when playing and calling the original load
     prototype.load = function() {
@@ -266,12 +278,39 @@ hbbtv.objects.DashProxy = (function() {
         return Promise.resolve(ciAncData ? ciAncData.toString() : undefined);
     };
 
+    prototype.orb_invalidate = function() {
+        const p = privates.get(this);
+        if (p) {
+            console.log('DashProxy: Cleaning up...');
+            this.removeEventListener('loadedmetadata', p.onLoadedMetaData, true);
+            this.textTracks.removeEventListener('change', p.onTextTrackChange);
+            p.audioTracks.removeEventListener('change', p.onAudioTrackChange);
+            p.videoTracks.removeEventListener('change', p.onVideoTrackChange);
+            p.player.off('error', p.onError);
+            p.player.off('manifestLoaded', p.onManifestLoaded);
+            p.player.off('periodSwitchCompleted', p.onPeriodChanged);
+            p.player.off('streamUpdated', p.onPeriodChanged);
+
+            for (const scheme of PARENTAL_CONTROL_EVENT_SCHEMES) {
+                p.player.off(scheme, p.onParentalRatingChange);
+            }
+            if (p.subs.parentNode) {
+                p.subs.parentNode.removeChild(p.subs);
+            }
+            p.player.destroy();
+            privates.delete(this);
+        } else {
+            console.log('DashProxy: Unable to invalidate. Skipping...');
+        }
+    };
+    
+
     function onLoadedMetaData() {
         const p = privates.get(this);
         if (p) {
             console.log('DashProxy: Loaded data.');
-            this.videoTracks.orb_setTrackList(getVideoTracks.call(this));
-            this.audioTracks.orb_setTrackList(getAudioTracks.call(this));
+            p.audioTracks.orb_setTrackList(getAudioTracks.call(this));
+            p.videoTracks.orb_setTrackList(getVideoTracks.call(this));
             p.onTextTrackChange();
         } else {
             console.warn('DashProxy: Not initialised.');
@@ -287,6 +326,17 @@ hbbtv.objects.DashProxy = (function() {
                     index = i;
                     break;
                 }
+            }
+            if (index !== -1) {
+                if (this.parentNode && !p.subs.parentNode) {
+                    if (this.nextSibling) {
+                        this.parentNode.insertBefore(p.subs, this.nextSibling);
+                    } else {
+                        this.parentNode.appendChild(p.subs);
+                    }
+                }
+            } else if (p.subs.parentNode) {
+                p.subs.parentNode.removeChild(p.subs);
             }
             p.player.setTextTrack(index);
         }
@@ -441,6 +491,7 @@ hbbtv.objects.DashProxy = (function() {
                 };
                 tracks.push(info);
             });
+            console.log("video tracks:", tracks);
             return tracks;
         }
         return [];
@@ -636,93 +687,108 @@ hbbtv.objects.DashProxy = (function() {
     }
 
     function initialise(src) {
-        Object.setPrototypeOf(this, prototype);
-        if (src) {
-            privates.set(this, {});
-            const p = privates.get(this);
-            p.error = null;
-            p.onLoadedMetaData = onLoadedMetaData.bind(this);
-            p.onManifestLoaded = onManifestLoaded.bind(this);
-            p.onTextTrackChange = onTextTrackChange.bind(this);
-            p.onAudioTrackChange = onAudioTrackChange.bind(this);
-            p.onVideoTrackChange = onVideoTrackChange.bind(this);
-            p.onPeriodChanged = makeStreamInfoCallback(this, '__orb_onperiodchanged__');
-            p.onStreamUpdated = makeStreamInfoCallback(this, '__orb_onstreamupdated__');
-            this.audioTracks.addEventListener('change', p.onAudioTrackChange);
-            this.videoTracks.addEventListener('change', p.onVideoTrackChange);
+        if (!privates.get(this)) {
+            this.orb_invalidate?.();
+            Object.setPrototypeOf(this, prototype);
+            if (src) {
+                privates.set(this, {});
+                const p = privates.get(this);
+                p.error = null;
+                p.audioTracks = hbbtv.objects.createAudioTrackList();
+                p.videoTracks = hbbtv.objects.createVideoTrackList();
+                p.onLoadedMetaData = onLoadedMetaData.bind(this);
+                p.onManifestLoaded = onManifestLoaded.bind(this);
+                p.onTextTrackChange = onTextTrackChange.bind(this);
+                p.onAudioTrackChange = onAudioTrackChange.bind(this);
+                p.onVideoTrackChange = onVideoTrackChange.bind(this);
+                p.onPeriodChanged = makeStreamInfoCallback(this, '__orb_onperiodchanged__');
+                p.onStreamUpdated = makeStreamInfoCallback(this, '__orb_onstreamupdated__');
+                p.audioTracks.addEventListener('change', p.onAudioTrackChange);
+                p.videoTracks.addEventListener('change', p.onVideoTrackChange);
 
-            p.onError = onError.bind(this);
-            p.onParentalRatingChange = onParentalRatingChange.bind(this);
-            this.addEventListener('loadedmetadata', p.onLoadedMetaData, true);
-            p.player = orb_dashjs.MediaPlayer().create();
-            p.player.registerCustomCapabilitiesFilter(filterCapabilities.bind(this));
-            p.player.updateSettings({
-                debug: {
-                    //LOG_LEVEL_NONE     0
-                    //LOG_LEVEL_FATAL    1
-                    //LOG_LEVEL_ERROR    2
-                    //LOG_LEVEL_WARNING  3
-                    //LOG_LEVEL_INFO     4
-                    //LOG_LEVEL_DEBUG    5
-                    logLevel: 3,
-                    dispatchEvent: false,
-                },
-                streaming: {
-                    fragmentRequestTimeout: 20000,
-                    trackSwitchMode: {
-                        audio: 'alwaysReplace',
-                        video: 'neverReplace',
-                    },
-                    capabilities: {
-                        filterUnsupportedEssentialProperties: true,
-                    },
-                    retryAttempts: {
-                        MPD: 0,
-                        MediaSegment: 0,
-                        InitializationSegment: 0,
-                        BitstreamSwitchingSegment: 0,
-                        IndexSegment: 0,
-                        FragmentInfoSegment: 0,
-                    },
-                    buffer: {
-                        enableSeekDecorrelationFix: true,
-                        fastSwitchEnabled: true,
-                        flushBufferAtTrackSwitch: true,
+                p.onError = onError.bind(this);
+                p.onParentalRatingChange = onParentalRatingChange.bind(this);
+                this.addEventListener('loadedmetadata', p.onLoadedMetaData, true);
+                p.player = orb_dashjs.MediaPlayer().create();
+                p.player.registerCustomCapabilitiesFilter(filterCapabilities.bind(this));
+                p.player.updateSettings({
+                    debug: {
+                        //LOG_LEVEL_NONE     0
+                        //LOG_LEVEL_FATAL    1
+                        //LOG_LEVEL_ERROR    2
+                        //LOG_LEVEL_WARNING  3
+                        //LOG_LEVEL_INFO     4
+                        //LOG_LEVEL_DEBUG    5
+                        logLevel: 3,
+                        dispatchEvent: false,
                     },
                     utcSynchronization: {
                         enableBackgroundSyncAfterSegmentDownloadError: true,
                         backgroundAttempts: 1,
                         timeBetweenSyncAttempts: 5,
                     },
-                },
-                errors: {
-                    recoverAttempts: {
-                        mediaErrorDecode: 1,
+                    streaming: {
+                        fragmentRequestTimeout: 20000,
+                        trackSwitchMode: {
+                            audio: 'alwaysReplace',
+                            video: 'neverReplace',
+                        },
+                        capabilities: {
+                            filterUnsupportedEssentialProperties: true,
+                        },
+                        retryAttempts: {
+                            MPD: 0,
+                            MediaSegment: 0,
+                            InitializationSegment: 0,
+                            BitstreamSwitchingSegment: 0,
+                            IndexSegment: 0,
+                            FragmentInfoSegment: 0,
+                        },
+                        buffer: {
+                            enableSeekDecorrelationFix: true,
+                            fastSwitchEnabled: true,
+                            flushBufferAtTrackSwitch: true,
+                        },
+                        utcSynchronization: {
+                            enableBackgroundSyncAfterSegmentDownloadError: true,
+                            backgroundAttempts: 1,
+                            timeBetweenSyncAttempts: 5,
+                        },
                     },
-                },
-            });
-            hbbtv.native.setDashProxy(this);
-            p.player.initialize(this, src, false);
-            p.player.on('error', p.onError);
-            p.player.on('manifestLoaded', p.onManifestLoaded);
-            p.player.on('periodSwitchCompleted', p.onPeriodChanged);
-            p.player.on('streamUpdated', p.onStreamUpdated);
-            p.player.on('representationSwitch', (e) => {
-                hbbtv.native.dispatchRepresentationNativeEvents?.(e.currentRepresentation);
-            });
+                    errors: {
+                        recoverAttempts: {
+                            mediaErrorDecode: 1,
+                        },
+                    },
+                });
+                hbbtv.native.setDashProxy(this);
+                p.player.initialize(this, src, false);
+                p.player.on('error', p.onError);
+                p.player.on('manifestLoaded', p.onManifestLoaded);
+                p.player.on('periodSwitchCompleted', p.onPeriodChanged);
+                p.player.on('streamUpdated', p.onStreamUpdated);
+                p.player.on('representationSwitch', (e) => {
+                    hbbtv.native.dispatchRepresentationNativeEvents?.(e.currentRepresentation);
+                });
 
-            for (const scheme of PARENTAL_CONTROL_EVENT_SCHEMES) {
-                p.player.on(scheme, p.onParentalRatingChange);
+                for (const scheme of PARENTAL_CONTROL_EVENT_SCHEMES) {
+                    p.player.on(scheme, p.onParentalRatingChange);
+                }
+                const subtitlesRenderDiv = document.createElement('div');
+                p.subs = subtitlesRenderDiv;
+                p.player.attachTTMLRenderingDiv(subtitlesRenderDiv);
+                
+                this.textTracks.addEventListener('change', p.onTextTrackChange);
+
+                console.log('DashProxy: Initialised DashProxy.');
+            } else {
+                // if the src attribute is unset, fallback to the native proxy.
+                // that way we let the browser handle any <source> children
+                this.__objectType = 'native';
+                hbbtv.objects.NativeProxy.initialise.call(this, src);
             }
-            p.player.attachTTMLRenderingDiv(document.getElementById('orb_subsPH'));
-            this.textTracks.addEventListener('change', p.onTextTrackChange);
-
-            console.log('DashProxy: Initialised DashProxy.');
         } else {
-            // if the src attribute is unset, fallback to the native proxy.
-            // that way we let the browser handle any <source> children
-            this.__objectType = 'native';
-            hbbtv.objects.NativeProxy.initialise.call(this, src);
+            console.log('DashProxy: Already initialised. Skipping...');
         }
     }
 

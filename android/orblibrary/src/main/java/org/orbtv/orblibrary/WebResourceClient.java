@@ -49,7 +49,6 @@ abstract class WebResourceClient {
             "application/xml",
             "application/vnd.hbbtv.xhtml+xml"
     );
-    private static final String ORB_PLAYER_URI = "orb://player";
 
     private final DsmccClient mDsmccClient;
     private final HtmlBuilder mHtmlBuilder;
@@ -83,9 +82,7 @@ abstract class WebResourceClient {
         Uri url = request.getUrl();
         String scheme = url.getScheme();
         if (request.getMethod().equalsIgnoreCase("GET")) {
-            if (url.toString().startsWith(ORB_PLAYER_URI)) {
-                return createPlayerPageResponse(request, appId);
-            } else if (scheme.equals("http") || scheme.equals("https")) {
+            if (scheme.equals("http") || scheme.equals("https")) {
                 return shouldInterceptHttpRequest(request, appId);
             } else if (scheme.equals("dvb")) {
                 return shouldInterceptDsmccRequest(request, appId);
@@ -315,35 +312,6 @@ abstract class WebResourceClient {
                 }
             }
         };
-    }
-
-    WebResourceResponse createPlayerPageResponse(WebResourceRequest request, int appId) {
-        Charset charset = StandardCharsets.UTF_8;
-        ByteArrayInputStream data = new ByteArrayInputStream(mHtmlBuilder.getPlayerPage(charset));
-        Vector<InputStream> payload = new Vector<>();
-        int payloadLength = 0;
-
-        byte[] tokenInjection = mHtmlBuilder.getTokenInjection(charset, request.getUrl(), appId);
-        payload.add(new ByteArrayInputStream(tokenInjection));
-        payloadLength += tokenInjection.length;
-
-        byte[] hbbtvInjection = mHtmlBuilder.getMediaManagerInjection(charset);
-        payload.add(new ByteArrayInputStream(hbbtvInjection));
-        payloadLength += hbbtvInjection.length;
-
-        InputStream inputStream = new InjectionInputStream(data, charset, payload, payloadLength) {
-            @Override
-            void onClose() {
-                try {
-                    data.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-        WebResourceResponse response = new WebResourceResponse("text/html",
-                charset.toString(), inputStream);
-        return response;
     }
 
     private static String updateCspHeader(String header) {
