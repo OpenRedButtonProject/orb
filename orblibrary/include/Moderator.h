@@ -42,20 +42,20 @@ public:
     // Set DVB integration callback object
     void setDvbClient(IDvbClient *dvb_client);
 
-    /** Execute the given request from browser.
+    /** Handle ORB request from Javascript.
      * The request is a string representation of a JSON object with the following form:
      * {
-     *    "token": <app_id>
      *    "method": <method>
+     *    "token": <app_id>
      *    "params": <params>
      * }
      *
      * The response is also a string representation of a JSON object containing the results, if any.
      *
-     * @param jsonRequest String representation of the JSON request
+     * @param request String representation of the JSON request
      * @return A string representation of the JSON response
      */
-    std::string executeRequest(std::string jsonRequest);
+    std::string handleOrbRequest(std::string request);
 
     // Notify that URL has been loaded for an application
     void notifyApplicationPageChanged(std::string url);

@@ -35,7 +35,7 @@ public:
      *
      * @return JSON encoded response string
      */
-    std::string request(std::string method, Json::Value token, Json::Value params) override;
+    std::string executeRequest(std::string method, Json::Value token, Json::Value params) override;
 
 }; // class MediaSynchroniser
 

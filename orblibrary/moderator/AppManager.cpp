@@ -28,7 +28,7 @@ using namespace std;
 
 namespace orb
 {
-string AppManager::request(string method, Json::Value token, Json::Value params)
+string AppManager::executeRequest(string method, Json::Value token, Json::Value params)
 {
     // TODO Set up proper responses
     string response = R"({"Response": "AppManager request [)" + method + R"(] not implemented"})";

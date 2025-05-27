@@ -111,7 +111,7 @@ void Moderator::setDvbClient(IDvbClient* dvb_client)
     mDvbClient = dvb_client;
 }
 
-string Moderator::executeRequest(string jsonRqst)
+string Moderator::handleOrbRequest(string jsonRqst)
 {
     Json::Value jsonval;
     Json::CharReaderBuilder builder;
@@ -149,17 +149,17 @@ string Moderator::executeRequest(string jsonRqst)
     if (component == "Manager")
     {
         LOGI("App Manager, method: " << method);
-        return mAppManager->request(method, jsonval["token"], jsonval["params"]);
+        return mAppManager->executeRequest(method, jsonval["token"], jsonval["params"]);
     }
     else if (component == "Network")
     {
         LOGI("Network, method: " << method);
-        return mNetwork->request(method, jsonval["token"], jsonval["params"]);
+        return mNetwork->executeRequest(method, jsonval["token"], jsonval["params"]);
     }
     else if (component == "MediaSynchroniser")
     {
         LOGI("MediaSynchroniser, method: " << method);
-        return mMediaSynchroniser->request(method, jsonval["token"], jsonval["params"]);
+        return mMediaSynchroniser->executeRequest(method, jsonval["token"], jsonval["params"]);
     }
 
     LOGI("Passing request to TIS component: [" << component << "], method: [" << method << "]");
