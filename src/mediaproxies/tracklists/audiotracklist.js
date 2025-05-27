@@ -159,7 +159,6 @@ hbbtv.objects.AudioTrackList = (function() {
     listProto.orb_removeTrackAt = function(index) {
         const p = privates.get(this);
         if (index >= 0 && index < p.length) {
-            // TODO: update all tracks indexes and keys with the iframe proxy
             for (let i = index + 1; i < p.length; i++) {
                 this[i - 1] = this[i];
             }
