@@ -6,8 +6,6 @@
 # Define the actual library target
 static_library("orb") {
   sources = [
-    "moderator/OrbInterface.cpp",
-    "moderator/DvbBroker.cpp",
     "moderator/Moderator.cpp",
     "moderator/AppManager.cpp",
     "moderator/Network.cpp",

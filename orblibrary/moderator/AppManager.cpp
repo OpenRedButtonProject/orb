@@ -28,7 +28,14 @@ using namespace std;
 
 namespace orb
 {
-string AppManager::executeRequest(string method, Json::Value token, Json::Value params)
+
+AppManager& AppManager::instance()
+{
+    static AppManager s_interface;
+    return s_interface;
+}
+
+string AppManager::executeRequest(string method, Json::Value token, Json::Value params, ApplicationType apptype)
 {
     // TODO Set up proper responses
     string response = R"({"Response": "AppManager request [)" + method + R"(] not implemented"})";
@@ -36,7 +43,7 @@ string AppManager::executeRequest(string method, Json::Value token, Json::Value 
     LOGI("Request with method [" + method + "] received");
     if (method == "createApplication")
     {
-        LOGI("");
+        LOGI("app type: ") << apptype;
     }
     else if (method == "destroyApplication")
     {

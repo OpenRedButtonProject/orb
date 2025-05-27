@@ -85,30 +85,17 @@ static bool ResolveMethod(string input, string& component, string& method)
     return true;
 }
 
-Moderator::Moderator()
-    : mBrowser(nullptr)
-    , mDvbClient(nullptr)
-    , mAppManager(std::make_unique<AppManager>())
+Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
+    : mOrbBrowser(browser)
+    , mAppType(apptype)
     , mNetwork(std::make_unique<Network>())
     , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
 {
+    LOGI("HbbTV version " << ORB_HBBTV_VERSION);
 }
 
 Moderator::~Moderator()
 {
-}
-
-// Set Orb Browser callback object
-void Moderator::setBrowserCallback(IBrowser* browser)
-{
-    mBrowser = browser;
-    LOGI("HbbTV version " << ORB_HBBTV_VERSION);
-}
-
-// Set DVB Client callback object
-void Moderator::setDvbClient(IDvbClient* dvb_client)
-{
-    mDvbClient = dvb_client;
 }
 
 string Moderator::handleOrbRequest(string jsonRqst)
@@ -149,7 +136,7 @@ string Moderator::handleOrbRequest(string jsonRqst)
     if (component == "Manager")
     {
         LOGI("App Manager, method: " << method);
-        return mAppManager->executeRequest(method, jsonval["token"], jsonval["params"]);
+        return AppManager::instance().executeRequest(method, jsonval["token"], jsonval["params"], mAppType);
     }
     else if (component == "Network")
     {
@@ -163,14 +150,8 @@ string Moderator::handleOrbRequest(string jsonRqst)
     }
 
     LOGI("Passing request to TIS component: [" << component << "], method: [" << method << "]");
-    // Call the DVB Integration callback
-    if (mDvbClient == nullptr)
-    {
-        LOGE("No DVB Client");
-        return "{\"error\": \"No Dvb Client\"}";
-    }
 
-    return mDvbClient->request(jsonRqst);
+    return mOrbBrowser->sendRequestToClient(jsonRqst);
 }
 
 void Moderator::notifyApplicationPageChanged(string url)
@@ -183,16 +164,15 @@ void Moderator::notifyApplicationLoadFailed(string url, string errorText)
     LOGI("url: " << url << " err: " << errorText);
 }
 
-void Moderator::getDvbContent(string url)
+void Moderator::processAitSection(int32_t aitPid, int32_t serviceId, const vector<uint8_t>& data)
 {
-    LOGI("url: " << url);
+    LOGI("pid: " << aitPid << "serviceId: " << serviceId);
 }
 
-string Moderator::getUserAgentString()
+void Moderator::processXmlAit(const vector<uint8_t>& data)
 {
-    std::string user_agent = "todo";
     LOGI("");
-    return user_agent;
 }
+
 
 } // namespace orb

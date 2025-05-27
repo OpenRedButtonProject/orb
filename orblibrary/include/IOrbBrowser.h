@@ -22,11 +22,11 @@
 namespace orb
 {
 
-class IBrowser
+class IOrbBrowser
 {
 public:
-    // Enum used with dispatchKeyEvent
-    enum { ACTION_DOWN, ACTION_UP };
+    IOrbBrowser() {}
+    virtual ~IOrbBrowser() {}
 
     // Load new application at URL with new app_id for a reference to this application
     virtual void loadApplication(std::string app_id, std::string url) = 0;
@@ -37,14 +37,23 @@ public:
     // Hide application
     virtual void hideApplication() = 0;
 
-    // Dispatch event
-    virtual void dispatchEvent(std::string type, std::string properties) = 0;
-
-    // Dispatch key event
-    virtual bool dispatchKeyEvent(int32_t action, int32_t key_code) = 0;
-
-    // Provide DSM-CC content
-    virtual void provideDsmccContent(std::string url, const std::vector<uint8_t>& content) = 0;
+    /**
+     * Send Orb message request to external client (DVB stack)
+     * The request is a string representation of a JSON object with the following form:
+     *
+     * {
+     *    "method": <method>
+     *    "token": <app_id>
+     *    "params": <params>
+     * }
+     *
+     * The response is also a string representation of a JSON object containing the results, if any.
+     *
+     * @param jsonRequest String representation of the JSON request
+     *
+     * @return A string representation of the JSON response
+     */
+    virtual std::string sendRequestToClient(std::string jsonRequest) = 0;
 
 }; // class IOrbBrowser
 
