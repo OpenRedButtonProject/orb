@@ -52,10 +52,8 @@ if(NOT DEFINED JAVASCRIPT_PAYLOAD_PATH)
 endif()
 
 set(POLLYFILL_JS_FILES
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../../out/resources/assets/polyfill/iframe.js"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../out/resources/assets/polyfill/hbbtv.js"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../out/resources/assets/polyfill/dash.all.min.js"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../../out/resources/assets/polyfill/playerpage.html"
 )
 
 

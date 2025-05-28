@@ -1044,7 +1044,7 @@ hbbtv.objects.AVControl = (function() {
         priv.connected = false;
         priv.seekPos = undefined;
         priv.targetSpeed = priv.speed = 0;
-        priv.videoElement.orb_unload();
+        priv.videoElement.orb_unload?.();
     }
 
     function updateMutationObservers() {

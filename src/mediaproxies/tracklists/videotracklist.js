@@ -20,7 +20,6 @@ hbbtv.objects.VideoTrackList = (function() {
     const events = ['change', 'addtrack', 'removetrack'];
     const evtTargetMethods = ['addEventListener', 'removeEventListener', 'dispatchEvent'];
     const trackProps = ['index', 'id', 'kind', 'label', 'language', 'encoding', 'encrypted'];
-    const VIDEO_TRACK_KEY_PREFIX = 'VideoTrack_';
 
     Object.defineProperty(listProto, 'length', {
         get() {
@@ -88,7 +87,7 @@ hbbtv.objects.VideoTrackList = (function() {
             const p = privates.get(this);
             if (value !== p.properties.selected) {
                 if (value) {
-                    for (let track of p.trackList) {
+                    for (let track of this) {
                         if (track.selected && track !== this) {
                             track.selected = false;
                             break;
@@ -96,7 +95,7 @@ hbbtv.objects.VideoTrackList = (function() {
                     }
                 }
                 p.properties.selected = !!value;
-                p.trackList.dispatchEvent(new Event('change'));
+                this.dispatchEvent(new Event('change'));
             }
         },
     });
@@ -118,7 +117,6 @@ hbbtv.objects.VideoTrackList = (function() {
     listProto.orb_setTrackList = function(trackList) {
         const p = privates.get(this);
         for (let i = trackList.length; i < this.length; ++i) {
-            p.proxy.unregisterObserver(VIDEO_TRACK_KEY_PREFIX + i);
             delete this[i];
         }
         for (let i = 0; i < trackList.length; ++i) {
@@ -137,7 +135,6 @@ hbbtv.objects.VideoTrackList = (function() {
     listProto.orb_removeTrackAt = function(index) {
         const p = privates.get(this);
         if (index >= 0 && index < p.length) {
-            // TODO: update all tracks indexes and keys with the iframe proxy
             for (let i = index + 1; i < p.length; i++) {
                 this[i - 1] = this[i];
             }
@@ -148,73 +145,19 @@ hbbtv.objects.VideoTrackList = (function() {
 
     function makeVideoTrack(trackList, index, properties) {
         const track = Object.create(trackProto);
-        const proxy = privates.get(trackList).proxy;
-        proxy.registerObserver(VIDEO_TRACK_KEY_PREFIX + index, track);
         privates.set(track, {
             trackList,
             properties,
         });
-
-        // We create a new Proxy object which we return in order to avoid ping-pong calls
-        // between the iframe and the main window when the user requests a property update
-        // or a function call.
-        const trackProxy = new Proxy(track, {
-            get: (target, property) => {
-                return target[property];
-            },
-            set: (target, property, value) => {
-                if (property === 'selected') {
-                    proxy.updateObserverProperties(VIDEO_TRACK_KEY_PREFIX + index, {
-                        [property]: value,
-                    });
-                }
-                target[property] = value;
-                return true;
-            },
-        });
-        return trackProxy;
+        return track;
     }
 
     function initialise(proxy) {
-        const VIDEO_TRACK_LIST_KEY = 'VideoTrackList';
         privates.set(this, {
             length: 0,
-            eventTarget: document.createDocumentFragment(),
-            proxy,
+            eventTarget: document.createDocumentFragment()
         });
-        proxy.registerObserver(VIDEO_TRACK_LIST_KEY, this);
-
-        // We create a new Proxy object which we return in order to avoid ping-pong calls
-        // between the iframe and the main window when the user requests a property update
-        // or a function call.
-        const tracksProxy = new Proxy(this, {
-            get: (target, property) => {
-                if (typeof target[property] === 'function') {
-                    if (!evtTargetMethods.includes(property)) {
-                        return function() {
-                            proxy.callObserverMethod(
-                                VIDEO_TRACK_LIST_KEY,
-                                property,
-                                Array.from(arguments)
-                            );
-                            return target[property].apply(target, arguments);
-                        };
-                    }
-                    return target[property].bind(target);
-                }
-                return target[property];
-            },
-            set: (target, property, value) => {
-                if (typeof target[property] !== 'function') {
-                    proxy.updateObserverProperties(VIDEO_TRACK_LIST_KEY, {
-                        [property]: value,
-                    });
-                }
-                target[property] = value;
-                return true;
-            },
-        });
-        return tracksProxy;
+        return this;
     }
 
     return {

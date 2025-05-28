@@ -6,4 +6,6 @@ oe-logs
 oe-workdir
 .vscode
 /build
-/.idea/
+**/.idea/
+**/local.properties
+**/config.properties

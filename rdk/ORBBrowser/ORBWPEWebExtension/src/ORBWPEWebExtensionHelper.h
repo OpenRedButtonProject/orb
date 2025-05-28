@@ -77,13 +77,6 @@ public:
     void RegisterDVBURLSchemeHandler(WebKitWebContext *context);
 
     /**
-     * Register the ORB URL scheme handler.
-     *
-     * @param context Pointer to the WebKit web context
-     */
-    void RegisterORBURLSchemeHandler(WebKitWebContext *context);
-
-    /**
      * Set custom preferences for the ORB browser.
      *
      * @param preferences        Pointer to the browser's global settings

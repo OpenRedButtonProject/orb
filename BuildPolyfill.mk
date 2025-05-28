@@ -1,22 +1,4 @@
 define build-polyfill
-$(eval polyfill_iframe_srcs = \
-src/housekeeping/banner.js \
-src/housekeeping/beginiffe.js \
-src/languagecodes.js \
-src/mediaproxies/init.js \
-src/natives/$(3).js \
-src/mediaproxies/tracklists/audiotracklist.js \
-src/mediaproxies/tracklists/videotracklist.js \
-src/mediaproxies/tracklists/texttracklist.js \
-src/mediaproxies/tracklists/texttrack.js \
-src/mediaproxies/tracklists/texttrackcuelist.js \
-src/mediaproxies/iframeobjectproxy.js \
-src/mediaproxies/mediamanager.js \
-src/mediaproxies/mediaerror.js \
-src/mediaproxies/dashproxy.js \
-src/mediaproxies/nativeproxy.js\
-src/mediaproxies/run.js \
-src/housekeeping/endiffe.js)
 
 $(eval polyfill_dash_srcs = \
 external/dash.all.min.js)
@@ -40,9 +22,6 @@ src/polyfill/orbdebug.js \
 src/objects/collection.js \
 src/mediaproxies/tracklists/audiotracklist.js \
 src/mediaproxies/tracklists/videotracklist.js \
-src/mediaproxies/tracklists/texttracklist.js \
-src/mediaproxies/tracklists/texttrack.js \
-src/mediaproxies/tracklists/texttrackcuelist.js \
 src/objects/channel.js \
 src/objects/programme.js \
 src/objects/dashevent.js \
@@ -82,22 +61,17 @@ src/objects/oipfdrmagent.js \
 src/objects/oipfgatewayinfo.js \
 src/extensions/textinputextension.js \
 src/mediaproxies/mediaerror.js \
-src/mediaproxies/timeranges.js \
-src/mediaproxies/eme/mediakeysystemaccess.js \
-src/mediaproxies/eme/mediakeys.js \
-src/mediaproxies/eme/mediakeysession.js \
-src/mediaproxies/iframeobjectproxy.js \
-src/extensions/mediaelementextension.js)
+src/mediaproxies/mediamanager.js \
+src/mediaproxies/dashproxy.js \
+src/mediaproxies/nativeproxy.js)
 
 $(eval polyfill_proprietary_bbc_srcs = \
 src/proprietary/bbc/bbc.js)
 
 $(shell mkdir -p $(2); \
-cat $(addprefix $(1)/,$(polyfill_iframe_srcs)) > $(2)/iframe.js; \
 cat $(addprefix $(1)/,$(polyfill_dash_srcs)) > $(2)/dash.all.min.js; \
 cat $(addprefix $(1)/,$(polyfill_hbbtv_srcs)) > $(2)/hbbtv.js; \
 if [ $(4) -eq 1 ]; then cat $(addprefix $(1)/,$(polyfill_proprietary_bbc_srcs)) >> $(2)/hbbtv.js; fi; \
 cat $(addprefix $(1)/,src/run.js) >> $(2)/hbbtv.js; \
-cat $(addprefix $(1)/,src/housekeeping/endiffe.js) >> $(2)/hbbtv.js; \
-cp $(addprefix $(1)/,external/playerpage.html) $(2)/playerpage.html;)
+cat $(addprefix $(1)/,src/housekeeping/endiffe.js) >> $(2)/hbbtv.js;)
 endef
