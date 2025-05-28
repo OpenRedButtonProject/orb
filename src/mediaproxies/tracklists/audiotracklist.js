@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 hbbtv.objects.AudioTrackList = (function() {
-    const AUDIO_TRACK_KEY_PREFIX = 'AudioTrack_';
     const listProto = {};
     const trackProto = {};
     const privates = new WeakMap();
@@ -86,7 +85,7 @@ hbbtv.objects.AudioTrackList = (function() {
             const p = privates.get(this);
             if (value !== p.properties.enabled) {
                 if (value) {
-                    for (let track of p.trackList) {
+                    for (let track of this) {
                         if (track.enabled && track !== this) {
                             track.enabled = false;
                             break;
@@ -94,7 +93,7 @@ hbbtv.objects.AudioTrackList = (function() {
                     }
                 }
                 p.properties.enabled = !!value;
-                p.trackList.dispatchEvent(new Event('change'));
+                this.dispatchEvent(new Event('change'));
             }
         },
     });
@@ -118,7 +117,6 @@ hbbtv.objects.AudioTrackList = (function() {
         let preferredAudioLanguageTrack = null;
         let cleanAudioTrack = null;
         for (let i = trackList.length; i < this.length; ++i) {
-            p.proxy.unregisterObserver(AUDIO_TRACK_KEY_PREFIX + i);
             delete this[i];
         }
 
@@ -161,7 +159,6 @@ hbbtv.objects.AudioTrackList = (function() {
     listProto.orb_removeTrackAt = function(index) {
         const p = privates.get(this);
         if (index >= 0 && index < p.length) {
-            // TODO: update all tracks indexes and keys with the iframe proxy
             for (let i = index + 1; i < p.length; i++) {
                 this[i - 1] = this[i];
             }
@@ -172,77 +169,19 @@ hbbtv.objects.AudioTrackList = (function() {
 
     function makeAudioTrack(trackList, index, properties) {
         const track = Object.create(trackProto);
-        const proxy = privates.get(trackList).proxy;
-        proxy.registerObserver(AUDIO_TRACK_KEY_PREFIX + index, track);
         privates.set(track, {
             trackList,
             properties,
         });
-
-        // We create a new Proxy object which we return in order to avoid ping-pong calls
-        // between the iframe and the main window when the user requests a property update
-        // or a function call.
-        const trackProxy = new Proxy(track, {
-            get: (target, property) => {
-                return target[property];
-            },
-            set: (target, property, value) => {
-                if (property === 'enabled') {
-                    proxy.updateObserverProperties(AUDIO_TRACK_KEY_PREFIX + index, {
-                        [property]: value,
-                    });
-                }
-                target[property] = value;
-                return true;
-            },
-        });
-        return trackProxy;
+        return track;
     }
 
     function initialise(proxy) {
-        const AUDIO_TRACK_LIST_KEY = 'AudioTrackList';
-        const prefLang = hbbtv.bridge.configuration.getPreferredAudioLanguage();
-
         privates.set(this, {
             length: 0,
-            eventTarget: document.createDocumentFragment(),
-            defaultAudioLanguage: prefLang.includes(',') ? prefLang.split(',')[0] : prefLang,
-            cleanAudioEnabled: hbbtv.bridge.configuration.getCleanAudioEnabled(),
-            proxy,
+            eventTarget: document.createDocumentFragment()
         });
-        proxy.registerObserver(AUDIO_TRACK_LIST_KEY, this);
-
-        // We create a new Proxy object which we return in order to avoid ping-pong calls
-        // between the iframe and the main window when the user requests a property update
-        // or a function call.
-        const tracksProxy = new Proxy(this, {
-            get: (target, property) => {
-                if (typeof target[property] === 'function') {
-                    if (!evtTargetMethods.includes(property)) {
-                        return function() {
-                            proxy.callObserverMethod(
-                                AUDIO_TRACK_LIST_KEY,
-                                property,
-                                Array.from(arguments)
-                            );
-                            return target[property].apply(target, arguments);
-                        };
-                    }
-                    return target[property].bind(target);
-                }
-                return target[property];
-            },
-            set: (target, property, value) => {
-                if (typeof target[property] !== 'function') {
-                    proxy.updateObserverProperties(AUDIO_TRACK_LIST_KEY, {
-                        [property]: value,
-                    });
-                }
-                target[property] = value;
-                return true;
-            },
-        });
-        return tracksProxy;
+        return this;
     }
 
     return {

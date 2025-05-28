@@ -12,39 +12,6 @@ target_platform = "android"
 bbc_api_enable = false
 
 ## To Do - how is this used in the code?
-action("build_polyfill_iframe") {
-  sources = [
-    "src/housekeeping/banner.js",
-    "src/housekeeping/beginiffe.js",
-    "src/languagecodes.js",
-    "src/mediaproxies/init.js",
-    "src/natives/$target_platform.js",
-    "src/mediaproxies/tracklists/audiotracklist.js",
-    "src/mediaproxies/tracklists/videotracklist.js",
-    "src/mediaproxies/tracklists/texttracklist.js",
-    "src/mediaproxies/tracklists/texttrack.js",
-    "src/mediaproxies/tracklists/texttrackcuelist.js",
-    "src/mediaproxies/iframeobjectproxy.js",
-    "src/mediaproxies/mediamanager.js",
-    "src/mediaproxies/mediaerror.js",
-    "src/mediaproxies/dashproxy.js",
-    "src/mediaproxies/nativeproxy.js",
-    "src/mediaproxies/run.js",
-    "src/housekeeping/endiffe.js"
-  ]
-
-  outputs = [ "$target_gen_dir/iframe.js" ]
-
-  script = "scripts/concat.py"
-
-  args = [ "--output", rebase_path(outputs[0], root_build_dir) ]
-
-  foreach(source, sources) {
-    args += [ rebase_path(source, root_build_dir) ]
-  }
-}
-
-## To Do - how is this used in the code?
 action("build_polyfill_dash") {
   sources = [
     "external/dash.all.min.js"
@@ -63,6 +30,7 @@ action("build_polyfill_dash") {
 
 action("build_polyfill_hbbtv") {
   sources = [
+    "external/dash.all.min.js",
     "src/housekeeping/banner.js",
     "src/housekeeping/beginiffe.js",
     "src/languagecodes.js",
@@ -81,9 +49,6 @@ action("build_polyfill_hbbtv") {
     "src/objects/collection.js",
     "src/mediaproxies/tracklists/audiotracklist.js",
     "src/mediaproxies/tracklists/videotracklist.js",
-    "src/mediaproxies/tracklists/texttracklist.js",
-    "src/mediaproxies/tracklists/texttrack.js",
-    "src/mediaproxies/tracklists/texttrackcuelist.js",
     "src/objects/channel.js",
     "src/objects/programme.js",
     "src/objects/dashevent.js",
@@ -123,12 +88,9 @@ action("build_polyfill_hbbtv") {
     "src/objects/oipfgatewayinfo.js",
     "src/extensions/textinputextension.js",
     "src/mediaproxies/mediaerror.js",
-    "src/mediaproxies/timeranges.js",
-    "src/mediaproxies/eme/mediakeysystemaccess.js",
-    "src/mediaproxies/eme/mediakeys.js",
-    "src/mediaproxies/eme/mediakeysession.js",
-    "src/mediaproxies/iframeobjectproxy.js",
-    "src/extensions/mediaelementextension.js",
+    "src/mediaproxies/mediamanager.js",
+    "src/mediaproxies/dashproxy.js",
+    "src/mediaproxies/nativeproxy.js",
     "src/proprietary/bbc/bbc.js", # Proprietary
     "src/run.js",
     "src/housekeeping/endiffe.js"
@@ -145,12 +107,6 @@ action("build_polyfill_hbbtv") {
       args += [ rebase_path(source, root_build_dir) ]
     }
   }
-}
-
-copy("build_polyfill_copy_playerpage")
-{
-  sources = [ "external/playerpage.html" ]
-  outputs = [ "$target_gen_dir/playerpage.html" ]
 }
 
 hbbtv_js_obj = "$target_out_dir/hbbtv_js.o"
