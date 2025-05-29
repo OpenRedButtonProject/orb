@@ -31,6 +31,8 @@
 #define MANAGER_SET_KEY_VALUE "setKeyValue"
 #define MANAGER_GET_KEY_MAXIMUM_VALUE "getKeyMaximumValue"
 #define MANAGER_GET_KEY_VALUES "getKeyValues"
+#define MANAGER_GET_OTHER_KEY_VALUES "getOtherKeyValues"
+#define MANAGER_GET_KEY_MAXIMUM_OTHER_KEYS "getKeyMaximumOtherKeys"
 #define MANAGER_GET_APPLICATION_SCHEME "getApplicationScheme"
 
 #define KEY_SET_RED 0x1
@@ -129,11 +131,17 @@ bool ManagerRequestHandler::Handle(
     // Manager.setKeyValue
     else if (method == MANAGER_SET_KEY_VALUE)
     {
+        json array = params["otherKeys"];
+        std::vector<uint16_t> otherKeys;
+        for (int i = 0; i < array.size(); i++)
+        {
+            otherKeys.push_back(array[i]);
+        }
         int value = params["value"];
         int callingAppId = GetAppIdFromToken(token);
         ORBEngine::GetSharedInstance().GetORBPlatform()->Platform_SetCurrentKeySetMask(value);
         response["result"] = ORBEngine::GetSharedInstance().GetApplicationManager()->SetKeySetMask(
-            callingAppId, value);
+            callingAppId, value, otherKeys);
     }
     // Manager.getKeyMaximumValue
     else if (method == MANAGER_GET_KEY_MAXIMUM_VALUE)
@@ -160,6 +168,25 @@ bool ManagerRequestHandler::Handle(
     {
         int callingAppId = GetAppIdFromToken(token);
         response["result"] = ORBEngine::GetSharedInstance().GetApplicationManager()->GetApplicationScheme(callingAppId);
+    }
+    // Manager.getOtherKeyValues
+    else if (method == MANAGER_GET_OTHER_KEY_VALUES)
+    {
+        int callingAppId = GetAppIdFromToken(token);
+        std::vector<uint16_t> otherKeyValues = ORBEngine::GetSharedInstance().GetApplicationManager()->GetOtherKeyValues(callingAppId);
+        json array;
+        for (auto otherKeyValue : otherKeyValues)
+        {
+            array.push_back(otherKeyValue);
+        }
+        response.emplace("result", array);
+    }
+    // Manager.getKeyMaximumOtherKeys
+    else if (method == MANAGER_GET_KEY_MAXIMUM_OTHER_KEYS)
+    {
+        int result = 0;
+        result |= 0x416; // VK_RECORD
+        response["result"] = result;
     }
     // UnknownMethod
     else

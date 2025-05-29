@@ -26,6 +26,7 @@
 #include <cstring>
 #include <iostream>
 #include <string>
+#include <algorithm>
 
 #include "ait.h"
 #include "log.h"
