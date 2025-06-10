@@ -1,9 +1,15 @@
+// The slack channel to notify about non-dry run or non-disabled autorolls
+def slackChannel = '#opapp-freely-build'
+
 pipeline {
     agent any
     // Skip regular checkout to allow it to be done in a subdirectory without
     // breaking Jenkinsfile support (https://stackoverflow.com/a/40392423 )
     options { skipDefaultCheckout() }
     parameters {
+        // BEWARE! Jenkins parameter changes are not picked up until AFTER the
+        // build with the change is done! See
+        // https://stackoverflow.com/a/46813693 for details
         string(
             name: 'DEPS_REPO',
             defaultValue: 'git@github.com:OpenRedButtonProject/chromium.git',
@@ -116,4 +122,27 @@ git push origin ${DEPS_REPO_BRANCH}
             }
         }
     }
+    post {
+        always {
+            script {
+                if (!(params.ROLL_DRY_RUN || params.DISABLE_ROLL)) {
+                    slackSend channel: slackChannel, color: buildResultColor(), message: buildResultSlackMessage()
+                }
+            }
+        }
+    }
+}
+
+String buildResultColor() {
+    def resultToColor = [FAILURE: '#FF0000', SUCCESS: '#00FF00', UNSTABLE: '#FFFF00', ABORTED: '#999999']
+    return resultToColor[currentBuild.result]
+}
+
+String buildOutcome() {
+    def resultToOutcome = [FAILURE: 'failed', SUCCESS: 'succeeded', UNSTABLE: 'finished with failing tests', ABORTED: 'was aborted']
+    return resultToOutcome[currentBuild.result]
+}
+
+String buildResultSlackMessage() {
+    return "Build <${BUILD_URL}|${JOB_NAME} #${BUILD_NUMBER}> " + buildOutcome()
 }
