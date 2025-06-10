@@ -19,13 +19,15 @@
 //#include <map>
 #include <json/json.h>
 
-#include "ComponentBase.hpp"
+#include "Moderator.h"
 
 namespace orb
 {
-class AppManager : ComponentBase
+class AppManager
 {
 public:
+    static AppManager& instance(); // singleton
+
     /**
      * AppManager request
      *
@@ -35,7 +37,7 @@ public:
      *
      * @return JSON encoded response string
      */
-    std::string request(std::string method, Json::Value token, Json::Value params) override;
+    std::string executeRequest(std::string method, Json::Value token, Json::Value params, ApplicationType apptype);
 
 private:
 //    std::map<std::string, Application*> mAppMap;

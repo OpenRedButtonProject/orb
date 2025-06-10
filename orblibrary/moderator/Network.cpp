@@ -26,7 +26,7 @@ using namespace std;
 
 namespace orb
 {
-string Network::request(string method, Json::Value token, Json::Value params)
+string Network::executeRequest(string method, Json::Value token, Json::Value params)
 {
     string response = R"({"Response": "Network request [)" + method + R"(] not implemented"})";
 

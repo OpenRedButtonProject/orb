@@ -26,7 +26,7 @@ namespace orb
 class Network : ComponentBase
 {
 public:
-    std::string request(std::string method, Json::Value token, Json::Value params) override;
+    std::string executeRequest(std::string method, Json::Value token, Json::Value params) override;
 
 }; // class Network
 

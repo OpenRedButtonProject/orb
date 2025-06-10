@@ -10,9 +10,7 @@ LOCAL_SRC_FILES := \
 	moderator/AppManager.cpp \
 	moderator/Network.cpp \
 	moderator/MediaSynchroniser.cpp \
-	moderator/Moderator.cpp \
-	moderator/DvbBroker.cpp \
-	moderator/OrbInterface.cpp
+	moderator/Moderator.cpp
 
 LOCAL_CFLAGS := \
    -DORB_HBBTV_VERSION=$(ORB_HBBTV_VERSION) \

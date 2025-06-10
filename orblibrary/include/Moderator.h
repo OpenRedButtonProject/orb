@@ -17,45 +17,39 @@
 
 #include <memory>
 
-#include "IBrowser.h"
-#include "IDvbClient.h"
+#include "IOrbBrowser.h"
 
 namespace orb
 {
 
-class AppManager;
 class Network;
 class MediaSynchroniser;
+
+enum ApplicationType {
+    APP_TYPE_HBBTV,
+    APP_TYPE_OPAPP
+};
 
 class Moderator
 {
 public:
-    Moderator();
+    Moderator(IOrbBrowser* browser, ApplicationType apptype);
     ~Moderator();
 
-    Moderator (const Moderator&) = delete;
-    Moderator& operator= (const Moderator&) = delete;
-
-    // Set Browser callback object
-    void setBrowserCallback(IBrowser* browser);
-
-    // Set DVB integration callback object
-    void setDvbClient(IDvbClient *dvb_client);
-
-    /** Execute the given request from browser.
+    /** Handle ORB request from Javascript.
      * The request is a string representation of a JSON object with the following form:
      * {
-     *    "token": <app_id>
      *    "method": <method>
+     *    "token": <app_id>
      *    "params": <params>
      * }
      *
      * The response is also a string representation of a JSON object containing the results, if any.
      *
-     * @param jsonRequest String representation of the JSON request
+     * @param request String representation of the JSON request
      * @return A string representation of the JSON response
      */
-    std::string executeRequest(std::string jsonRequest);
+    std::string handleOrbRequest(std::string request);
 
     // Notify that URL has been loaded for an application
     void notifyApplicationPageChanged(std::string url);
@@ -63,14 +57,15 @@ public:
     // Notify that URL has failed to load for an application
     void notifyApplicationLoadFailed(std::string url, std::string errorText);
 
-    void getDvbContent(std::string url);
-
-    std::string getUserAgentString();
+    // -----------------------------------------------
+    // Interface functions provided to DVB integration
+    // -----------------------------------------------
+    void processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& data);
+    void processXmlAit(const std::vector<uint8_t>& data);
 
 private:
-    IBrowser *mBrowser;
-    IDvbClient* mDvbClient;
-    std::unique_ptr<AppManager> mAppManager;
+    IOrbBrowser *mOrbBrowser;
+    ApplicationType mAppType;
     std::unique_ptr<Network> mNetwork;
     std::unique_ptr<MediaSynchroniser> mMediaSynchroniser;
 
