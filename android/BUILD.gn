@@ -1,0 +1,32 @@
+import("//build/config/android/rules.gni")
+
+android_resources("orb_client_java_resources") {
+  sources = [
+    "orb_client_apk/app/src/main/res/drawable/ic_refresh.png",
+    "orb_client_apk/app/src/main/res/drawable/progress.xml",
+    "orb_client_apk/app/src/main/res/layout/activity_main.xml",
+    "orb_client_apk/app/src/main/res/mipmap-hdpi/ic_launcher.webp",
+    "orb_client_apk/app/src/main/res/mipmap-mdpi/ic_launcher.webp",
+    "orb_client_apk/app/src/main/res/mipmap-xhdpi/ic_launcher.webp",
+    "orb_client_apk/app/src/main/res/mipmap-xxhdpi/ic_launcher.webp",
+    "orb_client_apk/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
+    "orb_client_apk/app/src/main/res/values/strings.xml",
+  ]
+}
+
+android_library("orb_client_java") {
+  resources_package = "org.orbtv.orbclient"
+  sources = [
+    "orb_client_apk/app/src/main/java/org/orbtv/orbclient/MainActivity.java",
+  ]
+  deps = [
+    "orblibrary:orb_library_java",
+    ":orb_client_java_resources",
+  ]
+}
+
+android_apk("orb_client_apk") {
+  apk_name = "OrbClient"
+  android_manifest = "orb_client_apk/app/src/main/AndroidManifest.xml"
+  deps = [ ":orb_client_java" ]
+}

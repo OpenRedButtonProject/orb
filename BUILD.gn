@@ -7,6 +7,15 @@ group("orb_library_deps")
   ]
 }
 
+group("orb_service_apks") {
+  testonly = true
+
+  deps = [
+    "android:orb_client_apk",
+    "//content/shell/android:content_shell_apk"
+  ]
+}
+
 # TODO Pass these variables in properly
 target_platform = "android"
 bbc_api_enable = false
