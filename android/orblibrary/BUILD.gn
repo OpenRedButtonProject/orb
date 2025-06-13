@@ -1,0 +1,15 @@
+import("//build/config/android/rules.gni")
+
+android_library("orb_shared_javalib") {
+  sources = [
+    "src/main/java/org/orbtv/orbsession/OrbSessionConstants.java",
+  ]
+}
+
+android_library("orb_library_java") {
+  sources = [
+    "src/main/java/org/orbtv/orbsession/OrbSession.java",
+  ]
+  deps = [ ":orb_shared_javalib" ]
+  srcjar_deps = [ "//content/shell/android:orb_service_aidl" ]
+}

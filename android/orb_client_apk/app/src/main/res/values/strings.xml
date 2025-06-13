@@ -1,0 +1,4 @@
+<resources>
+    <string name="url_hint">Type URL Here</string>
+    <string name="app_name">ORB Client</string>
+</resources>
