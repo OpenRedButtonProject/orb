@@ -34,6 +34,7 @@ hbbtv.bridge = (function() {
      */
     exported.initialise = function() {
         hbbtv.native.setDispatchEventCallback((type, properties) => {
+            console.debug('ReceivedEvent: ' + type);
             gEventDispatcher.dispatchEvent(Object.assign(new Event(type), properties));
         });
     };
