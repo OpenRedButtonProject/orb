@@ -19,12 +19,16 @@ hbbtv.native = {
     media: undefined,
     mediaProxy: undefined,
     dashProxy: undefined,
+    orbModule: undefined,
     pausedDelta: false,
 
     initialise: function() {
         this.token = Object.assign({}, document.token);
     },
     // setters
+    setDispatchEventCallback: function(callback) {
+		this.orbModule = new OrbModule(callback);
+    },
     setMedia: function(media) {
         this.media = media;
     },
@@ -44,7 +48,8 @@ hbbtv.native = {
             method: method,
             params: params || {},
         };
-        const responseText = Orb.request(JSON.stringify(body));
+        console.debug('SendingRequest: ' + method);
+        const responseText = this.orbModule.request(JSON.stringify(body));
         if (typeof responseText !== 'string') {
             console.debug('Invalid response');
             return false;
@@ -59,30 +64,6 @@ hbbtv.native = {
         }
         //console.log("Response from " + method + ": " + JSON.stringify(response));
         return response;
-    },
-    setDispatchEventCallback: function(callback) {
-        const FUNCTION_CALL_TYPE = "orb_functionCall";
-        // TEMPORARY Dispatch an event and properties. TODO Replace me in events part 2!
-        document.dispatchBridgeEvent = (type, properties) => {
-            callback(type, properties);
-            for (const iframe of document.getElementsByTagName("iframe")) {
-                iframe.contentWindow.postMessage(JSON.stringify({
-                    type: FUNCTION_CALL_TYPE,
-                    name: "dispatchBridgeEvent",
-                    args: [type, properties]
-                }), '*');
-            }
-        };
-        window.addEventListener("message", (e) => {
-            try {
-                const msg = JSON.parse(e.data);
-                if (msg.type === FUNCTION_CALL_TYPE && msg.name === "dispatchBridgeEvent") {
-                    document.dispatchBridgeEvent(msg.args[0], msg.args[1]);
-                }
-            } catch (error) {
-                console.warn('native: error parsing message data:', e.data);
-            }
-        });
     },
     isDebugBuild: function() {
         return true; // TODO Move
