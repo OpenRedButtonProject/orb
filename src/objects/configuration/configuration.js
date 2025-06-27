@@ -19,6 +19,24 @@ hbbtv.objects.Configuration = (function() {
     const prototype = {};
     let gIsPendingAccessCallback = false;
 
+    hbbtv.utils.defineConstantProperties(prototype, {
+        UI_TVMODE: 0,
+        UI_VOLUME: 1,
+        UI_PARENTALCONTROL: 2,
+        UI_TIMESHIFT: 3,
+        UI_RECORD: 4,
+        UI_MESSAGES_PVR: 32,
+        UI_MESSAGES_REMINDER: 33,
+        UI_MESSAGES_DRM: 34,
+        UI_MESSAGES_SYSTEM: 35,
+        UI_EPG: 64,
+        UI_PVR: 65,
+        UI_HBBTV: 66,
+        UI_MENU: 67,
+        UI_INSTALLATION: 68,
+        UI_ALL: 127,
+    });
+
     hbbtv.utils.defineGetterProperties(prototype, {
         preferredAudioLanguage: hbbtv.bridge.configuration.getPreferredAudioLanguage,
         // preferredAudioLanguage47 only supported since 2.0.4
@@ -27,6 +45,7 @@ hbbtv.objects.Configuration = (function() {
         // preferredSubtitleLanguage47 only supported since 2.0.4
         preferredSubtitleLanguage47: hbbtv.bridge.configuration.getPreferredSubtitleLanguage47,
         preferredUILanguage: hbbtv.bridge.configuration.getPreferredUILanguage,
+        preferredUILanguage47: hbbtv.bridge.configuration.getPreferredUILanguage47,
         countryId: hbbtv.bridge.configuration.getCountryId,
         subtitlesEnabled: hbbtv.bridge.configuration.getSubtitlesEnabled,
         audioDescriptionEnabled: hbbtv.bridge.configuration.getAudioDescriptionEnabled,
@@ -36,6 +55,7 @@ hbbtv.objects.Configuration = (function() {
         },
         dtt_network_ids: hbbtv.bridge.configuration.getDttNetworkIds,
         deviceId: hbbtv.bridge.configuration.getDeviceId,
+        runningOperatorApplication: hbbtv.bridge.configuration.getRunningOperatorApplication,
     });
 
     prototype.requestAccessToDistinctiveIdentifier = function(callback) {
@@ -51,6 +71,10 @@ hbbtv.objects.Configuration = (function() {
             hbbtv.bridge.configuration.requestAccessToDistinctiveIdentifier();
         }
     };
+
+    prototype.setQueryOrganisations = hbbtv.bridge.configuration.setQueryOrganisations;
+
+    prototype.replaceUIElements = hbbtv.bridge.configuration.replaceUIElements;
 
     function initialise() {}
 

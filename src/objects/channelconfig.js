@@ -29,6 +29,28 @@ hbbtv.objects.ChannelConfig = (function() {
         },
     });
 
+    prototype.getBroadcastSupervisor = function() {
+        // TODO: Needs BroadcastSupervisor implementation
+    }
+
+    prototype.setChannelList = hbbtv.bridge.broadcast.setChannelList;
+
+    prototype.createChannelList = function (data) {
+        let d;
+        if (Array.isArray(data)) {
+            // TODO: data is expected to be of Channel[] type. Will need to convert
+            // them to JSON Array before passing them to hbbtv.objects.createChannelList().
+        }
+        else if (typeof data === 'string') {
+            // TODO: data is expected to be of XML encoded string. Use DOMParser to parse
+            // the XML data before passing them to hbbtv.objects.createChannelList().
+        }
+        else {
+            return undefined;
+        }
+        return hbbtv.objects.createChannelList(d);
+    }
+
     function initialise() {
         privates.set(this, {});
         const p = privates.get(this);

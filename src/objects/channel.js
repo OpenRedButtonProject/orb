@@ -104,6 +104,10 @@ hbbtv.objects.Channel = (function() {
             const p = privates.get(this);
             return p.channelData.parentService;
         },
+        tunerId() {
+            const p = privates.get(this);
+            return p.channelData.tunerId;
+        },
     });
 
     // Initialise an instance of prototype

@@ -209,6 +209,18 @@ hbbtv.bridge.broadcast = (function() {
     };
 
     /**
+     * Sets the channel list to be used for UI with the user, for regular HbbTV® applications,
+     * for the calling operator application and for any operator application started by the
+     * calling operator application.
+     * 
+     * @param {ChannelList} list The new channel list for the terminal.
+     */
+    exported.setChannelList = function(list) {
+        // TODO: convert the list to JSON
+        hbbtv.native.request('Broadcast.setChannelList', { list });
+    };
+
+    /**
      * Select a logically null broadcast channel (e.g. tune off).
      *
      * When a logically null broadcast channel is selected, the Application Manager must transition
@@ -588,6 +600,8 @@ hbbtv.bridge.broadcast = (function() {
             presentationSuspended: presentationSuspended,
         });
     };
+
+
 
     return exported;
 })();
@@ -1234,6 +1248,22 @@ hbbtv.bridge.configuration = (function() {
     };
 
     /**
+     * Get preferred languages to be used for the user-interface on this system. The indicated
+     * set of languages and the order of preference shall be consistent with those found in the
+     * getPreferredUILanguage() method.
+     *
+     *
+     * @return {string} Comma separated string of languages (IETF BCP47 - IETF RFC 5646), in order of
+     *    preference.
+     *
+     * @method
+     * @memberof bridge.configuration#
+     */
+    exported.getPreferredUILanguage47 = function() {
+        return hbbtv.native.request('Configuration.getPreferredUILanguage47').result;
+    };
+
+    /**
      * Get a string containing the three character country code identifying the country this system
      * is deployed.
      *
@@ -1338,6 +1368,54 @@ hbbtv.bridge.configuration = (function() {
      */
     exported.getPrimaryDisplay = function() {
         return hbbtv.native.request('Configuration.getPrimaryDisplay').result;
+    };
+    
+    /**
+     * When read by a regular HbbTV® application, if an operator application is currently
+     * running and the HbbTV® application reading the property is permitted to query this
+     * (see clause A.2.1.3) then the value of this property shall be an identifier for the
+     * running operator application where index 0 in the array contains the organisation_id
+     * and index 1 in the array contains the application_id. Otherwise the value of this
+     * property shall be null.
+     * 
+     * @returns An array of integers when an OpApp is available, null otherwise.
+     */
+    exported.getRunningOperatorApplication = function() {
+        return hbbtv.native.request('Configuration.getRunningOperatorApplication').result;
+    };
+
+    /**
+     * When called by an operator application, sets the list of organisation_ids from which
+     * regular HbbTV® applications are permitted to query if this operator application is running.
+     * If called by a regular HbbTV® application then this method shall have no effect. The default
+     * is that no organisation_ids are permitted to make this query.
+     * 
+     * @param {Integer[]} org_ids An array of organisation_ids as defined in ETSI TS 102 809 [3].
+     */
+    exported.setQueryOrganisations = function(org_ids) {
+        if (hbbtv.native.orbModule.isOpApp) { 
+            hbbtv.native.request('Configuration.setQueryOrganisations', { org_ids });
+        }
+    };
+
+    /**
+     * Defines which UI elements the operator application wishes to provide instead of the terminal.
+     * The method shall return a list of the successfully replaced UI elements. If a running operator
+     * application calls this method more than once then the set of requested elements in the most
+     * recent call shall supersede the set requested in all previous calls. Specifically, an operator
+     * application that no longer wishes to replace a particular UI element just omits this from the
+     * set requested.
+     * 
+     * @param {Integer[]} elements Array of Integer constants taken from table A.2 indicating the UI
+     * elements and related functionality of the terminal that are replaced by the operator application.
+     * 
+     * @returns A list of the successfully replaced UI elements.
+     */
+    exported.replaceUIElements = function(elements) {
+        if (hbbtv.native.orbModule.isOpApp) { 
+            return hbbtv.native.request('Configuration.replaceUIElements', { elements }).result;
+        }
+        return [];
     };
 
     return exported;
