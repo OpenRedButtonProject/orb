@@ -7,6 +7,7 @@ vars = {
 
 deps = {
     'external/libwebsockets/v4.3': Var('google_libwebsockets_git') + '/platform/external/libwebsockets' + '@' + Var('google_libwebsockets_revision'),
+<<<<<<< HEAD
 }
 
 hooks = [
@@ -17,3 +18,6 @@ hooks = [
     'cwd': 'external/libwebsockets/v4.3',
   },
 ]
+=======
+}
+>>>>>>> 9606146 (FREE-131 Add DEPS file to download libwebsockets with git)
