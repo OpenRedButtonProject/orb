@@ -103,7 +103,7 @@ int ApplicationManager::CreateApplication(int callingAppId, const std::string &u
                 break;
             }
             appDescription = Ait::FindApp(m_ait.Get(), info.orgId, info.appId);
-            if (appDescription)
+            if (appDescription && Ait::HasViableTransport(appDescription, m_isNetworkAvailable))
             {
                 result = CreateAndRunApp(*appDescription, info.parameters, true, false, runAsOpApp);
             }
@@ -670,7 +670,7 @@ void ApplicationManager::OnApplicationPageChanged(int appId, const std::string &
     if (m_apps.count(appId) > 0)
     {
         m_apps[appId]->loadedUrl = url;
-        if (!Utils::IsInvalidDvbTriplet(m_currentService) && 
+        if (!Utils::IsInvalidDvbTriplet(m_currentService) &&
             url.find("https://www.live.bbctvapps.co.uk/tap/iplayer") == std::string::npos)
         {
             // For broadcast-related applications we reset the broadcast presentation on page change,
@@ -1117,7 +1117,7 @@ const Ait::S_AIT_APP_DESC * ApplicationManager::GetAutoStartApp(const Ait::S_AIT
     std::string parentalControlRegion3 = m_sessionCallback->GetParentalControlRegion3();
     int parentalControlAge = m_sessionCallback->GetParentalControlAge();
     return Ait::AutoStartApp(aitTable, parentalControlAge, parentalControlRegion,
-        parentalControlRegion3);
+        parentalControlRegion3, m_isNetworkAvailable);
 }
 
 /**
