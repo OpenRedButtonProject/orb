@@ -1,19 +1,34 @@
 #include <iostream>
 #include <string>
+#include <filesystem>
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/orb/orblibrary/include/OpAppPackageManager.h"
+#include <fstream>
 
 class OpAppPackageManagerTest : public ::testing::Test {
+
+public:
+  static constexpr std::string PACKAGE_PATH = "test/packages";
+
 protected:
   void SetUp() override {
     // Clean up any existing instance before each test
     OpAppPackageManager::destroyInstance();
+
+    // Create test directory structure
+    std::filesystem::create_directories(PACKAGE_PATH);
   }
 
   void TearDown() override {
     // Clean up after each test
     OpAppPackageManager::destroyInstance();
+    // Remove the package file in the package source location
+    std::string packagePath = PACKAGE_PATH + "/package.opk";
+    std::remove(packagePath.c_str());
+
+    // Remove test directory structure
+    std::filesystem::remove_all("test");
   }
 };
 
@@ -32,8 +47,7 @@ TEST_F(OpAppPackageManagerTest, TestGetInstanceWithConfiguration)
 {
   // GIVEN: a configuration object
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
-  configuration.m_PackageName = "test.package";
+  configuration.m_PackageLocation = PACKAGE_PATH;
 
   // WHEN: getting the singleton instance with configuration
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
@@ -48,8 +62,7 @@ TEST_F(OpAppPackageManagerTest, TestGetInstanceMultipleCalls)
 {
   // GIVEN: a configuration object
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
-
+  configuration.m_PackageLocation = PACKAGE_PATH;
   // WHEN: calling getInstance multiple times after configuration
   OpAppPackageManager& instance1 = OpAppPackageManager::getInstance(configuration);
   OpAppPackageManager* instance2 = OpAppPackageManager::getInstance();
@@ -65,7 +78,7 @@ TEST_F(OpAppPackageManagerTest, TestGetInstanceWithConfigurationAfterInstanceExi
 {
   // GIVEN: an existing singleton instance
   OpAppPackageManager::Configuration config1;
-  config1.m_PackageLocation = "/test/packages";
+  config1.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& instance1 = OpAppPackageManager::getInstance(config1);
 
   // WHEN: trying to get instance with different configuration when instance already exists
@@ -81,7 +94,7 @@ TEST_F(OpAppPackageManagerTest, TestDestroyInstance)
 {
   // GIVEN: a singleton instance
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
+  configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& instance1 = OpAppPackageManager::getInstance(configuration);
 
   // WHEN: destroying the instance
@@ -124,8 +137,7 @@ TEST_F(OpAppPackageManagerTest, TestDefaultInitialization)
 {
   // GIVEN: a configuration object
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
-
+  configuration.m_PackageLocation = PACKAGE_PATH;
   // WHEN: creating instance with configuration
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
 
@@ -138,8 +150,8 @@ TEST_F(OpAppPackageManagerTest, TestConfigurationInitialization)
 {
   // GIVEN: a configuration object
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/custom/packages";
-  configuration.m_PackageName = "custom.package";
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_PackageSuffix = ".opk";
   configuration.m_PrivateKeyFilePath = "/keys/private.key";
   configuration.m_PublicKeyFilePath = "/keys/public.key";
   configuration.m_CertificateFilePath = "/certs/cert.pem";
@@ -154,6 +166,95 @@ TEST_F(OpAppPackageManagerTest, TestConfigurationInitialization)
   EXPECT_FALSE(packageManager.isUpdating());
 }
 
+TEST_F(OpAppPackageManagerTest, TestStartAndStop)
+{
+  // GIVEN: a singleton OpAppPackageManager instance
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
+
+  // WHEN: starting the package manager
+  packageManager.start();
+
+  // THEN: the package manager should be running
+  EXPECT_TRUE(packageManager.isRunning());
+  EXPECT_FALSE(packageManager.isUpdating());
+
+  // WHEN: stopping the package manager
+  packageManager.stop();
+
+  // THEN: the package manager should be stopped
+  EXPECT_FALSE(packageManager.isRunning());
+  EXPECT_FALSE(packageManager.isUpdating());
+}
+
+TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_NoUpdates)
+{
+  // GIVEN: a singleton OpAppPackageManager instance
+  // and no package file in the package source location
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_PackageSuffix = ".opk";
+  OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
+
+  // WHEN: doPackageFileCheck is called
+  EXPECT_EQ(packageManager.getPackageStatus(), OpAppPackageManager::PackageStatus::DontKnow);
+  packageManager.doPackageFileCheck();
+
+  // THEN: the package status is unchanged
+  EXPECT_EQ(packageManager.getPackageStatus(), OpAppPackageManager::PackageStatus::DontKnow);
+}
+
+TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable)
+{
+  // GIVEN: a singleton OpAppPackageManager instance
+  // and a package file in the package source location
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_PackageSuffix = ".opk";
+  // Create a package file in the package source location
+  std::string packagePath = PACKAGE_PATH + "/package.opk";
+  std::ofstream file(packagePath);
+  file.close();
+  OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
+
+  // WHEN: doPackageFileCheck is called
+  packageManager.doPackageFileCheck();
+
+  // THEN: the package status is UpdateAvailable
+  EXPECT_EQ(packageManager.getPackageStatus(), OpAppPackageManager::PackageStatus::UpdateAvailable);
+}
+
+// TEST_F(OpAppPackageManagerTest, TestIsPackageIsNotAlreadyInstalled)
+// {
+//   // GIVEN: a singleton OpAppPackageManager instance and no package installed
+//   OpAppPackageManager::Configuration configuration;
+//   configuration.m_PackageLocation = PACKAGE_PATH;
+//   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
+//   std::string packagePath = "/path/to/package.opk";
+
+//   // WHEN: checking if the package is installed
+//   bool isInstalled = packageManager.isPackageInstalled(packagePath);
+
+//   // THEN: the package should not be installed
+//   EXPECT_FALSE(isInstalled);
+// }
+
+// TEST_F(OpAppPackageManagerTest, TestIsPackageIsAlreadyInstalled)
+// {
+//   // GIVEN: a singleton OpAppPackageManager instance and a package installed
+//   OpAppPackageManager::Configuration configuration;
+//   configuration.m_PackageLocation = PACKAGE_PATH;
+//   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
+//   std::string packagePath = "/path/to/package.opk";
+
+//   // WHEN: checking if the package is installed
+//   bool isInstalled = packageManager.isPackageInstalled(packagePath);
+
+//   // THEN: the package should be installed
+//   EXPECT_TRUE(isInstalled);
+// }
+
 // TODO: Add tests for future package manager functionality
 // These stubs can be expanded when the OpAppPackageManager class is implemented
 
@@ -161,7 +262,7 @@ TEST_F(OpAppPackageManagerTest, TestInstallPackage)
 {
   // GIVEN: a singleton OpAppPackageManager instance and a package to install
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
+  configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
   std::string packagePath = "/path/to/package.opk";
 
@@ -181,7 +282,7 @@ TEST_F(OpAppPackageManagerTest, TestUninstallPackage)
 {
   // GIVEN: a singleton OpAppPackageManager instance and a package ID
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
+  configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
   std::string packageId = "com.example.app";
 
@@ -201,7 +302,7 @@ TEST_F(OpAppPackageManagerTest, TestListInstalledPackages)
 {
   // GIVEN: a singleton OpAppPackageManager instance
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
+  configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
 
   // WHEN: requesting a list of installed packages
@@ -219,7 +320,7 @@ TEST_F(OpAppPackageManagerTest, TestGetPackageInfo)
 {
   // GIVEN: a singleton OpAppPackageManager instance and a package ID
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
+  configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
   std::string packageId = "com.example.app";
 
@@ -239,7 +340,7 @@ TEST_F(OpAppPackageManagerTest, TestUpdatePackage)
 {
   // GIVEN: a singleton OpAppPackageManager instance and a package update
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
+  configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
   std::string packagePath = "/path/to/update.opk";
 
@@ -259,7 +360,7 @@ TEST_F(OpAppPackageManagerTest, TestIsPackageInstalled)
 {
   // GIVEN: a singleton OpAppPackageManager instance and a package ID
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
+  configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
   std::string packageId = "com.example.app";
 
@@ -279,7 +380,7 @@ TEST_F(OpAppPackageManagerTest, TestGetPackageVersion)
 {
   // GIVEN: a singleton OpAppPackageManager instance and a package ID
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
+  configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
   std::string packageId = "com.example.app";
 
@@ -299,7 +400,7 @@ TEST_F(OpAppPackageManagerTest, TestEnablePackage)
 {
   // GIVEN: a singleton OpAppPackageManager instance and a package ID
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
+  configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
   std::string packageId = "com.example.app";
 
@@ -319,7 +420,7 @@ TEST_F(OpAppPackageManagerTest, TestDisablePackage)
 {
   // GIVEN: a singleton OpAppPackageManager instance and a package ID
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
+  configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
   std::string packageId = "com.example.app";
 
@@ -339,7 +440,7 @@ TEST_F(OpAppPackageManagerTest, TestGetPackageSize)
 {
   // GIVEN: a singleton OpAppPackageManager instance and a package ID
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
+  configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
   std::string packageId = "com.example.app";
 
@@ -359,7 +460,7 @@ TEST_F(OpAppPackageManagerTest, TestValidatePackage)
 {
   // GIVEN: a singleton OpAppPackageManager instance and a package path
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
+  configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
   std::string packagePath = "/path/to/package.opk";
 
@@ -380,7 +481,7 @@ TEST_F(OpAppPackageManagerTest, TestInstallInvalidPackage)
 {
   // GIVEN: a singleton OpAppPackageManager instance and an invalid package path
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
+  configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
   std::string invalidPath = "/nonexistent/package.opk";
 
@@ -400,7 +501,7 @@ TEST_F(OpAppPackageManagerTest, TestUninstallNonexistentPackage)
 {
   // GIVEN: a singleton OpAppPackageManager instance and a nonexistent package ID
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
+  configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
   std::string nonexistentId = "com.nonexistent.app";
 
@@ -420,7 +521,7 @@ TEST_F(OpAppPackageManagerTest, TestGetInfoForNonexistentPackage)
 {
   // GIVEN: a singleton OpAppPackageManager instance and a nonexistent package ID
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
+  configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
   std::string nonexistentId = "com.nonexistent.app";
 
@@ -441,7 +542,7 @@ TEST_F(OpAppPackageManagerTest, TestConcurrentOperations)
 {
   // GIVEN: a singleton OpAppPackageManager instance
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
+  configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
 
   // WHEN: performing multiple operations concurrently
@@ -458,7 +559,7 @@ TEST_F(OpAppPackageManagerTest, TestLargePackageHandling)
 {
   // GIVEN: a singleton OpAppPackageManager instance and a large package
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
+  configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
   std::string largePackagePath = "/path/to/large/package.opk";
 
@@ -477,7 +578,7 @@ TEST_F(OpAppPackageManagerTest, TestFullPackageLifecycle)
 {
   // GIVEN: a singleton OpAppPackageManager instance and a valid package
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
+  configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
   std::string packagePath = "/path/to/valid/package.opk";
   std::string packageId = "com.example.app";
@@ -497,7 +598,7 @@ TEST_F(OpAppPackageManagerTest, TestPackageUpdateWorkflow)
 {
   // GIVEN: a singleton OpAppPackageManager instance and package versions
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
+  configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
   std::string oldVersionPath = "/path/to/old/version.opk";
   std::string newVersionPath = "/path/to/new/version.opk";
@@ -518,7 +619,7 @@ TEST(OpAppPackageManagerStandalone, TestDestroyInstanceStandalone)
 {
   // GIVEN: a singleton instance
   OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = "/test/packages";
+  configuration.m_PackageLocation = OpAppPackageManagerTest::PACKAGE_PATH;
   OpAppPackageManager& instance1 = OpAppPackageManager::getInstance(configuration);
 
   // WHEN: destroying the instance
@@ -543,4 +644,3 @@ TEST(OpAppPackageManagerStandalone, TestDestroyInstanceStandalone)
   // Clean up after test
   OpAppPackageManager::destroyInstance();
 }
-

@@ -20,12 +20,22 @@ public:
 
   struct Configuration {
       std::string m_PackageLocation;
-      std::string m_PackageName;
+      std::string m_PackageSuffix;
       std::string m_PrivateKeyFilePath;
       std::string m_PublicKeyFilePath;
       std::string m_CertificateFilePath;
       std::string m_DestinationDirectory;
       std::string m_InstallDirectory;
+  };
+
+  enum class PackageStatus {
+    DontKnow,
+    NotInstalled,
+    Installed,
+    UpdateAvailable,
+    UpdateInProgress,
+    UpdateFailed,
+    UpdateSuccess
   };
 
   // Singleton instance management
@@ -48,12 +58,17 @@ public:
   void stop();
   bool isRunning() const;
   bool isUpdating() const;
+  bool isPackageInstalled(const std::string& packagePath) const;
+  void checkForUpdates();
+  PackageStatus getPackageStatus() const;
+  void doPackageFileCheck();
 
 private:
   // Private constructor for singleton pattern
   OpAppPackageManager(const Configuration& configuration);
 
-  void checkForUpdates();
+  std::vector<std::string> getPackageFiles();
+  PackageStatus m_PackageStatus;
 
   // void installPackage(const std::string& packagePath);
   // void uninstallPackage(const std::string& packagePath);
