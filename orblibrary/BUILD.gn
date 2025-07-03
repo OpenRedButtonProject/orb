@@ -29,6 +29,20 @@ config("external_lib_config") {
   defines = [ "IS_CHROMIUM", "ORB_HBBTV_VERSION=203"]
 }
 
+static_library("opapp_package_manager") {
+  sources = [
+    "package_manager/OpAppPackageManager.cpp",
+  ]
+
+  deps = [
+    "//base", # For logging dependency
+  ]
+
+  public_deps = []
+
+  public_configs = [ ":external_lib_config" ]
+}
+
 static_library("orb_polyfill") {
   sources = [
     "polyfill/HtmlBuilder.cpp",
@@ -65,6 +79,19 @@ executable("test_orb_moderator")
     "//testing/gtest",
     "//testing/gtest:gtest_main",
     ":orb"
+  ]
+
+  testonly = true
+}
+
+executable("test_opapp_package_manager")
+{
+  sources = [ "test/opapp_package_manager_unittest.cpp" ]
+
+  deps = [
+    "//testing/gtest",
+    "//testing/gtest:gtest_main",
+    ":opapp_package_manager"
   ]
 
   testonly = true
