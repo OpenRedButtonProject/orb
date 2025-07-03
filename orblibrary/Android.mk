@@ -12,6 +12,14 @@ LOCAL_SRC_FILES := \
 	moderator/MediaSynchroniser.cpp \
 	moderator/Moderator.cpp
 
+LOCAL_SRC_FILES += \
+   moderator/app_mgr/application_manager.cpp \
+   moderator/app_mgr/utils.cpp \
+   moderator/app_mgr/ait.cpp \
+   moderator/app_mgr/xml_parser.cpp \
+   moderator/app_mgr/hbbtv_app.cpp \
+   moderator/app_mgr/opapp.cpp
+
 LOCAL_CFLAGS := \
    -DORB_HBBTV_VERSION=$(ORB_HBBTV_VERSION) \
    -Wno-unused-variable \
@@ -26,6 +34,7 @@ LOCAL_CFLAGS := \
 LOCAL_SHARED_LIBRARIES := \
    libbase \
    libandroid \
+   libxml2 \
    libjsoncpp
 
 #LOCAL_CPPFLAGS += -fexceptions \

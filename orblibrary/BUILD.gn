@@ -10,6 +10,12 @@ static_library("orb") {
     "moderator/AppManager.cpp",
     "moderator/Network.cpp",
     "moderator/MediaSynchroniser.cpp",
+    "moderator/app_mgr/ait.cpp",
+    "moderator/app_mgr/application_manager.cpp",
+    "moderator/app_mgr/hbbtv_app.cpp",
+    "moderator/app_mgr/opapp.cpp",
+    "moderator/app_mgr/utils.cpp",
+    "moderator/app_mgr/xml_parser.cpp"
   ]
 
   deps = [
