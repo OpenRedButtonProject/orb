@@ -36,6 +36,7 @@ static_library("opapp_package_manager") {
 
   deps = [
     "//base", # For logging dependency
+    "//third_party/jsoncpp"
   ]
 
   public_deps = []

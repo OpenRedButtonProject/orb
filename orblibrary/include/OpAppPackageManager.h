@@ -57,12 +57,13 @@ public:
   };
 
   enum class PackageStatus {
-    DontKnow,
+    None,
+    NoUpdateAvailable,
     NotInstalled,
     Installed,
     UpdateAvailable,
     UpdateFailed,
-    ConfigurationError  // New status for configuration errors like multiple packages
+    ConfigurationError
   };
 
   // Singleton instance management
@@ -89,8 +90,7 @@ public:
   bool isUpdating() const;
   bool isPackageInstalled(const std::string& packagePath) const;
   void checkForUpdates();
-  PackageStatus getPackageStatus() const;
-  void doPackageFileCheck();
+  PackageStatus doPackageFileCheck();
 
   // Public method for calculating SHA256 hash (useful for testing and external use)
   std::string calculateFileSHA256Hash(const std::string& filePath) const;

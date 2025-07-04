@@ -14,7 +14,21 @@ class MockHashCalculator : public IHashCalculator {
 public:
   MockHashCalculator() = default;
 
-  // Set predefined responses for specific file paths
+  // Create a JSON file with the specified hash
+  void createHashJsonFile(const std::string& filePath, const std::string& hash) {
+    std::ofstream jsonFile(filePath);
+    jsonFile << "{\"hash\": \"" << hash << "\"}";
+    jsonFile.close();
+  }
+
+  // Create an invalid JSON file (missing hash field)
+  void createInvalidHashJsonFile(const std::string& filePath) {
+    std::ofstream jsonFile(filePath);
+    jsonFile << "{\"version\": \"1.0\", \"timestamp\": \"2024-01-01\"}";
+    jsonFile.close();
+  }
+
+  // Set predefined responses for specific file paths (for direct hash calculation)
   void setHashForFile(const std::string& filePath, const std::string& hash) {
     m_FileHashes[filePath] = hash;
   }
@@ -229,11 +243,10 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_NoUpdates)
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
 
   // WHEN: doPackageFileCheck is called
-  EXPECT_EQ(packageManager.getPackageStatus(), OpAppPackageManager::PackageStatus::DontKnow);
-  packageManager.doPackageFileCheck();
+  OpAppPackageManager::PackageStatus status = packageManager.doPackageFileCheck();
 
-  // THEN: the package status is unchanged
-  EXPECT_EQ(packageManager.getPackageStatus(), OpAppPackageManager::PackageStatus::DontKnow);
+  // THEN: the package status is NoUpdateAvailable
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::NoUpdateAvailable);
 }
 
 TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable)
@@ -250,10 +263,10 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable)
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
 
   // WHEN: doPackageFileCheck is called
-  packageManager.doPackageFileCheck();
+  OpAppPackageManager::PackageStatus status = packageManager.doPackageFileCheck();
 
   // THEN: the package status is UpdateAvailable
-  EXPECT_EQ(packageManager.getPackageStatus(), OpAppPackageManager::PackageStatus::UpdateAvailable);
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::UpdateAvailable);
 }
 
 TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_NoExistingPackage)
@@ -272,10 +285,97 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_NoExistingP
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
 
   // WHEN: doPackageFileCheck is called
-  packageManager.doPackageFileCheck();
+  OpAppPackageManager::PackageStatus status = packageManager.doPackageFileCheck();
 
   // THEN: the package status is UpdateAvailable
-  EXPECT_EQ(packageManager.getPackageStatus(), OpAppPackageManager::PackageStatus::UpdateAvailable);
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::UpdateAvailable);
+}
+
+TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_ExistingPackage_HashSame)
+{
+  // GIVEN: a package manager and a mock hash calculator with identical, predefined responses
+  auto mockCalculator = std::make_unique<MockHashCalculator>();
+  mockCalculator->setHashForFile(PACKAGE_PATH + "/package.opk", "test_hash_1234567890abcdef");
+  mockCalculator->createHashJsonFile(PACKAGE_PATH + "/package.hash", "test_hash_1234567890abcdef");
+
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_PackageSuffix = ".opk";
+  configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
+
+  // Create a package file in the package source location
+  std::string packagePath = PACKAGE_PATH + "/package.opk";
+  std::ofstream file(packagePath);
+  file.close();
+  // Note: hash file is created by createHashJsonFile above
+
+  // WHEN: checking package status
+  OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration, std::move(mockCalculator));
+  OpAppPackageManager::PackageStatus status = packageManager.doPackageFileCheck();
+
+  // THEN: the package status is Installed
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::Installed);
+
+  // Clean up test files
+  std::remove(packagePath.c_str());
+  std::remove((PACKAGE_PATH + "/package.hash").c_str());
+}
+
+TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_NoHashFile)
+{
+  // GIVEN: a package manager and a mock hash calculator, but no hash file exists
+  auto mockCalculator = std::make_unique<MockHashCalculator>();
+  mockCalculator->setHashForFile(PACKAGE_PATH + "/package.opk", "package_hash_abcdef123456");
+  // Note: No hash file is created, simulating a missing hash file
+
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_PackageSuffix = ".opk";
+  configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
+
+  // Create package file only
+  std::string packagePath = PACKAGE_PATH + "/package.opk";
+  std::ofstream packageFile(packagePath);
+  packageFile.close();
+
+  // WHEN: checking package status
+  OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration, std::move(mockCalculator));
+  OpAppPackageManager::PackageStatus status = packageManager.doPackageFileCheck();
+
+  // THEN: the package should be considered update available (no hash file means not installed)
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::UpdateAvailable);
+
+  // Clean up test files
+  std::remove(packagePath.c_str());
+}
+
+TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_InvalidHashFile)
+{
+  // GIVEN: a package manager and a mock hash calculator with an invalid JSON hash file
+  auto mockCalculator = std::make_unique<MockHashCalculator>();
+  mockCalculator->setHashForFile(PACKAGE_PATH + "/package.opk", "package_hash_abcdef123456");
+  mockCalculator->createInvalidHashJsonFile(PACKAGE_PATH + "/package.hash");
+
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_PackageSuffix = ".opk";
+  configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
+
+  // Create package file
+  std::string packagePath = PACKAGE_PATH + "/package.opk";
+  std::ofstream packageFile(packagePath);
+  packageFile.close();
+
+  // WHEN: checking package status
+  OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration, std::move(mockCalculator));
+  OpAppPackageManager::PackageStatus status = packageManager.doPackageFileCheck();
+
+  // THEN: the package should be considered update available (invalid hash file means not installed)
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::UpdateAvailable);
+
+  // Clean up test files
+  std::remove(packagePath.c_str());
+  std::remove((PACKAGE_PATH + "/package.hash").c_str());
 }
 
 TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_SameHash)
@@ -283,7 +383,7 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_SameHash)
   // GIVEN: a the package manager and a mock hash calculator with identical, predefined responses
   auto mockCalculator = std::make_unique<MockHashCalculator>();
   mockCalculator->setHashForFile(PACKAGE_PATH + "/package.opk", "test_hash_1234567890abcdef");
-  mockCalculator->setHashForFile(PACKAGE_PATH + "/package.hash", "test_hash_1234567890abcdef");
+  mockCalculator->createHashJsonFile(PACKAGE_PATH + "/package.hash", "test_hash_1234567890abcdef");
 
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
@@ -294,16 +394,15 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_SameHash)
   std::string packagePath = PACKAGE_PATH + "/package.opk";
   std::string hashPath = PACKAGE_PATH + "/package.hash";
   std::ofstream packageFile(packagePath);
-  std::ofstream hashFile(hashPath);
   packageFile.close();
-  hashFile.close();
+  // Note: hash file is created by createHashJsonFile above
 
   // WHEN: checking package status
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration, std::move(mockCalculator));
-  packageManager.doPackageFileCheck();
+  OpAppPackageManager::PackageStatus status = packageManager.doPackageFileCheck();
 
   // THEN: the package should be considered installed (same hash)
-  EXPECT_EQ(packageManager.getPackageStatus(), OpAppPackageManager::PackageStatus::Installed);
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::Installed);
 
   // Clean up test files
   std::remove(packagePath.c_str());
@@ -315,7 +414,7 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_DifferentHa
   // GIVEN: a the package manager and a mock hash calculator with different hashes for package and hash file
   auto mockCalculator = std::make_unique<MockHashCalculator>();
   mockCalculator->setHashForFile(PACKAGE_PATH + "/package.opk", "package_hash_abcdef123456");
-  mockCalculator->setHashForFile(PACKAGE_PATH + "/package.hash", "different_hash_789xyz");
+  mockCalculator->createHashJsonFile(PACKAGE_PATH + "/package.hash", "different_hash_789xyz");
 
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
@@ -326,22 +425,20 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_DifferentHa
   std::string packagePath = PACKAGE_PATH + "/package.opk";
   std::string hashPath = PACKAGE_PATH + "/package.hash";
   std::ofstream packageFile(packagePath);
-  std::ofstream hashFile(hashPath);
   packageFile.close();
-  hashFile.close();
+  // Note: hash file is created by createHashJsonFile above
 
   // WHEN: checking package status
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration, std::move(mockCalculator));
-  packageManager.doPackageFileCheck();
+  OpAppPackageManager::PackageStatus status = packageManager.doPackageFileCheck();
 
   // THEN: the package should be considered update available (different hashes)
-  EXPECT_EQ(packageManager.getPackageStatus(), OpAppPackageManager::PackageStatus::UpdateAvailable);
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::UpdateAvailable);
 
   // Clean up test files
   std::remove(packagePath.c_str());
   std::remove(hashPath.c_str());
 }
-
 
 // TODO: Add tests for future package manager functionality
 // These stubs can be expanded when the OpAppPackageManager class is implemented
@@ -738,8 +835,8 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_MultiplePackageFiles_Returns
 
   // WHEN: doPackageFileCheck is called
   // THEN: it should set status to ConfigurationError
-  packageManager.doPackageFileCheck();
-  EXPECT_EQ(packageManager.getPackageStatus(), OpAppPackageManager::PackageStatus::ConfigurationError);
+  OpAppPackageManager::PackageStatus status = packageManager.doPackageFileCheck();
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::ConfigurationError);
   EXPECT_FALSE(packageManager.getLastErrorMessage().empty());
 
   // Clean up test files
