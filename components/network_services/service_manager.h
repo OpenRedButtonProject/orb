@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef OBS_NS_SERVICE_MANAGER_
-#define OBS_NS_SERVICE_MANAGER_
+#ifndef OBS_NS_SERVICE_MANAGER_H
+#define OBS_NS_SERVICE_MANAGER_H
 
 #include <memory>
 #include <unordered_map>
@@ -24,7 +24,8 @@
 class ClockBase;
 class SysClock;
 
-namespace NetworkServices {
+namespace orb {
+namespace networkServices {    
 class ContentIdentificationProperties;
 class MediaSynchroniser;
 
@@ -37,7 +38,9 @@ public:
         virtual void Stop() = 0;
         virtual void OnServiceStopped()
         {
-            ServiceManager::GetInstance().OnServiceStopped(this);
+            // TODO: Call this method when Service manager is integated into Project
+            // to avoid link errors.
+            // ServiceManager::GetInstance().OnServiceStopped(this);
         }
 
         // Disallow copy and assign
@@ -88,7 +91,8 @@ private:
     ServiceManager(const ServiceManager&) = delete;
     ServiceManager& operator=(const ServiceManager&) = delete;
 };
-} // namespace NetworkServices
+} // namespace networkServices
+} // namespace orb  
 
-#endif // OBS_NS_SERVICE_MANAGER_
+#endif // OBS_NS_SERVICE_MANAGER_H
 

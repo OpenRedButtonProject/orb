@@ -12,27 +12,35 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * General logging for each supported platform
+ *
+ * Note: This file is part of the platform-agnostic application manager library.
  */
 
-#ifndef __MANAGER_LOG_H
-#define __MANAGER_LOG_H
-#if 1
-#include <android/log.h>
-#include <assert.h>
-#ifndef LOG_TAG
-#define LOG_TAG "ORBNATIVE"
-#endif
-#define LOG_ERROR ANDROID_LOG_ERROR
-#define LOG_INFO ANDROID_LOG_INFO
-#define LOG_DEBUG ANDROID_LOG_DEBUG
-#define LOG(level, args ...) __android_log_print(level, LOG_TAG, args)
-#define ASSERT(condition) assert(condition)
+#ifndef OBS_NS_LOG_H
+#define OBS_NS_LOG_H
+
+#ifdef IS_CHROMIUM
+#include <base/logging.h>
+#elif defined(ANDROID)
+#include <android-base/logging.h>
 #else
-#define LOG_ERROR 0
-#define LOG_INFO 1
-#define LOG_DEBUG 2
-#define LOG(level, args ...)
-#define ASSERT(condition)
+#error Not Chromium or Android build
 #endif
-#endif // __MANAGER_LOG_H
+
+
+namespace orb { 
+namespace networkServices {
+    
+#define LOGI(str)   LOG(INFO) << __FUNCTION__ << "," << __LINE__ << ": " << str
+#define LOGE(str)   LOG(ERROR) << __FUNCTION__ << "," << __LINE__ << ": " << str
+#define ENTER "ENTER"
+#define LEAVE "LEAVE"
+
+} // namespace networkServices
+} // namespace orb
+
+#endif // OBS_NS_LOG_H
+
 

@@ -3,7 +3,8 @@ group("orb_library_deps")
 {
   deps = [
     "orblibrary:orb",
-    ":orb_polyfill_js"
+    ":orb_polyfill_js",
+    "//third_party/orb/components/network_services:orb_network_services"    
   ]
 }
 

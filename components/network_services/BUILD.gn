@@ -1,0 +1,66 @@
+# Useful references: https://gn.googlesource.com/gn/+/main/docs/reference.md
+# This is done by the calling script already
+# import("//build/config/BUILDCONFIG.gn")
+
+# Define the actual library target
+static_library("orb_network_services") {
+  sources = [
+#    "app2app/app2app_local_service.cpp",
+#    "app2app/app2app_remote_service.cpp",
+#    "media_synchroniser/media_synchroniser.cpp",
+#    "media_synchroniser/Correlation.cpp",
+#    "media_synchroniser/CorrelatedClock.cpp",
+#    "media_synchroniser/ClockBase.cpp",
+#    "media_synchroniser/SysClock.cpp",
+#    "media_synchroniser/ClockUtilities.cpp",
+#    "media_synchroniser/WallClockService.cpp",
+#    "media_synchroniser/ContentIdentificationService.cpp",
+#    "media_synchroniser/CSSUtilities.cpp",
+#    "media_synchroniser/TimelineSyncService.cpp",
+    "json_rpc/JsonRpcService.cpp",
+    "json_rpc/JsonRpcServiceUtil.cpp",
+    "json_rpc/JsonRpcCallback.cpp",
+#    "service_manager.cpp",
+#    "UdpSocketService.cpp",
+    "websocket_service.cpp"
+  ]
+
+  deps = [
+    "//base", # For logging dependency
+    "//third_party/jsoncpp",
+    "//third_party/orb/external/libwebsockets/v4.3:libwebsockets",
+  ]
+
+  public_deps = []
+
+  public_configs = [ ":external_lib_config" ]
+}
+
+# Expose the include directory
+config("external_lib_config") {
+  include_dirs = [ 
+    ".",
+    "app2app",
+    "media_synchroniser",
+    "json_rpc"
+  ]
+  defines = [ "IS_CHROMIUM", "ORB_HBBTV_VERSION=204"]
+}
+
+executable("test_orb_jsonrpcservice")
+{
+  sources = [ 
+    "test/jsonrpcservice_unittest.cpp",
+    "test/jsonrpcserviceutil_unittest.cpp"
+  ]
+
+  deps = [
+    "//testing/gtest",
+    "//testing/gtest:gtest_main",
+    "//third_party/orb/external/libwebsockets/v4.3:libwebsockets",
+    "//base", # For logging dependency,
+    "//third_party/jsoncpp",
+    ":orb_network_services"
+  ]
+  testonly = true
+}

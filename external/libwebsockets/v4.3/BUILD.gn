@@ -1,0 +1,164 @@
+# //third_party/orb/external/libwebsockets/v4.3/BUILD.gn
+
+import("//build/config/compiler/compiler.gni") # For compiler configs
+import("//build/config/features.gni")          # For common features like is_debug, is_android etc.
+
+# ==============================================================================
+# Public Configuration: For consumers of this library
+# ==============================================================================
+config("libwebsockets_public_config") {
+  # This path allows consumers to include LWS headers like #include "libwebsockets.h"
+  include_dirs = [ "include" ]
+}
+
+# ==============================================================================
+# The main libwebsockets static library target
+# ==============================================================================
+static_library("libwebsockets") {
+  sources = [
+    # Network
+    "lib/core-net/adopt.c",
+    "lib/core-net/client/client.c",
+    "lib/core-net/client/conmon.c",
+    "lib/core-net/client/connect.c",
+    "lib/core-net/client/connect2.c",
+    "lib/core-net/client/connect3.c",
+    "lib/core-net/client/connect4.c",
+    "lib/core-net/client/sort-dns.c",
+    "lib/core-net/close.c",
+    "lib/core-net/dummy-callback.c",
+    "lib/core-net/network.c",
+    "lib/core-net/output.c",
+    "lib/core-net/pollfd.c",
+    "lib/core-net/service.c",
+    "lib/core-net/sorted-usec-list.c",
+    "lib/core-net/state.c",
+    "lib/core-net/vhost.c",
+    "lib/core-net/wsi-timeout.c",
+    "lib/core-net/wsi.c",
+
+    # Core
+    "lib/core/alloc.c",
+    "lib/core/buflist.c",
+    "lib/core/context.c",
+    "lib/core/libwebsockets.c",
+    "lib/core/logs.c",
+    "lib/core/lws_dll2.c",
+    "lib/core/lws_map.c",
+    "lib/core/vfs.c",
+
+    "lib/event-libs/poll/poll.c",
+    "lib/misc/base64-decode.c",
+    "lib/misc/cache-ttl/file.c",
+    "lib/misc/cache-ttl/heap.c",
+    "lib/misc/cache-ttl/lws-cache-ttl.c",
+    "lib/misc/dir.c",
+    "lib/misc/lejp.c",
+    "lib/misc/lws-ring.c",
+    "lib/misc/lwsac/cached-file.c",
+    "lib/misc/lwsac/lwsac.c",
+    "lib/misc/prng.c",
+    "lib/misc/sha-1.c",
+
+    # Platform-specific files (Linux/Unix)
+    "lib/plat/unix/unix-caps.c",
+    "lib/plat/unix/unix-fds.c",
+    "lib/plat/unix/unix-file.c",
+    "lib/plat/unix/unix-init.c",
+    "lib/plat/unix/unix-misc.c",
+    "lib/plat/unix/unix-pipe.c",
+    "lib/plat/unix/unix-service.c",
+    "lib/plat/unix/unix-sockets.c",
+    
+    "lib/roles/h1/ops-h1.c",
+    "lib/roles/h2/hpack.c",
+    "lib/roles/h2/http2.c",
+    "lib/roles/h2/ops-h2.c",
+    "lib/roles/http/client/client-http.c",
+    "lib/roles/http/cookie.c",
+    "lib/roles/http/date.c",
+    "lib/roles/http/header.c",
+    "lib/roles/http/parsers.c",
+    "lib/roles/http/server/lejp-conf.c",
+    "lib/roles/http/server/lws-spa.c",
+    "lib/roles/http/server/server.c",
+    "lib/roles/listen/ops-listen.c",
+    "lib/roles/pipe/ops-pipe.c",
+    "lib/roles/raw-file/ops-raw-file.c",
+    "lib/roles/raw-skt/ops-raw-skt.c",
+    "lib/roles/ws/client-parser-ws.c",
+    "lib/roles/ws/client-ws.c",
+    "lib/roles/ws/ops-ws.c",
+    "lib/roles/ws/server-ws.c",
+    "lib/system/smd/smd.c",
+    "lib/system/system.c",
+
+    # TLS Backend (CRITICAL: BoringSSL integration)
+    "lib/tls/openssl/openssl-client.c",
+    "lib/tls/openssl/openssl-server.c",
+    "lib/tls/openssl/openssl-session.c",
+    "lib/tls/openssl/openssl-ssl.c",
+    "lib/tls/openssl/openssl-tls.c",
+    "lib/tls/openssl/openssl-x509.c",
+    "lib/tls/tls-client.c",
+    "lib/tls/tls-network.c",
+    "lib/tls/tls-server.c",
+    "lib/tls/tls-sessions.c",
+    "lib/tls/tls.c"
+  ]
+
+  include_dirs = [
+    "lib/core",
+    "lib/core-net",
+    "lib/event-libs",
+    "lib/abstract",
+    "lib/tls",
+    "lib/roles",
+    "lib/event-libs/libuv",
+    "lib/event-libs/poll",
+    "lib/event-libs/libevent",
+    "lib/event-libs/glib",
+    "lib/event-libs/libev",
+    "lib/jose/jwe",
+    "lib/jose/jws",
+    "lib/jose",
+    "lib/misc",
+    "lib/roles/http",
+    "lib/roles/http/compression",
+    "lib/roles/h1",
+    "lib/roles/h2",
+    "lib/roles/ws",
+    "lib/roles/cgi",
+    "lib/roles/dbus",
+    "lib/roles/raw-proxy",
+    "lib/abstract",
+    "lib/system/async-dns",
+    "lib/system/smd",
+    "lib/system/metrics",
+    "lib/roles/mqtt",
+    "lib/plat/unix",
+    "lib"
+  ]
+
+  # Apply the public configuration (include_dirs) for consumers
+  public_configs = [ ":libwebsockets_public_config" ]
+
+  # Define dependencies on other Chromium targets
+  deps = [
+    # CRITICAL: LWS depends on BoringSSL for TLS features
+    "//third_party/boringssl:boringssl",
+    "//base", # LWS might implicitly rely on some basic system features Chromium's base provides
+  ]
+
+  # If you need to specify a language (e.g., C99) for LWS sources explicitly:
+  cflags_c = [
+                "-Wno-unused-parameter",
+                "-Wno-missing-field-initializers",
+                "-Wno-unreachable-code",
+                "-Wno-unused-function", 
+                "-Wno-unused-variable",
+                "-Wno-shadow",
+                "-Wno-unreachable-code-return",
+                "-Wno-implicit-fallthrough"
+            ]
+}

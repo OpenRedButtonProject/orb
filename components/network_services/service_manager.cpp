@@ -23,7 +23,8 @@
 
 #define MAX_SERVICES 1000
 
-namespace NetworkServices {
+namespace orb {
+namespace networkServices { 
 ServiceManager::ServiceManager() :
     max_services_(MAX_SERVICES)
 {
@@ -196,4 +197,6 @@ int ServiceManager::StartApp2AppService(std::unique_ptr<ServiceCallback> callbac
     mutex_.unlock();
     return id;
 }
-} // namespace NetworkServices
+} // namespace networkServices
+} // namespace orb
+  
