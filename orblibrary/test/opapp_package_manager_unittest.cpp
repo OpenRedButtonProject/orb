@@ -201,7 +201,7 @@ TEST_F(OpAppPackageManagerTest, TestConfigurationInitialization)
   configuration.m_PublicKeyFilePath = "/keys/public.key";
   configuration.m_CertificateFilePath = "/certs/cert.pem";
   configuration.m_DestinationDirectory = "/dest";
-  configuration.m_InstallDirectory = "/install";
+  configuration.m_OpAppInstallDirectory = "/install";
 
   // WHEN: creating instance with custom configuration
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
@@ -443,24 +443,33 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_DifferentHa
 // TODO: Add tests for future package manager functionality
 // These stubs can be expanded when the OpAppPackageManager class is implemented
 
-TEST_F(OpAppPackageManagerTest, TestInstallPackage)
+TEST_F(OpAppPackageManagerTest, TestInstallPackage_NoPackageFile)
 {
-  // GIVEN: a singleton OpAppPackageManager instance and a package to install
+  // GIVEN: a singleton OpAppPackageManager instance and no package file set
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
-  std::string packagePath = "/path/to/package.opk";
 
   // WHEN: attempting to install a package
-  // bool result = packageManager.installPackage(packagePath);
+  OpAppPackageManager::PackageStatus status = packageManager.doPackageInstall();
 
   // THEN: the installation should be handled appropriately
-  // TODO: Implement when installPackage method is added
-  // EXPECT_TRUE(result);
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::ConfigurationError);
+}
 
-  // Mark variables as intentionally unused for now
-  (void)packageManager;
-  (void)packagePath;
+TEST_F(OpAppPackageManagerTest, TestInstallPackage_PackageFileDoesNotExist)
+{
+  // GIVEN: a singleton OpAppPackageManager instance and a package file that does not exist
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
+  packageManager.setCandidatePackageFile("/nonexistent/package.opk");
+
+  // WHEN: attempting to install a package
+  OpAppPackageManager::PackageStatus status = packageManager.doPackageInstall();
+
+  // THEN: the installation should be handled appropriately
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::ConfigurationError);
 }
 
 TEST_F(OpAppPackageManagerTest, TestUninstallPackage)

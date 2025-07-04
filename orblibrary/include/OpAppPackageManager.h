@@ -15,12 +15,6 @@ public:
   virtual std::string calculateSHA256Hash(const std::string& filePath) const = 0;
 };
 
-// Default implementation using OpenSSL
-class OpenSSLHashCalculator : public IHashCalculator {
-public:
-  std::string calculateSHA256Hash(const std::string& filePath) const override;
-};
-
 // Error handling structure for package operations
 struct PackageOperationResult {
   bool success;
@@ -52,8 +46,8 @@ public:
       std::string m_PublicKeyFilePath;
       std::string m_CertificateFilePath;
       std::string m_PackageHashFilePath;
-      std::string m_DestinationDirectory;
-      std::string m_InstallDirectory;
+      std::string m_DestinationDirectory; /* Directory where the package is decrypted, unzipped and verified */
+      std::string m_OpAppInstallDirectory; /* Directory where the OpApp is installed */
   };
 
   enum class PackageStatus {
@@ -88,7 +82,7 @@ public:
   void stop();
   bool isRunning() const;
   bool isUpdating() const;
-  bool isPackageInstalled(const std::string& packagePath) const;
+  bool isPackageInstalled(const std::string& packagePath);
   void checkForUpdates();
   PackageStatus doPackageFileCheck();
 
@@ -97,6 +91,9 @@ public:
 
   // Package status methods
   PackageOperationResult getPackageFiles();
+  PackageStatus doPackageInstall();
+
+  void setCandidatePackageFile(const std::string& packageFile) { m_CandidatePackageFile = packageFile; }
 
   // Error handling
   std::string getLastErrorMessage() const { return m_LastErrorMessage; }
@@ -111,7 +108,6 @@ private:
   std::string calculateSHA256Hash(const std::string& filePath) const;
   PackageStatus m_PackageStatus;
 
-  // void installPackage(const std::string& packagePath);
   // void uninstallPackage(const std::string& packagePath);
   // void updatePackage(const std::string& packagePath);
   // PackageInfo getPackageInfo();
@@ -129,6 +125,9 @@ private:
 
   std::string m_LastErrorMessage;
   std::unique_ptr<IHashCalculator> m_HashCalculator;
+
+  std::string m_CandidatePackageFile;
+  std::string m_CandidatePackageHash;
 };
 
 #endif /* OP_APP_PACKAGE_MANAGER_H */

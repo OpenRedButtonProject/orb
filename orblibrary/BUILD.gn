@@ -32,11 +32,14 @@ config("external_lib_config") {
 static_library("opapp_package_manager") {
   sources = [
     "package_manager/OpAppPackageManager.cpp",
+    "package_manager/OpenSSLHashCalculator.cpp",
+    "package_manager/OpenSSLHashCalculator.h",
   ]
 
   deps = [
     "//base", # For logging dependency
-    "//third_party/jsoncpp"
+    "//third_party/jsoncpp",
+    "//third_party/boringssl"
   ]
 
   public_deps = []

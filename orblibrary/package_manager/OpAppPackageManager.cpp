@@ -5,10 +5,30 @@
 #include <sstream>
 #include <iomanip>
 #include <vector>
-#include <openssl/sha.h>
 #include <iostream>
 #include <base/logging.h>
 #include "json/json.h"
+#include "OpenSSLHashCalculator.h"
+
+static std::string statusCodeToString(OpAppPackageManager::PackageStatus status)
+{
+  switch (status) {
+    case OpAppPackageManager::PackageStatus::None:
+      return "None";
+    case OpAppPackageManager::PackageStatus::NoUpdateAvailable:
+      return "NoUpdateAvailable";
+    case OpAppPackageManager::PackageStatus::NotInstalled:
+      return "NotInstalled";
+    case OpAppPackageManager::PackageStatus::Installed:
+      return "Installed";
+    case OpAppPackageManager::PackageStatus::UpdateAvailable:
+      return "UpdateAvailable";
+    case OpAppPackageManager::PackageStatus::UpdateFailed:
+      return "UpdateFailed";
+    case OpAppPackageManager::PackageStatus::ConfigurationError:
+      return "ConfigurationError";
+  }
+}
 
 static int readJsonField(
   const std::string& jsonFilePath,
@@ -160,6 +180,24 @@ void OpAppPackageManager::checkForUpdates()
 
   m_PackageStatus = doPackageFileCheck();
 
+  if (m_PackageStatus != PackageStatus::UpdateAvailable) {
+
+    LOG(INFO) << "No update available: [" << statusCodeToString(m_PackageStatus) << "]";
+    return;
+  }
+
+  // We have an update available. Install it.
+  m_IsUpdating = true;
+  m_PackageStatus = doPackageInstall();
+  m_IsUpdating = false;
+
+  if (m_PackageStatus != PackageStatus::Installed) {
+    LOG(ERROR) << "Update failed: [" << statusCodeToString(m_PackageStatus) << "]";
+    return;
+  }
+
+  LOG(INFO) << "Update installed: [" << statusCodeToString(m_PackageStatus) << "]";
+
   // Keep the worker thread running by adding a small delay
   // This prevents the thread from exiting immediately
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -193,10 +231,13 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::doPackageFileCheck()
     return PackageStatus::Installed;
   }
 
+  // Save the package file name to the m_CandidatePackageFile variable
+  m_CandidatePackageFile = packageFile;
+
   return PackageStatus::UpdateAvailable;
 }
 
-bool OpAppPackageManager::isPackageInstalled(const std::string& packagePath) const
+bool OpAppPackageManager::isPackageInstalled(const std::string& packagePath)
 {
   // Calculate the given files SHA-256 hash and compare it to the hash of the installed package
   // If the hashes are the same, the package is installed
@@ -205,14 +246,14 @@ bool OpAppPackageManager::isPackageInstalled(const std::string& packagePath) con
   // If the package is installed, return true
 
   // Get the hash of the package file
-  std::string packageHash = calculateSHA256Hash(packagePath);
+  m_CandidatePackageHash = calculateSHA256Hash(packagePath);
 
   // Get the hash of the installed package
   std::string installedPackageHash;
   int result = readJsonField(m_Configuration.m_PackageHashFilePath, "hash", installedPackageHash);
   if (result == 0) {
     // Compare the hashes and return the result
-    return packageHash == installedPackageHash;
+    return m_CandidatePackageHash == installedPackageHash;
   }
   else if (result == -1) {
     // File does not exist, so the package is not installed
@@ -264,45 +305,43 @@ std::string OpAppPackageManager::calculateSHA256Hash(const std::string& filePath
   return m_HashCalculator->calculateSHA256Hash(filePath);
 }
 
-std::string OpenSSLHashCalculator::calculateSHA256Hash(const std::string& filePath) const
-{
-  std::ifstream file(filePath, std::ios::binary);
-  if (!file.is_open()) {
-    return ""; // Return empty string if file cannot be opened
-  }
-
-  // Initialize SHA256 context
-  SHA256_CTX sha256;
-  SHA256_Init(&sha256);
-
-  // Read file in chunks and update hash
-  const size_t bufferSize = 4096; // 4KB chunks
-  std::vector<char> buffer(bufferSize);
-
-  while (file.read(buffer.data(), bufferSize)) {
-    SHA256_Update(&sha256, buffer.data(), file.gcount());
-  }
-
-  // Handle any remaining bytes
-  if (file.gcount() > 0) {
-    SHA256_Update(&sha256, buffer.data(), file.gcount());
-  }
-
-  // Finalize the hash
-  unsigned char hash[SHA256_DIGEST_LENGTH];
-  SHA256_Final(hash, &sha256);
-
-  // Convert hash to hexadecimal string
-  std::stringstream ss;
-  ss << std::hex << std::setfill('0');
-  for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-    ss << std::setw(2) << static_cast<int>(hash[i]);
-  }
-
-  return ss.str();
-}
-
 std::string OpAppPackageManager::calculateFileSHA256Hash(const std::string& filePath) const
 {
   return calculateSHA256Hash(filePath);
+}
+
+OpAppPackageManager::PackageStatus OpAppPackageManager::doPackageInstall()
+{
+  // Check if the package file is set
+  if (m_CandidatePackageFile.empty()) {
+    return PackageStatus::ConfigurationError;
+  }
+
+  // Check if the package file exists
+  if (!std::filesystem::exists(m_CandidatePackageFile)) {
+    return PackageStatus::ConfigurationError;
+  }
+
+  // Steps to install the package:
+  // 1. Copy the package file to the installation directory
+  std::string packageFileName = std::filesystem::path(m_CandidatePackageFile).filename().string();
+  std::string workingDirectory = m_Configuration.m_DestinationDirectory + "/" + packageFileName;
+  std::filesystem::copy(m_CandidatePackageFile, workingDirectory);
+
+  // // Decrypt the package file
+  // std::string decryptedPackageFile = decryptPackageFile(workingDirectory);
+
+  // // Verify the package file
+  // if (!verifyPackageFile(decryptedPackageFile)) {
+  //   return PackageStatus::UpdateFailed;
+  // }
+
+  // 2. Update the package receipt file with the candidate hash
+  // 3. Return the status of the installation
+
+
+
+
+  // Return the status of the installation
+  return PackageStatus::UpdateFailed;
 }
