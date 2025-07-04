@@ -5,18 +5,22 @@
  * the top level of this repository.
  */
 
-#ifndef OBS_NS_JSONRPCSERVICE_
-#define OBS_NS_JSONRPCSERVICE_
+#ifndef OBS_NS_JSON_RPC_SERVICE_H
+#define OBS_NS_JSON_RPC_SERVICE_H
 
 #include "websocket_service.h"
 
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 #include <mutex>
+#include <memory> 
 #include <json/json.h>
+#include <functional>
 
-namespace NetworkServices {
+namespace orb {
+namespace networkServices {
 class JsonRpcService : public WebSocketService {
 public:
     enum class ConnectionDataType
@@ -70,6 +74,7 @@ public:
         std::unordered_set<std::string> subscribedMethods;
         int intentIdCount;
         bool voiceReady = false;
+        bool opAppEnabled = false;
     };
 
     enum class JsonRpcStatus
@@ -82,23 +87,28 @@ public:
         NOTIFICATION_ERROR = -99999,
         UNKNOWN = 1,
     };
+
     typedef JsonRpcStatus (JsonRpcService::*JsonRpcMethod)(int, const Json::Value&);
 
-    class SessionCallback {
+    struct SubscribeOptions
+    {
+        bool subtitles = false;
+        bool dialogueEnhancement = false;
+        bool uiMagnifier = false;
+        bool highContrastUI = false;
+        bool screenReader = false;
+        bool responseToUserAction = false;
+        bool audioDescription = false;
+        bool inVisionSigning = false;
+    };
+
+    class ISessionCallback {
 public:
         virtual void RequestNegotiateMethods() = 0;
 
-        virtual void RequestSubscribe(
-            bool subtitles, bool dialogueEnhancement,
-            bool uiMagnifier, bool highContrastUI,
-            bool screenReader, bool responseToUserAction,
-            bool audioDescription, bool inVisionSigning) = 0;
+        virtual void RequestSubscribe(const SubscribeOptions& options) = 0;
 
-        virtual void RequestUnsubscribe(
-            bool subtitles, bool dialogueEnhancement,
-            bool uiMagnifier, bool highContrastUI,
-            bool screenReader, bool responseToUserAction,
-            bool audioDescription, bool inVisionSigning) = 0;
+        virtual void RequestUnsubscribe(const SubscribeOptions& options) = 0;
 
         virtual void RequestDialogueEnhancementOverride(
             int connectionId,
@@ -134,10 +144,16 @@ public:
         virtual void RespondMessage(
             std::string info) = 0;
 
-        virtual void ReceiveIntentConfirm(
+        virtual void ReceiveConfirm(
             int connectionId,
             std::string id,
             std::string method) = 0;
+
+        virtual void ReceiveConfirmForSelectChannel(
+            int connectionId,
+            std::string id,
+            std::string method,
+            int sessionId) = 0;    
 
         virtual void ReceiveError(
             int code,
@@ -149,11 +165,26 @@ public:
             std::string method,
             std::string data) = 0;
 
-        virtual ~SessionCallback() = default;
+        virtual void RequestIPPlaybackStatusUpdate(
+            const Json::Value &params) = 0;
+
+        virtual void RequestIPPlaybackMediaPositionUpdate(
+            const Json::Value &params) = 0;
+        
+        virtual void RequestIPPlaybackSetComponents(
+            const Json::Value &params) = 0;
+
+        virtual void RequestIPPlaybackSetPresentFollowing(
+            const Json::Value &params) = 0;
+
+        virtual void RequestIPPlaybackSetTimelineMapping(
+            const Json::Value &params) = 0;   
+
+        virtual ~ISessionCallback() = default;
     };
 
     JsonRpcService(int port, const std::string &endpoint,
-        std::unique_ptr<SessionCallback> m_sessionCallback);
+        std::unique_ptr<ISessionCallback> sessionCallback);
 
     bool OnConnection(WebSocketConnection *connection) override;
 
@@ -183,7 +214,9 @@ public:
 
     JsonRpcStatus NotifyStateMedia(int connectionId, const Json::Value &obj);
 
-    JsonRpcStatus ReceiveIntentConfirm(int connectionId, const Json::Value &obj);
+    JsonRpcStatus ReceiveConfirm(int connectionId, const Json::Value &obj);
+
+    JsonRpcStatus ReceiveConfirmForSelectChannel(int connectionId, const Json::Value &obj);
 
     JsonRpcService::JsonRpcStatus ReceiveError(int connectionId, const Json::Value &obj);
 
@@ -290,6 +323,25 @@ public:
     void RespondTriggerResponseToUserAction(int connectionId, const std::string &id,
         bool actioned);
 
+    // OpApp Video Window to Terminal Request methods
+    JsonRpcStatus RequestIPPlaybackStatusUpdate(int connectionId, const Json::Value &obj);
+    JsonRpcStatus RequestIPPlaybackMediaPositionUpdate(int connectionId, const Json::Value &obj);
+    JsonRpcStatus RequestIPPlaybackSetComponents(int connectionId, const Json::Value &obj);
+    JsonRpcStatus RequestIPPlaybackSetTimelineMapping(int connectionId, const Json::Value &obj);
+    JsonRpcStatus RequestIPPlaybackSetPresentFollowing(int connectionId, const Json::Value &obj);
+    
+    // Terminal to OpApp Video Window Request methods
+    void SendIPPlayerSelectChannel(int channelType, int idType, const std::string& ipBroadcastId);
+    void SendIPPlayerPlay(int sessionId);
+    void SendIPPlayerPause(int sessionId);
+    void SendIPPlayerStop(int sessionId);
+    void SendIPPlayerResume(int sessionId);
+    void SendIPPlayerSeek(int sessionId, int offset, int reference);
+    void SendIPPlayerSetVideoWindow(int sessionId, int x, int y, int width, int height);
+    void SendIPPlayerSetRelativeVolume(int sessionId, int volume);
+    void SendIPPlayerSelectComponents(int sessionId, const std::vector<int>& videoComponents,
+        const std::vector<int>& audioComponents, const std::vector<int>& subtitleComponents);
+    void SendIPPlayerResolveTimeline(int sessionId, const std::string& timelineSelector);
 
 private:
     // Setters and getters for variables
@@ -299,12 +351,21 @@ private:
     Json::Value GetConnectionData(int connectionId, ConnectionDataType type);
 
     std::string m_endpoint;
-    std::unique_ptr<SessionCallback> m_sessionCallback;
+    std::unique_ptr<ISessionCallback> m_sessionCallback;
+
+    // Map to hold JSON-RPC methods
     std::map<std::string, std::function<JsonRpcStatus(int connectionId, const
         Json::Value&)> > m_json_rpc_methods;
+
+    // Sets to hold supported methods for both directions between the regular app and the terminal   
     std::unordered_set<std::string> m_supported_methods_app_to_terminal;
     std::unordered_set<std::string> m_supported_methods_terminal_to_app;
 
+    // Sets to hold supported methods for both directions between the terminal and the operator app
+    std::unordered_set<std::string> m_supported_methods_opapp_to_terminal;
+    std::unordered_set<std::string> m_supported_methods_terminal_to_opapp;
+
+    // Map to hold connection data for each connection   
     std::unordered_map<int, ConnectionData> m_connectionData;
 
     // Helper functions
@@ -330,7 +391,32 @@ private:
     void CheckIntentMethod(std::vector<int> &connectionIds, const std::string& method);
 
     std::string GenerateId(int connectionId);
-};
-} // namespace NetworkServices
 
-#endif // OBS_NS_JSONRPCSERVICE_
+    bool IsOpApp (int connectionId);
+
+    void handleError(int connectionId, JsonRpcStatus status, const Json::Value& obj);
+
+    JsonRpcStatus HandleFeatureRequest(int connectionId, const Json::Value &obj, 
+        const std::string &feature);
+
+    void GetIPPlayerConnectionIdsForMethod(std::vector<int> &result, const std::string& method);   
+    
+    void SendIPPlayerMessageToClients(const std::string& method, const Json::Value &params);
+
+    void SendIPPlayerMessageToClients(const std::string& method, const std::string &sessionId);
+
+    JsonRpcStatus HandleIPPlaybackRequest(int connectionId, const Json::Value &obj, const std::string &method);
+    
+    JsonRpcStatus ResponseIPPlaybackRequest(int connectionId, const std::string &id, const std::string &method);
+
+    void RegisterJsonRPCMethods();
+
+    bool GetActionValue(const Json::Value &actions, const std::string &actionName);
+
+    void SetSubscribeOptions(SubscribeOptions &options, int featureId);
+
+};
+} // namespace networkServices
+} // namespace orb
+
+#endif //OBS_NS_JSON_RPC_SERVICE_H 

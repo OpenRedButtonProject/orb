@@ -1,0 +1,27 @@
+diff -rupN include/libwebsockets.h include_update/libwebsockets.h
+--- include/libwebsockets.h	2025-07-01 22:31:52.858659000 +0100
++++ include_update/libwebsockets.h	2025-07-02 10:43:39.590972296 +0100
+@@ -300,6 +300,11 @@ typedef int suseconds_t;
+ #endif
+ #else
+ #include <openssl/ssl.h>
++
++#include <openssl/hmac.h>
++#include <openssl/sha.h> // often needed for HMAC/hashes
++#include <openssl/evp.h> // often needed for generic crypto
++
+ #if !defined(LWS_WITH_MBEDTLS)
+ #include <openssl/err.h>
+ #endif
+diff -rupN include/lws_config.h include_update/lws_config.h
+--- include/lws_config.h	2025-07-01 22:31:52.864659000 +0100
++++ include_update/lws_config.h	2025-07-02 10:43:50.133038800 +0100
+@@ -100,7 +100,7 @@
+ /* #undef LWS_HAVE_SSL_SESSION_up_ref */
+ /* #undef LWS_HAVE__STAT32I64 */
+ #define LWS_HAVE_STDINT_H
+-#define LWS_HAVE_SYS_CAPABILITY_H
++// #define LWS_HAVE_SYS_CAPABILITY_H
+ #define LWS_HAVE_TIMEGM
+ /* #undef LWS_HAVE_TLS_CLIENT_METHOD */
+ /* #undef LWS_HAVE_TLSV1_2_CLIENT_METHOD */
