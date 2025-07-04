@@ -5,6 +5,33 @@
 #include <thread>
 #include <atomic>
 #include <memory>
+#include <vector>
+#include <mutex>
+
+// Hash calculation interface for testing
+class IHashCalculator {
+public:
+  virtual ~IHashCalculator() = default;
+  virtual std::string calculateSHA256Hash(const std::string& filePath) const = 0;
+};
+
+// Default implementation using OpenSSL
+class OpenSSLHashCalculator : public IHashCalculator {
+public:
+  std::string calculateSHA256Hash(const std::string& filePath) const override;
+};
+
+// Error handling structure for package operations
+struct PackageOperationResult {
+  bool success;
+  std::string errorMessage;
+  std::vector<std::string> packageFiles;
+
+  PackageOperationResult() : success(true) {}
+  PackageOperationResult(bool s, const std::string& msg) : success(s), errorMessage(msg) {}
+  PackageOperationResult(bool s, const std::string& msg, const std::vector<std::string>& files)
+    : success(s), errorMessage(msg), packageFiles(files) {}
+};
 
 class OpAppPackageManager
 {
@@ -24,6 +51,7 @@ public:
       std::string m_PrivateKeyFilePath;
       std::string m_PublicKeyFilePath;
       std::string m_CertificateFilePath;
+      std::string m_PackageHashFilePath;
       std::string m_DestinationDirectory;
       std::string m_InstallDirectory;
   };
@@ -33,9 +61,8 @@ public:
     NotInstalled,
     Installed,
     UpdateAvailable,
-    UpdateInProgress,
     UpdateFailed,
-    UpdateSuccess
+    ConfigurationError  // New status for configuration errors like multiple packages
   };
 
   // Singleton instance management
@@ -43,6 +70,8 @@ public:
   static OpAppPackageManager* getInstance();
   // getInstance(configuration) creates and configures the instance
   static OpAppPackageManager& getInstance(const Configuration& configuration);
+  // getInstance(configuration, hashCalculator) creates instance with custom hash calculator (for testing)
+  static OpAppPackageManager& getInstance(const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator);
   static void destroyInstance();
 
   // Destructor must be public for std::unique_ptr to work
@@ -63,11 +92,23 @@ public:
   PackageStatus getPackageStatus() const;
   void doPackageFileCheck();
 
+  // Public method for calculating SHA256 hash (useful for testing and external use)
+  std::string calculateFileSHA256Hash(const std::string& filePath) const;
+
+  // Package status methods
+  PackageOperationResult getPackageFiles();
+
+  // Error handling
+  std::string getLastErrorMessage() const { return m_LastErrorMessage; }
+  void clearLastError() { m_LastErrorMessage.clear(); }
+
 private:
   // Private constructor for singleton pattern
   OpAppPackageManager(const Configuration& configuration);
+  // Private constructor with custom hash calculator (for testing)
+  OpAppPackageManager(const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator);
 
-  std::vector<std::string> getPackageFiles();
+  std::string calculateSHA256Hash(const std::string& filePath) const;
   PackageStatus m_PackageStatus;
 
   // void installPackage(const std::string& packagePath);
@@ -85,6 +126,9 @@ private:
   // Singleton instance
   static std::unique_ptr<OpAppPackageManager> s_Instance;
   static std::mutex s_InstanceMutex;
+
+  std::string m_LastErrorMessage;
+  std::unique_ptr<IHashCalculator> m_HashCalculator;
 };
 
 #endif /* OP_APP_PACKAGE_MANAGER_H */
