@@ -9,6 +9,21 @@
 #include "third_party/orb/orblibrary/include/OpAppPackageManager.h"
 #include <fstream>
 
+class MockDecryptor : public IDecryptor {
+public:
+  MockDecryptor() = default;
+  void setDecryptResult(const PackageOperationResult& result) {
+    m_DecryptResult = result;
+  }
+
+  PackageOperationResult decrypt(const std::string& filePath) const override {
+    return m_DecryptResult;
+  }
+
+private:
+  PackageOperationResult m_DecryptResult;
+};
+
 // Mock hash calculator for testing
 class MockHashCalculator : public IHashCalculator {
 public:
@@ -440,9 +455,6 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_DifferentHa
   std::remove(hashPath.c_str());
 }
 
-// TODO: Add tests for future package manager functionality
-// These stubs can be expanded when the OpAppPackageManager class is implemented
-
 TEST_F(OpAppPackageManagerTest, TestInstallPackage_NoPackageFile)
 {
   // GIVEN: a singleton OpAppPackageManager instance and no package file set
@@ -471,6 +483,75 @@ TEST_F(OpAppPackageManagerTest, TestInstallPackage_PackageFileDoesNotExist)
   // THEN: the installation should be handled appropriately
   EXPECT_EQ(status, OpAppPackageManager::PackageStatus::ConfigurationError);
 }
+
+TEST_F(OpAppPackageManagerTest, TestInstallPackage_PackageFileExists)
+{
+  // GIVEN: a singleton OpAppPackageManager instance and a package file that exists
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_PackageSuffix = ".opk";
+  configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
+  configuration.m_DestinationDirectory = PACKAGE_PATH + "/install";
+
+  // Create a package file in the package source location
+  std::string packagePath = PACKAGE_PATH + "/package.opk";
+  std::ofstream file(packagePath);
+  file << "test package content";
+  file.close();
+  OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
+  packageManager.setCandidatePackageFile(packagePath);
+
+  // WHEN: attempting to install a package
+  OpAppPackageManager::PackageStatus status = packageManager.doPackageInstall();
+
+  // THEN: the installation should be handled appropriately
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::Installed);
+
+  // Clean up test files
+  std::remove(packagePath.c_str());
+  std::remove((PACKAGE_PATH + "/package.hash").c_str());
+  std::remove((PACKAGE_PATH + "/install/package.opk").c_str());
+  std::filesystem::remove_all(PACKAGE_PATH + "/install");
+}
+
+TEST_F(OpAppPackageManagerTest, TestInstallPackage_PackageFileExists_DecryptFailed)
+{
+  // GIVEN: a singleton OpAppPackageManager instance and a package file that exists
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_PackageSuffix = ".opk";
+  configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
+  configuration.m_DestinationDirectory = PACKAGE_PATH + "/install";
+
+  // Create a package file in the package source location
+  std::string packagePath = PACKAGE_PATH + "/package.opk";
+  std::ofstream file(packagePath);
+  file << "test package content";
+  file.close();
+
+  // Create a mock decryptor that returns a failure
+  auto mockDecryptor = std::make_unique<MockDecryptor>();
+  auto mockHashCalculator = std::make_unique<MockHashCalculator>();
+  mockDecryptor->setDecryptResult(PackageOperationResult(false, "Decryption failed"));
+
+  OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(
+    configuration, std::move(mockHashCalculator), std::move(mockDecryptor));
+  packageManager.setCandidatePackageFile(packagePath);
+
+  // WHEN: attempting to install a package
+  OpAppPackageManager::PackageStatus status = packageManager.doPackageInstall();
+  // THEN: the installation should be handled appropriately
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::DecryptionFailed);
+
+  // Clean up test files
+  std::remove(packagePath.c_str());
+  std::remove((PACKAGE_PATH + "/package.hash").c_str());
+  std::remove((PACKAGE_PATH + "/install/package.opk").c_str());
+  std::filesystem::remove_all(PACKAGE_PATH + "/install");
+}
+
+// TODO: Add tests for future package manager functionality
+// These stubs can be expanded when the OpAppPackageManager class is implemented
 
 TEST_F(OpAppPackageManagerTest, TestUninstallPackage)
 {

@@ -8,13 +8,6 @@
 #include <vector>
 #include <mutex>
 
-// Hash calculation interface for testing
-class IHashCalculator {
-public:
-  virtual ~IHashCalculator() = default;
-  virtual std::string calculateSHA256Hash(const std::string& filePath) const = 0;
-};
-
 // Error handling structure for package operations
 struct PackageOperationResult {
   bool success;
@@ -25,6 +18,20 @@ struct PackageOperationResult {
   PackageOperationResult(bool s, const std::string& msg) : success(s), errorMessage(msg) {}
   PackageOperationResult(bool s, const std::string& msg, const std::vector<std::string>& files)
     : success(s), errorMessage(msg), packageFiles(files) {}
+};
+
+
+// Hash calculation interface for testing
+class IHashCalculator {
+public:
+  virtual ~IHashCalculator() = default;
+  virtual std::string calculateSHA256Hash(const std::string& filePath) const = 0;
+};
+
+class IDecryptor {
+public:
+  virtual ~IDecryptor() = default;
+  virtual PackageOperationResult decrypt(const std::string& filePath) const = 0;
 };
 
 class OpAppPackageManager
@@ -57,6 +64,7 @@ public:
     Installed,
     UpdateAvailable,
     UpdateFailed,
+    DecryptionFailed,
     ConfigurationError
   };
 
@@ -66,7 +74,14 @@ public:
   // getInstance(configuration) creates and configures the instance
   static OpAppPackageManager& getInstance(const Configuration& configuration);
   // getInstance(configuration, hashCalculator) creates instance with custom hash calculator (for testing)
-  static OpAppPackageManager& getInstance(const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator);
+  static OpAppPackageManager& getInstance(
+    const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator);
+  // getInstance(configuration, decryptor) creates instance with custom decryptor (for testing)
+  static OpAppPackageManager& getInstance(
+    const Configuration& configuration, std::unique_ptr<IDecryptor> decryptor);
+  // getInstance(configuration, hashCalculator, decryptor) creates instance with custom hash calculator and decryptor (for testing)
+  static OpAppPackageManager& getInstance(
+    const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator, std::unique_ptr<IDecryptor> decryptor);
   static void destroyInstance();
 
   // Destructor must be public for std::unique_ptr to work
@@ -95,6 +110,13 @@ public:
 
   void setCandidatePackageFile(const std::string& packageFile) { m_CandidatePackageFile = packageFile; }
 
+  PackageOperationResult decryptPackageFile(const std::string& filePath) const;
+
+  /* See 6.1.8: Checks the version number of the package and the version number of the OpApp.*/
+  /* Returns true if the package is compatible with the OpApp */
+  /* Returns false if the package is not compatible with the OpApp */
+  bool verifyPackageFile(const std::string& filePath) const;
+
   // Error handling
   std::string getLastErrorMessage() const { return m_LastErrorMessage; }
   void clearLastError() { m_LastErrorMessage.clear(); }
@@ -103,7 +125,13 @@ private:
   // Private constructor for singleton pattern
   OpAppPackageManager(const Configuration& configuration);
   // Private constructor with custom hash calculator (for testing)
-  OpAppPackageManager(const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator);
+  OpAppPackageManager(
+    const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator);
+  // Private constructor with custom hash calculator and decryptor (for testing)
+  OpAppPackageManager(
+    const Configuration& configuration,
+    std::unique_ptr<IHashCalculator> hashCalculator,
+    std::unique_ptr<IDecryptor> decryptor);
 
   std::string calculateSHA256Hash(const std::string& filePath) const;
   PackageStatus m_PackageStatus;
@@ -125,6 +153,7 @@ private:
 
   std::string m_LastErrorMessage;
   std::unique_ptr<IHashCalculator> m_HashCalculator;
+  std::unique_ptr<IDecryptor> m_Decryptor;
 
   std::string m_CandidatePackageFile;
   std::string m_CandidatePackageHash;

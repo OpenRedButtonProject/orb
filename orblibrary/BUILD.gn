@@ -34,12 +34,14 @@ static_library("opapp_package_manager") {
     "package_manager/OpAppPackageManager.cpp",
     "package_manager/OpenSSLHashCalculator.cpp",
     "package_manager/OpenSSLHashCalculator.h",
+    "package_manager/OpenSSLDecryptor.cpp",
+    "package_manager/OpenSSLDecryptor.h",
   ]
 
   deps = [
     "//base", # For logging dependency
     "//third_party/jsoncpp",
-    "//third_party/boringssl"
+    "//third_party/boringssl:boringssl"
   ]
 
   public_deps = []

@@ -3,7 +3,12 @@
 #include <sstream>
 #include <iomanip>
 #include <vector>
-#include <openssl/sha.h>
+
+#ifdef IS_CHROMIUM
+#include "third_party/boringssl/src/include/openssl/sha.h"
+#else
+#include <openssl/sha.h> // TODO: use local ssl library instead
+#endif
 
 std::string OpenSSLHashCalculator::calculateSHA256Hash(const std::string& filePath) const
 {

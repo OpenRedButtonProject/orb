@@ -6,9 +6,12 @@
 #include <iomanip>
 #include <vector>
 #include <iostream>
-#include <base/logging.h>
-#include "json/json.h"
+#include <base/logging.h> // TODO: use local logging instead
+#include "json/json.h" // TODO: We should be using external/jsoncpp library instead
+
+// TODO: Rename these to OpAppHashCalculator.h and OpAppDecryptor.h
 #include "OpenSSLHashCalculator.h"
+#include "OpenSSLDecryptor.h"
 
 static std::string statusCodeToString(OpAppPackageManager::PackageStatus status)
 {
@@ -25,6 +28,8 @@ static std::string statusCodeToString(OpAppPackageManager::PackageStatus status)
       return "UpdateAvailable";
     case OpAppPackageManager::PackageStatus::UpdateFailed:
       return "UpdateFailed";
+    case OpAppPackageManager::PackageStatus::DecryptionFailed:
+      return "DecryptionFailed";
     case OpAppPackageManager::PackageStatus::ConfigurationError:
       return "ConfigurationError";
   }
@@ -71,6 +76,7 @@ OpAppPackageManager::OpAppPackageManager(const Configuration& configuration)
   , m_Configuration(configuration)
   , m_LastErrorMessage()
   , m_HashCalculator(std::make_unique<OpenSSLHashCalculator>())
+  , m_Decryptor(std::make_unique<OpenSSLDecryptor>())
 {
 }
 
@@ -83,7 +89,28 @@ OpAppPackageManager::OpAppPackageManager(const Configuration& configuration, std
   , m_Configuration(configuration)
   , m_LastErrorMessage()
   , m_HashCalculator(std::move(hashCalculator))
+  , m_Decryptor(std::make_unique<OpenSSLDecryptor>())
 {
+}
+
+OpAppPackageManager::OpAppPackageManager(
+  const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator, std::unique_ptr<IDecryptor> decryptor)
+  : m_PackageStatus(PackageStatus::None)
+  , m_IsRunning(false)
+  , m_IsUpdating(false)
+  , m_Mutex()
+  , m_WorkerThread()
+  , m_Configuration(configuration)
+  , m_LastErrorMessage()
+  , m_HashCalculator(std::move(hashCalculator))
+  , m_Decryptor(std::move(decryptor))
+{
+  if (!m_HashCalculator) {
+    m_HashCalculator = std::make_unique<OpenSSLHashCalculator>();
+  }
+  if (!m_Decryptor) {
+    m_Decryptor = std::make_unique<OpenSSLDecryptor>();
+  }
 }
 
 OpAppPackageManager::~OpAppPackageManager()
@@ -125,6 +152,18 @@ OpAppPackageManager& OpAppPackageManager::getInstance(const Configuration& confi
   }
   // If instance already exists, we just return the existing instance
   // This is a design decision - you could also log a warning or handle it differently
+
+  return *s_Instance;
+}
+
+OpAppPackageManager& OpAppPackageManager::getInstance(
+  const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator, std::unique_ptr<IDecryptor> decryptor)
+{
+  std::lock_guard<std::mutex> lock(s_InstanceMutex);
+
+  if (!s_Instance) {
+    s_Instance = std::unique_ptr<OpAppPackageManager>(new OpAppPackageManager(configuration, std::move(hashCalculator), std::move(decryptor)));
+  }
 
   return *s_Instance;
 }
@@ -323,25 +362,58 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::doPackageInstall()
   }
 
   // Steps to install the package:
-  // 1. Copy the package file to the installation directory
-  std::string packageFileName = std::filesystem::path(m_CandidatePackageFile).filename().string();
-  std::string workingDirectory = m_Configuration.m_DestinationDirectory + "/" + packageFileName;
-  std::filesystem::copy(m_CandidatePackageFile, workingDirectory);
+  // 1. Ensure the destination directory exists
+  if (!std::filesystem::exists(m_Configuration.m_DestinationDirectory)) {
+    std::filesystem::create_directories(m_Configuration.m_DestinationDirectory);
+  }
 
-  // // Decrypt the package file
-  // std::string decryptedPackageFile = decryptPackageFile(workingDirectory);
+  // 2. Copy the package file to the installation directory
+  std::string packageFileName = std::filesystem::path(m_CandidatePackageFile).filename().string();
+  std::string workingFilePath = m_Configuration.m_DestinationDirectory + "/" + packageFileName;
+  std::error_code errorCode;
+  std::filesystem::copy(m_CandidatePackageFile, workingFilePath, errorCode);
+  if (errorCode) {
+    LOG(ERROR) << "Error copying package file to working directory: " << errorCode.message();
+    return PackageStatus::ConfigurationError;
+  }
+  else {
+    LOG(INFO) << "Package file copied to working directory: " << workingFilePath;
+  }
+
+  // Decrypt the package file
+  PackageOperationResult decryptResult = decryptPackageFile(workingFilePath);
+
+  // Verify the package file
+  if (!decryptResult.success) {
+    LOG(ERROR) << "Decryption failed: " << decryptResult.errorMessage;
+    return PackageStatus::DecryptionFailed;
+  }
+
+  LOG(INFO) << "Decryption successful";
 
   // // Verify the package file
-  // if (!verifyPackageFile(decryptedPackageFile)) {
-  //   return PackageStatus::UpdateFailed;
+  // if (!verifyPackageFile(decryptResult.packageFiles[0])) {
+  //   LOG(ERROR) << "Package file verification failed";
+  //   return PackageStatus::ConfigurationError;
   // }
+  // LOG(INFO) << "Package file verification successful";
 
-  // 2. Update the package receipt file with the candidate hash
-  // 3. Return the status of the installation
+  // // 3. Update the package receipt file with the candidate hash
+  // // Create the JSON hash file
+  // std::ofstream hashFile(m_Configuration.m_PackageHashFilePath);
+  // hashFile << "{\"hash\": \"" << m_CandidatePackageHash << "\"}";
+  // hashFile.close();
 
+  // 4. Return the status of the installation
+  return PackageStatus::Installed;
+}
 
+PackageOperationResult OpAppPackageManager::decryptPackageFile(const std::string& filePath) const
+{
+  return m_Decryptor->decrypt(filePath);
+}
 
-
-  // Return the status of the installation
-  return PackageStatus::UpdateFailed;
+bool OpAppPackageManager::verifyPackageFile(const std::string& filePath) const
+{
+  return false;
 }
