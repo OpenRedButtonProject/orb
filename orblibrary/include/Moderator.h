@@ -18,6 +18,7 @@
 #include <memory>
 
 #include "IOrbBrowser.h"
+#include "OrbConstants.h"
 
 namespace orb
 {
@@ -25,10 +26,6 @@ namespace orb
 class Network;
 class MediaSynchroniser;
 
-enum ApplicationType {
-    APP_TYPE_HBBTV,
-    APP_TYPE_OPAPP
-};
 
 class Moderator
 {
