@@ -20,7 +20,8 @@ static_library("orb") {
 
   deps = [
     "//base", # For logging dependency
-    "//third_party/jsoncpp"
+    "//third_party/jsoncpp",
+    "//third_party/libxml"
   ]
 
   public_deps = []

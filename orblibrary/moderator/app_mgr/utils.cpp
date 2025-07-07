@@ -26,6 +26,7 @@
 #include <cstring>
 #include <cstdint>
 #include <string>
+#include <errno.h>
 
 #include "ait.h"
 #include "log.h"
@@ -96,21 +97,45 @@ Utils::CreateLocatorInfo Utils::ParseCreateLocatorInfo(const std::string &url, c
                     std::string original_network_id = sub.substr(0, pos);
                     std::string transport_stream_id = sub.substr(pos + 1, pos2 - (pos + 1));
                     std::string service_id = sub.substr(pos2 + 1);
-                    try
+                    char *end;
+                    errno = 0;
+                    Utils::S_DVB_TRIPLET triplet;
+                    triplet.originalNetworkId = std::strtoul(original_network_id.c_str(), &end, 16);
+                    if (errno == ERANGE || *end != '\0' || end == original_network_id.c_str())
                     {
-                        isAitFilterCurrentService =
-                            (std::stoul(original_network_id, nullptr, 16)
-                             == currentService.originalNetworkId) &&
-                            ((transport_stream_id.empty()) ||
-                             std::stoul(transport_stream_id, nullptr, 16)
-                             == currentService.transportStreamId) &&
-                            (std::stoul(service_id, nullptr, 16)
-                             == currentService.serviceId);
-                    }
-                    catch (const std::exception &e)
-                    {
+                        LOG(LOG_ERROR, "failed to convert orginal network id");
                         isAitFilterCurrentService = false;
-                        LOG(LOG_DEBUG, "Could not parse onet/tsid/sid");
+                    }
+                    else
+                    {
+                        triplet.serviceId = std::strtoul(service_id.c_str(), &end, 16);
+                        if (errno == ERANGE || *end != '\0' || end == service_id.c_str())
+                        {
+                            LOG(LOG_ERROR, "failed to convert service id");
+                            isAitFilterCurrentService = false;
+                        }
+                        else if (transport_stream_id.empty())
+                        {
+                            isAitFilterCurrentService =
+                                (triplet.originalNetworkId == currentService.originalNetworkId) &&
+                                (triplet.serviceId == currentService.serviceId);
+                        }
+                        else
+                        {
+                            triplet.transportStreamId = std::strtoul(transport_stream_id.c_str(), &end, 16);
+                            if (errno == ERANGE || *end != '\0' || end == transport_stream_id.c_str())
+                            {
+                                LOG(LOG_ERROR, "failed to convert org_id");
+                                isAitFilterCurrentService = false;
+                            }
+                            else
+                            {
+                                isAitFilterCurrentService =
+                                    (triplet.originalNetworkId == currentService.originalNetworkId) &&
+                                    (triplet.transportStreamId == currentService.transportStreamId) &&
+                                    (triplet.serviceId == currentService.serviceId);
+                            }
+                        }
                     }
                 }
             }
@@ -137,17 +162,24 @@ Utils::CreateLocatorInfo Utils::ParseCreateLocatorInfo(const std::string &url, c
             {
                 std::string url_org_id = urlParameters.substr(0, pos);
                 std::string url_app_id = urlParameters.substr(pos + 1);
-                try
+                urlInfo.type = CreateLocatorType::AIT_APPLICATION_LOCATOR;
+                // Using strtoul because it does not raise exception and is valid C++11
+                char *end;
+                errno = 0;
+                urlInfo.orgId = std::strtoul(url_org_id.c_str(), &end, 16);
+                if (errno == ERANGE || *end != '\0' || end == url_org_id.c_str())
                 {
-                    urlInfo.orgId = std::stoul(url_org_id, nullptr, 16);
-                    urlInfo.appId = std::stoul(url_app_id, nullptr, 16);
-                    urlInfo.type = CreateLocatorType::AIT_APPLICATION_LOCATOR;
-                }
-                catch (const std::exception &e)
-                {
-                    urlInfo.orgId = 0;
-                    urlInfo.appId = 0;
+                    LOG(LOG_ERROR, "failed to convert org_id");
                     urlInfo.type = CreateLocatorType::UNKNOWN_LOCATOR;
+                    urlInfo.orgId = 0;
+                }
+                errno = 0;
+                urlInfo.appId = std::strtoul(url_app_id.c_str(), &end, 16);
+                if (errno == ERANGE || *end != '\0' || end == url_org_id.c_str())
+                {
+                    LOG(LOG_ERROR, "failed to convert app_id");
+                    urlInfo.type = CreateLocatorType::UNKNOWN_LOCATOR;
+                    urlInfo.appId = 0;
                 }
             }
 
@@ -208,13 +240,13 @@ bool Utils::CompareUrls(const std::string &url1, const std::string &url2)
  */
 bool Utils::IsPartOf(const std::string &documentUrl, const std::string &appBaseUrl)
 {
-    uint32_t len2;
+    //uint32_t len2;
     std::string str1 = documentUrl;
     std::string str2 = appBaseUrl;
 
     str1.erase(str1.find_last_not_of(" \t\n\r\f\v/") + 1);
     str2.erase(str2.find_last_not_of(" \t\n\r\f\v/") + 1);
-    len2 = str2.length();
+    //len2 = str2.length();
 
     if (!str1.empty() && !str2.empty())
     {

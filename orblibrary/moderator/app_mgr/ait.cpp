@@ -394,7 +394,7 @@ bool Ait::PrintInfo(const S_AIT_TABLE *parsedAit)
         if (!hAitApp.graphicsConstraints.empty())
         {
             std::stringstream ss;
-            for (int j = 0; j < hAitApp.graphicsConstraints.size(); ++j)
+            for (uint32_t j = 0; j < hAitApp.graphicsConstraints.size(); ++j)
             {
                 std::string sep = (j < hAitApp.graphicsConstraints.size() - 1) ? "p, " : "p";
                 ss << std::to_string(hAitApp.graphicsConstraints[j]) << sep;
@@ -605,7 +605,7 @@ void Ait::ParseAppDesc(const uint8_t *dataPtr, S_APP_DESC *desc)
 void Ait::ParseAppNameDesc(const uint8_t *dataPtr, S_APP_NAME_DESC *appName)
 {
     uint32_t langCode;
-    uint16_t length;
+    //uint16_t length;
     uint8_t descLen;
     uint8_t nameLen;
     const uint8_t *namePtr;
@@ -616,7 +616,7 @@ void Ait::ParseAppNameDesc(const uint8_t *dataPtr, S_APP_NAME_DESC *appName)
         numLangs = 0;
         descLen = *dataPtr;
         namePtr = dataPtr + 1;
-        length = 0;
+        //length = 0;
         while (descLen > 4)
         {
             nameLen = *(namePtr + 3);
@@ -625,7 +625,7 @@ void Ait::ParseAppNameDesc(const uint8_t *dataPtr, S_APP_NAME_DESC *appName)
             if (nameLen > 0)
             {
                 numLangs++;
-                length += nameLen + 1;
+                //length += nameLen + 1;
             }
         }
         appName->names.resize(numLangs);

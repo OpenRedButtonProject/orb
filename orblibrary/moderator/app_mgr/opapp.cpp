@@ -9,7 +9,6 @@ static std::string opAppStateToString(const HbbTVApp::E_APP_STATE &state);
 /**
  * Create opapp from url.
  *
- * @throws std::runtime_error
  */
 OpApp::OpApp(const std::string &url, ApplicationSessionCallback *sessionCallback)
     : HbbTVApp(url, sessionCallback),
@@ -19,16 +18,13 @@ OpApp::OpApp(const std::string &url, ApplicationSessionCallback *sessionCallback
 }
 
 /**
- * Create opapp from Ait description.
+ * Create opapp
  *
  * @throws std::runtime_error
  */
-OpApp::OpApp(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable, ApplicationSessionCallback *sessionCallback)
+OpApp::OpApp(ApplicationSessionCallback *sessionCallback)
     : HbbTVApp(
-        desc,
         Utils::MakeInvalidDvbTriplet(),
-        isNetworkAvailable,
-        "",
         true,
         false,
         sessionCallback

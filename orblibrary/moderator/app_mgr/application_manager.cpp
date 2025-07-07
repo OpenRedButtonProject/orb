@@ -369,8 +369,8 @@ void ApplicationManager::ProcessAitSection(uint16_t aitPid, uint16_t serviceId,
  *
  * @param xmlAit The XML AIT contents.
  * @param isDvbi true when the caller a DVB-I application.
- * @param scheme The linked application scheme. 
- * 
+ * @param scheme The linked application scheme.
+ *
  * @return true if the application can be created, otherwise false
  */
 int ApplicationManager::ProcessXmlAit(
@@ -869,18 +869,23 @@ void ApplicationManager::OnPerformBroadcastAutostart()
 
 /**
  * Create and run an App by url.
- * 
- * @param url The url the of the App. 
+ *
+ * @param url The url the of the App.
  * @param runAsOpApp When true, the newly created app will be lauched as an OpApp,
  *      otherwise as an HbbTVApp.
- * 
+ *
  * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
  */
 int ApplicationManager::CreateAndRunApp(std::string url, bool runAsOpApp)
 {
-    int result = INVALID_APP_ID;
+    int result;
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    try
+    if (url.empty())
+    {
+        LOG(LOG_ERROR, "URL is empty");
+        result = INVALID_APP_ID;
+    }
+    else
     {
         if (runAsOpApp)
         {
@@ -891,16 +896,12 @@ int ApplicationManager::CreateAndRunApp(std::string url, bool runAsOpApp)
             result = RunApp(std::make_unique<HbbTVApp>(url, m_sessionCallback.get()));
         }
     }
-    catch(const std::exception& e)
-    {
-        LOG(LOG_ERROR, "%s", e.what());
-    }
     return result;
 }
 
 /**
  * Create and run an App by AIT description.
- * 
+ *
  * @param desc The AIT description the new App will use to set its initial state.
  * @param urlParams Additional url parameters that will be concatenated with the
  *      loaded url of the new App.
@@ -908,7 +909,7 @@ int ApplicationManager::CreateAndRunApp(std::string url, bool runAsOpApp)
  * @param isTrusted Is the new App trusted?
  * @param runAsOpApp When true, the newly created app will be lauched as an OpApp,
  *      otherwise as an HbbTVApp.
- * 
+ *
  * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
  */
 int ApplicationManager::CreateAndRunApp(
@@ -918,32 +919,29 @@ int ApplicationManager::CreateAndRunApp(
     bool isTrusted,
     bool runAsOpApp
 ){
-    int result = INVALID_APP_ID;
+    int result;
+    std::unique_ptr<HbbTVApp> app;
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    try
+
+    // ETSI TS 103 606 V1.2.1 (2024-03) Table 7: XML AIT Profile
+    if (runAsOpApp || desc.appUsage == "urn:hbbtv:opapp:privileged:2017" ||
+        desc.appUsage == "urn:hbbtv:opapp:opspecific:2017")
     {
-        // ETSI TS 103 606 V1.2.1 (2024-03) Table 7: XML AIT Profile
-        if (runAsOpApp || desc.appUsage == "urn:hbbtv:opapp:privileged:2017" ||
-            desc.appUsage == "urn:hbbtv:opapp:opspecific:2017")
-        {
-            result = RunApp(std::make_unique<OpApp>(desc,
-                m_isNetworkAvailable,
-                m_sessionCallback.get()));
-        }
-        else
-        {
-            result = RunApp(std::make_unique<HbbTVApp>(desc,
-                m_currentService,
-                m_isNetworkAvailable,
-                urlParams,
-                isBroadcast,
-                isTrusted,
-                m_sessionCallback.get()));
-        }
+        app = std::make_unique<OpApp>(m_sessionCallback.get());
     }
-    catch(const std::exception& e)
+    else
     {
-        LOG(LOG_ERROR, "%s", e.what());
+        app = std::make_unique<HbbTVApp>(m_currentService, isBroadcast, isTrusted, m_sessionCallback.get());
+    }
+    app->SetUrl(desc, urlParams, m_isNetworkAvailable);
+    if (!app->Update(desc, m_isNetworkAvailable))
+    {
+        LOG(LOG_ERROR, "Update failed");
+        result = INVALID_APP_ID;
+    }
+    else
+    {
+        result = RunApp(std::move(app));
     }
     return result;
 }
@@ -952,7 +950,7 @@ int ApplicationManager::CreateAndRunApp(
  * Run the app.
  *
  * @param app The app to run.
- * 
+ *
  * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
  */
 int ApplicationManager::RunApp(std::unique_ptr<HbbTVApp> app)
@@ -970,14 +968,14 @@ int ApplicationManager::RunApp(std::unique_ptr<HbbTVApp> app)
         m_sessionCallback->StopBroadcast();
         m_previousService = m_currentService = Utils::MakeInvalidDvbTriplet();
     }
-    
+
     m_sessionCallback->LoadApplication(app->GetId(), app->GetEntryUrl().c_str(),
         app->GetAitDescription().graphicsConstraints.size(), app->GetAitDescription().graphicsConstraints);
 
     *appId = app->GetId();
     m_apps[*appId] = std::move(app);
 
-    // Call explicitly Show/Hide 
+    // Call explicitly Show/Hide
     if (m_apps[*appId]->GetState() != HbbTVApp::BACKGROUND_STATE)
     {
         m_sessionCallback->ShowApplication(*appId);
@@ -991,27 +989,19 @@ int ApplicationManager::RunApp(std::unique_ptr<HbbTVApp> app)
 
 /**
  * Update the running app.
- * 
+ *
  * @param desc The AIT description the running App will use to update its state.
- * 
+ *
  * @return True on success, false on failure.
  */
 bool ApplicationManager::UpdateRunningApp(const Ait::S_AIT_APP_DESC &desc)
 {
-    try
-    {
-        m_apps[m_hbbtvAppId]->Update(desc, m_isNetworkAvailable);
-    }
-    catch(const std::exception& e)
-    {
-        return false;
-    }
-    return true;
+    return m_apps[m_hbbtvAppId]->Update(desc, m_isNetworkAvailable);
 }
 
 /**
  * Kill the running app.
- */   
+ */
 void ApplicationManager::KillRunningApp(int appid)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
@@ -1068,7 +1058,7 @@ bool ApplicationManager::TransitionRunningAppToBroadcastRelated()
     {
         return false;
     }
-    
+
     /* Note: what about app.is_trusted, app.parental_ratings, ... */
     return m_apps[m_hbbtvAppId]->TransitionToBroadcastRelated();
 }
@@ -1108,7 +1098,7 @@ bool ApplicationManager::IsAppTrusted(bool)
  */
 const Ait::S_AIT_APP_DESC * ApplicationManager::GetAutoStartApp(const Ait::S_AIT_TABLE *aitTable)
 {
-    int index;
+    //int index;
     LOG(LOG_ERROR, "GetAutoStartApp");
 
     /* Note: XML AIt uses the alpha-2 region codes as defined in ISO 3166-1.
