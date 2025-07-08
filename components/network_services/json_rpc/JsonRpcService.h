@@ -74,7 +74,6 @@ public:
         std::unordered_set<std::string> subscribedMethods;
         int intentIdCount;
         bool voiceReady = false;
-        bool opAppEnabled = false;
     };
 
     enum class JsonRpcStatus
@@ -185,6 +184,11 @@ public:
 
     JsonRpcService(int port, const std::string &endpoint,
         std::unique_ptr<ISessionCallback> sessionCallback);
+    /**
+     *  Set Operator Application flag.
+     *  Default value is true. 
+     */
+    void SetOpAppEnabled(bool enabled);    
 
     bool OnConnection(WebSocketConnection *connection) override;
 
@@ -350,24 +354,6 @@ private:
     void SetStateMediaToConnectionData(int connectionId, const ConnectionData& mediaData);
     Json::Value GetConnectionData(int connectionId, ConnectionDataType type);
 
-    std::string m_endpoint;
-    std::unique_ptr<ISessionCallback> m_sessionCallback;
-
-    // Map to hold JSON-RPC methods
-    std::map<std::string, std::function<JsonRpcStatus(int connectionId, const
-        Json::Value&)> > m_json_rpc_methods;
-
-    // Sets to hold supported methods for both directions between the regular app and the terminal   
-    std::unordered_set<std::string> m_supported_methods_app_to_terminal;
-    std::unordered_set<std::string> m_supported_methods_terminal_to_app;
-
-    // Sets to hold supported methods for both directions between the terminal and the operator app
-    std::unordered_set<std::string> m_supported_methods_opapp_to_terminal;
-    std::unordered_set<std::string> m_supported_methods_terminal_to_opapp;
-
-    // Map to hold connection data for each connection   
-    std::unordered_map<int, ConnectionData> m_connectionData;
-
     // Helper functions
     std::vector<int> GetAllConnectionIds();
 
@@ -392,8 +378,6 @@ private:
 
     std::string GenerateId(int connectionId);
 
-    bool IsOpApp (int connectionId);
-
     void handleError(int connectionId, JsonRpcStatus status, const Json::Value& obj);
 
     JsonRpcStatus HandleFeatureRequest(int connectionId, const Json::Value &obj, 
@@ -414,7 +398,25 @@ private:
     bool GetActionValue(const Json::Value &actions, const std::string &actionName);
 
     void SetSubscribeOptions(SubscribeOptions &options, int featureId);
+ private:
+    std::string m_endpoint;
+    std::unique_ptr<ISessionCallback> m_sessionCallback;
 
+    // Map to hold JSON-RPC methods
+    std::map<std::string, std::function<JsonRpcStatus(int connectionId, const
+        Json::Value&)> > m_json_rpc_methods;
+
+    // Sets to hold supported methods for both directions between the regular app and the terminal   
+    std::unordered_set<std::string> m_supported_methods_app_to_terminal;
+    std::unordered_set<std::string> m_supported_methods_terminal_to_app;
+
+    // Sets to hold supported methods for both directions between the terminal and the operator app
+    std::unordered_set<std::string> m_supported_methods_opapp_to_terminal;
+    std::unordered_set<std::string> m_supported_methods_terminal_to_opapp;
+
+    // Map to hold connection data for each connection   
+    std::unordered_map<int, ConnectionData> m_connectionData;
+    bool m_opAppEnabled;
 };
 } // namespace networkServices
 } // namespace orb
