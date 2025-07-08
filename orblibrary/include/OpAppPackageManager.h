@@ -159,10 +159,21 @@ public:
    * Verifies the package file found in m_CandidatePackageFile. See reference 6.1.8.
    *
    * Returns:
-   *  true if the package is compatible and a new version of OpApp.
-   *  false if the package is not compatible with the OpApp or same or older version.
+   *  PackageOperationResult::success if the package is compatible and a new version of OpApp.
+   *  PackageOperationResult::errorMessage if the package is not compatible with the OpApp or same or older version.
    */
-  bool verifyPackageFile(const std::string& filePath) const;
+  PackageOperationResult verifyPackageFile(const std::string& filePath) const;
+
+  /**
+   * unzipPackageFile()
+   *
+   * Unzips the package file found in m_CandidatePackageFile.
+   *
+   * Returns:
+   *  true if the package is unzipped successfully.
+   *  false if the package cannot be unzipped.
+   */
+  bool unzipPackageFile(const std::string& filePath) const;
 
   // Error handling
   std::string getLastErrorMessage() const { return m_LastErrorMessage; }

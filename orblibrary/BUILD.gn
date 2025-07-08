@@ -49,6 +49,22 @@ static_library("opapp_package_manager") {
   public_configs = [ ":external_lib_config" ]
 }
 
+static_library("orb_integration")
+{
+  testonly = true
+
+  sources = [
+    "integration/OrbIntegration.cpp"
+  ]
+
+  public_configs = [ ":external_lib_config" ]
+
+  deps = [
+    "//content/public/browser:browser",
+    "//content/shell:content_shell_lib"
+  ]
+}
+
 static_library("orb_polyfill") {
   sources = [
     "polyfill/HtmlBuilder.cpp",

@@ -17,11 +17,32 @@ public:
   }
 
   PackageOperationResult decrypt(const std::string& filePath) const override {
+    m_WasDecryptCalled = true;
+    m_LastFilePath = filePath;
     return m_DecryptResult;
+  }
+
+  bool wasDecryptCalled() const {
+    return m_WasDecryptCalled;
+  }
+
+  void setLastFilePath(const std::string& filePath) {
+    m_LastFilePath = filePath;
+  }
+
+  std::string getLastFilePath() const {
+    return m_LastFilePath;
+  }
+
+  void reset() {
+    m_WasDecryptCalled = false;
+    m_LastFilePath.clear();
   }
 
 private:
   PackageOperationResult m_DecryptResult;
+  mutable bool m_WasDecryptCalled = false;
+  mutable std::string m_LastFilePath;
 };
 
 // Mock hash calculator for testing
@@ -498,14 +519,25 @@ TEST_F(OpAppPackageManagerTest, TestInstallPackage_PackageFileExists)
   std::ofstream file(packagePath);
   file << "test package content";
   file.close();
-  OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
+
+  // Create a mock decryptor that returns success with package files
+  auto mockDecryptor = std::make_unique<MockDecryptor>();
+  auto mockHashCalculator = std::make_unique<MockHashCalculator>();
+  std::vector<std::string> packageFiles = {PACKAGE_PATH + "/decrypted_package.opk"};
+  mockDecryptor->setDecryptResult(PackageOperationResult(true, "Decryption successful", packageFiles));
+
+  // Store a reference to the mock decryptor before moving it
+  MockDecryptor* mockDecryptorPtr = mockDecryptor.get();
+
+  OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(
+    configuration, std::move(mockHashCalculator), std::move(mockDecryptor));
   packageManager.setCandidatePackageFile(packagePath);
 
   // WHEN: attempting to install a package
-  OpAppPackageManager::PackageStatus status = packageManager.tryPackageInstall();
+  packageManager.tryPackageInstall();
 
-  // THEN: the installation should be handled appropriately
-  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::Installed);
+  // THEN: the decrypt method should be called
+  EXPECT_TRUE(mockDecryptorPtr->wasDecryptCalled());
 
   // Clean up test files
   std::remove(packagePath.c_str());

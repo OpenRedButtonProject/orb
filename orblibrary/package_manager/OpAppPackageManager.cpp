@@ -219,6 +219,8 @@ void OpAppPackageManager::checkForUpdates()
 {
   m_IsRunning = true;
 
+  /* TODO Error handling as outlined in OpApp HbbTV spec 6.1.9 Installation Failures */
+
   m_PackageStatus = doPackageFileCheck();
 
   if (m_PackageStatus != PackageStatus::UpdateAvailable) {
@@ -388,12 +390,14 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::tryPackageInstall()
 
   LOG(INFO) << "Decryption successful";
 
-  // // Verify the package file
-  // if (!verifyPackageFile(decryptResult.packageFiles[0])) {
-  //   LOG(ERROR) << "Package file verification failed";
-  //   return PackageStatus::ConfigurationError;
-  // }
-  // LOG(INFO) << "Package file verification successful";
+  // Verify the package file
+  PackageOperationResult verifyResult = verifyPackageFile(decryptResult.packageFiles[0]);
+  if (!verifyResult.success) {
+    LOG(INFO) << "Package file verification failed: " << verifyResult.errorMessage;
+    return PackageStatus::VerificationFailed;
+  }
+
+  LOG(INFO) << "Package file verification successful";
 
   // // 3. Update the package receipt file with the candidate hash
   // // Create the JSON hash file
@@ -407,10 +411,73 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::tryPackageInstall()
 
 PackageOperationResult OpAppPackageManager::decryptPackageFile(const std::string& filePath) const
 {
+  /* From the OpApp HbbTV spec:
+  11.3.4.4 Process for decrypting an application package
+  */
   return m_Decryptor->decrypt(filePath);
 }
 
-bool OpAppPackageManager::verifyPackageFile(const std::string& filePath) const
+PackageOperationResult OpAppPackageManager::verifyPackageFile(const std::string& filePath) const
+{
+  /* From the OpApp HbbTV spec:
+  6.1.8 Decrypt, verify, unpack and installation of the application package
+
+    The terminal shall decrypt the encrypted application package as defined in clause 11.3.4.4 using the Terminal
+    Packaging Certificate and corresponding private key. The terminal shall verify the signature of the decrypted
+    application ZIP package as specified in clause 11.3.4.5.
+
+    The terminal shall consider the application package as valid and verified if all of the following are true:
+      •The application zip package passed the verification process defined in clause 11.3.4.5.
+      •For application packages signalled by a broadcast AIT, the application loop entry from the initially trusted
+      broadcast AIT matches the opapp.ait file contained inside the package.
+      •For application packages signalled by an XML AIT, the initially trusted XML AIT file matches the
+      opapp.aitx from inside the package.
+      •When an already installed operator application is being updated, if a minimum application version number was
+      provided when the package was last updated (or installed if this is the first update) then:
+      -
+      the version number in the application package to be installed is greater than or equal that minimum
+      version number;
+      otherwise if no minimum application version number was provided at that time;
+      -
+      •
+      the version number in the application package to be installed is higher than the version number of the
+      currently installed operator application.
+      The combined uncompressed and extracted size of the operator application files is smaller than the maximum
+      permitted, subject to the bilateral agreement.
+
+  See 11.3.4.5 Application ZIP package signature verification process
+
+    After decrypting the encrypted application package as defined in clause 11.3.4.4, terminals shall verify the resulting
+    CMS SignedData according to the following process.
+
+    Terminals shall use the Operator Signing Root CA to verify the certificates included in the certificates block of
+    the CMS SignedData structure as detailed in section 5.1 of IETF RFC 5652 [12].
+
+    Terminals shall extract the application ZIP file from the encapContentInfo block of the CMS SignedData.
+    Terminals shall fail and reject the verification if any of the following conditions occur:
+    •The certificate chain fails certificate path validation as defined in clause 6 of RFC 5280 [11] (this includes a
+    check that none of the certificates have expired). The required check that certificates have not been revoked
+    shall be performed by obtaining the appropriate CRLs using the cRLDistributionPoints extension (see table
+    23).
+    •The Operator Name, as signalled via the Organization ('O=') attribute of the subject field, or the
+    organisation_id, as signalled via the CommonName ('CN=') attribute of the subject field do not match those
+    defined in the bilateral agreement for the operator whose organisation_id is found during the discovery process
+    in clause 6.1.5.
+    •The value of the message-digest field contained in the CMS SignedData structure does not match with
+    the terminal generating a message-digest of the extracted application ZIP file when applying the hashing
+    function communicated via the SignatureAlgorithm field.
+
+    If verification fails, the terminal shall follow the process outlined in clause 6.1.9.
+    The following provides an informative example where the decrypted application ZIP file is verified with the Operator
+    Signing Root CA. The example only covers validating the operator's certificate chain and the message-digest of the
+    application ZIP file. It does not include checking certificates for revocation using CRLs.
+
+  */
+
+  return PackageOperationResult(false, "Verification failed", std::vector<std::string>());
+}
+
+bool OpAppPackageManager::unzipPackageFile(const std::string& filePath) const
 {
   return false;
 }
