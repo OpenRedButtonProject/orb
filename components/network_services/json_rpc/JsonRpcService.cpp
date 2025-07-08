@@ -23,11 +23,17 @@ JsonRpcService::JsonRpcService(
     std::unique_ptr<ISessionCallback> sessionCallback) :
     WebSocketService("JsonRpcService", port, false, "lo"),
     m_endpoint(endpoint),
-    m_sessionCallback(std::move(sessionCallback))
+    m_sessionCallback(std::move(sessionCallback)),
+    m_opAppEnabled(true)
 {
     LOGI("JsonRpcService::JsonRpcService: endpoint=" << m_endpoint << ", port=" << port);    
     RegisterJsonRPCMethods();
     RegisterSupportedMethods();
+}
+
+void JsonRpcService::SetOpAppEnabled(bool enabled) {
+    LOGI("Set Operator Application enabled: " << enabled);
+    m_opAppEnabled = enabled; 
 }
 
 bool JsonRpcService::OnConnection(WebSocketConnection *connection)
@@ -1423,14 +1429,12 @@ Json::Value JsonRpcService::FilterMethods(int connectionId,
 {
     Json::Value newMethodsList;
 
-    bool isOpApp = IsOpApp(connectionId);
-
     for (const auto& method : methodsList)
     {
         std::string methodName = method.asString();
         if (isAppToTerminal && 
             (JsonRpcServiceUtil::IsMethodInSet(m_supported_methods_app_to_terminal, methodName) 
-            || (isOpApp && JsonRpcServiceUtil::IsMethodInSet(m_supported_methods_opapp_to_terminal, methodName))))
+            || (m_opAppEnabled && JsonRpcServiceUtil::IsMethodInSet(m_supported_methods_opapp_to_terminal, methodName))))
         {
             SetConnectionData(connectionId,
                 ConnectionDataType::NegotiateMethodsAppToTerminal,
@@ -1439,7 +1443,7 @@ Json::Value JsonRpcService::FilterMethods(int connectionId,
         }
         else if (!isAppToTerminal && 
             (JsonRpcServiceUtil::IsMethodInSet(m_supported_methods_terminal_to_app, methodName) 
-            || (isOpApp && JsonRpcServiceUtil::IsMethodInSet(m_supported_methods_terminal_to_opapp, methodName))))
+            || (m_opAppEnabled && JsonRpcServiceUtil::IsMethodInSet(m_supported_methods_terminal_to_opapp, methodName))))
         {
             SetConnectionData(connectionId,
                 ConnectionDataType::NegotiateMethodsTerminalToApp,
@@ -1759,15 +1763,6 @@ Json::Value JsonRpcService::GetConnectionData(int connectionId, ConnectionDataTy
         }
     }
     return value;
-}
-
-bool JsonRpcService::IsOpApp(int connectionId) {
-    std::lock_guard<std::recursive_mutex> lock(mConnectionsMutex);
-    if (m_connectionData.find(connectionId) != m_connectionData.end())
-    {
-        return m_connectionData[connectionId].opAppEnabled;
-    }
-    return false;
 }
 
 JsonRpcService::JsonRpcStatus JsonRpcService::ResponseIPPlaybackRequest(int connectionId, const std::string &id, const std::string &method)

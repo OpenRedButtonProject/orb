@@ -190,7 +190,7 @@ void WebSocketService::MainLooper()
     LOGI(ENTER);
     while (!mStop)
     {
-        LOGI("WebSocketService main loop running (200ms)...");
+        LOGI("WebSocketService main loop running ...");
         // The timeout value is ignored since 4.2
         if (lws_service(mContext, 0) < 0)
         {
