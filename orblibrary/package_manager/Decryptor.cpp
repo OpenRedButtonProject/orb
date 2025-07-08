@@ -1,4 +1,4 @@
-#include "OpenSSLDecryptor.h"
+#include "Decryptor.h"
 #include <fstream>
 #include <sstream>
 #include <iomanip>
@@ -10,7 +10,7 @@
 #include <openssl/sha.h>
 #endif
 
-PackageOperationResult OpenSSLDecryptor::decrypt(const std::string& filePath) const
+PackageOperationResult Decryptor::decrypt(const std::string& filePath) const
 {
   return PackageOperationResult(true, "", {filePath});
 }

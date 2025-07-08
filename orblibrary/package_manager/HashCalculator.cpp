@@ -1,4 +1,4 @@
-#include "OpenSSLHashCalculator.h"
+#include "HashCalculator.h"
 #include <fstream>
 #include <sstream>
 #include <iomanip>
@@ -10,7 +10,7 @@
 #include <openssl/sha.h> // TODO: use local ssl library instead
 #endif
 
-std::string OpenSSLHashCalculator::calculateSHA256Hash(const std::string& filePath) const
+std::string HashCalculator::calculateSHA256Hash(const std::string& filePath) const
 {
   std::ifstream file(filePath, std::ios::binary);
   if (!file.is_open()) {

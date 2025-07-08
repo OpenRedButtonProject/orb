@@ -10,8 +10,8 @@
 #include "json/json.h" // TODO: We should be using external/jsoncpp library instead
 
 // TODO: Rename these to OpAppHashCalculator.h and OpAppDecryptor.h
-#include "OpenSSLHashCalculator.h"
-#include "OpenSSLDecryptor.h"
+#include "HashCalculator.h"
+#include "Decryptor.h"
 
 static std::string statusCodeToString(OpAppPackageManager::PackageStatus status)
 {
@@ -75,8 +75,8 @@ OpAppPackageManager::OpAppPackageManager(const Configuration& configuration)
   , m_WorkerThread()
   , m_Configuration(configuration)
   , m_LastErrorMessage()
-  , m_HashCalculator(std::make_unique<OpenSSLHashCalculator>())
-  , m_Decryptor(std::make_unique<OpenSSLDecryptor>())
+  , m_HashCalculator(std::make_unique<HashCalculator>())
+  , m_Decryptor(std::make_unique<Decryptor>())
 {
 }
 
@@ -89,7 +89,7 @@ OpAppPackageManager::OpAppPackageManager(const Configuration& configuration, std
   , m_Configuration(configuration)
   , m_LastErrorMessage()
   , m_HashCalculator(std::move(hashCalculator))
-  , m_Decryptor(std::make_unique<OpenSSLDecryptor>())
+  , m_Decryptor(std::make_unique<Decryptor>())
 {
 }
 
@@ -106,10 +106,10 @@ OpAppPackageManager::OpAppPackageManager(
   , m_Decryptor(std::move(decryptor))
 {
   if (!m_HashCalculator) {
-    m_HashCalculator = std::make_unique<OpenSSLHashCalculator>();
+    m_HashCalculator = std::make_unique<HashCalculator>();
   }
   if (!m_Decryptor) {
-    m_Decryptor = std::make_unique<OpenSSLDecryptor>();
+    m_Decryptor = std::make_unique<Decryptor>();
   }
 }
 

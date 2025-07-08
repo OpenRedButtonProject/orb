@@ -32,10 +32,10 @@ config("external_lib_config") {
 static_library("opapp_package_manager") {
   sources = [
     "package_manager/OpAppPackageManager.cpp",
-    "package_manager/OpenSSLHashCalculator.cpp",
-    "package_manager/OpenSSLHashCalculator.h",
-    "package_manager/OpenSSLDecryptor.cpp",
-    "package_manager/OpenSSLDecryptor.h",
+    "package_manager/HashCalculator.cpp",
+    "package_manager/HashCalculator.h",
+    "package_manager/Decryptor.cpp",
+    "package_manager/Decryptor.h",
   ]
 
   deps = [
