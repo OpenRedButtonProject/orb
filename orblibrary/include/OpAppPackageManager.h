@@ -65,6 +65,7 @@ public:
     UpdateAvailable,
     UpdateFailed,
     DecryptionFailed,
+    VerificationFailed,
     ConfigurationError
   };
 
@@ -99,6 +100,23 @@ public:
   bool isUpdating() const;
   bool isPackageInstalled(const std::string& packagePath);
   void checkForUpdates();
+
+  /**
+   * doPackageFileCheck()
+   *
+   * Checks for the existence of a *single* OpApp package file, ending with the package suffix
+   * in the directory set by m_PackageLocation, and checks its SHA256 hash against any existing
+   * hash found at m_PackageHashFilePath.
+   *
+   * If the package file is found, it is saved to m_CandidatePackageFile.
+   *
+   * Returns:
+   *  PackageStatus::NoUpdateAvailable if no package file is found.
+   *  PackageStatus::Installed if the package file exists and the hash is the same.
+   *  PackageStatus::UpdateAvailable if the package file exists and the hash is different.
+   *  PackageStatus::ConfigurationError if multiple package files are found.
+   *  PackageStatus::ConfigurationError for any other error.
+   */
   PackageStatus doPackageFileCheck();
 
   // Public method for calculating SHA256 hash (useful for testing and external use)
@@ -106,15 +124,44 @@ public:
 
   // Package status methods
   PackageOperationResult getPackageFiles();
-  PackageStatus doPackageInstall();
+
+  /**
+   * tryPackageInstall()
+   *
+   * Attempts to install the package file found in m_CandidatePackageFile.
+   *
+   * Returns:
+   *  PackageStatus::Installed if the package is installed successfully.
+   *  PackageStatus::DecryptionFailed if the package file cannot be decrypted.
+   *  PackageStatus::VerificationFailed if the package file cannot be verified.
+   *  PackageStatus::ConfigurationError if the package file cannot be found.
+   *  PackageStatus::ConfigurationError for any other error.
+   */
+  PackageStatus tryPackageInstall();
 
   void setCandidatePackageFile(const std::string& packageFile) { m_CandidatePackageFile = packageFile; }
 
+  /**
+   * decryptPackageFile()
+   *
+   * Decrypts the package file found in m_CandidatePackageFile.
+   *
+   * Returns:
+   *  PackageOperationResult::success if the package file is decrypted successfully.
+   *  PackageOperationResult::errorMessage if the package file cannot be decrypted.
+   *  PackageOperationResult::packageFiles if the package file is decrypted successfully.
+   */
   PackageOperationResult decryptPackageFile(const std::string& filePath) const;
 
-  /* See 6.1.8: Checks the version number of the package and the version number of the OpApp.*/
-  /* Returns true if the package is compatible with the OpApp */
-  /* Returns false if the package is not compatible with the OpApp */
+  /**
+   * verifyPackageFile()
+   *
+   * Verifies the package file found in m_CandidatePackageFile. See reference 6.1.8.
+   *
+   * Returns:
+   *  true if the package is compatible and a new version of OpApp.
+   *  false if the package is not compatible with the OpApp or same or older version.
+   */
   bool verifyPackageFile(const std::string& filePath) const;
 
   // Error handling
@@ -133,7 +180,6 @@ private:
     std::unique_ptr<IHashCalculator> hashCalculator,
     std::unique_ptr<IDecryptor> decryptor);
 
-  std::string calculateSHA256Hash(const std::string& filePath) const;
   PackageStatus m_PackageStatus;
 
   // void uninstallPackage(const std::string& packagePath);

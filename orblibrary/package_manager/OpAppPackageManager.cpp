@@ -30,6 +30,8 @@ static std::string statusCodeToString(OpAppPackageManager::PackageStatus status)
       return "UpdateFailed";
     case OpAppPackageManager::PackageStatus::DecryptionFailed:
       return "DecryptionFailed";
+    case OpAppPackageManager::PackageStatus::VerificationFailed:
+      return "VerificationFailed";
     case OpAppPackageManager::PackageStatus::ConfigurationError:
       return "ConfigurationError";
   }
@@ -227,7 +229,7 @@ void OpAppPackageManager::checkForUpdates()
 
   // We have an update available. Install it.
   m_IsUpdating = true;
-  m_PackageStatus = doPackageInstall();
+  m_PackageStatus = tryPackageInstall();
   m_IsUpdating = false;
 
   if (m_PackageStatus != PackageStatus::Installed) {
@@ -285,7 +287,7 @@ bool OpAppPackageManager::isPackageInstalled(const std::string& packagePath)
   // If the package is installed, return true
 
   // Get the hash of the package file
-  m_CandidatePackageHash = calculateSHA256Hash(packagePath);
+  m_CandidatePackageHash = calculateFileSHA256Hash(packagePath);
 
   // Get the hash of the installed package
   std::string installedPackageHash;
@@ -311,7 +313,7 @@ PackageOperationResult OpAppPackageManager::getPackageFiles()
 
   // Check if the package location directory exists
   if (!std::filesystem::exists(m_Configuration.m_PackageLocation)) {
-    return PackageOperationResult(true, "", packageFiles); // No error, just no files
+    return PackageOperationResult(true, "", packageFiles); // No error, just no files, or no SD card.
   }
 
   // Iterate through files in the package location directory
@@ -339,17 +341,12 @@ PackageOperationResult OpAppPackageManager::getPackageFiles()
   return PackageOperationResult(true, "", packageFiles);
 }
 
-std::string OpAppPackageManager::calculateSHA256Hash(const std::string& filePath) const
+std::string OpAppPackageManager::calculateFileSHA256Hash(const std::string& filePath) const
 {
   return m_HashCalculator->calculateSHA256Hash(filePath);
 }
 
-std::string OpAppPackageManager::calculateFileSHA256Hash(const std::string& filePath) const
-{
-  return calculateSHA256Hash(filePath);
-}
-
-OpAppPackageManager::PackageStatus OpAppPackageManager::doPackageInstall()
+OpAppPackageManager::PackageStatus OpAppPackageManager::tryPackageInstall()
 {
   // Check if the package file is set
   if (m_CandidatePackageFile.empty()) {

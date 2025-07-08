@@ -463,7 +463,7 @@ TEST_F(OpAppPackageManagerTest, TestInstallPackage_NoPackageFile)
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
 
   // WHEN: attempting to install a package
-  OpAppPackageManager::PackageStatus status = packageManager.doPackageInstall();
+  OpAppPackageManager::PackageStatus status = packageManager.tryPackageInstall();
 
   // THEN: the installation should be handled appropriately
   EXPECT_EQ(status, OpAppPackageManager::PackageStatus::ConfigurationError);
@@ -478,7 +478,7 @@ TEST_F(OpAppPackageManagerTest, TestInstallPackage_PackageFileDoesNotExist)
   packageManager.setCandidatePackageFile("/nonexistent/package.opk");
 
   // WHEN: attempting to install a package
-  OpAppPackageManager::PackageStatus status = packageManager.doPackageInstall();
+  OpAppPackageManager::PackageStatus status = packageManager.tryPackageInstall();
 
   // THEN: the installation should be handled appropriately
   EXPECT_EQ(status, OpAppPackageManager::PackageStatus::ConfigurationError);
@@ -502,7 +502,7 @@ TEST_F(OpAppPackageManagerTest, TestInstallPackage_PackageFileExists)
   packageManager.setCandidatePackageFile(packagePath);
 
   // WHEN: attempting to install a package
-  OpAppPackageManager::PackageStatus status = packageManager.doPackageInstall();
+  OpAppPackageManager::PackageStatus status = packageManager.tryPackageInstall();
 
   // THEN: the installation should be handled appropriately
   EXPECT_EQ(status, OpAppPackageManager::PackageStatus::Installed);
@@ -539,7 +539,7 @@ TEST_F(OpAppPackageManagerTest, TestInstallPackage_PackageFileExists_DecryptFail
   packageManager.setCandidatePackageFile(packagePath);
 
   // WHEN: attempting to install a package
-  OpAppPackageManager::PackageStatus status = packageManager.doPackageInstall();
+  OpAppPackageManager::PackageStatus status = packageManager.tryPackageInstall();
   // THEN: the installation should be handled appropriately
   EXPECT_EQ(status, OpAppPackageManager::PackageStatus::DecryptionFailed);
 
