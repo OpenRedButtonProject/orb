@@ -246,6 +246,17 @@ string AppManager::executeRequest(string method, Json::Value token, Json::Value 
     return response;
 }
 
+
+void AppManager::processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section) {
+
+    mApplicationManager->ProcessAitSection((uint16_t)aitPid, (uint16_t)serviceId, section.data(), section.size());
+}
+
+void AppManager::processXmlAit(const std::vector<uint8_t>& xmlait) {
+    const std::string xmlstr(reinterpret_cast<const char*>(xmlait.data()), xmlait.size());
+    mApplicationManager->ProcessXmlAit(xmlstr);
+}
+
 bool AppManager::IsRequestAllowed(string token)
 {
     return false;

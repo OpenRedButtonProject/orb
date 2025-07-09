@@ -142,7 +142,7 @@ public:
      * @param sectionData The section section_data.
      * @param sectionDataBytes The size of section_data in bytes.
      */
-    void ProcessAitSection(uint16_t aitPid, uint16_t serviceId, uint8_t *sectionData, uint32_t
+    void ProcessAitSection(uint16_t aitPid, uint16_t serviceId, const uint8_t *sectionData, uint32_t
         sectionDataBytes);
 
     /**

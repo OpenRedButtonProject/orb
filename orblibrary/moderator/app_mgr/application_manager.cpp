@@ -319,7 +319,7 @@ bool ApplicationManager::InKeySet(int appId, uint16_t keyCode)
  * @param sectionDataBytes The size of section_data in bytes.
  */
 void ApplicationManager::ProcessAitSection(uint16_t aitPid, uint16_t serviceId,
-    uint8_t *sectionData, uint32_t sectionDataBytes)
+    const uint8_t *sectionData, uint32_t sectionDataBytes)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 

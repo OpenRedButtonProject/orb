@@ -43,6 +43,9 @@ public:
      */
     std::string executeRequest(std::string method, Json::Value token, Json::Value params, ApplicationType apptype);
 
+    void processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section);
+    void processXmlAit(const std::vector<uint8_t>& xmlait);
+
 private:
     std::unique_ptr<ApplicationManager> mApplicationManager;
 
