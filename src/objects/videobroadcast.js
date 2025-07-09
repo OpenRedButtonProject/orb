@@ -42,39 +42,7 @@
 hbbtv.objects.VideoBroadcast = (function() {
     const prototype = Object.create(HTMLObjectElement.prototype);
     const privates = new WeakMap();
-
-    const PLAY_STATE_UNREALIZED = 0;
-    const PLAY_STATE_CONNECTING = 1;
-    const PLAY_STATE_PRESENTING = 2;
-    const PLAY_STATE_STOPPED = 3;
-
-    const CHANNEL_STATUS_UNREALIZED = -4;
-    const CHANNEL_STATUS_PRESENTING = -3;
-    const CHANNEL_STATUS_CONNECTING = -2;
-    const CHANNEL_STATUS_CONNECTING_RECOVERY = -1;
-    const CHANNEL_STATUS_WRONG_TUNER = 0;
-    const CHANNEL_STATUS_NO_SIGNAL = 1;
-    const CHANNEL_STATUS_TUNER_IN_USE = 2;
-    const CHANNEL_STATUS_PARENTAL_LOCKED = 3;
-    const CHANNEL_STATUS_ENCRYPTED = 4;
-    const CHANNEL_STATUS_UNKNOWN_CHANNEL = 5;
-    const CHANNEL_STATUS_INTERRUPTED = 6;
-    const CHANNEL_STATUS_RECORDING_IN_PROGRESS = 7;
-    const CHANNEL_STATUS_CANNOT_RESOLVE_URI = 8;
-    const CHANNEL_STATUS_INSUFFICIENT_BANDWIDTH = 9;
-    const CHANNEL_STATUS_CANNOT_BE_CHANGED = 10;
-    const CHANNEL_STATUS_INSUFFICIENT_RESOURCES = 11;
-    const CHANNEL_STATUS_CHANNEL_NOT_IN_TS = 12;
-    const CHANNEL_STATUS_UNKNOWN_ERROR = 100;
-
-    const COMPONENT_TYPE_ANY = -1;
-    const COMPONENT_TYPE_VIDEO = 0;
-    const COMPONENT_TYPE_AUDIO = 1;
-    const COMPONENT_TYPE_SUBTITLE = 2;
-
-    const ERROR_TUNER_UNAVAILABLE = 2;
-    const ERROR_UNKNOWN_CHANNEL = 5;
-    const LINKED_APP_SCHEME_1_1 = "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.1";
+    const helperConstants = hbbtv.objects.BroadcastHelper.Constants;
 
     let gActiveStateOwner = null;
     let gBroadbandAvInUse = false;
@@ -100,7 +68,7 @@ hbbtv.objects.VideoBroadcast = (function() {
      * @memberof VideoBroadcast#
      */
     Object.defineProperty(prototype, 'COMPONENT_TYPE_VIDEO', {
-        value: COMPONENT_TYPE_VIDEO,
+        value: helperConstants.COMPONENT_TYPE_VIDEO,
     });
 
     /**
@@ -115,7 +83,7 @@ hbbtv.objects.VideoBroadcast = (function() {
      * @memberof VideoBroadcast#
      */
     Object.defineProperty(prototype, 'COMPONENT_TYPE_AUDIO', {
-        value: COMPONENT_TYPE_AUDIO,
+        value: helperConstants.COMPONENT_TYPE_AUDIO,
     });
 
     /**
@@ -130,7 +98,7 @@ hbbtv.objects.VideoBroadcast = (function() {
      * @memberof VideoBroadcast#
      */
     Object.defineProperty(prototype, 'COMPONENT_TYPE_SUBTITLE', {
-        value: COMPONENT_TYPE_SUBTITLE,
+        value: helperConstants.COMPONENT_TYPE_SUBTITLE,
     });
 
     // Properties
@@ -450,17 +418,17 @@ hbbtv.objects.VideoBroadcast = (function() {
         get: function() {
             const p = privates.get(this);
             mandatoryBroadcastRelatedSecurityCheck(p);
-            if (!p.currentChannelProgrammes) {
-                let programmes = hbbtv.bridge.broadcast.getProgrammes(p.currentChannelData.ccid);
+            if (!p.broadcastContext.currentChannelProgrammes) {
+                let programmes = hbbtv.bridge.broadcast.getProgrammes(p.broadcastContext.currentChannelData.ccid);
                 programmes.forEach(function(item, index) {
                     item.parentalRatings = hbbtv.objects.createParentalRatingCollection(
                         item.parentalRatings
                     );
                     programmes[index] = hbbtv.objects.createProgramme(item);
                 });
-                p.currentChannelProgrammes = programmes;
+                p.broadcastContext.currentChannelProgrammes = programmes;
             }
-            return hbbtv.objects.createCollection(p.currentChannelProgrammes);
+            return hbbtv.objects.createCollection(p.broadcastContext.currentChannelProgrammes);
         },
     });
 
@@ -559,7 +527,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                 p.onComponentChangedWrapper = (ev) => {
                     // For COMPONENT_TYPE_ANY (more than 1 component changed) use undefined.
                     let componentType = undefined;
-                    if (ev.componentType != COMPONENT_TYPE_ANY) {
+                    if (ev.componentType != helperConstants.COMPONENT_TYPE_ANY) {
                         componentType = ev.componentType;
                     }
                     listener(componentType);
@@ -647,21 +615,21 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     Object.defineProperty(prototype, 'currentChannel', {
         get: function() {
-            if (!privates.get(this).isBroadcastRelated) {
+            if (!privates.get(this).broadcastContext.isBroadcastRelated) {
                 return null;
             }
-            return privates.get(this).currentChannelData;
+            return privates.get(this).broadcastContext.currentChannelData;
         },
     });
 
     Object.defineProperty(prototype, 'currentServiceInstance', {
         get: function() {
             const p = privates.get(this);
-            if (!p.isBroadcastRelated || isNaN(p.currentInstanceIndex) ||
-                    !p.currentChannelData || !p.currentChannelData.serviceInstances) {
+            if (!p.broadcastContext.isBroadcastRelated || isNaN(p.broadcastContext.currentInstanceIndex) ||
+                    !p.broadcastContext.currentChannelData || !p.broadcastContext.currentChannelData.serviceInstances) {
                 return null;
             }
-            return p.currentChannelData.serviceInstances.item(p.currentInstanceIndex);
+            return p.broadcastContext.currentChannelData.serviceInstances.item(p.broadcastContext.currentInstanceIndex);
         },
     });
 
@@ -701,8 +669,7 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     prototype.getChannelConfig = function() {
         const p = privates.get(this);
-        mandatoryBroadcastRelatedSecurityCheck(p);
-        return p.channelConfig;
+        return p.broadcastHelper.getChannelConfig();
     };
 
     /**
@@ -720,7 +687,7 @@ hbbtv.objects.VideoBroadcast = (function() {
     prototype.bindToCurrentChannel = function() {
         const p = privates.get(this);
         mandatoryBroadcastRelatedSecurityCheck(p);
-        if (p.playState === PLAY_STATE_UNREALIZED || p.playState === PLAY_STATE_STOPPED) {
+        if (p.broadcastContext.playState === helperConstants.PLAY_STATE_UNREALIZED || p.broadcastContext.playState === helperConstants.PLAY_STATE_STOPPED) {
             let tmpChannelData;
             let channelData;
             try {
@@ -743,49 +710,49 @@ hbbtv.objects.VideoBroadcast = (function() {
                     hbbtv.holePuncher.setBroadcastVideoObject(this);
                     const applicationScheme = hbbtv.bridge.manager.getApplicationScheme();
                     let wasPlayStateStopped = false;
-                    if (p.playState === PLAY_STATE_UNREALIZED && applicationScheme === LINKED_APP_SCHEME_1_1) {
+                    if (p.broadcastContext.playState === helperConstants.PLAY_STATE_UNREALIZED && applicationScheme === helperConstants.LINKED_APP_SCHEME_1_1) {
                         /* DAE vol5 Table 8 state transition #7 */
-                        p.playState = PLAY_STATE_PRESENTING;
+                        p.broadcastContext.playState = helperConstants.PLAY_STATE_PRESENTING;
                     } else {
                         /* PLAY_STATE_STOPPED */
                         /* DAE vol5 Table 8 state transition #17 with HbbTV 2.0.3 modification */
-                        p.playState = PLAY_STATE_CONNECTING;
-                        wasPlayStateStopped = applicationScheme === LINKED_APP_SCHEME_1_1;
+                        p.broadcastContext.playState = helperConstants.PLAY_STATE_CONNECTING;
+                        wasPlayStateStopped = applicationScheme === helperConstants.LINKED_APP_SCHEME_1_1;
                     }
                     addBridgeEventListeners.call(this);
-                    dispatchPlayStateChangeEvent.call(this, p.playState);
+                    dispatchPlayStateChangeEvent.call(this, p.broadcastContext.playState);
                     if (wasPlayStateStopped) {
                         /* For PLAY_STATE_STOPPED: extra step to go into Presenting State */
                         /* DAE vol5 Table 8 state transition #17 with HbbTV 2.0.3 modification. */
-                        p.playState = PLAY_STATE_PRESENTING;
-                        dispatchPlayStateChangeEvent.call(this, p.playState);
+                        p.broadcastContext.playState = helperConstants.PLAY_STATE_PRESENTING;
+                        dispatchPlayStateChangeEvent.call(this, p.broadcastContext.playState);
                     }
                 } else {
-                    if (p.playState === PLAY_STATE_STOPPED) {
+                    if (p.broadcastContext.playState === helperConstants.PLAY_STATE_STOPPED) {
                         /* DAE vol5 Table 8 state transition #17 with HbbTV 2.0.3 modification */
-                        dispatchPlayStateChangeEvent.call(this, p.playState);
+                        dispatchPlayStateChangeEvent.call(this, p.broadcastContext.playState);
                     } else {
                         /* DAE vol5 Table 8 state transition #8 - binding fails */
                         unregisterAllStreamEventListeners(p);
-                        p.playState = PLAY_STATE_UNREALIZED;
+                        p.broadcastContext.playState = helperConstants.PLAY_STATE_UNREALIZED;
                         dispatchPlayStateChangeEvent.call(
                             this,
-                            p.playState,
-                            ERROR_TUNER_UNAVAILABLE
+                            p.broadcastContext.playState,
+                            helperConstants.ERROR_TUNER_UNAVAILABLE
                         );
                     }
                 }
-                p.currentChannelData = tmpChannelData;
-                p.currentInstanceIndex = channelData.currentInstanceIndex;
+                p.broadcastContext.currentChannelData = tmpChannelData;
+                p.broadcastContext.currentInstanceIndex = channelData.currentInstanceIndex;
             } else {
                 /* DAE vol5 Table 8 state transition #8 - no channel being presented */
                 unregisterAllStreamEventListeners(p);
-                p.playState = PLAY_STATE_UNREALIZED;
-                dispatchPlayStateChangeEvent.call(this, p.playState, ERROR_UNKNOWN_CHANNEL);
+                p.broadcastContext.playState = helperConstants.PLAY_STATE_UNREALIZED;
+                dispatchPlayStateChangeEvent.call(this, p.broadcastContext.playState, helperConstants.ERROR_UNKNOWN_CHANNEL);
             }
         }
-        if (p.currentChannelData) {
-            return p.currentChannelData;
+        if (p.broadcastContext.currentChannelData) {
+            return p.broadcastContext.currentChannelData;
         }
     };
 
@@ -816,34 +783,8 @@ hbbtv.objects.VideoBroadcast = (function() {
         sourceID,
         ipBroadcastID
     ) {
-        if (idType == 13) {
-            // createChannelObject(idType, dsd, tsid)
-            return hbbtv.objects.createChannel({
-                idType: idType,
-                dsd: dsdOrOnid,
-                sid: sidOrTsid,
-            });
-        } else {
-            // createChannelObject(idType, onid, tsid, sid, sourceID, ipBroadcastID)
-            let channel = {
-                idType: idType,
-                onid: dsdOrOnid,
-                tsid: sidOrTsid,
-                sid: sid,
-                sourceID: sourceID,
-                ipBroadcastID: ipBroadcastID,
-            };
-            const p = privates.get(this);
-            if (p.isBroadcastRelated) {
-                let foundChannel = p.channelConfig ?
-                    p.channelConfig.channelList.findChannel(channel) :
-                    null;
-                if (foundChannel !== null) {
-                    return foundChannel;
-                }
-            }
-            return hbbtv.objects.createChannel(channel);
-        }
+        const p = privates.get(this);
+        return p.broadcastHelper.createChannelObject(idType, dsdOrOnid, sidOrTsid, sid, sourceID, ipBroadcastID);
     };
 
     /**
@@ -868,122 +809,7 @@ hbbtv.objects.VideoBroadcast = (function() {
         quiet = 0
     ) {
         const p = privates.get(this);
-        const appScheme = hbbtv.bridge.manager.getApplicationScheme();
-        let releaseOnError = false;
-        // TODO Check state transitions table. Disallow if not connecting or presenting or stopped.
-        if (channel === null) {
-            this.release();
-            setIsBroadcastRelated.call(this, false);
-            const errorState = hbbtv.bridge.broadcast.setChannelToNull(
-                trickplay,
-                contentAccessDescriptorURL,
-                quiet
-            );
-            if (errorState < 0) {
-                dispatchChannelChangeSucceededEvent.call(this, null);
-            }
-            return;
-        }
-
-        // Acquire active state if required
-        if (p.playState === PLAY_STATE_UNREALIZED || p.playState === PLAY_STATE_STOPPED) {
-            if (!acquireActiveState.call(this)) {
-                hbbtv.bridge.broadcast.setPresentationSuspended(false);
-                /* DAE vol5 Table 8 state transition #2 & #6 - no suitable tuner is available */
-                dispatchChannelChangeErrorEvent.call(this, channel, ERROR_TUNER_UNAVAILABLE);
-                return;
-            }
-            addBridgeEventListeners.call(this);
-            releaseOnError = true;
-        }
-        // Change channel
-        p.isTransitioningToBroadcastRelated = true;
-        p.quiet = quiet;
-        let errorState = 0;
-        if (channel.idType == 13) {
-            // ID_DVB_SI_DIRECT
-            if (channel.dsd !== undefined && channel.sid !== undefined) {
-                errorState = hbbtv.bridge.broadcast.setChannelToDsd(
-                    hbbtv.utils.base64Encode(channel.dsd),
-                    channel.sid,
-                    trickplay,
-                    contentAccessDescriptorURL,
-                    quiet
-                );
-            }
-        } else {
-            if (channel.ccid !== undefined) {
-                errorState = hbbtv.bridge.broadcast.setChannelToCcid(
-                    channel.ccid,
-                    trickplay,
-                    contentAccessDescriptorURL,
-                    quiet
-                );
-            } else {
-                if (
-                    channel.onid !== undefined &&
-                    channel.tsid !== undefined &&
-                    channel.sid !== undefined
-                ) {
-                    errorState = hbbtv.bridge.broadcast.setChannelToTriplet(
-                        channel.idType,
-                        channel.onid,
-                        channel.tsid,
-                        channel.sid,
-                        typeof channel.sourceID !== 'undefined' ? channel.sourceID : -1,
-                        typeof channel.ipBroadcastID !== 'undefined' ? channel.ipBroadcastID : '',
-                        trickplay,
-                        contentAccessDescriptorURL,
-                        quiet
-                    );
-                }
-            }
-        }
-
-        if (errorState >= 0) {
-            p.isTransitioningToBroadcastRelated = false;
-            if (releaseOnError) {
-                removeBridgeEventListeners.call(this);
-                hbbtv.holePuncher.setBroadcastVideoObject(null);
-                releaseActiveState();
-            }
-            /* DAE vol5 Table 8 state transition #2 - combination of channel properties is invalid */
-            /*                                      - channel type is not supported */
-            // TODO Handle permanent errors consistently. Should all permanent errors set the play state to unrealized here,
-            // so that it is correct when ChannelChangeErrorEvent is received?
-            if (errorState === CHANNEL_STATUS_CHANNEL_NOT_IN_TS) {
-                p.playState = PLAY_STATE_UNREALIZED;
-                dispatchPlayStateChangeEvent.call(this, p.playState);
-            }
-            dispatchChannelChangeErrorEvent.call(this, channel, errorState);
-            return;
-        }
-
-        if (p.isBroadcastRelated && quiet !== 2) {
-            try {
-                const channelData = hbbtv.bridge.broadcast.getCurrentChannel();
-                p.currentChannelData = hbbtv.objects.createChannel(
-                    channelData
-                );
-                p.currentInstanceIndex = channelData.currentInstanceIndex;
-                if (p.channelConfig === null) {
-                    p.channelConfig = hbbtv.objects.createChannelConfig();
-                }
-            } catch (e) {
-                if (e.name === 'SecurityError') {
-                    console.log(
-                        'setChannel, unexpected condition: app appears broadcast-independent.'
-                    );
-                }
-                throw e;
-            }
-        }
-
-        /* DAE vol5 Table 8 state transition #1 */
-        unregisterAllStreamEventListeners(p);
-        p.playState = PLAY_STATE_CONNECTING;
-        p.waitingPlayStateConnectingConfirm = appScheme === LINKED_APP_SCHEME_1_1;
-        dispatchPlayStateChangeEvent.call(this, p.playState);
+        p.broadcastHelper.setChannel(channel, trickplay, contentAccessDescriptorURL, quiet);
     };
 
     /**
@@ -998,8 +824,7 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     prototype.prevChannel = function() {
         const p = privates.get(this);
-        mandatoryBroadcastRelatedSecurityCheck(p);
-        cycleChannel.call(this, -1);
+        p.broadcastHelper.prevChannel();
     };
 
     /**
@@ -1014,8 +839,7 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     prototype.nextChannel = function() {
         const p = privates.get(this);
-        mandatoryBroadcastRelatedSecurityCheck(p);
-        cycleChannel.call(this, 1);
+        p.broadcastHelper.nextChannel();
     };
 
     /**
@@ -1033,10 +857,10 @@ hbbtv.objects.VideoBroadcast = (function() {
     prototype.setFullScreen = function(val) {
         const p = privates.get(this);
         /** Broadcast-independent applications: setFullScreen() shall have no effect */
-        if (!p.isBroadcastRelated) {
+        if (!p.broadcastContext.isBroadcastRelated) {
             return;
         }
-        p.fullScreen = val;
+        p.broadcastContext.fullScreen = val;
         hbbtv.holePuncher.notifyFullScreenChanged(this);
         dispatchFullScreenChangeEvent.call(this);
     };
@@ -1090,22 +914,24 @@ hbbtv.objects.VideoBroadcast = (function() {
     prototype.release = function() {
         const p = privates.get(this);
         /** Broadcast-independent applications: release() shall have no effect */
-        if (!p.isBroadcastRelated) {
+        if (!p.broadcastContext.isBroadcastRelated) {
             return; // TODO Really?
         }
         removeBridgeEventListeners.call(this);
-        if (p.playState !== PLAY_STATE_UNREALIZED) {
+        if (p.broadcastContext.playState !== helperConstants.PLAY_STATE_UNREALIZED) {
             /* DAE vol5 Table 8 state transition #12 */
-            p.currentChannelData = null;
-            p.currentInstanceIndex = null;
-            p.currentNonQuietChannelData = null;
-            p.currentChannelProgrammes = null;
-            p.currentChannelComponents = null;
+            // Clean up BroadcastContext data
+            p.broadcastContext.currentChannelData = null;
+            p.broadcastContext.currentInstanceIndex = null;
+            p.broadcastContext.currentNonQuietChannelData = null;
+            p.broadcastContext.currentChannelProgrammes = null;
+            p.broadcastContext.currentChannelComponents = null;
+            p.broadcastContext.playState = helperConstants.PLAY_STATE_UNREALIZED;
+            
             unregisterAllStreamEventListeners(p);
-            p.playState = PLAY_STATE_UNREALIZED;
             hbbtv.holePuncher.setBroadcastVideoObject(null);
             releaseActiveState.call(this);
-            dispatchPlayStateChangeEvent.call(this, p.playState);
+            dispatchPlayStateChangeEvent.call(this, p.broadcastContext.playState);
             /* TODO: If app has modified the set of components, they continue to be presented */
         }
     };
@@ -1123,19 +949,19 @@ hbbtv.objects.VideoBroadcast = (function() {
     prototype.stop = function() {
         const p = privates.get(this);
         /** Broadcast-independent applications: stop() shall have no effect */
-        if (!p.isBroadcastRelated) {
+        if (!p.broadcastContext.isBroadcastRelated) {
             return;
         }
-        if (p.playState === PLAY_STATE_CONNECTING || p.playState === PLAY_STATE_PRESENTING) {
+        if (p.broadcastContext.playState === helperConstants.PLAY_STATE_CONNECTING || p.broadcastContext.playState === helperConstants.PLAY_STATE_PRESENTING) {
             /* DAE vol5 Table 8 state transition #14 */
-            p.playState = PLAY_STATE_STOPPED;
+            p.broadcastContext.playState = helperConstants.PLAY_STATE_STOPPED;
             hbbtv.bridge.broadcast.setPresentationSuspended(true);
             if (hbbtv.native.name === 'rdk' && hbbtv.native.getProprietary()) {
                 // support poorly implemented portals by delaying the event dispatch
-                setTimeout(() => {dispatchPlayStateChangeEvent.call(this, p.playState);}, 0);
+                setTimeout(() => {dispatchPlayStateChangeEvent.call(this, p.broadcastContext.playState);}, 0);
             }
             else {
-                dispatchPlayStateChangeEvent.call(this, p.playState);
+                dispatchPlayStateChangeEvent.call(this, p.broadcastContext.playState);
             }
         }
     };
@@ -1161,24 +987,24 @@ hbbtv.objects.VideoBroadcast = (function() {
         encoding
     ) {
         const p = privates.get(this);
-        if (!p.isBroadcastRelated) {
+        if (!p.broadcastContext.isBroadcastRelated) {
             return null;
         }
         const component = hbbtv.bridge.broadcast.getPrivateAudioComponent(componentTag);
         if (component !== null) {
 
             // update the currentChannelComponents with the new component
-            if (!p.currentChannelComponents) {
-                p.currentChannelComponents = hbbtv.bridge.broadcast.getComponents(
-                    p.currentChannelData.ccid,
+            if (!p.broadcastContext.currentChannelComponents) {
+                p.broadcastContext.currentChannelComponents = hbbtv.bridge.broadcast.getComponents(
+                    p.broadcastContext.currentChannelData.ccid,
                     -1
                 );
             }
-            p.currentChannelComponents.push(component);
+            p.broadcastContext.currentChannelComponents.push(component);
 
             return hbbtv.objects.createAVAudioComponent({
                 id: component.id,
-                type: COMPONENT_TYPE_AUDIO,
+                type: helperConstants.COMPONENT_TYPE_AUDIO,
                 componentTag: componentTag,
                 language: language,
                 audioDescription: audioDescription,
@@ -1204,24 +1030,24 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     prototype.createAVVideoComponent = function(componentTag, aspectRatio, encoding) {
         const p = privates.get(this);
-        if (!p.isBroadcastRelated) {
+        if (!p.broadcastContext.isBroadcastRelated) {
             return null;
         }
         const component = hbbtv.bridge.broadcast.getPrivateVideoComponent(componentTag);
         if (component !== null) {
 
             // update the currentChannelComponents with the new component
-            if (!p.currentChannelComponents) {
-                p.currentChannelComponents = hbbtv.bridge.broadcast.getComponents(
-                    p.currentChannelData.ccid,
+            if (!p.broadcastContext.currentChannelComponents) {
+                p.broadcastContext.currentChannelComponents = hbbtv.bridge.broadcast.getComponents(
+                    p.broadcastContext.currentChannelData.ccid,
                     -1
                 );
             }
-            p.currentChannelComponents.push(component);
+            p.broadcastContext.currentChannelComponents.push(component);
 
             return hbbtv.objects.createAVVideoComponent({
                 id: component.id,
-                type: COMPONENT_TYPE_VIDEO,
+                type: helperConstants.COMPONENT_TYPE_VIDEO,
                 pid: component.pid,
                 encrypted: component.encrypted,
                 componentTag: componentTag,
@@ -1248,24 +1074,7 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     prototype.getComponents = function(componentType) {
         const p = privates.get(this);
-        mandatoryBroadcastRelatedSecurityCheck(p);
-        if (!p.currentChannelComponents) {
-            p.currentChannelComponents = hbbtv.bridge.broadcast.getComponents(
-                p.currentChannelData.ccid,
-                -1
-            );
-        }
-        let result;
-        if (componentType === null || componentType === undefined) {
-            result = p.currentChannelComponents.filter((component) => {
-                return !component.hidden;
-            });
-        } else {
-            result = p.currentChannelComponents.filter((component) => {
-                return component.type === componentType && !component.hidden;
-            });
-        }
-        return avComponentArrayToCollection.call(this, result);
+        return p.broadcastHelper.getComponents(componentType);
     };
 
     /**
@@ -1284,24 +1093,7 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     prototype.getCurrentActiveComponents = function(componentType) {
         const p = privates.get(this);
-        mandatoryBroadcastRelatedSecurityCheck(p);
-        if (!p.currentChannelComponents) {
-            p.currentChannelComponents = hbbtv.bridge.broadcast.getComponents(
-                p.currentChannelData.ccid,
-                -1
-            );
-        }
-        if (componentType === null || componentType === undefined) {
-            let result = p.currentChannelComponents.filter((component) => {
-                return component.active;
-            });
-            return avComponentArrayToCollection.call(this, result);
-        } else {
-            let result = p.currentChannelComponents.filter((component) => {
-                return component.type === componentType && component.active;
-            });
-            return avComponentArrayToCollection.call(this, result);
-        }
+        return p.broadcastHelper.getCurrentActiveComponents(componentType);
     };
 
     /**
@@ -1318,25 +1110,7 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     prototype.selectComponent = function(component) {
         const p = privates.get(this);
-        mandatoryBroadcastRelatedSecurityCheck(p);
-        if (!p.currentChannelComponents) {
-            p.currentChannelComponents = hbbtv.bridge.broadcast.getComponents(
-                p.currentChannelData.ccid,
-                -1
-            );
-        }
-        if (!p.currentChannelComponents || p.currentChannelComponents.length === 0) {
-            throw new DOMException('', 'InvalidStateError');
-        }
-        if (isNaN(component)) {
-            const componentId = getComponentId(component);
-            if (componentId !== null) {
-                hbbtv.bridge.broadcast.overrideComponentSelection(component.type, componentId);
-            }
-        } else {
-            // Select the default component
-            hbbtv.bridge.broadcast.restoreComponentSelection(component);
-        }
+        p.broadcastHelper.selectComponent(component);
     };
 
     /**
@@ -1353,32 +1127,7 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     prototype.unselectComponent = function(component) {
         const p = privates.get(this);
-        mandatoryBroadcastRelatedSecurityCheck(p);
-        if (isNaN(component)) {
-            p.currentChannelComponents = hbbtv.bridge.broadcast.getComponents(
-                p.currentChannelData.ccid,
-                -1
-            );
-            const componentId = getComponentId(component);
-            const found = p.currentChannelComponents.find((item) => {
-                return componentId !== null && componentId === item.id;
-            });
-            if (found.active) {
-                if (
-                    component.type == this.COMPONENT_TYPE_AUDIO ||
-                    component.type == this.COMPONENT_TYPE_SUBTITLE
-                ) {
-                    // Select the default component
-                    hbbtv.bridge.broadcast.restoreComponentSelection(component.type);
-                } else {
-                    // Suspend video
-                    hbbtv.bridge.broadcast.overrideComponentSelection(component.type, '');
-                }
-            }
-        } else {
-            // Suspend this component type
-            hbbtv.bridge.broadcast.overrideComponentSelection(component, '');
-        }
+        p.broadcastHelper.unselectComponent(component);
     };
 
     /**
@@ -1397,7 +1146,7 @@ hbbtv.objects.VideoBroadcast = (function() {
     prototype.addStreamEventListener = function(targetURL, eventName, listener) {
         /* Extensions to video/broadcast for synchronization: No security restrictions specified */
         const p = privates.get(this);
-        if (p.playState == PLAY_STATE_PRESENTING || p.playState == PLAY_STATE_STOPPED) {
+        if (p.broadcastContext.playState == helperConstants.PLAY_STATE_PRESENTING || p.broadcastContext.playState == helperConstants.PLAY_STATE_STOPPED) {
             if (targetURL.startsWith('dsmcc:') || targetURL.endsWith('.xse')) {
                 let found = false;
                 let componentTag, streamEventId;
@@ -1547,33 +1296,33 @@ hbbtv.objects.VideoBroadcast = (function() {
                     '), status: ' +
                     event.statusCode +
                     ' playState: ' +
-                    p.playState
+                    p.broadcastContext.playState
                 );
-                if (p.playState == PLAY_STATE_CONNECTING) {
+                if (p.broadcastContext.playState == helperConstants.PLAY_STATE_CONNECTING) {
                     switch (event.statusCode) {
-                        case CHANNEL_STATUS_PRESENTING:
+                        case helperConstants.CHANNEL_STATUS_PRESENTING:
                             /* DAE vol5 Table 8 state transition #9 */
                             hbbtv.holePuncher.setBroadcastVideoObject(this);
-                            p.playState = PLAY_STATE_PRESENTING;
-                            dispatchChannelChangeSucceededEvent.call(this, p.currentChannelData);
-                            dispatchPlayStateChangeEvent.call(this, p.playState);
+                            p.broadcastContext.playState = helperConstants.PLAY_STATE_PRESENTING;
+                            dispatchChannelChangeSucceededEvent.call(this, p.broadcastContext.currentChannelData);
+                            dispatchPlayStateChangeEvent.call(this, p.broadcastContext.playState);
                             break;
 
-                        case CHANNEL_STATUS_CONNECTING:
+                        case helperConstants.CHANNEL_STATUS_CONNECTING:
                             if (
-                                p.currentChannelData == null ||
-                                event.servId != p.currentChannelData.sid ||
-                                event.onetId != p.currentChannelData.onid ||
-                                event.transId != p.currentChannelData.tsid
+                                p.broadcastContext.currentChannelData == null ||
+                                event.servId != p.broadcastContext.currentChannelData.sid ||
+                                event.onetId != p.broadcastContext.currentChannelData.onid ||
+                                event.transId != p.broadcastContext.currentChannelData.tsid
                             ) {
                                 try {
                                     const channelData = hbbtv.bridge.broadcast.getCurrentChannelForEvent();
-                                    p.currentChannelData = hbbtv.objects.createChannel(
+                                    p.broadcastContext.currentChannelData = hbbtv.objects.createChannel(
                                         channelData
                                     );
-                                    p.currentInstanceIndex = channelData.currentInstanceIndex;
-                                    if (p.quiet !== 2) {
-                                        p.currentNonQuietChannelData = p.currentChannelData;
+                                    p.broadcastContext.currentInstanceIndex = channelData.currentInstanceIndex;
+                                    if (p.broadcastContext.quiet !== 2) {
+                                        p.broadcastContext.currentNonQuietChannelData = p.broadcastContext.currentChannelData;
                                     }
                                 } catch (e) {
                                     if (e.name === 'SecurityError') {
@@ -1584,62 +1333,62 @@ hbbtv.objects.VideoBroadcast = (function() {
                                     throw e;
                                 }
                             }
-                            if (p.waitingPlayStateConnectingConfirm) {
+                            if (p.broadcastContext.waitingPlayStateConnectingConfirm) {
                                 console.log('waitingPlayStateConnectingConfirm TRUE. Ignore event');
                             } else {
                                 /* DAE vol5 Table 8 state transition #10, or possibly, a user initiated channel change */
                                 /* Terminal connected to the broadcast or IP multicast stream but presentation blocked */
-                                p.playState = PLAY_STATE_CONNECTING;
+                                p.broadcastContext.playState = helperConstants.PLAY_STATE_CONNECTING;
                                 dispatchChannelChangeSucceededEvent.call(
                                     this,
-                                    p.currentChannelData
+                                    p.broadcastContext.currentChannelData
                                 );
-                                dispatchPlayStateChangeEvent.call(this, p.playState);
+                                dispatchPlayStateChangeEvent.call(this, p.broadcastContext.playState);
                             }
                             break;
 
-                        case CHANNEL_STATUS_CONNECTING_RECOVERY:
+                        case helperConstants.CHANNEL_STATUS_CONNECTING_RECOVERY:
                             /* DAE vol5 Table 8 state transition #11 */
                             /* Recovery from transient error */
-                            p.playState = PLAY_STATE_PRESENTING;
-                            dispatchPlayStateChangeEvent.call(this, p.playState);
+                            p.broadcastContext.playState = helperConstants.PLAY_STATE_PRESENTING;
+                            dispatchPlayStateChangeEvent.call(this, p.broadcastContext.playState);
                             break;
 
                         default:
                             if (event.permanentError) {
                                 /* DAE vol5 Table 8 state transition #13 */
                                 unregisterAllStreamEventListeners(p);
-                                p.playState = PLAY_STATE_UNREALIZED;
-                                dispatchPlayStateChangeEvent.call(this, p.playState);
+                                p.broadcastContext.playState = helperConstants.PLAY_STATE_UNREALIZED;
+                                dispatchPlayStateChangeEvent.call(this, p.broadcastContext.playState);
                             } /* else DAE vol5 Table 8 state transition #2 */
                             dispatchChannelChangeErrorEvent.call(
                                 this,
-                                p.currentChannelData,
+                                p.broadcastContext.currentChannelData,
                                 event.statusCode
                             );
                     }
-                    p.waitingPlayStateConnectingConfirm = false;
-                } else if (p.playState == PLAY_STATE_PRESENTING) {
+                    p.broadcastContext.waitingPlayStateConnectingConfirm = false;
+                } else if (p.broadcastContext.playState == helperConstants.PLAY_STATE_PRESENTING) {
                     if (event.permanentError) {
                         /* DAE vol5 Table 8 state transition #16A */
                         unregisterAllStreamEventListeners(p);
-                        p.playState = PLAY_STATE_UNREALIZED;
-                        dispatchPlayStateChangeEvent.call(this, p.playState);
-                    } else if (event.statusCode == CHANNEL_STATUS_CONNECTING) {
+                        p.broadcastContext.playState = helperConstants.PLAY_STATE_UNREALIZED;
+                        dispatchPlayStateChangeEvent.call(this, p.broadcastContext.playState);
+                    } else if (event.statusCode == helperConstants.CHANNEL_STATUS_CONNECTING) {
                         /* Possibly a user initiated channel change (with app not bound to service) */
-                        p.playState = PLAY_STATE_CONNECTING;
+                        p.broadcastContext.playState = helperConstants.PLAY_STATE_CONNECTING;
                         if (
-                            p.currentChannelData == null ||
-                            event.servId != p.currentChannelData.sid ||
-                            event.onetId != p.currentChannelData.onid ||
-                            event.transId != p.currentChannelData.tsid
+                            p.broadcastContext.currentChannelData == null ||
+                            event.servId != p.broadcastContext.currentChannelData.sid ||
+                            event.onetId != p.broadcastContext.currentChannelData.onid ||
+                            event.transId != p.broadcastContext.currentChannelData.tsid
                         ) {
                             try {
                                 const channelData = hbbtv.bridge.broadcast.getCurrentChannelForEvent();
-                                p.currentNonQuietChannelData = p.currentChannelData = hbbtv.objects.createChannel(
+                                p.broadcastContext.currentNonQuietChannelData = p.broadcastContext.currentChannelData = hbbtv.objects.createChannel(
                                     channelData
                                 );
-                                p.currentInstanceIndex = channelData.currentInstanceIndex;
+                                p.broadcastContext.currentInstanceIndex = channelData.currentInstanceIndex;
                             } catch (e) {
                                 if (e.name === 'SecurityError') {
                                     console.log(
@@ -1648,41 +1397,41 @@ hbbtv.objects.VideoBroadcast = (function() {
                                 }
                                 throw e;
                             }
-                            dispatchChannelChangeSucceededEvent.call(this, p.currentChannelData);
+                            dispatchChannelChangeSucceededEvent.call(this, p.broadcastContext.currentChannelData);
                         }
-                        dispatchPlayStateChangeEvent.call(this, p.playState);
+                        dispatchPlayStateChangeEvent.call(this, p.broadcastContext.playState);
                     } /* temporary error */
                     else {
                         /* DAE vol5 Table 8 state transition #15 */
-                        p.playState = PLAY_STATE_CONNECTING;
-                        dispatchPlayStateChangeEvent.call(this, p.playState);
+                        p.broadcastContext.playState = helperConstants.PLAY_STATE_CONNECTING;
+                        dispatchPlayStateChangeEvent.call(this, p.broadcastContext.playState);
                     }
-                } else if (p.playState == PLAY_STATE_STOPPED && event.permanentError) {
+                } else if (p.broadcastContext.playState == helperConstants.PLAY_STATE_STOPPED && event.permanentError) {
                     /* DAE vol5 Table 8 state transition #16B */
                     unregisterAllStreamEventListeners(p);
-                    p.playState = PLAY_STATE_UNREALIZED;
-                    dispatchPlayStateChangeEvent.call(this, p.playState);
-                } else if (p.playState == PLAY_STATE_STOPPED) {
+                    p.broadcastContext.playState = helperConstants.PLAY_STATE_UNREALIZED;
+                    dispatchPlayStateChangeEvent.call(this, p.broadcastContext.playState);
+                } else if (p.broadcastContext.playState == helperConstants.PLAY_STATE_STOPPED) {
                     // The VBO is stopped and the channel is changed externally (e.g., ch+)
-                    if (event.statusCode == CHANNEL_STATUS_CONNECTING) {
+                    if (event.statusCode == helperConstants.CHANNEL_STATUS_CONNECTING) {
                         if (
-                            p.currentChannelData != null &&
-                            (event.servId != p.currentChannelData.sid ||
-                                event.onetId != p.currentChannelData.onid ||
-                                event.transId != p.currentChannelData.tsid)
+                            p.broadcastContext.currentChannelData != null &&
+                            (event.servId != p.broadcastContext.currentChannelData.sid ||
+                                event.onetId != p.broadcastContext.currentChannelData.onid ||
+                                event.transId != p.broadcastContext.currentChannelData.tsid)
                         ) {
                             try {
                                 const channelData = hbbtv.bridge.broadcast.getCurrentChannelForEvent();
-                                p.currentChannelData = hbbtv.objects.createChannel(
+                                p.broadcastContext.currentChannelData = hbbtv.objects.createChannel(
                                     channelData
                                 );
-                                p.currentInstanceIndex = channelData.currentInstanceIndex;
-                                p.playState = PLAY_STATE_CONNECTING;
+                                p.broadcastContext.currentInstanceIndex = channelData.currentInstanceIndex;
+                                p.broadcastContext.playState = helperConstants.PLAY_STATE_CONNECTING;
                                 dispatchChannelChangeSucceededEvent.call(
                                     this,
-                                    p.currentChannelData
+                                    p.broadcastContext.currentChannelData
                                 );
-                                dispatchPlayStateChangeEvent.call(this, p.playState);
+                                dispatchPlayStateChangeEvent.call(this, p.broadcastContext.playState);
                             } catch (e) {
                                 // Ignored
                             }
@@ -1690,7 +1439,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                     }
                 } else {
                     console.log(
-                        'Unhandled state transition. Current playState ' + p.playState + ', event:'
+                        'Unhandled state transition. Current playState ' + p.broadcastContext.playState + ', event:'
                     );
                     console.log(event);
                 }
@@ -1700,7 +1449,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                 p.onServiceInstanceChanged = (event) => {
                     console.log('Received onServiceInstanceChanged');
                     console.log(event);
-                    privates.currentInstanceIndex = event.serviceInstanceIndex;
+                    p.broadcastContext.currentInstanceIndex = event.serviceInstanceIndex;
                 };
             }
 
@@ -1722,13 +1471,13 @@ hbbtv.objects.VideoBroadcast = (function() {
             p.onParentalRatingChange = (event) => {
                 console.log('Received ParentalRatingChange');
                 console.log(event);
-                if (event.blocked && p.waitingPlayStateConnectingConfirm) {
-                    p.playState = PLAY_STATE_CONNECTING;
+                if (event.blocked && p.broadcastContext.waitingPlayStateConnectingConfirm) {
+                    p.broadcastContext.playState = helperConstants.PLAY_STATE_CONNECTING;
                     dispatchChannelChangeSucceededEvent.call(
                         this,
-                        p.currentChannelData
+                        p.broadcastContext.currentChannelData
                     );
-                    dispatchPlayStateChangeEvent.call(this, p.playState);
+                    dispatchPlayStateChangeEvent.call(this, p.broadcastContext.playState);
                 }
                 dispatchParentalRatingChange.call(
                     this,
@@ -1762,7 +1511,7 @@ hbbtv.objects.VideoBroadcast = (function() {
             p.onSelectedComponentChanged = (event) => {
                 const p = privates.get(this);
                 try {
-                    p.currentChannelComponents = null;
+                    p.broadcastContext.currentChannelComponents = null;
                     dispatchSelectedComponentChanged.call(this, event.componentType);
                 } catch (e) {
                     if (e.name === 'SecurityError') {
@@ -1785,10 +1534,10 @@ hbbtv.objects.VideoBroadcast = (function() {
                 const p = privates.get(this);
                 /* Update internal state */
                 try {
-                    p.currentChannelComponents = null;
+                    p.broadcastContext.currentChannelComponents = null;
                     // For COMPONENT_TYPE_ANY (more than 1 component changed) use undefined.
                     let componentType = undefined;
-                    if (event.componentType != COMPONENT_TYPE_ANY) {
+                    if (event.componentType != helperConstants.COMPONENT_TYPE_ANY) {
                         componentType = event.componentType;
                     }
                     dispatchComponentChanged.call(this, componentType);
@@ -1826,17 +1575,17 @@ hbbtv.objects.VideoBroadcast = (function() {
         if (!p.onTransitionedToBroadcastRelated) {
             p.onTransitionedToBroadcastRelated = (event) => {
                 const p = privates.get(this);
-                if (p.isTransitioningToBroadcastRelated) {
-                    p.isTransitioningToBroadcastRelated = false;
+                if (p.broadcastContext.isTransitioningToBroadcastRelated) {
+                    p.broadcastContext.isTransitioningToBroadcastRelated = false;
                     setIsBroadcastRelated.call(this, true);
                     try {
                         const channelData = hbbtv.bridge.broadcast.getCurrentChannel();
-                        p.currentNonQuietChannelData = p.currentChannelData = hbbtv.objects.createChannel(
+                        p.broadcastContext.currentNonQuietChannelData = p.broadcastContext.currentChannelData = hbbtv.objects.createChannel(
                             channelData
                         );
-                        p.currentInstanceIndex = channelData.currentInstanceIndex;
-                        if (p.channelConfig === null) {
-                            p.channelConfig = hbbtv.objects.createChannelConfig();
+                        p.broadcastContext.currentInstanceIndex = channelData.currentInstanceIndex;
+                        if (p.broadcastContext.channelConfig === null) {
+                            p.broadcastContext.channelConfig = hbbtv.objects.createChannelConfig();
                         }
                     } catch (e) {
                         if (e.name === 'SecurityError') {
@@ -1857,8 +1606,8 @@ hbbtv.objects.VideoBroadcast = (function() {
 
         if (!p.onApplicationSchemeUpdated) {
             p.onApplicationSchemeUpdated = (event) => {
-                if (event.scheme !== LINKED_APP_SCHEME_1_1) {
-                    dispatchChannelChangeSucceededEvent.call(this, p.currentChannelData);
+                if (event.scheme !== helperConstants.LINKED_APP_SCHEME_1_1) {
+                    dispatchChannelChangeSucceededEvent.call(this, p.broadcastContext.currentChannelData);
                 }
             }
 
@@ -1920,57 +1669,6 @@ hbbtv.objects.VideoBroadcast = (function() {
         if (p.onApplicationSchemeUpdated != null) {
             hbbtv.bridge.removeWeakEventListener('ApplicationSchemeUpdated', p.onApplicationSchemeUpdated);
             p.onApplicationSchemeUpdated = null;
-        }
-    }
-
-    function cycleChannel(delta) {
-        const p = privates.get(this);
-        if (!p.isBroadcastRelated) {
-            throw new DOMException('', 'SecurityError');
-        }
-        if (p.playState === PLAY_STATE_UNREALIZED || p.channelConfig.channelList.length < 2) {
-            dispatchChannelChangeErrorEvent.call(
-                this,
-                p.currentNonQuietChannelData,
-                CHANNEL_STATUS_CANNOT_BE_CHANGED
-            );
-            return;
-        }
-        let i;
-        for (i = 0; i < p.channelConfig.channelList.length; i++) {
-            if (p.channelConfig.channelList.item(i).ccid === p.currentNonQuietChannelData.ccid) {
-                /* DAE vol5 Table 8 state transition #3 happens in setChannel() */
-                let n = p.channelConfig.channelList.length;
-                this.setChannel(p.channelConfig.channelList.item((i + delta + n) % n));
-                return;
-            }
-        }
-        if (p.playState === PLAY_STATE_CONNECTING) {
-            /* DAE vol5 Table 8 state transition #4 */
-            unregisterAllStreamEventListeners(p);
-            p.playState = PLAY_STATE_UNREALIZED;
-            /* Note: playState is updated first, so it is already correct for the ChannelChangeErrorEvent */
-            dispatchChannelChangeErrorEvent.call(
-                this,
-                p.currentNonQuietChannelData,
-                CHANNEL_STATUS_CANNOT_BE_CHANGED
-            );
-            dispatchPlayStateChangeEvent.call(this, p.playState, CHANNEL_STATUS_CANNOT_BE_CHANGED);
-        } else {
-            /* Either Presenting or Stopped */
-            /* DAE vol5 Table 8 state transition #5 */
-            dispatchChannelChangeErrorEvent.call(
-                this,
-                p.currentNonQuietChannelData,
-                CHANNEL_STATUS_CANNOT_BE_CHANGED
-            );
-        }
-    }
-
-    /** Broadcast-independent applications: shall throw a "Security Error" */
-    function mandatoryBroadcastRelatedSecurityCheck(p) {
-        if (!p.isBroadcastRelated) {
-            throw new DOMException('', 'SecurityError');
         }
     }
 
@@ -2213,58 +1911,6 @@ hbbtv.objects.VideoBroadcast = (function() {
         }
     }
 
-    function setIsBroadcastRelated(value) {
-        const p = privates.get(this);
-        p.isBroadcastRelated = value;
-        if (p.channelConfig !== null) {
-            hbbtv.objects.ChannelConfig.setIsBroadcastRelated.call(p.channelConfig, value);
-        }
-    }
-
-    function avComponentArrayToCollection(avArray) {
-        let result = [];
-        avArray.forEach(function(item, index) {
-            switch (item.type) {
-                case COMPONENT_TYPE_VIDEO:
-                    result[index] = hbbtv.objects.createAVVideoComponent(item);
-                    break;
-                case COMPONENT_TYPE_AUDIO:
-                    result[index] = hbbtv.objects.createAVAudioComponent(item);
-                    break;
-                case COMPONENT_TYPE_SUBTITLE:
-                    result[index] = hbbtv.objects.createAVSubtitleComponent(item);
-                    break;
-                default:
-                    result[index] = hbbtv.objects.createAVComponent(item);
-            }
-        }, this);
-        return hbbtv.objects.createCollection(result);
-    }
-
-    function getComponentId(component) {
-        let id = null;
-        if (
-            component.type == COMPONENT_TYPE_VIDEO &&
-            hbbtv.objects.AVVideoComponent.prototype.isPrototypeOf(component)
-        ) {
-            id = hbbtv.objects.AVVideoComponent.getId.call(component);
-        } else if (
-            component.type == COMPONENT_TYPE_AUDIO &&
-            hbbtv.objects.AVAudioComponent.prototype.isPrototypeOf(component)
-        ) {
-            id = hbbtv.objects.AVAudioComponent.getId.call(component);
-        } else if (
-            component.type == COMPONENT_TYPE_SUBTITLE &&
-            hbbtv.objects.AVSubtitleComponent.prototype.isPrototypeOf(component)
-        ) {
-            id = hbbtv.objects.AVSubtitleComponent.getId.call(component);
-        }
-        if (id === undefined) {
-            id = null;
-        }
-        return id;
-    }
-
     function getStreamEventID(targetURL, eventName) {
         return targetURL + '::' + eventName;
     }
@@ -2294,41 +1940,57 @@ hbbtv.objects.VideoBroadcast = (function() {
         p.streamEventListenerIdMap = new defaultEntities.Map();
         /* Associates internal ID with registered listeners */
         p.streamEventListenerMap = new defaultEntities.Map();
-        p.playState = PLAY_STATE_UNREALIZED;
-        p.waitingPlayStateConnectingConfirm = false;
-        p.fullScreen = false;
-        p.x = 0;
-        p.y = 0;
-        p.width = 1280;
-        p.height = 720;
         this.widescreen = true; // TODO
-        p.display_none = this.style.display === 'none';
 
-        // The application either starts off broadcast-independent or becomes broadcast-independent
-        // when setChannel(null, ...) is called on the realized v/b object. Here we set we are
-        // broadcast-related unless getCurrentChannel() throws SecurityError.
-        p.currentChannelData = null;
-        p.currentInstanceIndex = null;
-        p.currentNonQuietChannelData = null;
-        p.channelConfig = null;
-        p.isTransitioningToBroadcastRelated = false;
-        p.quiet = 0;
-        setIsBroadcastRelated.call(this, true);
+        // Create BroadcastContext and store it in privates
+        p.broadcastContext = hbbtv.objects.BroadcastContext.instantiate();
+        
+        // Initialize context with initial values
+        p.broadcastContext.playState = helperConstants.PLAY_STATE_UNREALIZED;
+        p.broadcastContext.waitingPlayStateConnectingConfirm = false;
+        p.broadcastContext.fullScreen = false;
+        p.broadcastContext.x = 0;
+        p.broadcastContext.y = 0;
+        p.broadcastContext.width = 1280;
+        p.broadcastContext.height = 720;
+        p.broadcastContext.display_none = this.style.display === 'none';
+        
+        // Initialize broadcast-related properties
+        p.broadcastContext.currentChannelData = null;
+        p.broadcastContext.currentInstanceIndex = null;
+        p.broadcastContext.currentNonQuietChannelData = null;
+        p.broadcastContext.channelConfig = null;
+        p.broadcastContext.isTransitioningToBroadcastRelated = false;
+        p.broadcastContext.quiet = 0;
+        p.broadcastContext.isBroadcastRelated = true;
+        
+        // Try to get current channel data
         try {
             const channelData = hbbtv.bridge.broadcast.getCurrentChannel();
-            p.currentNonQuietChannelData = p.currentChannelData = hbbtv.objects.createChannel(
+            p.broadcastContext.currentNonQuietChannelData = p.broadcastContext.currentChannelData = hbbtv.objects.createChannel(
                 channelData
             );
-            p.currentInstanceIndex = channelData.currentInstanceIndex;
-            p.channelConfig = hbbtv.objects.createChannelConfig();
+            p.broadcastContext.currentInstanceIndex = channelData.currentInstanceIndex;
+            p.broadcastContext.channelConfig = hbbtv.objects.createChannelConfig();
         } catch (e) {
             if (e.name === 'SecurityError') {
-                p.currentInstanceIndex = p.currentNonQuietChannelData = p.currentChannelData = null;
-                setIsBroadcastRelated.call(this, false);
+                p.broadcastContext.currentInstanceIndex = p.broadcastContext.currentNonQuietChannelData = p.broadcastContext.currentChannelData = null;
+                p.broadcastContext.isBroadcastRelated = false;
             } else {
                 throw e;
             }
         }
+        
+        // Set method references
+        p.broadcastContext.acquireActiveState = acquireActiveState.bind(this);
+        p.broadcastContext.releaseActiveState = releaseActiveState.bind(this);
+        p.broadcastContext.addBridgeEventListeners = addBridgeEventListeners.bind(this);
+        p.broadcastContext.removeBridgeEventListeners = removeBridgeEventListeners.bind(this);
+        p.broadcastContext.release = this.release.bind(this);
+        p.broadcastContext.unregisterAllStreamEventListeners = unregisterAllStreamEventListeners.bind(this);
+        
+        // Create BroadcastHelper instance
+        p.broadcastHelper = hbbtv.objects.BroadcastHelper.instantiate(p.broadcastContext);
 
         hbbtv.drmManager.registerVideoBroadcast(
             this,
