@@ -9,7 +9,5 @@ oe-workdir
 **/.idea/
 **/local.properties
 **/config.properties
-external/libwebsockets/v4.3/
-!external/libwebsockets/v4.3/BUILD.gn
-!external/libwebsockets/v4.3/libwebsockets.patch
+external/libwebsockets/v4.3/source
 

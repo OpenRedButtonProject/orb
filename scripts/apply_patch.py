@@ -2,30 +2,58 @@ import subprocess
 import sys
 import os
 
-def apply_patch(target_path, patch_file_path):
-    """Applies a patch file to a source folder."""
+def apply_patch(patch_file):
+    """Applies a patch file to current folder."""
     try:
-        abspath_target_path = os.path.abspath(target_path)
+        # Check if the patch applies cleanly (without actually applying)
+        # This will fail if the patch has already been applied exactly.
+        patch_file_path = os.path.abspath(patch_file)
         subprocess.run(
-            ['patch', '-p1', '-i', os.path.abspath(patch_file_path)],
-            cwd=abspath_target_path,
-            check=True, # Raise CalledProcessError if command returns non-zero exit status
-            text=True,  # Capture stdout/stderr as text
-            capture_output=True # Capture output for debugging
+            ['git', 'apply', '-p1', '--check', patch_file_path],
+            check=True,
+            capture_output=True, # Capture output to avoid printing it unless there's an error
+            cwd=os.getcwd() # cwd is already set by DEPS
         )
-        print(f"Patch '{patch_file_path}' applied successfully to folder '{abspath_target_path}'.")
+        print(f"Applying patch: {patch_file_path} in {os.getcwd()}")
+        
+        # Apply the patch (if check passed)
+        subprocess.run(
+            ['git', 'apply', '-p1', patch_file_path],
+            check=True,
+            capture_output=True,
+            cwd=os.getcwd()
+        )
+        print(f"Patch '{patch_file_path}' applied successfully to folder {os.getcwd()}.")
+
+        # Stage the changes
+        print(f"Staging changes from {patch_file_path}")
+        subprocess.run(['git', 'add', '.'], check=True, cwd=os.getcwd())
+
+        # Commit the changes locally
+        print(f"Committing changes from {patch_file_path}")
+        subprocess.run(
+            ['git', 'commit', '-m', f'DEPS Hook: Applied {patch_file_path}'],
+            check=True,
+            cwd=os.getcwd()
+        )
+        print(f"Successfully applied and committed {patch_file_path}")
     except subprocess.CalledProcessError as e:
-        print(f"ERROR: Failed to apply patch '{patch_file_path}' to folder '{abspath_target_path}'.")
-        print(f"Command: {' '.join(e.cmd)}")
-        print(f"Stdout:\n{e.stdout}")
-        print(f"Stderr:\n{e.stderr}")
-        sys.exit(1) # Exit with an error code to fail the gclient sync
+        if "patch does not apply" in e.stderr.decode():
+             print(f"Patch {patch_file_path} already applied. Skipping.", file=sys.stderr)
+             # Exit 0 so gclient sync continues, as the desired state is met.
+             sys.exit(0)
+        else:
+            print(f"Error applying patch {patch_file_path}: {e}", file=sys.stderr)
+            print(f"Command: {' '.join(e.cmd)}")
+            print(f"Stdout: {e.stdout.decode()}", file=sys.stderr)
+            print(f"Stderr: {e.stderr.decode()}", file=sys.stderr)
+            sys.exit(e.returncode)
     except FileNotFoundError as e:
         print(f"ERROR:\n{e}")
         sys.exit(1)
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        print("Usage: python apply_patch.py <target_path> <patch_file_path>")
+    if len(sys.argv) != 2:
+        print("Usage: python3 apply_patch.py <patch_file_path>")
         sys.exit(1)
-    apply_patch(sys.argv[1], sys.argv[2])
+    apply_patch(sys.argv[1])
