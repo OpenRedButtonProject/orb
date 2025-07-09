@@ -1810,7 +1810,7 @@ hbbtv.objects.VideoBroadcast = (function() {
         const p = privates.get(this);
         mandatoryBroadcastRelatedSecurityCheck(p);
         const event = new Event('ProgrammesChanged');
-        p.eventDispatcher.dispatchEvent(event);
+        p.broadcastContext.eventDispatcher.dispatchEvent(event);
     }
 
     function dispatchParentalRatingChange(contentID, ratings, DRMSystemID, blocked) {
@@ -1823,7 +1823,7 @@ hbbtv.objects.VideoBroadcast = (function() {
             DRMSystemID: DRMSystemID,
             blocked: blocked,
         });
-        p.eventDispatcher.dispatchEvent(event);
+        p.broadcastContext.eventDispatcher.dispatchEvent(event);
     }
 
     function dispatchParentalRatingError(contentID, ratings, DRMSystemID) {
@@ -1835,7 +1835,7 @@ hbbtv.objects.VideoBroadcast = (function() {
             ratings: ratings,
             DRMSystemID: DRMSystemID,
         });
-        p.eventDispatcher.dispatchEvent(event);
+        p.broadcastContext.eventDispatcher.dispatchEvent(event);
     }
 
     function dispatchSelectedComponentChanged(componentType) {
@@ -1845,12 +1845,12 @@ hbbtv.objects.VideoBroadcast = (function() {
         Object.assign(event, {
             componentType: componentType,
         });
-        p.eventDispatcher.dispatchEvent(event);
+        p.broadcastContext.eventDispatcher.dispatchEvent(event);
         const event2 = new Event('SelectedComponentChange');
         Object.assign(event2, {
             componentType: componentType,
         });
-        p.eventDispatcher.dispatchEvent(event2);
+        p.broadcastContext.eventDispatcher.dispatchEvent(event2);
     }
 
     function dispatchComponentChanged(componentType) {
@@ -1860,7 +1860,7 @@ hbbtv.objects.VideoBroadcast = (function() {
         Object.assign(event, {
             componentType: componentType,
         });
-        p.eventDispatcher.dispatchEvent(event);
+        p.broadcastContext.eventDispatcher.dispatchEvent(event);
     }
 
     function dispatchDRMRightsError(errorState, contentID, DRMSystemID, rightsIssuerURL) {
@@ -1873,7 +1873,7 @@ hbbtv.objects.VideoBroadcast = (function() {
             DRMSystemID: DRMSystemID,
             rightsIssuerURL: rightsIssuerURL,
         });
-        p.eventDispatcher.dispatchEvent(event);
+        p.broadcastContext.eventDispatcher.dispatchEvent(event);
     }
 
     function dispatchStreamEvent(id, name, data, text, status, dashEventData) {
@@ -1935,7 +1935,6 @@ hbbtv.objects.VideoBroadcast = (function() {
          * requirements in section 10.1.3.1. => TLS handshake through a valid X.509v3 certificate */
         privates.set(this, {});
         const p = privates.get(this);
-        p.eventDispatcher = new hbbtv.utils.EventDispatcher(this);
         /* Associates targetURL::eventName with internal ID */
         p.streamEventListenerIdMap = new defaultEntities.Map();
         /* Associates internal ID with registered listeners */
@@ -1944,6 +1943,9 @@ hbbtv.objects.VideoBroadcast = (function() {
 
         // Create BroadcastContext and store it in privates
         p.broadcastContext = hbbtv.objects.BroadcastContext.instantiate();
+        
+        // Create eventDispatcher in the context
+        p.broadcastContext.eventDispatcher = new hbbtv.utils.EventDispatcher(this);
         
         // Initialize context with initial values
         p.broadcastContext.playState = helperConstants.PLAY_STATE_UNREALIZED;
