@@ -138,7 +138,7 @@ hbbtv.objects.BroadcastHelper = (function() {
                 quiet
             );
             if (errorState < 0) {
-                dispatchEvent(context, 'ChannelChangeSucceeded', { channel: null });
+                dispatchChannelChangeSucceeded(context, null);
             }
             return;
         }
@@ -147,7 +147,7 @@ hbbtv.objects.BroadcastHelper = (function() {
         if (context.playState === Constants.PLAY_STATE_UNREALIZED || context.playState === Constants.PLAY_STATE_STOPPED) {
             if (!context.acquireActiveState()) {
                 hbbtv.bridge.broadcast.setPresentationSuspended(false);
-                dispatchEvent(context, 'ChannelChangeError', { channel, errorState: Constants.ERROR_TUNER_UNAVAILABLE });
+                dispatchChannelChangeError(context, channel, Constants.ERROR_TUNER_UNAVAILABLE);
                 return;
             }
             context.addBridgeEventListeners();
@@ -208,9 +208,9 @@ hbbtv.objects.BroadcastHelper = (function() {
             }
             if (errorState === Constants.CHANNEL_STATUS_CHANNEL_NOT_IN_TS) {
                 context.playState = Constants.PLAY_STATE_UNREALIZED;
-                dispatchEvent(context, 'PlayStateChange',  { playState: context.playState });
+                dispatchPlayStateChange(context, context.playState, Constants.CHANNEL_STATUS_CHANNEL_NOT_IN_TS);
             }
-            dispatchEvent(context, 'ChannelChangeError', { channel, errorState });
+            dispatchChannelChangeError(context, channel, errorState);
             return;
         }
 
@@ -235,7 +235,7 @@ hbbtv.objects.BroadcastHelper = (function() {
         context.unregisterAllStreamEventListeners();
         context.playState = Constants.PLAY_STATE_CONNECTING;
         context.waitingPlayStateConnectingConfirm = appScheme === Constants.LINKED_APP_SCHEME_1_1;
-        dispatchEvent(context, 'PlayStateChange', { playState: context.playState });
+        dispatchPlayStateChange(context, context.playState, Constants.PLAY_STATE_CONNECTING);
     };
 
     /**
@@ -396,10 +396,7 @@ hbbtv.objects.BroadcastHelper = (function() {
             throw new DOMException('', 'SecurityError');
         }
         if (context.playState === Constants.PLAY_STATE_UNREALIZED || context.channelConfig.channelList.length < 2) {
-            dispatchEvent(context, 'ChannelChangeError', {
-                channel: context.currentNonQuietChannelData,
-                errorState: Constants.CHANNEL_STATUS_CANNOT_BE_CHANGED
-            });
+            dispatchChannelChangeError(context, context.currentNonQuietChannelData, Constants.CHANNEL_STATUS_CANNOT_BE_CHANGED);
             return;
         }
         let i;
@@ -413,19 +410,10 @@ hbbtv.objects.BroadcastHelper = (function() {
         if (context.playState === Constants.PLAY_STATE_CONNECTING) {
             context.unregisterAllStreamEventListeners();
             context.playState = Constants.PLAY_STATE_UNREALIZED;
-            dispatchEvent(context, 'ChannelChangeError', {
-                channel: context.currentNonQuietChannelData,
-                errorState: Constants.CHANNEL_STATUS_CANNOT_BE_CHANGED
-            });
-            dispatchEvent(context, 'PlayStateChange', {
-                playState: context.playState,
-                error: Constants.CHANNEL_STATUS_CANNOT_BE_CHANGED
-            });
+            dispatchChannelChangeError(context, context.currentNonQuietChannelData, Constants.CHANNEL_STATUS_CANNOT_BE_CHANGED);
+            dispatchPlayStateChange(context, context.playState, Constants.CHANNEL_STATUS_CANNOT_BE_CHANGED);
         } else {
-            dispatchEvent(context, 'ChannelChangeError', {
-                channel: context.currentNonQuietChannelData,
-                errorState: Constants.CHANNEL_STATUS_CANNOT_BE_CHANGED
-            });
+            dispatchChannelChangeError(context, context.currentNonQuietChannelData, Constants.CHANNEL_STATUS_CANNOT_BE_CHANGED);
         }
     }
 
@@ -474,13 +462,32 @@ hbbtv.objects.BroadcastHelper = (function() {
     }
 
     // helper function for dispatching events
-    function dispatchEvent(context, event, contextInfo) {
-        console.log("Dispatched '" + event + "' event.");
-        const evt = new Event(event);
+    function dispatchEvent(context, eventName, contextInfo) {
+        console.log("Dispatched '" + eventName + "' event.");
+        const event = new Event(eventName);
         if (contextInfo) {
-            Object.assign(evt, contextInfo);
+            Object.assign(event, contextInfo);
         }
         context.eventDispatcher.dispatchEvent(event);
+    }
+
+    // Specific event dispatching methods to prevent typos
+    function dispatchChannelChangeSucceeded(context, channel) {
+        dispatchEvent(context, 'ChannelChangeSucceeded', { channel: channel });
+    }
+
+    function dispatchChannelChangeError(context, channel, errorState) {
+        dispatchEvent(context, 'ChannelChangeError', { 
+            channel: channel, 
+            errorState: errorState 
+        });
+    }
+
+    function dispatchPlayStateChange(context, playState, error) {
+        dispatchEvent(context, 'PlayStateChange', { 
+            playState: playState, 
+            error: error 
+        });
     }
 
     function instantiate(context) {
