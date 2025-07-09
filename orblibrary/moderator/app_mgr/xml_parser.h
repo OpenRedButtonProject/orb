@@ -23,6 +23,9 @@
 
 #include "ait.h"
 
+namespace orb
+{
+
 class XmlParser {
 public:
 #if 0 // TODO(C++-ize)
@@ -71,5 +74,7 @@ public:
     static void FreeDsmcc(S_XML_DSMCC *dsm_objs);
 #endif
 };
+
+} // namespace orb
 
 #endif  /* XML_PARSE_H */

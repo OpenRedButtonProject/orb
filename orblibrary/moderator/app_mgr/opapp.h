@@ -23,6 +23,9 @@
 
 #include "hbbtv_app.h"
 
+namespace orb
+{
+
 class OpApp : public HbbTVApp
 {
 public:
@@ -66,5 +69,7 @@ private:
 
     Utils::Timeout m_countdown;
 };
+
+} // namespace orb
 
 #endif // OPAPP_H

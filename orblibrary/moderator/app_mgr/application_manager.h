@@ -35,6 +35,9 @@
 #include "opapp.h"
 #include "application_session_callback.h"
 
+namespace orb
+{
+
 class ApplicationManager {
 public:
     enum class MethodRequirement
@@ -147,8 +150,8 @@ public:
      *
      * @param xmlAit The XML AIT contents.
      * @param isDvbi true when the caller a DVB-I application.
-     * @param scheme The linked application scheme. 
-     * 
+     * @param scheme The linked application scheme.
+     *
      * @return true if the application can be created, otherwise false
      */
     int ProcessXmlAit(const std::string &xmlAit, const bool isDvbi = false,
@@ -272,18 +275,18 @@ private:
 
     /**
      * Create and run an App by url.
-     * 
+     *
      * @param url The url the of the App.
      * @param runAsOpApp When true, the newly created app will be lauched as an OpApp,
      *      otherwise as an HbbTVApp.
-     * 
+     *
      * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
      */
     int CreateAndRunApp(std::string url, bool runAsOpApp = false);
 
     /**
      * Create and run an App by AIT description.
-     * 
+     *
      * @param desc The AIT description the new App will use to set its initial state.
      * @param urlParams Additional url parameters that will be concatenated with the
      *      loaded url of the new App.
@@ -291,7 +294,7 @@ private:
      * @param isTrusted Is the new App trusted?
      * @param runAsOpApp When true, the newly created app will be lauched as an OpApp,
      *      otherwise as an HbbTVApp.
-     * 
+     *
      * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
      */
     int CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc,
@@ -304,16 +307,16 @@ private:
      * Run the app.
      *
      * @param app The app to run.
-     * 
+     *
      * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
      */
     int RunApp(std::unique_ptr<HbbTVApp> app);
 
     /**
      * Update the running app.
-     * 
+     *
      * @param desc The AIT description the running App will use to update its state.
-     * 
+     *
      * @return True on success, false on failure.
      */
     bool UpdateRunningApp(const Ait::S_AIT_APP_DESC &desc);
@@ -374,5 +377,7 @@ private:
     std::recursive_mutex m_lock;
     Utils::Timeout m_aitTimeout;
 };
+
+} // namespace orb
 
 #endif // HBBTV_SERVICE_MANAGER_H

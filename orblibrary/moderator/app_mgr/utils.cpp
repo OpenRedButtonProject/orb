@@ -31,6 +31,9 @@
 #include "ait.h"
 #include "log.h"
 
+namespace orb
+{
+
 /**
  * Make an invalid DVB triplet.
  * @return An invalid DVB triplet.
@@ -506,3 +509,5 @@ bool Utils::Timeout::isStopped() const
     std::lock_guard<std::mutex> lock(m_cvm);
     return m_stopped;
 }
+
+} // namespace orb

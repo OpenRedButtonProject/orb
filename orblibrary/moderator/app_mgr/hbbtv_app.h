@@ -31,6 +31,9 @@
 
 #define INVALID_APP_ID 0
 
+namespace orb
+{
+
 class HbbTVApp
 {
 public:
@@ -188,5 +191,7 @@ protected:
 private:
     int m_id;
 };
+
+} // namespace orb
 
 #endif // HBBTV_APP_H

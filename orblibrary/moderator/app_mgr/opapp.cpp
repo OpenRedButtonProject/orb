@@ -4,6 +4,9 @@
 
 #define COUNT_DOWN_TIMEOUT 60000
 
+namespace orb
+{
+
 static std::string opAppStateToString(const HbbTVApp::E_APP_STATE &state);
 
 /**
@@ -146,3 +149,5 @@ static std::string opAppStateToString(const HbbTVApp::E_APP_STATE &state)
     // should never get here
     return "undefined";
 }
+
+} // namespace orb

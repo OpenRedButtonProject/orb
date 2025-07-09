@@ -63,6 +63,9 @@
 #define VK_ALPHA_START 65
 #define VK_ALPHA_END 90
 
+namespace orb
+{
+
 static int g_id = INVALID_APP_ID;
 
 static std::string getAppSchemeFromUrlParams(const std::string &urlParams);
@@ -466,3 +469,5 @@ static bool IsKeyScroll(const uint16_t &code)
     return code == VK_PAGE_UP ||
            code == VK_PAGE_DOWN;
 }
+
+} // namespace orb

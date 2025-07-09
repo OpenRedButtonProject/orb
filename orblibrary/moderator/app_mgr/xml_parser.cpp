@@ -47,6 +47,9 @@
 #define NODE_PROP_FREE(dptr)
 #endif
 
+namespace orb
+{
+
 /**
  *
  * @param dptr
@@ -1226,4 +1229,6 @@ void XmlParser::FreeDsmcc(XmlParser::S_XML_DSMCC *dsm_objs)
     }
 }
 
-#endif
+#endif // TODO(C++-ize)
+
+} // namespace orb

@@ -33,6 +33,9 @@
 #include "utils.h"
 #include "xml_parser.h"
 
+namespace orb
+{
+
 /**
  * Application manager
  *
@@ -1125,3 +1128,5 @@ uint32_t ApplicationManager::GetOrganizationId()
     LOG(LOG_INFO, "Cannot retrieve organization id (no running app). Returning -1.\n");
     return -1;
 }
+
+} // namespace orb

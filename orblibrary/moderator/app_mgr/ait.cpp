@@ -45,6 +45,9 @@
 #define GET_SECTION_MASK_INDEX(section_number) static_cast<unsigned int>(section_number / 8u)
 #define GET_SECTION_MASK_SHIFT(section_number) static_cast<unsigned int>(section_number % 8u)
 
+namespace orb
+{
+
 /**
  * Get the last completed AIT table. This value may be invalidated by calling ProcessSection(),
  * consumers of this API should ensure serialization.
@@ -1308,3 +1311,5 @@ bool Ait::IsAgeRestricted(const std::vector<Ait::S_APP_PARENTAL_RATING> parental
     }
     return restricted;
 }
+
+} // namespace orb
