@@ -16,17 +16,21 @@
 #pragma once
 
 #include <string>
-//#include <map>
+
 #include <json/json.h>
 
 #include "Moderator.h"
 
 namespace orb
 {
+class ApplicationManager;
+
 class AppManager
 {
 public:
     static AppManager& instance(); // singleton
+
+    AppManager();
 
     /**
      * AppManager request
@@ -40,7 +44,7 @@ public:
     std::string executeRequest(std::string method, Json::Value token, Json::Value params, ApplicationType apptype);
 
 private:
-//    std::map<std::string, Application*> mAppMap;
+    std::unique_ptr<ApplicationManager> mApplicationManager;
 
     bool IsRequestAllowed(std::string token);
 
