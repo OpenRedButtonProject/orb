@@ -7,6 +7,7 @@
 #include <memory>
 #include <vector>
 #include <mutex>
+#include <functional>
 
 // Error handling structure for package operations
 struct PackageOperationResult {
@@ -38,6 +39,22 @@ class OpAppPackageManager
 {
 public:
 
+  enum class PackageStatus {
+    None,
+    NoUpdateAvailable,
+    NotInstalled,
+    Installed,
+    UpdateAvailable,
+    UpdateFailed,
+    DecryptionFailed,
+    VerificationFailed,
+    ConfigurationError
+  };
+
+  // Callback function types for update completion
+  using UpdateSuccessCallback = std::function<void(const std::string& packagePath)>;
+  using UpdateFailureCallback = std::function<void(PackageStatus status, const std::string& errorMessage)>;
+
   struct PackageInfo {
     std::string m_PackageName;
     std::string m_PackageVersion;
@@ -55,19 +72,11 @@ public:
       std::string m_PackageHashFilePath;
       std::string m_DestinationDirectory; /* Directory where the package is decrypted, unzipped and verified */
       std::string m_OpAppInstallDirectory; /* Directory where the OpApp is installed */
+      UpdateSuccessCallback m_OnUpdateSuccess; /* Callback called when update completes successfully */
+      UpdateFailureCallback m_OnUpdateFailure; /* Callback called when update fails */
   };
 
-  enum class PackageStatus {
-    None,
-    NoUpdateAvailable,
-    NotInstalled,
-    Installed,
-    UpdateAvailable,
-    UpdateFailed,
-    DecryptionFailed,
-    VerificationFailed,
-    ConfigurationError
-  };
+
 
   // Singleton instance management
   // getInstance() returns nullptr if not configured yet
@@ -95,7 +104,6 @@ public:
   OpAppPackageManager& operator=(OpAppPackageManager&&) = delete;
 
   void start();
-  void stop();
   bool isRunning() const;
   bool isUpdating() const;
   bool isPackageInstalled(const std::string& packagePath);

@@ -73,8 +73,6 @@ OpAppPackageManager::OpAppPackageManager(const Configuration& configuration)
   : m_PackageStatus(PackageStatus::None)
   , m_IsRunning(false)
   , m_IsUpdating(false)
-  , m_Mutex()
-  , m_WorkerThread()
   , m_Configuration(configuration)
   , m_LastErrorMessage()
   , m_HashCalculator(std::make_unique<HashCalculator>())
@@ -86,8 +84,6 @@ OpAppPackageManager::OpAppPackageManager(const Configuration& configuration, std
   : m_PackageStatus(PackageStatus::None)
   , m_IsRunning(false)
   , m_IsUpdating(false)
-  , m_Mutex()
-  , m_WorkerThread()
   , m_Configuration(configuration)
   , m_LastErrorMessage()
   , m_HashCalculator(std::move(hashCalculator))
@@ -100,8 +96,6 @@ OpAppPackageManager::OpAppPackageManager(
   : m_PackageStatus(PackageStatus::None)
   , m_IsRunning(false)
   , m_IsUpdating(false)
-  , m_Mutex()
-  , m_WorkerThread()
   , m_Configuration(configuration)
   , m_LastErrorMessage()
   , m_HashCalculator(std::move(hashCalculator))
@@ -119,7 +113,9 @@ OpAppPackageManager::~OpAppPackageManager()
 {
   // Ensure the worker thread is stopped before destruction
   if (m_IsRunning) {
-    stop();
+    if (m_WorkerThread.joinable()) {
+      m_WorkerThread.join();
+    }
   }
 }
 
@@ -174,6 +170,9 @@ void OpAppPackageManager::destroyInstance()
 {
   std::lock_guard<std::mutex> lock(s_InstanceMutex);
   if (s_Instance) {
+    if (s_Instance->m_WorkerThread.joinable()) {
+      s_Instance->m_WorkerThread.join();
+    }
     s_Instance.reset();
     s_Instance = nullptr; // Explicitly set to nullptr to ensure it's destroyed
   }
@@ -186,23 +185,12 @@ void OpAppPackageManager::start()
     return;
   }
 
-  m_WorkerThread = std::thread(&OpAppPackageManager::checkForUpdates, this);
-
   m_IsRunning = true;
-  m_IsUpdating = false;
-}
-
-void OpAppPackageManager::stop()
-{
-  std::lock_guard<std::mutex> lock(m_Mutex);
-  if (!m_IsRunning) {
-    return;
-  }
-
-  m_WorkerThread.join();
-
-  m_IsRunning = false;
-  m_IsUpdating = false;
+  m_WorkerThread = std::thread(
+    [this]() {
+      checkForUpdates();
+      m_IsRunning = false;
+    });
 }
 
 bool OpAppPackageManager::isRunning() const
@@ -217,15 +205,21 @@ bool OpAppPackageManager::isUpdating() const
 
 void OpAppPackageManager::checkForUpdates()
 {
-  m_IsRunning = true;
-
-  /* TODO Error handling as outlined in OpApp HbbTV spec 6.1.9 Installation Failures */
-
   m_PackageStatus = doPackageFileCheck();
 
   if (m_PackageStatus != PackageStatus::UpdateAvailable) {
-
-    LOG(INFO) << "No update available: [" << statusCodeToString(m_PackageStatus) << "]";
+    if (m_PackageStatus == PackageStatus::ConfigurationError)
+    {
+      LOG(ERROR) << "Configuration error: [" << statusCodeToString(m_PackageStatus) << "]";
+      // Call failure callback for configuration errors
+      if (m_Configuration.m_OnUpdateFailure) {
+        m_Configuration.m_OnUpdateFailure(m_PackageStatus, m_LastErrorMessage);
+      }
+    }
+    else
+    {
+      LOG(INFO) << "No new update available: [" << statusCodeToString(m_PackageStatus) << "]";
+    }
     return;
   }
 
@@ -236,10 +230,18 @@ void OpAppPackageManager::checkForUpdates()
 
   if (m_PackageStatus != PackageStatus::Installed) {
     LOG(ERROR) << "Update failed: [" << statusCodeToString(m_PackageStatus) << "]";
+    // Call failure callback for install errors
+    if (m_Configuration.m_OnUpdateFailure) {
+      m_Configuration.m_OnUpdateFailure(m_PackageStatus, m_LastErrorMessage);
+    }
     return;
   }
 
   LOG(INFO) << "Update installed: [" << statusCodeToString(m_PackageStatus) << "]";
+  // Call success callback
+  if (m_Configuration.m_OnUpdateSuccess) {
+    m_Configuration.m_OnUpdateSuccess(m_CandidatePackageFile);
+  }
 
   // Keep the worker thread running by adding a small delay
   // This prevents the thread from exiting immediately

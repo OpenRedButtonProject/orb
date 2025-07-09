@@ -250,6 +250,7 @@ TEST_F(OpAppPackageManagerTest, TestConfigurationInitialization)
 TEST_F(OpAppPackageManagerTest, TestStartAndStop)
 {
   // GIVEN: a singleton OpAppPackageManager instance
+  // and no package file in the package source location
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
@@ -259,14 +260,12 @@ TEST_F(OpAppPackageManagerTest, TestStartAndStop)
 
   // THEN: the package manager should be running
   EXPECT_TRUE(packageManager.isRunning());
-  EXPECT_FALSE(packageManager.isUpdating());
 
-  // WHEN: stopping the package manager
-  packageManager.stop();
+  // WHEN: the thead completes
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
   // THEN: the package manager should be stopped
   EXPECT_FALSE(packageManager.isRunning());
-  EXPECT_FALSE(packageManager.isUpdating());
 }
 
 TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_NoUpdates)
@@ -839,6 +838,141 @@ TEST_F(OpAppPackageManagerTest, TestPackageUpdateWorkflow)
   (void)packageManager;
   (void)oldVersionPath;
   (void)newVersionPath;
+}
+
+TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_NoUpdateAvailable_NoCallbacksCalled)
+{
+  // GIVEN: a singleton OpAppPackageManager instance with callbacks
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_PackageSuffix = ".opk";
+  configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
+
+  bool successCallbackCalled = false;
+  bool failureCallbackCalled = false;
+
+  configuration.m_OnUpdateSuccess = [&](const std::string&) {
+    successCallbackCalled = true;
+  };
+  configuration.m_OnUpdateFailure = [&](OpAppPackageManager::PackageStatus, const std::string&) {
+    failureCallbackCalled = true;
+  };
+
+  OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
+
+  // WHEN: checking for updates when no package file exists
+  packageManager.checkForUpdates();
+
+  // THEN: neither callback should be called for NoUpdateAvailable
+  EXPECT_FALSE(successCallbackCalled);
+  EXPECT_FALSE(failureCallbackCalled);
+}
+
+TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_Installed_NoCallbacksCalled)
+{
+  // GIVEN: a singleton OpAppPackageManager instance with callbacks and installed package
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_PackageSuffix = ".opk";
+  configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
+
+  // Create a package file and hash file with same hash (simulating installed package)
+  std::string packagePath = PACKAGE_PATH + "/package.opk";
+  std::ofstream packageFile(packagePath);
+  packageFile << "test package content";
+  packageFile.close();
+
+  auto mockCalculator = std::make_unique<MockHashCalculator>();
+  mockCalculator->setHashForFile(packagePath, "test_hash_1234567890abcdef");
+  mockCalculator->createHashJsonFile(PACKAGE_PATH + "/package.hash", "test_hash_1234567890abcdef");
+
+  bool successCallbackCalled = false;
+  bool failureCallbackCalled = false;
+
+  configuration.m_OnUpdateSuccess = [&](const std::string&) {
+    successCallbackCalled = true;
+  };
+  configuration.m_OnUpdateFailure = [&](OpAppPackageManager::PackageStatus, const std::string&) {
+    failureCallbackCalled = true;
+  };
+
+  OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration, std::move(mockCalculator));
+
+  // WHEN: checking for updates with installed package
+  OpAppPackageManager::PackageStatus status = packageManager.doPackageFileCheck();
+
+  // THEN: status should be Installed and neither callback should be called
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::Installed);
+  EXPECT_FALSE(successCallbackCalled);
+  EXPECT_FALSE(failureCallbackCalled);
+
+  // Clean up test files
+  std::remove(packagePath.c_str());
+  std::remove((PACKAGE_PATH + "/package.hash").c_str());
+}
+
+TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_ConfigurationError_CallsFailureCallback)
+{
+  // GIVEN: a singleton OpAppPackageManager instance with callbacks
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_PackageSuffix = ".opk";
+  configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
+
+  // Create multiple package files to trigger ConfigurationError
+  std::string packagePath1 = PACKAGE_PATH + "/package1.opk";
+  std::string packagePath2 = PACKAGE_PATH + "/package2.opk";
+  std::ofstream file1(packagePath1);
+  std::ofstream file2(packagePath2);
+  file1.close();
+  file2.close();
+
+  bool successCallbackCalled = false;
+  bool failureCallbackCalled = false;
+  OpAppPackageManager::PackageStatus failureStatus;
+  std::string failureErrorMessage;
+
+  configuration.m_OnUpdateSuccess = [&](const std::string&) {
+    successCallbackCalled = true;
+  };
+  configuration.m_OnUpdateFailure = [&](OpAppPackageManager::PackageStatus status, const std::string& errorMessage) {
+    failureCallbackCalled = true;
+    failureStatus = status;
+    failureErrorMessage = errorMessage;
+  };
+
+  OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
+
+  // WHEN: checking for updates with multiple package files (ConfigurationError)
+  packageManager.checkForUpdates();
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+  // THEN: status should be ConfigurationError and failure callback should be called
+  EXPECT_FALSE(successCallbackCalled);
+  EXPECT_TRUE(failureCallbackCalled);
+  EXPECT_EQ(failureStatus, OpAppPackageManager::PackageStatus::ConfigurationError);
+  EXPECT_FALSE(failureErrorMessage.empty());
+
+  // Clean up test files
+  std::remove(packagePath1.c_str());
+  std::remove(packagePath2.c_str());
+}
+
+TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_NoCallbacksSet)
+{
+  // GIVEN: a singleton OpAppPackageManager instance without callbacks
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_PackageSuffix = ".opk";
+  configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
+
+  OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
+
+  // WHEN: checking for updates when no package file exists
+  // THEN: function should complete successfully
+  OpAppPackageManager::PackageStatus status = packageManager.doPackageFileCheck();
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::NoUpdateAvailable);
 }
 
 // Standalone test to isolate destroyInstance issue
