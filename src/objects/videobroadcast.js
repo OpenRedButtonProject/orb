@@ -362,7 +362,7 @@ hbbtv.objects.VideoBroadcast = (function() {
             p.onChannelChangeSucceededDomLevel0 = listener;
             if (listener) {
                 p.onChannelChangeSucceededWrapper = (ev) => {
-                    listener(ev.channel);
+                    listener(ev.channel, ev.viewerChannel, ev.quiet);
                 };
                 this.addEventListener('ChannelChangeSucceeded', p.onChannelChangeSucceededWrapper);
             }

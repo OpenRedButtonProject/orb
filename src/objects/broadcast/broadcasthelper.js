@@ -138,7 +138,7 @@ hbbtv.objects.BroadcastHelper = (function() {
                 quiet
             );
             if (errorState < 0) {
-                dispatchChannelChangeSucceededEvent(context, null);
+                dispatchEvent(context, 'ChannelChangeSucceeded', { channel: null });
             }
             return;
         }
@@ -147,7 +147,7 @@ hbbtv.objects.BroadcastHelper = (function() {
         if (context.playState === Constants.PLAY_STATE_UNREALIZED || context.playState === Constants.PLAY_STATE_STOPPED) {
             if (!context.acquireActiveState()) {
                 hbbtv.bridge.broadcast.setPresentationSuspended(false);
-                dispatchChannelChangeErrorEvent(context, channel, Constants.ERROR_TUNER_UNAVAILABLE);
+                dispatchEvent(context, 'ChannelChangeError', { channel, errorState: Constants.ERROR_TUNER_UNAVAILABLE });
                 return;
             }
             context.addBridgeEventListeners();
@@ -208,9 +208,9 @@ hbbtv.objects.BroadcastHelper = (function() {
             }
             if (errorState === Constants.CHANNEL_STATUS_CHANNEL_NOT_IN_TS) {
                 context.playState = Constants.PLAY_STATE_UNREALIZED;
-                dispatchPlayStateChangeEvent(context, context.playState);
+                dispatchEvent(context, 'PlayStateChange',  { playState: context.playState });
             }
-            dispatchChannelChangeErrorEvent(context, channel, errorState);
+            dispatchEvent(context, 'ChannelChangeError', { channel, errorState });
             return;
         }
 
@@ -235,7 +235,7 @@ hbbtv.objects.BroadcastHelper = (function() {
         context.unregisterAllStreamEventListeners();
         context.playState = Constants.PLAY_STATE_CONNECTING;
         context.waitingPlayStateConnectingConfirm = appScheme === Constants.LINKED_APP_SCHEME_1_1;
-        dispatchPlayStateChangeEvent(context, context.playState);
+        dispatchEvent(context, 'PlayStateChange', { playState: context.playState });
     };
 
     /**
@@ -396,11 +396,10 @@ hbbtv.objects.BroadcastHelper = (function() {
             throw new DOMException('', 'SecurityError');
         }
         if (context.playState === Constants.PLAY_STATE_UNREALIZED || context.channelConfig.channelList.length < 2) {
-            dispatchChannelChangeErrorEvent(
-                context,
-                context.currentNonQuietChannelData,
-                Constants.CHANNEL_STATUS_CANNOT_BE_CHANGED
-            );
+            dispatchEvent(context, 'ChannelChangeError', {
+                channel: context.currentNonQuietChannelData,
+                errorState: Constants.CHANNEL_STATUS_CANNOT_BE_CHANGED
+            });
             return;
         }
         let i;
@@ -414,18 +413,19 @@ hbbtv.objects.BroadcastHelper = (function() {
         if (context.playState === Constants.PLAY_STATE_CONNECTING) {
             context.unregisterAllStreamEventListeners();
             context.playState = Constants.PLAY_STATE_UNREALIZED;
-            dispatchChannelChangeErrorEvent(
-                context,
-                context.currentNonQuietChannelData,
-                Constants.CHANNEL_STATUS_CANNOT_BE_CHANGED
-            );
-            dispatchPlayStateChangeEvent(context, context.playState, Constants.CHANNEL_STATUS_CANNOT_BE_CHANGED);
+            dispatchEvent(context, 'ChannelChangeError', {
+                channel: context.currentNonQuietChannelData,
+                errorState: Constants.CHANNEL_STATUS_CANNOT_BE_CHANGED
+            });
+            dispatchEvent(context, 'PlayStateChange', {
+                playState: context.playState,
+                error: Constants.CHANNEL_STATUS_CANNOT_BE_CHANGED
+            });
         } else {
-            dispatchChannelChangeErrorEvent(
-                context,
-                context.currentNonQuietChannelData,
-                Constants.CHANNEL_STATUS_CANNOT_BE_CHANGED
-            );
+            dispatchEvent(context, 'ChannelChangeError', {
+                channel: context.currentNonQuietChannelData,
+                errorState: Constants.CHANNEL_STATUS_CANNOT_BE_CHANGED
+            });
         }
     }
 
@@ -473,30 +473,13 @@ hbbtv.objects.BroadcastHelper = (function() {
         return id;
     }
 
-    // Event dispatching functions
-    function dispatchChannelChangeErrorEvent(context, channel, errorState) {
-        const event = new Event('ChannelChangeError');
-        Object.assign(event, {
-            channel: channel,
-            errorState: errorState,
-        });
-        context.eventDispatcher.dispatchEvent(event);
-    }
-
-    function dispatchChannelChangeSucceededEvent(context, channel) {
-        const event = new Event('ChannelChangeSucceeded');
-        Object.assign(event, {
-            channel: channel,
-        });
-        context.eventDispatcher.dispatchEvent(event);
-    }
-
-    function dispatchPlayStateChangeEvent(context, state, error) {
-        const event = new Event('PlayStateChange');
-        Object.assign(event, {
-            state: state,
-            error: error,
-        });
+    // helper function for dispatching events
+    function dispatchEvent(context, event, contextInfo) {
+        console.log("Dispatched '" + event + "' event.");
+        const evt = new Event(event);
+        if (contextInfo) {
+            Object.assign(evt, contextInfo);
+        }
         context.eventDispatcher.dispatchEvent(event);
     }
 
