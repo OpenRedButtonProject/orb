@@ -164,14 +164,16 @@ void Moderator::notifyApplicationLoadFailed(string url, string errorText)
     LOGI("url: " << url << " err: " << errorText);
 }
 
-void Moderator::processAitSection(int32_t aitPid, int32_t serviceId, const vector<uint8_t>& data)
+void Moderator::processAitSection(int32_t aitPid, int32_t serviceId, const vector<uint8_t>& section)
 {
     LOGI("pid: " << aitPid << "serviceId: " << serviceId);
+    AppManager::instance().processAitSection(aitPid, serviceId, section);
 }
 
-void Moderator::processXmlAit(const vector<uint8_t>& data)
+void Moderator::processXmlAit(const vector<uint8_t>& xmlait)
 {
     LOGI("");
+    AppManager::instance().processXmlAit(xmlait);
 }
 
 

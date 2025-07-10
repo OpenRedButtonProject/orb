@@ -23,27 +23,27 @@
 
 #include "hbbtv_app.h"
 
+namespace orb
+{
+
 class OpApp : public HbbTVApp
 {
 public:
     /**
      * Create opapp from url.
      *
-     * @throws std::runtime_error
      */
     OpApp(const std::string &url, ApplicationSessionCallback *sessionCallback);
 
     /**
-     * Create opapp from Ait description.
+     * Create opapp
      *
-     * @throws std::runtime_error
      */
-    OpApp(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable, ApplicationSessionCallback *sessionCallback);
+    OpApp(ApplicationSessionCallback *sessionCallback);
 
     /**
      * Create opapp from url and inherit another opapp's state (ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.1).
      *
-     * @throws std::runtime_error
      */
     OpApp(const OpApp &other, const std::string &url);
 
@@ -69,5 +69,7 @@ private:
 
     Utils::Timeout m_countdown;
 };
+
+} // namespace orb
 
 #endif // OPAPP_H

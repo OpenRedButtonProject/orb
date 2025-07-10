@@ -63,6 +63,9 @@
 #define VK_ALPHA_START 65
 #define VK_ALPHA_END 90
 
+namespace orb
+{
+
 static int g_id = INVALID_APP_ID;
 
 static std::string getAppSchemeFromUrlParams(const std::string &urlParams);
@@ -84,28 +87,20 @@ static bool IsKeyScroll(const uint16_t &code);
 
 /**
  * Create app from url.
- * 
+ *
  * @throws std::runtime_error
  */
 HbbTVApp::HbbTVApp(const std::string &url, ApplicationSessionCallback *sessionCallback)
     : loadedUrl(url), m_entryUrl(url), m_baseUrl(url), m_sessionCallback(sessionCallback), m_id(++g_id)
 {
-    if (url.empty())
-    {
-        throw std::runtime_error("[App]: Provided url should not be empty.");
-    }
     m_scheme = getAppSchemeFromUrlParams(url);
 }
 
 /**
- * Create app from Ait description.
- * 
- * @throws std::runtime_error
+ * Create app
+ *
  */
-HbbTVApp::HbbTVApp(const Ait::S_AIT_APP_DESC &desc,
-    const Utils::S_DVB_TRIPLET currentService,
-    bool isNetworkAvailable,
-    const std::string &urlParams,
+HbbTVApp::HbbTVApp(const Utils::S_DVB_TRIPLET currentService,
     bool isBroadcast,
     bool isTrusted,
     ApplicationSessionCallback *sessionCallback)
@@ -116,35 +111,48 @@ HbbTVApp::HbbTVApp(const Ait::S_AIT_APP_DESC &desc,
         m_sessionCallback(sessionCallback),
         m_id(++g_id)
 {
+    // Broadcast-related applications need to call show.
+    m_state = isBroadcast ? BACKGROUND_STATE : FOREGROUND_STATE;
+}
+
+/**
+ * Set URL of app from Ait description and URL params
+ *
+ */
+void HbbTVApp::SetUrl(const Ait::S_AIT_APP_DESC &desc,
+    const std::string &urlParams, bool isNetworkAvailable)
+{
     m_baseUrl = Ait::ExtractBaseURL(desc, m_service, isNetworkAvailable);
     m_entryUrl = Utils::MergeUrlParams(m_baseUrl, desc.location, urlParams);
     loadedUrl = m_entryUrl;
-    
-    // Broadcast-related applications need to call show.
-    m_state = isBroadcast ? BACKGROUND_STATE : FOREGROUND_STATE;
-
-    Update(desc, isNetworkAvailable);
 }
 
 /**
  * Updates the app's state. Meant to be called by the ApplicationManager
- * when it receives a new AIT table or when the network availability is 
+ * when it receives a new AIT table or when the network availability is
  * changed.
- * 
+ *
  * @param desc The model that the App will use to extract info about its
  *      state.
  * @param isNetworkAvailable The network availability. Will be used to
  *      determine the protocolId.
- * 
- * @throws std::runtime_error
+ *
+ * @return true if success
  */
-void HbbTVApp::Update(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable)
-{   
+bool HbbTVApp::Update(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable)
+{
     if (!IsAllowedByParentalControl(desc))
     {
-        throw std::runtime_error("App with loaded url '" + loadedUrl + "' is not allowed by Parental Control.");
+        LOG(LOG_ERROR, "App with loaded url '%s' is not allowed by Parental Control.", loadedUrl.c_str());
+        return false;
     }
     m_protocolId = Ait::ExtractProtocolId(desc, isNetworkAvailable);
+    if (m_protocolId == 0)
+    {
+        LOG(LOG_ERROR, "No valid protocol ID");
+        return false;
+    }
+
     m_aitDesc = desc;
 
     for (uint8_t i = 0; i < desc.appDesc.appProfiles.size(); i++)
@@ -176,8 +184,9 @@ void HbbTVApp::Update(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable)
     }
     LOG(LOG_DEBUG, "App[%d] properties: orgId=%d, controlCode=%d, protocolId=%d, baseUrl=%s, entryUrl=%s, loadedUrl=%s",
             m_aitDesc.appId, m_aitDesc.orgId, m_aitDesc.controlCode, m_protocolId, m_baseUrl.c_str(), m_entryUrl.c_str(), loadedUrl.c_str());
-    
+
     m_sessionCallback->DispatchApplicationSchemeUpdatedEvent(GetId(), m_scheme);
+    return true;
 }
 
 bool HbbTVApp::TransitionToBroadcastRelated()
@@ -237,12 +246,12 @@ uint16_t HbbTVApp::SetKeySetMask(uint16_t keySetMask, const std::vector<uint16_t
     std::string currentScheme = GetScheme();
 
     // Compatibility check for older versions
-    bool isOldVersion = m_versionMinor > 1; 
+    bool isOldVersion = m_versionMinor > 1;
     bool isLinkedAppScheme12 = currentScheme == LINKED_APP_SCHEME_1_2;
 
     // Key events VK_STOP, VK_PLAY, VK_PAUSE, VK_PLAY_PAUSE, VK_FAST_FWD,
-    // VK_REWIND and VK_RECORD shall always be available to linked applications 
-    // that are controlling media presentation without requiring the application 
+    // VK_REWIND and VK_RECORD shall always be available to linked applications
+    // that are controlling media presentation without requiring the application
     // to be activated first (2.0.4, App. O.7)
     bool isException = isLinkedAppScheme12 && m_versionMinor == 7;
 
@@ -295,7 +304,7 @@ bool HbbTVApp::InKeySet(uint16_t keyCode)
 
 /**
  * Set the application state.
- * 
+ *
  * @param state The desired state to transition to.
  * @returns true if transitioned successfully to the desired state, false otherwise.
  */
@@ -460,3 +469,5 @@ static bool IsKeyScroll(const uint16_t &code)
     return code == VK_PAGE_UP ||
            code == VK_PAGE_DOWN;
 }
+
+} // namespace orb

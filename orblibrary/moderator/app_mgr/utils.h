@@ -32,6 +32,9 @@
 
 #define INVALID_ID 0xFFFF
 
+namespace orb
+{
+
 class Utils {
 public:
     enum class CreateLocatorType
@@ -152,5 +155,7 @@ private:
         std::chrono::milliseconds m_timeout;
     };
 };
+
+} // namespace orb
 
 #endif // __HBBTV_UTILS_H

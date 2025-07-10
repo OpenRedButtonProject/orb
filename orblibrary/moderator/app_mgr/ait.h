@@ -55,6 +55,9 @@
 #define LINKED_APP_SCHEME_1_2 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.2"
 #define LINKED_APP_SCHEME_2 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:2"
 
+namespace orb
+{
+
 class Ait
 {
 public:
@@ -205,10 +208,11 @@ public:
      * @param parentalControlAge PC age set in the device.
      * @param parentalControlRegion 2 letter ISO 3166 region code.
      * @param parentalControlRegion3 3 letter ISO 3166 region code.
+     * @param isNetworkAvailable
      * @return App to auto start
      */
     static const S_AIT_APP_DESC* AutoStartApp(const S_AIT_TABLE *aitTable, int parentalControlAge,
-        std::string &parentalControlRegion, std::string &parentalControlRegion3);
+        std::string &parentalControlRegion, std::string &parentalControlRegion3, const bool isNetworkAvailable);
 
     /**
      *
@@ -244,13 +248,21 @@ public:
     static uint16_t ExtractProtocolId(const Ait::S_AIT_APP_DESC &appDescription,
         const bool isNetworkAvailable);
 
-/**
- * Determine whether the application has a transport with a certain protocol.
- * @param appDescription The application description.
- * @param protocolId The protocol to check for.
- * @return True if the application has a transport with the protocol, false otherwise.
- */
+    /**
+     * Determine whether the application has a transport with a certain protocol.
+     * @param appDescription The application description.
+     * @param protocolId The protocol to check for.
+     * @return True if the application has a transport with the protocol, false otherwise.
+     */
     static bool AppHasTransport(const Ait::S_AIT_APP_DESC *appDescription, uint16_t protocolId);
+
+    /**
+     * Check whether App description contains a viable transport protocol
+     * @param appDesc
+     * @param isNetworkAvailable
+     * @return true if there is a viable transport
+     */
+    static bool HasViableTransport(const S_AIT_APP_DESC *appDesc, const bool isNetworkAvailable);
 
     /**
      * Set that the protocol for this app failed to load.
@@ -352,5 +364,7 @@ private:
     std::shared_ptr<S_AIT_TABLE> m_ait;
     std::shared_ptr<S_AIT_TABLE> m_aitCompleted;
 };
+
+} // namespace orb
 
 #endif /* AIT_PARSE_H */

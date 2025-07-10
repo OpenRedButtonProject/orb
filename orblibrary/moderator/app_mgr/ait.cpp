@@ -45,6 +45,9 @@
 #define GET_SECTION_MASK_INDEX(section_number) static_cast<unsigned int>(section_number / 8u)
 #define GET_SECTION_MASK_SHIFT(section_number) static_cast<unsigned int>(section_number % 8u)
 
+namespace orb
+{
+
 /**
  * Get the last completed AIT table. This value may be invalidated by calling ProcessSection(),
  * consumers of this API should ensure serialization.
@@ -119,11 +122,13 @@ void Ait::ApplyAitTable(std::unique_ptr<Ait::S_AIT_TABLE> &aitTable)
  * @param parentalControlAge PC age set in the device.
  * @param parentalControlRegion 2 letter ISO 3166 region code.
  * @param parentalControlRegion3 3 letter ISO 3166 region code.
+ * @param isNetworkAvailable
  * @return App to auto start
  */
 const Ait::S_AIT_APP_DESC * Ait::AutoStartApp(const S_AIT_TABLE *aitTable, int
     parentalControlAge,
-    std::string &parentalControlRegion, std::string &parentalControlRegion3)
+    std::string &parentalControlRegion, std::string &parentalControlRegion3,
+    const bool isNetworkAvailable)
 {
     int index;
     const S_AIT_APP_DESC *app;
@@ -180,22 +185,7 @@ const Ait::S_AIT_APP_DESC * Ait::AutoStartApp(const S_AIT_TABLE *aitTable, int
                     continue;
                 }
 
-                // Check we have a viable transport
-                bool hasViableTransport = false;
-                for (int j = 0; j < candidate->numTransports; j++)
-                {
-                    if (candidate->transportArray[j].protocolId == AIT_PROTOCOL_HTTP ||
-                        candidate->transportArray[j].protocolId == AIT_PROTOCOL_OBJECT_CAROUSEL)
-                    {
-                        if (!candidate->transportArray[j].failedToLoad)
-                        {
-                            hasViableTransport = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (hasViableTransport)
+                if (HasViableTransport(candidate, isNetworkAvailable))
                 {
                     if (app == nullptr || app->appDesc.priority < candidate->appDesc.priority)
                     {
@@ -207,6 +197,47 @@ const Ait::S_AIT_APP_DESC * Ait::AutoStartApp(const S_AIT_TABLE *aitTable, int
     }
 
     return app;
+}
+
+/**
+ * Check whether App description contains a viable transport protocol
+ * @param appDesc
+ * @param isNetworkAvailable
+ * @return true if there is a viable transport
+ */
+bool Ait::HasViableTransport(const S_AIT_APP_DESC *appDesc, const bool isNetworkAvailable)
+{
+    bool hasViableTransport = false;
+    if (isNetworkAvailable)
+    {
+        for (int j = 0; j < appDesc->numTransports; j++)
+        {
+            if (appDesc->transportArray[j].protocolId == AIT_PROTOCOL_HTTP ||
+                appDesc->transportArray[j].protocolId == AIT_PROTOCOL_OBJECT_CAROUSEL)
+            {
+                if (!appDesc->transportArray[j].failedToLoad)
+                {
+                    hasViableTransport = true;
+                    break;
+                }
+            }
+        }
+    }
+    else // no broadband connection available
+    {
+        for (int j = 0; j < appDesc->numTransports; j++)
+        {
+            if (appDesc->transportArray[j].protocolId == AIT_PROTOCOL_OBJECT_CAROUSEL)
+            {
+                if (!appDesc->transportArray[j].failedToLoad)
+                {
+                    hasViableTransport = true;
+                    break;
+                }
+            }
+        }
+    }
+    return hasViableTransport;
 }
 
 /**
@@ -366,7 +397,7 @@ bool Ait::PrintInfo(const S_AIT_TABLE *parsedAit)
         if (!hAitApp.graphicsConstraints.empty())
         {
             std::stringstream ss;
-            for (int j = 0; j < hAitApp.graphicsConstraints.size(); ++j)
+            for (uint32_t j = 0; j < hAitApp.graphicsConstraints.size(); ++j)
             {
                 std::string sep = (j < hAitApp.graphicsConstraints.size() - 1) ? "p, " : "p";
                 ss << std::to_string(hAitApp.graphicsConstraints[j]) << sep;
@@ -425,10 +456,16 @@ std::string Ait::ExtractBaseURL(const Ait::S_AIT_APP_DESC &appDescription,
         }
         else
         {
-            // TODO In this scenario there are no valid transports but we don't handle it!
+            LOG(LOG_ERROR, "transport[%u] is not viable!", ti);
         }
     }
-
+    if (result.empty())
+    {
+        // There are no valid transports for appDescription, but we should never get here because,
+        // Ait::HasViableTransport should have been called and the return checked before calling this function
+        LOG(LOG_ERROR, "Eek! no valid transports");
+        //ASSERT(0);
+    }
     return result;
 }
 
@@ -571,7 +608,7 @@ void Ait::ParseAppDesc(const uint8_t *dataPtr, S_APP_DESC *desc)
 void Ait::ParseAppNameDesc(const uint8_t *dataPtr, S_APP_NAME_DESC *appName)
 {
     uint32_t langCode;
-    uint16_t length;
+    //uint16_t length;
     uint8_t descLen;
     uint8_t nameLen;
     const uint8_t *namePtr;
@@ -582,7 +619,7 @@ void Ait::ParseAppNameDesc(const uint8_t *dataPtr, S_APP_NAME_DESC *appName)
         numLangs = 0;
         descLen = *dataPtr;
         namePtr = dataPtr + 1;
-        length = 0;
+        //length = 0;
         while (descLen > 4)
         {
             nameLen = *(namePtr + 3);
@@ -591,7 +628,7 @@ void Ait::ParseAppNameDesc(const uint8_t *dataPtr, S_APP_NAME_DESC *appName)
             if (nameLen > 0)
             {
                 numLangs++;
-                length += nameLen + 1;
+                //length += nameLen + 1;
             }
         }
         appName->names.resize(numLangs);
@@ -1274,3 +1311,5 @@ bool Ait::IsAgeRestricted(const std::vector<Ait::S_APP_PARENTAL_RATING> parental
     }
     return restricted;
 }
+
+} // namespace orb
