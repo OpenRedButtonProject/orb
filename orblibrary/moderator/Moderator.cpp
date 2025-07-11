@@ -87,7 +87,6 @@ static bool ResolveMethod(string input, string& component, string& method)
 
 Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
     : mOrbBrowser(browser)
-    , mAppType(apptype)
     , mNetwork(std::make_unique<Network>())
     , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
     , mAppMgrInterface(std::make_unique<AppMgrInterface>(apptype))
@@ -137,7 +136,7 @@ string Moderator::handleOrbRequest(string jsonRqst)
     if (component == "Manager")
     {
         LOGI("App Manager, method: " << method);
-        return mAppMgrInterface->executeRequest(method, jsonval["token"], jsonval["params"], mAppType);
+        return mAppMgrInterface->executeRequest(method, jsonval["token"], jsonval["params"]);
     }
     else if (component == "Network")
     {

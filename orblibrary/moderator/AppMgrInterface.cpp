@@ -38,7 +38,7 @@ AppMgrInterface::AppMgrInterface(ApplicationType apptype)
     ApplicationManager::instance().RegisterCallback(apptype, this);
 }
 
-string AppMgrInterface::executeRequest(string method, Json::Value token, Json::Value params, ApplicationType apptype)
+string AppMgrInterface::executeRequest(string method, Json::Value token, Json::Value params)
 {
     // TODO Set up proper responses
     string response = R"({"Response": "AppMgrInterface request [)" + method + R"(] not implemented"})";

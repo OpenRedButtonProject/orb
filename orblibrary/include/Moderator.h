@@ -62,7 +62,6 @@ public:
 
 private:
     IOrbBrowser *mOrbBrowser;
-    ApplicationType mAppType;
     std::unique_ptr<Network> mNetwork;
     std::unique_ptr<MediaSynchroniser> mMediaSynchroniser;
     std::unique_ptr<AppMgrInterface> mAppMgrInterface;

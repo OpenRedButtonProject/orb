@@ -20,17 +20,18 @@
 #include <json/json.h>
 
 #include "Moderator.h"
+#include "ComponentBase.hpp"
 #include "app_mgr/application_session_callback.h"
 
 namespace orb
 {
 class ApplicationManager;
 
-class AppMgrInterface : public ApplicationSessionCallback
+class AppMgrInterface : ComponentBase, public ApplicationSessionCallback
 {
 public:
-    // Remove singleton pattern - constructor now takes parameters
-    AppMgrInterface(ApplicationType apptype);
+    // constructor for explicit Application Type
+    explicit AppMgrInterface(ApplicationType apptype);
 
     /**
      * AppMgrInterface request
@@ -41,7 +42,7 @@ public:
      *
      * @return JSON encoded response string
      */
-    std::string executeRequest(std::string method, Json::Value token, Json::Value params, ApplicationType apptype);
+    std::string executeRequest(std::string method, Json::Value token, Json::Value params) override;
 
     void processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section);
     void processXmlAit(const std::vector<uint8_t>& xmlait);
