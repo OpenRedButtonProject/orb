@@ -21,6 +21,8 @@
 #ifndef APPLICATION_SESSION_CALLBACK_H
 #define APPLICATION_SESSION_CALLBACK_H
 
+#include "utils.h"
+
 namespace orb
 {
 

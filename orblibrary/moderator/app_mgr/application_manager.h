@@ -34,6 +34,7 @@
 #include "hbbtv_app.h"
 #include "opapp.h"
 #include "application_session_callback.h"
+#include "OrbConstants.h"
 
 namespace orb
 {
@@ -48,17 +49,39 @@ public:
         FOR_TRUSTED_APP_ONLY = 3
     };
 
+    static constexpr size_t MAX_CBS = APP_TYPE_OPAPP+1;
+
     /**
      * Application manager
      *
      * @param sessionCallback Implementation of ApplicationSessionCallback interface.
      */
-    ApplicationManager(std::unique_ptr<ApplicationSessionCallback> sessionCallback);
+    ApplicationManager();
 
     /**
      *
      */
     ~ApplicationManager();
+
+    /**
+     * Get Singleton Instance
+     */
+    static ApplicationManager& instance();
+
+    /**
+     * Register an interface callback for this ApplicationManager
+     *
+     * @param apptype App interface type
+     * @param callback The callback to set.
+     */
+    void RegisterCallback(ApplicationType apptype, ApplicationSessionCallback* callback);
+
+    /**
+     * Set current interface callback
+     *
+     * @param apptype App interface type
+     */
+    void SetCurrentInterface(ApplicationType apptype);
 
     /**
      * Create and run a new application. If called by an application, check it is allowed.
@@ -364,7 +387,9 @@ private:
      */
     uint16_t GetKeySet(const uint16_t keyCode);
 
-    std::unique_ptr<ApplicationSessionCallback> m_sessionCallback;
+    std::array<ApplicationSessionCallback*, MAX_CBS> m_sessionCallback;
+    int m_cif; // current app type interface
+
     Ait m_ait;
     std::unordered_map<int, std::unique_ptr<HbbTVApp>> m_apps;
     int m_hbbtvAppId = INVALID_APP_ID;

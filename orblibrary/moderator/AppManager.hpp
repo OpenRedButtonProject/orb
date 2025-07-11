@@ -20,17 +20,17 @@
 #include <json/json.h>
 
 #include "Moderator.h"
+#include "app_mgr/application_session_callback.h"
 
 namespace orb
 {
 class ApplicationManager;
 
-class AppManager
+class AppManager : public ApplicationSessionCallback
 {
 public:
-    static AppManager& instance(); // singleton
-
-    AppManager();
+    // Remove singleton pattern - constructor now takes parameters
+    AppManager(ApplicationType apptype);
 
     /**
      * AppManager request
@@ -46,8 +46,29 @@ public:
     void processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section);
     void processXmlAit(const std::vector<uint8_t>& xmlait);
 
+    // ApplicationSessionCallback interface implementation
+    void LoadApplication(const int appId, const char *entryUrl) override;
+    void LoadApplication(const int appId, const char *entryUrl, int size, const std::vector<uint16_t> graphics) override;
+    void ShowApplication(const int appId) override;
+    void HideApplication(const int appId) override;
+    void StopBroadcast() override;
+    void ResetBroadcastPresentation() override;
+    void DispatchApplicationLoadErrorEvent() override;
+    void DispatchTransitionedToBroadcastRelatedEvent(const int appId) override;
+    std::string GetXmlAitContents(const std::string &url) override;
+    int GetParentalControlAge() override;
+    std::string GetParentalControlRegion() override;
+    std::string GetParentalControlRegion3() override;
+    void DispatchApplicationSchemeUpdatedEvent(const int appId, const std::string &scheme) override;
+    void DispatchOperatorApplicationStateChange(const int appId, const std::string &oldState, const std::string &newState) override;
+    void DispatchOperatorApplicationStateChangeCompleted(const int appId, const std::string &oldState, const std::string &newState) override;
+    void DispatchOperatorApplicationContextChange(const int appId, const std::string &startupLocation, const std::string &launchLocation = "") override;
+    void DispatchOpAppUpdate(const int appId, const std::string &updateEvent) override;
+    bool isInstanceInCurrentService(const Utils::S_DVB_TRIPLET &triplet) override;
+
 private:
-    std::unique_ptr<ApplicationManager> mApplicationManager;
+    ApplicationType mAppType;
+    mutable std::mutex mMutex;
 
     bool IsRequestAllowed(std::string token);
 

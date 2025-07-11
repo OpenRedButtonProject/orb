@@ -90,6 +90,7 @@ Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
     , mAppType(apptype)
     , mNetwork(std::make_unique<Network>())
     , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
+    , mAppManager(std::make_unique<AppManager>(apptype))
 {
     LOGI("HbbTV version " << ORB_HBBTV_VERSION);
 }
@@ -136,7 +137,7 @@ string Moderator::handleOrbRequest(string jsonRqst)
     if (component == "Manager")
     {
         LOGI("App Manager, method: " << method);
-        return AppManager::instance().executeRequest(method, jsonval["token"], jsonval["params"], mAppType);
+        return mAppManager->executeRequest(method, jsonval["token"], jsonval["params"], mAppType);
     }
     else if (component == "Network")
     {
@@ -167,13 +168,13 @@ void Moderator::notifyApplicationLoadFailed(string url, string errorText)
 void Moderator::processAitSection(int32_t aitPid, int32_t serviceId, const vector<uint8_t>& section)
 {
     LOGI("pid: " << aitPid << "serviceId: " << serviceId);
-    AppManager::instance().processAitSection(aitPid, serviceId, section);
+    mAppManager->processAitSection(aitPid, serviceId, section);
 }
 
 void Moderator::processXmlAit(const vector<uint8_t>& xmlait)
 {
     LOGI("");
-    AppManager::instance().processXmlAit(xmlait);
+    mAppManager->processXmlAit(xmlait);
 }
 
 

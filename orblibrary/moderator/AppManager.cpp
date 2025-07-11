@@ -31,145 +31,11 @@ using namespace std;
 namespace orb
 {
 
-class AppSessionCallback : public ApplicationSessionCallback {
-public:
-    /**
-     * Tell the browser to load an application. If the entry page fails to load, the browser
-     * should call ApplicationManager::OnLoadApplicationFailed.
-     *
-     * @param appId The application ID.
-     * @param entryUrl The entry page URL.
-     */
-    void LoadApplication(const int appId, const char *entryUrl) override {
-        LOGI("appID: " << appId << ", url: " << entryUrl);
-    }
-
-    /**
-     * Tell the browser to load an application. If the entry page fails to load, the browser
-     * should call ApplicationManager::OnLoadApplicationFailed.
-     *
-     * @param appId The application ID.
-     * @param entryUrl The entry page URL.
-     * @param size The number of the co-ordinate graphics
-     * @param graphics The list of the co-ordinate graphics supported by the application
-     */
-    void LoadApplication(const int appId, const char *entryUrl, int size, const
-        std::vector<uint16_t> graphics) override {
-        LOGI("appID: " << appId << ", url: " << entryUrl);
-    }
-
-    /**
-     * Tell the browser to show the loaded application.
-     */
-    void ShowApplication(const int appId) override {
-        LOGI("appID: " << appId);
-    }
-
-    /**
-     * Tell the browser to hide the loaded application.
-     */
-    void HideApplication(const int appId) override {
-        LOGI("appID: " << appId);
-    }
-
-    /**
-     * Tell the broadcast-integration to stop presenting any broadcast component, equivalent to
-     * selecting a null service.
-     */
-    void StopBroadcast() override {
-        LOGI("");
-    }
-
-    /**
-     * Tell the broadcast-integration to reset any calls by HbbTV to suspend presentation, set
-     * the video rectangle or set the presented components.
-     */
-    void ResetBroadcastPresentation() override {
-        LOGI("");
-    }
-
-    /**
-     *  Tell the bridge to dispatch ApplicationLoadError to the loaded application.
-     */
-    void DispatchApplicationLoadErrorEvent() override {
-        LOGI("");
-    }
-
-    /**
-     *  Tell the bridge to dispatch TransitionedToBroadcastRelated to the loaded application.
-     */
-    void DispatchTransitionedToBroadcastRelatedEvent(const int appId) override {
-        LOGI("appID: " << appId);
-    }
-
-    /**
-     * Perform a HTTP GET request and return the contents, which should be an XML AIT resource.
-     *
-     * @param url The URL to get.
-     * @return The contents of the resource at URL.
-     */
-    std::string GetXmlAitContents(const std::string &url) override {
-        std::string result;
-        return result;
-    }
-
-    int GetParentalControlAge() override {
-        LOGI("");
-        return 0;
-    }
-
-    std::string GetParentalControlRegion() override {
-        std::string result;
-        LOGI("");
-        return result;
-    }
-
-    std::string GetParentalControlRegion3() override {
-        std::string result;
-        LOGI("");
-        return result;
-    }
-
-    void DispatchApplicationSchemeUpdatedEvent(const int appId, const std::string &scheme) override {
-        LOGI("appID: " << appId);
-    }
-
-    void DispatchOperatorApplicationStateChange(const int appId, const std::string &oldState, const std::string &newState) override {
-        LOGI("appID: " << appId);
-    }
-
-    void DispatchOperatorApplicationStateChangeCompleted(const int appId, const std::string &oldState, const std::string &newState) override {
-        LOGI("appID: " << appId);
-    }
-
-    void DispatchOperatorApplicationContextChange(const int appId, const std::string &startupLocation, const std::string &launchLocation = "") override {
-        LOGI("appID: " << appId);
-    }
-
-    void DispatchOpAppUpdate(const int appId, const std::string &updateEvent) override {
-        LOGI("appID: " << appId);
-    }
-
-    /**
-     * Returns true if the provided triplet is in an instance within the
-     * currently playing service, otherwise false.
-     */
-    bool isInstanceInCurrentService(const Utils::S_DVB_TRIPLET &triplet) override {
-        LOGI("");
-        return false;
-    }
-};
-
-
-AppManager& AppManager::instance()
+AppManager::AppManager(ApplicationType apptype)
+    : mAppType(apptype)
 {
-    static AppManager s_interface;
-    return s_interface;
-}
-
-AppManager::AppManager()
-    : mApplicationManager(
-        std::make_unique<ApplicationManager>(std::make_unique<AppSessionCallback>())) {
+    // Set this AppManager instance as the callback for ApplicationManager
+    ApplicationManager::instance().RegisterCallback(apptype, this);
 }
 
 string AppManager::executeRequest(string method, Json::Value token, Json::Value params, ApplicationType apptype)
@@ -177,10 +43,13 @@ string AppManager::executeRequest(string method, Json::Value token, Json::Value 
     // TODO Set up proper responses
     string response = R"({"Response": "AppManager request [)" + method + R"(] not implemented"})";
 
+    std::lock_guard<std::mutex> lock(mMutex);
+    ApplicationManager::instance().SetCurrentInterface(mAppType);
+
     LOGI("Request with method [" + method + "] received");
     if (method == "createApplication")
     {
-        LOGI("app type: ") << apptype;
+        LOGI("app type: ") << mAppType;
     }
     else if (method == "destroyApplication")
     {
@@ -199,67 +68,119 @@ string AppManager::executeRequest(string method, Json::Value token, Json::Value 
     }
     else if (method == "searchOwner")
     {
-        LOGI("");
-    }
-    else if (method == "getFreeMem")
-    {
-        // TODO: ask DVB client for this
-        LOGI("");
-    }
-    else if (method == "getKeyIcon")
-    {
-        LOGI("");
-    }
-    else if (method == "setKeyValue")
-    {
-        LOGI("");
-    }
-    else if (method == "getKeyMaximumValue")
-    {
-        LOGI("");
-    }
-    else if (method == "getKeyValues")
-    {
-        LOGI("");
-    }
-    else if (method == "getApplicationScheme")
-    {
-        LOGI("");
-    }
-    else if (method == "getApplicationUrl")
-    {
+        // no response
         LOGI("");
     }
     else if (method == "getRunningAppIds")
     {
-        // TODO: string array?
+        // TODO implement
         LOGI("");
     }
-    else // Unknown Method
+    else
     {
-        response = R"({"error": "AppManager request [)" + method + R"(] invalid method"})";
-        LOGE("Invalid Method [" + method +"]");
+        LOGI("Unknown method: " << method);
     }
-
-    LOGI("Response: " << response);
 
     return response;
 }
 
-
 void AppManager::processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section) {
-
-    mApplicationManager->ProcessAitSection((uint16_t)aitPid, (uint16_t)serviceId, section.data(), section.size());
+    std::lock_guard<std::mutex> lock(mMutex);
+    ApplicationManager::instance().SetCurrentInterface(mAppType);
+    ApplicationManager::instance().ProcessAitSection(aitPid, serviceId, section.data(), section.size());
 }
 
 void AppManager::processXmlAit(const std::vector<uint8_t>& xmlait) {
-    const std::string xmlstr(reinterpret_cast<const char*>(xmlait.data()), xmlait.size());
-    mApplicationManager->ProcessXmlAit(xmlstr);
+    std::string xmlString(xmlait.begin(), xmlait.end());
+    std::lock_guard<std::mutex> lock(mMutex);
+    ApplicationManager::instance().SetCurrentInterface(mAppType);
+    ApplicationManager::instance().ProcessXmlAit(xmlString);
+}
+
+// ApplicationSessionCallback implementation
+void AppManager::LoadApplication(const int appId, const char *entryUrl) {
+    LOGI("appID: " << appId << ", url: " << entryUrl);
+}
+
+void AppManager::LoadApplication(const int appId, const char *entryUrl, int size, const std::vector<uint16_t> graphics) {
+    LOGI("appID: " << appId << ", url: " << entryUrl);
+}
+
+void AppManager::ShowApplication(const int appId) {
+    LOGI("appID: " << appId);
+}
+
+void AppManager::HideApplication(const int appId) {
+    LOGI("appID: " << appId);
+}
+
+void AppManager::StopBroadcast() {
+    LOGI("");
+}
+
+void AppManager::ResetBroadcastPresentation() {
+    LOGI("");
+}
+
+void AppManager::DispatchApplicationLoadErrorEvent() {
+    LOGI("");
+}
+
+void AppManager::DispatchTransitionedToBroadcastRelatedEvent(const int appId) {
+    LOGI("appID: " << appId);
+}
+
+std::string AppManager::GetXmlAitContents(const std::string &url) {
+    std::string result;
+    return result;
+}
+
+int AppManager::GetParentalControlAge() {
+    LOGI("");
+    return 0;
+}
+
+std::string AppManager::GetParentalControlRegion() {
+    std::string result;
+    LOGI("");
+    return result;
+}
+
+std::string AppManager::GetParentalControlRegion3() {
+    std::string result;
+    LOGI("");
+    return result;
+}
+
+void AppManager::DispatchApplicationSchemeUpdatedEvent(const int appId, const std::string &scheme) {
+    LOGI("appID: " << appId);
+}
+
+void AppManager::DispatchOperatorApplicationStateChange(const int appId, const std::string &oldState, const std::string &newState) {
+    LOGI("appID: " << appId);
+}
+
+void AppManager::DispatchOperatorApplicationStateChangeCompleted(const int appId, const std::string &oldState, const std::string &newState) {
+    LOGI("appID: " << appId);
+}
+
+void AppManager::DispatchOperatorApplicationContextChange(const int appId, const std::string &startupLocation, const std::string &launchLocation) {
+    LOGI("appID: " << appId);
+}
+
+void AppManager::DispatchOpAppUpdate(const int appId, const std::string &updateEvent) {
+    LOGI("appID: " << appId);
+}
+
+bool AppManager::isInstanceInCurrentService(const Utils::S_DVB_TRIPLET &triplet) {
+    LOGI("");
+    return false;
 }
 
 bool AppManager::IsRequestAllowed(string token)
 {
-    return false;
+    // TODO implement
+    return true;
 }
 
 } // namespace orb

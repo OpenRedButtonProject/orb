@@ -23,6 +23,7 @@
 #include <memory>
 #include <cstdio>
 #include <cstdlib>
+#include <mutex>
 #include <cstring>
 #include <iostream>
 #include <string>
@@ -41,8 +42,8 @@ namespace orb
  *
  * @param sessionCallback Implementation of ApplicationSessionCallback interface.
  */
-ApplicationManager::ApplicationManager(std::unique_ptr<ApplicationSessionCallback> sessionCallback) :
-    m_sessionCallback(std::move(sessionCallback)),
+ApplicationManager::ApplicationManager() :
+    m_sessionCallback{nullptr},
     m_aitTimeout([&] {
         OnSelectedServiceAitTimeout();
     })
@@ -53,6 +54,45 @@ ApplicationManager::ApplicationManager(std::unique_ptr<ApplicationSessionCallbac
  *
  */
 ApplicationManager::~ApplicationManager() = default;
+
+ApplicationManager& ApplicationManager::instance()
+{
+    static ApplicationManager s_instance;
+    return s_instance;
+}
+
+
+/**
+ * Register a callback for this ApplicationManager
+ *
+ * @param apptype App interface type
+ * @param callback The callback to set.
+ */
+void ApplicationManager::RegisterCallback(ApplicationType apptype, ApplicationSessionCallback* callback)
+{
+    if (apptype <= APP_TYPE_OPAPP && callback) {
+        // Store the raw pointer without taking ownership
+        m_sessionCallback[apptype] = callback;
+    }
+    else {
+        LOG(LOG_ERROR, "Invalid param: atype=%u cb=%p", apptype, callback);
+    }
+}
+
+/**
+ * Set current interface callback
+ *
+ * @param apptype App interface type
+ */
+void ApplicationManager::SetCurrentInterface(ApplicationType apptype)
+{
+    if (apptype <= APP_TYPE_OPAPP) {
+        m_cif = (int)apptype;
+    }
+    else {
+        LOG(LOG_ERROR, "Invalid param: atype=%u", apptype);
+    }
+}
 
 /**
  * Create and run a new application. If called by an application, check it is allowed.
@@ -84,7 +124,9 @@ int ApplicationManager::CreateApplication(int callingAppId, const std::string &u
     if (url.empty())
     {
         LOG(LOG_INFO, "Called with empty URL, early out");
-        m_sessionCallback->DispatchApplicationLoadErrorEvent();
+        if (m_sessionCallback[m_cif]) {
+            m_sessionCallback[m_cif]->DispatchApplicationLoadErrorEvent();
+        }
         return INVALID_APP_ID;
     }
 
@@ -123,7 +165,10 @@ int ApplicationManager::CreateApplication(int callingAppId, const std::string &u
         case Utils::CreateLocatorType::ENTRY_PAGE_OR_XML_AIT_LOCATOR:
         {
             LOG(LOG_INFO, "Create for ENTRY_PAGE_OR_XML_AIT_LOCATOR (url=%s)", url.c_str());
-            std::string contents = m_sessionCallback->GetXmlAitContents(url);
+            std::string contents;
+            if (m_sessionCallback[m_cif]) {
+                contents = m_sessionCallback[m_cif]->GetXmlAitContents(url);
+            }
             if (!contents.empty())
             {
                 LOG(LOG_INFO, "Locator resource is XML AIT");
@@ -147,7 +192,9 @@ int ApplicationManager::CreateApplication(int callingAppId, const std::string &u
 
     if (result == INVALID_APP_ID)
     {
-        m_sessionCallback->DispatchApplicationLoadErrorEvent();
+        if (m_sessionCallback[m_cif]) {
+            m_sessionCallback[m_cif]->DispatchApplicationLoadErrorEvent();
+        }
     }
 
     return result;
@@ -679,7 +726,9 @@ void ApplicationManager::OnApplicationPageChanged(int appId, const std::string &
             // For broadcast-related applications we reset the broadcast presentation on page change,
             // as dead JS objects may have suspended presentation, set the video rectangle or set
             // the presented components.
-            m_sessionCallback->ResetBroadcastPresentation();
+            if (m_sessionCallback[m_cif]) {
+                m_sessionCallback[m_cif]->ResetBroadcastPresentation();
+            }
         }
     }
 }
@@ -704,7 +753,7 @@ void ApplicationManager::OnSelectedServiceAitReceived()
                 Ait::S_AIT_APP_DESC aitDesc = m_apps[m_hbbtvAppId]->GetAitDescription();
                 LOG(LOG_INFO,
                     "OnSelectedServiceAitReceived: Pre-existing broadcast-related app already running");
-                if (aitDesc.appDesc.serviceBound && !m_sessionCallback->isInstanceInCurrentService(m_previousService))
+                if (aitDesc.appDesc.serviceBound && m_sessionCallback[m_cif] && !m_sessionCallback[m_cif]->isInstanceInCurrentService(m_previousService))
                 {
                     LOG(LOG_INFO, "Kill running app (is service bound)");
                     KillRunningApp(m_hbbtvAppId);
@@ -888,15 +937,20 @@ int ApplicationManager::CreateAndRunApp(std::string url, bool runAsOpApp)
         LOG(LOG_ERROR, "URL is empty");
         result = INVALID_APP_ID;
     }
+    else if (!m_sessionCallback[m_cif])
+    {
+        LOG(LOG_ERROR, "Callback is NULL");
+        result = INVALID_APP_ID;
+     }
     else
     {
         if (runAsOpApp)
         {
-            result = RunApp(std::make_unique<OpApp>(url, m_sessionCallback.get()));
+            result = RunApp(std::make_unique<OpApp>(url, m_sessionCallback[m_cif]));
         }
         else
         {
-            result = RunApp(std::make_unique<HbbTVApp>(url, m_sessionCallback.get()));
+            result = RunApp(std::make_unique<HbbTVApp>(url, m_sessionCallback[m_cif]));
         }
     }
     return result;
@@ -927,14 +981,16 @@ int ApplicationManager::CreateAndRunApp(
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
     // ETSI TS 103 606 V1.2.1 (2024-03) Table 7: XML AIT Profile
-    if (runAsOpApp || desc.appUsage == "urn:hbbtv:opapp:privileged:2017" ||
-        desc.appUsage == "urn:hbbtv:opapp:opspecific:2017")
-    {
-        app = std::make_unique<OpApp>(m_sessionCallback.get());
-    }
-    else
-    {
-        app = std::make_unique<HbbTVApp>(m_currentService, isBroadcast, isTrusted, m_sessionCallback.get());
+    if (m_sessionCallback[m_cif]) {
+        if (runAsOpApp || desc.appUsage == "urn:hbbtv:opapp:privileged:2017" ||
+            desc.appUsage == "urn:hbbtv:opapp:opspecific:2017")
+        {
+            app = std::make_unique<OpApp>(m_sessionCallback[m_cif]);
+        }
+        else
+        {
+            app = std::make_unique<HbbTVApp>(m_currentService, isBroadcast, isTrusted, m_sessionCallback[m_cif]);
+        }
     }
     app->SetUrl(desc, urlParams, m_isNetworkAvailable);
     if (!app->Update(desc, m_isNetworkAvailable))
@@ -968,24 +1024,30 @@ int ApplicationManager::RunApp(std::unique_ptr<HbbTVApp> app)
     m_apps.erase(*appId);
     if (!app->IsBroadcast() && !Utils::IsInvalidDvbTriplet(m_currentService))
     {
-        m_sessionCallback->StopBroadcast();
+        if (m_sessionCallback[m_cif]) {
+            m_sessionCallback[m_cif]->StopBroadcast();
+        }
         m_previousService = m_currentService = Utils::MakeInvalidDvbTriplet();
     }
 
-    m_sessionCallback->LoadApplication(app->GetId(), app->GetEntryUrl().c_str(),
-        app->GetAitDescription().graphicsConstraints.size(), app->GetAitDescription().graphicsConstraints);
+    if (m_sessionCallback[m_cif]) {
+        m_sessionCallback[m_cif]->LoadApplication(app->GetId(), app->GetEntryUrl().c_str(),
+            app->GetAitDescription().graphicsConstraints.size(), app->GetAitDescription().graphicsConstraints);
+    }
 
     *appId = app->GetId();
     m_apps[*appId] = std::move(app);
 
     // Call explicitly Show/Hide
-    if (m_apps[*appId]->GetState() != HbbTVApp::BACKGROUND_STATE)
-    {
-        m_sessionCallback->ShowApplication(*appId);
-    }
-    else
-    {
-        m_sessionCallback->HideApplication(*appId);
+    if (m_sessionCallback[m_cif]) {
+        if (m_apps[*appId]->GetState() != HbbTVApp::BACKGROUND_STATE)
+        {
+            m_sessionCallback[m_cif]->ShowApplication(*appId);
+        }
+        else
+        {
+            m_sessionCallback[m_cif]->HideApplication(*appId);
+        }
     }
     return *appId;
 }
@@ -1010,8 +1072,10 @@ void ApplicationManager::KillRunningApp(int appid)
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if ((m_hbbtvAppId == appid || m_opAppId == appid) && m_apps.erase(appid) > 0)
     {
-        m_sessionCallback->HideApplication(appid);
-        m_sessionCallback->LoadApplication(INVALID_APP_ID, "about:blank");
+        if (m_sessionCallback[m_cif]) {
+            m_sessionCallback[m_cif]->HideApplication(appid);
+            m_sessionCallback[m_cif]->LoadApplication(INVALID_APP_ID, "about:blank");
+        }
         if (appid == m_hbbtvAppId)
         {
             m_hbbtvAppId = INVALID_APP_ID;
@@ -1106,9 +1170,14 @@ const Ait::S_AIT_APP_DESC * ApplicationManager::GetAutoStartApp(const Ait::S_AIT
 
     /* Note: XML AIt uses the alpha-2 region codes as defined in ISO 3166-1.
      * DVB's parental_rating_descriptor uses the 3-character code as specified in ISO 3166. */
-    std::string parentalControlRegion = m_sessionCallback->GetParentalControlRegion();
-    std::string parentalControlRegion3 = m_sessionCallback->GetParentalControlRegion3();
-    int parentalControlAge = m_sessionCallback->GetParentalControlAge();
+    std::string parentalControlRegion;
+    std::string parentalControlRegion3;
+    int parentalControlAge = 0;
+    if (m_sessionCallback[m_cif]) {
+        parentalControlRegion = m_sessionCallback[m_cif]->GetParentalControlRegion();
+        parentalControlRegion3 = m_sessionCallback[m_cif]->GetParentalControlRegion3();
+        parentalControlAge = m_sessionCallback[m_cif]->GetParentalControlAge();
+    }
     return Ait::AutoStartApp(aitTable, parentalControlAge, parentalControlRegion,
         parentalControlRegion3, m_isNetworkAvailable);
 }
