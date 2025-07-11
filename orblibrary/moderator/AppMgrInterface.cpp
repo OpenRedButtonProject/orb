@@ -19,7 +19,7 @@
 
 #include <sys/sysinfo.h>
 
-#include "AppManager.hpp"
+#include "AppMgrInterface.hpp"
 #include "app_mgr/application_manager.h"
 
 #include "log.h"
@@ -31,17 +31,17 @@ using namespace std;
 namespace orb
 {
 
-AppManager::AppManager(ApplicationType apptype)
+AppMgrInterface::AppMgrInterface(ApplicationType apptype)
     : mAppType(apptype)
 {
-    // Set this AppManager instance as the callback for ApplicationManager
+    // Set this AppMgrInterface instance as the callback for ApplicationManager
     ApplicationManager::instance().RegisterCallback(apptype, this);
 }
 
-string AppManager::executeRequest(string method, Json::Value token, Json::Value params, ApplicationType apptype)
+string AppMgrInterface::executeRequest(string method, Json::Value token, Json::Value params, ApplicationType apptype)
 {
     // TODO Set up proper responses
-    string response = R"({"Response": "AppManager request [)" + method + R"(] not implemented"})";
+    string response = R"({"Response": "AppMgrInterface request [)" + method + R"(] not implemented"})";
 
     std::lock_guard<std::mutex> lock(mMutex);
     ApplicationManager::instance().SetCurrentInterface(mAppType);
@@ -84,13 +84,13 @@ string AppManager::executeRequest(string method, Json::Value token, Json::Value 
     return response;
 }
 
-void AppManager::processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section) {
+void AppMgrInterface::processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section) {
     std::lock_guard<std::mutex> lock(mMutex);
     ApplicationManager::instance().SetCurrentInterface(mAppType);
     ApplicationManager::instance().ProcessAitSection(aitPid, serviceId, section.data(), section.size());
 }
 
-void AppManager::processXmlAit(const std::vector<uint8_t>& xmlait) {
+void AppMgrInterface::processXmlAit(const std::vector<uint8_t>& xmlait) {
     std::string xmlString(xmlait.begin(), xmlait.end());
     std::lock_guard<std::mutex> lock(mMutex);
     ApplicationManager::instance().SetCurrentInterface(mAppType);
@@ -98,86 +98,86 @@ void AppManager::processXmlAit(const std::vector<uint8_t>& xmlait) {
 }
 
 // ApplicationSessionCallback implementation
-void AppManager::LoadApplication(const int appId, const char *entryUrl) {
+void AppMgrInterface::LoadApplication(const int appId, const char *entryUrl) {
     LOGI("appID: " << appId << ", url: " << entryUrl);
 }
 
-void AppManager::LoadApplication(const int appId, const char *entryUrl, int size, const std::vector<uint16_t> graphics) {
+void AppMgrInterface::LoadApplication(const int appId, const char *entryUrl, int size, const std::vector<uint16_t> graphics) {
     LOGI("appID: " << appId << ", url: " << entryUrl);
 }
 
-void AppManager::ShowApplication(const int appId) {
+void AppMgrInterface::ShowApplication(const int appId) {
     LOGI("appID: " << appId);
 }
 
-void AppManager::HideApplication(const int appId) {
+void AppMgrInterface::HideApplication(const int appId) {
     LOGI("appID: " << appId);
 }
 
-void AppManager::StopBroadcast() {
+void AppMgrInterface::StopBroadcast() {
     LOGI("");
 }
 
-void AppManager::ResetBroadcastPresentation() {
+void AppMgrInterface::ResetBroadcastPresentation() {
     LOGI("");
 }
 
-void AppManager::DispatchApplicationLoadErrorEvent() {
+void AppMgrInterface::DispatchApplicationLoadErrorEvent() {
     LOGI("");
 }
 
-void AppManager::DispatchTransitionedToBroadcastRelatedEvent(const int appId) {
+void AppMgrInterface::DispatchTransitionedToBroadcastRelatedEvent(const int appId) {
     LOGI("appID: " << appId);
 }
 
-std::string AppManager::GetXmlAitContents(const std::string &url) {
+std::string AppMgrInterface::GetXmlAitContents(const std::string &url) {
     std::string result;
     return result;
 }
 
-int AppManager::GetParentalControlAge() {
+int AppMgrInterface::GetParentalControlAge() {
     LOGI("");
     return 0;
 }
 
-std::string AppManager::GetParentalControlRegion() {
+std::string AppMgrInterface::GetParentalControlRegion() {
     std::string result;
     LOGI("");
     return result;
 }
 
-std::string AppManager::GetParentalControlRegion3() {
+std::string AppMgrInterface::GetParentalControlRegion3() {
     std::string result;
     LOGI("");
     return result;
 }
 
-void AppManager::DispatchApplicationSchemeUpdatedEvent(const int appId, const std::string &scheme) {
+void AppMgrInterface::DispatchApplicationSchemeUpdatedEvent(const int appId, const std::string &scheme) {
     LOGI("appID: " << appId);
 }
 
-void AppManager::DispatchOperatorApplicationStateChange(const int appId, const std::string &oldState, const std::string &newState) {
+void AppMgrInterface::DispatchOperatorApplicationStateChange(const int appId, const std::string &oldState, const std::string &newState) {
     LOGI("appID: " << appId);
 }
 
-void AppManager::DispatchOperatorApplicationStateChangeCompleted(const int appId, const std::string &oldState, const std::string &newState) {
+void AppMgrInterface::DispatchOperatorApplicationStateChangeCompleted(const int appId, const std::string &oldState, const std::string &newState) {
     LOGI("appID: " << appId);
 }
 
-void AppManager::DispatchOperatorApplicationContextChange(const int appId, const std::string &startupLocation, const std::string &launchLocation) {
+void AppMgrInterface::DispatchOperatorApplicationContextChange(const int appId, const std::string &startupLocation, const std::string &launchLocation) {
     LOGI("appID: " << appId);
 }
 
-void AppManager::DispatchOpAppUpdate(const int appId, const std::string &updateEvent) {
+void AppMgrInterface::DispatchOpAppUpdate(const int appId, const std::string &updateEvent) {
     LOGI("appID: " << appId);
 }
 
-bool AppManager::isInstanceInCurrentService(const Utils::S_DVB_TRIPLET &triplet) {
+bool AppMgrInterface::isInstanceInCurrentService(const Utils::S_DVB_TRIPLET &triplet) {
     LOGI("");
     return false;
 }
 
-bool AppManager::IsRequestAllowed(string token)
+bool AppMgrInterface::IsRequestAllowed(string token)
 {
     // TODO implement
     return true;

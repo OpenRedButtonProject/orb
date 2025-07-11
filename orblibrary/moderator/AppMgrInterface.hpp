@@ -26,14 +26,14 @@ namespace orb
 {
 class ApplicationManager;
 
-class AppManager : public ApplicationSessionCallback
+class AppMgrInterface : public ApplicationSessionCallback
 {
 public:
     // Remove singleton pattern - constructor now takes parameters
-    AppManager(ApplicationType apptype);
+    AppMgrInterface(ApplicationType apptype);
 
     /**
-     * AppManager request
+     * AppMgrInterface request
      *
      * @param method Application Manager method
      * @param token TODO to be replaced by application ID
@@ -72,6 +72,6 @@ private:
 
     bool IsRequestAllowed(std::string token);
 
-}; // class AppManager
+}; // class AppMgrInterface
 
 } // namespace orb

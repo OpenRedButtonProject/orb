@@ -20,7 +20,7 @@
 #include <json/json.h>
 
 #include "Moderator.h"
-#include "AppManager.hpp"
+#include "AppMgrInterface.hpp"
 #include "Network.hpp"
 #include "MediaSynchroniser.hpp"
 #include "log.h"
@@ -90,7 +90,7 @@ Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
     , mAppType(apptype)
     , mNetwork(std::make_unique<Network>())
     , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
-    , mAppManager(std::make_unique<AppManager>(apptype))
+    , mAppMgrInterface(std::make_unique<AppMgrInterface>(apptype))
 {
     LOGI("HbbTV version " << ORB_HBBTV_VERSION);
 }
@@ -137,7 +137,7 @@ string Moderator::handleOrbRequest(string jsonRqst)
     if (component == "Manager")
     {
         LOGI("App Manager, method: " << method);
-        return mAppManager->executeRequest(method, jsonval["token"], jsonval["params"], mAppType);
+        return mAppMgrInterface->executeRequest(method, jsonval["token"], jsonval["params"], mAppType);
     }
     else if (component == "Network")
     {
@@ -168,13 +168,13 @@ void Moderator::notifyApplicationLoadFailed(string url, string errorText)
 void Moderator::processAitSection(int32_t aitPid, int32_t serviceId, const vector<uint8_t>& section)
 {
     LOGI("pid: " << aitPid << "serviceId: " << serviceId);
-    mAppManager->processAitSection(aitPid, serviceId, section);
+    mAppMgrInterface->processAitSection(aitPid, serviceId, section);
 }
 
 void Moderator::processXmlAit(const vector<uint8_t>& xmlait)
 {
     LOGI("");
-    mAppManager->processXmlAit(xmlait);
+    mAppMgrInterface->processXmlAit(xmlait);
 }
 
 
