@@ -31,8 +31,9 @@ using namespace std;
 namespace orb
 {
 
-AppMgrInterface::AppMgrInterface(ApplicationType apptype)
-    : mAppType(apptype)
+AppMgrInterface::AppMgrInterface(IOrbBrowser* browser, ApplicationType apptype)
+    : mOrbBrowser(browser)
+    , mAppType(apptype)
 {
     // Set this AppMgrInterface instance as the callback for ApplicationManager
     ApplicationManager::instance().RegisterCallback(apptype, this);
@@ -100,30 +101,35 @@ void AppMgrInterface::processXmlAit(const std::vector<uint8_t>& xmlait) {
 // ApplicationSessionCallback implementation
 void AppMgrInterface::LoadApplication(const int appId, const char *entryUrl) {
     LOGI("appID: " << appId << ", url: " << entryUrl);
+    mOrbBrowser->loadApplication("AppId-todo", entryUrl);
 }
 
 void AppMgrInterface::LoadApplication(const int appId, const char *entryUrl, int size, const std::vector<uint16_t> graphics) {
     LOGI("appID: " << appId << ", url: " << entryUrl);
+    // TODO: need a different API to add extra params
+    mOrbBrowser->loadApplication("AppId-todo", entryUrl);
 }
 
 void AppMgrInterface::ShowApplication(const int appId) {
     LOGI("appID: " << appId);
+    mOrbBrowser->showApplication();
 }
 
 void AppMgrInterface::HideApplication(const int appId) {
     LOGI("appID: " << appId);
+    mOrbBrowser->hideApplication();
 }
 
 void AppMgrInterface::StopBroadcast() {
-    LOGI("");
+    LOGI(" TODO ");
 }
 
 void AppMgrInterface::ResetBroadcastPresentation() {
-    LOGI("");
+    LOGI(" TODO ");
 }
 
 void AppMgrInterface::DispatchApplicationLoadErrorEvent() {
-    LOGI("");
+    LOGI(" TODO ");
 }
 
 void AppMgrInterface::DispatchTransitionedToBroadcastRelatedEvent(const int appId) {

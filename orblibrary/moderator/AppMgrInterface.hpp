@@ -31,7 +31,7 @@ class AppMgrInterface : ComponentBase, public ApplicationSessionCallback
 {
 public:
     // constructor for explicit Application Type
-    explicit AppMgrInterface(ApplicationType apptype);
+    explicit AppMgrInterface(IOrbBrowser* browser, ApplicationType apptype);
 
     /**
      * AppMgrInterface request
@@ -68,6 +68,7 @@ public:
     bool isInstanceInCurrentService(const Utils::S_DVB_TRIPLET &triplet) override;
 
 private:
+    IOrbBrowser *mOrbBrowser;
     ApplicationType mAppType;
     mutable std::mutex mMutex;
 
