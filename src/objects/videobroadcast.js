@@ -118,7 +118,7 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     Object.defineProperty(prototype, 'fullScreen', {
         get: function() {
-            return privates.get(this).fullScreen;
+            return privates.get(this).broadcastContext.fullScreen;
         },
     });
 
@@ -137,7 +137,7 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     Object.defineProperty(prototype, 'playState', {
         get: function() {
-            return privates.get(this).playState;
+            return privates.get(this).broadcastContext.playState;
         },
     });
 
@@ -228,18 +228,11 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     Object.defineProperty(prototype, 'onfocus', {
         get() {
-            return privates.get(this).onfocusDomLevel0;
+            return privates.get(this).broadcastHelper.getIntrinsicCallback('focus');
         },
         set(listener) {
-            const p = privates.get(this);
-            if (p.onfocusDomLevel0) {
-                this.removeEventListener('focus', p.onfocusDomLevel0);
-            }
-            p.onfocusDomLevel0 = listener;
-            if (listener) {
-                this.addEventListener('focus', p.onfocusDomLevel0);
-            }
-        },
+            privates.get(this).broadcastHelper.setIntrinsicCallback('focus', listener);
+        }
     });
 
     /**
@@ -257,18 +250,11 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     Object.defineProperty(prototype, 'onblur', {
         get() {
-            return privates.get(this).onblurDomLevel0;
+            return privates.get(this).broadcastHelper.getIntrinsicCallback('blur');
         },
         set(listener) {
-            const p = privates.get(this);
-            if (p.onblurDomLevel0) {
-                this.removeEventListener('blur', p.onblurDomLevel0);
-            }
-            p.onblurDomLevel0 = listener;
-            if (listener) {
-                this.addEventListener('blur', p.onblurDomLevel0);
-            }
-        },
+            privates.get(this).broadcastHelper.setIntrinsicCallback('blur', listener);
+        }
     });
 
     /**
@@ -286,18 +272,11 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     Object.defineProperty(prototype, 'onFullScreenChange', {
         get() {
-            return privates.get(this).onFullScreenChangeDomLevel0;
+            return privates.get(this).broadcastHelper.getIntrinsicCallback('FullScreenChange');
         },
         set(listener) {
-            const p = privates.get(this);
-            if (p.onFullScreenChangeDomLevel0) {
-                this.removeEventListener('FullScreenChange', p.onFullScreenChangeDomLevel0);
-            }
-            p.onFullScreenChangeDomLevel0 = listener;
-            if (listener) {
-                this.addEventListener('FullScreenChange', p.onFullScreenChangeDomLevel0);
-            }
-        },
+            privates.get(this).broadcastHelper.setIntrinsicCallback('FullScreenChange', listener);
+        }
     });
 
     /**
@@ -315,22 +294,11 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     Object.defineProperty(prototype, 'onChannelChangeError', {
         get() {
-            return privates.get(this).onChannelChangeErrorDomLevel0;
+            return privates.get(this).broadcastHelper.getIntrinsicCallback('ChannelChangeError');
         },
         set(listener) {
-            const p = privates.get(this);
-            if (p.onChannelChangeErrorDomLevel0) {
-                this.removeEventListener('ChannelChangeError', p.onChannelChangeErrorWrapper);
-                p.onChannelChangeErrorWrapper = null;
-            }
-            p.onChannelChangeErrorDomLevel0 = listener;
-            if (listener) {
-                p.onChannelChangeErrorWrapper = (ev) => {
-                    listener(ev.channel, ev.errorState);
-                };
-                this.addEventListener('ChannelChangeError', p.onChannelChangeErrorWrapper);
-            }
-        },
+            privates.get(this).broadcastHelper.setIntrinsicCallback('ChannelChangeError', listener, ['channel', 'errorState']);
+        }
     });
 
     /**
@@ -348,25 +316,11 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     Object.defineProperty(prototype, 'onChannelChangeSucceeded', {
         get() {
-            return privates.get(this).onChannelChangeSucceededDomLevel0;
+            return privates.get(this).broadcastHelper.getIntrinsicCallback('ChannelChangeSucceeded');
         },
         set(listener) {
-            const p = privates.get(this);
-            if (p.onChannelChangeSucceededDomLevel0) {
-                this.removeEventListener(
-                    'ChannelChangeSucceeded',
-                    p.onChannelChangeSucceededWrapper
-                );
-                p.onChannelChangeSucceededWrapper = null;
-            }
-            p.onChannelChangeSucceededDomLevel0 = listener;
-            if (listener) {
-                p.onChannelChangeSucceededWrapper = (ev) => {
-                    listener(ev.channel, ev.viewerChannel, ev.quiet);
-                };
-                this.addEventListener('ChannelChangeSucceeded', p.onChannelChangeSucceededWrapper);
-            }
-        },
+            privates.get(this).broadcastHelper.setIntrinsicCallback('ChannelChangeSucceeded', listener, ['channel', 'viewerChannel', 'quiet']);
+        }
     });
 
     /**
@@ -384,22 +338,11 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     Object.defineProperty(prototype, 'onPlayStateChange', {
         get() {
-            return privates.get(this).onPlayStateChangeDomLevel0;
+            return privates.get(this).broadcastHelper.getIntrinsicCallback('PlayStateChange');
         },
         set(listener) {
-            const p = privates.get(this);
-            if (p.onPlayStateChangeDomLevel0) {
-                this.removeEventListener('PlayStateChange', p.onPlayStateChangeWrapper);
-                p.onPlayStateChangeWrapper = null;
-            }
-            p.onPlayStateChangeDomLevel0 = listener;
-            if (listener) {
-                p.onPlayStateChangeWrapper = (ev) => {
-                    listener(ev.state, ev.error);
-                };
-                this.addEventListener('PlayStateChange', p.onPlayStateChangeWrapper);
-            }
-        },
+            privates.get(this).broadcastHelper.setIntrinsicCallback('PlayStateChange', listener, ['playState', 'error']);
+        }
     });
 
     /**
@@ -446,18 +389,11 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     Object.defineProperty(prototype, 'onProgrammesChanged', {
         get() {
-            return privates.get(this).onProgrammesChangedDomLevel0;
+            return privates.get(this).broadcastHelper.getIntrinsicCallback('ProgrammesChanged');
         },
         set(listener) {
-            const p = privates.get(this);
-            if (p.onProgrammesChangedDomLevel0) {
-                this.removeEventListener('ProgrammesChanged', p.onProgrammesChangedDomLevel0);
-            }
-            p.onProgrammesChangedDomLevel0 = listener;
-            if (listener) {
-                this.addEventListener('ProgrammesChanged', p.onProgrammesChangedDomLevel0);
-            }
-        },
+            privates.get(this).broadcastHelper.setIntrinsicCallback('ProgrammesChanged', listener);
+        }
     });
 
     /**
@@ -475,28 +411,11 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     Object.defineProperty(prototype, 'onSelectedComponentChanged', {
         get() {
-            return privates.get(this).onSelectedComponentChangedDomLevel0;
+            return privates.get(this).broadcastHelper.getIntrinsicCallback('SelectedComponentChanged');
         },
         set(listener) {
-            const p = privates.get(this);
-            if (p.onSelectedComponentChangedDomLevel0) {
-                this.removeEventListener(
-                    'SelectedComponentChanged',
-                    p.onSelectedComponentChangedWrapper
-                );
-                p.onSelectedComponentChangedWrapper = null;
-            }
-            p.onSelectedComponentChangedDomLevel0 = listener;
-            if (listener) {
-                p.onSelectedComponentChangedWrapper = (ev) => {
-                    listener(ev.componentType);
-                };
-                this.addEventListener(
-                    'SelectedComponentChanged',
-                    p.onSelectedComponentChangedWrapper
-                );
-            }
-        },
+            privates.get(this).broadcastHelper.setIntrinsicCallback('SelectedComponentChanged', listener, ['componentType']);
+        }
     });
 
     /**
@@ -514,27 +433,11 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     Object.defineProperty(prototype, 'onComponentChanged', {
         get() {
-            return privates.get(this).onComponentChangedDomLevel0;
+            return privates.get(this).broadcastHelper.getIntrinsicCallback('ComponentChanged');
         },
         set(listener) {
-            const p = privates.get(this);
-            if (p.onComponentChangedDomLevel0) {
-                this.removeEventListener('ComponentChanged', p.onComponentChangedWrapper);
-                p.onComponentChangedWrapper = null;
-            }
-            p.onComponentChangedDomLevel0 = listener;
-            if (listener) {
-                p.onComponentChangedWrapper = (ev) => {
-                    // For COMPONENT_TYPE_ANY (more than 1 component changed) use undefined.
-                    let componentType = undefined;
-                    if (ev.componentType != helperConstants.COMPONENT_TYPE_ANY) {
-                        componentType = ev.componentType;
-                    }
-                    listener(componentType);
-                };
-                this.addEventListener('ComponentChanged', p.onComponentChangedWrapper);
-            }
-        },
+            privates.get(this).broadcastHelper.setIntrinsicCallback('ComponentChanged', listener, ['componentType']);
+        }
     });
 
     /**
@@ -551,22 +454,11 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     Object.defineProperty(prototype, 'onParentalRatingChange', {
         get() {
-            return privates.get(this).onParentalRatingChangeDomLevel0;
+            return privates.get(this).broadcastHelper.getIntrinsicCallback('ParentalRatingChange');
         },
         set(listener) {
-            const p = privates.get(this);
-            if (p.onParentalRatingChangeDomLevel0) {
-                this.removeEventListener('ParentalRatingChange', p.onParentalRatingChangeWrapper);
-                p.onParentalRatingChangeWrapper = null;
-            }
-            p.onParentalRatingChangeDomLevel0 = listener;
-            if (listener) {
-                p.onParentalRatingChangeWrapper = (ev) => {
-                    listener(ev.contentID, ev.ratings, ev.DRMSystemID, ev.blocked);
-                };
-                this.addEventListener('ParentalRatingChange', p.onParentalRatingChangeWrapper);
-            }
-        },
+            privates.get(this).broadcastHelper.setIntrinsicCallback('ParentalRatingChange', listener, ['contentID', 'ratings', 'DRMSystemID', 'blocked']);
+        }
     });
 
     /**
@@ -583,22 +475,11 @@ hbbtv.objects.VideoBroadcast = (function() {
      */
     Object.defineProperty(prototype, 'onParentalRatingError', {
         get() {
-            return privates.get(this).onParentalRatingErrorDomLevel0;
+            return privates.get(this).broadcastHelper.getIntrinsicCallback('ParentalRatingError');
         },
         set(listener) {
-            const p = privates.get(this);
-            if (p.onParentalRatingErrorDomLevel0) {
-                this.removeEventListener('ParentalRatingError', p.onParentalRatingErrorWrapper);
-                p.onParentalRatingErrorWrapper = null;
-            }
-            p.onParentalRatingErrorDomLevel0 = listener;
-            if (listener) {
-                p.onParentalRatingErrorWrapper = (ev) => {
-                    listener(ev.contentID, ev.ratings, ev.DRMSystemID);
-                };
-                this.addEventListener('ParentalRatingError', p.onParentalRatingErrorWrapper);
-            }
-        },
+            privates.get(this).broadcastHelper.setIntrinsicCallback('ParentalRatingError', listener, ['contentID', 'ratings', 'DRMSystemID']);
+        }
     });
 
     /**
@@ -635,22 +516,11 @@ hbbtv.objects.VideoBroadcast = (function() {
 
     Object.defineProperty(prototype, 'onDRMRightsError', {
         get() {
-            return privates.get(this).onDRMRightsErrorDomLevel0;
+            return privates.get(this).broadcastHelper.getIntrinsicCallback('DRMRightsError');
         },
         set(listener) {
-            const p = privates.get(this);
-            if (p.onDRMRightsErrorDomLevel0) {
-                this.removeEventListener('DRMRightsError', p.onDRMRightsErrorWrapper);
-                p.onDRMRightsErrorWrapper = null;
-            }
-            p.onDRMRightsErrorDomLevel0 = listener;
-            if (listener) {
-                p.onDRMRightsErrorWrapper = (ev) => {
-                    listener(ev.errorState, ev.contentID, ev.DRMSystemID, ev.rightsIssuerURL);
-                };
-                this.addEventListener('DRMRightsError', p.onDRMRightsErrorWrapper);
-            }
-        },
+            privates.get(this).broadcastHelper.setIntrinsicCallback('DRMRightsError', listener, ['errorState', 'contentID', 'DRMSystemID', 'rightsIssuerURL']);
+        }
     });
 
     // Methods

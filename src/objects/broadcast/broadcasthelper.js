@@ -66,7 +66,7 @@ hbbtv.objects.BroadcastHelper = (function() {
      * @returns {ChannelConfig}
      */
     prototype.getChannelConfig = function() {
-        const context = privates.get(this);
+        const context = privates.get(this).context;
         mandatoryBroadcastRelatedSecurityCheck(context);
         return context.channelConfig;
     };
@@ -99,7 +99,7 @@ hbbtv.objects.BroadcastHelper = (function() {
                 sourceID: sourceID,
                 ipBroadcastID: ipBroadcastID,
             };
-            const context = privates.get(this);
+            const context = privates.get(this).context;
             if (context.isBroadcastRelated) {
                 let foundChannel = context.channelConfig ?
                     context.channelConfig.channelList.findChannel(channel) :
@@ -120,7 +120,7 @@ hbbtv.objects.BroadcastHelper = (function() {
      * @param {number} quiet
      */
     prototype.setChannel = function(channel, trickplay = false, contentAccessDescriptorURL = '', quiet = 0) {
-        const context = privates.get(this);
+        const context = privates.get(this).context;
         const appScheme = hbbtv.bridge.manager.getApplicationScheme();
         let releaseOnError = false;
         
@@ -242,7 +242,7 @@ hbbtv.objects.BroadcastHelper = (function() {
      * Previous channel
      */
     prototype.prevChannel = function() {
-        const context = privates.get(this);
+        const context = privates.get(this).context;
         mandatoryBroadcastRelatedSecurityCheck(context);
         cycleChannel(context, -1).call(this);
     };
@@ -251,7 +251,7 @@ hbbtv.objects.BroadcastHelper = (function() {
      * Next channel
      */
     prototype.nextChannel = function() {
-        const context = privates.get(this);
+        const context = privates.get(this).context;
         mandatoryBroadcastRelatedSecurityCheck(context);
         cycleChannel(context, 1).call(this);
     };
@@ -262,7 +262,7 @@ hbbtv.objects.BroadcastHelper = (function() {
      * @returns {AVComponentCollection}
      */
     prototype.getComponents = function(componentType) {
-        const context = privates.get(this);
+        const context = privates.get(this).context;
         mandatoryBroadcastRelatedSecurityCheck(context);
         if (!context.currentChannelComponents) {
             context.currentChannelComponents = hbbtv.bridge.broadcast.getComponents(
@@ -289,7 +289,7 @@ hbbtv.objects.BroadcastHelper = (function() {
      * @returns {AVComponentCollection}
      */
     prototype.getCurrentActiveComponents = function(componentType) {
-        const context = privates.get(this);
+        const context = privates.get(this).context;
         mandatoryBroadcastRelatedSecurityCheck(context);
         if (!context.currentChannelComponents) {
             context.currentChannelComponents = hbbtv.bridge.broadcast.getComponents(
@@ -315,7 +315,7 @@ hbbtv.objects.BroadcastHelper = (function() {
      * @param {AVComponent|number} component
      */
     prototype.selectComponent = function(component) {
-        const context = privates.get(this);
+        const context = privates.get(this).context;
         mandatoryBroadcastRelatedSecurityCheck(context);
         if (!context.currentChannelComponents) {
             context.currentChannelComponents = hbbtv.bridge.broadcast.getComponents(
@@ -342,7 +342,7 @@ hbbtv.objects.BroadcastHelper = (function() {
      * @param {AVComponent|number} component
      */
     prototype.unselectComponent = function(component) {
-        const context = privates.get(this);
+        const context = privates.get(this).context;
         mandatoryBroadcastRelatedSecurityCheck(context);
         if (isNaN(component)) {
             context.currentChannelComponents = hbbtv.bridge.broadcast.getComponents(
@@ -376,12 +376,37 @@ hbbtv.objects.BroadcastHelper = (function() {
      * @param {boolean} value - Whether the object is broadcast-related
      */
     prototype.setIsBroadcastRelated = function(value) {
-        const context = privates.get(this);
+        const context = privates.get(this).context;
         context.isBroadcastRelated = value;
         if (context.channelConfig !== null) {
             hbbtv.objects.ChannelConfig.setIsBroadcastRelated.call(context.channelConfig, value);
         }
     };
+
+    prototype.setIntrinsicCallback = function(eventName, callback, parameterOrder = []) {
+        const p = privates.get(this);
+        const callbacks = p.intrinsicCallbacks;
+        const wrappers = p.intrinsicWrappers;
+
+        console.log(`Setting intrinsic callback for event '${eventName}' with parameter order ${parameterOrder}.`);
+
+        if (callbacks[eventName]) {
+            p.context.eventDispatcher.removeEventListener(eventName, wrappers[eventName]);
+            wrappers[eventName] = null;
+        }
+        callbacks[eventName] = callback;
+        if (callback) {
+            wrappers[eventName] = (ev) => {
+                const args = parameterOrder.map(prop => ev[prop]);
+                callback(...args);
+            };
+            p.context.eventDispatcher.addEventListener(eventName, wrappers[eventName]);
+        }
+    };
+
+    prototype.getIntrinsicCallback = function(eventName) {
+        return privates.get(this).intrinsicCallbacks[eventName];
+    }
 
     // Internal utility functions
 
@@ -492,7 +517,11 @@ hbbtv.objects.BroadcastHelper = (function() {
 
     function instantiate(context) {
         const obj = Object.create(prototype);
-        privates.set(obj, context);
+        privates.set(obj, {
+            context: context,
+            intrinsicCallbacks: { },
+            intrinsicWrappers: { }
+        });
         return obj;
     }
 
