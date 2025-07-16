@@ -3,141 +3,271 @@
 import("//build/config/compiler/compiler.gni") # For compiler configs
 import("//build/config/features.gni")          # For common features like is_debug, is_android etc.
 
-# ==============================================================================
+# Define a variable for the path to the original libwebsockets source
+libwebsockets_unpatched_src = "//third_party/orb/external/libwebsockets/v4.3/source"
+
+# Define the directory where the patched sources will reside in out/
+libwebsockets_patched_out_dir = "$target_gen_dir/patched_libwebsockets"
+
+# Define patch file path
+libwebsockets_patch_path = "//third_party/orb/external/libwebsockets/v4.3/libwebsockets.patch"
+
 # Public Configuration: For consumers of this library
-# ==============================================================================
 config("libwebsockets_public_config") {
   # This path allows consumers to include LWS headers like #include "libwebsockets.h"
-  include_dirs = [ "source/include" ]
+  include_dirs = [ "$libwebsockets_patched_out_dir/include" ]
+}
+
+# Define Action to copy and apply patch
+action("copy_and_patch") {
+  script = "//third_party/orb/scripts/apply_patch.py"
+
+  # List of directories to copy
+  dirs_to_copy = [
+    "lib",
+    "include",
+  ]
+
+  inputs = [
+    "$libwebsockets_unpatched_src/include/libwebsockets.h",
+    "$libwebsockets_unpatched_src/include/lws_config.h",
+  ]
+  
+  output_dir = libwebsockets_patched_out_dir
+  outputs = [
+    "$output_dir/include/libwebsockets.h",
+    "$output_dir/include/lws_config.h",      
+    
+    # Network
+    "$output_dir/lib/core-net/adopt.c",
+    "$output_dir/lib/core-net/client/client.c",
+    "$output_dir/lib/core-net/client/conmon.c",
+    "$output_dir/lib/core-net/client/connect.c",
+    "$output_dir/lib/core-net/client/connect2.c",
+    "$output_dir/lib/core-net/client/connect3.c",
+    "$output_dir/lib/core-net/client/connect4.c",
+    "$output_dir/lib/core-net/client/sort-dns.c",
+    "$output_dir/lib/core-net/close.c",
+    "$output_dir/lib/core-net/dummy-callback.c",
+    "$output_dir/lib/core-net/network.c",
+    "$output_dir/lib/core-net/output.c",
+    "$output_dir/lib/core-net/pollfd.c",
+    "$output_dir/lib/core-net/service.c",
+    "$output_dir/lib/core-net/sorted-usec-list.c",
+    "$output_dir/lib/core-net/state.c",
+    "$output_dir/lib/core-net/vhost.c",
+    "$output_dir/lib/core-net/wsi-timeout.c",
+    "$output_dir/lib/core-net/wsi.c",
+
+    # Core
+    "$output_dir/lib/core/alloc.c",
+    "$output_dir/lib/core/buflist.c",
+    "$output_dir/lib/core/context.c",
+    "$output_dir/lib/core/libwebsockets.c",
+    "$output_dir/lib/core/logs.c",
+    "$output_dir/lib/core/lws_dll2.c",
+    "$output_dir/lib/core/lws_map.c",
+    "$output_dir/lib/core/vfs.c",
+
+    "$output_dir/lib/event-libs/poll/poll.c",
+    "$output_dir/lib/misc/base64-decode.c",
+    "$output_dir/lib/misc/cache-ttl/file.c",
+    "$output_dir/lib/misc/cache-ttl/heap.c",
+    "$output_dir/lib/misc/cache-ttl/lws-cache-ttl.c",
+    "$output_dir/lib/misc/dir.c",
+    "$output_dir/lib/misc/lejp.c",
+    "$output_dir/lib/misc/lws-ring.c",
+    "$output_dir/lib/misc/lwsac/cached-file.c",
+    "$output_dir/lib/misc/lwsac/lwsac.c",
+    "$output_dir/lib/misc/prng.c",
+    "$output_dir/lib/misc/sha-1.c",
+
+    # Platform-specific files (Linux/Unix)
+    "$output_dir/lib/plat/unix/unix-caps.c",
+    "$output_dir/lib/plat/unix/unix-fds.c",
+    "$output_dir/lib/plat/unix/unix-file.c",
+    "$output_dir/lib/plat/unix/unix-init.c",
+    "$output_dir/lib/plat/unix/unix-misc.c",
+    "$output_dir/lib/plat/unix/unix-pipe.c",
+    "$output_dir/lib/plat/unix/unix-service.c",
+    "$output_dir/lib/plat/unix/unix-sockets.c",
+    
+    "$output_dir/lib/roles/h1/ops-h1.c",
+    "$output_dir/lib/roles/h2/hpack.c",
+    "$output_dir/lib/roles/h2/http2.c",
+    "$output_dir/lib/roles/h2/ops-h2.c",
+    "$output_dir/lib/roles/http/client/client-http.c",
+    "$output_dir/lib/roles/http/cookie.c",
+    "$output_dir/lib/roles/http/date.c",
+    "$output_dir/lib/roles/http/header.c",
+    "$output_dir/lib/roles/http/parsers.c",
+    "$output_dir/lib/roles/http/server/lejp-conf.c",
+    "$output_dir/lib/roles/http/server/lws-spa.c",
+    "$output_dir/lib/roles/http/server/server.c",
+    "$output_dir/lib/roles/listen/ops-listen.c",
+    "$output_dir/lib/roles/pipe/ops-pipe.c",
+    "$output_dir/lib/roles/raw-file/ops-raw-file.c",
+    "$output_dir/lib/roles/raw-skt/ops-raw-skt.c",
+    "$output_dir/lib/roles/ws/client-parser-ws.c",
+    "$output_dir/lib/roles/ws/client-ws.c",
+    "$output_dir/lib/roles/ws/ops-ws.c",
+    "$output_dir/lib/roles/ws/server-ws.c",
+    "$output_dir/lib/system/smd/smd.c",
+    "$output_dir/lib/system/system.c",
+
+    # TLS Backend (CRITICAL: BoringSSL integration)
+    "$output_dir/lib/tls/openssl/openssl-client.c",
+    "$output_dir/lib/tls/openssl/openssl-server.c",
+    "$output_dir/lib/tls/openssl/openssl-session.c",
+    "$output_dir/lib/tls/openssl/openssl-ssl.c",
+    "$output_dir/lib/tls/openssl/openssl-tls.c",
+    "$output_dir/lib/tls/openssl/openssl-x509.c",
+    "$output_dir/lib/tls/tls-client.c",
+    "$output_dir/lib/tls/tls-network.c",
+    "$output_dir/lib/tls/tls-server.c",
+    "$output_dir/lib/tls/tls-sessions.c",
+    "$output_dir/lib/tls/tls.c"
+  ]
+  
+
+  # convert to absolute path for python script
+  args = [
+    "--src_root=" + rebase_path(libwebsockets_unpatched_src, ""),
+    "--dest_root=" + rebase_path(output_dir, ""),
+    "--patch_file=" + rebase_path(libwebsockets_patch_path, ""),
+    "--patch_target_folder=" + rebase_path(output_dir, "") + "/include",
+    "--dirs_to_copy=" + string_join(":", dirs_to_copy),
+  ]
 }
 
 # ==============================================================================
 # The main libwebsockets static library target
 # ==============================================================================
 static_library("libwebsockets") {
+
   sources = [
     # Network
-    "source/lib/core-net/adopt.c",
-    "source/lib/core-net/client/client.c",
-    "source/lib/core-net/client/conmon.c",
-    "source/lib/core-net/client/connect.c",
-    "source/lib/core-net/client/connect2.c",
-    "source/lib/core-net/client/connect3.c",
-    "source/lib/core-net/client/connect4.c",
-    "source/lib/core-net/client/sort-dns.c",
-    "source/lib/core-net/close.c",
-    "source/lib/core-net/dummy-callback.c",
-    "source/lib/core-net/network.c",
-    "source/lib/core-net/output.c",
-    "source/lib/core-net/pollfd.c",
-    "source/lib/core-net/service.c",
-    "source/lib/core-net/sorted-usec-list.c",
-    "source/lib/core-net/state.c",
-    "source/lib/core-net/vhost.c",
-    "source/lib/core-net/wsi-timeout.c",
-    "source/lib/core-net/wsi.c",
+    "$libwebsockets_patched_out_dir/lib/core-net/adopt.c",
+    "$libwebsockets_patched_out_dir/lib/core-net/client/client.c",
+    "$libwebsockets_patched_out_dir/lib/core-net/client/conmon.c",
+    "$libwebsockets_patched_out_dir/lib/core-net/client/connect.c",
+    "$libwebsockets_patched_out_dir/lib/core-net/client/connect2.c",
+    "$libwebsockets_patched_out_dir/lib/core-net/client/connect3.c",
+    "$libwebsockets_patched_out_dir/lib/core-net/client/connect4.c",
+    "$libwebsockets_patched_out_dir/lib/core-net/client/sort-dns.c",
+    "$libwebsockets_patched_out_dir/lib/core-net/close.c",
+    "$libwebsockets_patched_out_dir/lib/core-net/dummy-callback.c",
+    "$libwebsockets_patched_out_dir/lib/core-net/network.c",
+    "$libwebsockets_patched_out_dir/lib/core-net/output.c",
+    "$libwebsockets_patched_out_dir/lib/core-net/pollfd.c",
+    "$libwebsockets_patched_out_dir/lib/core-net/service.c",
+    "$libwebsockets_patched_out_dir/lib/core-net/sorted-usec-list.c",
+    "$libwebsockets_patched_out_dir/lib/core-net/state.c",
+    "$libwebsockets_patched_out_dir/lib/core-net/vhost.c",
+    "$libwebsockets_patched_out_dir/lib/core-net/wsi-timeout.c",
+    "$libwebsockets_patched_out_dir/lib/core-net/wsi.c",
 
     # Core
-    "source/lib/core/alloc.c",
-    "source/lib/core/buflist.c",
-    "source/lib/core/context.c",
-    "source/lib/core/libwebsockets.c",
-    "source/lib/core/logs.c",
-    "source/lib/core/lws_dll2.c",
-    "source/lib/core/lws_map.c",
-    "source/lib/core/vfs.c",
+    "$libwebsockets_patched_out_dir/lib/core/alloc.c",
+    "$libwebsockets_patched_out_dir/lib/core/buflist.c",
+    "$libwebsockets_patched_out_dir/lib/core/context.c",
+    "$libwebsockets_patched_out_dir/lib/core/libwebsockets.c",
+    "$libwebsockets_patched_out_dir/lib/core/logs.c",
+    "$libwebsockets_patched_out_dir/lib/core/lws_dll2.c",
+    "$libwebsockets_patched_out_dir/lib/core/lws_map.c",
+    "$libwebsockets_patched_out_dir/lib/core/vfs.c",
 
-    "source/lib/event-libs/poll/poll.c",
-    "source/lib/misc/base64-decode.c",
-    "source/lib/misc/cache-ttl/file.c",
-    "source/lib/misc/cache-ttl/heap.c",
-    "source/lib/misc/cache-ttl/lws-cache-ttl.c",
-    "source/lib/misc/dir.c",
-    "source/lib/misc/lejp.c",
-    "source/lib/misc/lws-ring.c",
-    "source/lib/misc/lwsac/cached-file.c",
-    "source/lib/misc/lwsac/lwsac.c",
-    "source/lib/misc/prng.c",
-    "source/lib/misc/sha-1.c",
+    "$libwebsockets_patched_out_dir/lib/event-libs/poll/poll.c",
+    "$libwebsockets_patched_out_dir/lib/misc/base64-decode.c",
+    "$libwebsockets_patched_out_dir/lib/misc/cache-ttl/file.c",
+    "$libwebsockets_patched_out_dir/lib/misc/cache-ttl/heap.c",
+    "$libwebsockets_patched_out_dir/lib/misc/cache-ttl/lws-cache-ttl.c",
+    "$libwebsockets_patched_out_dir/lib/misc/dir.c",
+    "$libwebsockets_patched_out_dir/lib/misc/lejp.c",
+    "$libwebsockets_patched_out_dir/lib/misc/lws-ring.c",
+    "$libwebsockets_patched_out_dir/lib/misc/lwsac/cached-file.c",
+    "$libwebsockets_patched_out_dir/lib/misc/lwsac/lwsac.c",
+    "$libwebsockets_patched_out_dir/lib/misc/prng.c",
+    "$libwebsockets_patched_out_dir/lib/misc/sha-1.c",
 
     # Platform-specific files (Linux/Unix)
-    "source/lib/plat/unix/unix-caps.c",
-    "source/lib/plat/unix/unix-fds.c",
-    "source/lib/plat/unix/unix-file.c",
-    "source/lib/plat/unix/unix-init.c",
-    "source/lib/plat/unix/unix-misc.c",
-    "source/lib/plat/unix/unix-pipe.c",
-    "source/lib/plat/unix/unix-service.c",
-    "source/lib/plat/unix/unix-sockets.c",
+    "$libwebsockets_patched_out_dir/lib/plat/unix/unix-caps.c",
+    "$libwebsockets_patched_out_dir/lib/plat/unix/unix-fds.c",
+    "$libwebsockets_patched_out_dir/lib/plat/unix/unix-file.c",
+    "$libwebsockets_patched_out_dir/lib/plat/unix/unix-init.c",
+    "$libwebsockets_patched_out_dir/lib/plat/unix/unix-misc.c",
+    "$libwebsockets_patched_out_dir/lib/plat/unix/unix-pipe.c",
+    "$libwebsockets_patched_out_dir/lib/plat/unix/unix-service.c",
+    "$libwebsockets_patched_out_dir/lib/plat/unix/unix-sockets.c",
     
-    "source/lib/roles/h1/ops-h1.c",
-    "source/lib/roles/h2/hpack.c",
-    "source/lib/roles/h2/http2.c",
-    "source/lib/roles/h2/ops-h2.c",
-    "source/lib/roles/http/client/client-http.c",
-    "source/lib/roles/http/cookie.c",
-    "source/lib/roles/http/date.c",
-    "source/lib/roles/http/header.c",
-    "source/lib/roles/http/parsers.c",
-    "source/lib/roles/http/server/lejp-conf.c",
-    "source/lib/roles/http/server/lws-spa.c",
-    "source/lib/roles/http/server/server.c",
-    "source/lib/roles/listen/ops-listen.c",
-    "source/lib/roles/pipe/ops-pipe.c",
-    "source/lib/roles/raw-file/ops-raw-file.c",
-    "source/lib/roles/raw-skt/ops-raw-skt.c",
-    "source/lib/roles/ws/client-parser-ws.c",
-    "source/lib/roles/ws/client-ws.c",
-    "source/lib/roles/ws/ops-ws.c",
-    "source/lib/roles/ws/server-ws.c",
-    "source/lib/system/smd/smd.c",
-    "source/lib/system/system.c",
+    "$libwebsockets_patched_out_dir/lib/roles/h1/ops-h1.c",
+    "$libwebsockets_patched_out_dir/lib/roles/h2/hpack.c",
+    "$libwebsockets_patched_out_dir/lib/roles/h2/http2.c",
+    "$libwebsockets_patched_out_dir/lib/roles/h2/ops-h2.c",
+    "$libwebsockets_patched_out_dir/lib/roles/http/client/client-http.c",
+    "$libwebsockets_patched_out_dir/lib/roles/http/cookie.c",
+    "$libwebsockets_patched_out_dir/lib/roles/http/date.c",
+    "$libwebsockets_patched_out_dir/lib/roles/http/header.c",
+    "$libwebsockets_patched_out_dir/lib/roles/http/parsers.c",
+    "$libwebsockets_patched_out_dir/lib/roles/http/server/lejp-conf.c",
+    "$libwebsockets_patched_out_dir/lib/roles/http/server/lws-spa.c",
+    "$libwebsockets_patched_out_dir/lib/roles/http/server/server.c",
+    "$libwebsockets_patched_out_dir/lib/roles/listen/ops-listen.c",
+    "$libwebsockets_patched_out_dir/lib/roles/pipe/ops-pipe.c",
+    "$libwebsockets_patched_out_dir/lib/roles/raw-file/ops-raw-file.c",
+    "$libwebsockets_patched_out_dir/lib/roles/raw-skt/ops-raw-skt.c",
+    "$libwebsockets_patched_out_dir/lib/roles/ws/client-parser-ws.c",
+    "$libwebsockets_patched_out_dir/lib/roles/ws/client-ws.c",
+    "$libwebsockets_patched_out_dir/lib/roles/ws/ops-ws.c",
+    "$libwebsockets_patched_out_dir/lib/roles/ws/server-ws.c",
+    "$libwebsockets_patched_out_dir/lib/system/smd/smd.c",
+    "$libwebsockets_patched_out_dir/lib/system/system.c",
 
     # TLS Backend (CRITICAL: BoringSSL integration)
-    "source/lib/tls/openssl/openssl-client.c",
-    "source/lib/tls/openssl/openssl-server.c",
-    "source/lib/tls/openssl/openssl-session.c",
-    "source/lib/tls/openssl/openssl-ssl.c",
-    "source/lib/tls/openssl/openssl-tls.c",
-    "source/lib/tls/openssl/openssl-x509.c",
-    "source/lib/tls/tls-client.c",
-    "source/lib/tls/tls-network.c",
-    "source/lib/tls/tls-server.c",
-    "source/lib/tls/tls-sessions.c",
-    "source/lib/tls/tls.c"
+    "$libwebsockets_patched_out_dir/lib/tls/openssl/openssl-client.c",
+    "$libwebsockets_patched_out_dir/lib/tls/openssl/openssl-server.c",
+    "$libwebsockets_patched_out_dir/lib/tls/openssl/openssl-session.c",
+    "$libwebsockets_patched_out_dir/lib/tls/openssl/openssl-ssl.c",
+    "$libwebsockets_patched_out_dir/lib/tls/openssl/openssl-tls.c",
+    "$libwebsockets_patched_out_dir/lib/tls/openssl/openssl-x509.c",
+    "$libwebsockets_patched_out_dir/lib/tls/tls-client.c",
+    "$libwebsockets_patched_out_dir/lib/tls/tls-network.c",
+    "$libwebsockets_patched_out_dir/lib/tls/tls-server.c",
+    "$libwebsockets_patched_out_dir/lib/tls/tls-sessions.c",
+    "$libwebsockets_patched_out_dir/lib/tls/tls.c"
   ]
 
   include_dirs = [
-    "source/lib/core",
-    "source/lib/core-net",
-    "source/lib/event-libs",
-    "source/lib/abstract",
-    "source/lib/tls",
-    "source/lib/roles",
-    "source/lib/event-libs/libuv",
-    "source/lib/event-libs/poll",
-    "source/lib/event-libs/libevent",
-    "source/lib/event-libs/glib",
-    "source/lib/event-libs/libev",
-    "source/lib/jose/jwe",
-    "source/lib/jose/jws",
-    "source/lib/jose",
-    "source/lib/misc",
-    "source/lib/roles/http",
-    "source/lib/roles/http/compression",
-    "source/lib/roles/h1",
-    "source/lib/roles/h2",
-    "source/lib/roles/ws",
-    "source/lib/roles/cgi",
-    "source/lib/roles/dbus",
-    "source/lib/roles/raw-proxy",
-    "source/lib/abstract",
-    "source/lib/system/async-dns",
-    "source/lib/system/smd",
-    "source/lib/system/metrics",
-    "source/lib/roles/mqtt",
-    "source/lib/plat/unix",
-    "source/lib"
+    "$libwebsockets_patched_out_dir/lib/core",
+    "$libwebsockets_patched_out_dir/lib/core-net",
+    "$libwebsockets_patched_out_dir/lib/event-libs",
+    "$libwebsockets_patched_out_dir/lib/abstract",
+    "$libwebsockets_patched_out_dir/lib/tls",
+    "$libwebsockets_patched_out_dir/lib/roles",
+    "$libwebsockets_patched_out_dir/lib/event-libs/libuv",
+    "$libwebsockets_patched_out_dir/lib/event-libs/poll",
+    "$libwebsockets_patched_out_dir/lib/event-libs/libevent",
+    "$libwebsockets_patched_out_dir/lib/event-libs/glib",
+    "$libwebsockets_patched_out_dir/lib/event-libs/libev",
+    "$libwebsockets_patched_out_dir/lib/jose/jwe",
+    "$libwebsockets_patched_out_dir/lib/jose/jws",
+    "$libwebsockets_patched_out_dir/lib/jose",
+    "$libwebsockets_patched_out_dir/lib/misc",
+    "$libwebsockets_patched_out_dir/lib/roles/http",
+    "$libwebsockets_patched_out_dir/lib/roles/http/compression",
+    "$libwebsockets_patched_out_dir/lib/roles/h1",
+    "$libwebsockets_patched_out_dir/lib/roles/h2",
+    "$libwebsockets_patched_out_dir/lib/roles/ws",
+    "$libwebsockets_patched_out_dir/lib/roles/cgi",
+    "$libwebsockets_patched_out_dir/lib/roles/dbus",
+    "$libwebsockets_patched_out_dir/lib/roles/raw-proxy",
+    "$libwebsockets_patched_out_dir/lib/abstract",
+    "$libwebsockets_patched_out_dir/lib/system/async-dns",
+    "$libwebsockets_patched_out_dir/lib/system/smd",
+    "$libwebsockets_patched_out_dir/lib/system/metrics",
+    "$libwebsockets_patched_out_dir/lib/roles/mqtt",
+    "$libwebsockets_patched_out_dir/lib/plat/unix",
+    "$libwebsockets_patched_out_dir/lib"
   ]
 
   # Apply the public configuration (include_dirs) for consumers
@@ -145,12 +275,14 @@ static_library("libwebsockets") {
 
   # Define dependencies on other Chromium targets
   deps = [
+    # Depends on the Action to copy and apply patch in out folder
+    ":copy_and_patch",
     # CRITICAL: LWS depends on BoringSSL for TLS features
     "//third_party/boringssl:boringssl",
-    "//base", # LWS might implicitly rely on some basic system features Chromium's base provides
+    "//base",
   ]
 
-  # If you need to specify a language (e.g., C99) for LWS sources explicitly:
+  # Define special c flags for libwebsockets:
   cflags_c = [
                 "-Wno-unused-parameter",
                 "-Wno-missing-field-initializers",
@@ -161,4 +293,5 @@ static_library("libwebsockets") {
                 "-Wno-unreachable-code-return",
                 "-Wno-implicit-fallthrough"
             ]
+   
 }
