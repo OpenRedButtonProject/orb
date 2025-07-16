@@ -109,6 +109,31 @@ public:
   bool isPackageInstalled(const std::string& packagePath);
   void checkForUpdates();
 
+  // Public method for calculating SHA256 hash (useful for testing and external use)
+  std::string calculateFileSHA256Hash(const std::string& filePath) const;
+
+  // Package status methods
+  PackageOperationResult getPackageFiles();
+
+  // Error handling
+  std::string getLastErrorMessage() const { return m_LastErrorMessage; }
+  void clearLastError() { m_LastErrorMessage.clear(); }
+
+  // Make the test interface a friend class
+  friend class OpAppPackageManagerTestInterface;
+
+private:
+  // Private constructor for singleton pattern
+  OpAppPackageManager(const Configuration& configuration);
+  // Private constructor with custom hash calculator (for testing)
+  OpAppPackageManager(
+    const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator);
+  // Private constructor with custom hash calculator and decryptor (for testing)
+  OpAppPackageManager(
+    const Configuration& configuration,
+    std::unique_ptr<IHashCalculator> hashCalculator,
+    std::unique_ptr<IDecryptor> decryptor);
+
   /**
    * doPackageFileCheck()
    *
@@ -127,12 +152,6 @@ public:
    */
   PackageStatus doPackageFileCheck();
 
-  // Public method for calculating SHA256 hash (useful for testing and external use)
-  std::string calculateFileSHA256Hash(const std::string& filePath) const;
-
-  // Package status methods
-  PackageOperationResult getPackageFiles();
-
   /**
    * tryPackageInstall()
    *
@@ -146,8 +165,6 @@ public:
    *  PackageStatus::ConfigurationError for any other error.
    */
   PackageStatus tryPackageInstall();
-
-  void setCandidatePackageFile(const std::string& packageFile) { m_CandidatePackageFile = packageFile; }
 
   /**
    * decryptPackageFile()
@@ -182,22 +199,6 @@ public:
    *  false if the package cannot be unzipped.
    */
   bool unzipPackageFile(const std::string& filePath) const;
-
-  // Error handling
-  std::string getLastErrorMessage() const { return m_LastErrorMessage; }
-  void clearLastError() { m_LastErrorMessage.clear(); }
-
-private:
-  // Private constructor for singleton pattern
-  OpAppPackageManager(const Configuration& configuration);
-  // Private constructor with custom hash calculator (for testing)
-  OpAppPackageManager(
-    const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator);
-  // Private constructor with custom hash calculator and decryptor (for testing)
-  OpAppPackageManager(
-    const Configuration& configuration,
-    std::unique_ptr<IHashCalculator> hashCalculator,
-    std::unique_ptr<IDecryptor> decryptor);
 
   PackageStatus m_PackageStatus;
 
