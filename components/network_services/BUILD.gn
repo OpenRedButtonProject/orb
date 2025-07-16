@@ -42,7 +42,10 @@ config("external_lib_config") {
     ".",
     "app2app",
     "media_synchroniser",
-    "json_rpc"
+    "json_rpc",
+    # Add addtional include path for websockets and Jsoncpp.
+    "//third_party/jsoncpp/source/include",
+    "$root_build_dir/gen/third_party/orb/external/libwebsockets/v4.3/patched_libwebsockets/include"
   ]
   defines = [ "IS_CHROMIUM", "ORB_HBBTV_VERSION=204"]
 }
@@ -57,9 +60,7 @@ executable("test_orb_jsonrpcservice")
   deps = [
     "//testing/gtest",
     "//testing/gtest:gtest_main",
-    "//third_party/orb/external/libwebsockets/v4.3:libwebsockets",
     "//base", # For logging dependency,
-    "//third_party/jsoncpp",
     ":orb_network_services"
   ]
   testonly = true
