@@ -108,7 +108,11 @@ executable("test_orb_moderator")
 
 executable("test_opapp_package_manager")
 {
-  sources = [ "test/opapp_package_manager_unittest.cpp" ]
+  sources = [
+    "test/opapp_package_manager_unittest.cpp",
+    "test/OpAppPackageManagerTestInterface.cpp",
+    "test/OpAppPackageManagerTestInterface.h"
+  ]
 
   deps = [
     "//testing/gtest",
