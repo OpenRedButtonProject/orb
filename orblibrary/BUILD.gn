@@ -7,14 +7,21 @@
 static_library("orb") {
   sources = [
     "moderator/Moderator.cpp",
-    "moderator/AppManager.cpp",
+    "moderator/AppMgrInterface.cpp",
     "moderator/Network.cpp",
     "moderator/MediaSynchroniser.cpp",
+    "moderator/app_mgr/ait.cpp",
+    "moderator/app_mgr/application_manager.cpp",
+    "moderator/app_mgr/hbbtv_app.cpp",
+    "moderator/app_mgr/opapp.cpp",
+    "moderator/app_mgr/utils.cpp",
+    "moderator/app_mgr/xml_parser.cpp"
   ]
 
   deps = [
     "//base", # For logging dependency
-    "//third_party/jsoncpp"
+    "//third_party/jsoncpp",
+    "//third_party/libxml"
   ]
 
   public_deps = []

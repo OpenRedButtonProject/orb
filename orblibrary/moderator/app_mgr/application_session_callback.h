@@ -21,6 +21,11 @@
 #ifndef APPLICATION_SESSION_CALLBACK_H
 #define APPLICATION_SESSION_CALLBACK_H
 
+#include "utils.h"
+
+namespace orb
+{
+
 class ApplicationSessionCallback
 {
 public:
@@ -92,7 +97,7 @@ public:
     virtual std::string GetParentalControlRegion3() = 0;
 
     virtual void DispatchApplicationSchemeUpdatedEvent(const int appId, const std::string &scheme) = 0;
-    
+
     virtual void DispatchOperatorApplicationStateChange(const int appId, const std::string &oldState, const std::string &newState) = 0;
     virtual void DispatchOperatorApplicationStateChangeCompleted(const int appId, const std::string &oldState, const std::string &newState) = 0;
     virtual void DispatchOperatorApplicationContextChange(const int appId, const std::string &startupLocation, const std::string &launchLocation = "") = 0;
@@ -103,11 +108,13 @@ public:
      * currently playing service, otherwise false.
      */
     virtual bool isInstanceInCurrentService(const Utils::S_DVB_TRIPLET &triplet) = 0;
-    
+
     /**
      *
      */
     virtual ~ApplicationSessionCallback() = default;
 };
+
+} // namespace orb
 
 #endif // APPLICATION_SESSION_CALLBACK_H

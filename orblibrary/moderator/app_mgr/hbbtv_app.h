@@ -31,6 +31,9 @@
 
 #define INVALID_APP_ID 0
 
+namespace orb
+{
+
 class HbbTVApp
 {
 public:
@@ -51,42 +54,45 @@ public:
 
     /**
      * Create app from url.
-     * 
+     *
      * @throws std::runtime_error
      */
     HbbTVApp(const std::string &url, ApplicationSessionCallback *sessionCallback);
 
     /**
      * Create app from Ait description.
-     * 
-     * @throws std::runtime_error
+     *
      */
-    HbbTVApp(const Ait::S_AIT_APP_DESC &desc,
-        const Utils::S_DVB_TRIPLET currentService,
-        bool isNetworkAvailable,
-        const std::string &urlParams,
+    HbbTVApp(const Utils::S_DVB_TRIPLET currentService,
         bool isBroadcast,
         bool isTrusted,
         ApplicationSessionCallback *sessionCallback);
-    
+
     HbbTVApp(const HbbTVApp&) = delete;
     HbbTVApp &operator=(const HbbTVApp&) = delete;
 
     virtual ~HbbTVApp() = default;
 
     /**
+     * Set URL of app from Ait description and URL params
+     *
+     */
+    void SetUrl(const Ait::S_AIT_APP_DESC &desc,
+        const std::string &urlParams, bool isNetworkAvailable);
+
+    /**
      * Updates the app's state. Meant to be called by the ApplicationManager
-     * when it receives a new AIT table or when the network availability is 
+     * when it receives a new AIT table or when the network availability is
      * changed.
-     * 
+     *
      * @param desc The model that the App will use to extract info about its
      *      state.
      * @param isNetworkAvailable The network availability. Will be used to
      *      determine the protocolId.
-     * 
-     * @throws std::runtime_error
+     *
+     * @return true if success
      */
-    void Update(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable);
+    bool Update(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable);
 
     virtual bool TransitionToBroadcastRelated();
     virtual bool TransitionToBroadcastIndependent();
@@ -99,7 +105,7 @@ public:
     std::map<uint32_t, std::string> GetNames() const { return m_names; }
 
     uint16_t GetProtocolId() const { return m_protocolId; }
-    
+
     bool IsTrusted() const { return m_isTrusted; }
     bool IsBroadcast() const { return m_isBroadcast; }
 
@@ -136,10 +142,10 @@ public:
     virtual E_APP_TYPE GetType() const { return HBBTV_APP_TYPE; }
 
     E_APP_STATE GetState() const { return m_state; }
-    
+
     /**
      * Set the application state.
-     * 
+     *
      * @param state The desired state to transition to.
      * @returns true if transitioned successfully to the desired state, false otherwise.
      */
@@ -185,5 +191,7 @@ protected:
 private:
     int m_id;
 };
+
+} // namespace orb
 
 #endif // HBBTV_APP_H

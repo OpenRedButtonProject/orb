@@ -47,6 +47,9 @@
 #define NODE_PROP_FREE(dptr)
 #endif
 
+namespace orb
+{
+
 /**
  *
  * @param dptr
@@ -212,11 +215,11 @@ static xmlChar* XmlGetPropertyContent(xmlNodePtr node, const xmlChar *property)
  */
 static void XmlAllocApplication(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
 {
-    uint32_t length = 0;
+    //uint32_t length = 0;
     uint8_t num_langs = 0, numTransports = 0;
     const xmlChar *cptr;
     xmlChar *dptr;
-    Ait::S_LANG_STRING *langPtr;
+    //Ait::S_LANG_STRING *langPtr;
 
     while (node != nullptr)
     {
@@ -229,7 +232,7 @@ static void XmlAllocApplication(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
                 NODE_CONTENT_GET(node, dptr);
                 if (dptr)
                 {
-                    length += xmlStrlen(dptr) + 1;
+                    //length += xmlStrlen(dptr) + 1;
                     num_langs++;
                     NODE_CONTENT_RELEASE();
                 }
@@ -679,7 +682,7 @@ static uint32_t XmlParseAppBoundary(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_pt
  */
 static void XmlParseDvbTriplet(xmlNodePtr node, Utils::S_DVB_TRIPLET *dvb)
 {
-    const xmlChar *cptr;
+    //const xmlChar *cptr;
     xmlChar *dptr;
     dptr = NODE_PROPERTY(node, (const xmlChar *)"OrigNetId");
     if (dptr)
@@ -1004,7 +1007,7 @@ std::unique_ptr<Ait::S_AIT_TABLE> XmlParser::ParseAit(const char *content, uint3
     xmlDocPtr doc;
     xmlNodePtr node;
     uint32_t numApps;
-    Ait::S_AIT_APP_DESC *appPtr;
+    //Ait::S_AIT_APP_DESC *appPtr;
     int options = 0;
 
 #ifdef RDK
@@ -1226,4 +1229,6 @@ void XmlParser::FreeDsmcc(XmlParser::S_XML_DSMCC *dsm_objs)
     }
 }
 
-#endif
+#endif // TODO(C++-ize)
+
+} // namespace orb

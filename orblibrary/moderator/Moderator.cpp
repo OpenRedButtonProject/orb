@@ -20,7 +20,7 @@
 #include <json/json.h>
 
 #include "Moderator.h"
-#include "AppManager.hpp"
+#include "AppMgrInterface.hpp"
 #include "Network.hpp"
 #include "MediaSynchroniser.hpp"
 #include "log.h"
@@ -87,9 +87,9 @@ static bool ResolveMethod(string input, string& component, string& method)
 
 Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
     : mOrbBrowser(browser)
-    , mAppType(apptype)
     , mNetwork(std::make_unique<Network>())
     , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
+    , mAppMgrInterface(std::make_unique<AppMgrInterface>(browser, apptype))
 {
     LOGI("HbbTV version " << ORB_HBBTV_VERSION);
 }
@@ -136,7 +136,7 @@ string Moderator::handleOrbRequest(string jsonRqst)
     if (component == "Manager")
     {
         LOGI("App Manager, method: " << method);
-        return AppManager::instance().executeRequest(method, jsonval["token"], jsonval["params"], mAppType);
+        return mAppMgrInterface->executeRequest(method, jsonval["token"], jsonval["params"]);
     }
     else if (component == "Network")
     {
@@ -164,14 +164,16 @@ void Moderator::notifyApplicationLoadFailed(string url, string errorText)
     LOGI("url: " << url << " err: " << errorText);
 }
 
-void Moderator::processAitSection(int32_t aitPid, int32_t serviceId, const vector<uint8_t>& data)
+void Moderator::processAitSection(int32_t aitPid, int32_t serviceId, const vector<uint8_t>& section)
 {
     LOGI("pid: " << aitPid << "serviceId: " << serviceId);
+    mAppMgrInterface->processAitSection(aitPid, serviceId, section);
 }
 
-void Moderator::processXmlAit(const vector<uint8_t>& data)
+void Moderator::processXmlAit(const vector<uint8_t>& xmlait)
 {
     LOGI("");
+    mAppMgrInterface->processXmlAit(xmlait);
 }
 
 

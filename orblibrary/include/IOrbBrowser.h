@@ -55,6 +55,11 @@ public:
      */
     virtual std::string sendRequestToClient(std::string jsonRequest) = 0;
 
+    /**
+     * Dispatch Orb message to javascript
+     */
+    virtual void dispatchEvent(const std::string& etype, const std::string& properties) = 0;
+
 }; // class IOrbBrowser
 
 } // namespace orb

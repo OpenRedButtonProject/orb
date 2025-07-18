@@ -25,7 +25,7 @@ namespace orb
 
 class Network;
 class MediaSynchroniser;
-
+class AppMgrInterface;
 
 class Moderator
 {
@@ -57,14 +57,14 @@ public:
     // -----------------------------------------------
     // Interface functions provided to DVB integration
     // -----------------------------------------------
-    void processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& data);
-    void processXmlAit(const std::vector<uint8_t>& data);
+    void processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section);
+    void processXmlAit(const std::vector<uint8_t>& xmlait);
 
 private:
     IOrbBrowser *mOrbBrowser;
-    ApplicationType mAppType;
     std::unique_ptr<Network> mNetwork;
     std::unique_ptr<MediaSynchroniser> mMediaSynchroniser;
+    std::unique_ptr<AppMgrInterface> mAppMgrInterface;
 
 }; // class Moderator
 
