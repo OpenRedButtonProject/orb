@@ -72,33 +72,6 @@ static_library("orb_integration")
   ]
 }
 
-static_library("orb_polyfill") {
-  sources = [
-    "polyfill/HtmlBuilder.cpp",
-  ]
-
-  deps = [
-    "//base", # For logging dependency
-    "../:orb_polyfill_js"
-  ]
-
-  public_deps = []
-
-  public_configs = [ ":external_lib_config" ]
-}
-
-executable("test_orb_polyfill")
-{
-  sources = [ "polyfill/polyfill_unittest.cpp" ]
-
-  deps = [
-    "//testing/gtest",
-    "//testing/gtest:gtest_main",
-    ":orb_polyfill"
-  ]
-
-  testonly = true
-}
 
 executable("test_orb_moderator")
 {
