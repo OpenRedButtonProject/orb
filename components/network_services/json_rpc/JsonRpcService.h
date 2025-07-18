@@ -46,7 +46,7 @@ public:
         NegotiateMethodsTerminalToApp,
         SubscribedMethods,
         UnsubscribedMethods,
-        IntentIdCount,
+        IdCount,
         VoiceReady
     };
 
@@ -72,7 +72,7 @@ public:
         std::unordered_set<std::string> negotiateMethodsAppToTerminal;
         std::unordered_set<std::string> negotiateMethodsTerminalToApp;
         std::unordered_set<std::string> subscribedMethods;
-        int intentIdCount;
+        int idCount;
         bool voiceReady = false;
     };
 
