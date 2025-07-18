@@ -36,6 +36,42 @@ config("external_lib_config") {
   defines = [ "IS_CHROMIUM", "ORB_HBBTV_VERSION=203"]
 }
 
+static_library("opapp_package_manager") {
+  sources = [
+    "package_manager/OpAppPackageManager.cpp",
+    "package_manager/HashCalculator.cpp",
+    "package_manager/HashCalculator.h",
+    "package_manager/Decryptor.cpp",
+    "package_manager/Decryptor.h",
+  ]
+
+  deps = [
+    "//base", # For logging dependency
+    "//third_party/jsoncpp",
+    "//third_party/boringssl:boringssl"
+  ]
+
+  public_deps = []
+
+  public_configs = [ ":external_lib_config" ]
+}
+
+static_library("orb_integration")
+{
+  testonly = true
+
+  sources = [
+    "integration/OrbIntegration.cpp"
+  ]
+
+  public_configs = [ ":external_lib_config" ]
+
+  deps = [
+    "//content/public/browser:browser",
+    "//content/shell:content_shell_lib"
+  ]
+}
+
 static_library("orb_polyfill") {
   sources = [
     "polyfill/HtmlBuilder.cpp",
@@ -72,6 +108,23 @@ executable("test_orb_moderator")
     "//testing/gtest",
     "//testing/gtest:gtest_main",
     ":orb"
+  ]
+
+  testonly = true
+}
+
+executable("test_opapp_package_manager")
+{
+  sources = [
+    "test/opapp_package_manager_unittest.cpp",
+    "test/OpAppPackageManagerTestInterface.cpp",
+    "test/OpAppPackageManagerTestInterface.h"
+  ]
+
+  deps = [
+    "//testing/gtest",
+    "//testing/gtest:gtest_main",
+    ":opapp_package_manager"
   ]
 
   testonly = true
