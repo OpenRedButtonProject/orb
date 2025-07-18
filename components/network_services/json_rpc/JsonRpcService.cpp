@@ -26,14 +26,14 @@ JsonRpcService::JsonRpcService(
     m_sessionCallback(std::move(sessionCallback)),
     m_opAppEnabled(true)
 {
-    LOGI("JsonRpcService::JsonRpcService: endpoint=" << m_endpoint << ", port=" << port);    
+    LOGI("JsonRpcService::JsonRpcService: endpoint=" << m_endpoint << ", port=" << port);
     RegisterJsonRPCMethods();
     RegisterSupportedMethods();
 }
 
 void JsonRpcService::SetOpAppEnabled(bool enabled) {
     LOGI("Set Operator Application enabled: " << enabled);
-    m_opAppEnabled = enabled; 
+    m_opAppEnabled = enabled;
 }
 
 bool JsonRpcService::OnConnection(WebSocketConnection *connection)
@@ -57,7 +57,7 @@ void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const st
     Json::Value obj;
     Json::Reader reader;
     JsonRpcStatus status = JsonRpcStatus::UNKNOWN;
- 
+
     if (!reader.parse(text, obj))
     {
         status = JsonRpcStatus::PARSE_ERROR;
@@ -96,7 +96,8 @@ void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const st
             status = JsonRpcStatus::METHOD_NOT_FOUND;
             return handleError(connectionId, status, obj);
         }
-        else if (JsonRpcServiceUtil::HasJsonParam(obj, JSONRPC_RESULT_KEY) &&
+    } else {
+        if (JsonRpcServiceUtil::HasJsonParam(obj, JSONRPC_RESULT_KEY) &&
                  JsonRpcServiceUtil::HasParam(obj[JSONRPC_RESULT_KEY], JSONRPC_METHOD_KEY, Json::stringValue))
         {
             //case with method in result
@@ -104,7 +105,8 @@ void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const st
         }
         else
         {
-            //cannot find parameter of JSONRPC_METHOD_KEY
+            //cannot find method in result parameter
+            LOGE("method not found in result parameter: " << method);
             status = JsonRpcStatus::INVALID_REQUEST;
             return handleError(connectionId, status, obj);
         }
@@ -123,14 +125,14 @@ void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const st
     if (status == JsonRpcStatus::NOTIFICATION_ERROR)
     {
         LOGE("Error in notification message");
-    } 
+    }
     else if (status != JsonRpcStatus::SUCCESS)
     {
         handleError(connectionId, status, obj);
     }
 }
 
-void JsonRpcService::handleError(int connectionId, JsonRpcStatus status, const Json::Value& obj) 
+void JsonRpcService::handleError(int connectionId, JsonRpcStatus status, const Json::Value& obj)
 {
     int code = static_cast<int>(status);
     std::string message = JsonRpcServiceUtil::GetErrorMessage(status);
@@ -199,7 +201,7 @@ void JsonRpcService::RegisterSupportedMethods()
     m_supported_methods_terminal_to_opapp.insert(MD_IPPLAYER_RESOLVE_TIMELINE);
 }
 
-void JsonRpcService::RegisterJsonRPCMethods() 
+void JsonRpcService::RegisterJsonRPCMethods()
 {
     // Register methods to handle JSON-RPC requests and responses from applications
     RegisterMethod(MD_NEGOTIATE_METHODS, &JsonRpcService::RequestNegotiateMethods);
@@ -289,7 +291,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestNegotiateMethods(int connec
 
 JsonRpcService::JsonRpcStatus JsonRpcService::RequestSubscribe(int connectionId, const
     Json::Value &obj)
-{    
+{
     std::string id = JsonRpcServiceUtil::GetId(obj);
     if(id.empty())
     {
@@ -338,7 +340,7 @@ void JsonRpcService::SetSubscribeOptions(SubscribeOptions &options, int featureI
     }
     else if (featureName == F_DIALOGUE_ENHANCEMENT)
     {
-        options.dialogueEnhancement = true;     
+        options.dialogueEnhancement = true;
     }
     else if (featureName == F_UI_MAGNIFIER)
     {
@@ -429,8 +431,8 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestFeatureSuppress(int connect
     return HandleFeatureRequest(connectionId, obj, MD_AF_FEATURE_SUPPRESS);
 }
 
- JsonRpcService::JsonRpcStatus JsonRpcService::HandleFeatureRequest(int connectionId, const Json::Value &obj, 
-        const std::string &feature) 
+ JsonRpcService::JsonRpcStatus JsonRpcService::HandleFeatureRequest(int connectionId, const Json::Value &obj,
+        const std::string &feature)
 {
     std::string id = JsonRpcServiceUtil::GetId(obj);
     if(id.empty())
@@ -438,25 +440,25 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestFeatureSuppress(int connect
         return JsonRpcStatus::INVALID_PARAMS;
     }
     int featureId = JsonRpcServiceUtil::GetAccessibilityFeatureId(obj);
-    
+
     if (featureId == -1)
     {
         return JsonRpcStatus::INVALID_PARAMS;
     }
 
-    if (feature == MD_AF_FEATURE_SUPPORT_INFO) 
+    if (feature == MD_AF_FEATURE_SUPPORT_INFO)
     {
         m_sessionCallback->RequestFeatureSupportInfo(connectionId, id, featureId);
-    } 
-    else if (feature == MD_AF_FEATURE_SETTINGS_QUERY) 
+    }
+    else if (feature == MD_AF_FEATURE_SETTINGS_QUERY)
     {
         m_sessionCallback->RequestFeatureSettingsQuery(connectionId, id, featureId);
-    } 
-    else if (feature == MD_AF_FEATURE_SUPPRESS) 
+    }
+    else if (feature == MD_AF_FEATURE_SUPPRESS)
     {
         m_sessionCallback->RequestFeatureSuppress(connectionId, id, featureId);
-    } 
-    else 
+    }
+    else
     {
         return JsonRpcStatus::INVALID_REQUEST;
     }
@@ -562,7 +564,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::NotifyStateMedia(int connectionId,
     {
         return JsonRpcStatus::NOTIFICATION_ERROR;
     }
-    
+
     Json::Value actions = params["availableActions"];
     mediaData->actionPause =  GetActionValue(actions, "pause"); //HasParam(actions, "pause", Json::booleanValue) && actions["pause"];
     mediaData->actionPlay = GetActionValue(actions, "play");
@@ -748,18 +750,18 @@ JsonRpcService::JsonRpcStatus JsonRpcService::ReceiveConfirm(int connectionId, c
     if (!JsonRpcServiceUtil::HasParam(result, JSONRPC_METHOD_KEY, Json::stringValue))
     {
         return JsonRpcStatus::INVALID_PARAMS;
-    }    
+    }
     std::string method = result[JSONRPC_METHOD_KEY].asString();
     m_sessionCallback->ReceiveConfirm(connectionId, id, method);
     return JsonRpcStatus::SUCCESS;
 }
 
-JsonRpcService::JsonRpcStatus JsonRpcService::ReceiveConfirmForSelectChannel(int connectionId, const Json::Value &obj) 
+JsonRpcService::JsonRpcStatus JsonRpcService::ReceiveConfirmForSelectChannel(int connectionId, const Json::Value &obj)
 {
     std::string id = JsonRpcServiceUtil::GetId(obj);
     Json::Value result = obj[JSONRPC_RESULT_KEY];
-    if(id.empty() 
-    || !JsonRpcServiceUtil::HasParam(result, JSONRPC_METHOD_KEY, Json::stringValue) 
+    if(id.empty()
+    || !JsonRpcServiceUtil::HasParam(result, JSONRPC_METHOD_KEY, Json::stringValue)
     || !JsonRpcServiceUtil::HasParam(result, JSONRPC_SESSION_ID_KEY, Json::intValue))
     {
         return JsonRpcStatus::INVALID_PARAMS;
@@ -1222,27 +1224,27 @@ void JsonRpcService::RespondTriggerResponseToUserAction(int connectionId,
 
 // Helper functions
 /**
- * Generate a unique ID for an intent associated with a given connection.
+ * Generate a unique ID for an associated with a given connection.
  *
- * This method increments the intent ID count for the certain connection,
+ * This method increments the ID count for the certain connection,
  * generates a unique ID based on the incremented count.
- * Start from "IntentId1", "IntentId2", ...
+ * Start from "1", "2", ...
  *
- * @param connectionId The ID of the connection for which the intent ID is generated.
+ * @param connectionId The ID of the connection for which the ID is generated.
  *
- * @return A unique JSON-RPC intent ID as a string.
+ * @return A unique JSON-RPC ID as a string.
  */
 std::string JsonRpcService::GenerateId(int connectionId)
 {
-    Json::Value data = GetConnectionData(connectionId, ConnectionDataType::IntentIdCount);
+    Json::Value data = GetConnectionData(connectionId, ConnectionDataType::IdCount);
     if (data.isInt())
     {
-        int intentId = data.asInt();
-        intentId++;    //Generate the unique 'id' for intent media method
-        std::string id = JsonRpcServiceUtil::EncodeJsonId("IntentId" + std::to_string(intentId));
+        int msgId = data.asInt();
+        msgId++;    //Generate the unique 'id' for media method
+        std::string id = JsonRpcServiceUtil::EncodeJsonId(std::to_string(msgId));
         SetConnectionData(connectionId,
-            ConnectionDataType::IntentIdCount,
-            intentId);
+            ConnectionDataType::IdCount,
+            msgId);
         return id;
     }
     LOGE("Warning, connection data lost, parameter has wrong type.");
@@ -1432,8 +1434,8 @@ Json::Value JsonRpcService::FilterMethods(int connectionId,
     for (const auto& method : methodsList)
     {
         std::string methodName = method.asString();
-        if (isAppToTerminal && 
-            (JsonRpcServiceUtil::IsMethodInSet(m_supported_methods_app_to_terminal, methodName) 
+        if (isAppToTerminal &&
+            (JsonRpcServiceUtil::IsMethodInSet(m_supported_methods_app_to_terminal, methodName)
             || (m_opAppEnabled && JsonRpcServiceUtil::IsMethodInSet(m_supported_methods_opapp_to_terminal, methodName))))
         {
             SetConnectionData(connectionId,
@@ -1441,8 +1443,8 @@ Json::Value JsonRpcService::FilterMethods(int connectionId,
                 methodName);
             newMethodsList.append(method);
         }
-        else if (!isAppToTerminal && 
-            (JsonRpcServiceUtil::IsMethodInSet(m_supported_methods_terminal_to_app, methodName) 
+        else if (!isAppToTerminal &&
+            (JsonRpcServiceUtil::IsMethodInSet(m_supported_methods_terminal_to_app, methodName)
             || (m_opAppEnabled && JsonRpcServiceUtil::IsMethodInSet(m_supported_methods_terminal_to_opapp, methodName))))
         {
             SetConnectionData(connectionId,
@@ -1575,7 +1577,7 @@ std::vector<int> JsonRpcService::GetAllConnectionIds()
 void JsonRpcService::InitialConnectionData(int connectionId)
 {
     std::lock_guard<std::recursive_mutex> lock(mConnectionsMutex);
-    m_connectionData[connectionId].intentIdCount = 0;
+    m_connectionData[connectionId].idCount = 0;
     m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_NEGOTIATE_METHODS);
 }
 
@@ -1610,8 +1612,8 @@ void JsonRpcService::SetConnectionData(int connectionId, ConnectionDataType type
         case ConnectionDataType::UnsubscribedMethods:
             connectionData.subscribedMethods.erase(value.asString());
             break;
-        case ConnectionDataType::IntentIdCount:
-            connectionData.intentIdCount = value.asInt();
+        case ConnectionDataType::IdCount:
+            connectionData.idCount = value.asInt();
             break;
         case ConnectionDataType::VoiceReady:
             connectionData.voiceReady = value.asBool();
@@ -1665,7 +1667,7 @@ void JsonRpcService::SetStateMediaToConnectionData(int connectionId, const
  * of the Json::Value depend on the specified 'type':
  *   - For NegotiateMethodsAppToTerminal, NegotiateMethodsTerminalToApp, and SubscribedMethods,
  *     the Json::Value is an array of strings.
- *   - For IntentIdCount, the Json::Value is an integer value.
+ *   - For idCount, the Json::Value is an integer value.
  *   - For State, the Json::Value is a single string value.
  *   - For VoiceReady, ActionPause, ActionPlay, ActionFastForward, ActionFastReverse, ActionStop,
  *     ActionSeekContent, ActionSeekRelative, ActionSeekLive, and ActionSeekWallclock, the Json::Value
@@ -1701,8 +1703,8 @@ Json::Value JsonRpcService::GetConnectionData(int connectionId, ConnectionDataTy
             }
             case ConnectionDataType::UnsubscribedMethods:
                 break;
-            case ConnectionDataType::IntentIdCount:
-                value = connectionData.intentIdCount;
+            case ConnectionDataType::IdCount:
+                value = connectionData.idCount;
                 break;
             case ConnectionDataType::VoiceReady:
                 value = connectionData.voiceReady;
@@ -1759,8 +1761,11 @@ Json::Value JsonRpcService::GetConnectionData(int connectionId, ConnectionDataTy
                 value = static_cast<int>(connectionData.endTime);
                 break;
             default:
+                LOGE("Warning, connection data lost, parameter has wrong type.");
                 break;
         }
+    } else {
+        LOGE("Warning, connection id not found. connectionId: " << connectionId);
     }
     return value;
 }
@@ -1775,7 +1780,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::ResponseIPPlaybackRequest(int conn
     return JsonRpcStatus::SUCCESS;
 }
 
-JsonRpcService::JsonRpcStatus JsonRpcService::RequestIPPlaybackStatusUpdate(int connectionId, const Json::Value &obj) 
+JsonRpcService::JsonRpcStatus JsonRpcService::RequestIPPlaybackStatusUpdate(int connectionId, const Json::Value &obj)
 {
     return HandleIPPlaybackRequest(connectionId, obj, MD_IPPLAYBACK_STATUS_UPDATE);
 }
@@ -1800,7 +1805,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestIPPlaybackSetPresentFollowi
     return HandleIPPlaybackRequest(connectionId, obj, MD_IPPLAYBACK_SET_PRESENT_FOLLOWING);
 }
 
-JsonRpcService::JsonRpcStatus JsonRpcService::HandleIPPlaybackRequest(int connectionId, const Json::Value &obj, const std::string &method) 
+JsonRpcService::JsonRpcStatus JsonRpcService::HandleIPPlaybackRequest(int connectionId, const Json::Value &obj, const std::string &method)
 {
     std::string id = JsonRpcServiceUtil::GetId(obj);
     if (id.empty()) {
@@ -1840,22 +1845,22 @@ void JsonRpcService::SendIPPlayerSelectChannel(int channelType, int idType, cons
     SendIPPlayerMessageToClients(MD_IPPLAYER_SELECT_CHANNEL, params);
 }
 
-void JsonRpcService::SendIPPlayerPlay(int sessionId) 
+void JsonRpcService::SendIPPlayerPlay(int sessionId)
 {
     SendIPPlayerMessageToClients(MD_IPPLAYER_PLAY, sessionId);
 }
 
-void JsonRpcService::SendIPPlayerPause(int sessionId) 
+void JsonRpcService::SendIPPlayerPause(int sessionId)
 {
     SendIPPlayerMessageToClients(MD_IPPLAYER_PAUSE, sessionId);
 }
 
-void JsonRpcService::SendIPPlayerStop(int sessionId) 
+void JsonRpcService::SendIPPlayerStop(int sessionId)
 {
     SendIPPlayerMessageToClients(MD_IPPLAYER_STOP, sessionId);
 }
 
-void JsonRpcService::SendIPPlayerResume(int sessionId) 
+void JsonRpcService::SendIPPlayerResume(int sessionId)
 {
     SendIPPlayerMessageToClients(MD_IPPLAYER_RESUME, sessionId);
 }
@@ -1880,7 +1885,7 @@ void JsonRpcService::SendIPPlayerSetVideoWindow(int sessionId, int x, int y, int
     SendIPPlayerMessageToClients(MD_IPPLAYER_SET_VIDEO_WINDOW, params);
 
 }
-void JsonRpcService::SendIPPlayerSetRelativeVolume(int sessionId, int volume) 
+void JsonRpcService::SendIPPlayerSetRelativeVolume(int sessionId, int volume)
 {
     Json::Value params;
     params[JSONRPC_SESSION_ID_KEY] = sessionId;
@@ -1899,7 +1904,7 @@ void JsonRpcService::SendIPPlayerSelectComponents(int sessionId, const std::vect
     SendIPPlayerMessageToClients(MD_IPPLAYER_SELECT_COMPONENTS, params);
 }
 
-void JsonRpcService::SendIPPlayerResolveTimeline(int sessionId, const std::string& timelineSelector) 
+void JsonRpcService::SendIPPlayerResolveTimeline(int sessionId, const std::string& timelineSelector)
 {
     Json::Value params;
     params[JSONRPC_SESSION_ID_KEY] = sessionId;
@@ -1907,7 +1912,7 @@ void JsonRpcService::SendIPPlayerResolveTimeline(int sessionId, const std::strin
     SendIPPlayerMessageToClients(MD_IPPLAYER_RESOLVE_TIMELINE, params);
 }
 
-void JsonRpcService::GetIPPlayerConnectionIdsForMethod(std::vector<int> &availableIds, const std::string& method) 
+void JsonRpcService::GetIPPlayerConnectionIdsForMethod(std::vector<int> &availableIds, const std::string& method)
 {
     std::vector<int> connectionIds = GetAllConnectionIds();
     for (int connectionId : connectionIds)
@@ -1915,18 +1920,18 @@ void JsonRpcService::GetIPPlayerConnectionIdsForMethod(std::vector<int> &availab
         Json::Value negotiateMethodsJson = GetConnectionData(connectionId,
             ConnectionDataType::NegotiateMethodsTerminalToApp);
 
-        if (negotiateMethodsJson.isArray() 
+        if (negotiateMethodsJson.isArray()
             && JsonRpcServiceUtil::IsMethodInJsonArray(negotiateMethodsJson, method))
         {
             availableIds.push_back(connectionId);
-        } else  
+        } else
         {
             LOGE("Warning, connection data lost, parameter has wrong type.");
         }
     }
 }
 
-void JsonRpcService::SendIPPlayerMessageToClients(const std::string& method, const Json::Value &params) 
+void JsonRpcService::SendIPPlayerMessageToClients(const std::string& method, const Json::Value &params)
 {
     LOGI("Sending IP Player message to clients with method: " << method);
     std::vector<int> connectionIds;

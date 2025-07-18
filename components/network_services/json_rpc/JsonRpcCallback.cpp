@@ -17,6 +17,7 @@
  *
  */
  
+#include "log.h"
 #include "JsonRpcCallback.h"
 
 namespace orb

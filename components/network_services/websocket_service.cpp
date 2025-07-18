@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <log.h>
+#include "log.h"
 #include "websocket_service.h"
 
 #define         LWS_PROTOCOL_LIST_TERM   { NULL, NULL, 0, 0, 0, NULL, 0 }
