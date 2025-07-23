@@ -98,6 +98,16 @@ public:
      */
     static bool getBoolValue(const Json::Value& json, const std::string& key);
 
+    /**
+     * Gets a string value from a JSON object by key.
+     *
+     * @param json The JSON object to extract the string from.
+     * @param key The key of the string value in the JSON object.
+     * @return The string value if the key exists and the value is a string,
+     *         empty string otherwise.
+     */
+    static std::string getStringValue(const Json::Value& json, const std::string& key);
+
 }; // class JsonUtil
 
 } // namespace orb

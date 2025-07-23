@@ -88,4 +88,22 @@ bool JsonUtil::getBoolValue(const Json::Value& json, const std::string& key)
     return value.asBool();
 }
 
+std::string JsonUtil::getStringValue(const Json::Value& json, const std::string& key)
+{
+    if (!json.isMember(key))
+    {
+        LOGE("Key '" << key << "' not found in JSON object");
+        return "";
+    }
+
+    const Json::Value& value = json[key];
+    if (!value.isString())
+    {
+        LOGE("Value for key '" << key << "' is not a string");
+        return "";
+    }
+
+    return value.asString();
+}
+
 } // namespace orb

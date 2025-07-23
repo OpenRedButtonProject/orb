@@ -32,6 +32,13 @@ using namespace std;
 namespace orb
 {
 
+const string MANAGER_CREATE_APP = "createApplication";
+const string MANAGER_DESTROY_APP = "destroyApplication";
+const string MANAGER_SHOW_APP = "showApplication";
+const string MANAGER_HIDE_APP = "hideApplication";
+const string MANAGER_GET_APP_IDS = "getRunningAppIds";
+const string MANAGER_GET_APP_URL = "getApplicationUrl";
+
 AppMgrInterface::AppMgrInterface(IOrbBrowser* browser, ApplicationType apptype)
     : mOrbBrowser(browser)
     , mAppType(apptype)
@@ -42,46 +49,72 @@ AppMgrInterface::AppMgrInterface(IOrbBrowser* browser, ApplicationType apptype)
 
 string AppMgrInterface::executeRequest(string method, Json::Value token, Json::Value params)
 {
-    // TODO Set up proper responses
-    string response = R"({"Response": "AppMgrInterface request [)" + method + R"(] not implemented"})";
+    Json::CharReaderBuilder builder;
+    string response;
 
     std::lock_guard<std::mutex> lock(mMutex);
     ApplicationManager::instance().SetCurrentInterface(mAppType);
 
     LOGI("Request with method [" + method + "] received");
-    if (method == "createApplication")
+    if (method == MANAGER_CREATE_APP)
     {
-        LOGI("app type: ") << mAppType;
+        int appId =
+            ApplicationManager::instance().CreateApplication(
+                JsonUtil::getIntegerValue(params, "id"),
+                JsonUtil::getStringValue(params, "url"),
+                JsonUtil::getBoolValue(params, "runAsOpApp"));
+
+        LOGI("app type: " << mAppType << " new AppID" << appId);
+
+        Json::Value responseObj;
+        responseObj["result"] = appId;
+        response = JsonUtil::convertJsonToString(responseObj);
     }
-    else if (method == "destroyApplication")
+    else if (method == MANAGER_DESTROY_APP)
     {
-        // no response
-        LOGI("");
+        ApplicationManager::instance().DestroyApplication(JsonUtil::getIntegerValue(params, "id"));
+        // no response needed
     }
-    else if (method == "showApplication")
+    else if (method == MANAGER_SHOW_APP)
     {
-        // no response
-        LOGI("");
+        ApplicationManager::instance().ShowApplication(JsonUtil::getIntegerValue(params, "id"));
+        // no response needed
     }
-    else if (method == "hideApplication")
+    else if (method == MANAGER_HIDE_APP)
     {
-        // no response
-        LOGI("");
+        ApplicationManager::instance().HideApplication(JsonUtil::getIntegerValue(params, "id"));
+        // no response needed
     }
-    else if (method == "searchOwner")
+    else if (method == MANAGER_GET_APP_URL)
     {
-        // no response
-        LOGI("");
+        std::string url =
+            ApplicationManager::instance().GetApplicationUrl(JsonUtil::getIntegerValue(params, "id"));
+
+        Json::Value responseObj;
+        responseObj["result"] = url;
+        response = JsonUtil::convertJsonToString(responseObj);
     }
-    else if (method == "getRunningAppIds")
+    else if (method == MANAGER_GET_APP_IDS)
     {
-        // TODO implement
-        //LOGI("");
-        response = R"({"result": []})";
+        // Get running app IDs from ApplicationManager
+        std::vector<int> runningAppIds = ApplicationManager::instance().GetRunningAppIds();
+
+        // Create JSON response with array of integers
+        Json::Value resultArray = Json::Value(Json::arrayValue);
+        for (int appId : runningAppIds) {
+            resultArray.append(Json::Value(appId));
+        }
+
+        Json::Value responseObj;
+        responseObj["result"] = resultArray;
+        response = JsonUtil::convertJsonToString(responseObj);
+
+        LOGI("getRunningAppIds: returned " << runningAppIds.size() << " app IDs");
     }
     else
     {
         LOGI("Unknown method: " << method);
+        response = R"({"Response": "AppMgrInterface; method [)" + method + R"(] unknown"})";
     }
 
     return response;
