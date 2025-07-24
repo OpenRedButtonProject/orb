@@ -23,6 +23,7 @@
 #include "AppMgrInterface.hpp"
 #include "Network.hpp"
 #include "MediaSynchroniser.hpp"
+#include "BroadcastInterface.hpp"
 #include "log.h"
 
 using namespace std;
@@ -90,6 +91,7 @@ Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
     , mNetwork(std::make_unique<Network>())
     , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
     , mAppMgrInterface(std::make_unique<AppMgrInterface>(browser, apptype))
+    , mBroadcastInterface(std::make_unique<BroadcastInterface>(browser))
 {
     LOGI("HbbTV version " << ORB_HBBTV_VERSION);
 }
@@ -147,6 +149,11 @@ string Moderator::handleOrbRequest(string jsonRqst)
     {
         LOGI("MediaSynchroniser, method: " << method);
         return mMediaSynchroniser->executeRequest(method, jsonval["token"], jsonval["params"]);
+    }
+    else if (component == "Broadcast")
+    {
+        LOGI("Broadcast, method: " << method);
+        return mBroadcastInterface->executeRequest(method, jsonval["token"], jsonval["params"]);
     }
 
     LOGI("Passing request to TIS component: [" << component << "], method: [" << method << "]");

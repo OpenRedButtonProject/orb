@@ -26,6 +26,7 @@ namespace orb
 class Network;
 class MediaSynchroniser;
 class AppMgrInterface;
+class BroadcastInterface;
 
 class Moderator
 {
@@ -65,6 +66,7 @@ private:
     std::unique_ptr<Network> mNetwork;
     std::unique_ptr<MediaSynchroniser> mMediaSynchroniser;
     std::unique_ptr<AppMgrInterface> mAppMgrInterface;
+    std::unique_ptr<BroadcastInterface> mBroadcastInterface;
 
 }; // class Moderator
 

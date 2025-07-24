@@ -8,6 +8,7 @@ static_library("orb") {
   sources = [
     "moderator/Moderator.cpp",
     "moderator/AppMgrInterface.cpp",
+    "moderator/BroadcastInterface.cpp",
     "moderator/Network.cpp",
     "moderator/MediaSynchroniser.cpp",
     "moderator/app_mgr/ait.cpp",
