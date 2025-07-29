@@ -16,6 +16,7 @@
 
 #include "Drm.h"
 #include "log.h"
+#include "JsonUtil.h"
 #include <sstream>
 
 using namespace std;
@@ -67,10 +68,8 @@ std::string Drm::executeRequest(std::string method, Json::Value token, Json::Val
         response["error"] = "Drm request [" + method + "] invalid method";
     }
 
-
     // Convert response to JSON string
-    Json::StreamWriterBuilder writer;
-    return Json::writeString(writer, response);
+    return JsonUtil::convertJsonToString(response);
 }
 
 Json::Value Drm::handleGetSupportedDRMSystemIDs()

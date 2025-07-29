@@ -22,11 +22,10 @@
 
 #include "AppMgrInterface.hpp"
 #include "app_mgr/application_manager.h"
-
+#include "JsonUtil.h"
 #include "log.h"
 
 #define LINKED_APP_SCHEME_1_1 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.1"
-#define EMPTY_STRING ""
 
 using namespace std;
 
@@ -163,12 +162,9 @@ std::string AppMgrInterface::GetParentalControlRegion3() {
 
 void AppMgrInterface::DispatchApplicationSchemeUpdatedEvent(const int appId, const std::string &scheme) {
     LOGI("appID: " << appId << ", Scheme: " << scheme);
-    Json::StreamWriterBuilder writerBuilder;
     Json::Value prop;
-    writerBuilder["indentation"] = EMPTY_STRING; // optional?
-    prop["scheme"] = scheme.c_str();
-    std::string properties = Json::writeString(writerBuilder, prop);
-    mOrbBrowser->dispatchEvent("ApplicationSchemeUpdated", properties);
+    prop["scheme"] = scheme;
+    mOrbBrowser->dispatchEvent("ApplicationSchemeUpdated", JsonUtil::convertJsonToString(prop));
 }
 
 void AppMgrInterface::DispatchOperatorApplicationStateChange(const int appId, const std::string &oldState, const std::string &newState) {

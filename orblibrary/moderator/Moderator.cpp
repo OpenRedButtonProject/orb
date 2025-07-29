@@ -26,6 +26,8 @@
 #include "Configuration.h"
 #include "Drm.h"
 #include "log.h"
+#include "JsonUtil.h"
+#include "StringUtil.h"
 
 using namespace std;
 
@@ -38,62 +40,6 @@ const string COMPONENT_NETWORK = "Network";
 const string COMPONENT_MEDIA_SYNCHRONISER = "MediaSynchroniser";
 const string COMPONENT_CONFIGURATION = "Configuration";
 const string COMPONENT_DRM = "Drm";
-
-/**
- * Check if a JSON object has a specified parameter with a certain data type.
- *
- * @param json The JSON object to check for the presence of the parameter.
- * @param param The name of the parameter to search for within the JSON object.
- * @param type The expected data type of the parameter.
- * @return 'true' if the parameter 'param' exists within the JSON object
- *          and has the specified data type, 'false' otherwise.
- */
-static bool HasParam(const Json::Value &json, const string &param, const Json::ValueType& type)
-{
-    return json.isMember(param) && json[param].type() == type;
-}
-
-/**
- * Check if a JSON object has a specified parameter with a json data type.
- *
- * @param json The JSON object to check for the presence of the parameter.
- * @param param The name of the parameter to search for within the JSON object.
- * @return 'true' if the parameter 'param' exists within the JSON object
- *          and has the json data type, 'false' otherwise.
- */
-static bool HasJsonParam(const Json::Value &json, const string &param)
-{
-    return json.isMember(param) && json[param].isObject();
-}
-
-/**
- * Resolves the component and method from the specified input, which has the following form:
- *
- * <component>.<method>
- *
- * @param input  (in)  The input string
- * @param component (out) Holds the resolved component in success
- * @param method (out) Holds the resolved method in success
- *
- * @return true in success, otherwise false
- */
-static bool ResolveMethod(string input, string& component, string& method)
-{
-    vector<string> tokens;
-    for (auto i = strtok(&input[0], "."); i != NULL; i = strtok(NULL, "."))
-    {
-        tokens.push_back(i);
-    }
-    if (tokens.size() != 2)
-    {
-        return false;
-    }
-
-    component = tokens[0];
-    method = tokens[1];
-
-    return true;
-}
 
 Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
     : mOrbBrowser(browser)
@@ -126,13 +72,13 @@ string Moderator::handleOrbRequest(string jsonRqst)
         return "{\"error\": \"Invalid Request\"}";
     }
 
-    if (HasJsonParam(jsonval, "error"))
+    if (JsonUtil::HasJsonParam(jsonval, "error"))
     {
         LOGE("Json request reports error");
         return "{\"error\": \"Error Request\"}";
     }
 
-    if (!HasParam(jsonval, "method", Json::stringValue))
+    if (!JsonUtil::HasParam(jsonval, "method", Json::stringValue))
     {
         LOGE("Request has no method");
         return "{\"error\": \"No method\"}";
@@ -140,7 +86,7 @@ string Moderator::handleOrbRequest(string jsonRqst)
 
     string component;
     string method;
-    if (!ResolveMethod(jsonval["method"].asString(), component, method))
+    if (!StringUtil::ResolveMethod(jsonval["method"].asString(), component, method))
     {
         return "{\"error\": \"Invalid method\"}";
     }

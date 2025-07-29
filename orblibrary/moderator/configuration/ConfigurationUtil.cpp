@@ -277,12 +277,6 @@ Json::Value ConfigurationUtil::videoProfilesToJson(const std::vector<VideoProfil
     return jsonVideoProfiles;
 }
 
-std::string ConfigurationUtil::convertJsonToString(const Json::Value& json)
-{
-    Json::StreamWriterBuilder writer;
-    return Json::writeString(writer, json);
-}
-
 std::string ConfigurationUtil::getJsonRpcServerEndpoint()
 {
     return JSON_RPC_ENDPOINT;

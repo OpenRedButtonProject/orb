@@ -141,14 +141,6 @@ public:
     static Json::Value videoProfilesToJson(const std::vector<VideoProfile>& videoProfiles);
 
     /**
-     * Converts a JSON object to a string.
-     *
-     * @param json The JSON object to convert.
-     * @return A string representation of the JSON object.
-     */
-    static std::string convertJsonToString(const Json::Value& json);
-
-    /**
      * Returns the JSON RPC server URL.
      *
      * @param port The port number to use for the JSON RPC server.

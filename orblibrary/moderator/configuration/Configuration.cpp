@@ -17,6 +17,7 @@
 #include "Configuration.h"
 #include "log.h"
 #include "ConfigurationUtil.h"
+#include "JsonUtil.h"
 
 using namespace std;
 
@@ -54,7 +55,7 @@ string Configuration::executeRequest(string method, Json::Value token, Json::Val
 
     // TODO: Implement configuration-specific methods
     // For now, return a basic response indicating the method was received
-    string responseString = ConfigurationUtil::convertJsonToString(response);
+    string responseString = JsonUtil::convertJsonToString(response);
     LOGI("Configuration::executeRequest - response: " << responseString);
     return responseString;
 }

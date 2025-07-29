@@ -212,38 +212,6 @@ TEST_F(ConfigurationUtilTest, TestVideoProfilesToJson) {
     }
 }
 
-TEST_F(ConfigurationUtilTest, TestConvertJsonToString) {
-    // GIVEN: a JSON object
-    Json::Value jsonObject;
-    jsonObject["stringField"] = "test_value";
-    jsonObject["intField"] = 42;
-    jsonObject["boolField"] = true;
-    jsonObject["arrayField"] = Json::Value(Json::arrayValue);
-    jsonObject["arrayField"].append("item1");
-    jsonObject["arrayField"].append("item2");
-
-    // WHEN: convertJsonToString is called
-    std::string result = orb::ConfigurationUtil::convertJsonToString(jsonObject);
-
-    // THEN: a valid JSON string is returned
-    EXPECT_FALSE(result.empty());
-
-    // Verify the string can be parsed back to JSON
-    Json::Value parsedJson;
-    Json::CharReaderBuilder reader;
-    std::string errors;
-    std::istringstream resultStream(result);
-    bool parseSuccess = Json::parseFromStream(reader, resultStream, &parsedJson, &errors);
-    EXPECT_TRUE(parseSuccess) << "Failed to parse JSON string: " << errors;
-
-    // Verify the parsed JSON matches the original
-    EXPECT_EQ(parsedJson["stringField"].asString(), "test_value");
-    EXPECT_EQ(parsedJson["intField"].asInt(), 42);
-    EXPECT_EQ(parsedJson["boolField"].asBool(), true);
-    EXPECT_TRUE(parsedJson["arrayField"].isArray());
-    EXPECT_EQ(parsedJson["arrayField"].size(), (unsigned int)2);
-}
-
 TEST_F(ConfigurationUtilTest, TestGetJsonRpcServerUrl) {
     // GIVEN: a port number
     int port = 8910;
@@ -327,54 +295,6 @@ TEST_F(ConfigurationUtilTest, TestVideoProfilesToJson_EmptyVector) {
     // THEN: an empty JSON array is returned
     EXPECT_TRUE(jsonResult.isArray());
     EXPECT_TRUE(jsonResult.empty());
-}
-
-TEST_F(ConfigurationUtilTest, TestConvertJsonToString_EmptyObject) {
-    // GIVEN: an empty JSON object
-    Json::Value jsonObject(Json::objectValue);
-
-    // WHEN: convertJsonToString is called
-    std::string result = orb::ConfigurationUtil::convertJsonToString(jsonObject);
-
-    // THEN: a valid JSON string is returned
-    EXPECT_FALSE(result.empty());
-    EXPECT_EQ(result, "{}");
-}
-
-TEST_F(ConfigurationUtilTest, TestConvertJsonToString_ComplexObject) {
-    // GIVEN: a complex JSON object
-    Json::Value jsonObject;
-    jsonObject["nested"] = Json::Value(Json::objectValue);
-    jsonObject["nested"]["key1"] = "value1";
-    jsonObject["nested"]["key2"] = 123;
-    jsonObject["array"] = Json::Value(Json::arrayValue);
-    jsonObject["array"].append("item1");
-    jsonObject["array"].append("item2");
-    jsonObject["array"].append(Json::Value(Json::objectValue));
-    jsonObject["array"][2]["nestedKey"] = "nestedValue";
-
-    // WHEN: convertJsonToString is called
-    std::string result = orb::ConfigurationUtil::convertJsonToString(jsonObject);
-
-    // THEN: a valid JSON string is returned
-    EXPECT_FALSE(result.empty());
-
-    // Verify the string can be parsed back to JSON
-    Json::Value parsedJson;
-    Json::CharReaderBuilder reader;
-    std::string errors;
-    std::istringstream resultStream(result);
-    bool parseSuccess = Json::parseFromStream(reader, resultStream, &parsedJson, &errors);
-    EXPECT_TRUE(parseSuccess) << "Failed to parse JSON string: " << errors;
-
-    // Verify the structure is preserved
-    EXPECT_TRUE(parsedJson.isMember("nested"));
-    EXPECT_TRUE(parsedJson["nested"].isObject());
-    EXPECT_EQ(parsedJson["nested"]["key1"].asString(), "value1");
-    EXPECT_EQ(parsedJson["nested"]["key2"].asInt(), 123);
-    EXPECT_TRUE(parsedJson.isMember("array"));
-    EXPECT_TRUE(parsedJson["array"].isArray());
-    EXPECT_EQ(parsedJson["array"].size(), (unsigned int)3);
 }
 
 TEST_F(ConfigurationUtilTest, TestMultipleCapabilitiesCreation) {
