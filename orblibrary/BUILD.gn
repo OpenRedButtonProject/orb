@@ -18,6 +18,8 @@ static_library("orb") {
     "moderator/app_mgr/xml_parser.cpp",
     "moderator/configuration/Configuration.cpp",
     "moderator/configuration/ConfigurationUtil.cpp",
+    "moderator/utilities/JsonUtil.cpp",
+    "moderator/utilities/StringUtil.cpp",
     "moderator/Drm.cpp"
   ]
 
@@ -34,7 +36,11 @@ static_library("orb") {
 
 # Expose the include directory
 config("external_lib_config") {
-  include_dirs = [ "include", "moderator/configuration" ]
+  include_dirs = [
+   "include",
+   "moderator/configuration",
+   "moderator/utilities"
+   ]
 
   defines = [ "IS_CHROMIUM", "ORB_HBBTV_VERSION=204"]
 }
@@ -111,8 +117,12 @@ executable("test_orb_configuration")
   sources = [
     "test/configuration_unittest.cpp",
     "test/configuration_util_unittest.cpp",
+    "test/json_util_unittest.cpp",
+    "test/string_util_unittest.cpp",
     "moderator/configuration/Configuration.cpp",
-    "moderator/configuration/ConfigurationUtil.cpp"
+    "moderator/configuration/ConfigurationUtil.cpp",
+    "moderator/utilities/JsonUtil.cpp",
+    "moderator/utilities/StringUtil.cpp",
   ]
 
   deps = [
