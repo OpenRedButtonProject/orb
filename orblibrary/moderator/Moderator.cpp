@@ -23,12 +23,22 @@
 #include "AppMgrInterface.hpp"
 #include "Network.hpp"
 #include "MediaSynchroniser.hpp"
+#include "Configuration.h"
+#include "Drm.h"
 #include "log.h"
 
 using namespace std;
 
 namespace orb
 {
+
+// Component name constants
+const string COMPONENT_MANAGER = "Manager";
+const string COMPONENT_NETWORK = "Network";
+const string COMPONENT_MEDIA_SYNCHRONISER = "MediaSynchroniser";
+const string COMPONENT_CONFIGURATION = "Configuration";
+const string COMPONENT_DRM = "Drm";
+
 /**
  * Check if a JSON object has a specified parameter with a certain data type.
  *
@@ -90,6 +100,8 @@ Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
     , mNetwork(std::make_unique<Network>())
     , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
     , mAppMgrInterface(std::make_unique<AppMgrInterface>(browser, apptype))
+    , mConfiguration(std::make_unique<Configuration>(apptype))
+    , mDrm(std::make_unique<Drm>())
 {
     LOGI("HbbTV version " << ORB_HBBTV_VERSION);
 }
@@ -133,24 +145,29 @@ string Moderator::handleOrbRequest(string jsonRqst)
         return "{\"error\": \"Invalid method\"}";
     }
 
-    if (component == "Manager")
+    LOGI(component << ", method: " << method);
+    if (component == COMPONENT_MANAGER)
     {
-        LOGI("App Manager, method: " << method);
         return mAppMgrInterface->executeRequest(method, jsonval["token"], jsonval["params"]);
     }
-    else if (component == "Network")
+    else if (component == COMPONENT_NETWORK)
     {
-        LOGI("Network, method: " << method);
         return mNetwork->executeRequest(method, jsonval["token"], jsonval["params"]);
     }
-    else if (component == "MediaSynchroniser")
+    else if (component == COMPONENT_MEDIA_SYNCHRONISER)
     {
-        LOGI("MediaSynchroniser, method: " << method);
         return mMediaSynchroniser->executeRequest(method, jsonval["token"], jsonval["params"]);
+    }
+    else if (component == COMPONENT_CONFIGURATION)
+    {
+        return mConfiguration->executeRequest(method, jsonval["token"], jsonval["params"]);
+    }
+    else if (component == COMPONENT_DRM)
+    {
+        return mDrm->executeRequest(method, jsonval["token"], jsonval["params"]);
     }
 
     LOGI("Passing request to TIS component: [" << component << "], method: [" << method << "]");
-
     return mOrbBrowser->sendRequestToClient(jsonRqst);
 }
 

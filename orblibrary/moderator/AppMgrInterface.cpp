@@ -77,7 +77,8 @@ string AppMgrInterface::executeRequest(string method, Json::Value token, Json::V
     else if (method == "getRunningAppIds")
     {
         // TODO implement
-        LOGI("");
+        //LOGI("");
+        response = R"({"result": []})";
     }
     else
     {

@@ -3,6 +3,10 @@ group("orb_library_deps")
 {
   deps = [
     "orblibrary:orb",
-    "//third_party/orb/components/network_services:orb_network_services"    
+    "//third_party/orb/components/network_services:orb_network_services"
   ]
+
+  public_configs = [
+    "orblibrary:external_lib_config"
+   ]
 }

@@ -39,7 +39,7 @@ public:
      *
      * @return JSON encoded response string
      */
-    virtual std::string executeRequest(std::string method, Json::Value token, Json::Value params);
+    virtual std::string executeRequest(std::string method, Json::Value token, Json::Value params) = 0;
 
 }; // class ComponentBase
 
