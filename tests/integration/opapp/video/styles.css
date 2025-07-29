@@ -186,29 +186,29 @@ video {
     .container {
         max-width: 1800px;
     }
-    
+
     .header h1 {
         font-size: 3em;
     }
-    
+
     .video-section {
        height: 450px;
     }
     .logs-section {
         height: 500px;
     }
-    
+
     /* Always horizontal layout */
     .main-content {
         flex-direction: row;
         gap: 40px;
     }
-    
+
     .video-column,
     .logs-column {
         min-width: 0;
     }
-    
+
     .logs-column {
         min-width: 500px;
     }
@@ -219,23 +219,23 @@ video {
     .container {
         max-width: 1400px;
     }
-    
+
     .header h1 {
         font-size: 2.8em;
     }
-    
+
     .video-section {
         height: 480px;
      }
     .logs-section {
         height: 450px;
     }
-    
+
     .main-content {
         flex-direction: row;
         gap: 30px;
     }
-    
+
     .logs-column {
         min-width: 450px;
     }
@@ -246,28 +246,28 @@ video {
     .container {
         max-width: 1200px;
     }
-    
+
     .main-content {
         flex-direction: row;
         gap: 25px;
     }
-    
+
     .video-column,
     .logs-column {
         min-width: 0;
     }
-    
+
     .logs-column {
         min-width: 400px;
     }
-    
+
     .video-section {
         height: 360px;
      }
     .logs-section {
         height: 380px;
     }
-    
+
     .header h1 {
         font-size: 2.0em;
     }
@@ -278,39 +278,39 @@ video {
         padding: 10px;
         font-size: 14px; /* Adjusted for mobile */
     }
-    
+
     .container {
         margin: 0;
         border-radius: 10px;
     }
-    
+
     .header {
         padding: 20px;
     }
-    
+
     .header h1 {
         font-size: 2em;
     }
-    
+
     .content {
         padding: 20px;
     }
-    
+
     /* Maintain horizontal layout even on mobile */
     .main-content {
         flex-direction: row;
         gap: 15px;
     }
-    
+
     .video-column,
     .logs-column {
         min-width: 0;
     }
-    
+
     .logs-column {
         min-width: 300px;
     }
-    
+
     .video-section {
         height: 360px;
      }
@@ -318,9 +318,9 @@ video {
     .logs-section {
         height: 400px;
     }
-    
 
-    
+
+
     .log-entries {
         font-size: 7px;
         padding: 15px;
@@ -331,17 +331,17 @@ video {
     .header h1 {
         font-size: 1.8em;
     }
-    
+
     .video-section {
         height: 350px;
      }
-     
+
     .logs-section {
         height: 350px;
     }
-    
+
     .log-entries {
         font-size: 6px;
         padding: 12px;
     }
-} 
+}
