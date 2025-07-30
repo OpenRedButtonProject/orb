@@ -100,7 +100,7 @@ class HBBTVWebSocketClient {
     }
 
     initializeElements() {
-        this.defaultWebSocketUrl = 'ws://localhost:8091/orb/opapp';
+        this.defaultWebSocketUrl = this.getJsonRpcUrl();
     }
 
     bindEvents() {

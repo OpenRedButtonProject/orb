@@ -15,7 +15,12 @@ static_library("orb") {
     "moderator/app_mgr/hbbtv_app.cpp",
     "moderator/app_mgr/opapp.cpp",
     "moderator/app_mgr/utils.cpp",
-    "moderator/app_mgr/xml_parser.cpp"
+    "moderator/app_mgr/xml_parser.cpp",
+    "moderator/configuration/Configuration.cpp",
+    "moderator/configuration/ConfigurationUtil.cpp",
+    "moderator/utilities/JsonUtil.cpp",
+    "moderator/utilities/StringUtil.cpp",
+    "moderator/Drm.cpp"
   ]
 
   deps = [
@@ -31,9 +36,13 @@ static_library("orb") {
 
 # Expose the include directory
 config("external_lib_config") {
-  include_dirs = [ "include" ]
+  include_dirs = [
+   "include",
+   "moderator/configuration",
+   "moderator/utilities"
+   ]
 
-  defines = [ "IS_CHROMIUM", "ORB_HBBTV_VERSION=203"]
+  defines = [ "IS_CHROMIUM", "ORB_HBBTV_VERSION=204"]
 }
 
 static_library("opapp_package_manager") {
@@ -99,6 +108,31 @@ executable("test_opapp_package_manager")
     "//testing/gtest:gtest_main",
     ":opapp_package_manager"
   ]
+
+  testonly = true
+}
+
+executable("test_orb_configuration")
+{
+  sources = [
+    "test/configuration_unittest.cpp",
+    "test/configuration_util_unittest.cpp",
+    "test/json_util_unittest.cpp",
+    "test/string_util_unittest.cpp",
+    "moderator/configuration/Configuration.cpp",
+    "moderator/configuration/ConfigurationUtil.cpp",
+    "moderator/utilities/JsonUtil.cpp",
+    "moderator/utilities/StringUtil.cpp",
+  ]
+
+  deps = [
+    "//testing/gtest",
+    "//testing/gtest:gtest_main",
+    "//third_party/jsoncpp",
+    "//base", # For logging dependency
+  ]
+
+  public_configs = [ ":external_lib_config" ]
 
   testonly = true
 }

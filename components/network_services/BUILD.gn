@@ -32,7 +32,7 @@ config("external_lib_config") {
     "include",
     "json_rpc",
   ]
-  defines = [ "IS_CHROMIUM", "ORB_HBBTV_VERSION=204"]
+  defines = [ "IS_CHROMIUM" ]
 }
 
 executable("test_orb_jsonrpcservice")
