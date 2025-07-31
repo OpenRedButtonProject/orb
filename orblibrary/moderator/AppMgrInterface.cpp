@@ -23,7 +23,7 @@
 #include "AppMgrInterface.hpp"
 #include "app_mgr/application_manager.h"
 #include "JsonUtil.h"
-#include "log.h"
+#include "log.hpp"
 
 #define LINKED_APP_SCHEME_1_1 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.1"
 

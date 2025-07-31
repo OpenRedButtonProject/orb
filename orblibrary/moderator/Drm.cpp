@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include "Drm.h"
-#include "log.h"
+#include "Drm.hpp"
+#include "log.hpp"
 #include "JsonUtil.h"
 #include <sstream>
 

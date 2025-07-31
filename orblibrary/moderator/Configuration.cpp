@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include "Configuration.h"
-#include "log.h"
+#include "Configuration.hpp"
+#include "log.hpp"
 #include "ConfigurationUtil.h"
 #include "JsonUtil.h"
 

@@ -17,8 +17,8 @@ static_library("orb") {
     "moderator/app_mgr/opapp.cpp",
     "moderator/app_mgr/utils.cpp",
     "moderator/app_mgr/xml_parser.cpp",
-    "moderator/configuration/Configuration.cpp",
-    "moderator/configuration/ConfigurationUtil.cpp",
+    "moderator/Configuration.cpp",
+    "moderator/utilities/ConfigurationUtil.cpp",
     "moderator/utilities/JsonUtil.cpp",
     "moderator/utilities/StringUtil.cpp",
     "moderator/Drm.cpp"
@@ -30,6 +30,11 @@ static_library("orb") {
     "//third_party/libxml"
   ]
 
+  include_dirs = [ 
+   "moderator",
+   "moderator/utilities"
+  ]
+
   public_deps = []
 
   public_configs = [ ":external_lib_config" ]
@@ -39,8 +44,6 @@ static_library("orb") {
 config("external_lib_config") {
   include_dirs = [
    "include",
-   "moderator/configuration",
-   "moderator/utilities"
    ]
 
   defines = [ "IS_CHROMIUM", "ORB_HBBTV_VERSION=204"]
