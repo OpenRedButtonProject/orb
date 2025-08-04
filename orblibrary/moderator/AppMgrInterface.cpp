@@ -87,6 +87,18 @@ string AppMgrInterface::executeRequest(string method, Json::Value token, Json::V
     return response;
 }
 
+void AppMgrInterface::onNetworkStatusChange(bool available) {
+    std::lock_guard<std::mutex> lock(mMutex);
+    ApplicationManager::instance().SetCurrentInterface(mAppType);
+    ApplicationManager::instance().OnNetworkAvailabilityChanged(available);
+}
+
+void AppMgrInterface::onChannelChange(uint16_t onetId, uint16_t transId, uint16_t serviceId) {
+    std::lock_guard<std::mutex> lock(mMutex);
+    ApplicationManager::instance().SetCurrentInterface(mAppType);
+    ApplicationManager::instance().OnChannelChanged(onetId, transId, serviceId);
+}
+
 void AppMgrInterface::processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section) {
     std::lock_guard<std::mutex> lock(mMutex);
     ApplicationManager::instance().SetCurrentInterface(mAppType);

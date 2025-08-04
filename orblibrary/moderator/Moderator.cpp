@@ -43,6 +43,10 @@ const string COMPONENT_CONFIGURATION = "Configuration";
 const string COMPONENT_DRM = "Drm";
 const string COMPONENT_BROADCAST = "Broadcast";
 
+// Event types
+const string CHANNEL_STATUS_CHANGE = "ChannelStatusChanged";
+const string NETWORK_STATUS = "NetworkStatus";
+
 Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
     : mOrbBrowser(browser)
     , mNetwork(std::make_unique<Network>())
@@ -127,6 +131,32 @@ void Moderator::notifyApplicationPageChanged(string url)
 void Moderator::notifyApplicationLoadFailed(string url, string errorText)
 {
     LOGI("url: " << url << " err: " << errorText);
+}
+
+bool Moderator::handleBridgeEvent(const std::string& etype, const std::string& properties) {
+    bool consumed = false;
+    Json::Value jsonval;
+
+    LOGI("etype: " << etype << " props: " << properties);
+    if (etype == CHANNEL_STATUS_CHANGE) {
+        if (JsonUtil::decodeJson(properties, &jsonval)) {
+            int status = JsonUtil::getIntegerValue(jsonval, "statusCode");
+            if (status == CHANNEL_STATUS_CONNECTING) {
+                uint16_t onetId = JsonUtil::getIntegerValue(jsonval, "onetId");
+                uint16_t transId = JsonUtil::getIntegerValue(jsonval, "transId");
+                uint16_t serviceId = JsonUtil::getIntegerValue(jsonval, "servId");
+                mAppMgrInterface->onChannelChange(onetId, transId, serviceId);
+            }
+        }
+        // Javascript also needs this event
+    }
+    else if (etype == NETWORK_STATUS) {
+        if (JsonUtil::decodeJson(properties, &jsonval)) {
+            mAppMgrInterface->onNetworkStatusChange(JsonUtil::getBoolValue(jsonval, "available"));
+        }
+        consumed = true; // This event is consumed here and is not passed to Javascript
+    }
+    return consumed;
 }
 
 void Moderator::processAitSection(int32_t aitPid, int32_t serviceId, const vector<uint8_t>& section)
