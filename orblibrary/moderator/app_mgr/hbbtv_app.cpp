@@ -315,6 +315,7 @@ bool HbbTVApp::SetState(const E_APP_STATE &state)
     {
         if (state != m_state)
         {
+            LOG(LOG_INFO, "AppId %u; state transition: %d -> %d", m_id, m_state, state);
             m_state = state;
             if (state == BACKGROUND_STATE)
             {

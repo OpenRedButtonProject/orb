@@ -374,7 +374,7 @@ void ApplicationManager::ProcessAitSection(uint16_t aitPid, uint16_t serviceId,
 
     if (serviceId != m_currentService.serviceId)
     {
-        LOG(LOG_INFO, "The AIT is not for the current service, early out");
+        LOG(LOG_INFO, "The AIT is for service %x, not current service %x, early out",serviceId, m_currentService.serviceId);
         return;
     }
 
@@ -915,7 +915,7 @@ void ApplicationManager::OnPerformBroadcastAutostart()
     }
     else
     {
-        LOG(LOG_INFO, "OnPerformAutostart No autostart app found.");
+        LOG(LOG_INFO, "OnPerformAutostart No viable autostart app found. isNetworkAvailable? %u", m_isNetworkAvailable);
     }
 }
 
