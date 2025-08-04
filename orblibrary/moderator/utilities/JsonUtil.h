@@ -41,6 +41,15 @@ public:
     virtual ~JsonUtil() = default;
 
     /**
+     * Decodes a JSON string into a Json::Value object.
+     *
+     * @param jsonString The JSON string to decode.
+     * @param jsonval Pointer to the Json::Value object where the decoded JSON will be stored.
+     * @return 'true' if the JSON string was successfully decoded, 'false' otherwise.
+     */
+    static bool decodeJson(std::string jsonString, Json::Value *jsonval);
+
+    /**
      * Check if a JSON object has a specified parameter with a certain data type.
      *
      * @param json The JSON object to check for the presence of the parameter.
@@ -68,6 +77,26 @@ public:
      * @return A string representation of the JSON object.
      */
     static std::string convertJsonToString(const Json::Value& json);
+
+    /**
+     * Gets an integer value from a JSON object by key.
+     *
+     * @param json The JSON object to extract the integer from.
+     * @param key The key of the integer value in the JSON object.
+     * @return The integer value if the key exists and the value is an integer,
+     *         0 otherwise.
+     */
+    static int getIntegerValue(const Json::Value& json, const std::string& key);
+
+    /**
+     * Gets a boolean value from a JSON object by key.
+     *
+     * @param json The JSON object to extract the boolean from.
+     * @param key The key of the boolean value in the JSON object.
+     * @return The boolean value if the key exists and the value is a boolean,
+     *         false otherwise.
+     */
+    static bool getBoolValue(const Json::Value& json, const std::string& key);
 
 }; // class JsonUtil
 

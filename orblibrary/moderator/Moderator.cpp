@@ -62,16 +62,11 @@ Moderator::~Moderator()
 string Moderator::handleOrbRequest(string jsonRqst)
 {
     Json::Value jsonval;
-    Json::CharReaderBuilder builder;
-    const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
-    string err;
-    int rlen = static_cast<int>(jsonRqst.length());
 
     LOGI("json: " << jsonRqst);
 
-    if (!reader->parse(jsonRqst.c_str(), jsonRqst.c_str() + rlen, &jsonval, &err))
+    if (!JsonUtil::decodeJson(jsonRqst, &jsonval))
     {
-        LOGE("Json parsing failed: " << err);
         return "{\"error\": \"Invalid Request\"}";
     }
 
