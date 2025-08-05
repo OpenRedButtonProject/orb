@@ -38,6 +38,23 @@ const string MANAGER_SHOW_APP = "showApplication";
 const string MANAGER_HIDE_APP = "hideApplication";
 const string MANAGER_GET_APP_IDS = "getRunningAppIds";
 const string MANAGER_GET_APP_URL = "getApplicationUrl";
+const string MANAGER_GET_APP_SCHEME = "getApplicationScheme";
+const string MANAGER_GET_FREE_MEM = "getFreeMem";
+const string MANAGER_GET_KEY_VALUES = "getKeyValues";
+const string MANAGER_GET_OKEY_VALUES = "getOtherKeyValues";
+const string MANAGER_GET_KEY_MAX_VAL = "getKeyMaximumValue";
+const string MANAGER_GET_MAX_OKEYS = "getKeyMaximumOtherKeys";
+const string MANAGER_SET_KEY_VALUE = "setKeyValue";
+const string MANAGER_GET_KEY_ICON = "getKeyIcon";
+
+const int KEY_SET_RED = 0x1;
+const int KEY_SET_GREEN = 0x2;
+const int KEY_SET_YELLOW = 0x4;
+const int KET_SET_BLUE = 0x8;
+const int KEY_SET_NAVIGATION = 0x10;
+const int KEY_SET_VCR = 0x20;
+const int KEY_SET_NUMERIC = 0x100;
+const int KEY_OTHERS_MAX = 0x416; // temporary value based on v1.0
 
 AppMgrInterface::AppMgrInterface(IOrbBrowser* browser, ApplicationType apptype)
     : mOrbBrowser(browser)
@@ -85,15 +102,6 @@ string AppMgrInterface::executeRequest(string method, Json::Value token, Json::V
         ApplicationManager::instance().HideApplication(JsonUtil::getIntegerValue(params, "id"));
         // no response needed
     }
-    else if (method == MANAGER_GET_APP_URL)
-    {
-        std::string url =
-            ApplicationManager::instance().GetApplicationUrl(JsonUtil::getIntegerValue(params, "id"));
-
-        Json::Value responseObj;
-        responseObj["result"] = url;
-        response = JsonUtil::convertJsonToString(responseObj);
-    }
     else if (method == MANAGER_GET_APP_IDS)
     {
         // Get running app IDs from ApplicationManager
@@ -110,6 +118,80 @@ string AppMgrInterface::executeRequest(string method, Json::Value token, Json::V
         response = JsonUtil::convertJsonToString(responseObj);
 
         LOGI("getRunningAppIds: returned " << runningAppIds.size() << " app IDs");
+    }
+    else if (method == MANAGER_GET_APP_URL)
+    {
+        std::string url =
+            ApplicationManager::instance().GetApplicationUrl(JsonUtil::getIntegerValue(params, "id"));
+
+        Json::Value responseObj;
+        responseObj["result"] = url;
+        response = JsonUtil::convertJsonToString(responseObj);
+    }
+    else if (method == MANAGER_GET_APP_SCHEME)
+    {
+        std::string scheme =
+            ApplicationManager::instance().GetApplicationScheme(JsonUtil::getIntegerValue(params, "id"));
+
+        Json::Value responseObj;
+        responseObj["result"] = scheme;
+        response = JsonUtil::convertJsonToString(responseObj);
+    }
+    else if (method == MANAGER_SET_KEY_VALUE)
+    {
+        uint16_t keyset = JsonUtil::getIntegerValue(params, "value");
+        std::vector<uint16_t> otherkeys = JsonUtil::getIntegerArray(params, "otherKeys");
+        uint16_t kMask = ApplicationManager::instance().SetKeySetMask(
+                JsonUtil::getIntegerValue(params, "id"), keyset, otherkeys);
+    }
+    else if (method == MANAGER_GET_KEY_VALUES)
+    {
+        uint16_t keyset =
+            ApplicationManager::instance().GetKeySetMask(JsonUtil::getIntegerValue(params, "id"));
+
+        Json::Value responseObj;
+        responseObj["result"] = keyset;
+        response = JsonUtil::convertJsonToString(responseObj);
+    }
+    else if (method == MANAGER_GET_OKEY_VALUES)
+    {
+        std::vector<uint16_t> otherkeys =
+            ApplicationManager::instance().GetOtherKeyValues(JsonUtil::getIntegerValue(params, "id"));
+
+        // Create JSON response with array of other key values
+        Json::Value resultArray = Json::Value(Json::arrayValue);
+        for (uint16_t keyValue : otherkeys) {
+            resultArray.append(Json::Value(keyValue));
+        }
+
+        Json::Value responseObj;
+        responseObj["result"] = resultArray;
+        response = JsonUtil::convertJsonToString(responseObj);
+
+        LOGI("return: " << otherkeys.size() << " other key values");
+    }
+    else if (method == MANAGER_GET_KEY_MAX_VAL)
+    {
+        int maxval = KEY_SET_RED | KEY_SET_GREEN | KEY_SET_YELLOW | KET_SET_BLUE |
+                KEY_SET_NAVIGATION | KEY_SET_VCR | KEY_SET_NUMERIC;
+        Json::Value responseObj;
+        responseObj["result"] = maxval;
+        response = JsonUtil::convertJsonToString(responseObj);
+    }
+    else if (method == MANAGER_GET_MAX_OKEYS)
+    {
+        int maxval = KEY_OTHERS_MAX;
+        Json::Value responseObj;
+        responseObj["result"] = maxval;
+        response = JsonUtil::convertJsonToString(responseObj);
+    }
+    else if (method == MANAGER_GET_KEY_ICON)
+    {
+        response = R"({"Response": "AppMgrInterface; method [)" + method + R"(] unsupported"})";
+    }
+    else if (method == MANAGER_GET_FREE_MEM)
+    {
+        response = R"({"Response": "AppMgrInterface; method [)" + method + R"(] unsupported"})";
     }
     else
     {

@@ -108,6 +108,16 @@ public:
      */
     static std::string getStringValue(const Json::Value& json, const std::string& key);
 
+    /**
+     * Gets an array of unsigned 16-bit integers from a JSON object by key.
+     *
+     * @param json The JSON object to extract the integer array from.
+     * @param key The key of the integer array in the JSON object.
+     * @return A vector of uint16_t if the key exists and the value is an array of strings
+     *         that can be converted to unsigned 16-bit integers, empty vector otherwise.
+     */
+    static std::vector<uint16_t> getIntegerArray(const Json::Value& json, const std::string& key);
+
 }; // class JsonUtil
 
 } // namespace orb
