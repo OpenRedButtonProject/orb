@@ -143,6 +143,9 @@ string AppMgrInterface::executeRequest(string method, Json::Value token, Json::V
         std::vector<uint16_t> otherkeys = JsonUtil::getIntegerArray(params, "otherKeys");
         uint16_t kMask = ApplicationManager::instance().SetKeySetMask(
                 JsonUtil::getIntegerValue(params, "id"), keyset, otherkeys);
+        if (kMask > 0) {
+            mOrbBrowser->notifyKeySetChange(keyset, otherkeys);
+        }
     }
     else if (method == MANAGER_GET_KEY_VALUES)
     {
