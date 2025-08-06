@@ -28,6 +28,7 @@ class MediaSynchroniser;
 class AppMgrInterface;
 class Configuration;
 class Drm;
+class BroadcastInterface;
 
 class Moderator
 {
@@ -69,6 +70,7 @@ private:
     std::unique_ptr<AppMgrInterface> mAppMgrInterface;
     std::unique_ptr<Configuration> mConfiguration;
     std::unique_ptr<Drm> mDrm;
+    std::unique_ptr<BroadcastInterface> mBroadcastInterface;
 
 }; // class Moderator
 
