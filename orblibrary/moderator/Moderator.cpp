@@ -28,6 +28,7 @@
 #include "log.h"
 #include "JsonUtil.h"
 #include "StringUtil.h"
+#include "BroadcastInterface.hpp"
 
 using namespace std;
 
@@ -40,6 +41,7 @@ const string COMPONENT_NETWORK = "Network";
 const string COMPONENT_MEDIA_SYNCHRONISER = "MediaSynchroniser";
 const string COMPONENT_CONFIGURATION = "Configuration";
 const string COMPONENT_DRM = "Drm";
+const string COMPONENT_BROADCAST = "Broadcast";
 
 Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
     : mOrbBrowser(browser)
@@ -47,7 +49,8 @@ Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
     , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
     , mAppMgrInterface(std::make_unique<AppMgrInterface>(browser, apptype))
     , mConfiguration(std::make_unique<Configuration>(apptype))
-    , mDrm(std::make_unique<Drm>())
+    , mDrm(std::make_unique<Drm>()
+    , mBroadcastInterface(std::make_unique<BroadcastInterface>(browser))
 {
     LOGI("HbbTV version " << ORB_HBBTV_VERSION);
 }
@@ -111,6 +114,10 @@ string Moderator::handleOrbRequest(string jsonRqst)
     else if (component == COMPONENT_DRM)
     {
         return mDrm->executeRequest(method, jsonval["token"], jsonval["params"]);
+    }
+    else if (component == COMPONENT_BROADCAST)
+    {
+        return mBroadcastInterface->executeRequest(method, jsonval["token"], jsonval["params"]);
     }
 
     LOGI("Passing request to TIS component: [" << component << "], method: [" << method << "]");
