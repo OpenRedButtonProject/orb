@@ -49,7 +49,7 @@ Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
     , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
     , mAppMgrInterface(std::make_unique<AppMgrInterface>(browser, apptype))
     , mConfiguration(std::make_unique<Configuration>(apptype))
-    , mDrm(std::make_unique<Drm>()
+    , mDrm(std::make_unique<Drm>())
     , mBroadcastInterface(std::make_unique<BroadcastInterface>(browser))
 {
     LOGI("HbbTV version " << ORB_HBBTV_VERSION);
