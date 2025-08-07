@@ -35,6 +35,18 @@ enum ChannelStatus {
   CHANNEL_STATUS_UNKNOWN_ERROR = 100
 };
 
+const uint16_t KEY_SET_RED = 0x1;
+const uint16_t KEY_SET_GREEN = 0x2;
+const uint16_t KEY_SET_YELLOW = 0x4;
+const uint16_t KEY_SET_BLUE = 0x8;
+const uint16_t KEY_SET_NAVIGATION = 0x10;
+const uint16_t KEY_SET_VCR = 0x20;
+const uint16_t KEY_SET_SCROLL = 0x40;
+const uint16_t KEY_SET_INFO = 0x80;
+const uint16_t KEY_SET_NUMERIC = 0x100;
+const uint16_t KEY_SET_ALPHA = 0x200;
+const uint16_t KEY_SET_OTHER = 0x400;
+
 static constexpr std::string APPLICATION_TYPE_HBBTV = "HBBTV";
 static constexpr std::string APPLICATION_TYPE_OPAPP = "OPAPP";
 static constexpr std::string APPLICATION_TYPE_VIDEO = "VIDEO";

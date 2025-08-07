@@ -21,20 +21,9 @@
 #include "hbbtv_app.h"
 #include "log.h"
 #include "application_manager.h"
+#include "OrbConstants.h"
 
 #include <stdexcept>
-
-#define KEY_SET_RED 0x1
-#define KEY_SET_GREEN 0x2
-#define KEY_SET_YELLOW 0x4
-#define KET_SET_BLUE 0x8
-#define KEY_SET_NAVIGATION 0x10
-#define KEY_SET_VCR 0x20
-#define KEY_SET_SCROLL 0x40
-#define KEY_SET_INFO 0x80
-#define KEY_SET_NUMERIC 0x100
-#define KEY_SET_ALPHA 0x200
-#define KEY_SET_OTHER 0x400
 
 #define VK_RED 403
 #define VK_GREEN 404
@@ -419,7 +408,7 @@ static uint16_t GetKeySetMaskForKeyCode(const uint16_t &keyCode)
     }
     else if (keyCode == VK_BLUE)
     {
-        return KET_SET_BLUE;
+        return KEY_SET_BLUE;
     }
     else if (keyCode == VK_INFO)
     {

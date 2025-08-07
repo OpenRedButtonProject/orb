@@ -47,13 +47,6 @@ const string MANAGER_GET_MAX_OKEYS = "getKeyMaximumOtherKeys";
 const string MANAGER_SET_KEY_VALUE = "setKeyValue";
 const string MANAGER_GET_KEY_ICON = "getKeyIcon";
 
-const int KEY_SET_RED = 0x1;
-const int KEY_SET_GREEN = 0x2;
-const int KEY_SET_YELLOW = 0x4;
-const int KET_SET_BLUE = 0x8;
-const int KEY_SET_NAVIGATION = 0x10;
-const int KEY_SET_VCR = 0x20;
-const int KEY_SET_NUMERIC = 0x100;
 const int KEY_OTHERS_MAX = 0x416; // temporary value based on v1.0
 
 AppMgrInterface::AppMgrInterface(IOrbBrowser* browser, ApplicationType apptype)
@@ -175,7 +168,7 @@ string AppMgrInterface::executeRequest(string method, Json::Value token, Json::V
     }
     else if (method == MANAGER_GET_KEY_MAX_VAL)
     {
-        int maxval = KEY_SET_RED | KEY_SET_GREEN | KEY_SET_YELLOW | KET_SET_BLUE |
+        int maxval = KEY_SET_RED | KEY_SET_GREEN | KEY_SET_YELLOW | KEY_SET_BLUE |
                 KEY_SET_NAVIGATION | KEY_SET_VCR | KEY_SET_NUMERIC;
         Json::Value responseObj;
         responseObj["result"] = maxval;
