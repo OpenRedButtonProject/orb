@@ -20,7 +20,7 @@
 #include <sys/sysinfo.h>
 
 #include "Network.hpp"
-#include "log.h"
+#include "log.hpp"
 
 using namespace std;
 

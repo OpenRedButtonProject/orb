@@ -60,6 +60,11 @@ public:
      */
     virtual void dispatchEvent(const std::string& etype, const std::string& properties) = 0;
 
+    /**
+     * Notify ORB Client of change of key set
+     */
+    virtual void notifyKeySetChange(uint16_t keyset, std::vector<uint16_t> otherkeys) = 0;
+
 }; // class IOrbBrowser
 
 } // namespace orb

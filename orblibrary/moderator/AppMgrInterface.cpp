@@ -23,7 +23,7 @@
 #include "AppMgrInterface.hpp"
 #include "app_mgr/application_manager.h"
 #include "JsonUtil.h"
-#include "log.h"
+#include "log.hpp"
 
 #define LINKED_APP_SCHEME_1_1 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.1"
 
@@ -31,6 +31,23 @@ using namespace std;
 
 namespace orb
 {
+
+const string MANAGER_CREATE_APP = "createApplication";
+const string MANAGER_DESTROY_APP = "destroyApplication";
+const string MANAGER_SHOW_APP = "showApplication";
+const string MANAGER_HIDE_APP = "hideApplication";
+const string MANAGER_GET_APP_IDS = "getRunningAppIds";
+const string MANAGER_GET_APP_URL = "getApplicationUrl";
+const string MANAGER_GET_APP_SCHEME = "getApplicationScheme";
+const string MANAGER_GET_FREE_MEM = "getFreeMem";
+const string MANAGER_GET_KEY_VALUES = "getKeyValues";
+const string MANAGER_GET_OKEY_VALUES = "getOtherKeyValues";
+const string MANAGER_GET_KEY_MAX_VAL = "getKeyMaximumValue";
+const string MANAGER_GET_MAX_OKEYS = "getKeyMaximumOtherKeys";
+const string MANAGER_SET_KEY_VALUE = "setKeyValue";
+const string MANAGER_GET_KEY_ICON = "getKeyIcon";
+
+const int KEY_OTHERS_MAX = 0x416; // temporary value based on v1.0
 
 AppMgrInterface::AppMgrInterface(IOrbBrowser* browser, ApplicationType apptype)
     : mOrbBrowser(browser)
@@ -42,49 +59,140 @@ AppMgrInterface::AppMgrInterface(IOrbBrowser* browser, ApplicationType apptype)
 
 string AppMgrInterface::executeRequest(string method, Json::Value token, Json::Value params)
 {
-    // TODO Set up proper responses
-    string response = R"({"Response": "AppMgrInterface request [)" + method + R"(] not implemented"})";
+    auto buildJsonResponse = [](const Json::Value &value) -> std::string {
+      Json::Value responseObj;
+      responseObj["result"] = value;
+      return JsonUtil::convertJsonToString(responseObj);
+    };
 
     std::lock_guard<std::mutex> lock(mMutex);
-    ApplicationManager::instance().SetCurrentInterface(mAppType);
+    string response = buildJsonResponse(""); // default response
+
+    auto &appMgr = ApplicationManager::instance();
+    int appId = JsonUtil::getIntegerValue(params, "id");
+
+    appMgr.SetCurrentInterface(mAppType);
 
     LOGI("Request with method [" + method + "] received");
-    if (method == "createApplication")
+    if (method == MANAGER_CREATE_APP)
     {
-        LOGI("app type: ") << mAppType;
+        int newAppId = appMgr.CreateApplication(
+          appId, JsonUtil::getStringValue(params, "url"), JsonUtil::getBoolValue(params, "runAsOpApp"));
+
+        if (newAppId == INVALID_APP_ID)
+        {
+          LOGE("Failed to create application with ID " << appId);
+          response = buildJsonResponse("Failed to create application with ID " + std::to_string(appId));
+        }
+        else
+        {
+          LOGI("app type: " << mAppType << " new AppID" << newAppId);
+          response = buildJsonResponse(newAppId);
+        }
     }
-    else if (method == "destroyApplication")
+    else if (method == MANAGER_DESTROY_APP)
     {
-        // no response
-        LOGI("");
+        appMgr.DestroyApplication(appId);
+        // no response needed
     }
-    else if (method == "showApplication")
+    else if (method == MANAGER_SHOW_APP)
     {
-        // no response
-        LOGI("");
+        appMgr.ShowApplication(appId);
+        // no response needed
     }
-    else if (method == "hideApplication")
+    else if (method == MANAGER_HIDE_APP)
     {
-        // no response
-        LOGI("");
+        appMgr.HideApplication(appId);
+        // no response needed
     }
-    else if (method == "searchOwner")
+    else if (method == MANAGER_GET_APP_IDS)
     {
-        // no response
-        LOGI("");
+        // Get running app IDs from ApplicationManager
+        std::vector<int> runningAppIds = appMgr.GetRunningAppIds();
+
+        // Create JSON response with array of integers
+        Json::Value resultArray = Json::Value(Json::arrayValue);
+        for (int id : runningAppIds) {
+            resultArray.append(Json::Value(id));
+        }
+
+        LOGI("getRunningAppIds: returned " << runningAppIds.size() << " app IDs");
+        response = buildJsonResponse(resultArray);
     }
-    else if (method == "getRunningAppIds")
+    else if (method == MANAGER_GET_APP_URL)
     {
-        // TODO implement
-        //LOGI("");
-        response = R"({"result": []})";
+        response = buildJsonResponse(appMgr.GetApplicationUrl(appId));
+    }
+    else if (method == MANAGER_GET_APP_SCHEME)
+    {
+        response = buildJsonResponse(appMgr.GetApplicationScheme(appId));
+    }
+    else if (method == MANAGER_SET_KEY_VALUE)
+    {
+        uint16_t keyset = JsonUtil::getIntegerValue(params, "value");
+        std::vector<uint16_t> otherkeys = JsonUtil::getIntegerArray(params, "otherKeys");
+        uint16_t kMask = appMgr.SetKeySetMask(appId, keyset, otherkeys);
+        if (kMask > 0) {
+            mOrbBrowser->notifyKeySetChange(keyset, otherkeys);
+        }
+    }
+    else if (method == MANAGER_GET_KEY_VALUES)
+    {
+        uint16_t keyset = appMgr.GetKeySetMask(appId);
+
+        response = buildJsonResponse(keyset);
+    }
+    else if (method == MANAGER_GET_OKEY_VALUES)
+    {
+        std::vector<uint16_t> otherkeys = appMgr.GetOtherKeyValues(appId);
+
+        // Create JSON response with array of other key values
+        Json::Value resultArray = Json::Value(Json::arrayValue);
+        for (uint16_t keyValue : otherkeys) {
+            resultArray.append(Json::Value(keyValue));
+        }
+
+        response = buildJsonResponse(resultArray);
+
+        LOGI("return: " << otherkeys.size() << " other key values");
+    }
+    else if (method == MANAGER_GET_KEY_MAX_VAL)
+    {
+        int maxval = KEY_SET_RED | KEY_SET_GREEN | KEY_SET_YELLOW | KEY_SET_BLUE |
+                KEY_SET_NAVIGATION | KEY_SET_VCR | KEY_SET_NUMERIC;
+        response = buildJsonResponse(maxval);
+    }
+    else if (method == MANAGER_GET_MAX_OKEYS)
+    {
+        response = buildJsonResponse(KEY_OTHERS_MAX);
+    }
+    else if (method == MANAGER_GET_KEY_ICON)
+    {
+        response = buildJsonResponse("AppMgrInterface; method [" + method + "] unsupported");
+    }
+    else if (method == MANAGER_GET_FREE_MEM)
+    {
+        response = buildJsonResponse("AppMgrInterface; method [" + method + "] unsupported");
     }
     else
     {
         LOGI("Unknown method: " << method);
+        response = buildJsonResponse("AppMgrInterface; method [" + method + "] unknown");
     }
 
     return response;
+}
+
+void AppMgrInterface::onNetworkStatusChange(bool available) {
+    std::lock_guard<std::mutex> lock(mMutex);
+    ApplicationManager::instance().SetCurrentInterface(mAppType);
+    ApplicationManager::instance().OnNetworkAvailabilityChanged(available);
+}
+
+void AppMgrInterface::onChannelChange(uint16_t onetId, uint16_t transId, uint16_t serviceId) {
+    std::lock_guard<std::mutex> lock(mMutex);
+    ApplicationManager::instance().SetCurrentInterface(mAppType);
+    ApplicationManager::instance().OnChannelChanged(onetId, transId, serviceId);
 }
 
 void AppMgrInterface::processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section) {
@@ -102,23 +210,23 @@ void AppMgrInterface::processXmlAit(const std::vector<uint8_t>& xmlait) {
 
 // ApplicationSessionCallback implementation
 void AppMgrInterface::LoadApplication(const int appId, const char *entryUrl) {
-    LOGI("appID: " << appId << ", url: " << entryUrl);
+    LOGI("Apptyp: " << mAppType << ", appID: " << appId << ", url: " << entryUrl);
     mOrbBrowser->loadApplication(std::to_string(appId), entryUrl);
 }
 
 void AppMgrInterface::LoadApplication(const int appId, const char *entryUrl, int size, const std::vector<uint16_t> graphics) {
-    LOGI("appID: " << appId << ", url: " << entryUrl);
+    LOGI("Apptyp: " << mAppType << ", appID: " << appId << ", url: " << entryUrl);
     // TODO: need a different API to add extra params
     mOrbBrowser->loadApplication(std::to_string(appId), entryUrl);
 }
 
 void AppMgrInterface::ShowApplication(const int appId) {
-    LOGI("appID: " << appId);
+    LOGI("Apptyp: " << mAppType << ", appID: " << appId);
     mOrbBrowser->showApplication();
 }
 
 void AppMgrInterface::HideApplication(const int appId) {
-    LOGI("appID: " << appId);
+    LOGI("Apptyp: " << mAppType << ", appID: " << appId);
     mOrbBrowser->hideApplication();
 }
 

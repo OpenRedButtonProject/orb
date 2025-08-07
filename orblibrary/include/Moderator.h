@@ -36,6 +36,10 @@ public:
     Moderator(IOrbBrowser* browser, ApplicationType apptype);
     ~Moderator();
 
+    // ----------------------------------------------------------
+    // Interface functions to process messages from JS or Browser
+    // ----------------------------------------------------------
+
     /** Handle ORB request from Javascript.
      * The request is a string representation of a JSON object with the following form:
      * {
@@ -57,9 +61,11 @@ public:
     // Notify that URL has failed to load for an application
     void notifyApplicationLoadFailed(std::string url, std::string errorText);
 
-    // -----------------------------------------------
-    // Interface functions provided to DVB integration
-    // -----------------------------------------------
+    // --------------------------------------------------------
+    // Interface functions to process messages from Live TV app
+    // --------------------------------------------------------
+
+    bool handleBridgeEvent(const std::string& etype, const std::string& properties);
     void processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section);
     void processXmlAit(const std::vector<uint8_t>& xmlait);
 

@@ -20,7 +20,7 @@
 #include <sys/sysinfo.h>
 
 #include "MediaSynchroniser.hpp"
-#include "log.h"
+#include "log.hpp"
 
 using namespace std;
 

@@ -175,7 +175,7 @@ public:
      * @param isDvbi true when the caller a DVB-I application.
      * @param scheme The linked application scheme.
      *
-     * @return true if the application can be created, otherwise false
+     * @return The id of the newly created application. In case of failure, INVALID_APP_ID is returned.
      */
     int ProcessXmlAit(const std::string &xmlAit, const bool isDvbi = false,
         const std::string &scheme = LINKED_APP_SCHEME_1_1);

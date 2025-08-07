@@ -20,7 +20,7 @@
 #include <sys/sysinfo.h>
 
 #include "BroadcastInterface.hpp"
-#include "log.h"
+#include "log.hpp"
 #include "IOrbBrowser.h"
 
 #define EMPTY_STRING ""
@@ -257,13 +257,13 @@ void BroadcastInterface::DispatchStreamEvent(const int id, const std::string nam
         << text << ", status: " << status);
     Json::StreamWriterBuilder writerBuilder;
     Json::Value prop;
-    
+
     Json::Value dash;
     dash["id"] = dashEvent.id;
     dash["startTime"] = dashEvent.startTime;
     dash["duration"] = dashEvent.duration;
     dash["contentEncoding"] = dashEvent.contentEncoding;
-        
+
     writerBuilder["indentation"] = EMPTY_STRING; // optional?
     prop["id"] = id;
     prop["name"] = name.c_str();
