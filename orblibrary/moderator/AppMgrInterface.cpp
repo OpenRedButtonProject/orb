@@ -59,100 +59,92 @@ AppMgrInterface::AppMgrInterface(IOrbBrowser* browser, ApplicationType apptype)
 
 string AppMgrInterface::executeRequest(string method, Json::Value token, Json::Value params)
 {
-    Json::CharReaderBuilder builder;
-    string response;
+    auto buildJsonResponse = [](const Json::Value &value) -> std::string {
+      Json::Value responseObj;
+      responseObj["result"] = value;
+      return JsonUtil::convertJsonToString(responseObj);
+    };
 
     std::lock_guard<std::mutex> lock(mMutex);
-    ApplicationManager::instance().SetCurrentInterface(mAppType);
+    string response = buildJsonResponse(""); // default response
+
+    auto &appMgr = ApplicationManager::instance();
+    int appId = JsonUtil::getIntegerValue(params, "id");
+
+    appMgr.SetCurrentInterface(mAppType);
 
     LOGI("Request with method [" + method + "] received");
     if (method == MANAGER_CREATE_APP)
     {
-        int appId =
-            ApplicationManager::instance().CreateApplication(
-                JsonUtil::getIntegerValue(params, "id"),
-                JsonUtil::getStringValue(params, "url"),
-                JsonUtil::getBoolValue(params, "runAsOpApp"));
+        int newAppId = appMgr.CreateApplication(
+          appId, JsonUtil::getStringValue(params, "url"), JsonUtil::getBoolValue(params, "runAsOpApp"));
 
-        LOGI("app type: " << mAppType << " new AppID" << appId);
-
-        Json::Value responseObj;
-        responseObj["result"] = appId;
-        response = JsonUtil::convertJsonToString(responseObj);
+        if (newAppId == INVALID_APP_ID)
+        {
+          LOGE("Failed to create application with ID " << appId);
+          response = buildJsonResponse("Failed to create application with ID " + std::to_string(appId));
+        }
+        else
+        {
+          LOGI("app type: " << mAppType << " new AppID" << newAppId);
+          response = buildJsonResponse(newAppId);
+        }
     }
     else if (method == MANAGER_DESTROY_APP)
     {
-        ApplicationManager::instance().DestroyApplication(JsonUtil::getIntegerValue(params, "id"));
+        appMgr.DestroyApplication(appId);
         // no response needed
     }
     else if (method == MANAGER_SHOW_APP)
     {
-        ApplicationManager::instance().ShowApplication(JsonUtil::getIntegerValue(params, "id"));
+        appMgr.ShowApplication(appId);
         // no response needed
     }
     else if (method == MANAGER_HIDE_APP)
     {
-        ApplicationManager::instance().HideApplication(JsonUtil::getIntegerValue(params, "id"));
+        appMgr.HideApplication(appId);
         // no response needed
     }
     else if (method == MANAGER_GET_APP_IDS)
     {
         // Get running app IDs from ApplicationManager
-        std::vector<int> runningAppIds = ApplicationManager::instance().GetRunningAppIds();
+        std::vector<int> runningAppIds = appMgr.GetRunningAppIds();
 
         // Create JSON response with array of integers
         Json::Value resultArray = Json::Value(Json::arrayValue);
-        for (int appId : runningAppIds) {
-            resultArray.append(Json::Value(appId));
+        for (int id : runningAppIds) {
+            resultArray.append(Json::Value(id));
         }
 
-        Json::Value responseObj;
-        responseObj["result"] = resultArray;
-        response = JsonUtil::convertJsonToString(responseObj);
-
         LOGI("getRunningAppIds: returned " << runningAppIds.size() << " app IDs");
+        response = buildJsonResponse(resultArray);
     }
     else if (method == MANAGER_GET_APP_URL)
     {
-        std::string url =
-            ApplicationManager::instance().GetApplicationUrl(JsonUtil::getIntegerValue(params, "id"));
-
-        Json::Value responseObj;
-        responseObj["result"] = url;
-        response = JsonUtil::convertJsonToString(responseObj);
+        response = buildJsonResponse(appMgr.GetApplicationUrl(appId));
     }
     else if (method == MANAGER_GET_APP_SCHEME)
     {
-        std::string scheme =
-            ApplicationManager::instance().GetApplicationScheme(JsonUtil::getIntegerValue(params, "id"));
-
-        Json::Value responseObj;
-        responseObj["result"] = scheme;
-        response = JsonUtil::convertJsonToString(responseObj);
+        response = buildJsonResponse(appMgr.GetApplicationScheme(appId));
     }
     else if (method == MANAGER_SET_KEY_VALUE)
     {
         uint16_t keyset = JsonUtil::getIntegerValue(params, "value");
         std::vector<uint16_t> otherkeys = JsonUtil::getIntegerArray(params, "otherKeys");
-        uint16_t kMask = ApplicationManager::instance().SetKeySetMask(
-                JsonUtil::getIntegerValue(params, "id"), keyset, otherkeys);
+        uint16_t kMask = appMgr.SetKeySetMask(appId, keyset, otherkeys);
         if (kMask > 0) {
             mOrbBrowser->notifyKeySetChange(keyset, otherkeys);
         }
     }
     else if (method == MANAGER_GET_KEY_VALUES)
     {
-        uint16_t keyset =
-            ApplicationManager::instance().GetKeySetMask(JsonUtil::getIntegerValue(params, "id"));
+        uint16_t keyset = appMgr.GetKeySetMask(appId);
 
-        Json::Value responseObj;
-        responseObj["result"] = keyset;
-        response = JsonUtil::convertJsonToString(responseObj);
+        response = buildJsonResponse(keyset);
     }
     else if (method == MANAGER_GET_OKEY_VALUES)
     {
-        std::vector<uint16_t> otherkeys =
-            ApplicationManager::instance().GetOtherKeyValues(JsonUtil::getIntegerValue(params, "id"));
+        std::vector<uint16_t> otherkeys = appMgr.GetOtherKeyValues(appId);
 
         // Create JSON response with array of other key values
         Json::Value resultArray = Json::Value(Json::arrayValue);
@@ -160,9 +152,7 @@ string AppMgrInterface::executeRequest(string method, Json::Value token, Json::V
             resultArray.append(Json::Value(keyValue));
         }
 
-        Json::Value responseObj;
-        responseObj["result"] = resultArray;
-        response = JsonUtil::convertJsonToString(responseObj);
+        response = buildJsonResponse(resultArray);
 
         LOGI("return: " << otherkeys.size() << " other key values");
     }
@@ -170,29 +160,24 @@ string AppMgrInterface::executeRequest(string method, Json::Value token, Json::V
     {
         int maxval = KEY_SET_RED | KEY_SET_GREEN | KEY_SET_YELLOW | KEY_SET_BLUE |
                 KEY_SET_NAVIGATION | KEY_SET_VCR | KEY_SET_NUMERIC;
-        Json::Value responseObj;
-        responseObj["result"] = maxval;
-        response = JsonUtil::convertJsonToString(responseObj);
+        response = buildJsonResponse(maxval);
     }
     else if (method == MANAGER_GET_MAX_OKEYS)
     {
-        int maxval = KEY_OTHERS_MAX;
-        Json::Value responseObj;
-        responseObj["result"] = maxval;
-        response = JsonUtil::convertJsonToString(responseObj);
+        response = buildJsonResponse(KEY_OTHERS_MAX);
     }
     else if (method == MANAGER_GET_KEY_ICON)
     {
-        response = R"({"Response": "AppMgrInterface; method [)" + method + R"(] unsupported"})";
+        response = buildJsonResponse("AppMgrInterface; method [" + method + "] unsupported");
     }
     else if (method == MANAGER_GET_FREE_MEM)
     {
-        response = R"({"Response": "AppMgrInterface; method [)" + method + R"(] unsupported"})";
+        response = buildJsonResponse("AppMgrInterface; method [" + method + "] unsupported");
     }
     else
     {
         LOGI("Unknown method: " << method);
-        response = R"({"Response": "AppMgrInterface; method [)" + method + R"(] unknown"})";
+        response = buildJsonResponse("AppMgrInterface; method [" + method + "] unknown");
     }
 
     return response;
