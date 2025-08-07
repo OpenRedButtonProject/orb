@@ -57,14 +57,14 @@ int JsonUtil::getIntegerValue(const Json::Value& json, const std::string& key)
     if (!json.isMember(key))
     {
         LOGE("Key '" << key << "' not found in JSON object");
-        return 0;
+        return 0; // default value
     }
 
     const Json::Value& value = json[key];
     if (!value.isInt())
     {
         LOGE("Value for key '" << key << "' is not an integer");
-        return 0;
+        return 0; // default value
     }
 
     return value.asInt();
@@ -129,14 +129,14 @@ std::vector<uint16_t> JsonUtil::getIntegerArray(const Json::Value& json, const s
             LOGE("Array element is not a string in key '" << key << "'");
             return {};
         }
-        
+
         const std::string& strValue = element.asString();
         if (strValue.empty())
         {
             LOGE("Array element is empty string in key '" << key << "'");
             return {};
         }
-        
+
         // Check if string contains only digits (no negative numbers for uint16_t)
         bool isValid = true;
         for (size_t i = 0; i < strValue.length(); ++i)
@@ -147,19 +147,19 @@ std::vector<uint16_t> JsonUtil::getIntegerArray(const Json::Value& json, const s
                 break;
             }
         }
-        
+
         if (!isValid)
         {
             LOGE("Array element '" << strValue << "' cannot be converted to uint16_t in key '" << key << "'");
             return {};
         }
-        
+
         // Manual conversion to avoid exceptions
         uint16_t uintValue = 0;
         for (size_t i = 0; i < strValue.length(); ++i)
         {
             uintValue = uintValue * 10 + (strValue[i] - '0');
-            
+
             // Check for overflow (uint16_t max value is 65535)
             if (uintValue > 65535)
             {
@@ -167,7 +167,7 @@ std::vector<uint16_t> JsonUtil::getIntegerArray(const Json::Value& json, const s
                 return {};
             }
         }
-        
+
         result.push_back(uintValue);
     }
 
