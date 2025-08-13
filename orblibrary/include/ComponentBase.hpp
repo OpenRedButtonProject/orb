@@ -13,45 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef CONFIGURATION_H
-#define CONFIGURATION_H
+#pragma once
 
 #include <string>
 #include <json/json.h>
-#include <memory>
-#include "ComponentBase.hpp"
-#include "OrbConstants.h"
-#include "IPlatform.h"
 
 namespace orb
 {
 
-class Configuration : public ComponentBase
+class ComponentBase
 {
 public:
-    explicit Configuration(std::shared_ptr<IPlatform> platform);
-    virtual ~Configuration() {}
+    ComponentBase() {}
+    virtual ~ComponentBase() {}
+
+    ComponentBase (const ComponentBase&) = delete;
+    ComponentBase& operator= (const ComponentBase&) = delete;
 
     /**
-     * Configuration component request handler
+     * ComponentBase request
      *
-     * @param method Configuration's method
+     * @param method ComponentBase's method
      * @param token TODO to be replaced by application ID
      * @param params JSON params. TODO add details
      *
      * @return JSON encoded response string
      */
-    std::string executeRequest(std::string method, Json::Value token, Json::Value params) override;
+    virtual std::string executeRequest(std::string method, Json::Value token, Json::Value params) = 0;
 
-private:
-    Json::Value handleGetCapabilities();
-    Json::Value handleGetAudioProfiles();
-    Json::Value handleGetVideoProfiles();
-
-private:
-    std::shared_ptr<IPlatform> mPlatform;
-}; // class Configuration
+}; // class ComponentBase
 
 } // namespace orb
-
-#endif // CONFIGURATION_H

@@ -5,70 +5,20 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ConfigurationUtil.h"
+#include "third_party/orb/orblibrary/moderator/PlatformAndroid.h"
 
 class ConfigurationUtilTest : public ::testing::Test {
 protected:
     void SetUp() override {
         // Test setup if needed
+        mPlatform = std::make_shared<orb::AndroidPlatform>(orb::ApplicationType::APP_TYPE_HBBTV);
     }
 
     void TearDown() override {
         // Test cleanup if needed
     }
+    std::shared_ptr<orb::IPlatform> mPlatform;
 };
-
-TEST_F(ConfigurationUtilTest, TestCreateDefaultCapabilities_HbbTV) {
-    // GIVEN: ApplicationType::HbbTV
-    // WHEN: createDefaultCapabilities is called with HbbTV application type
-    auto capabilities = orb::ConfigurationUtil::createDefaultCapabilities(orb::ApplicationType::APP_TYPE_HBBTV);
-
-    // THEN: a valid Capabilities object is returned
-    EXPECT_NE(capabilities, nullptr);
-    EXPECT_FALSE(capabilities->m_optionStrings.empty());
-    EXPECT_FALSE(capabilities->m_profileNameFragments.empty());
-    EXPECT_FALSE(capabilities->m_parentalSchemes.empty());
-    EXPECT_FALSE(capabilities->m_displaySizeWidth.empty());
-    EXPECT_FALSE(capabilities->m_displaySizeHeight.empty());
-    EXPECT_FALSE(capabilities->m_displaySizeMeasurementType.empty());
-
-    // Verify JSON RPC server URL is set correctly for HbbTV
-    EXPECT_FALSE(capabilities->m_jsonRpcServerUrl.empty());
-    EXPECT_FALSE(capabilities->m_jsonRpcServerVersion.empty());
-}
-
-TEST_F(ConfigurationUtilTest, TestCreateDefaultCapabilities_OpApp) {
-    // GIVEN: ApplicationType::OpApp
-    // WHEN: createDefaultCapabilities is called with OpApp application type
-    auto capabilities = orb::ConfigurationUtil::createDefaultCapabilities(orb::ApplicationType::APP_TYPE_OPAPP);
-
-    // THEN: a valid Capabilities object is returned
-    EXPECT_NE(capabilities, nullptr);
-    EXPECT_FALSE(capabilities->m_optionStrings.empty());
-    EXPECT_FALSE(capabilities->m_profileNameFragments.empty());
-    EXPECT_FALSE(capabilities->m_parentalSchemes.empty());
-    EXPECT_FALSE(capabilities->m_displaySizeWidth.empty());
-    EXPECT_FALSE(capabilities->m_displaySizeHeight.empty());
-    EXPECT_FALSE(capabilities->m_displaySizeMeasurementType.empty());
-
-    // Verify JSON RPC server URL is set correctly for OpApp (different port)
-    EXPECT_FALSE(capabilities->m_jsonRpcServerUrl.empty());
-    EXPECT_FALSE(capabilities->m_jsonRpcServerVersion.empty());
-}
-
-TEST_F(ConfigurationUtilTest, TestCreateDefaultAudioProfiles) {
-    // GIVEN: ConfigurationUtil class
-    // WHEN: createDefaultAudioProfiles is called
-    auto audioProfiles = orb::ConfigurationUtil::createDefaultAudioProfiles();
-
-    // THEN: a non-empty vector of AudioProfile objects is returned
-    EXPECT_FALSE(audioProfiles.empty());
-
-    // Verify each audio profile has required fields
-    for (const auto& profile : audioProfiles) {
-        EXPECT_FALSE(profile.m_name.empty());
-        EXPECT_FALSE(profile.m_type.empty());
-    }
-}
 
 TEST_F(ConfigurationUtilTest, TestCreateAudioProfile) {
     // GIVEN: audio profile parameters
@@ -87,21 +37,6 @@ TEST_F(ConfigurationUtilTest, TestCreateAudioProfile) {
     EXPECT_EQ(audioProfile.m_transport, transport);
     EXPECT_EQ(audioProfile.m_syncTl, syncTl);
     EXPECT_EQ(audioProfile.m_drmSystemId, drmSystemId);
-}
-
-TEST_F(ConfigurationUtilTest, TestCreateDefaultVideoProfiles) {
-    // GIVEN: ConfigurationUtil class
-    // WHEN: createDefaultVideoProfiles is called
-    auto videoProfiles = orb::ConfigurationUtil::createDefaultVideoProfiles();
-
-    // THEN: a non-empty vector of VideoProfile objects is returned
-    EXPECT_FALSE(videoProfiles.empty());
-
-    // Verify each video profile has required fields
-    for (const auto& profile : videoProfiles) {
-        EXPECT_FALSE(profile.m_name.empty());
-        EXPECT_FALSE(profile.m_type.empty());
-    }
 }
 
 TEST_F(ConfigurationUtilTest, TestCreateVideoProfile) {
@@ -125,22 +60,9 @@ TEST_F(ConfigurationUtilTest, TestCreateVideoProfile) {
     EXPECT_EQ(videoProfile.m_hdr, hdr);
 }
 
-TEST_F(ConfigurationUtilTest, TestCreateDefaultVideoDisplayFormat) {
-    // GIVEN: ConfigurationUtil class
-    // WHEN: createDefaultVideoDisplayFormat is called
-    auto videoDisplayFormat = orb::ConfigurationUtil::createDefaultVideoDisplayFormat();
-
-    // THEN: a VideoDisplayFormat object is returned with default values
-    EXPECT_EQ(videoDisplayFormat.m_width, 0);
-    EXPECT_EQ(videoDisplayFormat.m_height, 0);
-    EXPECT_EQ(videoDisplayFormat.m_frameRate, 0);
-    EXPECT_EQ(videoDisplayFormat.m_bitDepth, 0);
-    EXPECT_TRUE(videoDisplayFormat.m_colorimetry.empty());
-}
-
 TEST_F(ConfigurationUtilTest, TestCapabilitiesToJson) {
     // GIVEN: a Capabilities object
-    auto capabilities = orb::ConfigurationUtil::createDefaultCapabilities(orb::ApplicationType::APP_TYPE_HBBTV);
+    auto capabilities = mPlatform->Configuration_GetCapabilities();
 
     // WHEN: capabilitiesToJson is called
     Json::Value jsonResult = orb::ConfigurationUtil::capabilitiesToJson(*capabilities);
@@ -172,7 +94,7 @@ TEST_F(ConfigurationUtilTest, TestCapabilitiesToJson) {
 
 TEST_F(ConfigurationUtilTest, TestAudioProfilesToJson) {
     // GIVEN: a vector of AudioProfile objects
-    auto audioProfiles = orb::ConfigurationUtil::createDefaultAudioProfiles();
+    auto audioProfiles = mPlatform->Configuration_GetAudioProfiles();
 
     // WHEN: audioProfilesToJson is called
     Json::Value jsonResult = orb::ConfigurationUtil::audioProfilesToJson(audioProfiles);
@@ -193,7 +115,7 @@ TEST_F(ConfigurationUtilTest, TestAudioProfilesToJson) {
 
 TEST_F(ConfigurationUtilTest, TestVideoProfilesToJson) {
     // GIVEN: a vector of VideoProfile objects
-    auto videoProfiles = orb::ConfigurationUtil::createDefaultVideoProfiles();
+    auto videoProfiles = mPlatform->Configuration_GetVideoProfiles();
 
     // WHEN: videoProfilesToJson is called
     Json::Value jsonResult = orb::ConfigurationUtil::videoProfilesToJson(videoProfiles);
@@ -295,23 +217,6 @@ TEST_F(ConfigurationUtilTest, TestVideoProfilesToJson_EmptyVector) {
     // THEN: an empty JSON array is returned
     EXPECT_TRUE(jsonResult.isArray());
     EXPECT_TRUE(jsonResult.empty());
-}
-
-TEST_F(ConfigurationUtilTest, TestMultipleCapabilitiesCreation) {
-    // GIVEN: multiple application types
-    // WHEN: createDefaultCapabilities is called for each type
-    auto capabilities1 = orb::ConfigurationUtil::createDefaultCapabilities(orb::ApplicationType::APP_TYPE_HBBTV);
-    auto capabilities2 = orb::ConfigurationUtil::createDefaultCapabilities(orb::ApplicationType::APP_TYPE_OPAPP);
-    auto capabilities3 = orb::ConfigurationUtil::createDefaultCapabilities(orb::ApplicationType::APP_TYPE_HBBTV);
-
-    // THEN: all capabilities objects are created successfully
-    EXPECT_NE(capabilities1, nullptr);
-    EXPECT_NE(capabilities2, nullptr);
-    EXPECT_NE(capabilities3, nullptr);
-
-    // Verify they have different JSON RPC server URLs (different ports)
-    EXPECT_NE(capabilities1->m_jsonRpcServerUrl, capabilities2->m_jsonRpcServerUrl);
-    EXPECT_EQ(capabilities1->m_jsonRpcServerUrl, capabilities3->m_jsonRpcServerUrl);
 }
 
 TEST_F(ConfigurationUtilTest, TestJsonRpcServerUrlPorts) {

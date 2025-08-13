@@ -18,23 +18,33 @@
 #define OBS_NS_JSON_RPC_CALLBACK_H
 
 #include "JsonRpcService.h"
+#include "BroadcastInterface.hpp"
+#include <unordered_map>
+#include <memory>
+#include "base/memory/raw_ptr.h"
 
 namespace orb
 {
-namespace networkServices 
-{    
-    class JsonRpcCallback : public JsonRpcService::ISessionCallback 
+    const int SESSION_NO_ERROR = -999;
+    struct SessionInfo
+    {
+        int status;
+        int errorCode = SESSION_NO_ERROR;
+        Json::Value componentsInfo;
+    };
+
+    class JsonRpcCallback : public networkServices::JsonRpcService::ISessionCallback
     {
     public:
-        JsonRpcCallback() = default;
+        JsonRpcCallback(BroadcastInterface* broadcastInterface);
         virtual ~JsonRpcCallback() = default;
 
         // ISessionCallback interface
         void RequestNegotiateMethods() override;
 
-        void RequestSubscribe(const JsonRpcService::SubscribeOptions& options) override;
+        void RequestSubscribe(const networkServices::JsonRpcService::SubscribeOptions& options) override;
 
-        void RequestUnsubscribe(const JsonRpcService::SubscribeOptions& options) override;
+        void RequestUnsubscribe(const networkServices::JsonRpcService::SubscribeOptions& options) override;
 
         void RequestDialogueEnhancementOverride(
             int connectionId,
@@ -79,7 +89,7 @@ namespace networkServices
             int connectionId,
             std::string id,
             std::string method,
-            int sessionId) override;    
+            int sessionId) override;
 
         void ReceiveError(
             int code,
@@ -96,7 +106,7 @@ namespace networkServices
 
         void RequestIPPlaybackMediaPositionUpdate(
             const Json::Value &params) override;
-        
+
         void RequestIPPlaybackSetComponents(
             const Json::Value &params) override;
 
@@ -104,9 +114,13 @@ namespace networkServices
             const Json::Value &params) override;
 
         void RequestIPPlaybackSetTimelineMapping(
-            const Json::Value &params) override;   
-    }; 
-} // namespace networkServices
+            const Json::Value &params) override;
+
+    private:
+        std::unordered_map<int, SessionInfo> mSessionMap;
+        raw_ptr<BroadcastInterface> mBroadcastInterface;
+
+    };
 } // namespace orb
 
 #endif // OBS_NS_JSON_RPC_CALLBACK_H

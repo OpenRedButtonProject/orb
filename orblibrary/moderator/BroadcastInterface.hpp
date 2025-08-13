@@ -19,6 +19,8 @@
 #include <json/json.h>
 
 #include "ComponentBase.hpp"
+#include "IPlatform.h"
+#include "JsonRpcService.h"
 
 namespace orb
 {
@@ -42,7 +44,12 @@ public:
         std::string contentEncoding;
     };
 
-    explicit BroadcastInterface(IOrbBrowser* browser);
+    struct IPChannelSessionInfo {
+        int sessionId = -1;
+        Json::Value componentsInfo = Json::arrayValue;
+    };
+
+    explicit BroadcastInterface(IOrbBrowser* browser, std::shared_ptr<IPlatform> platform);
 
     /**
      * BroadcastInterface request
@@ -56,10 +63,10 @@ public:
     std::string executeRequest(std::string method, Json::Value token, Json::Value params) override;
 
     // BroadcastSessionCallback interface implementation
-    
+
     void DispatchChannelStatusChangedEvent(const int onetId, const int transId, const int servId,
-        const int statusCode, const bool permanentError);
-    
+        const int statusCode, const bool permanentError, int ipSessionId = -1);
+
     void DispatchServiceInstanceChangedEvent(const int index);
 
     void DispatchParentalRatingChangeEvent(const bool blocked);
@@ -74,9 +81,17 @@ public:
 
     void DispatchProgrammesChangedEvent();
 
+    void DispatchComponentChangedEvent(const int componentType, int ipSessionId = -1, Json::Value componentsInfo = Json::Value());
+
+    void SetWebSocketServer(std::shared_ptr<orb::networkServices::JsonRpcService> webSocketServer);
+
+    void CreateIPChannelSession(const int sessionId);
+
 private:
     IOrbBrowser *mOrbBrowser;
-
+    std::shared_ptr<IPlatform> mPlatform;
+    std::shared_ptr<orb::networkServices::JsonRpcService> mWebSocketServer;
+    std::unordered_map<std::string, IPChannelSessionInfo> mIPChannelSessionMap;
 }; // class BroadcastInterface
 
 } // namespace orb

@@ -30,11 +30,13 @@
 #endif
 
 
-namespace orb { 
+namespace orb {
 namespace networkServices {
-    
+
 #define LOGI(str)   LOG(INFO) << __FUNCTION__ << "," << __LINE__ << ": " << str
+#define LOGW(str)   LOG(WARNING) << __FUNCTION__ << "," << __LINE__ << ": " << str
 #define LOGE(str)   LOG(ERROR) << __FUNCTION__ << "," << __LINE__ << ": " << str
+#define LOGD(str)   DLOG(INFO) << __FUNCTION__ << "," << __LINE__ << ": " << str
 #define ENTER "ENTER"
 #define LEAVE "LEAVE"
 

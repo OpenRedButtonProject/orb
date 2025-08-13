@@ -5,12 +5,14 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "Configuration.h"
 #include "ConfigurationUtil.h"
+#include "third_party/orb/orblibrary/moderator/PlatformAndroid.h"
 
 class ConfigurationTest : public ::testing::Test {
 protected:
     void SetUp() override {
         // Create a Configuration instance for testing
-        m_configuration = std::make_unique<orb::Configuration>(orb::ApplicationType::APP_TYPE_HBBTV);
+        m_platform = std::make_shared<orb::AndroidPlatform>(orb::ApplicationType::APP_TYPE_VIDEO);
+        m_configuration = std::make_unique<orb::Configuration>(m_platform);
     }
 
     void TearDown() override {
@@ -18,6 +20,7 @@ protected:
     }
 
     std::unique_ptr<orb::Configuration> m_configuration;
+    std::shared_ptr<orb::IPlatform> m_platform;
 };
 
 TEST_F(ConfigurationTest, TestExecuteRequest_GetCapabilities) {
@@ -198,54 +201,4 @@ TEST_F(ConfigurationTest, TestExecuteRequest_AllMethods) {
         bool parseSuccess = Json::parseFromStream(reader, responseStream, &jsonResponse, &errors);
         EXPECT_TRUE(parseSuccess) << "Failed to parse response JSON for method " << method << ": " << errors;
     }
-}
-
-TEST_F(ConfigurationTest, TestConstructor_WithApplicationType) {
-    // GIVEN: ApplicationType::HbbTV
-    // WHEN: Configuration is constructed with HbbTV application type
-    orb::Configuration config(orb::ApplicationType::APP_TYPE_HBBTV);
-
-    // THEN: object is created successfully
-    EXPECT_TRUE(true); // If we get here, construction succeeded
-}
-
-TEST_F(ConfigurationTest, TestConstructor_WithOpAppApplicationType) {
-    // GIVEN: ApplicationType::OpApp
-    // WHEN: Configuration is constructed with OpApp application type
-    orb::Configuration config(orb::ApplicationType::APP_TYPE_OPAPP);
-
-    // THEN: object is created successfully
-    EXPECT_TRUE(true); // If we get here, construction succeeded
-}
-
-TEST_F(ConfigurationTest, TestDestructor) {
-    // GIVEN: a Configuration object
-    // WHEN: object goes out of scope
-    {
-        orb::Configuration config(orb::ApplicationType::APP_TYPE_HBBTV);
-        // Object is automatically destroyed when scope ends
-    }
-
-    // THEN: no exceptions are thrown during destruction
-    EXPECT_TRUE(true); // If we get here, destruction succeeded
-}
-
-TEST_F(ConfigurationTest, TestMultipleInstances) {
-    // GIVEN: multiple Configuration instances
-    // WHEN: multiple instances are created
-    orb::Configuration config1(orb::ApplicationType::APP_TYPE_HBBTV);
-    orb::Configuration config2(orb::ApplicationType::APP_TYPE_OPAPP);
-    orb::Configuration config3(orb::ApplicationType::APP_TYPE_HBBTV);
-
-    // THEN: all instances work independently
-    Json::Value token;
-    Json::Value params;
-
-    std::string response1 = config1.executeRequest("getCapabilities", token, params);
-    std::string response2 = config2.executeRequest("getCapabilities", token, params);
-    std::string response3 = config3.executeRequest("getCapabilities", token, params);
-
-    EXPECT_FALSE(response1.empty());
-    EXPECT_FALSE(response2.empty());
-    EXPECT_FALSE(response3.empty());
 }

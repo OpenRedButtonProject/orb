@@ -28,10 +28,10 @@ const string CONFIGURATION_GET_CAPABILITIES = "getCapabilities";
 const string CONFIGURATION_GET_AUDIO_PROFILES = "getAudioProfiles";
 const string CONFIGURATION_GET_VIDEO_PROFILES = "getVideoProfiles";
 
-Configuration::Configuration(ApplicationType apptype)
-    : ComponentBase(), mAppType(apptype)
+Configuration::Configuration(std::shared_ptr<IPlatform> platform)
+    : ComponentBase(), mPlatform(platform)
 {
-    LOGI("Configuration constructor - apptype: " << apptype);
+    LOGI("Configuration constructor");
 }
 
 string Configuration::executeRequest(string method, Json::Value token, Json::Value params)
@@ -56,25 +56,25 @@ string Configuration::executeRequest(string method, Json::Value token, Json::Val
     // TODO: Implement configuration-specific methods
     // For now, return a basic response indicating the method was received
     string responseString = JsonUtil::convertJsonToString(response);
-    LOGI("Configuration::executeRequest - response: " << responseString);
+    // LOGI("Configuration::executeRequest - response: " << responseString);
     return responseString;
 }
 
 Json::Value Configuration::handleGetCapabilities()
 {
-    std::shared_ptr<Capabilities> capabilities = ConfigurationUtil::createDefaultCapabilities(mAppType);
+    std::shared_ptr<Capabilities> capabilities = mPlatform->Configuration_GetCapabilities();
     return ConfigurationUtil::capabilitiesToJson(*capabilities);
 }
 
 Json::Value Configuration::handleGetAudioProfiles()
 {
-    std::vector<AudioProfile> audioProfiles = ConfigurationUtil::createDefaultAudioProfiles();
+    std::vector<AudioProfile> audioProfiles = mPlatform->Configuration_GetAudioProfiles();
     return ConfigurationUtil::audioProfilesToJson(audioProfiles);
 }
 
 Json::Value Configuration::handleGetVideoProfiles()
 {
-    std::vector<VideoProfile> videoProfiles = ConfigurationUtil::createDefaultVideoProfiles();
+    std::vector<VideoProfile> videoProfiles = mPlatform->Configuration_GetVideoProfiles();
     return ConfigurationUtil::videoProfilesToJson(videoProfiles);
 }
 

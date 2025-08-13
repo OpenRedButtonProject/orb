@@ -28,79 +28,6 @@ const int JSON_RPC_SERVER_PORT = 8910;
 const string JSON_RPC_ENDPOINT = "/hbbtv/" + ConfigurationUtil::generateRandomNumberStr() + "/";
 const string JSON_RPC_SERVER_VERSION = "1.7.1";
 
-std::shared_ptr<Capabilities> ConfigurationUtil::createDefaultCapabilities(ApplicationType apptype)
-{
-
-    // TODO: This is a mock implementation.
-    std::shared_ptr<Capabilities> capabilities = std::make_shared<Capabilities>();
-
-    std::vector<std::string> optionStrings;
-    optionStrings.push_back("+PVR");
-    optionStrings.push_back("+DRM");
-
-    std::vector<std::string> profileNameFragments;
-    profileNameFragments.push_back("+TRICKMODE"); // +ITV_KEYS is inherited from the base profile
-    profileNameFragments.push_back("+DVB_T");
-    profileNameFragments.push_back("+DVB_T2");
-    profileNameFragments.push_back("+DVB_S");
-    profileNameFragments.push_back("+DVB_S2");
-
-    std::vector<std::string> parentalSchemes;
-    parentalSchemes.push_back("dvb-si");
-
-    std::vector<std::string> graphicsLevels;
-    graphicsLevels.push_back("urn:hbbtv:graphics:performance:level1");
-    graphicsLevels.push_back("urn:hbbtv:graphics:performance:level2");
-
-    std::vector<std::string> broadcastUrns;
-    broadcastUrns.push_back("urn:dvb:broadcast:ird:video:25_Hz_H.264_AVC_HDTV_IRD");
-    broadcastUrns.push_back("urn:dvb:broadcast:ird:video:30_Hz_H.264_AVC_HDTV_IRD");
-    broadcastUrns.push_back("urn:dvb:broadcast:ird:video:50_Hz_H.264_AVC_HDTV_IRD");
-    broadcastUrns.push_back("urn:dvb:broadcast:ird:video:60_Hz_H.264_AVC_HDTV_IRD");
-    broadcastUrns.push_back("urn:dvb:broadcast:ird:video:50_Hz_HEVC_HDTV_8-bit_IRD");
-    broadcastUrns.push_back("urn:dvb:broadcast:ird:video:60_Hz_HEVC_HDTV_8-bit_IRD");
-
-    broadcastUrns.push_back("urn:dvb:broadcast:ird:audio:MPEG-1_and_MPEG-2_backwards_compatible");
-    broadcastUrns.push_back("urn:dvb:broadcast:ird:audio:AC-3_and_enhanced_AC-3");
-    broadcastUrns.push_back("urn:dvb:broadcast:ird:audio:MPEG-4_AAC_family");
-
-    std::string displaySizeWidth = "71"; // Mock 32" TV
-    std::string displaySizeHeight = "40"; // Mock 32" TV
-    std::string displaySizeMeasurementType = "built-in"; // hdmi-accurate, hdmi-other
-    std::string audioOutputFormat = "stereo"; // multichannel, multichannel-preferred
-    bool passThroughStatus = false;
-    std::string html5MediaVariableRateMin = "0.5";
-    std::string html5MediaVariableRateMax = "5.0";
-
-    capabilities->m_optionStrings = optionStrings;
-    capabilities->m_profileNameFragments = profileNameFragments;
-    capabilities->m_parentalSchemes = parentalSchemes;
-    capabilities->m_graphicsLevels = graphicsLevels;
-    capabilities->m_broadcastUrns = broadcastUrns;
-    capabilities->m_displaySizeWidth = displaySizeWidth;
-    capabilities->m_displaySizeHeight = displaySizeHeight;
-    capabilities->m_displaySizeMeasurementType = displaySizeMeasurementType;
-    capabilities->m_audioOutputFormat = audioOutputFormat;
-    capabilities->m_passThroughStatus = passThroughStatus;
-    capabilities->m_html5MediaVariableRateMin = html5MediaVariableRateMin;
-    capabilities->m_html5MediaVariableRateMax = html5MediaVariableRateMax;
-    // HbbTV port is 8910, OpApp port is 8911
-    int port = getJsonRpcServerPort(apptype);
-    capabilities->m_jsonRpcServerUrl = getJsonRpcServerUrl(port);
-    capabilities->m_jsonRpcServerVersion = JSON_RPC_SERVER_VERSION;
-    return capabilities;
-}
-
-std::vector<AudioProfile> ConfigurationUtil::createDefaultAudioProfiles()
-{
-    std::vector<AudioProfile> audioProfiles;
-    audioProfiles.push_back(createAudioProfile("MPEG1_L3", "audio/mpeg", "", "", ""));
-    audioProfiles.push_back(createAudioProfile("HEAAC", "audio/mp4", "", "", ""));
-    audioProfiles.push_back(createAudioProfile("MP4_HEAAC", "audio/mp4", "dash", "dash_pr", ""));
-    audioProfiles.push_back(createAudioProfile("MP4_E-AC3", "audio/mp4", "", "", ""));
-    audioProfiles.push_back(createAudioProfile("MP4_E-AC3", "audio/mp4", "dash", "dash_pr", ""));
-    return audioProfiles;
-}
 
 AudioProfile ConfigurationUtil::createAudioProfile(
     std::string name,
@@ -116,26 +43,6 @@ AudioProfile ConfigurationUtil::createAudioProfile(
     audioProfile.m_syncTl = syncTl;
     audioProfile.m_drmSystemId = drmSystemId;
     return audioProfile;
-}
-
-std::vector<VideoProfile> ConfigurationUtil::createDefaultVideoProfiles()
-{
-    std::vector<VideoProfile> videoProfiles;
-    videoProfiles.push_back(createVideoProfile("MP4_AVC_SD_25_HEAAC", "video/mp4", "", "", "", ""));
-    videoProfiles.push_back(createVideoProfile("MP4_AVC_HD_25_HEAAC", "video/mp4", "", "", "", ""));
-    videoProfiles.push_back(createVideoProfile("MP4_AVC_SD_25_HEAAC_EBUTTD", "video/mp4", "", "", "", ""));
-    videoProfiles.push_back(createVideoProfile("MP4_AVC_HD_25_HEAAC_EBUTTD", "video/mp4", "", "", "", ""));
-    videoProfiles.push_back(createVideoProfile("TS_AVC_SD_25_HEAAC", "video/mpeg", "", "temi", "", ""));
-    videoProfiles.push_back(createVideoProfile("TS_AVC_HD_25_HEAAC", "video/mpeg", "", "temi", "", ""));
-    videoProfiles.push_back(createVideoProfile("MP4_AVC_SD_25_HEAAC", "video/mp4", "", "", "", ""));
-    videoProfiles.push_back(createVideoProfile("MP4_AVC_HD_25_HEAAC", "video/mp4", "", "", "", ""));
-    videoProfiles.push_back(createVideoProfile("TS_AVC_SD_25_E-AC3", "video/mpeg", "", "temi", "", ""));
-    videoProfiles.push_back(createVideoProfile("TS_AVC_HD_25_E-AC3", "video/mpeg", "", "temi", "", ""));
-    videoProfiles.push_back(createVideoProfile("MP4_AVC_SD_25_E-AC3", "video/mp4", "", "", "", ""));
-    videoProfiles.push_back(createVideoProfile("MP4_AVC_HD_25_E-AC3", "video/mp4", "", "", "", ""));
-    videoProfiles.push_back(createVideoProfile("MP4_AVC_SD_25_E-AC3_EBUTTD", "video/mp4", "dash", "dash_pr", "", ""));
-    videoProfiles.push_back(createVideoProfile("MP4_AVC_HD_25_E-AC3_EBUTTD", "video/mp4", "dash", "dash_pr", "", ""));
-    return videoProfiles;
 }
 
 VideoProfile ConfigurationUtil::createVideoProfile(
@@ -154,11 +61,6 @@ VideoProfile ConfigurationUtil::createVideoProfile(
     videoProfile.m_drmSystemId = drmSystemId;
     videoProfile.m_hdr = hdr;
     return videoProfile;
-}
-
-VideoDisplayFormat ConfigurationUtil::createDefaultVideoDisplayFormat()
-{
-    return VideoDisplayFormat{};
 }
 
 std::string ConfigurationUtil::getJsonRpcServerUrl(int port)
@@ -286,4 +188,10 @@ int ConfigurationUtil::getJsonRpcServerPort(ApplicationType apptype)
 {
     return apptype == ApplicationType::APP_TYPE_HBBTV ? JSON_RPC_SERVER_PORT + 1 : JSON_RPC_SERVER_PORT;
 }
+
+std::string ConfigurationUtil::getJsonRpcServerVersion()
+{
+    return JSON_RPC_SERVER_VERSION;
+}
+
 } // namespace orb

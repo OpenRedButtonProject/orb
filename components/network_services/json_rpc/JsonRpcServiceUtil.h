@@ -30,7 +30,7 @@
 */
 namespace orb
 {
-namespace networkServices { 
+namespace networkServices {
 // Constants
 
     const std::string F_SUBTITLES = "subtitles";
@@ -110,7 +110,7 @@ namespace networkServices {
     const std::string JSONRPC_SESSION_ID_KEY = "sessionID";
     const std::string JSONRPC_MSG_TYPE_KEY = "msgType";
     const std::string JSONRPC_VALUE_KEY = "value";
-    const std::string JSONRPC_FEATURE_KEY = "feature";    
+    const std::string JSONRPC_FEATURE_KEY = "feature";
     const std::string JSONRPC_ORIGIN_KEY ="origin";
     const std::string JSONRPC_ANCHOR_KEY = "anchor";
     const std::string JSONRPC_STATE_KEY = "state";
@@ -140,7 +140,7 @@ namespace networkServices {
     const std::string PLAYER_STATE_PAUSED = "paused";
     const std::string PLAYER_STATE_PLAYING = "playing";
     const std::string PLAYER_STATE_STOPPED = "stopped";
-    
+
 
     const static std::map<std::string, int> ACCESSIBILITY_FEATURE_IDS = {
         {F_SUBTITLES, 0},
@@ -162,9 +162,9 @@ namespace networkServices {
         {5, F_RESPONSE_TO_USER_ACTION},
         {6, F_AUDIO_DESCRIPTION},
         {7, F_IN_VISION_SIGNING},
-    }; 
+    };
    class JsonRpcServiceUtil {
-    public: 
+    public:
         static Json::Value QuerySettingsSubtitles(bool enabled, int size, const std::string &fontFamily,
             const std::string &textColour, int textOpacity, const std::string &edgeType, const std::string
             &edgeColour, const std::string &backgroundColour, int backgroundOpacity, const std::string
@@ -184,17 +184,6 @@ namespace networkServices {
 
         static Json::Value QuerySettingsAudioDescription(bool enabled, int gainPreference, int
             panAzimuthPreference);
-
-        static Json::Value GetMethodsInJsonArray(const std::unordered_set<std::string>& set);
-
-        static bool IsMethodInSet(const std::unordered_set<std::string> &set, const std::string& method);
-
-        static bool IsMethodInJsonArray(const Json::Value& array, const std::string& method);
-
-        static bool HasParam(const Json::Value &json, const std::string &param, const
-            Json::ValueType& type);
-
-        static bool HasJsonParam(const Json::Value &json, const std::string &param);
 
         static std::string EncodeJsonId(const Json::Value& id);
 
@@ -219,20 +208,11 @@ namespace networkServices {
 
         static std::time_t ConvertISO8601ToSecond(const std::string& input);
 
-        static std::string ConvertSecondToISO8601(const int sec); 
+        static std::string ConvertSecondToISO8601(const int sec);
 
-        static std::string GetId(const Json::Value& obj); 
+        static std::string GetId(const Json::Value& obj);
 
         static int GetAccessibilityFeatureId(const Json::Value& obj);
-
-        static void AddArrayToJson(Json::Value &json, const std::string &key, const std::vector<int> &array);
-
-        static std::string GetStringValueFromJson(const Json::Value &json, const std::string &key);
-
-        static int GetIntValueFromJson(const Json::Value &json, const std::string &key);
-
-        static bool GetBoolValueFromJson(const Json::Value &json, const std::string &key);
-        
     };
 } // namespace networkServices
 } // namespace orb

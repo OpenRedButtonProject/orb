@@ -15,6 +15,7 @@ class HBBTVWebSocketClient {
     static METHOD_STOP = "org.hbbtv.ipplayer.stop";
     static METHOD_SEEK = "org.hbbtv.ipplayer.seek";
     static METHOD_RESUME = "org.hbbtv.ipplayer.resume";
+    static METHOD_SET_VIDEO_WINDOW = "org.hbbtv.ipplayer.setVideoWindow";
     static METHOD_STATUS_UPDATE = "org.hbbtv.ipplayback.statusUpdate";
     static METHOD_MEDIA_POSITION_UPDATE = "org.hbbtv.ipplayback.mediaPositionUpdate";
     static METHOD_SET_COMPONENTS = "org.hbbtv.ipplayback.setComponents";
@@ -214,6 +215,7 @@ class HBBTVWebSocketClient {
                 HBBTVWebSocketClient.METHOD_STOP,
                 HBBTVWebSocketClient.METHOD_SEEK,
                 HBBTVWebSocketClient.METHOD_RESUME,
+                HBBTVWebSocketClient.METHOD_SET_VIDEO_WINDOW,
             ],
             appToTerminal: [
                 HBBTVWebSocketClient.METHOD_STATUS_UPDATE,
@@ -252,8 +254,8 @@ class HBBTVWebSocketClient {
 
     handleServerRequest(message) {
         switch (message.method) {
-            case HBBTVWebSocketClient.METHOD_PLAY:
-                this.handlePlayRequest(message);
+            case HBBTVWebSocketClient.METHOD_RESUME:
+                this.handleResumeRequest(message);
                 break;
             case HBBTVWebSocketClient.METHOD_PAUSE:
                 this.handlePauseRequest(message);
@@ -267,19 +269,22 @@ class HBBTVWebSocketClient {
             case HBBTVWebSocketClient.METHOD_SELECT_CHANNEL:
                 this.handleSelectChannelRequest(message);
                 break;
+            case HBBTVWebSocketClient.METHOD_SET_VIDEO_WINDOW:
+                this.handleSetVideoWindowRequest(message);
+                break;
             default:
                 this.log(`Unknown server request method: ${message.method}`, 'warn');
                 this.sendErrorResponse(message.id, -32601, 'Method not found');
         }
     }
 
-    handlePlayRequest(message) {
-        this.log('Handling play request from server', 'info');
+    handleResumeRequest(message) {
+        this.log('Handling resume request from server', 'info');
 
         if (this.videoPlayer && this.videoPlayer.isInitialized) {
             this.videoPlayer.video.play().then(() => {
                 this.log('Video playback started via server request', 'success');
-                this.sendSuccessResponse(message.id, HBBTVWebSocketClient.METHOD_PLAY);
+                this.sendSuccessResponse(message.id, HBBTVWebSocketClient.METHOD_RESUME);
             }).catch(error => {
                 this.log(`Failed to start playback: ${error.message}`, 'error');
                 this.sendErrorResponse(message.id, -32000, 'Failed to start playback');
@@ -307,8 +312,7 @@ class HBBTVWebSocketClient {
         this.log('Handling stop request from server', 'info');
 
         if (this.videoPlayer && this.videoPlayer.isInitialized) {
-            this.videoPlayer.video.pause();
-            this.videoPlayer.video.currentTime = 0;
+            this.videoPlayer.src = "";
             this.log('Video playback stopped via server request', 'success');
             this.sendSuccessResponse(message.id, HBBTVWebSocketClient.METHOD_STOP);
         } else {
@@ -338,12 +342,14 @@ class HBBTVWebSocketClient {
 
     handleSelectChannelRequest(message) {
         this.log('Handling select channel request from server', 'info');
-
-        if (message.params && message.params.url) {
+        this.log(JSON.stringify(message), 'info');
+        const ID_IPTV_URI = 41;
+        if (message.params && message.params.idType == ID_IPTV_URI) {
             if (this.videoPlayer) {
-                this.videoPlayer.defaultStreamUrl = message.params.url;
-                this.videoPlayer.loadStream();
-                this.log(`Channel selected: ${message.params.url}`, 'success');
+                const streamUrl = this.getMediaUrl(message.params.ipBroadcastID);
+                this.log(`Channel selected: ${streamUrl}`, 'success');
+                this.videoPlayer.loadStream(streamUrl);
+                console.log('New streamUrl: ', streamUrl);
                 this.sendSuccessResponse(message.id, HBBTVWebSocketClient.METHOD_SELECT_CHANNEL);
             } else {
                 this.log('Video player not available', 'error');
@@ -355,10 +361,54 @@ class HBBTVWebSocketClient {
         }
     }
 
+    handleSetVideoWindowRequest(message) {
+        this.log('Handling set video window request from server', 'info');
+        this.log(JSON.stringify(message), 'info');
+
+        if (this.videoPlayer && this.videoPlayer.isInitialized) {
+            if (message.params &&
+                typeof message.params.x === 'number' &&
+                typeof message.params.y === 'number' &&
+                typeof message.params.width === 'number' &&
+                typeof message.params.height === 'number') {
+
+                // Apply the video window parameters to the video element
+                //const videoElement = this.videoPlayer.video;
+                //videoElement.style.position = 'absolute';
+                //videoElement.style.left = message.params.x + 'px';
+                //videoElement.style.top = message.params.y + 'px';
+                //videoElement.style.width = message.params.width + 'px';
+                //videoElement.style.height = message.params.height + 'px';
+
+                this.log(`Video window set to: x=${message.params.x}, y=${message.params.y}, width=${message.params.width}, height=${message.params.height}`, 'success');
+                this.sendSuccessResponse(message.id, HBBTVWebSocketClient.METHOD_SET_VIDEO_WINDOW);
+            } else {
+                this.log('Invalid setVideoWindow parameters: x, y, width, height required', 'error');
+                this.sendErrorResponse(message.id, -32602, 'Invalid params: x, y, width, height required');
+            }
+        } else {
+            this.log('Video player not initialized', 'error');
+            this.sendErrorResponse(message.id, -32000, 'Video player not initialized');
+        }
+    }
+
+    getMediaUrl(ipBroadcastId) {
+        // create a array return the url based on the ipBroadcastId
+        // The media url should get from service manager according to the ipBroadcastId or CCID
+        const mediaUrls = [
+            { id: "1.2.3", url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4' },
+            { id: "4.5.6", url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' },
+            { id: "7.8.9", url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4' },
+        ];
+
+        const mediaUrl = mediaUrls.find(url => url.id === ipBroadcastId);
+        return mediaUrl ? mediaUrl.url : null;
+    }
+
     sendSuccessResponse(requestId, method) {
         const response = {
             jsonrpc: "2.0",
-            result: { method: method },
+            result: { method: method, sessionID: method === HBBTVWebSocketClient.METHOD_SELECT_CHANNEL ? this.videoPlayer.sessionID : undefined },
             id: requestId
         };
 
@@ -384,12 +434,18 @@ class HBBTVWebSocketClient {
             this.log(`Failed to send error response: ${error.message}`, 'error');
         }
     }
+
+
 }
 
 /**
  * HTML5 Video Player
  */
 class HTML5VideoPlayer {
+    static COMPONENT_TYPE_VIDEO = 0;
+    static COMPONENT_TYPE_AUDIO = 1;
+    static COMPONENT_TYPE_SUBTITLE = 2;
+
     constructor(websocketClient = null) {
         this.video = document.getElementById('videoPlayer');
         this.isInitialized = false;
@@ -398,19 +454,13 @@ class HTML5VideoPlayer {
         this.logEntries = document.getElementById('logEntries');
         this.websocketClient = websocketClient;
 
-        this.initializeElements();
+        // this.initializeElements();
         this.bindEvents();
         this.log('HTML5 Video Player initialized', 'info');
-
-        // Auto-load default stream
-        setTimeout(() => {
-            this.log('Auto-loading default stream...', 'info');
-            this.loadStream();
-        }, 500);
     }
 
     initializeElements() {
-        this.defaultStreamUrl = 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+        this.defaultStreamUrl = 'http://dash.akamaized.net/dash264/TestCases/4b/qualcomm/2/TearsOfSteel_onDem5secSegSubTitles.mpd';
     }
 
     bindEvents() {
@@ -486,10 +536,15 @@ class HTML5VideoPlayer {
         this.video.addEventListener('timeupdate', () => {
             if (this.lastPositionUpdate === undefined ||
                 (Date.now() - this.lastPositionUpdate) >= 5000) {
-                this.sendMediaPositionUpdate();
+                //Disable for now as HBBTV does not support timeshift
+                //this.sendMediaPositionUpdate();
                 this.lastPositionUpdate = Date.now();
             }
         });
+        this.video.onloadedmetadata = () => {
+            this.log('Video metadata loaded, sending set components', 'info');
+            this.sendSetComponents();
+        };
     }
 
     log(message, level = 'info') {
@@ -507,16 +562,14 @@ class HTML5VideoPlayer {
     }
 
 
-    loadStream() {
-        const url = this.defaultStreamUrl;
-        this.log(`Loading video stream: ${url}`, 'info');
-        this.initializeVideo(url);
+    loadStream(streamUrl) {
+        this.initializeVideo(streamUrl);
     }
 
     initializeVideo(url) {
         try {
-            this.video.pause();
-            this.video.currentTime = 0;
+            //this.video.pause();
+            // this.video.currentTime = 0;
             this.sessionID++;
             this.video.src = url;
             this.video.load();
@@ -582,10 +635,11 @@ class HTML5VideoPlayer {
 
     sendStatusUpdate(status, error = 0) {
         if (this.websocketClient && this.websocketClient.negotiated) {
+            let errorCode = error != 0 ? error : undefined;
             const params = {
                 sessionID: this.sessionID,
                 status: status,
-                error: error
+                error: errorCode
             };
 
             const message = {
@@ -596,7 +650,7 @@ class HTML5VideoPlayer {
             };
 
             const statusName = this.getStatusName(status);
-            this.websocketClient.log(`Auto-sending status update: ${statusName} (${status}) (error: ${error}, sessionID: ${this.sessionID})`, 'websocket');
+            this.websocketClient.log(`Auto-sending status update: ${statusName} (${status}) (error: ${errorCode}, sessionID: ${this.sessionID})`, 'websocket');
 
             try {
                 this.websocketClient.websocket.send(JSON.stringify(message));
@@ -644,6 +698,154 @@ class HTML5VideoPlayer {
                 this.websocketClient.log(`Failed to send media position update: ${error.message}`, 'error');
             }
         }
+    }
+
+    sendSetComponents() {
+        const components = this.extractComponents(null, false);
+        this.websocketClient.log(`Auto-sending set components (sessionID: ${this.sessionID})`, 'websocket');
+        const params = {
+            sessionID: this.sessionID,
+            componentsList: components
+        };
+        const message = {
+            jsonrpc: "2.0",
+            id: this.websocketClient.messageId++,
+            method: HBBTVWebSocketClient.METHOD_SET_COMPONENTS,
+            params: params
+        };
+        try {
+            this.websocketClient.websocket.send(JSON.stringify(message));
+            this.websocketClient.log('Set components message sent successfully', 'success');
+        } catch (error) {
+            this.websocketClient.log(`Failed to send set components: ${error.message}`, 'error');
+        }
+    }
+
+    extractComponents(componentType, onlyActive) {
+        const videoElement = this.video;
+        let components = [];
+        let returnAllComponentTypes = false;
+
+        if (componentType === null || componentType === undefined) {
+            returnAllComponentTypes = true;
+        }
+        //TODO propably not all codec & lang strings are oipf profile compatible
+        if (this.video.readyState >= HTMLMediaElement.HAVE_METADATA) {
+            // playing or paused or buffering
+            const videoTracks = videoElement.videoTracks;
+            if (
+                (returnAllComponentTypes || componentType === HTML5VideoPlayer.COMPONENT_TYPE_VIDEO) &&
+                videoTracks
+            ) {
+                for (let i = 0; i < videoTracks.length; ++i) {
+                    const videoTrack = videoTracks[i];
+                    if (!onlyActive || videoTrack.selected) {
+                        components.push({
+                            // AVComponent properties
+                            componentTag: parseInt(videoTrack.id),
+                            pid: parseInt(videoTrack.id),
+                            type: HTML5VideoPlayer.COMPONENT_TYPE_VIDEO,
+                            encoding: videoTrack.encoding ?
+                                videoTrack.encoding.split('"')[1] : undefined,
+                            encrypted: videoTrack.encrypted,
+                            aspectRatio: (
+                                videoElement.videoWidth / videoElement.videoHeight
+                            ).toFixed(2),
+                            initiallyActive: videoTrack.selected,
+                        });
+                    }
+                }
+            }
+
+            const audioTracks = videoElement.audioTracks;
+
+            function isMPEG4HEAAC(codecString) {
+                if (codecString) {
+                    const parts = codecString.split('.');
+                    const codecFamily = parts[0];
+                    const mpeg4Audio = parts[1];
+                    const objectType = parts[2];
+                    if (codecFamily === 'mp4a' && mpeg4Audio === '40') {
+                        const heAacTypes = ['02', '05', '29']; // common HE-AAC object types for MPEG-4
+                        return heAacTypes.includes(objectType);
+                    }
+                }
+                return false;
+            }
+
+            function isEAC3(codecString) {
+                if (codecString) {
+                    const eac3Identifiers = ['ec-3', 'dd+', 'ddp', 'e-ac-3']; // common identifiers for E-AC-3
+                    const normalizedCodecString = codecString.toLowerCase();
+                    return eac3Identifiers.includes(normalizedCodecString);
+                }
+                return false;
+            }
+
+            if (
+                (returnAllComponentTypes || componentType === HTML5VideoPlayer.COMPONENT_TYPE_AUDIO) &&
+                audioTracks
+            ) {
+                for (let i = 0; i < audioTracks.length; ++i) {
+                    const audioTrack = audioTracks[i];
+                    if (!onlyActive || audioTrack.enabled) {
+                        let trackEncoding = audioTrack.encoding ? audioTrack.encoding.split('"')[1] : undefined;
+                        if (isMPEG4HEAAC(trackEncoding)) {
+                            trackEncoding = "HEAAC";
+                        } else if (isEAC3(trackEncoding)) {
+                            trackEncoding = "E-AC3";
+                        }
+
+                        let language = 'und';
+                        if (audioTrack.language) {
+                            language = audioTrack.language;
+                        }
+
+                        components.push({
+                            // AVComponent properties
+                            componentTag: audioTrack.id,
+                            pid: parseInt(audioTrack.id),
+                            type: HTML5VideoPlayer.COMPONENT_TYPE_AUDIO,
+                            encoding: trackEncoding,
+                            encrypted: audioTrack.encrypted,
+                            // AVAudioComponent properties
+                            language: language,
+                            audioDescription: audioTrack.kind === 'alternate' ||
+                                audioTrack.kind === 'alternative',
+                            audioChannels: audioTrack.numChannels,
+                            initiallyActive: audioTrack.enabled,
+                        });
+                    }
+                }
+            }
+
+            const textTracks = videoElement.textTracks;
+            if (
+                (returnAllComponentTypes || componentType === HTML5VideoPlayer.COMPONENT_TYPE_SUBTITLE) &&
+                textTracks
+            ) {
+                for (let i = 0; i < textTracks.length; ++i) {
+                    const textTrack = textTracks[i];
+                    if (!onlyActive || textTrack.mode === 'showing') {
+                        components.push({
+                            // AVComponent properties
+                            componentTag: textTrack.id,
+                            pid: parseInt(textTrack.id),
+                            type: HTML5VideoPlayer.COMPONENT_TYPE_SUBTITLE,
+                            encoding: textTrack.encoding ?
+                                textTrack.encoding : 'application/ttml+xml',
+                            encrypted: false,
+                            language: textTrack.language,
+                            hearingImpaired: textTrack.kind === 'captions',
+                            label: textTrack.label,
+                            initiallyActive: textTrack.mode === 'showing',
+                        });
+                    }
+                }
+            }
+        }
+
+        return components;
     }
 
     destroy() {

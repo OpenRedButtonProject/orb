@@ -20,7 +20,8 @@
 #include "JsonRpcServiceUtil.h"
 #include "log.h"
 #include <iomanip>
-#include <sstream> 
+#include <sstream>
+#include "JsonUtil.h"
 
 namespace orb
 {
@@ -266,87 +267,7 @@ namespace networkServices
         return value;
     }
 
-    /**
-    * Convert a std::unordered_set of methods strings into a JSON array.
-    *
-    * @param set The unordered set of methods strings to convert to a JSON array.
-    * @return A Json::Value containing the converted JSON array.
-    */
-    Json::Value JsonRpcServiceUtil::GetMethodsInJsonArray(const std::unordered_set<std::string>& set)
-    {
-        Json::Value value;
-        int index = 0;
-        // Loop through the unordered_set 'set' and copy each string item into 'value' as a Json::arrayValue
-        for (const std::string& item : set)
-        {
-            // Add each 'item' as a Json::Value to 'value' at the current 'index'
-            value[index++] = Json::Value(item);
-        }
-        return value;
-    }
-
-    /**
-    * Check if a given 'method' string exists within a JSON array.
-    *
-    * @param array A JSON array to search for the 'method' string.
-    * @param method The string to search for within the JSON array.
-    * @return 'true' if the 'method' string is found within the JSON array, 'false' otherwise.
-    */
-    bool JsonRpcServiceUtil::IsMethodInJsonArray(const Json::Value& array, const std::string& method)
-    {
-        if (array.type() == Json::arrayValue)
-        {
-            for (const auto& element : array)
-            {
-                if (element.asString() == method)
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-    * Check if a given 'method' string exists within an unordered set.
-    *
-    * @param set An unordered set to search for the 'method' string.
-    * @param method The string to search for within the unordered set.
-    * @return 'true' if the 'method' string is found within the unordered set, 'false' otherwise.
-    */
-    bool JsonRpcServiceUtil::IsMethodInSet(const std::unordered_set<std::string> &set, const std::string& method)
-    {
-        return set.find(method) != set.end();
-    }
-
-    /**
-    * Check if a JSON object has a specified parameter with a certain data type.
-    *
-    * @param json The JSON object to check for the presence of the parameter.
-    * @param param The name of the parameter to search for within the JSON object.
-    * @param type The expected data type of the parameter.
-    * @return 'true' if the parameter 'param' exists within the JSON object
-    *          and has the specified data type, 'false' otherwise.
-    */
-    bool JsonRpcServiceUtil::HasParam(const Json::Value &json, const std::string &param, const Json::ValueType& type)
-    {
-        return json.isMember(param) && json[param].type() == type;
-    }
-
-    /**
-    * Check if a JSON object has a specified parameter with a json data type.
-    *
-    * @param json The JSON object to check for the presence of the parameter.
-    * @param param The name of the parameter to search for within the JSON object.
-    * @return 'true' if the parameter 'param' exists within the JSON object
-    *          and has the json data type, 'false' otherwise.
-    */
-    bool JsonRpcServiceUtil::HasJsonParam(const Json::Value &json, const std::string &param)
-    {
-        return json.isMember(param) && json[param].isObject();
-    }
-
-    /**
+   /**
     * Encode a JSON value to a string representation.
     *
     * @param id The JSON value to encode into a string.
@@ -583,11 +504,11 @@ namespace networkServices
     {
         std::time_t time_sec = static_cast<std::time_t>(sec);
         struct tm* p_tm = std::gmtime(&time_sec);
-        if (p_tm != nullptr) 
+        if (p_tm != nullptr)
         {
             std::ostringstream oss;
             oss << std::put_time(p_tm, "%Y-%m-%dT%H:%M:%SZ");
-            return oss.str();         
+            return oss.str();
         }
        return "";
     }
@@ -597,11 +518,11 @@ namespace networkServices
     * @param obj The JSON object to extract the id from.
     * @return The id as a string, or an empty string if the id is not present or invalid.
     */
-    std::string JsonRpcServiceUtil::GetId(const Json::Value& obj) 
+    std::string JsonRpcServiceUtil::GetId(const Json::Value& obj)
     {
-      if (!HasParam(obj, JSONRPC_ID_KEY, Json::stringValue) &&
-          !HasParam(obj, JSONRPC_ID_KEY, Json::intValue) &&
-          !HasParam(obj, JSONRPC_ID_KEY, Json::uintValue))
+      if (!JsonUtil::HasParam(obj, JSONRPC_ID_KEY, Json::stringValue) &&
+          !JsonUtil::HasParam(obj, JSONRPC_ID_KEY, Json::intValue) &&
+          !JsonUtil::HasParam(obj, JSONRPC_ID_KEY, Json::uintValue))
         {
             return "";
         }
@@ -614,77 +535,17 @@ namespace networkServices
     * @return The feature ID as an integer, or -1 if the feature is not specified or invalid.
     */
     int JsonRpcServiceUtil::GetAccessibilityFeatureId(const Json::Value& obj) {
-        if (!HasJsonParam(obj, JSONRPC_PARAMS_KEY))
+        if (!JsonUtil::HasJsonParam(obj, JSONRPC_PARAMS_KEY))
         {
             return -1;
         }
-        if (!HasParam(obj[JSONRPC_PARAMS_KEY], JSONRPC_FEATURE_KEY, Json::stringValue))
+        if (!JsonUtil::HasParam(obj[JSONRPC_PARAMS_KEY], JSONRPC_FEATURE_KEY, Json::stringValue))
         {
             return -1;
         }
 
         std::string feature = obj[JSONRPC_PARAMS_KEY][JSONRPC_FEATURE_KEY].asString();
         return GetAccessibilityFeatureId(feature);
-    }
-
-    /**
-     * Add an array of strings to a JSON object under a specified key.
-     * @param json The JSON object to which the array will be added.
-     * @param key The key under which the array will be stored in the JSON object.
-     * @param array The vector of int to be added as a JSON array.
-     */
-     void JsonRpcServiceUtil::AddArrayToJson(Json::Value &json, const std::string &key, const std::vector<int> &array)
-     {
-        Json::Value jsonArray(Json::arrayValue);
-        for (const auto& item : array)
-        {
-            jsonArray.append(item);
-        }
-        json[key] = jsonArray;
-    }
-
-    /**
-     * Get a string value from a JSON object by key.
-     * If the key does not exist or is not a string, returns OPTIONAL_STR_NOT_SET.
-     * @param json The JSON object to search.
-     * @param key The key to look for in the JSON object.
-     * @return The string value associated with the key, or OPTIONAL_STR_NOT_SET if not found.
-     */
-    std::string JsonRpcServiceUtil::GetStringValueFromJson(const Json::Value &json, const std::string &key) {
-        if (HasParam(json, key, Json::stringValue)) {
-            return json[key].asString();
-        }
-        return OPTIONAL_STR_NOT_SET;
-    }
-
-    /**
-     * Get an integer value from a JSON object by key.
-     * If the key does not exist or is not an integer, returns OPTIONAL_INT_NOT_SET.
-     * @param json The JSON object to search.
-     * @param key The key to look for in the JSON object.
-     * @return The integer value associated with the key, or OPTIONAL_INT_NOT_SET if not found.
-     */
-    int JsonRpcServiceUtil::GetIntValueFromJson(const Json::Value &json, const std::string &key)
-    {
-        if (HasParam(json, key, Json::intValue)) {
-            return json[key].asInt();
-        }
-        return OPTIONAL_INT_NOT_SET;
-    }
-
-    /**
-     * Get a boolean value from a JSON object by key.
-     * If the key does not exist or is not a boolean, returns false.
-     * @param json The JSON object to search.
-     * @param key The key to look for in the JSON object.
-     * @return The boolean value associated with the key, or false if not found.
-     */
-    bool JsonRpcServiceUtil::GetBoolValueFromJson(const Json::Value &json, const std::string &key)
-    {
-        if (HasParam(json, key, Json::booleanValue)) {
-            return json[key].asBool();
-        }
-        return false;
     }
 } // namespace networkServices
 } // namespace orb

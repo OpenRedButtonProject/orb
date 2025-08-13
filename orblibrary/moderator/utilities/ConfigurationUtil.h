@@ -45,20 +45,6 @@ public:
     virtual ~ConfigurationUtil() = default;
 
     /**
-     * Creates a default Capabilities object with empty values.
-     *
-     * @return A shared pointer to a new Capabilities object.
-     */
-    static std::shared_ptr<Capabilities> createDefaultCapabilities(ApplicationType apptype);
-
-    /**
-    * Creates a default vector of AudioProfile objects.
-    *
-    * @return A vector of AudioProfile objects.
-    */
-    static std::vector<AudioProfile> createDefaultAudioProfiles();
-
-    /**
      * Creates an AudioProfile object with the given parameters.
      *
      * @param name The name of the audio profile.
@@ -74,13 +60,6 @@ public:
         std::string transport,
         std::string syncTl,
         std::string drmSystemId);
-
-    /**
-     * Creates a default vector of VideoProfile objects.
-     *
-     * @return A vector of VideoProfile objects.
-     */
-    static std::vector<VideoProfile> createDefaultVideoProfiles();
 
     /**
      * Creates a VideoProfile object with the given parameters.
@@ -100,13 +79,6 @@ public:
         std::string syncTl,
         std::string drmSystemId,
         std::string hdr);
-
-    /**
-     * Creates a default VideoDisplayFormat object with zero values.
-     *
-     * @return A new VideoDisplayFormat object.
-     */
-    static VideoDisplayFormat createDefaultVideoDisplayFormat();
 
     /**
      * Converts a Capabilities object to a JSON string.
@@ -167,6 +139,13 @@ public:
      * @return A random number string.
      */
     static std::string generateRandomNumberStr();
+
+    /**
+     * Returns the JSON RPC server version.
+     *
+     * @return The JSON RPC server version.
+     */
+    static std::string getJsonRpcServerVersion();
 
 }; // class ConfigurationUtil
 

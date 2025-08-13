@@ -5,203 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minimal HbbTV OpApp v1.2.1</title>
 
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            background-color: #1a1a1a;
-            color: #ffffff;
-            overflow: hidden;
-        }
-
-        .container {
-            max-width: 1280px;
-            margin: 0 auto;
-            position: relative;
-            height: 100vh;
-        }
-
-        .header {
-            background-color: #2d2d2d;
-            padding: 10px 20px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            z-index: 10;
-        }
-
-        .title {
-            font-size: 1.5em;
-            margin-bottom: 5px;
-            color: #00ff00;
-        }
-
-        .subtitle {
-            font-size: 0.9em;
-            color: #cccccc;
-            margin-bottom: 0;
-        }
-
-        .button-container {
-            position: absolute;
-            right: 20px;
-            top: 120px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 10;
-        }
-
-        .button {
-            background-color: #4CAF50;
-            border: none;
-            color: white;
-            padding: 12px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 14px;
-            margin: 0;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-            min-width: 120px;
-        }
-
-        .button:hover {
-            background-color: #45a049;
-        }
-
-        .button:focus {
-            outline: 2px solid #00ff00;
-        }
-
-        .info-panel {
-            position: absolute;
-            top: 100px;
-            left: 440px;
-            background-color: #2d2d2d;
-            padding: 20px;
-            border-radius: 10px;
-            max-width: 300px;
-            z-index: 10;
-        }
-
-        .info-item {
-            margin: 10px 0;
-            text-align: left;
-        }
-
-        .key-info {
-            background-color: #333;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 5px 0;
-        }
-
-        .status {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        #hole {
-            position: absolute;
-            top: 120px;
-            left: 20px;
-        }
-
-        .video-hole object {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2;
-        }
-
-        /* Transport Bar Styles */
-        .transport-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
-            padding: 15px 20px;
-            border-top: 2px solid #4CAF50;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-        }
-
-        .transport-controls {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-
-        .transport-btn {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-            border: none;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            color: white;
-            font-size: 20px;
-        }
-
-        .transport-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-            background: linear-gradient(135deg, #45a049 0%, #4CAF50 100%);
-        }
-
-        .transport-btn:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        }
-
-        .transport-btn:focus {
-            outline: 3px solid #00ff00;
-        }
-
-        .transport-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-icon {
-            font-size: 24px;
-            line-height: 1;
-        }
-
-    </style>
+    <link rel="stylesheet" href="app_styles.css">
 </head>
 
 <body>
     <div class="status" id="status">OpApp Ready</div>
-
     <div class="container">
         <div class="header">
             <h1 class="title">HbbTV OpApp v1.2.1</h1>
@@ -212,11 +20,21 @@
             <button class="button" id="videoBtn" onclick="openVideoWindow()">Open Video Window</button>
             <button class="button" id="broadcastBtn" onclick="toggleVideoBroadcast()">Toggle Broadcast</button>
             <button class="button" id="infoBtn" onclick="showInfo()">Show Info</button>
-            <button class="button" id="testBtn" onclick="runTests()">Run Tests</button>
         </div>
 
         <!-- Video broadcast hole - DOES NOT WORK INSIDE A DIV OBJECT -->
-        <object id="hole" type="video/broadcast" width="400" height="300" noshade></object>
+        <object type="application/oipfapplicationmanager" id="app-manager"></object>
+        <object type="application/oipfcapabilities" id="capabilities"></object>
+        <object type="video/broadcast" id="hole" width="400" height="300" noshade></object>
+
+        <!-- Event Log Panel -->
+        <div class="event-log-panel">
+            <h3>Event Log</h3>
+            <div class="event-log-container" id="eventLogContainer">
+                <div class="event-log-entry">Waiting for events...</div>
+            </div>
+            <button class="clear-log-btn" onclick="clearEventLog()">Clear Log</button>
+        </div>
 
         <div class="info-panel hidden" id="infoPanel">
             <h3>HbbTV OpApp Information</h3>
@@ -235,6 +53,7 @@
                     <li>Basic navigation</li>
                     <li>Video window support</li>
                     <li>Video broadcast hole</li>
+                    <li>Channel selection</li>
                     <li>HbbTV compliance</li>
                     <li>Remote control support</li>
                 </ul>
@@ -251,206 +70,29 @@
                 <strong>Back:</strong> Return to previous screen
             </div>
             <div class="key-info">
-                <strong>Red:</strong> Open video window
+                <strong>Red (R):</strong> Open video window
             </div>
             <div class="key-info">
-                <strong>Green:</strong> Toggle broadcast
+                <strong>Green (G):</strong> Toggle broadcast
+            </div>
+            <div class="key-info">
+                <strong>Channel (C):</strong> Select next channel
             </div>
         </div>
 
         <!-- Transport Bar -->
         <div class="transport-bar">
             <div class="transport-controls">
-                <button id="playButton" class="transport-btn play-btn" onclick="playVideo()" title="Play">
-                    <span class="btn-icon">▶</span>
+                <button id="channelSelectBtn" class="transport-btn channel-btn" onclick="selectNextChannel()" title="Select Channel">
+                    <span class="btn-icon">📺[C]</span>
                 </button>
-                <button id="pauseButton" class="transport-btn pause-btn" onclick="pauseVideo()" title="Pause">
-                    <span class="btn-icon">⏸</span>
+                <button id="stopButton" class="transport-btn stop-btn" onclick="stopVideo()" title="Stop">
+                    <span class="btn-icon">⏹ [S]</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <script>
-        // HbbTV OpApp v1.2.1 Minimal Implementation
-        let currentFocus = 0;
-        const buttons = ['videoBtn', 'broadcastBtn', 'infoBtn', 'testBtn'];
-
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('HbbTV OpApp v1.2.1 initialized');
-            updateStatus('Application loaded successfully');
-            setFocus(0);
-        });
-
-        // Handle keyboard navigation
-        document.addEventListener('keydown', function(event) {
-            switch(event.keyCode) {
-                case 37: // Left arrow
-                    navigateFocus(-1);
-                    event.preventDefault();
-                    break;
-                case 39: // Right arrow
-                    navigateFocus(1);
-                    event.preventDefault();
-                    break;
-                case 38: // Up arrow
-                    navigateFocus(-1);
-                    event.preventDefault();
-                    break;
-                case 40: // Down arrow
-                    navigateFocus(1);
-                    event.preventDefault();
-                    break;
-                case 13: // Enter
-                    activateCurrentButton();
-                    event.preventDefault();
-                    break;
-                case 8: // Backspace
-                    goBack();
-                    event.preventDefault();
-                    break;
-                case 82: // R key (Red button)
-                    openVideoWindow();
-                    event.preventDefault();
-                    break;
-                case 71: // G key (Green button)
-                    toggleVideoBroadcast();
-                    event.preventDefault();
-                    break;
-            }
-        });
-
-        function navigateFocus(direction) {
-            currentFocus = (currentFocus + direction + buttons.length) % buttons.length;
-            setFocus(currentFocus);
-        }
-
-        function setFocus(index) {
-            // Remove previous focus
-            buttons.forEach(btnId => {
-                const btn = document.getElementById(btnId);
-                if (btn) btn.style.outline = 'none';
-            });
-
-            // Set new focus
-            const currentBtn = document.getElementById(buttons[index]);
-            if (currentBtn) {
-                currentBtn.style.outline = '3px solid #00ff00';
-                currentBtn.focus();
-            }
-        }
-
-        function activateCurrentButton() {
-            const currentBtn = document.getElementById(buttons[currentFocus]);
-            if (currentBtn) {
-                currentBtn.click();
-            }
-        }
-
-        function openVideoWindow() {
-            updateStatus('Opening video window...');
-            // In a real implementation, this would open the video window
-            // For this minimal version, we'll just show a message
-            setTimeout(() => {
-                window.open('video.html', '_opappvideo');
-                updateStatus('[TEST]Video window opened');
-            }, 500);
-        }
-
-        function showInfo() {
-            const infoPanel = document.getElementById('infoPanel');
-            infoPanel.classList.toggle('hidden');
-            updateStatus('Info panel toggled');
-        }
-
-        function runTests() {
-            updateStatus('Running tests...');
-            // Simulate test execution
-            setTimeout(() => {
-                updateStatus('[TEST] Tests completed successfully');
-            }, 2000);
-        }
-
-        function goBack() {
-            updateStatus('Back button pressed');
-            // In a real implementation, this would navigate back
-        }
-
-        function updateStatus(message) {
-            const status = document.getElementById('status');
-            status.textContent = message;
-            console.log('Status:', message);
-        }
-
-        // HbbTV specific functions
-        function getHbbTVVersion() {
-            return '1.2.1';
-        }
-
-        function isHbbTVSupported() {
-            return typeof window.hbbtv !== 'undefined';
-        }
-
-        // Video broadcast object functions
-        function initializeVideoBroadcast() {
-            const videoHole = document.getElementById('hole');
-            if (videoHole) {
-                console.log('Video broadcast object initialized');
-                updateStatus('Video broadcast ready');
-
-                // Add event listeners for video broadcast
-                videoHole.addEventListener('load', function() {
-                    console.log('Video broadcast loaded');
-                    updateStatus('Video broadcast active');
-                });
-
-                videoHole.addEventListener('error', function() {
-                    console.log('Video broadcast error');
-                    updateStatus('Video broadcast error');
-                });
-            }
-        }
-
-        function toggleVideoBroadcast() {
-            const videoHole = document.getElementById('hole');
-            const videoContainer = videoHole.parentElement;
-
-            if (videoContainer.style.display === 'none') {
-                videoContainer.style.display = 'flex';
-                updateStatus('[TEST] Video broadcast enabled');
-            } else {
-                videoContainer.style.display = 'none';
-                updateStatus('[TEST] Video broadcast disabled');
-            }
-        }
-
-        // Initialize HbbTV support if available
-        if (typeof window.hbbtv !== 'undefined') {
-            console.log('HbbTV API detected');
-            updateStatus('HbbTV API available');
-        } else {
-            console.log('HbbTV API not detected - running in test mode');
-            updateStatus('Running in test mode');
-        }
-
-        // Initialize video broadcast when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeVideoBroadcast();
-        });
-
-        // Transport Bar Stub Methods
-        function playVideo() {
-            updateStatus('[TRANSPORT] Play button pressed');
-            console.log('Transport: Play video');
-            // Stub implementation - in a real app this would control video playback
-        }
-
-        function pauseVideo() {
-            updateStatus('[TRANSPORT] Pause button pressed');
-            console.log('Transport: Pause video');
-            // Stub implementation - in a real app this would control video playback
-        }
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>

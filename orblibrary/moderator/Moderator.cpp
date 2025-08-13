@@ -30,6 +30,12 @@
 #include "StringUtil.h"
 #include "BroadcastInterface.hpp"
 
+#include "JsonRpcCallback.h"
+#include "ConfigurationUtil.h"
+
+#include "PlatformAndroid.h"
+
+
 using namespace std;
 
 namespace orb
@@ -49,18 +55,26 @@ const string NETWORK_STATUS = "NetworkStatus";
 
 Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
     : mOrbBrowser(browser)
+    , mPlatform(std::make_shared<AndroidPlatform>(apptype))
     , mNetwork(std::make_unique<Network>())
     , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
     , mAppMgrInterface(std::make_unique<AppMgrInterface>(browser, apptype))
-    , mConfiguration(std::make_unique<Configuration>(apptype))
+    , mConfiguration(std::make_unique<Configuration>(mPlatform))
     , mDrm(std::make_unique<Drm>())
-    , mBroadcastInterface(std::make_unique<BroadcastInterface>(browser))
+    , mBroadcastInterface(std::make_unique<BroadcastInterface>(browser, mPlatform))
+    , mAppType(apptype)
 {
     LOGI("HbbTV version " << ORB_HBBTV_VERSION);
+    if (apptype != orb::APP_TYPE_VIDEO) {
+        startWebSocketServer(apptype);
+    }
 }
 
 Moderator::~Moderator()
 {
+    if (mWebSocketServer) {
+        mWebSocketServer->Stop();
+    }
 }
 
 string Moderator::handleOrbRequest(string jsonRqst)
@@ -116,7 +130,12 @@ string Moderator::handleOrbRequest(string jsonRqst)
     }
     else if (component == COMPONENT_BROADCAST)
     {
-        return mBroadcastInterface->executeRequest(method, jsonval["token"], jsonval["params"]);
+        // Video Window does not support the broadcast interface
+        if (mAppType != APP_TYPE_VIDEO) {
+            return mBroadcastInterface->executeRequest(method, jsonval["token"], jsonval["params"]);
+        } else {
+            return "{\"error\": \"Not supported\"}";
+        }
     }
 
     LOGI("Passing request to TIS component: [" << component << "], method: [" << method << "]");
@@ -171,5 +190,17 @@ void Moderator::processXmlAit(const vector<uint8_t>& xmlait)
     mAppMgrInterface->processXmlAit(xmlait);
 }
 
+bool Moderator::startWebSocketServer(ApplicationType apptype) {
+    std::string endpoint = orb::ConfigurationUtil::getJsonRpcServerEndpoint();
+    int port = orb::ConfigurationUtil::getJsonRpcServerPort(apptype);
+    LOGI("Create and start WebSocket Server - endpoint: " << endpoint << " port: " << port);
+
+    std::unique_ptr<orb::networkServices::JsonRpcService::ISessionCallback> callback =
+        std::make_unique<JsonRpcCallback>(mBroadcastInterface.get());
+    mWebSocketServer = std::make_shared<orb::networkServices::JsonRpcService>(port,endpoint,std::move(callback)); // TODO: check if this is correct
+    mWebSocketServer->SetOpAppEnabled(apptype != orb::APP_TYPE_HBBTV);
+    mBroadcastInterface->SetWebSocketServer(mWebSocketServer);
+    return mWebSocketServer->Start();
+}
 
 } // namespace orb
