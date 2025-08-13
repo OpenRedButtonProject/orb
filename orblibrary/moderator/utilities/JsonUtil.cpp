@@ -20,158 +20,173 @@
 namespace orb
 {
 
+    constexpr int OPTIONAL_INT_NOT_SET = -999999;
+    const std::string OPTIONAL_STR_NOT_SET = "";
 
-bool JsonUtil::decodeJson(std::string jsonString, Json::Value *jsonval)
-{
-    Json::CharReaderBuilder builder;
-    const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
-    int rlen = static_cast<int>(jsonString.length());
-    std::string err;
-
-    if (!reader->parse(jsonString.c_str(), jsonString.c_str() + rlen, jsonval, &err))
+    bool JsonUtil::decodeJson(std::string jsonString, Json::Value *jsonval)
     {
-        LOGE("Json parsing failed: " << err);
-        return false;
-    }
-    return true;
-}
+        Json::CharReaderBuilder builder;
+        const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
+        int rlen = static_cast<int>(jsonString.length());
+        std::string err;
 
-bool JsonUtil::HasParam(const Json::Value &json, const std::string &param, const Json::ValueType& type)
-{
-    return json.isMember(param) && json[param].type() == type;
-}
-
-bool JsonUtil::HasJsonParam(const Json::Value &json, const std::string &param)
-{
-    return json.isMember(param) && json[param].isObject();
-}
-
-std::string JsonUtil::convertJsonToString(const Json::Value& json)
-{
-    Json::StreamWriterBuilder writer;
-    return Json::writeString(writer, json);
-}
-
-int JsonUtil::getIntegerValue(const Json::Value& json, const std::string& key)
-{
-    if (!json.isMember(key))
-    {
-        LOGE("Key '" << key << "' not found in JSON object");
-        return 0; // default value
-    }
-
-    const Json::Value& value = json[key];
-    if (!value.isInt())
-    {
-        LOGE("Value for key '" << key << "' is not an integer");
-        return 0; // default value
-    }
-
-    return value.asInt();
-}
-
-bool JsonUtil::getBoolValue(const Json::Value& json, const std::string& key)
-{
-    if (!json.isMember(key))
-    {
-        LOGE("Key '" << key << "' not found in JSON object");
-        return false;
-    }
-
-    const Json::Value& value = json[key];
-    if (!value.isBool())
-    {
-        LOGE("Value for key '" << key << "' is not a boolean");
-        return false;
-    }
-
-    return value.asBool();
-}
-
-std::string JsonUtil::getStringValue(const Json::Value& json, const std::string& key)
-{
-    if (!json.isMember(key))
-    {
-        LOGE("Key '" << key << "' not found in JSON object");
-        return "";
-    }
-
-    const Json::Value& value = json[key];
-    if (!value.isString())
-    {
-        LOGE("Value for key '" << key << "' is not a string");
-        return "";
-    }
-
-    return value.asString();
-}
-
-std::vector<uint16_t> JsonUtil::getIntegerArray(const Json::Value& json, const std::string& key)
-{
-    if (!json.isMember(key))
-    {
-        LOGE("Key '" << key << "' not found in JSON object");
-        return {};
-    }
-
-    const Json::Value& value = json[key];
-    if (!value.isArray())
-    {
-        LOGE("Value for key '" << key << "' is not an array");
-        return {};
-    }
-
-    std::vector<uint16_t> result;
-    for (const auto& element : value)
-    {
-        if (!element.isString())
+        if (!reader->parse(jsonString.c_str(), jsonString.c_str() + rlen, jsonval, &err))
         {
-            LOGE("Array element is not a string in key '" << key << "'");
+            LOGE("Json parsing failed: " << err);
+            return false;
+        }
+        return true;
+    }
+
+    bool JsonUtil::HasParam(const Json::Value &json, const std::string &param, const Json::ValueType& type)
+    {
+        return json.isMember(param) && json[param].type() == type;
+    }
+
+    bool JsonUtil::HasJsonParam(const Json::Value &json, const std::string &param)
+    {
+        return json.isMember(param) && json[param].isObject();
+    }
+
+    std::string JsonUtil::convertJsonToString(const Json::Value& json)
+    {
+        Json::StreamWriterBuilder writer;
+        return Json::writeString(writer, json);
+    }
+
+    std::string JsonUtil::getStringValue(const Json::Value &json, const std::string &key)
+    {
+        if (HasParam(json, key, Json::stringValue)) {
+            return json[key].asString();
+        }
+        return OPTIONAL_STR_NOT_SET;
+    }
+
+    int JsonUtil::getIntegerValue(const Json::Value &json, const std::string &key)
+    {
+        if (HasParam(json, key, Json::intValue)) {
+            return json[key].asInt();
+        }
+        return OPTIONAL_INT_NOT_SET;
+    }
+
+    bool JsonUtil::getBoolValue(const Json::Value &json, const std::string &key)
+    {
+        if (HasParam(json, key, Json::booleanValue)) {
+            return json[key].asBool();
+        }
+        return false;
+    }
+
+    std::vector<uint16_t> JsonUtil::getIntegerArray(const Json::Value& json, const std::string& key)
+    {
+        if (!json.isMember(key))
+        {
+            LOGE("Key '" << key << "' not found in JSON object");
             return {};
         }
 
-        const std::string& strValue = element.asString();
-        if (strValue.empty())
+        const Json::Value& value = json[key];
+        if (!value.isArray())
         {
-            LOGE("Array element is empty string in key '" << key << "'");
+            LOGE("Value for key '" << key << "' is not an array");
             return {};
         }
 
-        // Check if string contains only digits (no negative numbers for uint16_t)
-        bool isValid = true;
-        for (size_t i = 0; i < strValue.length(); ++i)
+        std::vector<uint16_t> result;
+        for (const auto& element : value)
         {
-            if (strValue[i] < '0' || strValue[i] > '9')
+            if (!element.isString())
             {
-                isValid = false;
-                break;
-            }
-        }
-
-        if (!isValid)
-        {
-            LOGE("Array element '" << strValue << "' cannot be converted to uint16_t in key '" << key << "'");
-            return {};
-        }
-
-        // Manual conversion to avoid exceptions
-        uint16_t uintValue = 0;
-        for (size_t i = 0; i < strValue.length(); ++i)
-        {
-            uintValue = uintValue * 10 + (strValue[i] - '0');
-
-            // Check for overflow (uint16_t max value is 65535)
-            if (uintValue > 65535)
-            {
-                LOGE("Array element '" << strValue << "' is too large for uint16_t in key '" << key << "'");
+                LOGE("Array element is not a string in key '" << key << "'");
                 return {};
             }
+
+            const std::string& strValue = element.asString();
+            if (strValue.empty())
+            {
+                LOGE("Array element is empty string in key '" << key << "'");
+                return {};
+            }
+
+            // Check if string contains only digits (no negative numbers for uint16_t)
+            bool isValid = true;
+            for (size_t i = 0; i < strValue.length(); ++i)
+            {
+                if (strValue[i] < '0' || strValue[i] > '9')
+                {
+                    isValid = false;
+                    break;
+                }
+            }
+
+            if (!isValid)
+            {
+                LOGE("Array element '" << strValue << "' cannot be converted to uint16_t in key '" << key << "'");
+                return {};
+            }
+
+            // Manual conversion to avoid exceptions
+            uint16_t uintValue = 0;
+            for (size_t i = 0; i < strValue.length(); ++i)
+            {
+                uintValue = uintValue * 10 + (strValue[i] - '0');
+
+                // Check for overflow (uint16_t max value is 65535)
+                if (uintValue > 65535)
+                {
+                    LOGE("Array element '" << strValue << "' is too large for uint16_t in key '" << key << "'");
+                    return {};
+                }
+            }
+
+            result.push_back(uintValue);
         }
 
-        result.push_back(uintValue);
+        return result;
     }
 
-    return result;
-}
+    Json::Value JsonUtil::GetMethodsInJsonArray(const std::unordered_set<std::string>& set)
+    {
+        Json::Value value;
+        int index = 0;
+        // Loop through the unordered_set 'set' and copy each string item into 'value' as a Json::arrayValue
+        for (const std::string& item : set)
+        {
+            // Add each 'item' as a Json::Value to 'value' at the current 'index'
+            value[index++] = Json::Value(item);
+        }
+        return value;
+    }
+
+    bool JsonUtil::IsMethodInJsonArray(const Json::Value& array, const std::string& method)
+    {
+        if (array.type() == Json::arrayValue)
+        {
+            for (const auto& element : array)
+            {
+                if (element.asString() == method)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    bool JsonUtil::IsMethodInSet(const std::unordered_set<std::string> &set, const std::string& method)
+    {
+        return set.find(method) != set.end();
+    }
+
+    void JsonUtil::AddArrayToJson(Json::Value &json, const std::string &key, const std::vector<int> &array)
+    {
+       Json::Value jsonArray(Json::arrayValue);
+       for (const auto& item : array)
+       {
+           jsonArray.append(item);
+       }
+       json[key] = jsonArray;
+   }
 
 } // namespace orb
