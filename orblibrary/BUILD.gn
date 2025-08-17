@@ -18,19 +18,19 @@ static_library("orb") {
     "moderator/app_mgr/utils.cpp",
     "moderator/app_mgr/xml_parser.cpp",
     "moderator/Configuration.cpp",
-    "moderator/utilities/ConfigurationUtil.cpp",
-    "moderator/utilities/JsonUtil.cpp",
-    "moderator/utilities/StringUtil.cpp",
-    "moderator/Drm.cpp"
+    "moderator/Drm.cpp",
+    "moderator/JsonRpcCallback.cpp",
   ]
 
   deps = [
     "//base", # For logging dependency
     "//third_party/jsoncpp",
-    "//third_party/libxml"
+    "//third_party/libxml",
+    ":orb_util",
+    "//third_party/orb/components/network_services:orb_network_services",
   ]
 
-  include_dirs = [ 
+  include_dirs = [
    "moderator",
    "moderator/utilities"
   ]
@@ -85,6 +85,35 @@ static_library("orb_integration")
   ]
 }
 
+static_library("orb_util")
+{
+  sources = [
+    "moderator/utilities/JsonUtil.cpp",
+    "moderator/utilities/StringUtil.cpp",
+    "moderator/utilities/ConfigurationUtil.cpp",
+  ]
+
+  public_configs = [ ":util_lib_config" ]
+
+  include_dirs = [
+   "include",
+   "moderator",
+  ]
+
+  deps = [
+    "//third_party/jsoncpp",
+    "//base", # For logging dependency
+  ]
+
+  defines = [ "IS_CHROMIUM" ]
+}
+
+config("util_lib_config") {
+  include_dirs = [
+   "moderator/utilities",
+   ]
+}
+
 
 executable("test_orb_moderator")
 {
@@ -120,13 +149,35 @@ executable("test_orb_configuration")
 {
   sources = [
     "test/configuration_unittest.cpp",
-    "test/configuration_util_unittest.cpp",
+    "moderator/Configuration.cpp",
+  ]
+
+  deps = [
+    "//testing/gtest",
+    "//testing/gtest:gtest_main",
+    "//third_party/jsoncpp",
+    "//base", # For logging dependency,
+    ":orb_util",
+  ]
+
+
+  include_dirs = [
+    "include",
+    "moderator",
+    "moderator/utilities",
+  ]
+
+  defines = [ "IS_CHROMIUM" ]
+
+  testonly = true
+}
+
+executable("test_orb_util")
+{
+  sources = [
     "test/json_util_unittest.cpp",
     "test/string_util_unittest.cpp",
-    "moderator/configuration/Configuration.cpp",
-    "moderator/configuration/ConfigurationUtil.cpp",
-    "moderator/utilities/JsonUtil.cpp",
-    "moderator/utilities/StringUtil.cpp",
+    "test/configuration_util_unittest.cpp",
   ]
 
   deps = [
@@ -134,9 +185,13 @@ executable("test_orb_configuration")
     "//testing/gtest:gtest_main",
     "//third_party/jsoncpp",
     "//base", # For logging dependency
+    ":orb_util",
   ]
 
-  public_configs = [ ":external_lib_config" ]
+  include_dirs = [
+    "include",
+    "moderator/utilities",
+  ]
 
   testonly = true
 }

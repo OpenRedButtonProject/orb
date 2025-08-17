@@ -7,7 +7,6 @@ static_library("orb_network_services") {
   sources = [
     "json_rpc/JsonRpcService.cpp",
     "json_rpc/JsonRpcServiceUtil.cpp",
-    "json_rpc/JsonRpcCallback.cpp",
     "websocket_service.cpp"
   ]
 
@@ -15,6 +14,7 @@ static_library("orb_network_services") {
     "//base", # For logging dependency
     "//third_party/jsoncpp",
     "//third_party/orb/external/libwebsockets/v4.3:libwebsockets",
+    "//third_party/orb/orblibrary:orb_util",
   ]
 
   public_deps = []

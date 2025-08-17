@@ -31,5 +31,6 @@
 
 #define LOGI(str)   LOG(INFO) << __FUNCTION__ << "," << __LINE__ << ": " << str
 #define LOGE(str)   LOG(ERROR) << __FUNCTION__ << "," << __LINE__ << ": " << str
+#define LOGD(str)   DLOG(INFO) << __FUNCTION__ << "," << __LINE__ << ": " << str
 
 #endif // _MODERATOR_LOG_H
