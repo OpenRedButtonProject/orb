@@ -73,7 +73,6 @@ public:
     void processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section);
     void processXmlAit(const std::vector<uint8_t>& xmlait);
 
-private:
     bool startWebSocketServer();
 
 private:
