@@ -31,7 +31,7 @@ body {
 .container {
     max-width: 1800px; /* Increased for 1080p TV */
     margin: 0 auto;
-    background: white;
+    background: black;
     border-radius: 15px;
     box-shadow: 0 10px 20px rgba(0,0,0,0.1);
     overflow: hidden;

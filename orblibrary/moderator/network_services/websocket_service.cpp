@@ -59,7 +59,7 @@ void WebSocketService::WebSocketConnection::SendFragment(std::vector<uint8_t> &&
     if (mWsi != nullptr)
     {
         lws_callback_on_writable(mWsi);
-    } else 
+    } else
     {
         LOGE("Wsi is null, cannot send data.");
     }
@@ -74,7 +74,7 @@ void WebSocketService::WebSocketConnection::Close()
     if (mWsi != nullptr)
     {
         lws_callback_on_writable(mWsi);
-    } else 
+    } else
     {
         LOGE("Wsi is null, cannot send data.");
     }
@@ -132,7 +132,7 @@ bool WebSocketService::Start()
 {
     LOGI(ENTER);
     bool ret = false;
-    if (mContext == nullptr 
+    if (mContext == nullptr
         && (mContext = lws_create_context(&mContextInfo)) != nullptr)
     {
         mStop = false;
@@ -162,7 +162,6 @@ void WebSocketService::Stop()
     }
 
     // Wait for the main thread to finish
-    LOGI("Stopping WebSocketService main thread...");
     mStop = true;
     // cancel the service
     if (mContext != nullptr)
@@ -190,7 +189,6 @@ void WebSocketService::MainLooper()
     LOGI(ENTER);
     while (!mStop)
     {
-        LOGI("WebSocketService main loop running ...");
         // The timeout value is ignored since 4.2
         if (lws_service(mContext, 0) < 0)
         {
@@ -221,14 +219,13 @@ int WebSocketService::EnterLwsCallback(struct lws *wsi, enum lws_callback_reason
 int WebSocketService::LwsCallback(struct lws *wsi, enum lws_callback_reasons reason,
     void *user, void *in, size_t len)
 {
-    LOGI("LwsCallback: " << reason);
     int result = 0;
     std::lock_guard<std::recursive_mutex> lock(mConnectionsMutex);
-    
+
     std::unordered_map<void *, std::unique_ptr<WebSocketConnection>>::iterator it;
 
     // Check if conection exists
-    if (reason == LWS_CALLBACK_CLOSED 
+    if (reason == LWS_CALLBACK_CLOSED
         || reason == LWS_CALLBACK_RECEIVE
         || reason == LWS_CALLBACK_SERVER_WRITEABLE)
     {
@@ -240,7 +237,7 @@ int WebSocketService::LwsCallback(struct lws *wsi, enum lws_callback_reasons rea
             return -1; // User not found
         }
     }
-    
+
     //handle the callback reason
     switch (reason)
     {
@@ -300,7 +297,6 @@ int WebSocketService::LwsCallback(struct lws *wsi, enum lws_callback_reasons rea
             break;
         }
     }
-    LOGI("LwsCallback result: " << result);
     return result;
 }
 
@@ -363,7 +359,7 @@ std::string WebSocketService::Header(struct lws *wsi, enum lws_token_indexes hea
     return "";
 }
 
-void WebSocketService::ReleaseService() 
+void WebSocketService::ReleaseService()
 {
     if (mContext != nullptr)
     {
@@ -397,5 +393,5 @@ WebSocketService::WebSocketConnection* WebSocketService::GetConnection(int id)
 }
 
 } // namespace networkServices
-   
+
 } // namespace orb

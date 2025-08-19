@@ -3,7 +3,7 @@
 #include <json/json.h>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "Configuration.h"
+#include "Configuration.hpp"
 #include "ConfigurationUtil.h"
 
 class ConfigurationTest : public ::testing::Test {

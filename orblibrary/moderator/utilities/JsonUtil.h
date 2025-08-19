@@ -19,6 +19,8 @@
 
 #include <json/json.h>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace orb
 {
@@ -117,6 +119,42 @@ public:
      *         that can be converted to unsigned 16-bit integers, empty vector otherwise.
      */
     static std::vector<uint16_t> getIntegerArray(const Json::Value& json, const std::string& key);
+
+    /**
+     * Get a JSON array containing the methods in a set.
+     *
+     * @param set The set of methods to convert to a JSON array.
+     * @return A JSON array containing the methods in the set.
+     */
+    static Json::Value GetMethodsInJsonArray(const std::unordered_set<std::string>& set);
+
+    /**
+     * Check if a method is present in a set of methods.
+     *
+     * @param set The set of methods to check for the presence of the method.
+     * @param method The method to search for within the set.
+     * @return 'true' if the method is present in the set, 'false' otherwise.
+     */
+    static bool IsMethodInSet(const std::unordered_set<std::string> &set, const std::string& method);
+
+    /**
+     * Check if a method is present in a JSON array.
+     *
+     * @param array The JSON array to check for the presence of the method.
+     * @param method The method to search for within the JSON array.
+     * @return 'true' if the method is present in the JSON array, 'false' otherwise.
+     */
+    static bool IsMethodInJsonArray(const Json::Value& array, const std::string& method);
+
+    /**
+     * Add an array to a JSON object.
+     *
+     * @param json The JSON object to add the array to.
+     * @param key The key to use for the array in the JSON object.
+     * @param array The array to add to the JSON object.
+     */
+    static void AddArrayToJson(Json::Value &json, const std::string &key, const std::vector<int> &array);
+
 
 }; // class JsonUtil
 

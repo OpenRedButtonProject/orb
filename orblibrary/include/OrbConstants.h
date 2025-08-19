@@ -47,6 +47,10 @@ const uint16_t KEY_SET_NUMERIC = 0x100;
 const uint16_t KEY_SET_ALPHA = 0x200;
 const uint16_t KEY_SET_OTHER = 0x400;
 
+// Event types
+const std::string CHANNEL_STATUS_CHANGE = "ChannelStatusChanged";
+const std::string NETWORK_STATUS = "NetworkStatus";
+
 static constexpr std::string APPLICATION_TYPE_HBBTV = "HBBTV";
 static constexpr std::string APPLICATION_TYPE_OPAPP = "OPAPP";
 static constexpr std::string APPLICATION_TYPE_VIDEO = "VIDEO";
