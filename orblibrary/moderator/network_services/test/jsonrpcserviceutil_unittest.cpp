@@ -1,6 +1,6 @@
 // create unit for all static methods in JsonRpcServiceUtil.cpp
 #include "testing/gtest/include/gtest/gtest.h"
-#include "third_party/orb/components/network_services/json_rpc/JsonRpcServiceUtil.h"
+#include "JsonRpcServiceUtil.h"
 
 using namespace orb::networkServices;
 

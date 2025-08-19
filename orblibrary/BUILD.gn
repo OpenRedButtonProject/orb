@@ -27,7 +27,7 @@ static_library("orb") {
     "//third_party/jsoncpp",
     "//third_party/libxml",
     ":orb_util",
-    "//third_party/orb/components/network_services:orb_network_services",
+    ":orb_network_services",
   ]
 
   include_dirs = [
@@ -195,3 +195,52 @@ executable("test_orb_util")
 
   testonly = true
 }
+
+static_library("orb_network_services") {
+  sources = [
+    "moderator/network_services/json_rpc/JsonRpcService.cpp",
+    "moderator/network_services/json_rpc/JsonRpcServiceUtil.cpp",
+    "moderator/network_services/websocket_service.cpp"
+  ]
+
+  deps = [
+    "//base", # For logging dependency
+    "//third_party/jsoncpp",
+    "//third_party/orb/external/libwebsockets/v4.3:libwebsockets",
+    ":orb_util",
+  ]
+
+  public_deps = []
+
+  public_configs = [
+    ":external_network_services_config",
+    "//third_party/orb/external/libwebsockets/v4.3:libwebsockets_public_config",
+    "//third_party/jsoncpp:jsoncpp_config"
+   ]
+}
+
+# Expose the include directory
+config("external_network_services_config") {
+  include_dirs = [
+    "moderator/network_services/include",
+    "moderator/network_services/json_rpc",
+  ]
+  defines = [ "IS_CHROMIUM" ]
+}
+
+executable("test_orb_jsonrpcservice")
+{
+  sources = [
+    "moderator/network_services/test/jsonrpcservice_unittest.cpp",
+    "moderator/network_services/test/jsonrpcserviceutil_unittest.cpp"
+  ]
+
+  deps = [
+    "//testing/gtest",
+    "//testing/gtest:gtest_main",
+    "//base", # For logging dependency,
+    ":orb_network_services"
+  ]
+  testonly = true
+}
+
