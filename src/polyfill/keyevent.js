@@ -104,13 +104,13 @@
             originalEvent.preventDefault();
             originalEvent.stopImmediatePropagation();
             const keyLabel = Object.keys(keys).find(key => keys[key] === originalEvent.keyCode);
-            const newEvent = new KeyboardEvent(originalEvent.type, {
+            const newEvent = new KeyboardEvent(originalEvent.type, Object.assign({}, originalEvent, {
                 keyCode: originalEvent.keyCode,
                 code: keyLabels[keyLabel] || "0",
-                bubbles: true
-            });
+                bubbles: true,
+            }));
 
-            window.dispatchEvent(newEvent);
+            originalEvent.target.dispatchEvent(newEvent);
         }
     }
 
