@@ -27,9 +27,10 @@ namespace orb
 const string CONFIGURATION_GET_CAPABILITIES = "getCapabilities";
 const string CONFIGURATION_GET_AUDIO_PROFILES = "getAudioProfiles";
 const string CONFIGURATION_GET_VIDEO_PROFILES = "getVideoProfiles";
+const string CONFIGURATION_METHOD_PREFIX = "Configuration.";
 
-Configuration::Configuration(ApplicationType apptype)
-    : ComponentBase(), mAppType(apptype)
+Configuration::Configuration(ApplicationType apptype, IOrbBrowser* browser)
+    : ComponentBase(), mAppType(apptype), mOrbBrowser(browser)
 {
     LOGI("Configuration constructor - apptype: " << apptype);
 }
@@ -39,42 +40,38 @@ string Configuration::executeRequest(string method, Json::Value token, Json::Val
     LOGI("Configuration::executeRequest - method: " << method);
     const string RESULT_KEY = "result";
     // create an empty json object
-    Json::Value response;
+
     if (method == CONFIGURATION_GET_CAPABILITIES) {
-        response[RESULT_KEY] = handleGetCapabilities();
+        return handleGetCapabilities();
     }
     else if (method == CONFIGURATION_GET_AUDIO_PROFILES) {
-        response[RESULT_KEY] = handleGetAudioProfiles();
+        return handleGetAudioProfiles();
     }
     else if (method == CONFIGURATION_GET_VIDEO_PROFILES) {
-        response[RESULT_KEY] = handleGetVideoProfiles();
-    }
-    else {
-        response[RESULT_KEY] = "Configuration method '" + method + "' received";
+        return handleGetVideoProfiles();
     }
 
-    // TODO: Implement configuration-specific methods
-    // For now, return a basic response indicating the method was received
-    string responseString = JsonUtil::convertJsonToString(response);
-    return responseString;
+    Json::Value response;
+    response[RESULT_KEY] = "Configuration method '" + method + "' Not implemented";
+    return JsonUtil::convertJsonToString(response);
 }
 
-Json::Value Configuration::handleGetCapabilities()
+string Configuration::handleGetCapabilities()
 {
-    std::shared_ptr<Capabilities> capabilities = ConfigurationUtil::createDefaultCapabilities(mAppType);
-    return ConfigurationUtil::capabilitiesToJson(*capabilities);
+    std::string request = ConfigurationUtil::generateRequest(CONFIGURATION_METHOD_PREFIX+CONFIGURATION_GET_CAPABILITIES, mAppType);
+    return mOrbBrowser->sendRequestToClient(request);
 }
 
-Json::Value Configuration::handleGetAudioProfiles()
+string Configuration::handleGetAudioProfiles()
 {
-    std::vector<AudioProfile> audioProfiles = ConfigurationUtil::createDefaultAudioProfiles();
-    return ConfigurationUtil::audioProfilesToJson(audioProfiles);
+    std::string request = ConfigurationUtil::generateRequest(CONFIGURATION_METHOD_PREFIX+CONFIGURATION_GET_AUDIO_PROFILES, mAppType);
+    return mOrbBrowser->sendRequestToClient(request);
 }
 
-Json::Value Configuration::handleGetVideoProfiles()
+string Configuration::handleGetVideoProfiles()
 {
-    std::vector<VideoProfile> videoProfiles = ConfigurationUtil::createDefaultVideoProfiles();
-    return ConfigurationUtil::videoProfilesToJson(videoProfiles);
+    std::string request = ConfigurationUtil::generateRequest(CONFIGURATION_METHOD_PREFIX+CONFIGURATION_GET_VIDEO_PROFILES, mAppType);
+    return mOrbBrowser->sendRequestToClient(request);
 }
 
 

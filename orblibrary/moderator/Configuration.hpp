@@ -21,6 +21,7 @@
 #include <memory>
 #include "ComponentBase.hpp"
 #include "OrbConstants.h"
+#include "IOrbBrowser.h"
 
 namespace orb
 {
@@ -28,7 +29,7 @@ namespace orb
 class Configuration : public ComponentBase
 {
 public:
-    explicit Configuration(ApplicationType apptype);
+    explicit Configuration(ApplicationType apptype, IOrbBrowser* browser);
     virtual ~Configuration() {}
 
     /**
@@ -45,11 +46,12 @@ public:
 
 private:
     ApplicationType mAppType;
+    IOrbBrowser *mOrbBrowser;
 
 private:
-    Json::Value handleGetCapabilities();
-    Json::Value handleGetAudioProfiles();
-    Json::Value handleGetVideoProfiles();
+    std::string handleGetCapabilities();
+    std::string handleGetAudioProfiles();
+    std::string handleGetVideoProfiles();
 }; // class Configuration
 
 } // namespace orb

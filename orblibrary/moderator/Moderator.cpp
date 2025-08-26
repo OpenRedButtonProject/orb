@@ -52,15 +52,12 @@ Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
     , mNetwork(std::make_unique<Network>())
     , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
     , mAppMgrInterface(std::make_unique<AppMgrInterface>(browser, apptype))
-    , mConfiguration(std::make_unique<Configuration>(apptype))
+    , mConfiguration(std::make_unique<Configuration>(apptype, browser))
     , mDrm(std::make_unique<Drm>())
     , mBroadcastInterface(std::make_unique<BroadcastInterface>(browser))
     , mAppType(apptype)
 {
     LOGI("HbbTV version " << ORB_HBBTV_VERSION);
-    if (apptype != orb::APP_TYPE_VIDEO) {
-        startWebSocketServer();
-    }
 }
 
 Moderator::~Moderator()
@@ -123,7 +120,7 @@ string Moderator::handleOrbRequest(string jsonRqst)
     }
     else if (component == COMPONENT_BROADCAST)
     {
-            return mBroadcastInterface->executeRequest(method, jsonval["token"], jsonval["params"]);
+        return mBroadcastInterface->executeRequest(method, jsonval["token"], jsonval["params"]);
     }
 
     LOGI("Passing request to TIS component: [" << component << "], method: [" << method << "]");
@@ -179,13 +176,26 @@ void Moderator::processXmlAit(const vector<uint8_t>& xmlait)
 }
 
 bool Moderator::startWebSocketServer() {
-    std::string endpoint = orb::ConfigurationUtil::getJsonRpcServerEndpoint();
-    int port = orb::ConfigurationUtil::getJsonRpcServerPort(mAppType);
-    LOGI("Create and start WebSocket Server - endpoint: " << endpoint << " port: " << port);
+    const std::string CONFIGURATION_GETCAPABILITIES = "Configuration.getCapabilities";
+    // request capabilities from Live App
+    std::string request = ConfigurationUtil::generateRequest(CONFIGURATION_GETCAPABILITIES, mAppType);
+    std::string response = mOrbBrowser->sendRequestToClient(request);
 
+    Json::Value capabilities = Json::Value();
+    if (!JsonUtil::decodeJson(response, &capabilities)) {
+        LOGE("Failed to decode capabilities");
+        return false;
+    }
+
+    // Get the endpoint and port from the capabilities
+    std::string endpoint = JsonUtil::getStringValue(capabilities["result"], "jsonRpcServerEndpoint");
+    int port = JsonUtil::getIntegerValue(capabilities["result"], "jsonRpcServerPort");
+
+    LOGI("Create and start WebSocket Server - endpoint: " << endpoint << ", port: " << port);
+    // Create and start the WebSocket Server
     std::unique_ptr<orb::networkServices::JsonRpcService::ISessionCallback> callback =
         std::make_unique<JsonRpcCallback>();
-    mWebSocketServer = std::make_shared<orb::networkServices::JsonRpcService>(port,endpoint,std::move(callback)); // TODO: check if this is correct
+    mWebSocketServer = std::make_shared<orb::networkServices::JsonRpcService>(port,endpoint,std::move(callback));
     mWebSocketServer->SetOpAppEnabled(mAppType != orb::APP_TYPE_HBBTV);
     return mWebSocketServer->Start();
 }
