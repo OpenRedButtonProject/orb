@@ -30,6 +30,10 @@ class Configuration;
 class Drm;
 class BroadcastInterface;
 
+namespace networkServices {
+    class JsonRpcService;
+}
+
 class Moderator
 {
 public:
@@ -69,6 +73,8 @@ public:
     void processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section);
     void processXmlAit(const std::vector<uint8_t>& xmlait);
 
+    bool startWebSocketServer();
+
 private:
     IOrbBrowser *mOrbBrowser;
     std::unique_ptr<Network> mNetwork;
@@ -77,7 +83,11 @@ private:
     std::unique_ptr<Configuration> mConfiguration;
     std::unique_ptr<Drm> mDrm;
     std::unique_ptr<BroadcastInterface> mBroadcastInterface;
-
+    // WebSocket Server is used to communicate with the web client, OpApp and regular HBBTV App
+    // should have different WebSocket Server for different permission. OpApp and Video Window
+    // will use the same WebSocket Server with different connections.
+    std::shared_ptr<orb::networkServices::JsonRpcService> mWebSocketServer;
+    ApplicationType mAppType;
 }; // class Moderator
 
 } // namespace orb

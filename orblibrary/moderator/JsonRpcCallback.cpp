@@ -16,15 +16,16 @@
  * ORB JsonRpcCallback
  *
  */
- 
+
 #include "log.h"
 #include "JsonRpcCallback.h"
 
 namespace orb
 {
-namespace networkServices
-{    
-    void JsonRpcCallback::RequestNegotiateMethods() 
+
+    using namespace networkServices;
+
+    void JsonRpcCallback::RequestNegotiateMethods()
     {
         LOGI("JsonRpcCallback::RequestNegotiateMethods");
         // Implementation of method negotiation logic goes here
@@ -83,7 +84,7 @@ namespace networkServices
         std::string id,
         int feature)
     {
-        LOGI("JsonRpcCallback::RequestFeatureSuppress");    
+        LOGI("JsonRpcCallback::RequestFeatureSuppress");
         // Implementation of feature suppression logic goes here
     }
 
@@ -94,10 +95,10 @@ namespace networkServices
     }
 
     void JsonRpcCallback::NotifyStateMedia(std::string state)
-    {   
+    {
         LOGI("JsonRpcCallback::NotifyStateMedia");
         // Implementation of media state notification logic goes here
-    }   
+    }
 
     void JsonRpcCallback::RespondMessage(std::string info)
     {
@@ -128,7 +129,7 @@ namespace networkServices
         int code,
         std::string message)
     {
-        LOGI("JsonRpcCallback::ReceiveError");  
+        LOGI("JsonRpcCallback::ReceiveError");
         // Implementation of error reception logic goes here
     }
 
@@ -137,10 +138,10 @@ namespace networkServices
         std::string message,
         std::string method,
         std::string data)
-    {   
+    {
         LOGI("JsonRpcCallback::ReceiveError with method and data");
         // Implementation of error reception with method and data logic goes here
-    }   
+    }
 
     void JsonRpcCallback::RequestIPPlaybackStatusUpdate(
         const Json::Value &params)
@@ -159,22 +160,21 @@ namespace networkServices
     void JsonRpcCallback::RequestIPPlaybackSetComponents(
         const Json::Value &params)
     {
-        LOGI("JSON Params: " + params.toStyledString());    
+        LOGI("JSON Params: " + params.toStyledString());
         // Implementation of IP playback set components request logic goes here
     }
 
     void JsonRpcCallback::RequestIPPlaybackSetPresentFollowing(
         const Json::Value &params)
-    {       
+    {
         LOGI("JSON Params: " + params.toStyledString());
         // Implementation of IP playback set present following request logic goes here
     }
 
     void JsonRpcCallback::RequestIPPlaybackSetTimelineMapping(
         const Json::Value &params)
-    {   
+    {
         LOGI("JSON Params: " + params.toStyledString());
         // Implementation of IP playback set timeline mapping request logic goes here
     }
-} // namespace networkServices
 } // namespace orb
