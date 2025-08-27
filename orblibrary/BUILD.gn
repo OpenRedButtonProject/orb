@@ -17,7 +17,6 @@ static_library("orb") {
     "moderator/app_mgr/opapp.cpp",
     "moderator/app_mgr/utils.cpp",
     "moderator/app_mgr/xml_parser.cpp",
-    "moderator/Configuration.cpp",
     "moderator/Drm.cpp",
     "moderator/JsonRpcCallback.cpp",
   ]
@@ -90,7 +89,6 @@ static_library("orb_util")
   sources = [
     "moderator/utilities/JsonUtil.cpp",
     "moderator/utilities/StringUtil.cpp",
-    "moderator/utilities/ConfigurationUtil.cpp",
   ]
 
   public_configs = [ ":util_lib_config" ]
@@ -145,39 +143,11 @@ executable("test_opapp_package_manager")
   testonly = true
 }
 
-executable("test_orb_configuration")
-{
-  sources = [
-    "test/configuration_unittest.cpp",
-    "moderator/Configuration.cpp",
-  ]
-
-  deps = [
-    "//testing/gtest",
-    "//testing/gtest:gtest_main",
-    "//third_party/jsoncpp",
-    "//base", # For logging dependency,
-    ":orb_util",
-  ]
-
-
-  include_dirs = [
-    "include",
-    "moderator",
-    "moderator/utilities",
-  ]
-
-  defines = [ "IS_CHROMIUM" ]
-
-  testonly = true
-}
-
 executable("test_orb_util")
 {
   sources = [
     "test/json_util_unittest.cpp",
     "test/string_util_unittest.cpp",
-    "test/configuration_util_unittest.cpp",
   ]
 
   deps = [

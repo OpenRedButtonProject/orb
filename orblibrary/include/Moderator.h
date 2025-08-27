@@ -26,7 +26,6 @@ namespace orb
 class Network;
 class MediaSynchroniser;
 class AppMgrInterface;
-class Configuration;
 class Drm;
 class BroadcastInterface;
 
@@ -80,7 +79,6 @@ private:
     std::unique_ptr<Network> mNetwork;
     std::unique_ptr<MediaSynchroniser> mMediaSynchroniser;
     std::unique_ptr<AppMgrInterface> mAppMgrInterface;
-    std::unique_ptr<Configuration> mConfiguration;
     std::unique_ptr<Drm> mDrm;
     std::unique_ptr<BroadcastInterface> mBroadcastInterface;
     // WebSocket Server is used to communicate with the web client, OpApp and regular HBBTV App
