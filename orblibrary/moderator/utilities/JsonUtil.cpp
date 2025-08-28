@@ -25,14 +25,12 @@ namespace orb
 
     bool JsonUtil::decodeJson(std::string jsonString, Json::Value *jsonval)
     {
-        Json::CharReaderBuilder builder;
-        const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
-        int rlen = static_cast<int>(jsonString.length());
-        std::string err;
-
-        if (!reader->parse(jsonString.c_str(), jsonString.c_str() + rlen, jsonval, &err))
-        {
-            LOGE("Json parsing failed: " << err);
+        Json::CharReaderBuilder reader;
+        std::string errors;
+        std::istringstream responseStream(jsonString);
+        bool parseSuccess = Json::parseFromStream(reader, responseStream, jsonval, &errors);
+        if (!parseSuccess) {
+            LOGE("Json parsing failed: " << errors);
             return false;
         }
         return true;
