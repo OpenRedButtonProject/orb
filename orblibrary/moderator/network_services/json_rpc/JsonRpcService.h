@@ -15,7 +15,7 @@
 #include <unordered_set>
 #include <vector>
 #include <mutex>
-#include <memory> 
+#include <memory>
 #include <json/json.h>
 #include <functional>
 
@@ -152,7 +152,7 @@ public:
             int connectionId,
             std::string id,
             std::string method,
-            int sessionId) = 0;    
+            int sessionId) = 0;
 
         virtual void ReceiveError(
             int code,
@@ -169,7 +169,7 @@ public:
 
         virtual void RequestIPPlaybackMediaPositionUpdate(
             const Json::Value &params) = 0;
-        
+
         virtual void RequestIPPlaybackSetComponents(
             const Json::Value &params) = 0;
 
@@ -177,7 +177,7 @@ public:
             const Json::Value &params) = 0;
 
         virtual void RequestIPPlaybackSetTimelineMapping(
-            const Json::Value &params) = 0;   
+            const Json::Value &params) = 0;
 
         virtual ~ISessionCallback() = default;
     };
@@ -186,9 +186,9 @@ public:
         std::unique_ptr<ISessionCallback> sessionCallback);
     /**
      *  Set Operator Application flag.
-     *  Default value is true. 
+     *  Default value is true.
      */
-    void SetOpAppEnabled(bool enabled);    
+    void SetOpAppEnabled(bool enabled);
 
     bool OnConnection(WebSocketConnection *connection) override;
 
@@ -333,7 +333,7 @@ public:
     JsonRpcStatus RequestIPPlaybackSetComponents(int connectionId, const Json::Value &obj);
     JsonRpcStatus RequestIPPlaybackSetTimelineMapping(int connectionId, const Json::Value &obj);
     JsonRpcStatus RequestIPPlaybackSetPresentFollowing(int connectionId, const Json::Value &obj);
-    
+
     // Terminal to OpApp Video Window Request methods
     void SendIPPlayerSelectChannel(int channelType, int idType, const std::string& ipBroadcastId);
     void SendIPPlayerPlay(int sessionId);
@@ -346,6 +346,8 @@ public:
     void SendIPPlayerSelectComponents(int sessionId, const std::vector<int>& videoComponents,
         const std::vector<int>& audioComponents, const std::vector<int>& subtitleComponents);
     void SendIPPlayerResolveTimeline(int sessionId, const std::string& timelineSelector);
+
+    int GetCurrentSessionId();
 
 private:
     // Setters and getters for variables
@@ -380,17 +382,17 @@ private:
 
     void handleError(int connectionId, JsonRpcStatus status, const Json::Value& obj);
 
-    JsonRpcStatus HandleFeatureRequest(int connectionId, const Json::Value &obj, 
+    JsonRpcStatus HandleFeatureRequest(int connectionId, const Json::Value &obj,
         const std::string &feature);
 
-    void GetIPPlayerConnectionIdsForMethod(std::vector<int> &result, const std::string& method);   
-    
+    void GetIPPlayerConnectionIdsForMethod(std::vector<int> &result, const std::string& method);
+
     void SendIPPlayerMessageToClients(const std::string& method, const Json::Value &params);
 
     void SendIPPlayerMessageToClients(const std::string& method, const std::string &sessionId);
 
     JsonRpcStatus HandleIPPlaybackRequest(int connectionId, const Json::Value &obj, const std::string &method);
-    
+
     JsonRpcStatus ResponseIPPlaybackRequest(int connectionId, const std::string &id, const std::string &method);
 
     void RegisterJsonRPCMethods();
@@ -406,7 +408,7 @@ private:
     std::map<std::string, std::function<JsonRpcStatus(int connectionId, const
         Json::Value&)> > m_json_rpc_methods;
 
-    // Sets to hold supported methods for both directions between the regular app and the terminal   
+    // Sets to hold supported methods for both directions between the regular app and the terminal
     std::unordered_set<std::string> m_supported_methods_app_to_terminal;
     std::unordered_set<std::string> m_supported_methods_terminal_to_app;
 
@@ -414,11 +416,12 @@ private:
     std::unordered_set<std::string> m_supported_methods_opapp_to_terminal;
     std::unordered_set<std::string> m_supported_methods_terminal_to_opapp;
 
-    // Map to hold connection data for each connection   
+    // Map to hold connection data for each connection
     std::unordered_map<int, ConnectionData> m_connectionData;
     bool m_opAppEnabled;
+    int m_currentSessionId;
 };
 } // namespace networkServices
 } // namespace orb
 
-#endif //OBS_NS_JSON_RPC_SERVICE_H 
+#endif //OBS_NS_JSON_RPC_SERVICE_H

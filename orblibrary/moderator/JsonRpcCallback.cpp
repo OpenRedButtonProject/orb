@@ -25,6 +25,10 @@ namespace orb
 
     using namespace networkServices;
 
+    JsonRpcCallback::JsonRpcCallback(std::weak_ptr<VideoWindow> videoWindow)
+    : mVideoWindow(videoWindow)
+    {}
+
     void JsonRpcCallback::RequestNegotiateMethods()
     {
         LOGI("JsonRpcCallback::RequestNegotiateMethods");
@@ -147,6 +151,10 @@ namespace orb
         const Json::Value &params)
     {
         LOGI("JSON Params: " + params.toStyledString());
+        std::shared_ptr<VideoWindow> videoWindow = mVideoWindow.lock();
+        if (videoWindow) {
+            videoWindow->DispatchChannelStatusChangedEvent(params);
+        }
         // Implementation of IP playback status update request logic goes here
     }
 
