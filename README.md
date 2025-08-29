@@ -8,17 +8,10 @@ The Open Red Button Project (ORB) is an open source project that adds HbbTV supp
 
 The ORB project is designed as a reference implementation and requires additional modifications, including minor browser patches, for use in production. Ocean Blue Software (OBS), the creators of ORB, are experienced in making these modifications and integrating ORB into production devices. **For commercial support and discussion about how OBS can help with your project, contact OBS at [info@oceanbluesoftware.co.uk](mailto:info@oceanbluesoftware.co.uk).**
 
-## Overview
+## Development Status
+We are in the process of updating ORB to include HbbTV OpApp support. As a result the **master** branch is subject to frequent chance, is unstable, and may not build successfully. 
 
-* **[src/:](src/)** Common polyfill adding HbbTV APIs to the browser (JavaScript).
-
-* **[components/:](components/)** Application Manager and Network Services components, including Media Synchronization and Companion Screen (C++).
-
-* **[android/](android/):** Android library utilising the system WebView and a mock application for integration testing.
-
-* **[rdk/](rdk/):** RDK library utilising the system WPE browser.
-
-See those directories for specific build and integration information.
+For a stable ORB release, please use the **[orb 1.0][https://github.com/OpenRedButtonProject/orb/tree/v1.0]** branch, which is maintained with bug fixes and critical updates.  If you are interested in the feature roadmap for ORB, please contact OBS at [info@oceanbluesoftware.co.uk](mailto:info@oceanbluesoftware.co.uk).
 
 ## Contribute
 
