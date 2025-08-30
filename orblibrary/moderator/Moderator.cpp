@@ -27,12 +27,8 @@
 #include "log.hpp"
 #include "JsonUtil.h"
 #include "StringUtil.h"
-#include "BroadcastInterface.hpp"
-
 #include "JsonRpcCallback.h"
-#include "JsonUtil.h"
-
-
+#include "VideoWindow.hpp"
 using namespace std;
 
 namespace orb
@@ -43,7 +39,7 @@ const string COMPONENT_MANAGER = "Manager";
 const string COMPONENT_NETWORK = "Network";
 const string COMPONENT_MEDIA_SYNCHRONISER = "MediaSynchroniser";
 const string COMPONENT_DRM = "Drm";
-const string COMPONENT_BROADCAST = "Broadcast";
+const string VIDEO_WINDOW_PREFIX = "VideoWindow.";
 
 Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
     : mOrbBrowser(browser)
@@ -51,8 +47,8 @@ Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
     , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
     , mAppMgrInterface(std::make_unique<AppMgrInterface>(browser, apptype))
     , mDrm(std::make_unique<Drm>())
-    , mBroadcastInterface(std::make_unique<BroadcastInterface>(browser))
     , mAppType(apptype)
+    , mVideoWindow(std::make_shared<VideoWindow>(browser))
 {
     LOGI("HbbTV version " << ORB_HBBTV_VERSION);
 }
@@ -114,10 +110,6 @@ string Moderator::handleOrbRequest(string jsonRqst)
     {
         return mDrm->executeRequest(method, jsonval["token"], jsonval["params"]);
     }
-    else if (component == COMPONENT_BROADCAST)
-    {
-        return mBroadcastInterface->executeRequest(method, jsonval["token"], jsonval["params"]);
-    }
 
     LOGI("Passing request to Live TV App");
     return mOrbBrowser->sendRequestToClient(JsonUtil::convertJsonToString(jsonval));
@@ -155,6 +147,9 @@ bool Moderator::handleBridgeEvent(const std::string& etype, const std::string& p
             mAppMgrInterface->onNetworkStatusChange(JsonUtil::getBoolValue(jsonval, "available"));
         }
         consumed = true; // This event is consumed here and is not passed to Javascript
+    } else if (etype.starts_with(VIDEO_WINDOW_PREFIX)) {
+        // VideoWindow events are handled here
+        consumed = mVideoWindow->handleBridgeEvent(etype, properties);
     }
     return consumed;
 }
@@ -192,9 +187,11 @@ bool Moderator::startWebSocketServer() {
     LOGI("Create and start WebSocket Server - endpoint: " << endpoint << ", port: " << port);
     // Create and start the WebSocket Server
     std::unique_ptr<orb::networkServices::JsonRpcService::ISessionCallback> callback =
-        std::make_unique<JsonRpcCallback>();
+        std::make_unique<JsonRpcCallback>(mVideoWindow);
     mWebSocketServer = std::make_shared<orb::networkServices::JsonRpcService>(port,endpoint,std::move(callback));
     mWebSocketServer->SetOpAppEnabled(mAppType == orb::APP_TYPE_OPAPP);
+    // set WebSocketService to VideoWindow
+    mVideoWindow->setWebSocketService(mWebSocketServer);
     return mWebSocketServer->Start();
 }
 

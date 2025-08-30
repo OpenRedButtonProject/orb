@@ -18,14 +18,19 @@
 #define OBS_NS_JSON_RPC_CALLBACK_H
 
 #include "JsonRpcService.h"
+#include "VideoWindow.hpp"
 
 namespace orb
 {
 
 class JsonRpcCallback : public networkServices::JsonRpcService::ISessionCallback
 {
+private:
+    std::weak_ptr<VideoWindow> mVideoWindow;
+
 public:
-    JsonRpcCallback() = default;
+    JsonRpcCallback(std::weak_ptr<VideoWindow> videoWindow);
+
     virtual ~JsonRpcCallback() = default;
 
     // ISessionCallback interface

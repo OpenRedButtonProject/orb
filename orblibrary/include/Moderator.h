@@ -27,7 +27,7 @@ class Network;
 class MediaSynchroniser;
 class AppMgrInterface;
 class Drm;
-class BroadcastInterface;
+class VideoWindow;
 
 namespace networkServices {
     class JsonRpcService;
@@ -80,12 +80,14 @@ private:
     std::unique_ptr<MediaSynchroniser> mMediaSynchroniser;
     std::unique_ptr<AppMgrInterface> mAppMgrInterface;
     std::unique_ptr<Drm> mDrm;
-    std::unique_ptr<BroadcastInterface> mBroadcastInterface;
+    ApplicationType mAppType;
+
     // WebSocket Server is used to communicate with the web client, OpApp and regular HBBTV App
     // should have different WebSocket Server for different permission. OpApp and Video Window
     // will use the same WebSocket Server with different connections.
     std::shared_ptr<orb::networkServices::JsonRpcService> mWebSocketServer;
-    ApplicationType mAppType;
+    // Video Window is used to communicate with the video window component for Operator channel playback
+    std::shared_ptr<VideoWindow> mVideoWindow;
 }; // class Moderator
 
 } // namespace orb

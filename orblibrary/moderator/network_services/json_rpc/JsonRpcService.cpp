@@ -769,6 +769,7 @@ JsonRpcService::JsonRpcStatus JsonRpcService::ReceiveConfirmForSelectChannel(int
     }
     std::string method = result[JSONRPC_METHOD_KEY].asString();
     int sessionId = result[JSONRPC_SESSION_ID_KEY].asInt();
+    m_currentSessionId = sessionId;
     m_sessionCallback->ReceiveConfirmForSelectChannel(connectionId, id, method, sessionId);
     return JsonRpcStatus::SUCCESS;
 }
@@ -1950,6 +1951,11 @@ void JsonRpcService::SendIPPlayerMessageToClients(const std::string& method, con
     Json::Value params;
     params[JSONRPC_SESSION_ID_KEY] = sessionId;
     SendIPPlayerMessageToClients(method, params);
+}
+
+int JsonRpcService::GetCurrentSessionId()
+{
+    return m_currentSessionId;
 }
 
 } // namespace network_services
