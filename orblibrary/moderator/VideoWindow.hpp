@@ -23,23 +23,56 @@
 namespace orb
 {
 
+/**
+ * @brief VideoWindow class
+ *
+ * This class is responsible for handling the request to OpApp video window
+ * by calling websocket service APIs..
+ *
+ */
 class VideoWindow
 {
 public:
+    /**
+     * @brief VideoWindow constructor
+     *
+     * @param browser OrbBrowser instance to send request to ORBClient
+     */
     explicit VideoWindow(IOrbBrowser* browser);
+
+    /**
+     * @brief VideoWindow destructor
+     */
     virtual ~VideoWindow();
+
+    /**
+     * @brief Handle the bridge event from LiveTV app
+     *
+     * @param etype Event type
+     * @param properties Event properties in JSON string format
+     * @return true if the event is handled, false otherwise
+     */
     bool handleBridgeEvent(const std::string& etype, const std::string& properties);
+
+    /**
+     * @brief Set the WebSocket service
+     *
+     * @param webSocketService WebSocket service instance
+     */
     void setWebSocketService(std::shared_ptr<networkServices::JsonRpcService> webSocketService);
+
+    /**
+     * @brief Dispatch the channel status changed event to Orbclient
+     *
+     * @param params Event parameters for channel status changed event
+     * @return The response string in JSON format from Orbclient
+     */
     std::string DispatchChannelStatusChangedEvent(const Json::Value& params);
+
 
 private:
     IOrbBrowser *mOrbBrowser;
     std::shared_ptr<networkServices::JsonRpcService> mWebSocketService;
-
-private:
-    bool handleSelectChannel(const Json::Value& params);
-    bool handlePause(const Json::Value& params);
-    bool handleResume(const Json::Value& params);
 };
 
 }

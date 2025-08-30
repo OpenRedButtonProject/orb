@@ -50,47 +50,43 @@ namespace orb
     bool VideoWindow::handleBridgeEvent(const std::string& etype, const std::string& properties)
     {
         LOGD("handleBridgeEvent called: " << etype << " " << properties);
-        if (!mWebSocketService) {
+        if (!mWebSocketService)
+        {
             LOGE("WebSocket service not available.");
             return false;
         }
 
-        Json::Value jsonval;
-        if (JsonUtil::decodeJson(properties, &jsonval)) {
-            if (etype == SELECT_CHANNEL_METHOD) {
-                return handleSelectChannel(jsonval);
+        Json::Value params;
+        bool handled = true;
+        if (JsonUtil::decodeJson(properties, &params))
+        {
+            if (etype == SELECT_CHANNEL_METHOD)
+            {
+                mWebSocketService->SendIPPlayerSelectChannel(
+                    params["channelType"].asInt(),
+                    params["idType"].asInt(),
+                    params["ipBroadcastID"].asString());
             }
-            else if (etype == VIDEO_WINDOW_PAUSE) {
-                return handlePause(jsonval);
+            else if (etype == VIDEO_WINDOW_PAUSE)
+            {
+                mWebSocketService->SendIPPlayerPause(mWebSocketService->GetCurrentSessionId());
             }
-            else if (etype == VIDEO_WINDOW_RESUME) {
-                return handleResume(jsonval);
+            else if (etype == VIDEO_WINDOW_RESUME)
+            {
+                mWebSocketService->SendIPPlayerResume(mWebSocketService->GetCurrentSessionId());
+            }
+            else
+            {
+                LOGI("Unhandled method: " << etype);
+                handled = false;
             }
         }
-        return false;
-    }
-
-    bool VideoWindow::handleSelectChannel(const Json::Value& params)
-    {
-        mWebSocketService->SendIPPlayerSelectChannel(
-        params["channelType"].asInt(),
-        params["idType"].asInt(),
-        params["ipBroadcastID"].asString());
-        return true;
-    }
-
-    bool VideoWindow::handlePause(const Json::Value& params)
-    {
-        // web socket service will provide current sessionID
-        mWebSocketService->SendIPPlayerPause(mWebSocketService->GetCurrentSessionId());
-        return true;
-    }
-
-    bool VideoWindow::handleResume(const Json::Value& params)
-    {
-        // web socket service will provide current sessionID
-        mWebSocketService->SendIPPlayerResume(mWebSocketService->GetCurrentSessionId());
-        return true;
+        else
+        {
+            LOGE("Failed to decode JSON: " << properties);
+            handled = false;
+        }
+        return handled;
     }
 
     std::string VideoWindow::DispatchChannelStatusChangedEvent(const Json::Value& params)
@@ -98,15 +94,29 @@ namespace orb
        int status = params["status"].asInt();
        int statusCode = CHANNEL_STATUS_CONNECTING;
        bool permanentError = false;
-       if (JsonUtil::HasParam(params, "error", Json::intValue)) {
-           // if the error is not 0, the status code is the error code
+       if (JsonUtil::HasParam(params, "error", Json::intValue))
+       {
+           // See OPApp Spec section 9.9.4.4.1
+           // See OIPF DAE spec section 7.13.1.2 onChannelChangeError table for error codes
+           // See OIPF DAE spec section 7.13.1.1
            statusCode = params["error"].asInt();
-           permanentError = true;
-       } else if (status == PLAYBACK_STATUS_CONNECTING) {
+           if (statusCode == CHANNEL_STATUS_NO_SIGNAL
+            || statusCode == CHANNEL_STATUS_INSUFFICIENT_RESOURCES
+            || statusCode == CHANNEL_STATUS_UNKNOWN_ERROR)
+            {
+                permanentError = true;
+            }
+       }
+       else if (status == PLAYBACK_STATUS_CONNECTING)
+       {
            statusCode = CHANNEL_STATUS_CONNECTING;
-       } else if (status == PLAYBACK_STATUS_PRESENTING) {
+       }
+       else if (status == PLAYBACK_STATUS_PRESENTING)
+       {
            statusCode = CHANNEL_STATUS_PRESENTING;
-       } else if (status == PLAYBACK_STATUS_STOPPED) {
+       }
+       else if (status == PLAYBACK_STATUS_STOPPED)
+       {
            statusCode = CHANNEL_STATUS_INTERRUPTED;
        }
        Json::Value request;
