@@ -19,7 +19,6 @@
 
 #include "IOrbBrowser.h"
 #include "JsonRpcService.h"
-#include "ComponentBase.hpp"
 
 namespace orb
 {
@@ -31,7 +30,7 @@ namespace orb
  * by calling websocket service APIs..
  *
  */
-class VideoWindow : public ComponentBase
+class VideoWindow
 {
 public:
     /**
@@ -47,14 +46,13 @@ public:
     virtual ~VideoWindow();
 
     /**
-     * @brief Execute the request from Orbclient
+     * @brief Handle the bridge event from LiveTV app
      *
-     * @param method Method name
-     * @param token Token
-     * @param params Json parameters
-     * @return The response string in JSON format
+     * @param etype Event type
+     * @param properties Event properties in JSON string format
+     * @return true if the event is handled, false otherwise
      */
-    std::string executeRequest(std::string method, Json::Value token, Json::Value params) override;
+    bool handleBridgeEvent(const std::string& etype, const std::string& properties);
 
     /**
      * @brief Set the WebSocket service

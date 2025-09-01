@@ -47,36 +47,46 @@ namespace orb
         mWebSocketService = webSocketService;
     }
 
-    std::string VideoWindow::executeRequest(std::string method, Json::Value token, Json::Value params)
+    bool VideoWindow::handleBridgeEvent(const std::string& etype, const std::string& properties)
     {
-        LOGD("executeRequest called: " << method << " " << JsonUtil::convertJsonToString(params));
+        LOGD("handleBridgeEvent called: " << etype << " " << properties);
         if (!mWebSocketService)
         {
             LOGE("WebSocket service not available.");
-            return "{\"error\": \"WebSocket service not available\"}";
+            return false;
         }
 
-        if (method == SELECT_CHANNEL_METHOD)
+        Json::Value params;
+        bool handled = true;
+        if (JsonUtil::decodeJson(properties, &params))
         {
-            mWebSocketService->SendIPPlayerSelectChannel(
-                params["channelType"].asInt(),
-                params["idType"].asInt(),
-                params["ipBroadcastID"].asString());
-        }
-        else if (method == VIDEO_WINDOW_PAUSE)
-        {
-            mWebSocketService->SendIPPlayerPause(mWebSocketService->GetCurrentSessionId());
-        }
-        else if (method == VIDEO_WINDOW_RESUME)
-        {
-            mWebSocketService->SendIPPlayerResume(mWebSocketService->GetCurrentSessionId());
+            if (etype == SELECT_CHANNEL_METHOD)
+            {
+                mWebSocketService->SendIPPlayerSelectChannel(
+                    params["channelType"].asInt(),
+                    params["idType"].asInt(),
+                    params["ipBroadcastID"].asString());
+            }
+            else if (etype == VIDEO_WINDOW_PAUSE)
+            {
+                mWebSocketService->SendIPPlayerPause(mWebSocketService->GetCurrentSessionId());
+            }
+            else if (etype == VIDEO_WINDOW_RESUME)
+            {
+                mWebSocketService->SendIPPlayerResume(mWebSocketService->GetCurrentSessionId());
+            }
+            else
+            {
+                LOGI("Unhandled method: " << etype);
+                handled = false;
+            }
         }
         else
         {
-            LOGI("Unhandled method: " << method);
-            return "{\"error\": \"Unhandled method: " + method + "\"}";
+            LOGE("Failed to decode JSON: " << properties);
+            handled = false;
         }
-        return "{\"result\": \"Success\"}";
+        return handled;
     }
 
     std::string VideoWindow::DispatchChannelStatusChangedEvent(const Json::Value& params)

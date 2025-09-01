@@ -125,42 +125,31 @@ void Moderator::notifyApplicationLoadFailed(string url, string errorText)
     LOGI("url: " << url << " err: " << errorText);
 }
 
-bool Moderator::handleBridgeEvent(const std::string& etype, const std::string& properties)
-{
+bool Moderator::handleBridgeEvent(const std::string& etype, const std::string& properties) {
     bool consumed = false;
     Json::Value jsonval;
 
     LOGI("etype: " << etype << " props: " << properties);
-    if (JsonUtil::decodeJson(properties, &jsonval))
-    {
-        if (etype == CHANNEL_STATUS_CHANGE)
-        {
+    if (etype == CHANNEL_STATUS_CHANGE) {
+        if (JsonUtil::decodeJson(properties, &jsonval)) {
             int status = JsonUtil::getIntegerValue(jsonval, "statusCode");
-            if (status == CHANNEL_STATUS_CONNECTING)
-            {
+            if (status == CHANNEL_STATUS_CONNECTING) {
                 uint16_t onetId = JsonUtil::getIntegerValue(jsonval, "onetId");
                 uint16_t transId = JsonUtil::getIntegerValue(jsonval, "transId");
                 uint16_t serviceId = JsonUtil::getIntegerValue(jsonval, "servId");
                 mAppMgrInterface->onChannelChange(onetId, transId, serviceId);
             }
         }
-        else if (etype == NETWORK_STATUS)
-        {
-            mAppMgrInterface->onNetworkStatusChange(JsonUtil::getBoolValue(jsonval, "available"));
-            consumed = true; // This event is consumed here and is not passed to Javascript
-        }
-        else if (etype.starts_with(VIDEO_WINDOW_PREFIX))
-        {
-            // only OpApp and HbbTV App can handle VideoWindow events
-            if (mAppType == APP_TYPE_OPAPP || mAppType == APP_TYPE_HBBTV) {
-                mVideoWindow->executeRequest(etype, jsonval["token"], jsonval);
-            }
-            consumed = true; // This event is consumed here and is not passed to Javascript
-        }
+        // Javascript also needs this event
     }
-    else if (etype == NETWORK_STATUS || etype.starts_with(VIDEO_WINDOW_PREFIX))
-    {
+    else if (etype == NETWORK_STATUS) {
+        if (JsonUtil::decodeJson(properties, &jsonval)) {
+            mAppMgrInterface->onNetworkStatusChange(JsonUtil::getBoolValue(jsonval, "available"));
+        }
         consumed = true; // This event is consumed here and is not passed to Javascript
+    } else if (etype.starts_with(VIDEO_WINDOW_PREFIX)) {
+        // VideoWindow events are handled here
+        consumed = mVideoWindow->handleBridgeEvent(etype, properties);
     }
     return consumed;
 }
