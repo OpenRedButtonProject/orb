@@ -47,46 +47,36 @@ namespace orb
         mWebSocketService = webSocketService;
     }
 
-    bool VideoWindow::handleBridgeEvent(const std::string& etype, const std::string& properties)
+    std::string VideoWindow::executeRequest(std::string method, Json::Value token, Json::Value params)
     {
-        LOGD("handleBridgeEvent called: " << etype << " " << properties);
+        LOGD("executeRequest called: " << method << " " << JsonUtil::convertJsonToString(params));
         if (!mWebSocketService)
         {
             LOGE("WebSocket service not available.");
-            return false;
+            return "{\"error\": \"WebSocket service not available\"}";
         }
 
-        Json::Value params;
-        bool handled = true;
-        if (JsonUtil::decodeJson(properties, &params))
+        if (method == SELECT_CHANNEL_METHOD)
         {
-            if (etype == SELECT_CHANNEL_METHOD)
-            {
-                mWebSocketService->SendIPPlayerSelectChannel(
-                    params["channelType"].asInt(),
-                    params["idType"].asInt(),
-                    params["ipBroadcastID"].asString());
-            }
-            else if (etype == VIDEO_WINDOW_PAUSE)
-            {
-                mWebSocketService->SendIPPlayerPause(mWebSocketService->GetCurrentSessionId());
-            }
-            else if (etype == VIDEO_WINDOW_RESUME)
-            {
-                mWebSocketService->SendIPPlayerResume(mWebSocketService->GetCurrentSessionId());
-            }
-            else
-            {
-                LOGI("Unhandled method: " << etype);
-                handled = false;
-            }
+            mWebSocketService->SendIPPlayerSelectChannel(
+                params["channelType"].asInt(),
+                params["idType"].asInt(),
+                params["ipBroadcastID"].asString());
+        }
+        else if (method == VIDEO_WINDOW_PAUSE)
+        {
+            mWebSocketService->SendIPPlayerPause(mWebSocketService->GetCurrentSessionId());
+        }
+        else if (method == VIDEO_WINDOW_RESUME)
+        {
+            mWebSocketService->SendIPPlayerResume(mWebSocketService->GetCurrentSessionId());
         }
         else
         {
-            LOGE("Failed to decode JSON: " << properties);
-            handled = false;
+            LOGI("Unhandled method: " << method);
+            return "{\"error\": \"Unhandled method: " + method + "\"}";
         }
-        return handled;
+        return "{\"result\": \"Success\"}";
     }
 
     std::string VideoWindow::DispatchChannelStatusChangedEvent(const Json::Value& params)
