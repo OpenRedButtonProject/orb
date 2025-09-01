@@ -101,7 +101,7 @@ video {
 
 /* Logs Section */
 .logs-section {
-    background: #f8f9fa;
+    background: black;
     border-radius: 10px;
     padding: 2px; /* Increased padding for TV */
     height: 500px; /* Increased height to match video section */

@@ -13,11 +13,8 @@ class HBBTVWebSocketClient {
     static METHOD_PLAY = "org.hbbtv.ipplayer.play";
     static METHOD_PAUSE = "org.hbbtv.ipplayer.pause";
     static METHOD_STOP = "org.hbbtv.ipplayer.stop";
-    static METHOD_SEEK = "org.hbbtv.ipplayer.seek";
     static METHOD_RESUME = "org.hbbtv.ipplayer.resume";
     static METHOD_STATUS_UPDATE = "org.hbbtv.ipplayback.statusUpdate";
-    static METHOD_MEDIA_POSITION_UPDATE = "org.hbbtv.ipplayback.mediaPositionUpdate";
-    static METHOD_SET_COMPONENTS = "org.hbbtv.ipplayback.setComponents";
     static METHOD_NEGOTIATE_METHODS = "org.hbbtv.negotiateMethods";
 
     constructor(videoPlayer = null) {
@@ -37,9 +34,11 @@ class HBBTVWebSocketClient {
         this.capabilities = document.getElementById('capabilities');
         this.videoPlayer = videoPlayer;
 
-        this.initializeElements();
-        this.bindEvents();
-        this.log('HBBTV WebSocket Client initialized', 'websocket');
+        this.defaultWebSocketUrl = this.getJsonRpcUrl();
+        if (!this.defaultWebSocketUrl) {
+            this.log('No JSON-RPC server URL found', 'error');
+            return;
+        }
         this.initializeHBBTV();
     }
 
@@ -48,7 +47,7 @@ class HBBTVWebSocketClient {
         const xml = this.capabilities.xmlCapabilities;
         const elements = xml.getElementsByTagName('json_rpc_server');
         if (elements.length > 0 && elements[0].hasAttribute('url')) {
-        return elements[0].getAttribute('url');
+            return elements[0].getAttribute('url');
         }
         return null;
     }
@@ -98,16 +97,6 @@ class HBBTVWebSocketClient {
             this.log(`Error reading capabilities: ${error.message}`, 'error');
         }
     }
-
-    initializeElements() {
-        this.defaultWebSocketUrl = this.getJsonRpcUrl();
-    }
-
-    bindEvents() {
-        // No specific events to bind for HBBTVWebSocketClient itself,
-        // as it's a client-side WebSocket handler.
-    }
-
 
     log(message, level = 'info') {
         const timestamp = new Date().toLocaleTimeString();
@@ -212,13 +201,10 @@ class HBBTVWebSocketClient {
                 HBBTVWebSocketClient.METHOD_PLAY,
                 HBBTVWebSocketClient.METHOD_PAUSE,
                 HBBTVWebSocketClient.METHOD_STOP,
-                HBBTVWebSocketClient.METHOD_SEEK,
                 HBBTVWebSocketClient.METHOD_RESUME,
             ],
             appToTerminal: [
                 HBBTVWebSocketClient.METHOD_STATUS_UPDATE,
-                HBBTVWebSocketClient.METHOD_MEDIA_POSITION_UPDATE,
-                HBBTVWebSocketClient.METHOD_SET_COMPONENTS
             ]
         };
 
@@ -252,17 +238,14 @@ class HBBTVWebSocketClient {
 
     handleServerRequest(message) {
         switch (message.method) {
-            case HBBTVWebSocketClient.METHOD_PLAY:
-                this.handlePlayRequest(message);
+            case HBBTVWebSocketClient.METHOD_RESUME:
+                this.handleResumeRequest(message);
                 break;
             case HBBTVWebSocketClient.METHOD_PAUSE:
                 this.handlePauseRequest(message);
                 break;
             case HBBTVWebSocketClient.METHOD_STOP:
                 this.handleStopRequest(message);
-                break;
-            case HBBTVWebSocketClient.METHOD_SEEK:
-                this.handleSeekRequest(message);
                 break;
             case HBBTVWebSocketClient.METHOD_SELECT_CHANNEL:
                 this.handleSelectChannelRequest(message);
@@ -273,13 +256,13 @@ class HBBTVWebSocketClient {
         }
     }
 
-    handlePlayRequest(message) {
-        this.log('Handling play request from server', 'info');
+    handleResumeRequest(message) {
+        this.log('Handling resume request from server', 'info');
 
         if (this.videoPlayer && this.videoPlayer.isInitialized) {
             this.videoPlayer.video.play().then(() => {
                 this.log('Video playback started via server request', 'success');
-                this.sendSuccessResponse(message.id, HBBTVWebSocketClient.METHOD_PLAY);
+                this.sendSuccessResponse(message.id, HBBTVWebSocketClient.METHOD_RESUME);
             }).catch(error => {
                 this.log(`Failed to start playback: ${error.message}`, 'error');
                 this.sendErrorResponse(message.id, -32000, 'Failed to start playback');
@@ -307,8 +290,7 @@ class HBBTVWebSocketClient {
         this.log('Handling stop request from server', 'info');
 
         if (this.videoPlayer && this.videoPlayer.isInitialized) {
-            this.videoPlayer.video.pause();
-            this.videoPlayer.video.currentTime = 0;
+            this.videoPlayer.src = "";
             this.log('Video playback stopped via server request', 'success');
             this.sendSuccessResponse(message.id, HBBTVWebSocketClient.METHOD_STOP);
         } else {
@@ -317,33 +299,16 @@ class HBBTVWebSocketClient {
         }
     }
 
-    handleSeekRequest(message) {
-        this.log('Handling seek request from server', 'info');
-
-        if (this.videoPlayer && this.videoPlayer.isInitialized) {
-            if (message.params && typeof message.params.offset === 'number') {
-                const offset = message.params.offset / 1000;
-                this.videoPlayer.video.currentTime = offset;
-                this.log('Video seek completed via server request', 'success');
-                this.sendSuccessResponse(message.id, HBBTVWebSocketClient.METHOD_SEEK);
-            } else {
-                this.log('Invalid seek parameters: offset required', 'error');
-                this.sendErrorResponse(message.id, -32602, 'Invalid params: offset required');
-            }
-        } else {
-            this.log('Video player not initialized', 'error');
-            this.sendErrorResponse(message.id, -32000, 'Video player not initialized');
-        }
-    }
-
     handleSelectChannelRequest(message) {
         this.log('Handling select channel request from server', 'info');
-
-        if (message.params && message.params.url) {
+        this.log(JSON.stringify(message), 'info');
+        const ID_IPTV_URI = 41;
+        if (message.params && message.params.idType == ID_IPTV_URI) {
             if (this.videoPlayer) {
-                this.videoPlayer.defaultStreamUrl = message.params.url;
-                this.videoPlayer.loadStream();
-                this.log(`Channel selected: ${message.params.url}`, 'success');
+                const streamUrl = this.getMediaUrl(message.params.ipBroadcastID);
+                this.log(`Channel selected: ${streamUrl}`, 'success');
+                this.videoPlayer.loadStream(streamUrl);
+                console.log('New streamUrl: ', streamUrl);
                 this.sendSuccessResponse(message.id, HBBTVWebSocketClient.METHOD_SELECT_CHANNEL);
             } else {
                 this.log('Video player not available', 'error');
@@ -355,10 +320,23 @@ class HBBTVWebSocketClient {
         }
     }
 
+    getMediaUrl(ipBroadcastId) {
+        // create a array return the url based on the ipBroadcastId
+        // The media url should get from service manager according to the ipBroadcastId or CCID
+        const mediaUrls = [
+            { id: "1.2.3", url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4' },
+            { id: "4.5.6", url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' },
+            { id: "7.8.9", url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4' },
+        ];
+
+        const mediaUrl = mediaUrls.find(url => url.id === ipBroadcastId);
+        return mediaUrl ? mediaUrl.url : null;
+    }
+
     sendSuccessResponse(requestId, method) {
         const response = {
             jsonrpc: "2.0",
-            result: { method: method },
+            result: { method: method, sessionID: method === HBBTVWebSocketClient.METHOD_SELECT_CHANNEL ? this.videoPlayer.sessionID : undefined },
             id: requestId
         };
 
@@ -390,39 +368,26 @@ class HBBTVWebSocketClient {
  * HTML5 Video Player
  */
 class HTML5VideoPlayer {
+    static COMPONENT_TYPE_VIDEO = 0;
+    static COMPONENT_TYPE_AUDIO = 1;
+    static COMPONENT_TYPE_SUBTITLE = 2;
+
     constructor(websocketClient = null) {
         this.video = document.getElementById('videoPlayer');
         this.isInitialized = false;
         this.sessionID = 0;
-        this.playStartTime = null;
         this.logEntries = document.getElementById('logEntries');
         this.websocketClient = websocketClient;
 
-        this.initializeElements();
         this.bindEvents();
         this.log('HTML5 Video Player initialized', 'info');
-
-        // Auto-load default stream
-        setTimeout(() => {
-            this.log('Auto-loading default stream...', 'info');
-            this.loadStream();
-        }, 500);
-    }
-
-    initializeElements() {
-        this.defaultStreamUrl = 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
     }
 
     bindEvents() {
-
         // Video events
         this.video.addEventListener('loadstart', () => {
             this.log('Video load started', 'info');
             this.sendStatusUpdate(HBBTVWebSocketClient.STATUS_CONNECTING, 0);
-        });
-        this.video.addEventListener('play', () => {
-            this.log('Video playback started', 'info');
-            this.playStartTime = Date.now();
         });
         this.video.addEventListener('playing', () => {
             this.log('Video is playing', 'success');
@@ -483,13 +448,6 @@ class HTML5VideoPlayer {
             this.log('Video element emptied', 'info');
             this.sendStatusUpdate(HBBTVWebSocketClient.STATUS_STOPPED, 0);
         });
-        this.video.addEventListener('timeupdate', () => {
-            if (this.lastPositionUpdate === undefined ||
-                (Date.now() - this.lastPositionUpdate) >= 5000) {
-                this.sendMediaPositionUpdate();
-                this.lastPositionUpdate = Date.now();
-            }
-        });
     }
 
     log(message, level = 'info') {
@@ -507,16 +465,14 @@ class HTML5VideoPlayer {
     }
 
 
-    loadStream() {
-        const url = this.defaultStreamUrl;
-        this.log(`Loading video stream: ${url}`, 'info');
-        this.initializeVideo(url);
+    loadStream(streamUrl) {
+        this.initializeVideo(streamUrl);
     }
 
     initializeVideo(url) {
         try {
-            this.video.pause();
-            this.video.currentTime = 0;
+            //this.video.pause();
+            // this.video.currentTime = 0;
             this.sessionID++;
             this.video.src = url;
             this.video.load();
@@ -563,8 +519,6 @@ class HTML5VideoPlayer {
         document.addEventListener('click', clickHandler);
     }
 
-
-
     getStatusName(status) {
         switch(status) {
             case HBBTVWebSocketClient.STATUS_CONNECTING:
@@ -582,10 +536,11 @@ class HTML5VideoPlayer {
 
     sendStatusUpdate(status, error = 0) {
         if (this.websocketClient && this.websocketClient.negotiated) {
+            let errorCode = error != 0 ? error : undefined;
             const params = {
                 sessionID: this.sessionID,
                 status: status,
-                error: error
+                error: errorCode
             };
 
             const message = {
@@ -596,52 +551,13 @@ class HTML5VideoPlayer {
             };
 
             const statusName = this.getStatusName(status);
-            this.websocketClient.log(`Auto-sending status update: ${statusName} (${status}) (error: ${error}, sessionID: ${this.sessionID})`, 'websocket');
+            this.websocketClient.log(`Auto-sending status update: ${statusName} (${status}) (error: ${errorCode}, sessionID: ${this.sessionID})`, 'websocket');
 
             try {
                 this.websocketClient.websocket.send(JSON.stringify(message));
                 this.websocketClient.log('Status update message sent successfully', 'success');
             } catch (error) {
                 this.websocketClient.log(`Failed to send status update: ${error.message}`, 'error');
-            }
-        }
-    }
-
-    sendMediaPositionUpdate() {
-        if (this.websocketClient && this.websocketClient.negotiated && this.isInitialized) {
-            const currentTime = this.video.currentTime * 1000;
-            const playSpeed = this.video.playbackRate;
-
-            let playPosition;
-            if (this.playStartTime) {
-                playPosition = this.playStartTime + currentTime;
-            } else {
-                playPosition = Date.now();
-            }
-
-            const params = {
-                sessionID: this.sessionID,
-                playPosition: Math.floor(playPosition),
-                playSpeed: playSpeed,
-                currentTimeShiftMode: 3,
-                playbackOffset: Math.floor(currentTime),
-                maxOffset: Math.floor(this.video.duration * 1000)
-            };
-
-            const message = {
-                jsonrpc: "2.0",
-                id: this.websocketClient.messageId++,
-                method: HBBTVWebSocketClient.METHOD_MEDIA_POSITION_UPDATE,
-                params: params
-            };
-
-            this.websocketClient.log(`Auto-sending media position update (sessionID: ${this.sessionID})`, 'websocket');
-
-            try {
-                this.websocketClient.websocket.send(JSON.stringify(message));
-                this.websocketClient.log('Media position update message sent successfully', 'success');
-            } catch (error) {
-                this.websocketClient.log(`Failed to send media position update: ${error.message}`, 'error');
             }
         }
     }

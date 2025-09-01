@@ -1,0 +1,296 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #1a1a1a;
+    color: #ffffff;
+    overflow: hidden;
+}
+
+/* HBBTV Objects - Hidden from UI */
+object[type="application/oipfapplicationmanager"],
+object[type="application/oipfcapabilities"] {
+    position: absolute !important;
+    left: -9999px !important;
+    top: -9999px !important;
+    width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+    display: none !important;
+}
+
+.container {
+    max-width: 1280px;
+    margin: 0 auto;
+    position: relative;
+    height: 100vh;
+}
+
+.header {
+    background-color: #2d2d2d;
+    padding: 10px 20px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    z-index: 10;
+}
+
+.title {
+    font-size: 1.5em;
+    margin-bottom: 5px;
+    color: #00ff00;
+}
+
+.subtitle {
+    font-size: 0.9em;
+    color: #cccccc;
+    margin-bottom: 0;
+}
+
+.button-container {
+    position: absolute;
+    right: 10px;
+    top: 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 10;
+}
+
+.button {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 8px 15px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 9px;
+    margin: 0;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+    min-width: 35px;
+}
+
+.button:hover {
+    background-color: #45a049;
+}
+
+.button:focus {
+    outline: 2px solid #00ff00;
+}
+
+.info-panel {
+    position: absolute;
+    top: 100px;
+    left: 440px;
+    background-color: #2d2d2d;
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 300px;
+    z-index: 10;
+}
+
+.info-item {
+    margin: 10px 0;
+    text-align: left;
+}
+
+.key-info {
+    background-color: #333;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 5px 0;
+}
+
+.status {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.hidden {
+    display: none;
+}
+
+#hole {
+    position: absolute;
+    top: 120px;
+    left: 20px;
+}
+
+/* Event Log Panel Styles */
+.event-log-panel {
+    position: absolute;
+    top: 120px;
+    left: 440px;
+    background-color: #2d2d2d;
+    padding: 5px;
+    border-radius: 10px;
+    width: 280px;
+    max-height: 280px;
+    z-index: 10;
+}
+
+.event-log-panel h3 {
+    margin: 0 0 10px 0;
+    color: #00ff00;
+    font-size: 0.8em;
+}
+
+.event-log-container {
+    max-height: 250px;
+    overflow-y: auto;
+    background-color: #1a1a1a;
+    border-radius: 5px;
+    padding: 5px;
+    margin-bottom: 10px;
+}
+
+.event-log-entry {
+    color: #cccccc;
+    font-size: 0.50em;
+    margin-bottom: 2px;
+    padding: 2px 0;
+    border-bottom: 1px solid #333;
+    word-wrap: break-word;
+}
+
+.event-log-entry:last-child {
+    border-bottom: none;
+}
+
+.event-log-entry.info {
+    color: #4CAF50;
+}
+
+.event-log-entry.warning {
+    color: #FF9800;
+}
+
+.event-log-entry.error {
+    color: #F44336;
+}
+
+.event-log-entry.success {
+    color: #00ff00;
+}
+
+.clear-log-btn {
+    background-color: #666;
+    border: none;
+    color: white;
+    padding: 5px 2px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 9px;
+    margin: 0;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: background-color 0.3s;
+    width: 100%;
+}
+
+.clear-log-btn:hover {
+    background-color: #555;
+}
+
+.video-hole object {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+}
+
+/* Transport Bar Styles */
+.transport-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+    padding: 15px 20px;
+    border-top: 2px solid #4CAF50;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.transport-controls {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.transport-btn {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    color: white;
+    font-size: 20px;
+}
+
+.transport-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    background: linear-gradient(135deg, #45a049 0%, #4CAF50 100%);
+}
+
+.transport-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.transport-btn:focus {
+    outline: 3px solid #00ff00;
+}
+
+.transport-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.channel-btn {
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+}
+
+.channel-btn:hover {
+    background: linear-gradient(135deg, #1976D2 0%, #2196F3 100%);
+}
+
+.stop-btn {
+    background: linear-gradient(135deg, #F44336 0%, #D32F2F 100%);
+}
+
+.stop-btn:hover {
+    background: linear-gradient(135deg, #D32F2F 0%, #F44336 100%);
+}
+
+.btn-icon {
+    font-size: 24px;
+    line-height: 1;
+}
