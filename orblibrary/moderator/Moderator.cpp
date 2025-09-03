@@ -181,9 +181,20 @@ bool Moderator::startWebSocketServer() {
     }
 
     // Get the endpoint and port from the capabilities
-    std::string endpoint = JsonUtil::getStringValue(capabilities["result"], "jsonRpcServerEndpoint");
-    int port = JsonUtil::getIntegerValue(capabilities["result"], "jsonRpcServerPort");
+    Json::Value result = capabilities["result"];
+    const std::string SERVER_ENDPOINT_KEY = "jsonRpcServerEndpoint";
+    const std::string SERVER_PORT_KEY = "jsonRpcServerPort";
 
+    // Check if the capabilities response contains the jsonRpcServerEndpoint and jsonRpcServerPort
+    if (!JsonUtil::HasParam(result, SERVER_ENDPOINT_KEY, Json::stringValue) ||
+         !JsonUtil::HasParam(result, SERVER_PORT_KEY, Json::intValue))
+    {
+        LOGE("Websocket Server can not start as Capabilities response does not contain jsonRpcServerEndpoint or jsonRpcServerPort");
+        return false;
+    }
+
+    std::string endpoint = JsonUtil::getStringValue(result, SERVER_ENDPOINT_KEY);
+    int port = JsonUtil::getIntegerValue(result, SERVER_PORT_KEY);
     LOGI("Create and start WebSocket Server - endpoint: " << endpoint << ", port: " << port);
     // Create and start the WebSocket Server
     std::unique_ptr<orb::networkServices::JsonRpcService::ISessionCallback> callback =
