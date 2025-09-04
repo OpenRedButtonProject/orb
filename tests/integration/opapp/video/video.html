@@ -45,5 +45,14 @@
     </div>
 
     <script src="script.js"></script>
+    <script>
+        // Send a message to the parent window when video window loads
+        window.addEventListener('load', function() {
+            if (window.opener) {
+                window.opener.postMessage('Video window loaded successfully!', '*');
+                console.log('Sent message to parent window: Video window loaded successfully!');
+            }
+        });
+    </script>
 </body>
 </html>

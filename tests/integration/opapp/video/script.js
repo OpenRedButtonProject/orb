@@ -604,3 +604,21 @@ window.addEventListener('beforeunload', () => {
         window.videoPlayer.destroy();
     }
 });
+
+// Set up message listener for communication with parent window
+window.addEventListener('message', function(event) {
+    // Verify the message is from our parent window
+    if (event.source === window.opener) {
+        console.log('Received message from parent window:', event.data);
+
+        // Log the message in the video window's log panel
+        if (window.websocketClient && window.websocketClient.log) {
+            window.websocketClient.log(`Message from parent: ${event.data}`, 'info');
+        }
+
+        // Send a response back to the parent window
+        if (window.opener) {
+            window.opener.postMessage(`Video window received: ${event.data}`, '*');
+        }
+    }
+});
