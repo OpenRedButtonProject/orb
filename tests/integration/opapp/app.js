@@ -1,6 +1,6 @@
 // HbbTV OpApp v1.2.1 Minimal Implementation
 let currentFocus = 0;
-const buttons = ['videoBtn', 'broadcastBtn', 'channelBtn', 'infoBtn', 'testBtn'];
+const buttons = ['videoBtn', 'broadcastBtn', 'sendMsgBtn', 'infoBtn'];
 
 // Event Logging Functions
 function logEvent(message, level = 'info') {
@@ -373,9 +373,36 @@ function openVideoWindow() {
     // In a real implementation, this would open the video window
     // For this minimal version, we'll just show a message
     setTimeout(() => {
-        window.open('video.html', '_opappvideo');
+        const videoWindow = window.open('video/video.html', '_opappVideo');
         updateStatus('[TEST]Video window opened');
+
+        // Store reference to video window for communication
+        window.videoWindowRef = videoWindow;
+
+        // Set up message listener for communication from video window
+        window.addEventListener('message', function(event) {
+            // Verify the message is from our video window
+            if (event.source === videoWindow) {
+                logEvent(`Message from video window: ${event.data}`, 'info');
+            }
+        });
     }, 500);
+}
+
+// Function to send message to video window
+/* Use to test spec requirement 9.9.3:
+ *
+ * "Communication using postMessage shall be supported in both directions between the two windows using the
+ * WindowProxy objects returned by window.open() and window.opener. The event message listener shall
+ *support the origin and source properties of the Message event."
+ */
+function sendMessageToVideoWindow(message) {
+    if (window.videoWindowRef && !window.videoWindowRef.closed) {
+        window.videoWindowRef.postMessage(message, '*');
+        logEvent(`Sent message to video window: ${message}`, 'info');
+    } else {
+        logEvent('Video window is not available', 'error');
+    }
 }
 
 function showInfo() {
