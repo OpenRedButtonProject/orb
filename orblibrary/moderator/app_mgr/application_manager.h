@@ -49,7 +49,8 @@ public:
         FOR_TRUSTED_APP_ONLY = 3
     };
 
-    static constexpr size_t MAX_CBS = APP_TYPE_OPAPP+1;
+    // Number of supported application types - HbbTVApp and OpApp
+    static constexpr size_t MAX_CBS = 2;
 
     /**
      * Application manager
