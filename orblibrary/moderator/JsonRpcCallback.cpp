@@ -150,9 +150,9 @@ namespace orb
     void JsonRpcCallback::RequestIPPlaybackStatusUpdate(
         const Json::Value &params)
     {
-        LOGI("JSON Params: " + params.toStyledString());
         std::shared_ptr<VideoWindow> videoWindow = mVideoWindow.lock();
         if (videoWindow) {
+            LOGI("JSON Params: " + params.toStyledString());
             videoWindow->DispatchChannelStatusChangedEvent(params);
         }
         // Implementation of IP playback status update request logic goes here
