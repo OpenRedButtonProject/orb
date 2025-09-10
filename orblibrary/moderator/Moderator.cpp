@@ -48,9 +48,11 @@ Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
     , mAppMgrInterface(std::make_unique<AppMgrInterface>(browser, apptype))
     , mDrm(std::make_unique<Drm>())
     , mAppType(apptype)
-    , mVideoWindow(std::make_shared<VideoWindow>(browser))
 {
     LOGI("HbbTV version " << ORB_HBBTV_VERSION);
+    // Video Window is used to communicate with the video window component for OpApp playback
+    // For HbbTV App, mVideoWindow is nullptr.
+    mVideoWindow = (apptype == APP_TYPE_OPAPP) ? std::make_shared<VideoWindow>(browser) : nullptr;
 }
 
 Moderator::~Moderator()
@@ -148,8 +150,10 @@ bool Moderator::handleBridgeEvent(const std::string& etype, const std::string& p
         }
         consumed = true; // This event is consumed here and is not passed to Javascript
     } else if (etype.starts_with(VIDEO_WINDOW_PREFIX)) {
-        // VideoWindow events are handled here
-        consumed = mVideoWindow->handleBridgeEvent(etype, properties);
+        if (mVideoWindow.get()) {
+            // VideoWindow events are handled by the websocket service
+            consumed = mVideoWindow->handleBridgeEvent(etype, properties);
+        }
     }
     return consumed;
 }
@@ -195,14 +199,22 @@ bool Moderator::startWebSocketServer() {
 
     std::string endpoint = JsonUtil::getStringValue(result, SERVER_ENDPOINT_KEY);
     int port = JsonUtil::getIntegerValue(result, SERVER_PORT_KEY);
+
     LOGI("Create and start WebSocket Server - endpoint: " << endpoint << ", port: " << port);
-    // Create and start the WebSocket Server
+
+    // Create and start the WebSocket Server.
+    // OpApp and Video Window will use the same WebSocket Server with different connections.
+    // For HbbTV App, mVideoWindow is nullptr.
     std::unique_ptr<orb::networkServices::JsonRpcService::ISessionCallback> callback =
         std::make_unique<JsonRpcCallback>(mVideoWindow);
+
     mWebSocketServer = std::make_shared<orb::networkServices::JsonRpcService>(port,endpoint,std::move(callback));
     mWebSocketServer->SetOpAppEnabled(mAppType == orb::APP_TYPE_OPAPP);
-    // set WebSocketService to VideoWindow
-    mVideoWindow->setWebSocketService(mWebSocketServer);
+
+    if (mVideoWindow.get()) {
+        // set WebSocketService to VideoWindow
+        mVideoWindow->setWebSocketService(mWebSocketServer);
+    }
     return mWebSocketServer->Start();
 }
 
