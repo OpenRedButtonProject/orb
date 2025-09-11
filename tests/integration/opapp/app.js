@@ -451,14 +451,8 @@ function toggleVideoBroadcast() {
     }
 }
 
-// Initialize HbbTV support if available
-if (typeof window.hbbtv !== 'undefined') {
-    console.log('HbbTV API detected');
-    logEvent('HbbTV API detected', 'success');
-} else {
-    console.log('HbbTV API not detected - running in test mode');
-    logEvent('HbbTV API not detected - running in test mode', 'warning');
-}
+console.log('Browser User Agent: ' + navigator.userAgent);
+logEvent('Browser User Agent: ' + navigator.userAgent, 'info');
 
 // Initialize video broadcast when page loads
 document.addEventListener('DOMContentLoaded', function() {
