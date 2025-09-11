@@ -451,8 +451,28 @@ function toggleVideoBroadcast() {
     }
 }
 
+// User Agent Test
+function UserAgentTest() {
+    const userAgent = navigator.userAgent;
+    //verify user agent format is valid for HbbTV specification for v1.7.1
+    const validHbbTVUserAgent = /HbbTV\/1\.7\.1 \(.*\).*/.test(userAgent);
+    //verify user agent format is valid for ETV
+    const validETVUserAgent = /HbbTV\/1\.7\.1 \(.*\) FVC\/9\.0 \(.*\)/.test(userAgent);
+    if (validHbbTVUserAgent) {
+        logEvent('Test: HbbTV User Agent [OK]', 'success');
+    } else {
+        logEvent('Test: HbbTV User Agent [FAIL]', 'error');
+    }
+    if (validETVUserAgent) {
+        logEvent('Test: ETV User Agent [OK]', 'success');
+    } else {
+        logEvent('Test: ETV User Agent [FAIL]', 'error');
+    }
+}
+
 console.log('Browser User Agent: ' + navigator.userAgent);
 logEvent('Browser User Agent: ' + navigator.userAgent, 'info');
+UserAgentTest();
 
 // Initialize video broadcast when page loads
 document.addEventListener('DOMContentLoaded', function() {
