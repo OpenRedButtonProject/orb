@@ -453,10 +453,10 @@ function toggleVideoBroadcast() {
 
 // User Agent Test
 function UserAgentTest() {
-    const userAgent = navigator.userAgent;
-    //verify user agent format is valid for HbbTV specification for v1.7.1
-    const validHbbTVUserAgent = /HbbTV\/1\.7\.1 \(.*\).*/.test(userAgent);
-    if (validHbbTVUserAgent) {
+    //verify user agent value is same with the value in Live TV App
+    const EXPECTED_USER_AGENT = "HbbTV/1.7.1 (+DRM; OBS; ORB; v2.0.0; a12-emu; ORB; ) FVC/9.0 (OBS; ORB; )";
+
+    if (navigator.userAgent === EXPECTED_USER_AGENT) {
         logEvent('User Agent Test [PASS]', 'success');
     } else {
         logEvent('User Agent Test [FAIL]', 'error');
