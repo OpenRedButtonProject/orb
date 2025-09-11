@@ -451,14 +451,21 @@ function toggleVideoBroadcast() {
     }
 }
 
-// Initialize HbbTV support if available
-if (typeof window.hbbtv !== 'undefined') {
-    console.log('HbbTV API detected');
-    logEvent('HbbTV API detected', 'success');
-} else {
-    console.log('HbbTV API not detected - running in test mode');
-    logEvent('HbbTV API not detected - running in test mode', 'warning');
+// User Agent Test
+function UserAgentTest() {
+    //verify user agent value is same with the value in Live TV App
+    const EXPECTED_USER_AGENT = "HbbTV/1.7.1 (+DRM; OBS; ORB; v2.0.0; a12-emu; ORB; ) FVC/9.0 (OBS; ORB; )";
+
+    if (navigator.userAgent === EXPECTED_USER_AGENT) {
+        logEvent('User Agent Test [PASS]', 'success');
+    } else {
+        logEvent('User Agent Test [FAIL]', 'error');
+    }
 }
+
+console.log('User Agent: ' + navigator.userAgent);
+logEvent('User Agent: ' + navigator.userAgent, 'info');
+UserAgentTest();
 
 // Initialize video broadcast when page loads
 document.addEventListener('DOMContentLoaded', function() {
