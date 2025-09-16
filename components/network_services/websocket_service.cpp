@@ -72,7 +72,9 @@ WebSocketService::WebSocketService(const std::string &protocol_name, int port, b
                SECS_SINCE_VALID_HANGUP},
 #endif
     protocols_{Protocol(protocol_name_.c_str()), LWS_PROTOCOL_LIST_TERM},
-    context_(nullptr)
+    context_(nullptr),
+    main_looper_thread_(0),
+    destroyed_(false)
 {
     info_ =
     {
@@ -98,6 +100,21 @@ WebSocketService::WebSocketService(const std::string &protocol_name, int port, b
     lws_set_log_level(LLL_ERR | LLL_WARN /*| LLL_NOTICE*/, nullptr);
 }
 
+WebSocketService::~WebSocketService()
+{
+    // Signal that the object is being destroyed
+    destroyed_ = true;
+    
+    // Stop the service first
+    Stop();
+    
+    // Wait for the main looper thread to finish
+    if (main_looper_thread_ != 0) {
+        pthread_join(main_looper_thread_, nullptr);
+        main_looper_thread_ = 0;
+    }
+}
+
 bool WebSocketService::Start()
 {
     bool ret = false;
@@ -105,8 +122,8 @@ bool WebSocketService::Start()
     if (context_ == nullptr && (context_ = lws_create_context(&info_)) != nullptr)
     {
         stop_ = false;
-        pthread_t thread;
-        pthread_create(&thread, nullptr, EnterMainLooper, this);
+        destroyed_ = false;
+        pthread_create(&main_looper_thread_, nullptr, EnterMainLooper, this);
         connections_mutex_.unlock();
         ret = true;
     }
@@ -140,27 +157,51 @@ void * WebSocketService::EnterMainLooper(void *instance)
 
 void WebSocketService::MainLooper()
 {
+    // Check if object is being destroyed before accessing mutex
+    if (destroyed_.load()) {
+        return;
+    }
+    
     connections_mutex_.lock();
     while (!stop_ || connections_.size() > 0)
     {
         connections_mutex_.unlock();
+        
+        // Check again before calling lws_service
+        if (destroyed_.load()) {
+            return;
+        }
+        
         if (lws_service(context_, 0) < 0)
         {
+            // Check before accessing mutex again
+            if (destroyed_.load()) {
+                return;
+            }
             connections_mutex_.lock();
             stop_ = true;
             connections_.clear();
             lws_cancel_service(context_);
             break;
         }
+        
+        // Check before re-locking mutex
+        if (destroyed_.load()) {
+            return;
+        }
         connections_mutex_.lock();
     }
-    if (context_ != nullptr)
-    {
-        lws_context_destroy(context_);
-        context_ = nullptr;
+    
+    // Check before accessing context and mutex
+    if (!destroyed_.load()) {
+        if (context_ != nullptr)
+        {
+            lws_context_destroy(context_);
+            context_ = nullptr;
+        }
+        connections_mutex_.unlock();
+        OnServiceStopped();
     }
-    connections_mutex_.unlock();
-    OnServiceStopped();
 }
 
 int WebSocketService::EnterLwsCallback(struct lws *wsi, enum lws_callback_reasons reason,
@@ -179,6 +220,12 @@ int WebSocketService::LwsCallback(struct lws *wsi, enum lws_callback_reasons rea
     void *user, void *in, size_t len)
 {
     int result = 0;
+    
+    // Check if object is being destroyed before accessing mutex
+    if (destroyed_.load()) {
+        return result;
+    }
+    
     connections_mutex_.lock();
     switch (reason)
     {
@@ -267,7 +314,11 @@ int WebSocketService::LwsCallback(struct lws *wsi, enum lws_callback_reasons rea
             break;
         }
     }
-    connections_mutex_.unlock();
+    
+    // Check before unlocking mutex
+    if (!destroyed_.load()) {
+        connections_mutex_.unlock();
+    }
     return result;
 }
 

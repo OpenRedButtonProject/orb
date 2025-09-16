@@ -24,6 +24,8 @@
 #include <memory>
 #include <queue>
 #include <mutex>
+#include <atomic>
+#include <pthread.h>
 #include <libwebsockets.h>
 
 namespace NetworkServices {
@@ -73,7 +75,7 @@ protected:
 
     WebSocketService(const std::string &server_name, int port, bool use_ssl, const
         std::string &interface_name);
-    virtual ~WebSocketService() = default;
+    virtual ~WebSocketService();
     virtual bool Start();
     virtual void Stop();
     virtual bool OnConnection(WebSocketConnection *connection) = 0;
@@ -115,6 +117,8 @@ private:
     bool use_ssl_;
     std::string interface_name_;
     struct lws_context *context_;
+    pthread_t main_looper_thread_;
+    std::atomic<bool> destroyed_;
 };
 } // namespace NetworkServices
 
