@@ -96,9 +96,9 @@ class VideoBroadcast {
             });
             // PlayStateChange event
             this.videoBroadcast.addEventListener('PlayStateChange', (event) => {
-                const playState = this.getChannelstatus(event.state);
-                console.log('PlayStateChange event: ' + playState);
-                logEvent(`PlayStateChange: ${playState}`, 'info');
+                const playState = this.getChannelstatus(event.playState);
+                console.log('VBO.PlayStateChange event: ' + playState);
+                logEvent(`VBO.PlayStateChange: ${playState}`, 'info');
             });
             //ComponentChanged event
             this.videoBroadcast.addEventListener('ComponentChanged', (event) => {
@@ -106,10 +106,28 @@ class VideoBroadcast {
                 logEvent(`ComponentChanged: ${event.componentType}`, 'info');
                 this.printComponents();
             });
+            this.videoBroadcast.getChannelConfig().getBroadcastSupervisor().addEventListener('PlayStateChange', (event) => {
+                const playState = this.getChannelstatus(event.playState);
+                console.log('BroadcastSupervisor.PlayStateChange event: ' + playState);
+                logEvent(`BroadcastSupervisor.PlayStateChange: ${playState}`, 'info');
+            });;
         }
     }
 
     selectNextChannel() {
+        console.log(`Selecting next channel through VBO...`);
+        logEvent(`Selecting next channel through VBO...`);
+        this.selectNextChannelWrapper(this.videoBroadcast);
+    }
+
+    selectNextChannelBS() {
+        console.log(`Selecting next channel through BroadcastSupervisor...`);
+        logEvent(`Selecting next channel through BroadcastSupervisor...`);
+        this.selectNextChannelWrapper(this.videoBroadcast.getChannelConfig().getBroadcastSupervisor());
+    }
+
+    selectNextChannelWrapper(videoBroadcast)
+    {
         try {
             if (!this.isInitialized || this.channelList.length === 0) {
                 logEvent('No channels available', 'warning');
@@ -125,7 +143,7 @@ class VideoBroadcast {
             logEvent(`Selecting channel: ${channelName} (CCID: ${channelCCID})`, 'info');
 
             // Set the channel
-            this.videoBroadcast.setChannel(channel);
+            videoBroadcast.setChannel(channel);
             logEvent(`Channel set: ${channelName}`, 'success');
 
             // Move to next channel for next selection
@@ -481,4 +499,8 @@ function stopVideo() {
 // Channel selection function that uses the VideoBroadcast class
 function selectNextChannel() {
     videoBroadcast.selectNextChannel();
+}
+
+function selectNextChannelBS() {
+    videoBroadcast.selectNextChannelBS();
 }
