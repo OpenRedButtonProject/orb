@@ -155,6 +155,16 @@ public:
      */
     static void AddArrayToJson(Json::Value &json, const std::string &key, const std::vector<int> &array);
 
+    /**
+     * Add a property to the params of a JSON object.
+     *
+     * @param jsonString The JSON string to add the property to.
+     * @param key The key to use for the property in the JSON object.
+     * @param value The integer value for the property in the JSON object.
+     * @return The JSON string with the property added to the params.
+     */
+    static std::string AddPropertyToParams(const std::string &jsonString, const std::string &key, int value);
+
 
 }; // class JsonUtil
 

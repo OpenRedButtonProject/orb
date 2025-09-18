@@ -19,6 +19,7 @@ static_library("orb") {
     "moderator/Drm.cpp",
     "moderator/JsonRpcCallback.cpp",
     "moderator/VideoWindow.cpp",
+    "moderator/WebSocketServerFactory.cpp",
   ]
 
   deps = [
