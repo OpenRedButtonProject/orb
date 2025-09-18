@@ -46,7 +46,7 @@ public:
     virtual ~VideoWindow();
 
     /**
-     * @brief Handle the request event from LiveTV app
+     * @brief Handle the video window request from orbclient
      *
      * @param method request method name
      * @param paramsString request params in JSON string format
