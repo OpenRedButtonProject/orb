@@ -31,17 +31,7 @@ public:
      * @return WebSocketServer instance
      */
     static std::unique_ptr<networkServices::JsonRpcService> createWebSocketServer(
-        orb::ApplicationType appType, IOrbBrowser* browser, std::weak_ptr<VideoWindow> videoWindow);
-
-    /**
-     * @brief Create a WebSocketServer for the given application type without VideoWindow.
-     *
-     * @param appType Application type
-     * @param browser OrbBrowser instance to send request to ORBClient
-     * @return WebSocketServer instance
-     */
-    static std::unique_ptr<networkServices::JsonRpcService> createWebSocketServer(
-        orb::ApplicationType appType, IOrbBrowser* browser);
+        orb::ApplicationType appType, IOrbBrowser* browser, std::weak_ptr<VideoWindow> videoWindow = std::weak_ptr<VideoWindow>());
 };
 
 }

@@ -149,7 +149,7 @@ TEST_F(VideoWindowTest, TestDispatchChannelStatusChangedEventWithError) {
     // Test dispatching channel status changed event with error
     Json::Value params;
     params["status"] = 1;
-    params["error"] = CHANNEL_STATUS_NO_SIGNAL; // Error code : CHANNEL_STATUS_NO_SIGNAL
+    params["error"] = CHANNEL_STATUS_NO_SIGNAL;
 
     std::string result = m_videoWindow->DispatchChannelStatusChangedEvent(params);
 

@@ -51,11 +51,5 @@ namespace orb
 
         return webSocketServer;
     }
-
-    std::unique_ptr<JsonRpcService> WebSocketServerFactory::createWebSocketServer(orb::ApplicationType appType,
-        IOrbBrowser* browser)
-    {
-        return createWebSocketServer(appType, browser, std::weak_ptr<VideoWindow>());
-    }
 }
 
