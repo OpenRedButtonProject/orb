@@ -46,13 +46,13 @@ public:
     virtual ~VideoWindow();
 
     /**
-     * @brief Handle the bridge event from LiveTV app
+     * @brief Handle the video window request from orbclient
      *
-     * @param etype Event type
-     * @param properties Event properties in JSON string format
-     * @return true if the event is handled, false otherwise
+     * @param method request method name
+     * @param paramsString request params in JSON string format
+     * @return true if the request is handled, false otherwise
      */
-    bool handleBridgeEvent(const std::string& etype, const std::string& properties);
+    bool handleRequest(const std::string& method, const std::string& paramsString);
 
     /**
      * @brief Set the WebSocket service

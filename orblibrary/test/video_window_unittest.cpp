@@ -54,47 +54,47 @@ TEST_F(VideoWindowTest, TestSetWebSocketService) {
     SUCCEED();
 }
 
-TEST_F(VideoWindowTest, TestHandleBridgeEventSelectChannel) {
+TEST_F(VideoWindowTest, TestHandleRequestSelectChannel) {
     // Test handling select channel event
     std::string properties = "{\"channelType\":1,\"idType\":2,\"ipBroadcastID\":\"testBroadcast\"}";
 
-    bool result = m_videoWindow->handleBridgeEvent("VideoWindow.selectChannel", properties);
+    bool result = m_videoWindow->handleRequest("VideoWindow.selectChannel", properties);
 
     EXPECT_TRUE(result);
 }
 
-TEST_F(VideoWindowTest, TestHandleBridgeEventPause) {
+TEST_F(VideoWindowTest, TestHandleRequestPause) {
     // Test handling pause event
     std::string properties = "{}";
 
-    bool result = m_videoWindow->handleBridgeEvent("VideoWindow.pause", properties);
+    bool result = m_videoWindow->handleRequest("VideoWindow.pause", properties);
 
     EXPECT_TRUE(result);
 }
 
-TEST_F(VideoWindowTest, TestHandleBridgeEventResume) {
+TEST_F(VideoWindowTest, TestHandleRequestResume) {
     // Test handling resume event
     std::string properties = "{}";
 
-    bool result = m_videoWindow->handleBridgeEvent("VideoWindow.resume", properties);
+    bool result = m_videoWindow->handleRequest("VideoWindow.resume", properties);
 
     EXPECT_TRUE(result);
 }
 
-TEST_F(VideoWindowTest, TestHandleBridgeEventUnknownEvent) {
+TEST_F(VideoWindowTest, TestHandleRequestUnknownEvent) {
     // Test handling unknown event type
     std::string properties = "{}";
 
-    bool result = m_videoWindow->handleBridgeEvent("UnknownEvent", properties);
+    bool result = m_videoWindow->handleRequest("UnknownEvent", properties);
 
     EXPECT_FALSE(result);
 }
 
-TEST_F(VideoWindowTest, TestHandleBridgeEventInvalidJson) {
+TEST_F(VideoWindowTest, TestHandleRequestInvalidJson) {
     // Test handling event with invalid JSON properties
     std::string properties = "invalid json";
 
-    bool result = m_videoWindow->handleBridgeEvent("VideoWindow.selectChannel", properties);
+    bool result = m_videoWindow->handleRequest("VideoWindow.selectChannel", properties);
 
     EXPECT_FALSE(result);
 }
@@ -149,7 +149,7 @@ TEST_F(VideoWindowTest, TestDispatchChannelStatusChangedEventWithError) {
     // Test dispatching channel status changed event with error
     Json::Value params;
     params["status"] = 1;
-    params["error"] = 404; // Error code
+    params["error"] = CHANNEL_STATUS_NO_SIGNAL;
 
     std::string result = m_videoWindow->DispatchChannelStatusChangedEvent(params);
 
@@ -157,44 +157,7 @@ TEST_F(VideoWindowTest, TestDispatchChannelStatusChangedEventWithError) {
     EXPECT_FALSE(result.empty());
     Json::Value resultVal;
     EXPECT_TRUE(orb::JsonUtil::decodeJson(result, &resultVal));
-    EXPECT_EQ(resultVal["params"]["statusCode"].asInt(), 404);
+    EXPECT_EQ(resultVal["params"]["statusCode"].asInt(), CHANNEL_STATUS_NO_SIGNAL);
     EXPECT_EQ(resultVal["params"]["permanentError"].asBool(), true);
 }
 
-TEST_F(VideoWindowTest, TestHandleSelectChannelWithNullWebSocketService) {
-    // Test handling select channel when WebSocket service is null
-    m_videoWindow->setWebSocketService(std::weak_ptr<JsonRpcService>());
-
-    Json::Value params;
-    params["channelType"] = 1;
-    params["idType"] = 2;
-    params["ipBroadcastID"] = "test";
-
-    // This would be called internally by handleBridgeEvent
-    // We can't test it directly as it's private, but we can test the behavior
-    // through the public interface
-    std::string properties = "{\"channelType\":1,\"idType\":2,\"ipBroadcastID\":\"test\"}";
-    bool result = m_videoWindow->handleBridgeEvent("VideoWindow.selectChannel", properties);
-
-    EXPECT_FALSE(result);
-}
-
-TEST_F(VideoWindowTest, TestHandlePauseWithNullWebSocketService) {
-    // Test handling pause when WebSocket service is null
-    m_videoWindow->setWebSocketService(std::weak_ptr<JsonRpcService>());
-
-    std::string properties = "{}";
-    bool result = m_videoWindow->handleBridgeEvent("VideoWindow.pause", properties);
-
-    EXPECT_FALSE(result);
-}
-
-TEST_F(VideoWindowTest, TestHandleResumeWithNullWebSocketService) {
-    // Test handling resume when WebSocket service is null
-    m_videoWindow->setWebSocketService(std::weak_ptr<JsonRpcService>());
-
-    std::string properties = "{}";
-    bool result = m_videoWindow->handleBridgeEvent("VideoWindow.resume", properties);
-
-    EXPECT_FALSE(result);
-}

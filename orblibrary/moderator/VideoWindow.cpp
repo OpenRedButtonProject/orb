@@ -47,9 +47,9 @@ namespace orb
         mWebSocketService = webSocketService;
     }
 
-    bool VideoWindow::handleBridgeEvent(const std::string& etype, const std::string& properties)
+    bool VideoWindow::handleRequest(const std::string& method, const std::string& paramsString)
     {
-        LOGD("handleBridgeEvent called: " << etype << " " << properties);
+        LOGD("handleRequest called: " << method << " " << paramsString);
         if (!mWebSocketService)
         {
             LOGE("WebSocket service not available.");
@@ -58,32 +58,32 @@ namespace orb
 
         Json::Value params;
         bool handled = true;
-        if (JsonUtil::decodeJson(properties, &params))
+        if (JsonUtil::decodeJson(paramsString, &params))
         {
-            if (etype == SELECT_CHANNEL_METHOD)
+            if (method == SELECT_CHANNEL_METHOD)
             {
                 mWebSocketService->SendIPPlayerSelectChannel(
                     params["channelType"].asInt(),
                     params["idType"].asInt(),
                     params["ipBroadcastID"].asString());
             }
-            else if (etype == VIDEO_WINDOW_PAUSE)
+            else if (method == VIDEO_WINDOW_PAUSE)
             {
                 mWebSocketService->SendIPPlayerPause(mWebSocketService->GetCurrentSessionId());
             }
-            else if (etype == VIDEO_WINDOW_RESUME)
+            else if (method == VIDEO_WINDOW_RESUME)
             {
                 mWebSocketService->SendIPPlayerResume(mWebSocketService->GetCurrentSessionId());
             }
             else
             {
-                LOGI("Unhandled method: " << etype);
+                LOGI("Unhandled method: " << method);
                 handled = false;
             }
         }
         else
         {
-            LOGE("Failed to decode JSON: " << properties);
+            LOGE("Failed to decode JSON: " << paramsString);
             handled = false;
         }
         return handled;

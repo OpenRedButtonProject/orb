@@ -187,4 +187,13 @@ namespace orb
        json[key] = jsonArray;
    }
 
+   std::string JsonUtil::AddPropertyToParams(const std::string &jsonString, const std::string &key, int value)
+   {
+       Json::Value jsonval;
+       if (decodeJson(jsonString, &jsonval)) {
+           jsonval["params"][key] = value;
+           return convertJsonToString(jsonval);
+       }
+       return "";
+   }
 } // namespace orb
