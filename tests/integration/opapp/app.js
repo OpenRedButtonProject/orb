@@ -128,6 +128,13 @@ class VideoBroadcast {
         console.log(`Selecting next channel through VBO...`);
         logEvent(`Selecting next channel through VBO...`);
         this.selectNextChannelWrapper(this.videoBroadcast);
+        setTimeout(() => {
+            // Verify that the BroadcastSupervisor PlayStateChange Event was triggered after selecting a channel
+            if (!this.BSPlayStateEventVerified) {
+                logEvent(`BroadcastSupervisor PlayStateChange Event Test: [FAIL]`, 'error');
+                console.log(`BroadcastSupervisor PlayStateChange Event Test: [FAIL]`);
+            }
+        }, 2000);
     }
 
     selectNextChannelBS() {
