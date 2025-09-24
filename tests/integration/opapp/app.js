@@ -35,6 +35,8 @@ class VideoBroadcast {
         this.currentChannelIndex = 0;
         this.isPlaying = false;
         this.isInitialized = false;
+        this.broadcastSupervisor = null;
+        this.BSPlayStateEventVerified = false;
     }
 
     initialize() {
@@ -42,6 +44,7 @@ class VideoBroadcast {
             this.videoBroadcast = document.getElementById('hole');
             if (this.videoBroadcast) {
                 this.isInitialized = true;
+                this.broadcastSupervisor = this.videoBroadcast.getChannelConfig().getBroadcastSupervisor();
                 this.loadChannelList();
                 this.setupEventListeners();
                 setTimeout(() => {
@@ -106,11 +109,18 @@ class VideoBroadcast {
                 logEvent(`ComponentChanged: ${event.componentType}`, 'info');
                 this.printComponents();
             });
-            this.videoBroadcast.getChannelConfig().getBroadcastSupervisor().addEventListener('PlayStateChange', (event) => {
-                const playState = this.getChannelstatus(event.playState);
-                console.log('BroadcastSupervisor.PlayStateChange event: ' + playState);
-                logEvent(`BroadcastSupervisor.PlayStateChange: ${playState}`, 'info');
-            });;
+            // BroadcastSupervisor PlayStateChange event
+            if (this.broadcastSupervisor) {
+                this.broadcastSupervisor.addEventListener('PlayStateChange', (event) => {
+                    const playState = this.getChannelstatus(event.playState);
+                    console.log('BroadcastSupervisor.PlayStateChange event: ' + playState);
+                    if (!this.BSPlayStateEventVerified) {
+                        this.BSPlayStateEventVerified = true;
+                        logEvent(`BroadcastSupervisor PlayStateChange Event Test: [PASS]`, 'success');
+                    }
+                    logEvent(`BroadcastSupervisor.PlayStateChange: ${playState}`, 'info');
+                });
+            }
         }
     }
 
@@ -118,12 +128,19 @@ class VideoBroadcast {
         console.log(`Selecting next channel through VBO...`);
         logEvent(`Selecting next channel through VBO...`);
         this.selectNextChannelWrapper(this.videoBroadcast);
+        setTimeout(() => {
+            // Verify that the BroadcastSupervisor PlayStateChange Event was triggered after selecting a channel
+            if (!this.BSPlayStateEventVerified) {
+                logEvent(`BroadcastSupervisor PlayStateChange Event Test: [FAIL]`, 'error');
+                console.log(`BroadcastSupervisor PlayStateChange Event Test: [FAIL]`);
+            }
+        }, 2000);
     }
 
     selectNextChannelBS() {
         console.log(`Selecting next channel through BroadcastSupervisor...`);
         logEvent(`Selecting next channel through BroadcastSupervisor...`);
-        this.selectNextChannelWrapper(this.videoBroadcast.getChannelConfig().getBroadcastSupervisor());
+        this.selectNextChannelWrapper(this.broadcastSupervisor);
     }
 
     selectNextChannelWrapper(videoBroadcast)
