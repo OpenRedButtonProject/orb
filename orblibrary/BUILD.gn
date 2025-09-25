@@ -243,3 +243,20 @@ executable("test_orb_jsonrpcservice")
   testonly = true
 }
 
+executable("test_orb_application_manager")
+{
+  sources = [
+    "test/application_manager_unittest.cpp",
+    "test/MockApplicationSessionCallback.h"
+  ]
+  deps = [
+    ":orb",
+    "//testing/gtest",
+    "//testing/gtest:gtest_main",
+    "//third_party/jsoncpp",
+    "//third_party/libxml"
+  ]
+  testonly = true
+}
+
+
