@@ -14,10 +14,21 @@ The tests cover:
 1. **Singleton Pattern**: Tests that the `instance()` method returns the same singleton instance
 2. **ProcessXmlAit Method**: Tests various scenarios:
    - Empty XML input (should return INVALID_APP_ID)
-   - Invalid XML input (should return INVALID_APP_ID)
-   - Valid XML AIT input (should return valid app ID)
-   - DVB-I flag usage
-   - Custom scheme parameter
+   - Mock XML parser failure (should return INVALID_APP_ID)
+   - Mock XML parser success (should return valid app ID)
+3. **Callback Management**: Tests for `RegisterCallback()` and `SetCurrentInterface()` methods
+4. **State Queries**: Tests for `GetRunningAppIds()`, `GetOrganizationId()`, and `GetCurrentAppNames()`
+5. **Error Handling**: Tests for invalid parameters and null callbacks
+
+## Architecture
+
+The tests use an interface-based approach to isolate XML parsing:
+
+- **IXmlParser Interface**: Defines the contract for XML parsing
+- **RealXmlParser**: Production implementation that uses the real XML parser
+- **MockXmlParser**: Test implementation that allows controlled behavior for testing
+
+This approach allows the unit tests to run without depending on `//third_party/libxml` while maintaining full functionality in production builds.
 
 ## Running the Tests
 
@@ -41,4 +52,16 @@ The tests use Google Test (gtest) framework and follow the Given-When-Then patte
 
 ## Mock Objects
 
-The `MockApplicationSessionCallback` provides a mock implementation of the `ApplicationSessionCallback` interface, allowing tests to run without requiring actual browser or platform integration.
+The test suite uses two types of mocks:
+
+1. **MockApplicationSessionCallback**: Provides a mock implementation of the `ApplicationSessionCallback` interface
+2. **MockXmlParser**: Provides a mock implementation of the `IXmlParser` interface with controllable behavior
+
+## Dependencies
+
+This test suite has minimal dependencies:
+- `:orb` - The main ORB library
+- `//testing/gtest` - Google Test framework
+- `//third_party/jsoncpp` - JSON handling (used by the main library)
+
+Note: The test does not depend on `//third_party/libxml` or XML parsing functionality, focusing on testing the ApplicationManager logic without requiring full XML infrastructure.

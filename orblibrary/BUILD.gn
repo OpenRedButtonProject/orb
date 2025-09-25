@@ -247,14 +247,14 @@ executable("test_orb_application_manager")
 {
   sources = [
     "test/application_manager_unittest.cpp",
-    "test/MockApplicationSessionCallback.h"
+    "test/MockApplicationSessionCallback.h",
+    "moderator/app_mgr/xml_parser.h"
   ]
   deps = [
     ":orb",
     "//testing/gtest",
     "//testing/gtest:gtest_main",
-    "//third_party/jsoncpp",
-    "//third_party/libxml"
+    "//third_party/jsoncpp"
   ]
   testonly = true
 }
