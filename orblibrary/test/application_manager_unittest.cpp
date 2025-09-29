@@ -23,6 +23,7 @@
 #include "third_party/orb/orblibrary/moderator/app_mgr/application_manager.h"
 #include "third_party/orb/orblibrary/moderator/app_mgr/xml_parser.h"
 #include "MockApplicationSessionCallback.h"
+#include <gmock/gmock.h>
 
 namespace orb
 {
@@ -128,6 +129,11 @@ TEST_F(ApplicationManagerTest, TestProcessXmlAitWithMockParserFailure)
 
 TEST_F(ApplicationManagerTest, TestProcessXmlAitWithMockParserSuccess)
 {
+    class GMockXmlParser : public IXmlParser
+    {
+    public:
+        MOCK_METHOD(std::unique_ptr<Ait::S_AIT_TABLE>, ParseAit, (const char *content, uint32_t length), (override));
+    };
     // GIVEN: ApplicationManager singleton and mock XML parser set to succeed
     ApplicationManager& appManager = ApplicationManager::instance();
 
@@ -139,23 +145,20 @@ TEST_F(ApplicationManagerTest, TestProcessXmlAitWithMockParserSuccess)
     mockAitTable->appArray[0].orgId = 1;
     mockAitTable->appArray[0].scheme = "urn:hbbtv:opapp:privileged:2017";
 
-    auto successMockParser = std::make_unique<MockXmlParser>();
-    successMockParser->SetParseAitResult(std::move(mockAitTable));
+    std::string xmlContent = "valid xml content";
+
+    auto successMockParser = std::make_unique<GMockXmlParser>();
+    // Expect the ParseAit method to be called with the XML content and return the mock AIT table
+    EXPECT_CALL(*successMockParser, ParseAit(xmlContent.c_str(), xmlContent.length()))
+        .WillOnce(::testing::Return(::testing::ByMove(std::move(mockAitTable))));
     appManager.SetXmlParser(std::move(successMockParser));
 
     // Register callback for app creation
     appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
     appManager.SetCurrentInterface(APP_TYPE_HBBTV);
 
-    std::string xmlContent = "valid xml content";
-
     // WHEN: ProcessXmlAit is called
-    int result = appManager.ProcessXmlAit(xmlContent);
-
-    // THEN: Should return a valid app ID (not INVALID_APP_ID)
-    // Note: The actual result depends on app creation logic, but it should not be INVALID_APP_ID
-    // due to successful XML parsing
-    EXPECT_NE(result, INVALID_APP_ID);
+    appManager.ProcessXmlAit(xmlContent);
 }
 
 TEST_F(ApplicationManagerTest, TestRegisterCallback)

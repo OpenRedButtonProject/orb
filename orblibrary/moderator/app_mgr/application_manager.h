@@ -58,7 +58,7 @@ public:
      *
      * @param sessionCallback Implementation of ApplicationSessionCallback interface.
      */
-    ApplicationManager(std::unique_ptr<IXmlParser> xmlParser = std::make_unique<XmlParser>());
+    ApplicationManager(std::unique_ptr<IXmlParser> xmlParser = {});
 
     /**
      *

@@ -447,6 +447,12 @@ int ApplicationManager::ProcessXmlAit(
         return INVALID_APP_ID;
     }
 
+    if (m_xmlParser == nullptr)
+    {
+        LOG(LOG_ERROR, "No XML parser provided");
+        return INVALID_APP_ID;
+    }
+
     std::unique_ptr<Ait::S_AIT_TABLE> aitTable = m_xmlParser->ParseAit(xmlAit.c_str(),
         xmlAit.length());
     if (nullptr == aitTable || aitTable->numApps == 0)

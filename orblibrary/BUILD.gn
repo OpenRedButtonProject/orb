@@ -248,15 +248,25 @@ executable("test_orb_application_manager")
   sources = [
     "test/application_manager_unittest.cpp",
     "test/MockApplicationSessionCallback.h",
-    "moderator/app_mgr/xml_parser.h"
+    "moderator/app_mgr/xml_parser.h",
+    "moderator/app_mgr/ait.cpp",
+    "moderator/app_mgr/application_manager.cpp",
+    "moderator/app_mgr/hbbtv_app.cpp",
+    "moderator/app_mgr/opapp.cpp",
+    "moderator/app_mgr/utils.cpp",
   ]
+
   deps = [
-    ":orb",
     "//testing/gtest",
     "//testing/gtest:gtest_main",
-    "//third_party/jsoncpp"
+    "//testing/gmock",
   ]
+
+  include_dirs = [
+   "include",
+  ]
+
+  defines = ["ORB_HBBTV_VERSION=204"]
   testonly = true
 }
-
 
