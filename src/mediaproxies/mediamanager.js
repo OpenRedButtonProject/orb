@@ -412,6 +412,7 @@ hbbtv.mediaManager = (function() {
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, e)
         );
 
+        let currentTimeInterval;
         media.addEventListener('play', (e) => {
             // some tests ask for the seekable property just after the playing event
             hbbtv.native.updateSeekable(e);
@@ -421,6 +422,12 @@ hbbtv.mediaManager = (function() {
             });
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, evt);
             propsUpdateCallback(e);
+
+            currentTimeInterval = setInterval(() => {
+                mediaProxy.updateObserverProperties(MEDIA_PROXY_ID, {
+                    currentTime: media.currentTime
+                });
+            }, 20);
         });
         media.addEventListener('pause', (e) => {
             let evt = new Event('__orb_onplayspeedchanged__');
@@ -430,6 +437,8 @@ hbbtv.mediaManager = (function() {
             hbbtv.native.setPausedDelta?.(true);
             mediaProxy.dispatchEvent(MEDIA_PROXY_ID, evt);
             propsUpdateCallback(e);
+
+            clearInterval(currentTimeInterval);
         });
         media.addEventListener('durationchange', makeCallback('duration'));
         media.addEventListener('ratechange', makeCallback('playbackRate'));

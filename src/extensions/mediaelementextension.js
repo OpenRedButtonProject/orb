@@ -612,6 +612,7 @@ hbbtv.objects.MediaElementExtension = (function() {
                 _timeUpdateTS = Date.now();
             },
             get() {
+                return _currentTime;
                 return this.paused || this.ended ?
                     _currentTime :
                     _currentTime + (Date.now() - _timeUpdateTS) / 1000.0;
