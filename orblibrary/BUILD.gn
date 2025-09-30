@@ -102,98 +102,20 @@ static_library("orb_util")
 
   deps = [
     "//third_party/jsoncpp",
-    "//base", # For logging dependency
+    "//third_party/orb/logging:orb_logging_deps",
+    "//base",
+    # For logging dependency. Seems to need //base otherwise can't find partition_alloc/flags.h
   ]
 
   defines = [ "IS_CHROMIUM" ]
+  # Something very broken in JsonUtil.cpp's logging.
+  # Without this JsonUtil.cpp's macros don't work, even if defined in logging:orb_logging instead.
 }
 
 config("util_lib_config") {
   include_dirs = [
    "moderator/utilities",
    ]
-}
-
-
-executable("test_orb_moderator")
-{
-  sources = [ "test/moderator_unittest.cpp"]
-
-  deps = [
-    "//testing/gtest",
-    "//testing/gtest:gtest_main",
-    ":orb"
-  ]
-
-  testonly = true
-}
-
-executable("test_opapp_package_manager")
-{
-  sources = [
-    "test/opapp_package_manager_unittest.cpp",
-    "test/OpAppPackageManagerTestInterface.cpp",
-    "test/OpAppPackageManagerTestInterface.h"
-  ]
-
-  deps = [
-    "//testing/gtest",
-    "//testing/gtest:gtest_main",
-    ":opapp_package_manager"
-  ]
-
-  testonly = true
-}
-
-executable("test_orb_video_window")
-{
-  sources = [
-    "test/video_window_unittest.cpp",
-    "moderator/VideoWindow.cpp",
-  ]
-
-  deps = [
-    "//testing/gtest",
-    "//testing/gtest:gtest_main",
-    "//third_party/jsoncpp",
-    "//base", # For logging dependency,
-    ":orb_util",
-    ":orb_network_services"
-  ]
-
-
-  include_dirs = [
-    "include",
-    "moderator",
-    "moderator/utilities",
-  ]
-
-  defines = [ "IS_CHROMIUM" ]
-
-  testonly = true
-}
-
-executable("test_orb_util")
-{
-  sources = [
-    "test/json_util_unittest.cpp",
-    "test/string_util_unittest.cpp",
-  ]
-
-  deps = [
-    "//testing/gtest",
-    "//testing/gtest:gtest_main",
-    "//third_party/jsoncpp",
-    "//base", # For logging dependency
-    ":orb_util",
-  ]
-
-  include_dirs = [
-    "include",
-    "moderator/utilities",
-  ]
-
-  testonly = true
 }
 
 static_library("orb_network_services") {
@@ -228,9 +150,28 @@ config("external_network_services_config") {
   defines = [ "IS_CHROMIUM" ]
 }
 
-executable("test_orb_jsonrpcservice")
+
+# Unified test executable that combines all unit tests
+executable("test_orb_all")
 {
   sources = [
+    # Moderator tests FREE-283
+    # "test/moderator_unittest.cpp",
+
+    # OpApp Package Manager tests
+    "test/opapp_package_manager_unittest.cpp",
+    "test/OpAppPackageManagerTestInterface.cpp",
+    "test/OpAppPackageManagerTestInterface.h",
+
+    # Video Window tests
+    "test/video_window_unittest.cpp",
+    "moderator/VideoWindow.cpp",
+
+    # Utility tests
+    "test/json_util_unittest.cpp",
+    "test/string_util_unittest.cpp",
+
+    # Network services tests
     "moderator/network_services/test/jsonrpcservice_unittest.cpp",
     "moderator/network_services/test/jsonrpcserviceutil_unittest.cpp"
   ]
@@ -238,9 +179,23 @@ executable("test_orb_jsonrpcservice")
   deps = [
     "//testing/gtest",
     "//testing/gtest:gtest_main",
-    "//base", # For logging dependency,
+    "//third_party/orb/logging:orb_logging_deps",
+    "//base", # For logging dependency
+    "//third_party/jsoncpp",
+    ":orb",
+    ":opapp_package_manager",
+    ":orb_util",
     ":orb_network_services"
   ]
+
+  include_dirs = [
+    "include",
+    "moderator",
+    "moderator/utilities",
+    "moderator/network_services/include",
+    "moderator/network_services/json_rpc",
+  ]
+
   testonly = true
 }
 
