@@ -42,8 +42,9 @@ namespace orb
  *
  * @param sessionCallback Implementation of ApplicationSessionCallback interface.
  */
-ApplicationManager::ApplicationManager() :
+ApplicationManager::ApplicationManager(std::unique_ptr<IXmlParser> xmlParser) :
     m_sessionCallback{nullptr},
+    m_xmlParser(std::move(xmlParser)),
     m_aitTimeout([&] {
         OnSelectedServiceAitTimeout();
     })
@@ -59,6 +60,12 @@ ApplicationManager& ApplicationManager::instance()
 {
     static ApplicationManager s_instance;
     return s_instance;
+}
+
+void ApplicationManager::SetXmlParser(std::unique_ptr<IXmlParser> xmlParser)
+{
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
+    m_xmlParser = std::move(xmlParser);
 }
 
 
@@ -440,7 +447,13 @@ int ApplicationManager::ProcessXmlAit(
         return INVALID_APP_ID;
     }
 
-    std::unique_ptr<Ait::S_AIT_TABLE> aitTable = XmlParser::ParseAit(xmlAit.c_str(),
+    if (m_xmlParser == nullptr)
+    {
+        LOG(LOG_ERROR, "No XML parser provided");
+        return INVALID_APP_ID;
+    }
+
+    std::unique_ptr<Ait::S_AIT_TABLE> aitTable = m_xmlParser->ParseAit(xmlAit.c_str(),
         xmlAit.length());
     if (nullptr == aitTable || aitTable->numApps == 0)
     {

@@ -26,7 +26,21 @@
 namespace orb
 {
 
-class XmlParser {
+class IXmlParser
+{
+public:
+    virtual ~IXmlParser() = default;
+
+    /**
+     * Parse Xml data as specified in TS 102 809 section 5.4
+     * @param content pointer to Xml data
+     * @param length length of Xml data
+     * @return AIT table data in same format as generated from DVB broadcast data
+     */
+    virtual std::unique_ptr<Ait::S_AIT_TABLE> ParseAit(const char *content, uint32_t length) = 0;
+};
+
+class XmlParser : public IXmlParser {
 public:
 #if 0 // TODO(C++-ize)
     typedef struct
@@ -56,7 +70,7 @@ public:
      * @param length length of Xml data
      * @return AIT table data in same format as generated from DVB broadcast data
      */
-    static std::unique_ptr<Ait::S_AIT_TABLE> ParseAit(const char *content, uint32_t length);
+    std::unique_ptr<Ait::S_AIT_TABLE> ParseAit(const char *content, uint32_t length) override;
 
 #if 0
     /**

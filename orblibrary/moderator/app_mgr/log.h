@@ -82,7 +82,12 @@ static unsigned char app_mgr_log_run_level = LOG_LVL_DEBUG;
 
 #else
 
-#error UNKNOWN BUILD OPTION
+// Default case - no-op logging macros that accept arguments but do nothing
+#define LOG_ERROR 0
+#define LOG_INFO 1
+#define LOG_DEBUG 2
+#define LOG(level, ...) do { } while(0)
+#define ASSERT(condition) do { } while(0)
 
 #endif // ANDROID RDK
 

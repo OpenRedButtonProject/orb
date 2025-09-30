@@ -35,6 +35,7 @@
 #include "opapp.h"
 #include "application_session_callback.h"
 #include "OrbConstants.h"
+#include "xml_parser.h"
 
 namespace orb
 {
@@ -53,14 +54,15 @@ public:
     static constexpr size_t MAX_CBS = 2;
 
     /**
-     * Application manager
+     * Constructor of Application manager
      *
-     * @param sessionCallback Implementation of ApplicationSessionCallback interface.
+     * @param xmlParser The XML parser implementation to use. The default is null.
+     * 
      */
-    ApplicationManager();
+    ApplicationManager(std::unique_ptr<IXmlParser> xmlParser = {});
 
     /**
-     *
+     * Destructor of Application manager
      */
     ~ApplicationManager();
 
@@ -68,6 +70,12 @@ public:
      * Get Singleton Instance
      */
     static ApplicationManager& instance();
+
+    /**
+     * Set XML Parser (for testing)
+     * @param xmlParser The XML parser implementation to use
+     */
+    void SetXmlParser(std::unique_ptr<IXmlParser> xmlParser);
 
     /**
      * Register an interface callback for this ApplicationManager
@@ -392,6 +400,7 @@ private:
     int m_cif; // current app type interface
 
     Ait m_ait;
+    std::unique_ptr<IXmlParser> m_xmlParser;
     std::unordered_map<int, std::unique_ptr<HbbTVApp>> m_apps;
     int m_hbbtvAppId = INVALID_APP_ID;
     int m_opAppId = INVALID_APP_ID;
