@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Mock ApplicationSessionCallback for testing
+ * Mock ApplicationSessionCallback for testing using Google Mock
  */
 
 #ifndef MOCK_APPLICATION_SESSION_CALLBACK_H
@@ -21,6 +21,7 @@
 
 #include "third_party/orb/orblibrary/moderator/app_mgr/application_session_callback.h"
 #include "third_party/orb/orblibrary/moderator/app_mgr/utils.h"
+#include <gmock/gmock.h>
 
 namespace orb
 {
@@ -31,98 +32,25 @@ public:
     MockApplicationSessionCallback() = default;
     virtual ~MockApplicationSessionCallback() = default;
 
-    // ApplicationSessionCallback interface
-    void LoadApplication(const int appId, const char *entryUrl) override
-    {
-        // Mock implementation - do nothing
-    }
-
-    void LoadApplication(const int appId, const char *entryUrl, int size, const std::vector<uint16_t> graphics) override
-    {
-        // Mock implementation - do nothing
-    }
-
-    void ShowApplication(const int appId) override
-    {
-        // Mock implementation - do nothing
-    }
-
-    void HideApplication(const int appId) override
-    {
-        // Mock implementation - do nothing
-    }
-
-    void StopBroadcast() override
-    {
-        // Mock implementation - do nothing
-    }
-
-    void ResetBroadcastPresentation() override
-    {
-        // Mock implementation - do nothing
-    }
-
-    void DispatchApplicationLoadErrorEvent() override
-    {
-        // Mock implementation - do nothing
-    }
-
-    void DispatchTransitionedToBroadcastRelatedEvent(const int appId) override
-    {
-        // Mock implementation - do nothing
-    }
-
-    std::string GetXmlAitContents(const std::string &url) override
-    {
-        // Mock implementation - return empty string
-        return "";
-    }
-
-    int GetParentalControlAge() override
-    {
-        return 18; // Mock age
-    }
-
-    std::string GetParentalControlRegion() override
-    {
-        return "GB"; // Mock region
-    }
-
-    std::string GetParentalControlRegion3() override
-    {
-        return "GBR"; // Mock region3
-    }
-
-    void DispatchApplicationSchemeUpdatedEvent(const int appId, const std::string &scheme) override
-    {
-        // Mock implementation - do nothing
-    }
-
-    void DispatchOperatorApplicationStateChange(const int appId, const std::string &oldState, const std::string &newState) override
-    {
-        // Mock implementation - do nothing
-    }
-
-    void DispatchOperatorApplicationStateChangeCompleted(const int appId, const std::string &oldState, const std::string &newState) override
-    {
-        // Mock implementation - do nothing
-    }
-
-    void DispatchOperatorApplicationContextChange(const int appId, const std::string &startupLocation, const std::string &launchLocation) override
-    {
-        // Mock implementation - do nothing
-    }
-
-    void DispatchOpAppUpdate(const int appId, const std::string &updateEvent) override
-    {
-        // Mock implementation - do nothing
-    }
-
-    bool isInstanceInCurrentService(const Utils::S_DVB_TRIPLET &triplet) override
-    {
-        // Mock implementation - return false
-        return false;
-    }
+    // ApplicationSessionCallback interface using Google Mock
+    MOCK_METHOD(void, LoadApplication, (const int appId, const char *entryUrl), (override));
+    MOCK_METHOD(void, LoadApplication, (const int appId, const char *entryUrl, int size, const std::vector<uint16_t> graphics), (override));
+    MOCK_METHOD(void, ShowApplication, (const int appId), (override));
+    MOCK_METHOD(void, HideApplication, (const int appId), (override));
+    MOCK_METHOD(void, StopBroadcast, (), (override));
+    MOCK_METHOD(void, ResetBroadcastPresentation, (), (override));
+    MOCK_METHOD(void, DispatchApplicationLoadErrorEvent, (), (override));
+    MOCK_METHOD(void, DispatchTransitionedToBroadcastRelatedEvent, (const int appId), (override));
+    MOCK_METHOD(std::string, GetXmlAitContents, (const std::string &url), (override));
+    MOCK_METHOD(int, GetParentalControlAge, (), (override));
+    MOCK_METHOD(std::string, GetParentalControlRegion, (), (override));
+    MOCK_METHOD(std::string, GetParentalControlRegion3, (), (override));
+    MOCK_METHOD(void, DispatchApplicationSchemeUpdatedEvent, (const int appId, const std::string &scheme), (override));
+    MOCK_METHOD(void, DispatchOperatorApplicationStateChange, (const int appId, const std::string &oldState, const std::string &newState), (override));
+    MOCK_METHOD(void, DispatchOperatorApplicationStateChangeCompleted, (const int appId, const std::string &oldState, const std::string &newState), (override));
+    MOCK_METHOD(void, DispatchOperatorApplicationContextChange, (const int appId, const std::string &startupLocation, const std::string &launchLocation), (override));
+    MOCK_METHOD(void, DispatchOpAppUpdate, (const int appId, const std::string &updateEvent), (override));
+    MOCK_METHOD(bool, isInstanceInCurrentService, (const Utils::S_DVB_TRIPLET &triplet), (override));
 };
 
 } // namespace orb
