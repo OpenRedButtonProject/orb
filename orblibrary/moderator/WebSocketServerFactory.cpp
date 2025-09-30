@@ -1,4 +1,4 @@
-#include "log.hpp"
+#include "log.h"
 #include "JsonUtil.h"
 #include "JsonRpcService.h"
 #include "JsonRpcCallback.h"

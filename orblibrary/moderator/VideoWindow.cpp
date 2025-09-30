@@ -16,7 +16,7 @@
 
 #include "VideoWindow.hpp"
 #include "JsonUtil.h"
-#include "log.hpp"
+#include "log.h"
 #include "OrbConstants.h"
 
 using namespace std;

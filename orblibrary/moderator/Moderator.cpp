@@ -24,7 +24,7 @@
 #include "Network.hpp"
 #include "MediaSynchroniser.hpp"
 #include "Drm.hpp"
-#include "log.hpp"
+#include "log.h"
 #include "JsonUtil.h"
 #include "StringUtil.h"
 using namespace std;
