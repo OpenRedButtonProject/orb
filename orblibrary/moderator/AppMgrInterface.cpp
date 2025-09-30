@@ -22,6 +22,7 @@
 
 #include "AppMgrInterface.hpp"
 #include "app_mgr/application_manager.h"
+#include "app_mgr/xml_parser.h"
 #include "JsonUtil.h"
 #include "log.hpp"
 
@@ -53,6 +54,8 @@ AppMgrInterface::AppMgrInterface(IOrbBrowser* browser, ApplicationType apptype)
     : mOrbBrowser(browser)
     , mAppType(apptype)
 {
+    // Set the XML parser for ApplicationManager
+    ApplicationManager::instance().SetXmlParser(std::make_unique<XmlParser>());
     // Set this AppMgrInterface instance as the callback for ApplicationManager
     ApplicationManager::instance().RegisterCallback(apptype, this);
 }

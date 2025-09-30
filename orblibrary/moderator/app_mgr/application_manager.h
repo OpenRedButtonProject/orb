@@ -56,7 +56,8 @@ public:
     /**
      * Constructor of Application manager
      *
-     * @param xmlParser The XML parser implementation to use.
+     * @param xmlParser The XML parser implementation to use. The default is null.
+     * 
      */
     ApplicationManager(std::unique_ptr<IXmlParser> xmlParser = {});
 
