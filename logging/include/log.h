@@ -18,35 +18,11 @@
  * Note: This file is part of the platform-agnostic application manager library.
  */
 
-#ifndef __MANAGER_LOG_H
-#define __MANAGER_LOG_H
+#ifndef COMMON_LOG_H
+#define COMMON_LOG_H
 
 #ifdef IS_CHROMIUM
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-// Define logging levels compatible with app_mgr style
-#define LOG_ERROR 0
-#define LOG_INFO 1
-#define LOG_DEBUG 2
-
-// Define APP_MGR_LOG macro that matches app_mgr format: LOG(level, fmt, args...)
-#define APP_MGR_LOG(level, fmt, args...) do { \
-    const char* level_str = (level == LOG_ERROR) ? "ERROR" : \
-                           (level == LOG_INFO) ? "INFO" : "DEBUG"; \
-    if (level == LOG_ERROR) { \
-        fprintf(stderr, "[%s] %s:%d: " fmt "\n", level_str, __FUNCTION__, __LINE__, ##args); \
-    } else if (level == LOG_INFO) { \
-        fprintf(stdout, "[%s] %s:%d: " fmt "\n", level_str, __FUNCTION__, __LINE__, ##args); \
-    } else { \
-        fprintf(stdout, "[%s] %s:%d: " fmt "\n", level_str, __FUNCTION__, __LINE__, ##args); \
-    } \
-} while(0)
-
-// Map the app_mgr LOG calls to our APP_MGR_LOG macro
-#define LOG(level, fmt, args...) APP_MGR_LOG(level, fmt, ##args)
-
+#include <base/logging.h>
 #elif defined(ANDROID)
 
 #include <android/log.h>
@@ -106,15 +82,13 @@ static unsigned char app_mgr_log_run_level = LOG_LVL_DEBUG;
 }
 #endif // __cplusplus
 
-#else
 
-// Default case - no-op logging macros that accept arguments but do nothing
-#define LOG_ERROR 0
-#define LOG_INFO 1
-#define LOG_DEBUG 2
-#define LOG(level, ...) do { } while(0)
-#define ASSERT(condition) do { } while(0)
+ #else
+ #error Not Chromium or Android build
+ #endif
 
-#endif // IS_CHROMIUM ANDROID RDK
+ #define LOGI(str)   LOG(INFO) << __FUNCTION__ << "," << __LINE__ << ": " << str
+ #define LOGE(str)   LOG(ERROR) << __FUNCTION__ << "," << __LINE__ << ": " << str
+ #define LOGD(str)   DLOG(INFO) << __FUNCTION__ << "," << __LINE__ << ": " << str
 
-#endif // __MANAGER_LOG_H
+ #endif // COMMON_LOG_H

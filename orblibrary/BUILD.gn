@@ -26,6 +26,7 @@ static_library("orb") {
     "//base", # For logging dependency
     "//third_party/jsoncpp",
     "//third_party/libxml",
+    "//third_party/orb/logging:orb_logging_deps",
     ":orb_util",
     ":orb_network_services",
   ]

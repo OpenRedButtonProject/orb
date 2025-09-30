@@ -1,0 +1,41 @@
+# Logging library for ORB
+# Provides platform-agnostic logging functionality
+
+# Source set for the logging library
+source_set("orb_logging") {
+  sources = [
+    # No source files needed - this is a header-only library
+  ]
+
+  public_deps = [
+    "//base",  # For Chromium logging
+  ]
+
+  public_configs = [ ":logging_config" ]
+}
+
+# Configuration for the logging library
+config("logging_config") {
+  include_dirs = [
+    "//third_party/orb/logging/include",
+  ]
+
+  # Platform-specific defines
+  if (is_android) {
+    defines = [ "ANDROID" ]
+  } else {
+    defines = [ "IS_CHROMIUM" ]
+  }
+}
+
+# Group target to make the logging library easy to depend on
+group("orb_logging_deps") {
+  deps = [
+    ":orb_logging",
+  ]
+
+  public_configs = [
+    ":logging_config",
+  ]
+}
+
