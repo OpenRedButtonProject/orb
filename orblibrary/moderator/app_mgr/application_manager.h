@@ -54,14 +54,14 @@ public:
     static constexpr size_t MAX_CBS = 2;
 
     /**
-     * Application manager
+     * Constructor of Application manager
      *
-     * @param sessionCallback Implementation of ApplicationSessionCallback interface.
+     * @param xmlParser The XML parser implementation to use.
      */
     ApplicationManager(std::unique_ptr<IXmlParser> xmlParser = {});
 
     /**
-     *
+     * Destructor of Application manager
      */
     ~ApplicationManager();
 
