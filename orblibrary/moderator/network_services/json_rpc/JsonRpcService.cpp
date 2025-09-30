@@ -6,7 +6,7 @@
  */
 
 #include "JsonRpcServiceUtil.h"
-#include "log.h"
+#include "third_party/orb/logging/include/log.h"
 #include "JsonRpcService.h"
 #include "JsonUtil.h"
 

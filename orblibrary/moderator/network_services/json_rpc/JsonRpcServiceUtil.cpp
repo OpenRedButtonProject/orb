@@ -18,7 +18,7 @@
  */
 
 #include "JsonRpcServiceUtil.h"
-#include "log.h"
+#include "third_party/orb/logging/include/log.h"
 #include <iomanip>
 #include <sstream>
 #include "JsonUtil.h"
