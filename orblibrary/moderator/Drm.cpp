@@ -15,7 +15,7 @@
  */
 
 #include "Drm.hpp"
-#include "log.hpp"
+#include "log.h"
 #include "JsonUtil.h"
 #include <sstream>
 

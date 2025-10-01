@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "log.h"
+#include "third_party/orb/logging/include/log.h"
 #include "websocket_service.h"
 
 #define         LWS_PROTOCOL_LIST_TERM   { NULL, NULL, 0, 0, 0, NULL, 0 }
@@ -101,7 +101,6 @@ WebSocketService::WebSocketService(const std::string &protocol_name, int port, b
     mProtocols{Protocol(mProtocolName.c_str()), LWS_PROTOCOL_LIST_TERM},
     mContext(nullptr)
 {
-    LOGI(ENTER);
     mContextInfo =
     {
         .protocols = mProtocols,
@@ -125,12 +124,10 @@ WebSocketService::WebSocketService(const std::string &protocol_name, int port, b
         mContextInfo.iface = mInterfaceName.c_str();
     }
     lws_set_log_level(LLL_ERR | LLL_WARN, nullptr);
-    LOGI(LEAVE);
 }
 
 bool WebSocketService::Start()
 {
-    LOGI(ENTER);
     bool ret = false;
     if (mContext == nullptr
         && (mContext = lws_create_context(&mContextInfo)) != nullptr)
@@ -140,13 +137,11 @@ bool WebSocketService::Start()
         mMainThread = std::make_unique<std::thread>(EnterMainLooper, this);
         ret = true;
     }
-    LOGI(LEAVE);
     return ret;
 }
 
 void WebSocketService::Stop()
 {
-    LOGI(ENTER);
     {
         LOGI("Stopping ALl WebSocketService Connections...");
         std::lock_guard<std::recursive_mutex> lock(mConnectionsMutex);
@@ -175,7 +170,6 @@ void WebSocketService::Stop()
         mMainThread->join();
         mMainThread.reset();
     }
-    LOGI(LEAVE);
 }
 
 void * WebSocketService::EnterMainLooper(void *instance)
@@ -186,7 +180,6 @@ void * WebSocketService::EnterMainLooper(void *instance)
 
 void WebSocketService::MainLooper()
 {
-    LOGI(ENTER);
     while (!mStop)
     {
         // The timeout value is ignored since 4.2
@@ -201,7 +194,6 @@ void WebSocketService::MainLooper()
         }
      }
     OnServiceStopped();
-    LOGI(LEAVE);
 }
 
 int WebSocketService::EnterLwsCallback(struct lws *wsi, enum lws_callback_reasons reason,
@@ -370,14 +362,14 @@ void WebSocketService::ReleaseService()
 }
 
 WebSocketService::~WebSocketService() {
-    LOGI(ENTER);
+
     // Stop the service if it is running
     if (!mStop)
     {
         Stop();
     }
     ReleaseService();
-    LOGI(LEAVE);
+
 }
 
 WebSocketService::WebSocketConnection* WebSocketService::GetConnection(int id)

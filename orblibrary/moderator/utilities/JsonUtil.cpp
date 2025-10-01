@@ -15,7 +15,7 @@
  */
 
 #include "JsonUtil.h"
-#include "log.hpp"
+#include "log.h"
 
 namespace orb
 {

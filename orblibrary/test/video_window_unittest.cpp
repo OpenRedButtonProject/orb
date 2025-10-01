@@ -8,7 +8,7 @@
 #include "MockOrbBrowser.h"
 #include "JsonRpcService.h"
 #include "OrbConstants.h"
-#include "log.hpp"
+
 
 using namespace orb;
 using namespace orb::networkServices;
