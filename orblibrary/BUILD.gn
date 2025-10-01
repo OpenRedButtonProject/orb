@@ -150,20 +150,19 @@ config("external_network_services_config") {
   defines = [ "IS_CHROMIUM" ]
 }
 
-executable("test_orb_moderator")
+source_set("test_orb_moderator_sources")
 {
   sources = [ "test/moderator_unittest.cpp"]
 
   deps = [
     "//testing/gtest",
-    "//testing/gtest:gtest_main",
     ":orb"
   ]
 
   testonly = true
 }
 
-executable("test_opapp_package_manager")
+source_set("test_opapp_package_manager_sources")
 {
   sources = [
     "test/opapp_package_manager_unittest.cpp",
@@ -173,14 +172,13 @@ executable("test_opapp_package_manager")
 
   deps = [
     "//testing/gtest",
-    "//testing/gtest:gtest_main",
     ":opapp_package_manager"
   ]
 
   testonly = true
 }
 
-executable("test_orb_video_window")
+source_set("test_orb_video_window_sources")
 {
   sources = [
     "test/video_window_unittest.cpp",
@@ -189,14 +187,12 @@ executable("test_orb_video_window")
 
   deps = [
     "//testing/gtest",
-    "//testing/gtest:gtest_main",
     "//third_party/jsoncpp",
     "//base", # Seems to be some dependency on this for logging
     "//third_party/orb/logging:orb_logging_deps",
     ":orb_util",
     ":orb_network_services"
   ]
-
 
   include_dirs = [
     "include",
@@ -207,7 +203,7 @@ executable("test_orb_video_window")
   testonly = true
 }
 
-executable("test_orb_util")
+source_set("test_orb_util_sources")
 {
   sources = [
     "test/json_util_unittest.cpp",
@@ -216,7 +212,6 @@ executable("test_orb_util")
 
   deps = [
     "//testing/gtest",
-    "//testing/gtest:gtest_main",
     "//third_party/jsoncpp",
     ":orb_util",
   ]
@@ -229,7 +224,7 @@ executable("test_orb_util")
   testonly = true
 }
 
-executable("test_orb_jsonrpcservice")
+source_set("test_orb_jsonrpcservice_sources")
 {
   sources = [
     "moderator/network_services/test/jsonrpcservice_unittest.cpp",
@@ -238,15 +233,15 @@ executable("test_orb_jsonrpcservice")
 
   deps = [
     "//testing/gtest",
-    "//testing/gtest:gtest_main",
-    "//base", # For logging dependency,
+    "//base", # There's no direct dependency on //base,
+              # but without this there are compiler errors related to libwebsockets
     ":orb_network_services"
   ]
 
   testonly = true
 }
 
-executable("test_orb_application_manager")
+source_set("test_orb_application_manager_sources")
 {
   sources = [
     "test/application_manager_unittest.cpp",
@@ -261,7 +256,6 @@ executable("test_orb_application_manager")
 
   deps = [
     "//testing/gtest",
-    "//testing/gtest:gtest_main",
     "//testing/gmock",
   ]
 
@@ -273,17 +267,17 @@ executable("test_orb_application_manager")
   testonly = true
 }
 
-# Group all test executables together
-group("test_orb_suite") {
+# Single executable that combines all test sources
+executable("test_orb_all") {
   deps = [
-    # ":test_orb_moderator", // broken, fix in FREE-283
-    ":test_opapp_package_manager",
-    ":test_orb_video_window",
-    ":test_orb_util",
-    ":test_orb_jsonrpcservice",
-    ":test_orb_application_manager"
+    "//testing/gtest:gtest_main",
+    #":test_orb_moderator_sources", # TODO Fix in FREE-283
+    ":test_opapp_package_manager_sources",
+    ":test_orb_video_window_sources",
+    ":test_orb_util_sources",
+    ":test_orb_jsonrpcservice_sources",
+    ":test_orb_application_manager_sources"
   ]
 
   testonly = true
 }
-
