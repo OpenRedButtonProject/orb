@@ -16,7 +16,8 @@
 #pragma once
 
 #include <string>
-#include <json/json.h>
+#include "IJson.h"
+#include <memory>
 
 namespace orb
 {
@@ -25,7 +26,7 @@ class ComponentBase
 {
 public:
     ComponentBase() {}
-    virtual ~ComponentBase() {}
+    virtual ~ComponentBase() = default;
 
     ComponentBase (const ComponentBase&) = delete;
     ComponentBase& operator= (const ComponentBase&) = delete;
@@ -39,8 +40,7 @@ public:
      *
      * @return JSON encoded response string
      */
-    virtual std::string executeRequest(std::string method, Json::Value token, Json::Value params) = 0;
-
+    virtual std::string executeRequest(std::string method, std::string token, std::unique_ptr<IJson> params) = 0;
 }; // class ComponentBase
 
 } // namespace orb

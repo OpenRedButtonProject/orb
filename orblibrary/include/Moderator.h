@@ -19,19 +19,19 @@
 
 #include "IOrbBrowser.h"
 #include "OrbConstants.h"
+#include "IJson.h"
+#include "IFactory.h"
 
 namespace orb
 {
 
-class Network;
-class MediaSynchroniser;
-class AppMgrInterface;
-class Drm;
+class ComponentBase;
+class IAppMgrInterface;
 
 class Moderator
 {
 public:
-    Moderator(IOrbBrowser* browser, ApplicationType apptype);
+    Moderator(IOrbBrowser* browser, ApplicationType apptype, std::unique_ptr<IFactory> factory);
     ~Moderator();
 
     // ----------------------------------------------------------
@@ -69,10 +69,11 @@ public:
 
 private:
     IOrbBrowser *mOrbBrowser;
-    std::unique_ptr<Network> mNetwork;
-    std::unique_ptr<MediaSynchroniser> mMediaSynchroniser;
-    std::unique_ptr<AppMgrInterface> mAppMgrInterface;
-    std::unique_ptr<Drm> mDrm;
+    std::unique_ptr<IFactory> mFactory;
+    std::unique_ptr<ComponentBase> mNetwork;
+    std::unique_ptr<ComponentBase> mMediaSynchroniser;
+    std::unique_ptr<IAppMgrInterface> mAppMgrInterface;
+    std::unique_ptr<ComponentBase> mDrm;
     ApplicationType mAppType;
 }; // class Moderator
 

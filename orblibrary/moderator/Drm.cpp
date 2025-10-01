@@ -37,9 +37,18 @@ const string DRM_SYSTEM_ID = "DRMSystemID";
 const string DRM_PRIVATE_DATA = "DRMPrivateData";
 
 
-std::string Drm::executeRequest(std::string method, Json::Value token, Json::Value params)
+std::string Drm::executeRequest(std::string method, std::string token, std::unique_ptr<IJson> params)
 {
     LOGI("Drm executeRequest method: " << method);
+    // convert params to Json::Value, so we do not change other code.
+    // This is workaround for now, we need to change the code to use IJson instead of Json::Value
+    // in separate Ticket.
+
+    Json::Value paramsJson;
+    if (!JsonUtil::decodeJson(params->toString(), &paramsJson)) {
+        LOGE("Drm executeRequest: Invalid params");
+        return "{\"error\": \"Invalid params\"}";
+    }
 
     Json::Value response(Json::objectValue);
 
@@ -49,19 +58,19 @@ std::string Drm::executeRequest(std::string method, Json::Value token, Json::Val
     }
     else if (method == DRM_SEND_DRM_MESSAGE)
     {
-        response = handleSendDRMMessage(params);
+        response = handleSendDRMMessage(paramsJson);
     }
     else if (method == DRM_CAN_PLAY_CONTENT)
     {
-        response = handleCanPlayContent(params);
+        response = handleCanPlayContent(paramsJson);
     }
     else if (method == DRM_CAN_RECORD_CONTENT)
     {
-        response = handleCanRecordContent(params);
+        response = handleCanRecordContent(paramsJson);
     }
     else if (method == DRM_SET_ACTIVE_DRM)
     {
-        response = handleSetActiveDRM(params);
+        response = handleSetActiveDRM(paramsJson);
     }
     else
     {

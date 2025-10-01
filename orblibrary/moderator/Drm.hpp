@@ -39,7 +39,7 @@ public:
      *
      * @return JSON encoded response string
      */
-    std::string executeRequest(std::string method, Json::Value token, Json::Value params) override;
+    std::string executeRequest(std::string method, std::string token, std::unique_ptr<IJson> params) override;
 
 private:
     /**

@@ -26,7 +26,7 @@ using namespace std;
 
 namespace orb
 {
-string MediaSynchroniser::executeRequest(string method, Json::Value token, Json::Value params)
+string MediaSynchroniser::executeRequest(string method, string token, std::unique_ptr<IJson> params)
 {
     // TODO Set up proper responses
     string response = R"({"Response": "MediaSynchroniser request [)" + method + R"(] not implemented"})";

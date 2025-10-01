@@ -60,7 +60,7 @@ AppMgrInterface::AppMgrInterface(IOrbBrowser* browser, ApplicationType apptype)
     ApplicationManager::instance().RegisterCallback(apptype, this);
 }
 
-string AppMgrInterface::executeRequest(string method, Json::Value token, Json::Value params)
+string AppMgrInterface::executeRequest(string method, string token, std::unique_ptr<IJson> params)
 {
     auto buildJsonResponse = [](const Json::Value &value) -> std::string {
       Json::Value responseObj;
@@ -68,11 +68,20 @@ string AppMgrInterface::executeRequest(string method, Json::Value token, Json::V
       return JsonUtil::convertJsonToString(responseObj);
     };
 
+    // convert params to Json::Value, so we do not change other code now.
+    // This is workaround for now, we need to change the code to use IJson instead of Json::Value
+    // in separate Ticket.
+    Json::Value paramsJson;
+    if (!JsonUtil::decodeJson(params->toString(), &paramsJson)) {
+        LOGE("AppMgrInterface executeRequest: Invalid params");
+        return "{\"error\": \"Invalid params\"}";
+    }
+
     std::lock_guard<std::mutex> lock(mMutex);
     string response = buildJsonResponse(""); // default response
 
     auto &appMgr = ApplicationManager::instance();
-    int appId = JsonUtil::getIntegerValue(params, "id");
+    int appId = JsonUtil::getIntegerValue(paramsJson, "id");
 
     appMgr.SetCurrentInterface(mAppType);
 
@@ -80,17 +89,17 @@ string AppMgrInterface::executeRequest(string method, Json::Value token, Json::V
     if (method == MANAGER_CREATE_APP)
     {
         int newAppId = appMgr.CreateApplication(
-          appId, JsonUtil::getStringValue(params, "url"), JsonUtil::getBoolValue(params, "runAsOpApp"));
+        appId, JsonUtil::getStringValue(paramsJson, "url"), JsonUtil::getBoolValue(paramsJson, "runAsOpApp"));
 
         if (newAppId == INVALID_APP_ID)
         {
-          LOGE("Failed to create application with ID " << appId);
-          response = buildJsonResponse("Failed to create application with ID " + std::to_string(appId));
+        LOGE("Failed to create application with ID " << appId);
+        response = buildJsonResponse("Failed to create application with ID " + std::to_string(appId));
         }
         else
         {
-          LOGI("app type: " << mAppType << " new AppID" << newAppId);
-          response = buildJsonResponse(newAppId);
+        LOGI("app type: " << mAppType << " new AppID" << newAppId);
+        response = buildJsonResponse(newAppId);
         }
     }
     else if (method == MANAGER_DESTROY_APP)
@@ -132,8 +141,8 @@ string AppMgrInterface::executeRequest(string method, Json::Value token, Json::V
     }
     else if (method == MANAGER_SET_KEY_VALUE)
     {
-        uint16_t keyset = JsonUtil::getIntegerValue(params, "value");
-        std::vector<uint16_t> otherkeys = JsonUtil::getIntegerArray(params, "otherKeys");
+        uint16_t keyset = JsonUtil::getIntegerValue(paramsJson, "value");
+        std::vector<uint16_t> otherkeys = JsonUtil::getIntegerArray(paramsJson, "otherKeys");
         uint16_t kMask = appMgr.SetKeySetMask(appId, keyset, otherkeys);
         if (kMask > 0) {
             mOrbBrowser->notifyKeySetChange(keyset, otherkeys);

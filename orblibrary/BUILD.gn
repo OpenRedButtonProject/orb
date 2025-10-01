@@ -20,6 +20,8 @@ static_library("orb") {
     "moderator/JsonRpcCallback.cpp",
     "moderator/VideoWindow.cpp",
     "moderator/WebSocketServerFactory.cpp",
+    "moderator/JsonImpl.cpp",
+    "moderator/FactoryImpl.cpp",
   ]
 
   deps = [
@@ -152,12 +154,28 @@ config("external_network_services_config") {
 
 source_set("test_orb_moderator_sources")
 {
-  sources = [ "test/moderator_unittest.cpp"]
+sources = [
+    "test/moderator_unittest.cpp",
+    "moderator/Moderator.cpp",
+    "moderator/Network.cpp",
+    "moderator/MediaSynchroniser.cpp",
+    "moderator/utilities/StringUtil.cpp",
+  ]
 
   deps = [
     "//testing/gtest",
-    ":orb"
+    "//testing/gmock",
+    "//third_party/orb/logging:orb_logging_deps",
+    "//base", # For logging dependency
   ]
+
+  include_dirs = [
+    "include",
+    "moderator",
+    "moderator/utilities",
+  ]
+
+  defines = ["IS_CHROMIUM","ORB_HBBTV_VERSION=204"]
 
   testonly = true
 }
@@ -187,6 +205,7 @@ source_set("test_orb_video_window_sources")
 
   deps = [
     "//testing/gtest",
+    "//testing/gmock",
     "//third_party/jsoncpp",
     "//base", # Seems to be some dependency on this for logging
     "//third_party/orb/logging:orb_logging_deps",
@@ -271,7 +290,7 @@ source_set("test_orb_application_manager_sources")
 executable("test_orb_all") {
   deps = [
     "//testing/gtest:gtest_main",
-    #":test_orb_moderator_sources", # TODO Fix in FREE-283
+    ":test_orb_moderator_sources",
     ":test_opapp_package_manager_sources",
     ":test_orb_video_window_sources",
     ":test_orb_util_sources",

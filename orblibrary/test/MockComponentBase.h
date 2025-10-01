@@ -13,34 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * ORB Network
- *
+ * Mock ComponentBase for testing using Google Mock
  */
 
-#include <sys/sysinfo.h>
+#ifndef MOCK_COMPONENT_BASE_H
+#define MOCK_COMPONENT_BASE_H
 
-#include "Network.hpp"
-#include "log.h"
-
-using namespace std;
+#include "ComponentBase.hpp"
+#include <gmock/gmock.h>
 
 namespace orb
 {
-string Network::executeRequest(string method, std::string token, std::unique_ptr<IJson> params)
+
+class MockComponentBase : public ComponentBase
 {
-    string response = R"({"Response": "Network request [)" + method + R"(] not implemented"})";
+public:
+    MockComponentBase() = default;
+    virtual ~MockComponentBase() = default;
 
-    if (method == "resolveHostAddress")
-    {
-        LOGI("method: " << method);
-    }
-    else // Unknown Method
-    {
-        response = R"({"error": "Network request [)" + method + R"(] invalid method"})";
-        LOGE("Invalid Method [" + method +"]");
-    }
-
-    return response;
-}
+    // ComponentBase interface using Google Mock
+    MOCK_METHOD(std::string, executeRequest, (std::string method, std::string token, std::unique_ptr<IJson> params), (override));
+};
 
 } // namespace orb
+
+#endif // MOCK_COMPONENT_BASE_H

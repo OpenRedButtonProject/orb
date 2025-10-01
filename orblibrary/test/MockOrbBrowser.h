@@ -1,47 +1,44 @@
+/**
+ * ORB Software. Copyright (c) 2025 Ocean Blue Software Limited
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #ifndef MOCKORBBROWSER_H
 #define MOCKORBBROWSER_H
 
 #include "IOrbBrowser.h"
-#include "JsonUtil.h"
+#include <gmock/gmock.h>
 #include <string>
 #include <vector>
 
-class MockOrbBrowser : public orb::IOrbBrowser {
-    public:
-    void loadApplication(std::string app_id, std::string url) override {
-     // TODO: implement
-    }
-    void showApplication() override {
-     // TODO: implement
-    }
-    void hideApplication() override {
-     // TODO: implement
-    }
-    std::string sendRequestToClient(std::string jsonRequest) override {
-     // get the method from the jsonRequest
-     Json::Value jsonRequestVal;
-     if (!orb::JsonUtil::decodeJson(jsonRequest, &jsonRequestVal)) {
-         return "{\"result\":{\"error\":\"Invalid JSON request\"}}";
-     }
-     std::string method = jsonRequestVal["method"].asString();
-     if (method == "Configuration.getCapabilities") {
-         return "{\"result\":{\"jsonRpcServerEndpoint\":\"/hbbtv/jsonrpc/\",\"jsonRpcServerPort\":8080}}";
-     }
-     else if (method == "Configuration.getAudioProfiles") {
-         return "{\"result\":{\"AudioProfiles\":[{\"name\":\"AudioProfile1\",\"id\":1},{\"name\":\"AudioProfile2\",\"id\":2}]}}";
-     }
-     else if (method == "Configuration.getVideoProfiles") {
-         return "{\"result\":{\"VideoProfiles\":[{\"name\":\"VideoProfile1\",\"id\":1},{\"name\":\"VideoProfile2\",\"id\":2}]}}";
-     } else if (method == "VideoWindow.ChannelStatusChanged") {
-         return jsonRequest;
-     }
-     return "{\"result\":{\"error\":\"Not implemented\"}}";
-    }
-    void dispatchEvent(const std::string& etype, const std::string& properties) override {
-     // TODO: implement
-    }
-    void notifyKeySetChange(uint16_t keyset, std::vector<uint16_t> otherkeys) override {
-    }
- };
+namespace orb
+{
 
-#endif
+/**
+ * Mock implementation of IOrbBrowser using Google Mock
+ */
+class MockOrbBrowser : public IOrbBrowser
+{
+public:
+    MOCK_METHOD(void, loadApplication, (std::string app_id, std::string url), (override));
+    MOCK_METHOD(void, showApplication, (), (override));
+    MOCK_METHOD(void, hideApplication, (), (override));
+    MOCK_METHOD(std::string, sendRequestToClient, (std::string jsonRequest), (override));
+    MOCK_METHOD(void, dispatchEvent, (const std::string& etype, const std::string& properties), (override));
+    MOCK_METHOD(void, notifyKeySetChange, (uint16_t keyset, (std::vector<uint16_t>) otherkeys), (override));
+};
+
+} // namespace orb
+
+#endif // MOCKORBBROWSER_H
