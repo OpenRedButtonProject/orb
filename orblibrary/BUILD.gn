@@ -150,28 +150,88 @@ config("external_network_services_config") {
   defines = [ "IS_CHROMIUM" ]
 }
 
+executable("test_orb_moderator")
+{
+  sources = [ "test/moderator_unittest.cpp"]
 
-# Unified test executable that combines all unit tests
-executable("test_orb_all")
+  deps = [
+    "//testing/gtest",
+    "//testing/gtest:gtest_main",
+    ":orb"
+  ]
+
+  testonly = true
+}
+
+executable("test_opapp_package_manager")
 {
   sources = [
-    # Moderator tests FREE-283
-    # "test/moderator_unittest.cpp",
-
-    # OpApp Package Manager tests
     "test/opapp_package_manager_unittest.cpp",
     "test/OpAppPackageManagerTestInterface.cpp",
-    "test/OpAppPackageManagerTestInterface.h",
+    "test/OpAppPackageManagerTestInterface.h"
+  ]
 
-    # Video Window tests
+  deps = [
+    "//testing/gtest",
+    "//testing/gtest:gtest_main",
+    ":opapp_package_manager"
+  ]
+
+  testonly = true
+}
+
+executable("test_orb_video_window")
+{
+  sources = [
     "test/video_window_unittest.cpp",
     "moderator/VideoWindow.cpp",
+  ]
 
-    # Utility tests
+  deps = [
+    "//testing/gtest",
+    "//testing/gtest:gtest_main",
+    "//third_party/jsoncpp",
+    "//base", # Seems to be some dependency on this for logging
+    "//third_party/orb/logging:orb_logging_deps",
+    ":orb_util",
+    ":orb_network_services"
+  ]
+
+
+  include_dirs = [
+    "include",
+    "moderator",
+    "moderator/utilities",
+  ]
+
+  testonly = true
+}
+
+executable("test_orb_util")
+{
+  sources = [
     "test/json_util_unittest.cpp",
     "test/string_util_unittest.cpp",
+  ]
 
-    # Network services tests
+  deps = [
+    "//testing/gtest",
+    "//testing/gtest:gtest_main",
+    "//third_party/jsoncpp",
+    ":orb_util",
+  ]
+
+  include_dirs = [
+    "include",
+    "moderator/utilities",
+  ]
+
+  testonly = true
+}
+
+executable("test_orb_jsonrpcservice")
+{
+  sources = [
     "moderator/network_services/test/jsonrpcservice_unittest.cpp",
     "moderator/network_services/test/jsonrpcserviceutil_unittest.cpp"
   ]
@@ -179,21 +239,8 @@ executable("test_orb_all")
   deps = [
     "//testing/gtest",
     "//testing/gtest:gtest_main",
-    "//third_party/orb/logging:orb_logging_deps",
-    "//base", # For logging dependency
-    "//third_party/jsoncpp",
-    ":orb",
-    ":opapp_package_manager",
-    ":orb_util",
+    "//base", # For logging dependency,
     ":orb_network_services"
-  ]
-
-  include_dirs = [
-    "include",
-    "moderator",
-    "moderator/utilities",
-    "moderator/network_services/include",
-    "moderator/network_services/json_rpc",
   ]
 
   testonly = true
@@ -223,6 +270,20 @@ executable("test_orb_application_manager")
   ]
 
   defines = ["ORB_HBBTV_VERSION=204"]
+  testonly = true
+}
+
+# Group all test executables together
+group("test_orb_suite") {
+  deps = [
+    # ":test_orb_moderator", // broken, fix in FREE-283
+    ":test_opapp_package_manager",
+    ":test_orb_video_window",
+    ":test_orb_util",
+    ":test_orb_jsonrpcservice",
+    ":test_orb_application_manager"
+  ]
+
   testonly = true
 }
 
