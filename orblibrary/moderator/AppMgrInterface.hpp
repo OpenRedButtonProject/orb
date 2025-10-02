@@ -76,7 +76,7 @@ public:
      *
      * @return JSON encoded response string
      */
-    std::string executeRequest(std::string method, std::string token, std::unique_ptr<IJson> params) override;
+    std::string executeRequest(std::string method, std::string token, const IJson& params) override;
 
     void onNetworkStatusChange(bool available) override;
     void onChannelChange(uint16_t onetId, uint16_t transId, uint16_t serviceId) override;
@@ -109,6 +109,8 @@ private:
     mutable std::mutex mMutex;
 
     bool IsRequestAllowed(std::string token);
+    std::string buildJsonResponse(const std::string &value);
+    std::string buildJsonResponse(const int value);
 
 }; // class AppMgrInterface
 

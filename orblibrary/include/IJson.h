@@ -24,16 +24,6 @@
 namespace orb
 {
 
-
-enum JsonType
-{
-    JSON_TYPE_STRING,
-    JSON_TYPE_INTEGER,
-    JSON_TYPE_BOOLEAN,
-    JSON_TYPE_ARRAY,
-    JSON_TYPE_OBJECT
-};
-
 /**
  * Interface for a Json class.
  */
@@ -41,15 +31,16 @@ class IJson
 {
 
 public:
+    enum JsonType
+    {
+        JSON_TYPE_STRING,
+        JSON_TYPE_INTEGER,
+        JSON_TYPE_BOOLEAN,
+        JSON_TYPE_ARRAY,
+        JSON_TYPE_OBJECT
+    };
 
     virtual ~IJson() = default;
-
-    /**
-     * Checks if the Json is initialized.
-     *
-     * @return 'true' if the Json object was successfully initialized, 'false' otherwise.
-     */
-    virtual bool isInitialized() = 0;
 
     /**
      * Parses a JSON string into an Json object.
@@ -67,14 +58,14 @@ public:
      * @return 'true' if the parameter 'param' exists within the Json object
      *          and has the specified JsonType, 'false' otherwise.
      */
-    virtual bool hasParam(const std::string &param, const JsonType& type = JsonType::JSON_TYPE_OBJECT) = 0;
+    virtual bool hasParam(const std::string &param, const JsonType& type = JSON_TYPE_OBJECT) const = 0;
 
     /**
      * Converts current Json object to a string.
      *
      * @return A string representation of the Json object.
      */
-    virtual std::string toString() = 0;
+    virtual std::string toString() const = 0;
 
     /**
      * Gets an integer value from a Json object by key.
@@ -83,7 +74,7 @@ public:
      * @return The integer value if the key exists and the value is an integer,
      *         0 otherwise.
      */
-    virtual int getInteger(const std::string& key) = 0;
+    virtual int getInteger(const std::string& key) const = 0;
 
     /**
      * Gets a boolean value from a Json object by key.
@@ -92,7 +83,7 @@ public:
      * @return The boolean value if the key exists and the value is a boolean,
      *         false otherwise.
      */
-    virtual bool getBool(const std::string& key) = 0;
+    virtual bool getBool(const std::string& key) const = 0;
 
     /**
      * Gets a string value from a Json object by key.
@@ -101,7 +92,7 @@ public:
      * @return The string value if the key exists and the value is a string,
      *         empty string otherwise.
      */
-    virtual std::string getString(const std::string& key) = 0;
+    virtual std::string getString(const std::string& key) const = 0;
 
     /**
      * Gets an object value from a Json object by key.
@@ -110,7 +101,7 @@ public:
      * @return The object value if the key exists and the value is an object,
      *         nullptr otherwise.
      */
-    virtual std::unique_ptr<IJson> getObject(const std::string& key) = 0;
+    virtual std::unique_ptr<IJson> getObject(const std::string& key) const = 0;
 
     /**
      * Sets an integer value in a Json object by key.
@@ -158,13 +149,35 @@ public:
     virtual void setArray(const std::string& key, const std::vector<int>& array) = 0;
 
     /**
-     * Gets an array of integers from a Json object by key.
-     *
-     * @param key The key of the integer array in the Json object.
-     * @return The integer array if the key exists and the value is an array of integers,
-     *         empty vector otherwise.
+     * Gets an array of unsigned 16-bit integers from a Json object by key.
      */
-    virtual std::vector<uint16_t> getUint16Array(const std::string& key) = 0;
+    virtual std::vector<uint16_t> getUint16Array(const std::string& key) const = 0;
+};
+
+/**
+ * Json Factory class.
+ * This class is responsible for creating a Json object.
+ */
+class JsonFactory
+{
+private:
+    /**
+     * Private Constructor
+     */
+    JsonFactory() = default;
+    /**
+     * Destructor
+     */
+    ~JsonFactory() = default;
+
+public:
+    /**
+     * Create a Json object.
+     *
+     * @param jsonString The JSON string to create the instance from, default is empty string
+     * @return A unique pointer to the created instance
+     */
+    static std::unique_ptr<IJson> createJson(const std::string& jsonString = {});
 };
 
 } // namespace orb

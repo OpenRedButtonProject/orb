@@ -19,8 +19,6 @@
 
 #include "IOrbBrowser.h"
 #include "OrbConstants.h"
-#include "IJson.h"
-#include "IFactory.h"
 
 namespace orb
 {
@@ -31,7 +29,21 @@ class IAppMgrInterface;
 class Moderator
 {
 public:
-    Moderator(IOrbBrowser* browser, ApplicationType apptype, std::unique_ptr<IFactory> factory);
+    Moderator(IOrbBrowser* browser, ApplicationType apptype);
+
+    /**
+     * Moderator constructor for testing
+     *
+     * @param browser The OrbBrowser instance
+     * @param apptype The application type
+     * @param appMgrInterface The AppMgrInterface instance
+     * @param drm The Drm instance
+     */
+    Moderator(
+        IOrbBrowser* browser,
+        ApplicationType apptype,
+        std::unique_ptr<IAppMgrInterface> appMgrInterface,
+        std::unique_ptr<ComponentBase> drm);
     ~Moderator();
 
     // ----------------------------------------------------------
@@ -68,8 +80,8 @@ public:
     void processXmlAit(const std::vector<uint8_t>& xmlait);
 
 private:
+    //Todo: use smart pointers to manager IOrbBrowser
     IOrbBrowser *mOrbBrowser;
-    std::unique_ptr<IFactory> mFactory;
     std::unique_ptr<ComponentBase> mNetwork;
     std::unique_ptr<ComponentBase> mMediaSynchroniser;
     std::unique_ptr<IAppMgrInterface> mAppMgrInterface;

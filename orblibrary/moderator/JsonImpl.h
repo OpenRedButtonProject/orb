@@ -23,8 +23,8 @@ namespace orb
 {
 
 /**
- * Json implementation class.
- * The methods implemented here are based on the JsonUtil class.
+ * Json implementation class which wraps the Json::Value object.
+ * The methods implemented here are based static methods of the JsonUtil class.
  */
 class JsonImpl : public IJson
 {
@@ -35,30 +35,28 @@ public:
     JsonImpl(std::vector<uint16_t> array);
     JsonImpl(std::vector<int> array);
     virtual ~JsonImpl() {}
-    bool isInitialized() override;
     bool parse(std::string jsonString) override;
-    bool hasParam(const std::string &param, const JsonType& type = JsonType::JSON_TYPE_OBJECT) override;
-    std::string toString() override;
-    int getInteger(const std::string& key) override;
-    bool getBool(const std::string& key) override;
-    std::string getString(const std::string& key) override;
-    std::unique_ptr<IJson> getObject(const std::string& key) override;
+    bool hasParam(const std::string &param, const JsonType& type = JsonType::JSON_TYPE_OBJECT) const override;
+    std::string toString() const override;
+    int getInteger(const std::string& key) const override;
+    bool getBool(const std::string& key) const override;
+    std::string getString(const std::string& key) const override;
+    std::unique_ptr<IJson> getObject(const std::string& key) const override;
     void setInteger(const std::string& key, const int value, const std::string& subKey) override;
     void setBool(const std::string& key, const bool value, const std::string& subKey) override;
     void setString(const std::string& key, const std::string& value, const std::string& subKey) override;
     void setArray(const std::string& key, const std::vector<uint16_t>& array) override;
     void setArray(const std::string& key, const std::vector<int>& array) override;
-    std::vector<uint16_t> getUint16Array(const std::string& key) override;
+    std::vector<uint16_t> getUint16Array(const std::string& key) const override;
 
 private:
-    Json::ValueType convertToJsonValueType(const JsonType& type);
+    Json::ValueType convertToJsonValueType(const JsonType& type) const;
     void setValue(const std::string& key, Json::Value value, const std::string& subKey);
     template<typename T>
     void setJsonArray(const std::string& key, const std::vector<T>& array);
 
 private:
     Json::Value mJson;
-    bool mIsInitialized;
 };
 } // namespace orb
 

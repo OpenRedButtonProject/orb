@@ -20,8 +20,7 @@ static_library("orb") {
     "moderator/JsonRpcCallback.cpp",
     "moderator/VideoWindow.cpp",
     "moderator/WebSocketServerFactory.cpp",
-    "moderator/JsonImpl.cpp",
-    "moderator/FactoryImpl.cpp",
+    "moderator/JsonImpl.cpp"
   ]
 
   deps = [
@@ -159,6 +158,8 @@ sources = [
     "moderator/Moderator.cpp",
     "moderator/Network.cpp",
     "moderator/MediaSynchroniser.cpp",
+    "moderator/AppMgrInterface.cpp",
+    "moderator/Drm.cpp",
     "moderator/utilities/StringUtil.cpp",
   ]
 

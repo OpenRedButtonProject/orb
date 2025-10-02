@@ -13,34 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * ORB Network
- *
+ * Mock XML Parser for unit testing
  */
 
-#include <sys/sysinfo.h>
+#ifndef MOCK_XML_PARSER_H
+#define MOCK_XML_PARSER_H
 
-#include "Network.hpp"
-#include "log.h"
-
-using namespace std;
+#include "testing/gmock/include/gmock/gmock.h"
+#include "app_mgr/xml_parser.h"
 
 namespace orb
 {
-string Network::executeRequest(string method, std::string token, const IJson& params)
+
+/**
+ * Mock implementation of IXmlParser interface for unit testing
+ */
+class MockXmlParser : public IXmlParser
 {
-    string response = R"({"Response": "Network request [)" + method + R"(] not implemented"})";
-
-    if (method == "resolveHostAddress")
-    {
-        LOGI("method: " << method);
-    }
-    else // Unknown Method
-    {
-        response = R"({"error": "Network request [)" + method + R"(] invalid method"})";
-        LOGE("Invalid Method [" + method +"]");
-    }
-
-    return response;
-}
+public:
+    /**
+     * Mock implementation of ParseAit method
+     * @param content pointer to Xml data
+     * @param length length of Xml data
+     * @return AIT table data in same format as generated from DVB broadcast data
+     */
+    MOCK_METHOD(std::unique_ptr<Ait::S_AIT_TABLE>, ParseAit, (const char *content, uint32_t length), (override));
+};
 
 } // namespace orb
+
+#endif /* MOCK_XML_PARSER_H */

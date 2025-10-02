@@ -24,6 +24,7 @@
 #include "log.h"
 #include "StringUtil.h"
 #include "IJson.h"
+#include "Drm.hpp"
 
 using namespace std;
 
@@ -36,17 +37,29 @@ const string COMPONENT_NETWORK = "Network";
 const string COMPONENT_MEDIA_SYNCHRONISER = "MediaSynchroniser";
 const string COMPONENT_DRM = "Drm";
 
-Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype, std::unique_ptr<IFactory> factory)
+Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
     : mOrbBrowser(browser)
-    , mFactory(std::move(factory))
     , mNetwork(std::make_unique<Network>())
     , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
-    , mAppMgrInterface(mFactory->createAppMgrInterface(browser, apptype))
-    , mDrm(mFactory->createDrm())
+    , mAppMgrInterface(std::make_unique<AppMgrInterface>(browser, apptype))
+    , mDrm(std::make_unique<Drm>())
     , mAppType(apptype)
 {
     LOGI("HbbTV version " << ORB_HBBTV_VERSION);
 }
+
+Moderator::Moderator(
+    IOrbBrowser* browser,
+    ApplicationType apptype,
+    std::unique_ptr<IAppMgrInterface> appMgrInterface,
+    std::unique_ptr<ComponentBase> drm)
+    : mOrbBrowser(browser)
+    , mNetwork(std::make_unique<Network>())
+    , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
+    , mAppMgrInterface(std::move(appMgrInterface))
+    , mDrm(std::move(drm))
+    , mAppType(apptype)
+{}
 
 Moderator::~Moderator() {}
 
@@ -54,7 +67,7 @@ string Moderator::handleOrbRequest(string jsonRqst)
 {
     LOGI("json: " << jsonRqst);
 
-    std::unique_ptr<IJson> json = mFactory->createJson();
+    std::unique_ptr<IJson> json = JsonFactory::createJson();
 
     if (!json->parse(jsonRqst))
     {
@@ -67,7 +80,7 @@ string Moderator::handleOrbRequest(string jsonRqst)
         return "{\"error\": \"Error Request\"}";
     }
 
-    if (!json->hasParam("method", JsonType::JSON_TYPE_STRING))
+    if (!json->hasParam("method", IJson::JSON_TYPE_STRING))
     {
         LOGE("Request has no method");
         return "{\"error\": \"No method\"}";
@@ -84,21 +97,23 @@ string Moderator::handleOrbRequest(string jsonRqst)
     }
 
     LOGI(component << ", method: " << method);
+    std::unique_ptr<IJson> params = json->getObject("params");
+    string token = json->getString("token");
     if (component == COMPONENT_MANAGER)
     {
-        return mAppMgrInterface->executeRequest(method, json->getString("token"), json->getObject("params"));
+        return mAppMgrInterface->executeRequest(method, token, *params);
     }
     else if (component == COMPONENT_NETWORK)
     {
-        return mNetwork->executeRequest(method, json->getString("token"), json->getObject("params"));
+        return mNetwork->executeRequest(method, token, *params);
     }
     else if (component == COMPONENT_MEDIA_SYNCHRONISER)
     {
-        return mMediaSynchroniser->executeRequest(method, json->getString("token"), json->getObject("params"));
+        return mMediaSynchroniser->executeRequest(method, token, *params);
     }
     else if (component == COMPONENT_DRM)
     {
-        return mDrm->executeRequest(method, json->getString("token"), json->getObject("params"));
+        return mDrm->executeRequest(method, token, *params);
     }
 
     LOGI("Passing request to Live TV App");
@@ -119,7 +134,7 @@ bool Moderator::handleBridgeEvent(const std::string& etype, const std::string& p
     bool consumed = false;
     LOGI("etype: " << etype << " props: " << properties);
     if (etype == CHANNEL_STATUS_CHANGE) {
-        std::unique_ptr<IJson> json = mFactory->createJson();
+        std::unique_ptr<IJson> json = JsonFactory::createJson();
         if (json->parse(properties)) {
             int status = json->getInteger("statusCode");
             if (status == CHANNEL_STATUS_CONNECTING) {
@@ -132,7 +147,7 @@ bool Moderator::handleBridgeEvent(const std::string& etype, const std::string& p
         // Javascript also needs this event
     }
     else if (etype == NETWORK_STATUS) {
-        std::unique_ptr<IJson> json = mFactory->createJson();
+        std::unique_ptr<IJson> json = JsonFactory::createJson();
         if (json->parse(properties)) {
             mAppMgrInterface->onNetworkStatusChange(json->getBool("available"));
         }

@@ -7,10 +7,34 @@
 #include "Moderator.h"
 #include "MockOrbBrowser.h"
 #include "MockJson.h"
-#include "MockFactory.h"
 #include "MockAppMgrInterface.h"
 #include "MockComponentBase.h"
+#include "MockXmlParser.h"
 
+
+/**
+ * Mock Json object
+ */
+static std::unique_ptr<orb::IJson> g_mockJson = nullptr;
+
+namespace orb {
+    /**
+     * The implementation of static method createJson of JsonFactory class
+     * To inject a mock Json object
+     */
+    std::unique_ptr<IJson> JsonFactory::createJson(const std::string& jsonString)
+    {
+        if (g_mockJson) {
+            return std::move(g_mockJson);
+        }
+        return std::make_unique<orb::MockJson>();
+    }
+
+    std::unique_ptr<orb::IXmlParser> XmlParserFactory::createXmlParser()
+    {
+        return std::make_unique<orb::MockXmlParser>();
+    }
+}
 
 /**
  * Test fixture class for Moderator unit tests
@@ -19,11 +43,10 @@
 class ModeratorTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        // Create mock objects
         mockBrowser = std::make_unique<orb::MockOrbBrowser>();
-        mockFactory = std::make_unique<orb::MockFactory>();
         mockAppMgrInterface = std::make_unique<orb::MockAppMgrInterface>(mockBrowser.get(), orb::APP_TYPE_HBBTV);
         mockDrm = std::make_unique<orb::MockComponentBase>();
+        mockJson = std::make_unique<orb::MockJson>();
     }
 
     void TearDown() override {}
@@ -35,19 +58,16 @@ protected:
         return std::make_unique<orb::Moderator>(
             mockBrowser.get(),
             orb::APP_TYPE_HBBTV,
-            std::move(mockFactory)
+            std::move(mockAppMgrInterface),
+            std::move(mockDrm)
         );
     }
 
-    void createAppMgrInterfaceAndDrm() {
-      EXPECT_CALL(*mockFactory, createAppMgrInterface(mockBrowser.get(), orb::APP_TYPE_HBBTV))
-         .WillOnce(::testing::Return(::testing::ByMove(std::move(mockAppMgrInterface))));
-      EXPECT_CALL(*mockFactory, createDrm())
-         .WillOnce(::testing::Return(::testing::ByMove(std::move(mockDrm))));
+    void finishMockPrepare() {
+        g_mockJson = std::move(mockJson);
     }
 
     void setupJsonParsing(const std::string& input, bool parseResult, const std::string& methodValue = "") {
-        auto mockJson = std::make_unique<orb::MockJson>();
         EXPECT_CALL(*mockJson, parse(input))
             .WillOnce(::testing::Return(parseResult));
 
@@ -56,100 +76,72 @@ protected:
              .WillOnce(::testing::Return(methodValue));
         }
 
-        EXPECT_CALL(*mockFactory, createJson(""))
-            .WillOnce(::testing::Return(::testing::ByMove(std::move(mockJson))));
-        createAppMgrInterfaceAndDrm();
+        finishMockPrepare();
     }
 
     /**
      * Set up expectations for error request handling
      */
     void setupErrorRequestHandling(const std::string& input) {
-      auto mockJson = std::make_unique<orb::MockJson>();
         EXPECT_CALL(*mockJson, parse(input))
             .WillOnce(::testing::Return(true));
-        EXPECT_CALL(*mockJson, hasParam("error", orb::JsonType::JSON_TYPE_OBJECT))
+        EXPECT_CALL(*mockJson, hasParam("error", orb::IJson::JSON_TYPE_OBJECT))
             .WillOnce(::testing::Return(true));
-        EXPECT_CALL(*mockFactory, createJson(""))
-            .WillOnce(::testing::Return(::testing::ByMove(std::move(mockJson))));
-        createAppMgrInterfaceAndDrm();
+        finishMockPrepare();
     }
 
     /**
      * Set up expectations for invalid method handling
      */
     void setupNoMethodHandling(const std::string& input) {
-      auto mockJson = std::make_unique<orb::MockJson>();
       EXPECT_CALL(*mockJson, parse(input))
             .WillOnce(::testing::Return(true));
-        EXPECT_CALL(*mockJson, hasParam("method", orb::JsonType::JSON_TYPE_STRING))
+        EXPECT_CALL(*mockJson, hasParam("method", orb::IJson::JSON_TYPE_STRING))
             .WillOnce(::testing::Return(false));
-        EXPECT_CALL(*mockJson, hasParam("error", orb::JsonType::JSON_TYPE_OBJECT))
+        EXPECT_CALL(*mockJson, hasParam("error", orb::IJson::JSON_TYPE_OBJECT))
             .WillOnce(::testing::Return(false));
-        EXPECT_CALL(*mockFactory, createJson(""))
-            .WillOnce(::testing::Return(::testing::ByMove(std::move(mockJson))));
-        createAppMgrInterfaceAndDrm();
+        finishMockPrepare();
     }
 
     /**
      * Set up expectations for valid method handling
      */
-    void setupHandleOrbRequest(const std::string& input, const std::string& methodValue, const std::string& resultValue) {
-        auto mockJson = std::make_unique<orb::MockJson>();
-        auto mockParams = std::make_unique<orb::MockJson>();
+    void setupHandleOrbRequest(const std::string& input, const std::string& methodValue,
+        const std::string& resultValue, bool isForRequestToClient = false) {
+        auto anotherMockParams = std::make_unique<orb::MockJson>();
         EXPECT_CALL(*mockJson, parse(input))
             .WillOnce(::testing::Return(true));
         EXPECT_CALL(*mockJson, getString("method"))
             .WillOnce(::testing::Return(methodValue));
         EXPECT_CALL(*mockJson, getString("token"))
             .WillOnce(::testing::Return("token"));
-        EXPECT_CALL(*mockJson, hasParam("method", orb::JsonType::JSON_TYPE_STRING))
+        EXPECT_CALL(*mockJson, hasParam("method", orb::IJson::JSON_TYPE_STRING))
             .WillOnce(::testing::Return(true));
-        EXPECT_CALL(*mockJson, hasParam("error", orb::JsonType::JSON_TYPE_OBJECT))
+        EXPECT_CALL(*mockJson, hasParam("error", orb::IJson::JSON_TYPE_OBJECT))
             .WillOnce(::testing::Return(false));
 
          int appType = orb::APP_TYPE_HBBTV;
          EXPECT_CALL(*mockJson, setInteger("params",  appType, "applicationType"))
             .WillOnce(::testing::Return());
+        if (isForRequestToClient) {
+            EXPECT_CALL(*mockJson, toString())
+            .WillOnce(::testing::Return(methodValue));
+
+            EXPECT_CALL(*mockBrowser, sendRequestToClient(methodValue))
+                .WillOnce(::testing::Return(resultValue));
+        }
 
         EXPECT_CALL(*mockJson, getObject("params"))
-            .WillOnce(::testing::Return(::testing::ByMove(std::move(mockParams))));
+            .WillOnce(::testing::Return(::testing::ByMove(std::move(anotherMockParams))));
 
-        EXPECT_CALL(*mockFactory, createJson(""))
-            .WillOnce(::testing::Return(::testing::ByMove(std::move(mockJson))));
-
-        createAppMgrInterfaceAndDrm();
+        finishMockPrepare();
     }
 
-    void setupValidMethodHandlingForSendRequestToClient(const std::string& input, const std::string& methodValue, const std::string& resultValue) {
-      auto mockJson = std::make_unique<orb::MockJson>();
-      EXPECT_CALL(*mockJson, parse(input))
-          .WillOnce(::testing::Return(true));
-      EXPECT_CALL(*mockJson, getString("method"))
-          .WillOnce(::testing::Return(methodValue));
-      EXPECT_CALL(*mockJson, hasParam("method", orb::JsonType::JSON_TYPE_STRING))
-          .WillOnce(::testing::Return(true));
-      EXPECT_CALL(*mockJson, hasParam("error", orb::JsonType::JSON_TYPE_OBJECT))
-          .WillOnce(::testing::Return(false));
-      int appType = orb::APP_TYPE_HBBTV;
-      EXPECT_CALL(*mockJson, setInteger("params",  appType, "applicationType"))
-          .WillOnce(::testing::Return());
-      EXPECT_CALL(*mockJson, toString())
-          .WillOnce(::testing::Return(methodValue));
-
-      EXPECT_CALL(*mockBrowser, sendRequestToClient(methodValue))
-          .WillOnce(::testing::Return(resultValue));
-
-      EXPECT_CALL(*mockFactory, createJson(""))
-          .WillOnce(::testing::Return(::testing::ByMove(std::move(mockJson))));
-      createAppMgrInterfaceAndDrm();
-    }
-
-    // Mock objects available to all test methods
+     // Mock objects available to all test methods
     std::unique_ptr<orb::MockOrbBrowser> mockBrowser;
-    std::unique_ptr<orb::MockFactory> mockFactory;
     std::unique_ptr<orb::MockAppMgrInterface> mockAppMgrInterface;
     std::unique_ptr<orb::MockComponentBase> mockDrm;
+    std::unique_ptr<orb::MockJson> mockJson;
 };
 
 TEST_F(ModeratorTest, HandleOrbRequestEmptyRequest)
@@ -216,18 +208,17 @@ TEST_F(ModeratorTest, HandleOrbRequestForNetwork)
 TEST_F(ModeratorTest, HandleOrbRequestForSendRequestToClient)
 {
     std::string result = R"({"result": "OrbClient Response"})";
-    setupValidMethodHandlingForSendRequestToClient(R"({ "method": "Broadcast.SetChannel" })", "Broadcast.SetChannel", result);
+    setupHandleOrbRequest(R"({ "method": "Broadcast.SetChannel" })", "Broadcast.SetChannel", result, true);
     auto moderator = createModerator();
     std::string response = moderator->handleOrbRequest(R"({ "method": "Broadcast.SetChannel" })");
     EXPECT_EQ(response, result);
 }
 
-// add test to test handleBridgeEvent
 TEST_F(ModeratorTest, HandleBridgeEventForChannelStatusChange)
 {
     std::string etype = orb::CHANNEL_STATUS_CHANGE;
     std::string properties = R"({ "statusCode": -2, "onetId": 1, "transId": 1, "servId": 1 })";
-    auto mockJson = std::make_unique<orb::MockJson>();
+
     EXPECT_CALL(*mockJson, parse(properties))
         .WillOnce(::testing::Return(true));
     EXPECT_CALL(*mockJson, getInteger("statusCode"))
@@ -239,13 +230,10 @@ TEST_F(ModeratorTest, HandleBridgeEventForChannelStatusChange)
     EXPECT_CALL(*mockJson, getInteger("servId"))
         .WillOnce(::testing::Return(1));
 
-    EXPECT_CALL(*mockFactory, createJson(""))
-      .WillOnce(::testing::Return(::testing::ByMove(std::move(mockJson))));
-
     EXPECT_CALL(*mockAppMgrInterface, onChannelChange(1, 1, 1))
         .WillOnce(::testing::Return());
 
-    createAppMgrInterfaceAndDrm();
+    finishMockPrepare();
     auto moderator = createModerator();
     bool consumed = moderator->handleBridgeEvent(etype, properties);
     EXPECT_FALSE(consumed);
@@ -255,19 +243,15 @@ TEST_F(ModeratorTest, HandleBridgeEventForNetworkStatusChange)
 {
     std::string etype = orb::NETWORK_STATUS;
     std::string properties = R"({ "available": true })";
-    auto mockJson = std::make_unique<orb::MockJson>();
     EXPECT_CALL(*mockJson, parse(properties))
         .WillOnce(::testing::Return(true));
     EXPECT_CALL(*mockJson, getBool("available"))
         .WillOnce(::testing::Return(true));
 
-    EXPECT_CALL(*mockFactory, createJson(""))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(mockJson))));
-
     EXPECT_CALL(*mockAppMgrInterface, onNetworkStatusChange(true))
         .WillOnce(::testing::Return());
 
-    createAppMgrInterfaceAndDrm();
+    finishMockPrepare();
     auto moderator = createModerator();
     bool consumed = moderator->handleBridgeEvent(etype, properties);
     EXPECT_TRUE(consumed);
@@ -280,7 +264,7 @@ TEST_F(ModeratorTest, ProcessAitSection)
   EXPECT_CALL(*mockAppMgrInterface, processAitSection(1, 1, section))
       .WillOnce(::testing::Return());
 
-  createAppMgrInterfaceAndDrm();
+  finishMockPrepare();
   auto moderator = createModerator();
   moderator->processAitSection(1, 1, section);
 }
@@ -291,7 +275,7 @@ TEST_F(ModeratorTest, ProcessXmlAit)
   {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F};
   EXPECT_CALL(*mockAppMgrInterface, processXmlAit(xmlait))
       .WillOnce(::testing::Return());
-  createAppMgrInterfaceAndDrm();
+  finishMockPrepare();
   auto moderator = createModerator();
   moderator->processXmlAit(xmlait);
 }

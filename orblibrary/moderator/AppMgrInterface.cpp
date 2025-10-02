@@ -18,12 +18,9 @@
  */
 
 #include <sys/sysinfo.h>
-#include <json/json.h>
-
 #include "AppMgrInterface.hpp"
 #include "app_mgr/application_manager.h"
 #include "app_mgr/xml_parser.h"
-#include "JsonUtil.h"
 #include "log.h"
 
 #define LINKED_APP_SCHEME_1_1 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.1"
@@ -55,33 +52,18 @@ AppMgrInterface::AppMgrInterface(IOrbBrowser* browser, ApplicationType apptype)
     , mAppType(apptype)
 {
     // Set the XML parser for ApplicationManager
-    ApplicationManager::instance().SetXmlParser(std::make_unique<XmlParser>());
+    ApplicationManager::instance().SetXmlParser(XmlParserFactory::createXmlParser());
     // Set this AppMgrInterface instance as the callback for ApplicationManager
     ApplicationManager::instance().RegisterCallback(apptype, this);
 }
 
-string AppMgrInterface::executeRequest(string method, string token, std::unique_ptr<IJson> params)
+string AppMgrInterface::executeRequest(string method, string token, const IJson& params)
 {
-    auto buildJsonResponse = [](const Json::Value &value) -> std::string {
-      Json::Value responseObj;
-      responseObj["result"] = value;
-      return JsonUtil::convertJsonToString(responseObj);
-    };
-
-    // convert params to Json::Value, so we do not change other code now.
-    // This is workaround for now, we need to change the code to use IJson instead of Json::Value
-    // in separate Ticket.
-    Json::Value paramsJson;
-    if (!JsonUtil::decodeJson(params->toString(), &paramsJson)) {
-        LOGE("AppMgrInterface executeRequest: Invalid params");
-        return "{\"error\": \"Invalid params\"}";
-    }
-
     std::lock_guard<std::mutex> lock(mMutex);
     string response = buildJsonResponse(""); // default response
 
     auto &appMgr = ApplicationManager::instance();
-    int appId = JsonUtil::getIntegerValue(paramsJson, "id");
+    int appId = params.getInteger("id");
 
     appMgr.SetCurrentInterface(mAppType);
 
@@ -89,17 +71,17 @@ string AppMgrInterface::executeRequest(string method, string token, std::unique_
     if (method == MANAGER_CREATE_APP)
     {
         int newAppId = appMgr.CreateApplication(
-        appId, JsonUtil::getStringValue(paramsJson, "url"), JsonUtil::getBoolValue(paramsJson, "runAsOpApp"));
+          appId, params.getString("url"), params.getBool("runAsOpApp"));
 
         if (newAppId == INVALID_APP_ID)
         {
-        LOGE("Failed to create application with ID " << appId);
-        response = buildJsonResponse("Failed to create application with ID " + std::to_string(appId));
+          LOGE("Failed to create application with ID " << appId);
+          response = buildJsonResponse("Failed to create application with ID " + std::to_string(appId));
         }
         else
         {
-        LOGI("app type: " << mAppType << " new AppID" << newAppId);
-        response = buildJsonResponse(newAppId);
+          LOGI("app type: " << mAppType << " new AppID" << newAppId);
+          response = buildJsonResponse(newAppId);
         }
     }
     else if (method == MANAGER_DESTROY_APP)
@@ -121,15 +103,10 @@ string AppMgrInterface::executeRequest(string method, string token, std::unique_
     {
         // Get running app IDs from ApplicationManager
         std::vector<int> runningAppIds = appMgr.GetRunningAppIds();
-
-        // Create JSON response with array of integers
-        Json::Value resultArray = Json::Value(Json::arrayValue);
-        for (int id : runningAppIds) {
-            resultArray.append(Json::Value(id));
-        }
-
+        std::unique_ptr<IJson> json = JsonFactory::createJson();
+        json->setArray("result", runningAppIds);
+        response = json->toString();
         LOGI("getRunningAppIds: returned " << runningAppIds.size() << " app IDs");
-        response = buildJsonResponse(resultArray);
     }
     else if (method == MANAGER_GET_APP_URL)
     {
@@ -141,8 +118,8 @@ string AppMgrInterface::executeRequest(string method, string token, std::unique_
     }
     else if (method == MANAGER_SET_KEY_VALUE)
     {
-        uint16_t keyset = JsonUtil::getIntegerValue(paramsJson, "value");
-        std::vector<uint16_t> otherkeys = JsonUtil::getIntegerArray(paramsJson, "otherKeys");
+        uint16_t keyset = params.getInteger("value");
+        std::vector<uint16_t> otherkeys = params.getUint16Array("otherKeys");
         uint16_t kMask = appMgr.SetKeySetMask(appId, keyset, otherkeys);
         if (kMask > 0) {
             mOrbBrowser->notifyKeySetChange(keyset, otherkeys);
@@ -157,15 +134,10 @@ string AppMgrInterface::executeRequest(string method, string token, std::unique_
     else if (method == MANAGER_GET_OKEY_VALUES)
     {
         std::vector<uint16_t> otherkeys = appMgr.GetOtherKeyValues(appId);
-
         // Create JSON response with array of other key values
-        Json::Value resultArray = Json::Value(Json::arrayValue);
-        for (uint16_t keyValue : otherkeys) {
-            resultArray.append(Json::Value(keyValue));
-        }
-
-        response = buildJsonResponse(resultArray);
-
+        std::unique_ptr<IJson> json = JsonFactory::createJson();
+        json->setArray("result", otherkeys);
+        response = json->toString();
         LOGI("return: " << otherkeys.size() << " other key values");
     }
     else if (method == MANAGER_GET_KEY_MAX_VAL)
@@ -282,9 +254,9 @@ std::string AppMgrInterface::GetParentalControlRegion3() {
 
 void AppMgrInterface::DispatchApplicationSchemeUpdatedEvent(const int appId, const std::string &scheme) {
     LOGI("appID: " << appId << ", Scheme: " << scheme);
-    Json::Value prop;
-    prop["scheme"] = scheme;
-    mOrbBrowser->dispatchEvent("ApplicationSchemeUpdated", JsonUtil::convertJsonToString(prop));
+    std::unique_ptr<IJson> json = JsonFactory::createJson();
+    json->setString("scheme", scheme);
+    mOrbBrowser->dispatchEvent("ApplicationSchemeUpdated", json->toString());
 }
 
 void AppMgrInterface::DispatchOperatorApplicationStateChange(const int appId, const std::string &oldState, const std::string &newState) {
@@ -312,6 +284,20 @@ bool AppMgrInterface::IsRequestAllowed(string token)
 {
     // TODO implement
     return true;
+}
+
+std::string AppMgrInterface::buildJsonResponse(const std::string &value)
+{
+    std::unique_ptr<IJson> json = JsonFactory::createJson();
+    json->setString("result", value);
+    return json->toString();
+}
+
+std::string AppMgrInterface::buildJsonResponse(const int value)
+{
+    std::unique_ptr<IJson> json = JsonFactory::createJson();
+    json->setInteger("result", value);
+    return json->toString();
 }
 
 } // namespace orb
