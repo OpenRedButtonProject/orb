@@ -141,9 +141,9 @@ std::vector<uint16_t> JsonImpl::getUint16Array(const std::string& key) const
 /**
  * The implementation of static method createJson of JsonFactory class
  */
-std::unique_ptr<IJson> JsonFactory::createJson(const std::string& jsonString)
+std::unique_ptr<IJson> IJson::create(const std::string& jsonString)
 {
-    return std::make_unique<JsonImpl>(jsonString);
+    return std::make_unique<orb::JsonImpl>(jsonString);
 }
 
 }

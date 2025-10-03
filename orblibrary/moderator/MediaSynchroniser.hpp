@@ -33,7 +33,7 @@ public:
      *
      * @return JSON encoded response string
      */
-    std::string executeRequest(std::string method, std::string token, const IJson& params) override;
+    std::string executeRequest(const std::string& method, const std::string& token, const IJson& params) override;
 
 }; // class MediaSynchroniser
 

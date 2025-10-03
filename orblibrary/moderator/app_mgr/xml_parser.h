@@ -29,6 +29,12 @@ namespace orb
 class IXmlParser
 {
 public:
+    /**
+     * Create a Xml Parser object.
+     * @return A unique pointer to the created instance
+     */
+    static std::unique_ptr<IXmlParser> create();
+
     virtual ~IXmlParser() = default;
 
     /**
@@ -38,30 +44,6 @@ public:
      * @return AIT table data in same format as generated from DVB broadcast data
      */
     virtual std::unique_ptr<Ait::S_AIT_TABLE> ParseAit(const char *content, uint32_t length) = 0;
-};
-
-/**
- * Xml Parser Factory class.
- * This class is responsible for creating a Xml Parser object.
- */
-class XmlParserFactory
-{
-private:
-    /**
-     * Private Constructor
-     */
-    XmlParserFactory() = default;
-    /**
-     * Destructor
-     */
-    ~XmlParserFactory() = default;
-
-public:
-    /**
-     * Create a Xml Parser object.
-     * @return A unique pointer to the created instance
-     */
-    static std::unique_ptr<IXmlParser> createXmlParser();
 };
 
 class XmlParser : public IXmlParser {

@@ -40,6 +40,14 @@ public:
         JSON_TYPE_OBJECT
     };
 
+    /**
+     * Create a Json object.
+     *
+     * @param jsonString The JSON string to create the instance from, default is empty string
+     * @return A unique pointer to the created instance
+     */
+    static std::unique_ptr<IJson> create(const std::string& jsonString = {});
+
     virtual ~IJson() = default;
 
     /**
@@ -152,32 +160,6 @@ public:
      * Gets an array of unsigned 16-bit integers from a Json object by key.
      */
     virtual std::vector<uint16_t> getUint16Array(const std::string& key) const = 0;
-};
-
-/**
- * Json Factory class.
- * This class is responsible for creating a Json object.
- */
-class JsonFactory
-{
-private:
-    /**
-     * Private Constructor
-     */
-    JsonFactory() = default;
-    /**
-     * Destructor
-     */
-    ~JsonFactory() = default;
-
-public:
-    /**
-     * Create a Json object.
-     *
-     * @param jsonString The JSON string to create the instance from, default is empty string
-     * @return A unique pointer to the created instance
-     */
-    static std::unique_ptr<IJson> createJson(const std::string& jsonString = {});
 };
 
 } // namespace orb

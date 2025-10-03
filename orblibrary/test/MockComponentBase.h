@@ -32,7 +32,7 @@ public:
     virtual ~MockComponentBase() = default;
 
     // ComponentBase interface using Google Mock
-    MOCK_METHOD(std::string, executeRequest, (std::string method, std::string token, const IJson& params), (override));
+    MOCK_METHOD(std::string, executeRequest, (const std::string& method, const std::string& token, const IJson& params), (override));
 };
 
 } // namespace orb

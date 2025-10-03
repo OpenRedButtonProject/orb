@@ -50,7 +50,7 @@
 namespace orb
 {
 
-std::unique_ptr<IXmlParser> XmlParserFactory::createXmlParser()
+std::unique_ptr<IXmlParser> IXmlParser::create()
 {
     return std::make_unique<XmlParser>();
 }

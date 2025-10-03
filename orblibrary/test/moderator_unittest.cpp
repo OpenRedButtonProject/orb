@@ -19,10 +19,10 @@ static std::unique_ptr<orb::IJson> g_mockJson = nullptr;
 
 namespace orb {
     /**
-     * The implementation of static method createJson of JsonFactory class
+     * The implementation of static method createJson of IJson class
      * To inject a mock Json object
      */
-    std::unique_ptr<IJson> JsonFactory::createJson(const std::string& jsonString)
+    std::unique_ptr<IJson> IJson::create(const std::string& jsonString)
     {
         if (g_mockJson) {
             return std::move(g_mockJson);
@@ -30,7 +30,7 @@ namespace orb {
         return std::make_unique<orb::MockJson>();
     }
 
-    std::unique_ptr<orb::IXmlParser> XmlParserFactory::createXmlParser()
+    std::unique_ptr<orb::IXmlParser> IXmlParser::create()
     {
         return std::make_unique<orb::MockXmlParser>();
     }

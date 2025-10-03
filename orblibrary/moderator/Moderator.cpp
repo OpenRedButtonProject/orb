@@ -67,7 +67,7 @@ string Moderator::handleOrbRequest(string jsonRqst)
 {
     LOGI("json: " << jsonRqst);
 
-    std::unique_ptr<IJson> json = JsonFactory::createJson();
+    std::unique_ptr<IJson> json = IJson::create();
 
     if (!json->parse(jsonRqst))
     {
@@ -134,7 +134,7 @@ bool Moderator::handleBridgeEvent(const std::string& etype, const std::string& p
     bool consumed = false;
     LOGI("etype: " << etype << " props: " << properties);
     if (etype == CHANNEL_STATUS_CHANGE) {
-        std::unique_ptr<IJson> json = JsonFactory::createJson();
+        std::unique_ptr<IJson> json = IJson::create();
         if (json->parse(properties)) {
             int status = json->getInteger("statusCode");
             if (status == CHANNEL_STATUS_CONNECTING) {
@@ -147,7 +147,7 @@ bool Moderator::handleBridgeEvent(const std::string& etype, const std::string& p
         // Javascript also needs this event
     }
     else if (etype == NETWORK_STATUS) {
-        std::unique_ptr<IJson> json = JsonFactory::createJson();
+        std::unique_ptr<IJson> json = IJson::create();
         if (json->parse(properties)) {
             mAppMgrInterface->onNetworkStatusChange(json->getBool("available"));
         }

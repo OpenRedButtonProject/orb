@@ -40,7 +40,7 @@ public:
      *
      * @return JSON encoded response string
      */
-    virtual std::string executeRequest(std::string method, std::string token, const IJson& params) = 0;
+    virtual std::string executeRequest(const std::string& method, const std::string& token, const IJson& params) = 0;
 }; // class ComponentBase
 
 } // namespace orb

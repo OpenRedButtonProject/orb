@@ -36,7 +36,7 @@ const string DRM_SYSTEM_ID = "DRMSystemID";
 const string DRM_PRIVATE_DATA = "DRMPrivateData";
 
 
-std::string Drm::executeRequest(std::string method, std::string token, const IJson& params)
+std::string Drm::executeRequest(const std::string& method, const std::string& token, const IJson& params)
 {
     LOGI("Drm executeRequest method: " << method);
 
@@ -70,7 +70,7 @@ std::string Drm::handleGetSupportedDRMSystemIDs()
 {
     LOGI("Drm handleGetSupportedDRMSystemIDs");
 
-    std::unique_ptr<IJson> json = JsonFactory::createJson();
+    std::unique_ptr<IJson> json = IJson::create();
     std::vector<int> drmSystems;
     // Mock implementation - return empty array for now
     // In a real implementation, this would query the platform for supported DRM systems
@@ -83,7 +83,7 @@ std::string Drm::handleSendDRMMessage(const IJson& params)
 {
     LOGI("Drm handleSendDRMMessage");
 
-    std::unique_ptr<IJson> json = JsonFactory::createJson();
+    std::unique_ptr<IJson> json = IJson::create();
 
     // Extract parameters
     string msgID = params.getString("msgID");
@@ -106,7 +106,7 @@ std::string Drm::handleCanPlayContent(const IJson& params)
 {
     LOGI("Drm handleCanPlayContent");
 
-    std::unique_ptr<IJson> json = JsonFactory::createJson();
+    std::unique_ptr<IJson> json = IJson::create();
 
     // Extract parameters
     string drmPrivateData = params.getString(DRM_PRIVATE_DATA);
@@ -125,7 +125,7 @@ std::string Drm::handleCanRecordContent(const IJson& params)
 {
     LOGI("Drm handleCanRecordContent");
 
-    std::unique_ptr<IJson> json = JsonFactory::createJson();
+    std::unique_ptr<IJson> json = IJson::create();
 
     // Extract parameters
     string drmPrivateData = params.getString(DRM_PRIVATE_DATA);
@@ -144,7 +144,7 @@ std::string Drm::handleSetActiveDRM(const IJson& params)
 {
     LOGI("Drm handleSetActiveDRM");
 
-    std::unique_ptr<IJson> json = JsonFactory::createJson();
+    std::unique_ptr<IJson> json = IJson::create();
 
     // Extract parameters
     string drmSystemID = params.getString(DRM_SYSTEM_ID);

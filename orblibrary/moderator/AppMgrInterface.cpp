@@ -47,17 +47,31 @@ const string MANAGER_GET_KEY_ICON = "getKeyIcon";
 
 const int KEY_OTHERS_MAX = 0x416; // temporary value based on v1.0
 
+static std::string buildJsonResponse(const std::string &value)
+{
+    std::unique_ptr<IJson> json = IJson::create();
+    json->setString("result", value);
+    return json->toString();
+}
+
+static std::string buildJsonResponse(const int value)
+{
+    std::unique_ptr<IJson> json = IJson::create();
+    json->setInteger("result", value);
+    return json->toString();
+}
+
 AppMgrInterface::AppMgrInterface(IOrbBrowser* browser, ApplicationType apptype)
     : mOrbBrowser(browser)
     , mAppType(apptype)
 {
     // Set the XML parser for ApplicationManager
-    ApplicationManager::instance().SetXmlParser(XmlParserFactory::createXmlParser());
+    ApplicationManager::instance().SetXmlParser(IXmlParser::create());
     // Set this AppMgrInterface instance as the callback for ApplicationManager
     ApplicationManager::instance().RegisterCallback(apptype, this);
 }
 
-string AppMgrInterface::executeRequest(string method, string token, const IJson& params)
+string AppMgrInterface::executeRequest(const string& method, const string& token, const IJson& params)
 {
     std::lock_guard<std::mutex> lock(mMutex);
     string response = buildJsonResponse(""); // default response
@@ -103,7 +117,7 @@ string AppMgrInterface::executeRequest(string method, string token, const IJson&
     {
         // Get running app IDs from ApplicationManager
         std::vector<int> runningAppIds = appMgr.GetRunningAppIds();
-        std::unique_ptr<IJson> json = JsonFactory::createJson();
+        std::unique_ptr<IJson> json = IJson::create();
         json->setArray("result", runningAppIds);
         response = json->toString();
         LOGI("getRunningAppIds: returned " << runningAppIds.size() << " app IDs");
@@ -135,7 +149,7 @@ string AppMgrInterface::executeRequest(string method, string token, const IJson&
     {
         std::vector<uint16_t> otherkeys = appMgr.GetOtherKeyValues(appId);
         // Create JSON response with array of other key values
-        std::unique_ptr<IJson> json = JsonFactory::createJson();
+        std::unique_ptr<IJson> json = IJson::create();
         json->setArray("result", otherkeys);
         response = json->toString();
         LOGI("return: " << otherkeys.size() << " other key values");
@@ -254,7 +268,7 @@ std::string AppMgrInterface::GetParentalControlRegion3() {
 
 void AppMgrInterface::DispatchApplicationSchemeUpdatedEvent(const int appId, const std::string &scheme) {
     LOGI("appID: " << appId << ", Scheme: " << scheme);
-    std::unique_ptr<IJson> json = JsonFactory::createJson();
+    std::unique_ptr<IJson> json = IJson::create();
     json->setString("scheme", scheme);
     mOrbBrowser->dispatchEvent("ApplicationSchemeUpdated", json->toString());
 }
@@ -284,20 +298,6 @@ bool AppMgrInterface::IsRequestAllowed(string token)
 {
     // TODO implement
     return true;
-}
-
-std::string AppMgrInterface::buildJsonResponse(const std::string &value)
-{
-    std::unique_ptr<IJson> json = JsonFactory::createJson();
-    json->setString("result", value);
-    return json->toString();
-}
-
-std::string AppMgrInterface::buildJsonResponse(const int value)
-{
-    std::unique_ptr<IJson> json = JsonFactory::createJson();
-    json->setInteger("result", value);
-    return json->toString();
 }
 
 } // namespace orb
