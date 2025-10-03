@@ -16,17 +16,16 @@
 #pragma once
 
 #include <string>
-#include <json/json.h>
 
 #include "ComponentBase.hpp"
 
 namespace orb
 {
 
-class Network : ComponentBase
+class Network : public ComponentBase
 {
 public:
-    std::string executeRequest(std::string method, Json::Value token, Json::Value params) override;
+    std::string executeRequest(const std::string& method, const std::string& token, const IJson& params) override;
 
 }; // class Network
 

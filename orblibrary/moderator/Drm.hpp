@@ -17,8 +17,6 @@
 #define ORB_DRM_H
 
 #include <string>
-#include <json/json.h>
-
 #include "ComponentBase.hpp"
 
 namespace orb
@@ -39,47 +37,47 @@ public:
      *
      * @return JSON encoded response string
      */
-    std::string executeRequest(std::string method, Json::Value token, Json::Value params) override;
+    std::string executeRequest(const std::string& method, const std::string& token, const IJson& params) override;
 
 private:
     /**
      * Handle getSupportedDRMSystemIDs request
      *
-     * @return JSON response with supported DRM system IDs
+     * @return JSON response string with supported DRM system IDs
      */
-    Json::Value handleGetSupportedDRMSystemIDs();
+    std::string handleGetSupportedDRMSystemIDs();
 
     /**
      * Handle sendDRMMessage request
      *
      * @param params JSON parameters containing message details
-     * @return JSON response with message result
+     * @return JSON response string with message result
      */
-    Json::Value handleSendDRMMessage(const Json::Value& params);
+    std::string handleSendDRMMessage(const IJson& params);
 
     /**
      * Handle canPlayContent request
      *
      * @param params JSON parameters containing DRM private data and system ID
-     * @return JSON response with play capability result
+     * @return JSON response string with play capability result
      */
-    Json::Value handleCanPlayContent(const Json::Value& params);
+    std::string handleCanPlayContent(const IJson& params);
 
     /**
      * Handle canRecordContent request
      *
      * @param params JSON parameters containing DRM private data and system ID
-     * @return JSON response with record capability result
+     * @return JSON response string with record capability result
      */
-    Json::Value handleCanRecordContent(const Json::Value& params);
+    std::string handleCanRecordContent(const IJson& params);
 
     /**
      * Handle setActiveDRM request
      *
      * @param params JSON parameters containing DRM system ID
-     * @return JSON response with activation result
+     * @return JSON response string with activation result
      */
-    Json::Value handleSetActiveDRM(const Json::Value& params);
+    std::string handleSetActiveDRM(const IJson& params);
 
 }; // class Drm
 

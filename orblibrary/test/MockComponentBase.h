@@ -12,35 +12,29 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Mock ComponentBase for testing using Google Mock
  */
-#pragma once
 
-#include <string>
-#include "IJson.h"
-#include <memory>
+#ifndef MOCK_COMPONENT_BASE_H
+#define MOCK_COMPONENT_BASE_H
+
+#include "ComponentBase.hpp"
+#include <gmock/gmock.h>
 
 namespace orb
 {
 
-class ComponentBase
+class MockComponentBase : public ComponentBase
 {
 public:
-    ComponentBase() {}
-    virtual ~ComponentBase() = default;
+    MockComponentBase() = default;
+    virtual ~MockComponentBase() = default;
 
-    ComponentBase (const ComponentBase&) = delete;
-    ComponentBase& operator= (const ComponentBase&) = delete;
-
-    /**
-     * ComponentBase request
-     *
-     * @param method ComponentBase's method
-     * @param token TODO to be replaced by application ID
-     * @param params JSON params. TODO add details
-     *
-     * @return JSON encoded response string
-     */
-    virtual std::string executeRequest(const std::string& method, const std::string& token, const IJson& params) = 0;
-}; // class ComponentBase
+    // ComponentBase interface using Google Mock
+    MOCK_METHOD(std::string, executeRequest, (const std::string& method, const std::string& token, const IJson& params), (override));
+};
 
 } // namespace orb
+
+#endif // MOCK_COMPONENT_BASE_H

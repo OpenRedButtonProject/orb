@@ -8,6 +8,7 @@
 #include "MockOrbBrowser.h"
 #include "JsonRpcService.h"
 #include "OrbConstants.h"
+#include "JsonUtil.h"
 
 
 using namespace orb;
@@ -105,6 +106,9 @@ TEST_F(VideoWindowTest, TestDispatchChannelStatusChangedEventConnecting) {
     Json::Value params;
     params["status"] = 1; // PLAYBACK_STATUS_CONNECTING
 
+    EXPECT_CALL(*m_mockOrbBrowser, sendRequestToClient(::testing::_))
+        .WillOnce(::testing::Return("{\"method\":\"VideoWindow.ChannelStatusChanged\",\"params\":{\"statusCode\":-2}}"));
+
     std::string result = m_videoWindow->DispatchChannelStatusChangedEvent(params);
 
     // Verify the result contains the expected status code
@@ -119,6 +123,9 @@ TEST_F(VideoWindowTest, TestDispatchChannelStatusChangedEventPresenting) {
     // Test dispatching channel status changed event for presenting status
     Json::Value params;
     params["status"] = 2; // PLAYBACK_STATUS_PRESENTING
+
+    EXPECT_CALL(*m_mockOrbBrowser, sendRequestToClient(::testing::_))
+        .WillOnce(::testing::Return("{\"method\":\"VideoWindow.ChannelStatusChanged\",\"params\":{\"statusCode\":-3}}"));
 
     std::string result = m_videoWindow->DispatchChannelStatusChangedEvent(params);
 
@@ -135,6 +142,9 @@ TEST_F(VideoWindowTest, TestDispatchChannelStatusChangedEventStopped) {
     Json::Value params;
     params["status"] = 3; // PLAYBACK_STATUS_STOPPED
 
+    EXPECT_CALL(*m_mockOrbBrowser, sendRequestToClient(::testing::_))
+        .WillOnce(::testing::Return("{\"method\":\"VideoWindow.ChannelStatusChanged\",\"params\":{\"statusCode\":6}}"));
+
     std::string result = m_videoWindow->DispatchChannelStatusChangedEvent(params);
 
     // Verify the result contains the expected status code
@@ -150,6 +160,9 @@ TEST_F(VideoWindowTest, TestDispatchChannelStatusChangedEventWithError) {
     Json::Value params;
     params["status"] = 1;
     params["error"] = CHANNEL_STATUS_NO_SIGNAL;
+
+    EXPECT_CALL(*m_mockOrbBrowser, sendRequestToClient(::testing::_))
+        .WillOnce(::testing::Return("{\"method\":\"VideoWindow.ChannelStatusChanged\",\"params\":{\"statusCode\":1,\"permanentError\":true}}"));
 
     std::string result = m_videoWindow->DispatchChannelStatusChangedEvent(params);
 

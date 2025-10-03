@@ -29,6 +29,12 @@ namespace orb
 class IXmlParser
 {
 public:
+    /**
+     * Create a Xml Parser object.
+     * @return A unique pointer to the created instance
+     */
+    static std::unique_ptr<IXmlParser> create();
+
     virtual ~IXmlParser() = default;
 
     /**

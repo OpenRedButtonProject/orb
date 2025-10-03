@@ -16,7 +16,6 @@
 
 #include "Drm.hpp"
 #include "log.h"
-#include "JsonUtil.h"
 #include <sstream>
 
 using namespace std;
@@ -37,131 +36,126 @@ const string DRM_SYSTEM_ID = "DRMSystemID";
 const string DRM_PRIVATE_DATA = "DRMPrivateData";
 
 
-std::string Drm::executeRequest(std::string method, Json::Value token, Json::Value params)
+std::string Drm::executeRequest(const std::string& method, const std::string& token, const IJson& params)
 {
     LOGI("Drm executeRequest method: " << method);
 
-    Json::Value response(Json::objectValue);
-
     if (method == DRM_GET_SUPPORTED_DRM_SYSTEM_IDS)
     {
-        response = handleGetSupportedDRMSystemIDs();
+        return handleGetSupportedDRMSystemIDs();
     }
     else if (method == DRM_SEND_DRM_MESSAGE)
     {
-        response = handleSendDRMMessage(params);
+        return handleSendDRMMessage(std::move(params));
     }
     else if (method == DRM_CAN_PLAY_CONTENT)
     {
-        response = handleCanPlayContent(params);
+        return handleCanPlayContent(std::move(params));
     }
     else if (method == DRM_CAN_RECORD_CONTENT)
     {
-        response = handleCanRecordContent(params);
+        return handleCanRecordContent(std::move(params));
     }
     else if (method == DRM_SET_ACTIVE_DRM)
     {
-        response = handleSetActiveDRM(params);
+        return handleSetActiveDRM(std::move(params));
     }
     else
     {
-        response["error"] = "Drm request [" + method + "] invalid method";
+        return "{\"error\": \"Drm request [" + method + "] invalid method\"}";
     }
-
-    // Convert response to JSON string
-    return JsonUtil::convertJsonToString(response);
 }
 
-Json::Value Drm::handleGetSupportedDRMSystemIDs()
+std::string Drm::handleGetSupportedDRMSystemIDs()
 {
     LOGI("Drm handleGetSupportedDRMSystemIDs");
 
-    Json::Value response(Json::objectValue);
-    Json::Value drmSystems(Json::arrayValue);
+    std::unique_ptr<IJson> json = IJson::create();
+    std::vector<int> drmSystems;
     // Mock implementation - return empty array for now
     // In a real implementation, this would query the platform for supported DRM systems
-    response[DRM_RESULT] = drmSystems;
+    json->setArray(DRM_RESULT, drmSystems);
 
-    return response;
+    return json->toString();
 }
 
-Json::Value Drm::handleSendDRMMessage(const Json::Value& params)
+std::string Drm::handleSendDRMMessage(const IJson& params)
 {
     LOGI("Drm handleSendDRMMessage");
 
-    Json::Value response;
+    std::unique_ptr<IJson> json = IJson::create();
 
     // Extract parameters
-    string msgID = params.get("msgID", "").asString();
-    string msgType = params.get("msgType", "").asString();
-    string msg = params.get("msg", "").asString();
-    string drmSystemID = params.get(DRM_SYSTEM_ID, "").asString();
-    bool block = params.get("block", false).asBool();
+    string msgID = params.getString("msgID");
+    string msgType = params.getString("msgType");
+    string msg = params.getString("msg");
+    string drmSystemID = params.getString(DRM_SYSTEM_ID);
+    bool block = params.hasParam("block", IJson::JSON_TYPE_BOOLEAN) && params.getBool("block");
 
     LOGI("Drm sendDRMMessage - msgID: " << msgID << ", msgType: " << msgType
          << ", DRMSystemID: " << drmSystemID << ", block: " << (block ? "true" : "false"));
 
     // Mock implementation - return empty result for now
     // In a real implementation, this would send the message to the DRM system
-    response[DRM_RESULT] = "";
+    json->setString(DRM_RESULT, string(""));
 
-    return response;
+    return json->toString();
 }
 
-Json::Value Drm::handleCanPlayContent(const Json::Value& params)
+std::string Drm::handleCanPlayContent(const IJson& params)
 {
     LOGI("Drm handleCanPlayContent");
 
-    Json::Value response(Json::objectValue);
+    std::unique_ptr<IJson> json = IJson::create();
 
     // Extract parameters
-    string drmPrivateData = params.get(DRM_PRIVATE_DATA, "").asString();
-    string drmSystemID = params.get(DRM_SYSTEM_ID, "").asString();
+    string drmPrivateData = params.getString(DRM_PRIVATE_DATA);
+    string drmSystemID = params.getString(DRM_SYSTEM_ID);
 
     LOGI("Drm canPlayContent - DRMSystemID: " << drmSystemID);
 
     // Mock implementation - return false for now
     // In a real implementation, this would check if the content can be played
-    response[DRM_RESULT] = false;
+    json->setBool(DRM_RESULT, false);
 
-    return response;
+    return json->toString();
 }
 
-Json::Value Drm::handleCanRecordContent(const Json::Value& params)
+std::string Drm::handleCanRecordContent(const IJson& params)
 {
     LOGI("Drm handleCanRecordContent");
 
-    Json::Value response(Json::objectValue);
+    std::unique_ptr<IJson> json = IJson::create();
 
     // Extract parameters
-    string drmPrivateData = params.get(DRM_PRIVATE_DATA, "").asString();
-    string drmSystemID = params.get(DRM_SYSTEM_ID, "").asString();
+    string drmPrivateData = params.getString(DRM_PRIVATE_DATA);
+    string drmSystemID = params.getString(DRM_SYSTEM_ID);
 
     LOGI("Drm canRecordContent - DRMSystemID: " << drmSystemID);
 
     // Mock implementation - return false for now
     // In a real implementation, this would check if the content can be recorded
-    response[DRM_RESULT] = false;
+    json->setBool(DRM_RESULT, false);
 
-    return response;
+    return json->toString();
 }
 
-Json::Value Drm::handleSetActiveDRM(const Json::Value& params)
+std::string Drm::handleSetActiveDRM(const IJson& params)
 {
     LOGI("Drm handleSetActiveDRM");
 
-    Json::Value response(Json::objectValue);
+    std::unique_ptr<IJson> json = IJson::create();
 
     // Extract parameters
-    string drmSystemID = params.get(DRM_SYSTEM_ID, "").asString();
+    string drmSystemID = params.getString(DRM_SYSTEM_ID);
 
     LOGI("Drm setActiveDRM - DRMSystemID: " << drmSystemID);
 
     // Mock implementation - return false for now
     // In a real implementation, this would set the active DRM system
-    response[DRM_RESULT] = false;
+    json->setBool(DRM_RESULT, false);
 
-    return response;
+    return json->toString();
 }
 
 } // namespace orb

@@ -17,16 +17,15 @@
  *
  */
 
-#include <json/json.h>
-
 #include "Moderator.h"
 #include "AppMgrInterface.hpp"
 #include "Network.hpp"
 #include "MediaSynchroniser.hpp"
-#include "Drm.hpp"
 #include "log.h"
-#include "JsonUtil.h"
 #include "StringUtil.h"
+#include "IJson.h"
+#include "Drm.hpp"
+
 using namespace std;
 
 namespace orb
@@ -49,61 +48,76 @@ Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
     LOGI("HbbTV version " << ORB_HBBTV_VERSION);
 }
 
+Moderator::Moderator(
+    IOrbBrowser* browser,
+    ApplicationType apptype,
+    std::unique_ptr<IAppMgrInterface> appMgrInterface,
+    std::unique_ptr<ComponentBase> drm)
+    : mOrbBrowser(browser)
+    , mNetwork(std::make_unique<Network>())
+    , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
+    , mAppMgrInterface(std::move(appMgrInterface))
+    , mDrm(std::move(drm))
+    , mAppType(apptype)
+{}
+
 Moderator::~Moderator() {}
 
 string Moderator::handleOrbRequest(string jsonRqst)
 {
-    Json::Value jsonval;
-
     LOGI("json: " << jsonRqst);
 
-    if (!JsonUtil::decodeJson(jsonRqst, &jsonval))
+    std::unique_ptr<IJson> json = IJson::create();
+
+    if (!json->parse(jsonRqst))
     {
         return "{\"error\": \"Invalid Request\"}";
     }
 
-    if (JsonUtil::HasJsonParam(jsonval, "error"))
+    if (json->hasParam("error"))
     {
         LOGE("Json request reports error");
         return "{\"error\": \"Error Request\"}";
     }
 
-    if (!JsonUtil::HasParam(jsonval, "method", Json::stringValue))
+    if (!json->hasParam("method", IJson::JSON_TYPE_STRING))
     {
         LOGE("Request has no method");
         return "{\"error\": \"No method\"}";
     }
 
     // add application type to params
-    jsonval["params"]["applicationType"] = mAppType;
+    json->setInteger("params", mAppType, "applicationType");
 
     string component;
     string method;
-    if (!StringUtil::ResolveMethod(jsonval["method"].asString(), component, method))
+    if (!StringUtil::ResolveMethod(json->getString("method"), component, method))
     {
         return "{\"error\": \"Invalid method\"}";
     }
 
     LOGI(component << ", method: " << method);
+    std::unique_ptr<IJson> params = json->getObject("params");
+    string token = json->getString("token");
     if (component == COMPONENT_MANAGER)
     {
-        return mAppMgrInterface->executeRequest(method, jsonval["token"], jsonval["params"]);
+        return mAppMgrInterface->executeRequest(method, token, *params);
     }
     else if (component == COMPONENT_NETWORK)
     {
-        return mNetwork->executeRequest(method, jsonval["token"], jsonval["params"]);
+        return mNetwork->executeRequest(method, token, *params);
     }
     else if (component == COMPONENT_MEDIA_SYNCHRONISER)
     {
-        return mMediaSynchroniser->executeRequest(method, jsonval["token"], jsonval["params"]);
+        return mMediaSynchroniser->executeRequest(method, token, *params);
     }
     else if (component == COMPONENT_DRM)
     {
-        return mDrm->executeRequest(method, jsonval["token"], jsonval["params"]);
+        return mDrm->executeRequest(method, token, *params);
     }
 
     LOGI("Passing request to Live TV App");
-    return mOrbBrowser->sendRequestToClient(JsonUtil::convertJsonToString(jsonval));
+    return mOrbBrowser->sendRequestToClient(json->toString());
 }
 
 void Moderator::notifyApplicationPageChanged(string url)
@@ -118,24 +132,24 @@ void Moderator::notifyApplicationLoadFailed(string url, string errorText)
 
 bool Moderator::handleBridgeEvent(const std::string& etype, const std::string& properties) {
     bool consumed = false;
-    Json::Value jsonval;
-
     LOGI("etype: " << etype << " props: " << properties);
     if (etype == CHANNEL_STATUS_CHANGE) {
-        if (JsonUtil::decodeJson(properties, &jsonval)) {
-            int status = JsonUtil::getIntegerValue(jsonval, "statusCode");
+        std::unique_ptr<IJson> json = IJson::create();
+        if (json->parse(properties)) {
+            int status = json->getInteger("statusCode");
             if (status == CHANNEL_STATUS_CONNECTING) {
-                uint16_t onetId = JsonUtil::getIntegerValue(jsonval, "onetId");
-                uint16_t transId = JsonUtil::getIntegerValue(jsonval, "transId");
-                uint16_t serviceId = JsonUtil::getIntegerValue(jsonval, "servId");
+                uint16_t onetId = json->getInteger("onetId");
+                uint16_t transId = json->getInteger("transId");
+                uint16_t serviceId = json->getInteger("servId");
                 mAppMgrInterface->onChannelChange(onetId, transId, serviceId);
             }
         }
         // Javascript also needs this event
     }
     else if (etype == NETWORK_STATUS) {
-        if (JsonUtil::decodeJson(properties, &jsonval)) {
-            mAppMgrInterface->onNetworkStatusChange(JsonUtil::getBoolValue(jsonval, "available"));
+        std::unique_ptr<IJson> json = IJson::create();
+        if (json->parse(properties)) {
+            mAppMgrInterface->onNetworkStatusChange(json->getBool("available"));
         }
         consumed = true; // This event is consumed here and is not passed to Javascript
     }

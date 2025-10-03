@@ -16,18 +16,52 @@
 #pragma once
 
 #include <string>
-
-#include <json/json.h>
-
 #include "Moderator.h"
 #include "ComponentBase.hpp"
 #include "app_mgr/application_session_callback.h"
 
 namespace orb
 {
-class ApplicationManager;
 
-class AppMgrInterface : ComponentBase, public ApplicationSessionCallback
+/**
+ * Interface for the AppMgrInterface class.
+ */
+class IAppMgrInterface : public ComponentBase, public ApplicationSessionCallback {
+public:
+    virtual ~IAppMgrInterface() = default;
+
+    /**
+     * Callback for network status change
+     *
+     * @param available True if the network is available, false otherwise
+     */
+    virtual void onNetworkStatusChange(bool available) = 0;
+
+    /**
+     * Callback for channel change
+     *
+     * @param onetId The ONET ID
+     * @param transId The transport stream ID
+     * @param serviceId The service ID
+     */
+    virtual void onChannelChange(uint16_t onetId, uint16_t transId, uint16_t serviceId) = 0;
+    /**
+     * Process an AIT section
+     *
+     * @param aitPid The AIT PID
+     * @param serviceId The service ID
+     * @param section The AIT section to process
+     */
+    virtual void processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section) = 0;
+    /**
+     * Process an XML AIT
+     *
+     * @param xmlait The XML AIT to process
+     */
+    virtual void processXmlAit(const std::vector<uint8_t>& xmlait) = 0;
+};
+
+class AppMgrInterface : public IAppMgrInterface
 {
 public:
     // constructor for explicit Application Type
@@ -42,12 +76,12 @@ public:
      *
      * @return JSON encoded response string
      */
-    std::string executeRequest(std::string method, Json::Value token, Json::Value params) override;
+    std::string executeRequest(const std::string& method, const std::string& token, const IJson& params) override;
 
-    void onNetworkStatusChange(bool available);
-    void onChannelChange(uint16_t onetId, uint16_t transId, uint16_t serviceId);
-    void processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section);
-    void processXmlAit(const std::vector<uint8_t>& xmlait);
+    void onNetworkStatusChange(bool available) override;
+    void onChannelChange(uint16_t onetId, uint16_t transId, uint16_t serviceId) override;
+    void processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section) override;
+    void processXmlAit(const std::vector<uint8_t>& xmlait) override;
 
     // ApplicationSessionCallback interface implementation
     void LoadApplication(const int appId, const char *entryUrl) override;

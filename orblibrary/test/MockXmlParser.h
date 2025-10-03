@@ -12,35 +12,34 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Mock XML Parser for unit testing
  */
-#pragma once
 
-#include <string>
-#include "IJson.h"
-#include <memory>
+#ifndef MOCK_XML_PARSER_H
+#define MOCK_XML_PARSER_H
+
+#include "testing/gmock/include/gmock/gmock.h"
+#include "app_mgr/xml_parser.h"
 
 namespace orb
 {
 
-class ComponentBase
+/**
+ * Mock implementation of IXmlParser interface for unit testing
+ */
+class MockXmlParser : public IXmlParser
 {
 public:
-    ComponentBase() {}
-    virtual ~ComponentBase() = default;
-
-    ComponentBase (const ComponentBase&) = delete;
-    ComponentBase& operator= (const ComponentBase&) = delete;
-
     /**
-     * ComponentBase request
-     *
-     * @param method ComponentBase's method
-     * @param token TODO to be replaced by application ID
-     * @param params JSON params. TODO add details
-     *
-     * @return JSON encoded response string
+     * Mock implementation of ParseAit method
+     * @param content pointer to Xml data
+     * @param length length of Xml data
+     * @return AIT table data in same format as generated from DVB broadcast data
      */
-    virtual std::string executeRequest(const std::string& method, const std::string& token, const IJson& params) = 0;
-}; // class ComponentBase
+    MOCK_METHOD(std::unique_ptr<Ait::S_AIT_TABLE>, ParseAit, (const char *content, uint32_t length), (override));
+};
 
 } // namespace orb
+
+#endif /* MOCK_XML_PARSER_H */
