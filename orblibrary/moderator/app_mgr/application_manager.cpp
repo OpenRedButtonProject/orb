@@ -37,11 +37,6 @@
 namespace orb
 {
 
-/**
- * Application manager
- *
- * @param sessionCallback Implementation of ApplicationSessionCallback interface.
- */
 ApplicationManager::ApplicationManager(std::unique_ptr<IXmlParser> xmlParser) :
     m_sessionCallback{nullptr},
     m_xmlParser(std::move(xmlParser)),
@@ -51,9 +46,6 @@ ApplicationManager::ApplicationManager(std::unique_ptr<IXmlParser> xmlParser) :
 {
 }
 
-/**
- *
- */
 ApplicationManager::~ApplicationManager() = default;
 
 ApplicationManager& ApplicationManager::instance()
@@ -69,12 +61,6 @@ void ApplicationManager::SetXmlParser(std::unique_ptr<IXmlParser> xmlParser)
 }
 
 
-/**
- * Register a callback for this ApplicationManager
- *
- * @param apptype App interface type
- * @param callback The callback to set.
- */
 void ApplicationManager::RegisterCallback(ApplicationType apptype, ApplicationSessionCallback* callback)
 {
     if (apptype <= APP_TYPE_OPAPP && callback) {
@@ -86,11 +72,7 @@ void ApplicationManager::RegisterCallback(ApplicationType apptype, ApplicationSe
     }
 }
 
-/**
- * Set current interface callback
- *
- * @param apptype App interface type
- */
+
 void ApplicationManager::SetCurrentInterface(ApplicationType apptype)
 {
     if (apptype <= APP_TYPE_OPAPP) {
@@ -101,21 +83,6 @@ void ApplicationManager::SetCurrentInterface(ApplicationType apptype)
     }
 }
 
-/**
- * Create and run a new application. If called by an application, check it is allowed.
- *
- * @param callingAppId The calling app ID or INVALID_APP_ID if not called by an app.
- * @param url A HTTP/HTTPS or DVB URL.
- * @param runAsOpApp Whether the newly created app will be launched as an OpApp.
- *
- * A HTTP/HTTPS URL may refer to the entry page or XML AIT of a broadcast-independent app.
- *
- * A DVB URL may refer to a broadcast-related app signalled in the current service AIT. This
- * will result in the signalled URL being loaded, which may be HTTP/HTTPS for broadband or DVB
- * for carousel.
- *
- * @return The id of the newly created application. In case of failure, INVALID_APP_ID is returned.
- */
 int ApplicationManager::CreateApplication(int callingAppId, const std::string &url, bool runAsOpApp)
 {
     int result = INVALID_APP_ID;
@@ -207,15 +174,6 @@ int ApplicationManager::CreateApplication(int callingAppId, const std::string &u
     return result;
 }
 
-/**
- * Create and run an App by url.
- *
- * @param url The url the of the App.
- * @param runAsOpApp When true, the newly created app will be lauched as an OpApp,
- *      otherwise as an HbbTVApp.
- *
- * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
- */
 int ApplicationManager::CreateAndRunApp(std::string url, bool runAsOpApp)
 {
     int result;
@@ -244,19 +202,6 @@ int ApplicationManager::CreateAndRunApp(std::string url, bool runAsOpApp)
     return result;
 }
 
-/**
- * Create and run an App by AIT description.
- *
- * @param desc The AIT description the new App will use to set its initial state.
- * @param urlParams Additional url parameters that will be concatenated with the
- *      loaded url of the new App.
- * @param isBroadcast Is the new App broadcast related?
- * @param isTrusted Is the new App trusted?
- * @param runAsOpApp When true, the newly created app will be lauched as an OpApp,
- *      otherwise as an HbbTVApp.
- *
- * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
- */
 int ApplicationManager::CreateAndRunApp(
     const Ait::S_AIT_APP_DESC &desc,
     const std::string &urlParams,
@@ -293,11 +238,6 @@ int ApplicationManager::CreateAndRunApp(
     return result;
 }
 
-/**
- * Destroy the calling application.
- *
- * @param callingAppId The calling app ID.
- */
 void ApplicationManager::DestroyApplication(int callingAppId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
@@ -318,11 +258,6 @@ void ApplicationManager::DestroyApplication(int callingAppId)
     onRunningAppExited();
 }
 
-/**
- * Show the calling application.
- *
- * @param callingAppId The calling app ID.
- */
 void ApplicationManager::ShowApplication(int callingAppId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
@@ -332,11 +267,6 @@ void ApplicationManager::ShowApplication(int callingAppId)
     }
 }
 
-/**
- * Hide the calling application.
- *
- * @param callingAppId The calling app ID.
- */
 void ApplicationManager::HideApplication(int callingAppId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
@@ -346,14 +276,6 @@ void ApplicationManager::HideApplication(int callingAppId)
     }
 }
 
-/**
- * Set the key set mask for an application.
- *
- * @param appId The application.
- * @param keySetMask The key set mask.
- * @param otherKeys optional other keys
- * @return The key set mask for the application.
- */
 uint16_t ApplicationManager::SetKeySetMask(int appId, uint16_t keySetMask, std::vector<uint16_t> otherKeys)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
@@ -366,12 +288,6 @@ uint16_t ApplicationManager::SetKeySetMask(int appId, uint16_t keySetMask, std::
     return m_apps[appId]->SetKeySetMask(keySetMask, otherKeys);
 }
 
-/**
- * Get the key set mask for an application.
- *
- * @param appId The application.
- * @return The key set mask for the application.
- */
 uint16_t ApplicationManager::GetKeySetMask(int appId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
@@ -382,12 +298,6 @@ uint16_t ApplicationManager::GetKeySetMask(int appId)
     return 0;
 }
 
-/**
- * Get the other keys for an application.
- *
- * @param appId The application.
- * @return The other keys for the application.
- */
 std::vector<uint16_t> ApplicationManager::GetOtherKeyValues(int appId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
@@ -431,14 +341,6 @@ std::string ApplicationManager::GetApplicationUrl(int appId)
     return std::string();
 }
 
-/**
- * Check the key code is accepted by the current key mask. Activate the app as a result if the
- * key is accepted.
- *
- * @param appId The application.
- * @param keyCode The key code to check.
- * @return The supplied key_code is accepted by the current app's key set.
- */
 bool ApplicationManager::InKeySet(int appId, uint16_t keyCode)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
@@ -450,14 +352,6 @@ bool ApplicationManager::InKeySet(int appId, uint16_t keyCode)
     return false;
 }
 
-/**
- * Process an AIT section. The table will be processed when it is completed or updated.
- *
- * @param aitPid The section PID.
- * @param serviceId The service this section was received for.
- * @param sectionData The section section_data.
- * @param sectionDataBytes The size of section_data in bytes.
- */
 void ApplicationManager::ProcessAitSection(uint16_t aitPid, uint16_t serviceId,
     const uint8_t *sectionData, uint32_t sectionDataBytes)
 {
@@ -507,15 +401,7 @@ void ApplicationManager::ProcessAitSection(uint16_t aitPid, uint16_t serviceId,
     }
 }
 
-/**
- * Process an XML AIT and create and run a new broadcast-independent application.
- *
- * @param xmlAit The XML AIT contents.
- * @param isDvbi true when the caller a DVB-I application.
- * @param scheme The linked application scheme.
- *
- * @return The id of the newly created application. In case of failure, INVALID_APP_ID is returned.
- */
+
 int ApplicationManager::ProcessXmlAit(
     const std::string &xmlAit,
     const bool isDvbi,
@@ -588,11 +474,6 @@ int ApplicationManager::ProcessXmlAit(
     return result;
 }
 
-/**
- * Check whether a Teletext application is signalled.
- *
- * @return true if a Teletext application is signalled, otherwise false
- */
 bool ApplicationManager::IsTeletextApplicationSignalled()
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
@@ -603,11 +484,6 @@ bool ApplicationManager::IsTeletextApplicationSignalled()
     return Ait::TeletextApp(m_ait.Get()) != nullptr;
 }
 
-/**
- * Run the signalled Teletext application.
- *
- * @return true if the Teletext application can be created, otherwise false
- */
 bool ApplicationManager::RunTeletextApplication()
 {
     const Ait::S_AIT_APP_DESC *appDescription;
@@ -629,14 +505,6 @@ bool ApplicationManager::RunTeletextApplication()
     return CreateAndRunApp(*appDescription, "", true, false);
 }
 
-/**
- * Check whether a request from the polyfill is allowed.
- *
- * @param callingAppId The app ID making the request.
- * @param callingPageUrl The page URL making the request.
- * @param methodRequirement Any additional requirement of the method.
- * @return true if the request is allowed, otherwise false
- */
 bool ApplicationManager::IsRequestAllowed(int callingAppId, const
     std::string &callingPageUrl,
     MethodRequirement methodRequirement)
@@ -683,11 +551,6 @@ bool ApplicationManager::IsRequestAllowed(int callingAppId, const
     }
 }
 
-/**
- * Get the names of the current app.
- *
- * @return The current app names as a map of <lang,name> pairs
- */
 std::map<std::string, std::string> ApplicationManager::GetCurrentAppNames()
 {
     std::map<std::string, std::string> result;
@@ -712,12 +575,6 @@ std::map<std::string, std::string> ApplicationManager::GetCurrentAppNames()
     return result;
 }
 
-/**
- * Called when broadcast is stopped (for example when v/b object setChannel is called with null).
- *
- * If a broadcast-related application is running, it will transition to broadcast-independent or
- * be killed depending on the signalling.
- */
 void ApplicationManager::OnBroadcastStopped()
 {
     LOG(LOG_DEBUG, "OnBroadcastStopped");
@@ -733,17 +590,6 @@ void ApplicationManager::OnBroadcastStopped()
     }
 }
 
-/**
- * Called when the selected broadcast channel is changed (e.g. by the user or by v/b object).
- *
- * Once the first complete AIT is received or times out:
- *
- * If a broadcast-related application is running, it will continue to run or be killed depending
- * on the signalling.
- *
- * If a broadcast-independent application is running, it will transition to broadcast-related or
- * be killed depending on the signalling.
- */
 void ApplicationManager::OnChannelChanged(uint16_t originalNetworkId,
     uint16_t transportStreamId, uint16_t serviceId)
 {
@@ -761,11 +607,6 @@ void ApplicationManager::OnChannelChanged(uint16_t originalNetworkId,
     };
 }
 
-/**
- * Called when the network availability has changed.
- *
- * @param available true if the network is available, otherwise false
- */
 void ApplicationManager::OnNetworkAvailabilityChanged(bool available)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
@@ -773,11 +614,6 @@ void ApplicationManager::OnNetworkAvailabilityChanged(bool available)
     m_isNetworkAvailable = available;
 }
 
-/**
- * Notify the application manager that a call to loadApplication failed.
- *
- * @param appId The application ID of the application that failed to load.
- */
 void ApplicationManager::OnLoadApplicationFailed(int appId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
@@ -806,13 +642,6 @@ void ApplicationManager::OnLoadApplicationFailed(int appId)
     onPerformBroadcastAutostart();
 }
 
-/**
- * Notify the application manager of application page changed, before the new page is
- * loaded. For example, when the user follows a link.
- *
- * @param appId The application ID.
- * @param url The URL of the new page.
- */
 void ApplicationManager::OnApplicationPageChanged(int appId, const std::string &url)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
@@ -834,9 +663,6 @@ void ApplicationManager::OnApplicationPageChanged(int appId, const std::string &
 
 // Private methods...
 
-/**
- * Called when the AIT for the selected service is received.
- */
 void ApplicationManager::onSelectedServiceAitReceived()
 {
     LOG(LOG_INFO, "OnSelectedServiceAitReceived");
@@ -908,9 +734,6 @@ void ApplicationManager::onSelectedServiceAitReceived()
     }
 }
 
-/**
- * Called when the AIT for the selected service is not received after some timeout.
- */
 void ApplicationManager::onSelectedServiceAitTimeout()
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
@@ -918,9 +741,6 @@ void ApplicationManager::onSelectedServiceAitTimeout()
     killRunningApp(m_hbbtvAppId);
 }
 
-/**
- * Called when the AIT for the selected service is updated.
- */
 void ApplicationManager::onSelectedServiceAitUpdated()
 {
     auto ait = m_ait.Get();
@@ -972,9 +792,6 @@ void ApplicationManager::onSelectedServiceAitUpdated()
     }
 }
 
-/**
- * Called when the running app has exited.
- */
 void ApplicationManager::onRunningAppExited()
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
@@ -1018,13 +835,6 @@ void ApplicationManager::onPerformBroadcastAutostart()
     }
 }
 
-/**
- * Run the app.
- *
- * @param app The app to run.
- *
- * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
- */
 int ApplicationManager::runApp(std::unique_ptr<HbbTVApp> app)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
@@ -1065,21 +875,11 @@ int ApplicationManager::runApp(std::unique_ptr<HbbTVApp> app)
     return *appId;
 }
 
-/**
- * Update the running app.
- *
- * @param desc The AIT description the running App will use to update its state.
- *
- * @return True on success, false on failure.
- */
 bool ApplicationManager::updateRunningApp(const Ait::S_AIT_APP_DESC &desc)
 {
     return m_apps[m_hbbtvAppId]->Update(desc, m_isNetworkAvailable);
 }
 
-/**
- * Kill the running app.
- */
 void ApplicationManager::killRunningApp(int appid)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
@@ -1158,12 +958,6 @@ bool ApplicationManager::transitionRunningAppToBroadcastIndependent()
     return true;
 }
 
-/**
- * Whether the app should be trusted or not TODO
- *
- * @param is_broadcast Whether the app is broadcast-related
- * @return True if the app is trusted, false otherwise
- */
 bool ApplicationManager::isAppTrusted(bool)
 {
     // TODO See specification. Probably need to add more parameters to this method
@@ -1195,11 +989,6 @@ const Ait::S_AIT_APP_DESC * ApplicationManager::getAutoStartApp(const Ait::S_AIT
         parentalControlRegion3, m_isNetworkAvailable);
 }
 
-/**
- * Provide access to the AIT organization id
- *
- * @return uint32_t the organization id
- */
 uint32_t ApplicationManager::GetOrganizationId()
 {
     if (m_apps.count(m_hbbtvAppId) > 0)
