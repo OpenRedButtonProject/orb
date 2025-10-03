@@ -63,8 +63,8 @@ void ApplicationManager::SetXmlParser(std::unique_ptr<IXmlParser> xmlParser)
 
 void ApplicationManager::RegisterCallback(ApplicationType apptype, ApplicationSessionCallback* callback)
 {
-    if (apptype <= APP_TYPE_OPAPP && callback) {
-        // Store the raw pointer without taking ownership
+    if (apptype <= APP_TYPE_OPAPP) {
+        // Store the raw pointer without taking ownership (allow nullptr for cleanup)
         m_sessionCallback[apptype] = callback;
     }
     else {
