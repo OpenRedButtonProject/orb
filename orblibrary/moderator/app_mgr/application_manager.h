@@ -289,6 +289,13 @@ private:
     bool updateRunningApp(const Ait::S_AIT_APP_DESC &desc);
     void killRunningApp(int appid);
 
+    // Helper methods for accessing apps with the new pointer structure
+    HbbTVApp* getAppById(int appId);
+    bool isHbbTVAppRunning() const;
+    bool isOpAppRunning() const;
+    int getCurrentHbbTVAppId() const;
+    int getCurrentOpAppId() const;
+
     /**
      * Transition the running app to broadcast-related, if conditions permit.
      *
@@ -332,9 +339,8 @@ private:
 
     Ait m_ait;
     std::unique_ptr<IXmlParser> m_xmlParser;
-    std::unordered_map<int, std::unique_ptr<HbbTVApp>> m_apps;
-    int m_hbbtvAppId = INVALID_APP_ID;
-    int m_opAppId = INVALID_APP_ID;
+    std::unique_ptr<HbbTVApp> m_hbbtvApp;
+    std::unique_ptr<HbbTVApp> m_opApp;  // Must be OpApp but stored as HbbTVApp base pointer
     Utils::S_DVB_TRIPLET m_currentService = Utils::MakeInvalidDvbTriplet();
     Utils::S_DVB_TRIPLET m_previousService = Utils::MakeInvalidDvbTriplet();
     uint16_t m_currentServiceReceivedFirstAit = false;
