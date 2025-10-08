@@ -37,6 +37,8 @@ public:
     // ComponentBase interface using Google Mock
     MOCK_METHOD(std::string, executeRequest, (const std::string& method, const std::string& token, const IJson& params), (override));
 
+    MOCK_METHOD(ApplicationType, GetApplicationType, (), (const, override));
+
     // AppMgrInterface specific methods using Google Mock
     MOCK_METHOD(void, onNetworkStatusChange, (bool available), (override));
     MOCK_METHOD(void, onChannelChange, (uint16_t onetId, uint16_t transId, uint16_t serviceId), (override));

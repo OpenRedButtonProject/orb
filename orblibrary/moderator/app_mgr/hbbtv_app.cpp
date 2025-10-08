@@ -74,7 +74,7 @@ static bool IsKeyScroll(const uint16_t &code);
 
 
 HbbTVApp::HbbTVApp(const std::string &url, ApplicationSessionCallback *sessionCallback)
-    : BaseApp(BaseApp::HBBTV_APP_TYPE, url, sessionCallback),
+    : BaseApp(APP_TYPE_HBBTV, url, sessionCallback),
     m_entryUrl(url),
     m_baseUrl(url)
 {
@@ -85,7 +85,7 @@ HbbTVApp::HbbTVApp(const Utils::S_DVB_TRIPLET currentService,
     bool isBroadcast,
     bool isTrusted,
     ApplicationSessionCallback *sessionCallback)
-        : BaseApp(BaseApp::HBBTV_APP_TYPE, sessionCallback),
+        : BaseApp(APP_TYPE_HBBTV, sessionCallback),
         m_service(currentService),
         m_isTrusted(isTrusted),
         m_isBroadcast(isBroadcast),

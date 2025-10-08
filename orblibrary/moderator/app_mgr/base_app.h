@@ -22,6 +22,7 @@
 #define BASE_APP_H
 
 #include <string>
+#include "OrbConstants.h"
 
 
 namespace orb
@@ -33,13 +34,6 @@ class BaseApp
 public:
     typedef enum
     {
-        INVALID_APP_TYPE = 0,
-        HBBTV_APP_TYPE,
-        OPAPP_TYPE
-    } E_APP_TYPE;
-
-    typedef enum
-    {
         BACKGROUND_STATE = 0,
         FOREGROUND_STATE,
         TRANSIENT_STATE, /* OpApp only */
@@ -48,8 +42,8 @@ public:
         INVALID_APP_STATE
     } E_APP_STATE;
 
-    BaseApp(const E_APP_TYPE type, const std::string &url, ApplicationSessionCallback *sessionCallback);
-    BaseApp(E_APP_TYPE type, ApplicationSessionCallback *sessionCallback);
+    BaseApp(const ApplicationType type, const std::string &url, ApplicationSessionCallback *sessionCallback);
+    BaseApp(ApplicationType type, ApplicationSessionCallback *sessionCallback);
 
     static const int INVALID_APP_ID;
 
@@ -58,7 +52,7 @@ public:
     BaseApp(const BaseApp&) = delete;
     BaseApp& operator=(const BaseApp&) = delete;
 
-    E_APP_TYPE GetType() const;
+    ApplicationType GetType() const;
 
     int GetId() const;
 
@@ -83,7 +77,7 @@ protected:
     std::string m_scheme;
 
 private:
-    const E_APP_TYPE m_type;
+    const ApplicationType m_type;
     static int g_id;
     int m_id;
     std::string m_loadedUrl;

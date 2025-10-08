@@ -1,25 +1,26 @@
 #include "base_app.h"
 
+
 namespace orb
 {
 int BaseApp::g_id = 0;
 const int BaseApp::INVALID_APP_ID = 0;
 
-BaseApp::BaseApp(const E_APP_TYPE type, const std::string &url, ApplicationSessionCallback *sessionCallback)
+BaseApp::BaseApp(const ApplicationType type, const std::string &url, ApplicationSessionCallback *sessionCallback)
     : m_sessionCallback(sessionCallback)
     , m_type(type)
     , m_id(++g_id)
     , m_loadedUrl(url)
 {}
 
-BaseApp::BaseApp(E_APP_TYPE type, ApplicationSessionCallback *sessionCallback)
+BaseApp::BaseApp(ApplicationType type, ApplicationSessionCallback *sessionCallback)
     : m_sessionCallback(sessionCallback)
     , m_type(type)
     , m_id(++g_id)
     , m_loadedUrl("")
 {}
 
-BaseApp::E_APP_TYPE BaseApp::GetType() const
+ApplicationType BaseApp::GetType() const
 {
     return m_type;
 }

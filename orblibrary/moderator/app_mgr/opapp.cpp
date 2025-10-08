@@ -22,14 +22,14 @@ static std::string opAppStateToString(const BaseApp::E_APP_STATE &state)
 }
 
 OpApp::OpApp(const std::string &url, ApplicationSessionCallback *sessionCallback)
-    : BaseApp(BaseApp::OPAPP_TYPE, url, sessionCallback),
+    : BaseApp(APP_TYPE_OPAPP, url, sessionCallback),
       m_countdown([this]() { SetState(BaseApp::BACKGROUND_STATE); })
 {
     init();
 }
 
 OpApp::OpApp(ApplicationSessionCallback *sessionCallback)
-    : BaseApp(BaseApp::OPAPP_TYPE, sessionCallback),
+    : BaseApp(APP_TYPE_OPAPP, sessionCallback),
       m_countdown([this]() { SetState(BaseApp::BACKGROUND_STATE); })
 {
     init();

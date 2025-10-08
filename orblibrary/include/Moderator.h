@@ -86,7 +86,6 @@ private:
     std::unique_ptr<ComponentBase> mMediaSynchroniser;
     std::unique_ptr<IAppMgrInterface> mAppMgrInterface;
     std::unique_ptr<ComponentBase> mDrm;
-    ApplicationType mAppType;
 }; // class Moderator
 
 } // namespace orb
