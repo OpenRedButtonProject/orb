@@ -50,9 +50,6 @@ public:
         FOR_TRUSTED_APP_ONLY = 3
     };
 
-    // Number of supported application types - BaseApp and OpApp
-    static constexpr size_t MAX_CBS = 2;
-
     ApplicationManager(std::unique_ptr<IXmlParser> xmlParser = {});
 
     ~ApplicationManager();
@@ -70,13 +67,6 @@ public:
     void RegisterCallback(ApplicationType apptype, ApplicationSessionCallback* callback);
 
     /**
-     * Set current interface callback
-     *
-     * @param apptype App interface type
-     */
-    void SetCurrentInterface(ApplicationType apptype);
-
-    /**
      * Create and run a new application. If called by an application, check it is allowed.
      *
      * @param callingAppId The calling app ID or INVALID_APP_ID if not called by an app.
@@ -88,6 +78,8 @@ public:
      * A DVB URL may refer to a broadcast-related app signalled in the current service AIT. This
      * will result in the signalled URL being loaded, which may be HTTP/HTTPS for broadband or DVB
      * for carousel.
+     *
+     * Note that constructing an OpApp from a currently running OpApp is not supported.
      *
      * @return The id of the newly created application. In case of failure, INVALID_APP_ID is returned.
      */
@@ -335,8 +327,7 @@ private:
      */
     uint16_t getKeySet(const uint16_t keyCode);
 
-    std::array<ApplicationSessionCallback*, MAX_CBS> m_sessionCallback;
-    int m_cif; // current app type interface
+    std::array<ApplicationSessionCallback*, APP_TYPE_MAX> m_sessionCallback;
 
     Ait m_ait;
     std::unique_ptr<IXmlParser> m_xmlParser;

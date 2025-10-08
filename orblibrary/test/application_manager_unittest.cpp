@@ -77,7 +77,6 @@ protected:
         // Reset ApplicationManager singleton state to ensure test isolation
         appManager.RegisterCallback(APP_TYPE_HBBTV, nullptr);
         appManager.RegisterCallback(APP_TYPE_OPAPP, nullptr);
-        appManager.SetCurrentInterface(APP_TYPE_HBBTV);
     }
 
     void TearDown() override
@@ -90,7 +89,6 @@ protected:
         ApplicationManager& appManager = ApplicationManager::instance();
         appManager.RegisterCallback(APP_TYPE_HBBTV, nullptr);
         appManager.RegisterCallback(APP_TYPE_OPAPP, nullptr);
-        appManager.SetCurrentInterface(APP_TYPE_HBBTV);
     }
 
     std::unique_ptr<MockApplicationSessionCallback> mockCallback;
@@ -167,7 +165,6 @@ TEST_F(ApplicationManagerTest, TestProcessXmlAitWithMockParserSuccess)
 
     // Register callback for app creation
     appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
-    appManager.SetCurrentInterface(APP_TYPE_HBBTV);
 
     // WHEN: ProcessXmlAit is called
     appManager.ProcessXmlAit(xmlContent);
@@ -193,8 +190,7 @@ TEST_F(ApplicationManagerTest, TestRegisterCallbackInvalidType)
     ApplicationManager& appManager = ApplicationManager::instance();
 
     // WHEN: RegisterCallback is called with invalid app type
-    // Note: APP_TYPE_VIDEO is beyond the valid range (APP_TYPE_HBBTV, APP_TYPE_OPAPP)
-    appManager.RegisterCallback(APP_TYPE_VIDEO, mockCallback.get());
+    appManager.RegisterCallback(APP_TYPE_MAX, mockCallback.get());
 
     // THEN: No exception should be thrown
     // The method should handle invalid parameters gracefully
@@ -211,31 +207,6 @@ TEST_F(ApplicationManagerTest, TestRegisterCallbackNullCallback)
 
     // THEN: No exception should be thrown
     // The method should handle null callback gracefully
-    SUCCEED();
-}
-
-TEST_F(ApplicationManagerTest, TestSetCurrentInterface)
-{
-    // GIVEN: ApplicationManager singleton
-    ApplicationManager& appManager = ApplicationManager::instance();
-
-    // WHEN: SetCurrentInterface is called with valid app type
-    appManager.SetCurrentInterface(APP_TYPE_HBBTV);
-
-    // THEN: No exception should be thrown
-    SUCCEED();
-}
-
-TEST_F(ApplicationManagerTest, TestSetCurrentInterfaceInvalidType)
-{
-    // GIVEN: ApplicationManager singleton
-    ApplicationManager& appManager = ApplicationManager::instance();
-
-    // WHEN: SetCurrentInterface is called with invalid app type
-    appManager.SetCurrentInterface(APP_TYPE_VIDEO);
-
-    // THEN: No exception should be thrown
-    // The method should handle invalid parameters gracefully
     SUCCEED();
 }
 
@@ -282,7 +253,6 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithValidHbbTVUrl)
     // GIVEN: ApplicationManager with session callback registered
     ApplicationManager& appManager = ApplicationManager::instance();
     appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
-    appManager.SetCurrentInterface(APP_TYPE_HBBTV);
 
     std::string testUrl = "http://example.com/myapp.html";
 
@@ -304,7 +274,6 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithValidOpAppUrl)
     // GIVEN: ApplicationManager with session callback registered for OpApp
     ApplicationManager& appManager = ApplicationManager::instance();
     appManager.RegisterCallback(APP_TYPE_OPAPP, mockCallback.get());
-    appManager.SetCurrentInterface(APP_TYPE_OPAPP);
 
     std::string testUrl = "http://operator.com/opapp.html";
 
@@ -328,7 +297,6 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithEmptyUrl)
     // GIVEN: ApplicationManager with session callback registered
     ApplicationManager& appManager = ApplicationManager::instance();
     appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
-    appManager.SetCurrentInterface(APP_TYPE_HBBTV);
 
     std::string emptyUrl = "";
 
@@ -351,7 +319,6 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithoutSessionCallback)
     ApplicationManager& appManager = ApplicationManager::instance();
     // Explicitly ensure no callback is registered for current interface
     appManager.RegisterCallback(APP_TYPE_HBBTV, nullptr);
-    appManager.SetCurrentInterface(APP_TYPE_HBBTV);
 
     std::string testUrl = "http://example.com/myapp.html";
 
@@ -367,7 +334,6 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppReplacesExistingApp)
     // GIVEN: ApplicationManager with session callback registered
     ApplicationManager& appManager = ApplicationManager::instance();
     appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
-    appManager.SetCurrentInterface(APP_TYPE_HBBTV);
 
     // First app
     std::string firstUrl = "http://first.com/app.html";
@@ -397,7 +363,6 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithHTTPSUrl)
     // GIVEN: ApplicationManager with session callback registered
     ApplicationManager& appManager = ApplicationManager::instance();
     appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
-    appManager.SetCurrentInterface(APP_TYPE_HBBTV);
 
     std::string httpsUrl = "https://secure.example.com/myapp.html";
 
@@ -419,7 +384,6 @@ TEST_F(ApplicationManagerTest, DISABLED_TestCreateAndRunAppParameterValidation)
     // GIVEN: ApplicationManager with session callback registered
     ApplicationManager& appManager = ApplicationManager::instance();
     appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
-    appManager.SetCurrentInterface(APP_TYPE_HBBTV);
 
     // Test various URLs and parameters
     struct TestCase {
@@ -470,7 +434,6 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppAppLifecycle)
     // GIVEN: ApplicationManager with session callback
     ApplicationManager& appManager = ApplicationManager::instance();
     appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
-    appManager.SetCurrentInterface(APP_TYPE_HBBTV);
 
     std::string testUrl = "http://example.com/lifecycle_test.html";
 
@@ -499,7 +462,6 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppDefaultParameters)
     // GIVEN: ApplicationManager with session callback registered
     ApplicationManager& appManager = ApplicationManager::instance();
     appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
-    appManager.SetCurrentInterface(APP_TYPE_HBBTV);
 
     std::string testUrl = "http://example.com/default_test.html";
 
