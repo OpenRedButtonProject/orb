@@ -28,34 +28,17 @@
 #include "utils.h"
 #include "ait.h"
 #include "application_session_callback.h"
+#include "base_app.h"
 
-#define INVALID_APP_ID 0
 
 namespace orb
 {
 
-class HbbTVApp
+class HbbTVApp : public BaseApp
 {
 public:
-    typedef enum
-    {
-        HBBTV_APP_TYPE,
-        OPAPP_TYPE
-    } E_APP_TYPE;
-
-    typedef enum
-    {
-        FOREGROUND_STATE,
-        BACKGROUND_STATE,
-        TRANSIENT_STATE,
-        OVERLAID_FOREGROUND_STATE,
-        OVERLAID_TRANSIENT_STATE
-    } E_APP_STATE;
-
     /**
      * Create app from url.
-     *
-     * @throws std::runtime_error
      */
     HbbTVApp(const std::string &url, ApplicationSessionCallback *sessionCallback);
 
@@ -80,6 +63,8 @@ public:
     void SetUrl(const Ait::S_AIT_APP_DESC &desc,
         const std::string &urlParams, bool isNetworkAvailable);
 
+    bool SetState(const E_APP_STATE &state) override;
+
     /**
      * Updates the app's state. Meant to be called by the ApplicationManager
      * when it receives a new AIT table or when the network availability is
@@ -94,11 +79,11 @@ public:
      */
     bool Update(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable);
 
-    virtual bool TransitionToBroadcastRelated();
-    virtual bool TransitionToBroadcastIndependent();
+    bool TransitionToBroadcastRelated();
+    bool TransitionToBroadcastIndependent();
 
     Utils::S_DVB_TRIPLET GetService() const { return m_service; }
-    std::string GetScheme() const;
+    std::string GetScheme() const override;
 
     std::string GetEntryUrl() const { return m_entryUrl; }
     std::string GetBaseUrl() const { return m_baseUrl; }
@@ -137,19 +122,7 @@ public:
      * @param keyCode The key code to check.
      * @return The supplied key_code is accepted by the current app's key set.
      */
-    virtual bool InKeySet(uint16_t keyCode);
-
-    virtual E_APP_TYPE GetType() const { return HBBTV_APP_TYPE; }
-
-    E_APP_STATE GetState() const { return m_state; }
-
-    /**
-     * Set the application state.
-     *
-     * @param state The desired state to transition to.
-     * @returns true if transitioned successfully to the desired state, false otherwise.
-     */
-    virtual bool SetState(const E_APP_STATE &state);
+    bool InKeySet(uint16_t keyCode);
 
     /**
      * Get the other keys for an application.
@@ -159,11 +132,7 @@ public:
      */
     std::vector<uint16_t> GetOtherKeyValues() const { return m_otherKeys; }
 
-    int GetId() const { return m_id; }
-
-    std::string loadedUrl;
-
-protected:
+private:
     bool IsAllowedByParentalControl(const Ait::S_AIT_APP_DESC &desc) const;
 
     uint16_t m_keySetMask = 0;
@@ -182,14 +151,7 @@ protected:
     Ait::S_AIT_APP_DESC m_aitDesc;
     std::map<uint32_t, std::string> m_names;
 
-    std::string m_scheme;
     uint8_t m_versionMinor = 0;
-    E_APP_STATE m_state = FOREGROUND_STATE;
-
-    ApplicationSessionCallback *m_sessionCallback;
-
-private:
-    int m_id;
 };
 
 } // namespace orb

@@ -50,7 +50,7 @@ public:
         FOR_TRUSTED_APP_ONLY = 3
     };
 
-    // Number of supported application types - HbbTVApp and OpApp
+    // Number of supported application types - BaseApp and OpApp
     static constexpr size_t MAX_CBS = 2;
 
     ApplicationManager(std::unique_ptr<IXmlParser> xmlParser = {});
@@ -98,7 +98,7 @@ public:
      *
      * @param url The url the of the App.
      * @param runAsOpApp When true, the newly created app will be lauched as an OpApp,
-     *      otherwise as an HbbTVApp.
+     *      otherwise as an BaseApp.
      *
      * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
      */
@@ -113,7 +113,7 @@ public:
      * @param isBroadcast Is the new App broadcast related?
      * @param isTrusted Is the new App trusted?
      * @param runAsOpApp When true, the newly created app will be lauched as an OpApp,
-     *      otherwise as an HbbTVApp.
+     *      otherwise as an BaseApp.
      *
      * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
      */
@@ -285,12 +285,13 @@ private:
     void onRunningAppExited();
     void onPerformBroadcastAutostart();
 
-    int runApp(std::unique_ptr<HbbTVApp> app);
+    int runOpApp(std::unique_ptr<OpApp> app);
+    int runHbbTVApp(std::unique_ptr<HbbTVApp> app);
     bool updateRunningApp(const Ait::S_AIT_APP_DESC &desc);
     void killRunningApp(int appid);
 
     // Helper methods for accessing apps with the new pointer structure
-    HbbTVApp* getAppById(int appId);
+    BaseApp* getAppById(int appId);
     bool isHbbTVAppRunning() const;
     bool isOpAppRunning() const;
     int getCurrentHbbTVAppId() const;
@@ -340,10 +341,10 @@ private:
     Ait m_ait;
     std::unique_ptr<IXmlParser> m_xmlParser;
     std::unique_ptr<HbbTVApp> m_hbbtvApp;
-    std::unique_ptr<HbbTVApp> m_opApp;  // Must be OpApp but stored as HbbTVApp base pointer
+    std::unique_ptr<OpApp> m_opApp;
     Utils::S_DVB_TRIPLET m_currentService = Utils::MakeInvalidDvbTriplet();
     Utils::S_DVB_TRIPLET m_previousService = Utils::MakeInvalidDvbTriplet();
-    uint16_t m_currentServiceReceivedFirstAit = false;
+    bool m_currentServiceReceivedFirstAit = false;
     uint16_t m_currentServiceAitPid = 0;
     bool m_isNetworkAvailable = false;
     std::recursive_mutex m_lock;

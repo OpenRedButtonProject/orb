@@ -23,6 +23,7 @@
 #include "third_party/orb/orblibrary/moderator/app_mgr/application_manager.h"
 #include "third_party/orb/orblibrary/moderator/app_mgr/xml_parser.h"
 #include "MockApplicationSessionCallback.h"
+#include "third_party/orb/orblibrary/moderator/app_mgr/base_app.h"
 #include <gmock/gmock.h>
 
 namespace orb
@@ -116,8 +117,8 @@ TEST_F(ApplicationManagerTest, TestProcessXmlAitEmptyXml)
     // WHEN: ProcessXmlAit is called with empty XML
     int result = appManager.ProcessXmlAit(emptyXml);
 
-    // THEN: Should return INVALID_APP_ID
-    EXPECT_EQ(result, INVALID_APP_ID);
+    // THEN: Should return BaseApp::INVALID_APP_ID
+    EXPECT_EQ(result, BaseApp::INVALID_APP_ID);
 }
 
 TEST_F(ApplicationManagerTest, TestProcessXmlAitWithMockParserFailure)
@@ -134,8 +135,8 @@ TEST_F(ApplicationManagerTest, TestProcessXmlAitWithMockParserFailure)
     // WHEN: ProcessXmlAit is called
     int result = appManager.ProcessXmlAit(xmlContent);
 
-    // THEN: Should return INVALID_APP_ID due to parser failure
-    EXPECT_EQ(result, INVALID_APP_ID);
+    // THEN: Should return BaseApp::INVALID_APP_ID due to parser failure
+    EXPECT_EQ(result, BaseApp::INVALID_APP_ID);
 }
 
 TEST_F(ApplicationManagerTest, TestProcessXmlAitWithMockParserSuccess)
@@ -308,7 +309,7 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithValidOpAppUrl)
     std::string testUrl = "http://operator.com/opapp.html";
 
     // EXPECT: Callback methods to be called correctly
-    EXPECT_CALL(*mockCallback, LoadApplication(testing::_, testing::_, testing::_, testing::_))
+    EXPECT_CALL(*mockCallback, LoadApplication(testing::_, testing::_))
         .Times(1);
 
     // This seems odd. OpApp starts in background state...
@@ -340,8 +341,8 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithEmptyUrl)
     // WHEN: CreateAndRunApp is called with empty URL
     int appId = appManager.CreateAndRunApp(emptyUrl, false);
 
-    // THEN: Should return INVALID_APP_ID
-    EXPECT_EQ(appId, INVALID_APP_ID);
+    // THEN: Should return BaseApp::INVALID_APP_ID
+    EXPECT_EQ(appId, BaseApp::INVALID_APP_ID);
 }
 
 TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithoutSessionCallback)
@@ -357,8 +358,8 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithoutSessionCallback)
     // WHEN: CreateAndRunApp is called without session callback
     int appId = appManager.CreateAndRunApp(testUrl, false);
 
-    // THEN: Should return INVALID_APP_ID due to missing callback
-    EXPECT_EQ(appId, INVALID_APP_ID);
+    // THEN: Should return BaseApp::INVALID_APP_ID due to missing callback
+    EXPECT_EQ(appId, BaseApp::INVALID_APP_ID);
 }
 
 TEST_F(ApplicationManagerTest, TestCreateAndRunAppReplacesExistingApp)
@@ -435,12 +436,21 @@ TEST_F(ApplicationManagerTest, DISABLED_TestCreateAndRunAppParameterValidation)
     for (const auto& testCase : testCases) {
         if (testCase.url.empty()) {
             // For empty URL, expect no callbacks
+            EXPECT_CALL(*mockCallback, LoadApplication(testing::_, testing::_))
+                .Times(0);
             EXPECT_CALL(*mockCallback, LoadApplication(testing::_, testing::_, testing::_, testing::_))
                 .Times(0);
         } else {
-            // For valid URL, expect callbacks
-            EXPECT_CALL(*mockCallback, LoadApplication(testing::_, testing::_, testing::_, testing::_))
-                .Times(1);
+            // For valid URL, expect callbacks based on app type
+            if (testCase.runAsOpApp) {
+                // OpApp uses 2-parameter LoadApplication
+                EXPECT_CALL(*mockCallback, LoadApplication(testing::_, testing::_))
+                    .Times(1);
+            } else {
+                // HbbTV app uses 4-parameter LoadApplication
+                EXPECT_CALL(*mockCallback, LoadApplication(testing::_, testing::_, testing::_, testing::_))
+                    .Times(1);
+            }
             EXPECT_CALL(*mockCallback, ShowApplication(testing::_))
                 .Times(1);
         }
@@ -450,7 +460,7 @@ TEST_F(ApplicationManagerTest, DISABLED_TestCreateAndRunAppParameterValidation)
         if (testCase.shouldSucceed) {
             EXPECT_GT(appId, 0) << "Failed for URL: " << testCase.url;
         } else {
-            EXPECT_EQ(appId, INVALID_APP_ID) << "Should have failed for URL: " << testCase.url;
+            EXPECT_EQ(appId, BaseApp::INVALID_APP_ID) << "Should have failed for URL: " << testCase.url;
         }
     }
 }

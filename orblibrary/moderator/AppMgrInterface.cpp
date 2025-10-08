@@ -87,7 +87,7 @@ string AppMgrInterface::executeRequest(const string& method, const string& token
         int newAppId = appMgr.CreateApplication(
           appId, params.getString("url"), params.getBool("runAsOpApp"));
 
-        if (newAppId == INVALID_APP_ID)
+        if (newAppId == BaseApp::INVALID_APP_ID)
         {
           LOGE("Failed to create application with ID " << appId);
           response = buildJsonResponse("Failed to create application with ID " + std::to_string(appId));

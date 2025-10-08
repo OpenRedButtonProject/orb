@@ -55,8 +55,6 @@
 namespace orb
 {
 
-static int g_id = INVALID_APP_ID;
-
 static std::string getAppSchemeFromUrlParams(const std::string &urlParams);
 static std::string getUrlParamsFromAppScheme(const std::string &scheme);
 
@@ -74,65 +72,42 @@ static bool IsKeyAlpha(const uint16_t &code);
 static bool IsKeyVcr(const uint16_t &code);
 static bool IsKeyScroll(const uint16_t &code);
 
-/**
- * Create app from url.
- *
- * @throws std::runtime_error
- */
+
 HbbTVApp::HbbTVApp(const std::string &url, ApplicationSessionCallback *sessionCallback)
-    : loadedUrl(url), m_entryUrl(url), m_baseUrl(url), m_sessionCallback(sessionCallback), m_id(++g_id)
+    : BaseApp(BaseApp::HBBTV_APP_TYPE, url, sessionCallback),
+    m_entryUrl(url),
+    m_baseUrl(url)
 {
     m_scheme = getAppSchemeFromUrlParams(url);
 }
 
-/**
- * Create app
- *
- */
 HbbTVApp::HbbTVApp(const Utils::S_DVB_TRIPLET currentService,
     bool isBroadcast,
     bool isTrusted,
     ApplicationSessionCallback *sessionCallback)
-        : m_service(currentService),
+        : BaseApp(BaseApp::HBBTV_APP_TYPE, sessionCallback),
+        m_service(currentService),
         m_isTrusted(isTrusted),
         m_isBroadcast(isBroadcast),
-        m_versionMinor(INT8_MAX),
-        m_sessionCallback(sessionCallback),
-        m_id(++g_id)
+        m_versionMinor(INT8_MAX)
 {
     // Broadcast-related applications need to call show.
-    m_state = isBroadcast ? BACKGROUND_STATE : FOREGROUND_STATE;
+    m_state = isBroadcast ? BaseApp::BACKGROUND_STATE : BaseApp::FOREGROUND_STATE;
 }
 
-/**
- * Set URL of app from Ait description and URL params
- *
- */
 void HbbTVApp::SetUrl(const Ait::S_AIT_APP_DESC &desc,
     const std::string &urlParams, bool isNetworkAvailable)
 {
     m_baseUrl = Ait::ExtractBaseURL(desc, m_service, isNetworkAvailable);
     m_entryUrl = Utils::MergeUrlParams(m_baseUrl, desc.location, urlParams);
-    loadedUrl = m_entryUrl;
+    SetLoadedUrl(m_entryUrl);
 }
 
-/**
- * Updates the app's state. Meant to be called by the ApplicationManager
- * when it receives a new AIT table or when the network availability is
- * changed.
- *
- * @param desc The model that the App will use to extract info about its
- *      state.
- * @param isNetworkAvailable The network availability. Will be used to
- *      determine the protocolId.
- *
- * @return true if success
- */
 bool HbbTVApp::Update(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable)
 {
     if (!IsAllowedByParentalControl(desc))
     {
-        LOG(LOG_ERROR, "App with loaded url '%s' is not allowed by Parental Control.", loadedUrl.c_str());
+        LOG(LOG_ERROR, "App with loaded url '%s' is not allowed by Parental Control.", GetLoadedUrl().c_str());
         return false;
     }
     m_protocolId = Ait::ExtractProtocolId(desc, isNetworkAvailable);
@@ -164,15 +139,15 @@ bool HbbTVApp::Update(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable)
     {
         size_t index = desc.scheme.find('?');
         m_scheme = m_scheme.substr(0, index);
-        loadedUrl = Utils::MergeUrlParams("", loadedUrl,
-                                             getUrlParamsFromAppScheme(GetScheme()));
+        SetLoadedUrl(Utils::MergeUrlParams("", m_entryUrl,
+                                             getUrlParamsFromAppScheme(GetScheme())));
         if (index != std::string::npos) {
             std::string llocParams = desc.scheme.substr(index);
-            loadedUrl = Utils::MergeUrlParams("", m_entryUrl, llocParams);
+            SetLoadedUrl(Utils::MergeUrlParams("", m_entryUrl, llocParams));
         }
     }
     LOG(LOG_DEBUG, "App[%d] properties: orgId=%d, controlCode=%d, protocolId=%d, baseUrl=%s, entryUrl=%s, loadedUrl=%s",
-            m_aitDesc.appId, m_aitDesc.orgId, m_aitDesc.controlCode, m_protocolId, m_baseUrl.c_str(), m_entryUrl.c_str(), loadedUrl.c_str());
+            m_aitDesc.appId, m_aitDesc.orgId, m_aitDesc.controlCode, m_protocolId, m_baseUrl.c_str(), m_entryUrl.c_str(), GetLoadedUrl().c_str());
 
     m_sessionCallback->DispatchApplicationSchemeUpdatedEvent(GetId(), m_scheme);
     return true;
@@ -194,7 +169,7 @@ bool HbbTVApp::TransitionToBroadcastRelated()
             LOG(LOG_INFO, "Cannot transition to broadcast (entry URL is not in boundaries)");
             return false;
         }
-        if (!Utils::CheckBoundaries(loadedUrl, m_baseUrl, m_aitDesc.boundaries))
+        if (!Utils::CheckBoundaries(GetLoadedUrl(), m_baseUrl, m_aitDesc.boundaries))
         {
             LOG(LOG_INFO, "Cannot transition to broadcast (loaded URL is not in boundaries)");
             return false;
@@ -224,13 +199,7 @@ std::string HbbTVApp::GetScheme() const {
     return LINKED_APP_SCHEME_1_1;
 }
 
-/**
- * Set the key set mask for an application.
- *
- * @param keySetMask The key set mask.
- * @param otherKeys optional other keys
- * @return The key set mask for the application.
- */
+
 uint16_t HbbTVApp::SetKeySetMask(uint16_t keySetMask, const std::vector<uint16_t> &otherKeys) {
     std::string currentScheme = GetScheme();
 
@@ -264,14 +233,6 @@ uint16_t HbbTVApp::SetKeySetMask(uint16_t keySetMask, const std::vector<uint16_t
     return keySetMask;
 }
 
-/**
- * Check the key code is accepted by the current key mask. Activate the app as a result if the
- * key is accepted.
- *
- * @param appId The application.
- * @param keyCode The key code to check.
- * @return The supplied key_code is accepted by the current app's key set.
- */
 bool HbbTVApp::InKeySet(uint16_t keyCode)
 {
     if ((m_keySetMask & GetKeySetMaskForKeyCode(keyCode)) != 0)
@@ -291,12 +252,6 @@ bool HbbTVApp::InKeySet(uint16_t keyCode)
     return false;
 }
 
-/**
- * Set the application state.
- *
- * @param state The desired state to transition to.
- * @returns true if transitioned successfully to the desired state, false otherwise.
- */
 bool HbbTVApp::SetState(const E_APP_STATE &state)
 {
     // HbbTV apps can go only to background or foreground state
@@ -334,7 +289,7 @@ bool HbbTVApp::IsAllowedByParentalControl(const Ait::S_AIT_APP_DESC &desc) const
         parental_control_region, parental_control_region3))
     {
         LOG(LOG_INFO, "%s, Parental Control Age RESTRICTED for %s: only %d content accepted",
-            loadedUrl.c_str(), parental_control_region.c_str(), parental_control_age);
+            GetLoadedUrl().c_str(), parental_control_region.c_str(), parental_control_age);
         return false;
     }
     return true;
