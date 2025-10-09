@@ -65,6 +65,7 @@ void ApplicationManager::RegisterCallback(ApplicationType apptype, ApplicationSe
 {
     if (apptype >= APP_TYPE_MAX) {
         LOG(LOG_ERROR, "Invalid param: atype=%u cb=%p", apptype, callback);
+        return;
     }
 
     // Store the raw pointer without taking ownership (allow nullptr for cleanup)
