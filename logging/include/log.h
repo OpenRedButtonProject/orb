@@ -85,8 +85,24 @@ static unsigned char app_mgr_log_run_level = LOG_LVL_DEBUG;
 
 
  #else
- #error Not Chromium or Android build
- #endif
+
+#include <iostream>
+
+// Default case - no-op logging macros that accept arguments but do nothing
+
+// Stream-style logging macros for compatibility with LOG(INFO) << syntax
+class NoOpLogStream {
+public:
+    template<typename T>
+    NoOpLogStream& operator<<(const T&) { return *this; }
+    NoOpLogStream& operator<<(std::ostream& (*)(std::ostream&)) { return *this; }
+};
+
+// Define LOG macro to work both as function call and stream
+#define LOG(level) NoOpLogStream()
+#define ASSERT(condition) do { } while(0)
+
+#endif
 
  #define LOGI(str)   LOG(INFO) << __FUNCTION__ << "," << __LINE__ << ": " << str
  #define LOGE(str)   LOG(ERROR) << __FUNCTION__ << "," << __LINE__ << ": " << str
