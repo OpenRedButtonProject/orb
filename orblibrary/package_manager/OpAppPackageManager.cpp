@@ -112,7 +112,9 @@ OpAppPackageManager::OpAppPackageManager(
 OpAppPackageManager::~OpAppPackageManager()
 {
   // Ensure the worker thread is stopped before destruction
+  std::lock_guard<std::mutex> lock(m_Mutex);
   if (m_IsRunning) {
+    m_IsRunning = false;
     if (m_WorkerThread.joinable()) {
       m_WorkerThread.join();
     }
@@ -125,7 +127,7 @@ OpAppPackageManager* OpAppPackageManager::getInstance()
   std::lock_guard<std::mutex> lock(s_InstanceMutex);
 
   // Return nullptr if no instance has been created yet
-  return s_Instance.get();
+  return s_Instance ? s_Instance.get() : nullptr;
 }
 
 OpAppPackageManager& OpAppPackageManager::getInstance(const Configuration& configuration)
@@ -168,14 +170,20 @@ OpAppPackageManager& OpAppPackageManager::getInstance(
 
 void OpAppPackageManager::destroyInstance()
 {
-  std::lock_guard<std::mutex> lock(s_InstanceMutex);
-  if (s_Instance) {
-    if (s_Instance->m_WorkerThread.joinable()) {
-      s_Instance->m_WorkerThread.join();
+  std::unique_ptr<OpAppPackageManager> instanceToDestroy;
+
+  // Move the instance out of the singleton while holding the lock
+  {
+    std::lock_guard<std::mutex> lock(s_InstanceMutex);
+    if (s_Instance) {
+      instanceToDestroy = std::move(s_Instance);
+      s_Instance = nullptr;
     }
-    s_Instance.reset();
-    s_Instance = nullptr; // Explicitly set to nullptr to ensure it's destroyed
   }
+
+  // Destroy the instance outside the lock to avoid deadlock
+  // The destructor will handle thread cleanup safely
+  instanceToDestroy.reset();
 }
 
 void OpAppPackageManager::start()
