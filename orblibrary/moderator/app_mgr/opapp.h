@@ -21,51 +21,32 @@
 #ifndef OPAPP_H
 #define OPAPP_H
 
-#include "hbbtv_app.h"
+#include "base_app.h"
+#include "utils.h"
 
 namespace orb
 {
-
-class OpApp : public HbbTVApp
+class OpApp : public BaseApp
 {
 public:
-    /**
-     * Create opapp from url.
-     *
-     */
     OpApp(const std::string &url, ApplicationSessionCallback *sessionCallback);
-
-    /**
-     * Create opapp
-     *
-     */
     OpApp(ApplicationSessionCallback *sessionCallback);
 
-    /**
-     * Create opapp from url and inherit another opapp's state (ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.1).
-     *
-     */
-    OpApp(const OpApp &other, const std::string &url);
+    /* Create opapp from url and inherit another opapp's state (ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.1).
+     * Unsupported in FREELY */
+    // OpApp(const OpApp &other, const std::string &url);
 
     virtual ~OpApp() = default;
 
-    OpApp(const HbbTVApp&) = delete;
+    OpApp(const OpApp&) = delete;
     OpApp &operator=(const OpApp&) = delete;
 
-    /**
-     * Set the application state.
-     *
-     * @param state The desired state to transition to.
-     * @returns true if transitioned successfully to the desired state, false otherwise.
-     */
     bool SetState(const E_APP_STATE &state) override;
-
-    E_APP_TYPE GetType() const override { return HbbTVApp::E_APP_TYPE::OPAPP_TYPE; }
-
-    bool TransitionToBroadcastRelated() override;
 
 private:
     bool CanTransitionToState(const E_APP_STATE &state);
+
+    void init();
 
     Utils::Timeout m_countdown;
 };

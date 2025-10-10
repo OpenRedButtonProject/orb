@@ -59,6 +59,8 @@ public:
      * @param xmlait The XML AIT to process
      */
     virtual void processXmlAit(const std::vector<uint8_t>& xmlait) = 0;
+
+    virtual ApplicationType GetApplicationType() const = 0;
 };
 
 class AppMgrInterface : public IAppMgrInterface
@@ -77,6 +79,8 @@ public:
      * @return JSON encoded response string
      */
     std::string executeRequest(const std::string& method, const std::string& token, const IJson& params) override;
+
+    ApplicationType GetApplicationType() const override { return mAppType; }
 
     void onNetworkStatusChange(bool available) override;
     void onChannelChange(uint16_t onetId, uint16_t transId, uint16_t serviceId) override;

@@ -7,9 +7,9 @@ namespace orb
 {
 // TODO is this alredy defined in AIDL?
 enum ApplicationType {
-  APP_TYPE_HBBTV,
+  APP_TYPE_HBBTV = 0,
   APP_TYPE_OPAPP,
-  APP_TYPE_VIDEO
+  APP_TYPE_MAX
 };
 
 enum ChannelStatus {

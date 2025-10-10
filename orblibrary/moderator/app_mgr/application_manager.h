@@ -50,31 +50,12 @@ public:
         FOR_TRUSTED_APP_ONLY = 3
     };
 
-    // Number of supported application types - HbbTVApp and OpApp
-    static constexpr size_t MAX_CBS = 2;
-
-    /**
-     * Constructor of Application manager
-     *
-     * @param xmlParser The XML parser implementation to use. The default is null.
-     * 
-     */
     ApplicationManager(std::unique_ptr<IXmlParser> xmlParser = {});
 
-    /**
-     * Destructor of Application manager
-     */
     ~ApplicationManager();
 
-    /**
-     * Get Singleton Instance
-     */
     static ApplicationManager& instance();
 
-    /**
-     * Set XML Parser (for testing)
-     * @param xmlParser The XML parser implementation to use
-     */
     void SetXmlParser(std::unique_ptr<IXmlParser> xmlParser);
 
     /**
@@ -84,13 +65,6 @@ public:
      * @param callback The callback to set.
      */
     void RegisterCallback(ApplicationType apptype, ApplicationSessionCallback* callback);
-
-    /**
-     * Set current interface callback
-     *
-     * @param apptype App interface type
-     */
-    void SetCurrentInterface(ApplicationType apptype);
 
     /**
      * Create and run a new application. If called by an application, check it is allowed.
@@ -105,29 +79,46 @@ public:
      * will result in the signalled URL being loaded, which may be HTTP/HTTPS for broadband or DVB
      * for carousel.
      *
+     * Note that constructing an OpApp from a currently running OpApp is not supported.
+     *
      * @return The id of the newly created application. In case of failure, INVALID_APP_ID is returned.
      */
     int CreateApplication(int callingAppId, const std::string &url, bool runAsOpApp);
 
     /**
-     * Destroy the calling application.
+     * Create and run an App by url.
      *
-     * @param callingAppId The calling app ID.
+     * @param url The url the of the App.
+     * @param runAsOpApp When true, the newly created app will be lauched as an OpApp,
+     *      otherwise as an BaseApp.
+     *
+     * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
      */
+    int CreateAndRunApp(std::string url, bool runAsOpApp = false);
+
+    /**
+     * Create and run an App by AIT description.
+     *
+     * @param desc The AIT description the new App will use to set its initial state.
+     * @param urlParams Additional url parameters that will be concatenated with the
+     *      loaded url of the new App.
+     * @param isBroadcast Is the new App broadcast related?
+     * @param isTrusted Is the new App trusted?
+     * @param runAsOpApp When true, the newly created app will be lauched as an OpApp,
+     *      otherwise as an BaseApp.
+     *
+     * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
+     */
+    int CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc,
+        const std::string &urlParams,
+        bool isBroadcast,
+        bool isTrusted,
+        bool runAsOpApp = false);
+
     void DestroyApplication(int callingAppId);
 
-    /**
-     * Show the calling application.
-     *
-     * @param callingAppId The calling app ID.
-     */
     void ShowApplication(int callingAppId);
 
-    /**
-     * Hide the calling application.
-     *
-     * @param callingAppId The calling app ID.
-     */
     void HideApplication(int callingAppId);
 
     /**
@@ -280,97 +271,37 @@ public:
     std::vector<int> GetRunningAppIds();
 
 private:
-    /**
-     * Called when the AIT for the selected service is received.
-     */
-    void OnSelectedServiceAitReceived();
+    void onSelectedServiceAitReceived();
+    void onSelectedServiceAitTimeout();
+    void onSelectedServiceAitUpdated();
+    void onRunningAppExited();
+    void onPerformBroadcastAutostart();
 
-    /**
-     * Called when the AIT for the selected service is not received after some timeout.
-     */
-    void OnSelectedServiceAitTimeout();
+    int runOpApp(std::unique_ptr<OpApp> app);
+    int runHbbTVApp(std::unique_ptr<HbbTVApp> app);
+    bool updateRunningApp(const Ait::S_AIT_APP_DESC &desc);
+    void killRunningApp(int appid);
 
-    /**
-     * Called when the AIT for the selected service is updated.
-     */
-    void OnSelectedServiceAitUpdated();
-
-    /**
-     * Called when the running app has exited.
-     */
-    void OnRunningAppExited();
-
-    /**
-     * Called at a time when the broadcast autostart app should be started.
-     */
-    void OnPerformBroadcastAutostart();
-
-    /**
-     * Create and run an App by url.
-     *
-     * @param url The url the of the App.
-     * @param runAsOpApp When true, the newly created app will be lauched as an OpApp,
-     *      otherwise as an HbbTVApp.
-     *
-     * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
-     */
-    int CreateAndRunApp(std::string url, bool runAsOpApp = false);
-
-    /**
-     * Create and run an App by AIT description.
-     *
-     * @param desc The AIT description the new App will use to set its initial state.
-     * @param urlParams Additional url parameters that will be concatenated with the
-     *      loaded url of the new App.
-     * @param isBroadcast Is the new App broadcast related?
-     * @param isTrusted Is the new App trusted?
-     * @param runAsOpApp When true, the newly created app will be lauched as an OpApp,
-     *      otherwise as an HbbTVApp.
-     *
-     * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
-     */
-    int CreateAndRunApp(const Ait::S_AIT_APP_DESC &desc,
-        const std::string &urlParams,
-        bool isBroadcast,
-        bool isTrusted,
-        bool runAsOpApp = false);
-
-    /**
-     * Run the app.
-     *
-     * @param app The app to run.
-     *
-     * @return The id of the application. In case of failure, INVALID_APP_ID is returned.
-     */
-    int RunApp(std::unique_ptr<HbbTVApp> app);
-
-    /**
-     * Update the running app.
-     *
-     * @param desc The AIT description the running App will use to update its state.
-     *
-     * @return True on success, false on failure.
-     */
-    bool UpdateRunningApp(const Ait::S_AIT_APP_DESC &desc);
-
-    /**
-     * Kill the running app.
-     */
-    void KillRunningApp(int appid);
+    // Helper methods for accessing apps with the new pointer structure
+    BaseApp* getAppById(int appId);
+    bool isHbbTVAppRunning() const;
+    bool isOpAppRunning() const;
+    int getCurrentHbbTVAppId() const;
+    int getCurrentOpAppId() const;
 
     /**
      * Transition the running app to broadcast-related, if conditions permit.
      *
      * @return true on success, false on failure.
      */
-    bool TransitionRunningAppToBroadcastRelated();
+    bool transitionRunningAppToBroadcastRelated();
 
     /**
      * Transition the running app to broadcast-independent, if conditions permit.
      *
      * @return true on success, false on failure.
      */
-    bool TransitionRunningAppToBroadcastIndependent();
+    bool transitionRunningAppToBroadcastIndependent();
 
     /**
      * Whether the app should be trusted or not TODO
@@ -378,7 +309,7 @@ private:
      * @param is_broadcast Whether the app is broadcast-related
      * @return True if the app is trusted, false otherwise
      */
-    bool IsAppTrusted(bool is_broadcast);
+    bool isAppTrusted(bool is_broadcast);
 
     /**
      * Call to Ait::AutoStartApp() passing the parental restrictions.
@@ -386,7 +317,7 @@ private:
      * @param aitTable AIT table.
      * @return The App to auto start.
      */
-    const Ait::S_AIT_APP_DESC* GetAutoStartApp(const Ait::S_AIT_TABLE *aitTable);
+    const Ait::S_AIT_APP_DESC* getAutoStartApp(const Ait::S_AIT_TABLE *aitTable);
 
     /**
      * Return the KeySet a key code belongs to.
@@ -394,19 +325,17 @@ private:
      * @param keyCode The key code.
      * @return The key set.
      */
-    uint16_t GetKeySet(const uint16_t keyCode);
+    uint16_t getKeySet(const uint16_t keyCode);
 
-    std::array<ApplicationSessionCallback*, MAX_CBS> m_sessionCallback;
-    int m_cif; // current app type interface
+    std::array<ApplicationSessionCallback*, APP_TYPE_MAX> m_sessionCallback;
 
     Ait m_ait;
     std::unique_ptr<IXmlParser> m_xmlParser;
-    std::unordered_map<int, std::unique_ptr<HbbTVApp>> m_apps;
-    int m_hbbtvAppId = INVALID_APP_ID;
-    int m_opAppId = INVALID_APP_ID;
+    std::unique_ptr<HbbTVApp> m_hbbtvApp;
+    std::unique_ptr<OpApp> m_opApp;
     Utils::S_DVB_TRIPLET m_currentService = Utils::MakeInvalidDvbTriplet();
     Utils::S_DVB_TRIPLET m_previousService = Utils::MakeInvalidDvbTriplet();
-    uint16_t m_currentServiceReceivedFirstAit = false;
+    bool m_currentServiceReceivedFirstAit = false;
     uint16_t m_currentServiceAitPid = 0;
     bool m_isNetworkAvailable = false;
     std::recursive_mutex m_lock;

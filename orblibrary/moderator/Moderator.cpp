@@ -43,7 +43,6 @@ Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
     , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
     , mAppMgrInterface(std::make_unique<AppMgrInterface>(browser, apptype))
     , mDrm(std::make_unique<Drm>())
-    , mAppType(apptype)
 {
     LOGI("HbbTV version " << ORB_HBBTV_VERSION);
 }
@@ -58,7 +57,6 @@ Moderator::Moderator(
     , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
     , mAppMgrInterface(std::move(appMgrInterface))
     , mDrm(std::move(drm))
-    , mAppType(apptype)
 {}
 
 Moderator::~Moderator() {}
@@ -87,7 +85,7 @@ string Moderator::handleOrbRequest(string jsonRqst)
     }
 
     // add application type to params
-    json->setInteger("params", mAppType, "applicationType");
+    json->setInteger("params", mAppMgrInterface->GetApplicationType(), "applicationType");
 
     string component;
     string method;

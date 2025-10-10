@@ -79,15 +79,13 @@ string AppMgrInterface::executeRequest(const string& method, const string& token
     auto &appMgr = ApplicationManager::instance();
     int appId = params.getInteger("id");
 
-    appMgr.SetCurrentInterface(mAppType);
-
     LOGI("Request with method [" + method + "] received");
     if (method == MANAGER_CREATE_APP)
     {
         int newAppId = appMgr.CreateApplication(
           appId, params.getString("url"), params.getBool("runAsOpApp"));
 
-        if (newAppId == INVALID_APP_ID)
+        if (newAppId == BaseApp::INVALID_APP_ID)
         {
           LOGE("Failed to create application with ID " << appId);
           response = buildJsonResponse("Failed to create application with ID " + std::to_string(appId));
@@ -183,26 +181,22 @@ string AppMgrInterface::executeRequest(const string& method, const string& token
 
 void AppMgrInterface::onNetworkStatusChange(bool available) {
     std::lock_guard<std::mutex> lock(mMutex);
-    ApplicationManager::instance().SetCurrentInterface(mAppType);
     ApplicationManager::instance().OnNetworkAvailabilityChanged(available);
 }
 
 void AppMgrInterface::onChannelChange(uint16_t onetId, uint16_t transId, uint16_t serviceId) {
     std::lock_guard<std::mutex> lock(mMutex);
-    ApplicationManager::instance().SetCurrentInterface(mAppType);
     ApplicationManager::instance().OnChannelChanged(onetId, transId, serviceId);
 }
 
 void AppMgrInterface::processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section) {
     std::lock_guard<std::mutex> lock(mMutex);
-    ApplicationManager::instance().SetCurrentInterface(mAppType);
     ApplicationManager::instance().ProcessAitSection(aitPid, serviceId, section.data(), section.size());
 }
 
 void AppMgrInterface::processXmlAit(const std::vector<uint8_t>& xmlait) {
     std::string xmlString(xmlait.begin(), xmlait.end());
     std::lock_guard<std::mutex> lock(mMutex);
-    ApplicationManager::instance().SetCurrentInterface(mAppType);
     ApplicationManager::instance().ProcessXmlAit(xmlString);
 }
 
