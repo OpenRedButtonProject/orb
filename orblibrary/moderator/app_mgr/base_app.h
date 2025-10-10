@@ -23,11 +23,14 @@
 
 #include <string>
 #include "OrbConstants.h"
-
+#include <ostream>
 
 namespace orb
 {
 class ApplicationSessionCallback;
+
+std::ostream& operator<<(std::ostream& os, const ApplicationType& type);
+
 
 class BaseApp
 {

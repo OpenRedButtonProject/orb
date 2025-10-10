@@ -23,6 +23,7 @@
 
 #ifdef IS_CHROMIUM
 #include <base/logging.h>
+#define DEBUG INFO // Ugly hack to make DEBUG level work like INFO level
 #elif defined(ANDROID)
 
 #include <android/log.h>

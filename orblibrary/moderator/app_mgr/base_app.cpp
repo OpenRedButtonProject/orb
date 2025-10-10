@@ -6,6 +6,22 @@ namespace orb
 int BaseApp::g_id = 0;
 const int BaseApp::INVALID_APP_ID = 0;
 
+std::ostream& operator<<(std::ostream& os, const ApplicationType& type) {
+    switch (type) {
+        case ApplicationType::APP_TYPE_HBBTV:
+        os << "HBBTV";
+        break;
+        case ApplicationType::APP_TYPE_OPAPP:
+        os << "OPAPP";
+        break;
+        default:
+        os << "INVALID";
+        break;
+    }
+    return os;
+}
+
+
 BaseApp::BaseApp(const ApplicationType type, const std::string &url, ApplicationSessionCallback *sessionCallback)
     : m_sessionCallback(sessionCallback)
     , m_type(type)

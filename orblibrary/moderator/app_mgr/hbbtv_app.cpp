@@ -19,7 +19,7 @@
  */
 
 #include "hbbtv_app.h"
-#include "log.h"
+#include "third_party/orb/logging/include/log.h"
 #include "application_manager.h"
 #include "OrbConstants.h"
 
@@ -107,13 +107,13 @@ bool HbbTVApp::Update(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable)
 {
     if (!IsAllowedByParentalControl(desc))
     {
-        LOG(LOG_ERROR, "App with loaded url '%s' is not allowed by Parental Control.", GetLoadedUrl().c_str());
+        LOG(ERROR) << "App with loaded url '" << GetLoadedUrl() << "' is not allowed by Parental Control.";
         return false;
     }
     m_protocolId = Ait::ExtractProtocolId(desc, isNetworkAvailable);
     if (m_protocolId == 0)
     {
-        LOG(LOG_ERROR, "No valid protocol ID");
+        LOG(ERROR) << "No valid protocol ID";
         return false;
     }
 
@@ -146,8 +146,13 @@ bool HbbTVApp::Update(const Ait::S_AIT_APP_DESC &desc, bool isNetworkAvailable)
             SetLoadedUrl(Utils::MergeUrlParams("", m_entryUrl, llocParams));
         }
     }
-    LOG(LOG_DEBUG, "App[%d] properties: orgId=%d, controlCode=%d, protocolId=%d, baseUrl=%s, entryUrl=%s, loadedUrl=%s",
-            m_aitDesc.appId, m_aitDesc.orgId, m_aitDesc.controlCode, m_protocolId, m_baseUrl.c_str(), m_entryUrl.c_str(), GetLoadedUrl().c_str());
+    LOG(DEBUG) << "App[" << m_aitDesc.appId
+        << "] properties: orgId=" << m_aitDesc.orgId
+        << ", controlCode=" << m_aitDesc.controlCode
+        << ", protocolId=" << m_protocolId
+        << ", baseUrl=" << m_baseUrl
+        << ", entryUrl=" << m_entryUrl
+        << ", loadedUrl=" << GetLoadedUrl();
 
     m_sessionCallback->DispatchApplicationSchemeUpdatedEvent(GetId(), m_scheme);
     return true;
@@ -157,8 +162,7 @@ bool HbbTVApp::TransitionToBroadcastRelated()
 {
     if (m_aitDesc.controlCode != Ait::APP_CTL_AUTOSTART && m_aitDesc.controlCode != Ait::APP_CTL_PRESENT)
     {
-        LOG(LOG_INFO,
-            "Cannot transition to broadcast (app is not signalled in the new AIT as AUTOSTART or PRESENT)");
+        LOG(INFO) << "Cannot transition to broadcast (app is not signalled in the new AIT as AUTOSTART or PRESENT)";
         return false;
     }
 
@@ -166,18 +170,18 @@ bool HbbTVApp::TransitionToBroadcastRelated()
     {
         if (!Utils::CheckBoundaries(m_entryUrl, m_baseUrl, m_aitDesc.boundaries))
         {
-            LOG(LOG_INFO, "Cannot transition to broadcast (entry URL is not in boundaries)");
+            LOG(INFO) << "Cannot transition to broadcast (entry URL is not in boundaries)";
             return false;
         }
         if (!Utils::CheckBoundaries(GetLoadedUrl(), m_baseUrl, m_aitDesc.boundaries))
         {
-            LOG(LOG_INFO, "Cannot transition to broadcast (loaded URL is not in boundaries)");
+            LOG(INFO) << "Cannot transition to broadcast (loaded URL is not in boundaries)";
             return false;
         }
     }
     else
     {
-        LOG(LOG_INFO, "Cannot transition to broadcast (invalid protocol id)");
+        LOG(INFO) << "Cannot transition to broadcast (invalid protocol id)";
         return false;
     }
 
@@ -259,7 +263,7 @@ bool HbbTVApp::SetState(const E_APP_STATE &state)
     {
         if (state != m_state)
         {
-            LOG(LOG_INFO, "AppId %u; state transition: %d -> %d", GetId(), GetState(), state);
+            LOG(INFO) << "AppId [" << GetId() << "]; state transition: " << GetState() << " -> " << state;
             m_state = state;
             if (state == BACKGROUND_STATE)
             {
@@ -272,7 +276,7 @@ bool HbbTVApp::SetState(const E_APP_STATE &state)
         }
         return true;
     }
-    LOG(LOG_INFO, "Invalid state transition: %d -> %d", m_state, state);
+    LOG(INFO) << "Invalid state transition: " << GetState() << " -> " << state;
     return false;
 }
 
@@ -288,8 +292,8 @@ bool HbbTVApp::IsAllowedByParentalControl(const Ait::S_AIT_APP_DESC &desc) const
     if (Ait::IsAgeRestricted(desc.parentalRatings, parental_control_age,
         parental_control_region, parental_control_region3))
     {
-        LOG(LOG_INFO, "%s, Parental Control Age RESTRICTED for %s: only %d content accepted",
-            GetLoadedUrl().c_str(), parental_control_region.c_str(), parental_control_age);
+        LOG(INFO) << GetLoadedUrl() << ", Parental Control Age RESTRICTED for "
+            << parental_control_region << ": only " << parental_control_age << " content accepted";
         return false;
     }
     return true;
