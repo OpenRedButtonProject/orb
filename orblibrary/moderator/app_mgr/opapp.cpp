@@ -1,5 +1,5 @@
 #include "opapp.h"
-#include "log.h"
+#include "third_party/orb/logging/include/log.h"
 #include "application_manager.h"
 
 #define COUNT_DOWN_TIMEOUT 60000
@@ -48,6 +48,7 @@ bool OpApp::SetState(const E_APP_STATE &state)
     {
         if (state != m_state)
         {
+            LOG(INFO) << "AppId " << GetId() << "; state transition: " << GetState() << " -> " << state;
             std::string previous = opAppStateToString(m_state);
             std::string next = opAppStateToString(state);
             m_state = state;
@@ -73,7 +74,7 @@ bool OpApp::SetState(const E_APP_STATE &state)
         }
         return true;
     }
-    LOG(LOG_INFO, "Invalid state transition: %d -> %d", m_state, state);
+    LOG(INFO) << "Invalid state transition: " << GetState() << " -> " << state;
     return false;
 }
 
