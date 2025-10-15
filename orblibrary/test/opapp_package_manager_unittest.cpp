@@ -91,14 +91,16 @@ private:
 class OpAppPackageManagerTest : public ::testing::Test {
 
 public:
-  static constexpr std::string PACKAGE_PATH = "test/packages";
+  // Static member declaration
+  static std::string PACKAGE_PATH;
 
 protected:
   void SetUp() override {
     // Clean up any existing instance before each test
     OpAppPackageManager::destroyInstance();
 
-    // Create test directory structure
+    // Create test directory structure in temporary directory
+    PACKAGE_PATH = std::filesystem::temp_directory_path() / "orb_test_packages";
     std::filesystem::create_directories(PACKAGE_PATH);
   }
 
@@ -110,9 +112,12 @@ protected:
     std::remove(packagePath.c_str());
 
     // Remove test directory structure
-    std::filesystem::remove_all("test");
+    std::filesystem::remove_all(PACKAGE_PATH);
   }
 };
+
+// Static member definition
+std::string OpAppPackageManagerTest::PACKAGE_PATH;
 
 TEST_F(OpAppPackageManagerTest, TestGetInstanceWithoutConfiguration)
 {
