@@ -91,39 +91,62 @@ TEST_F(ApplicationManagerTest, TestProcessXmlAitWithMockParserFailure)
     EXPECT_EQ(result, BaseApp::INVALID_APP_ID);
 }
 
-TEST_F(ApplicationManagerTest, TestProcessXmlAitWithMockParserSuccess)
+TEST_F(ApplicationManagerTest, TestProcessXmlAitWithValidAitTable)
 {
-    // GIVEN: ApplicationManager and valid XML content
+    // GIVEN: ApplicationManager and valid AIT table with autostart app
     std::string xmlContent = "valid xml content";
 
-    // Create a mock AIT table
+    // Create a mock AIT table meeting ALL conditions for getAutoStartApp to return non-null
     auto mockAitTable = std::make_unique<Ait::S_AIT_TABLE>();
     mockAitTable->numApps = 1;
     mockAitTable->appArray.resize(1);
+
+    // ✅ Basic app info
     mockAitTable->appArray[0].appId = 1;
     mockAitTable->appArray[0].orgId = 1;
     mockAitTable->appArray[0].scheme = "urn:hbbtv:opapp:privileged:2017";
 
+    // ✅ Control code: AUTOSTART (required for getAutoStartApp)
+    mockAitTable->appArray[0].controlCode = Ait::APP_CTL_AUTOSTART;
 
-    // Expect the ParseAit method to be called with the XML content and return the mock AIT table
+    // ✅ Version: Supported HbbTV version (1.0.0 <= 1.7.1)
+    mockAitTable->appArray[0].appDesc.appProfiles.resize(1);
+    mockAitTable->appArray[0].appDesc.appProfiles[0].versionMajor = 1;
+    mockAitTable->appArray[0].appDesc.appProfiles[0].versionMinor = 0;
+    mockAitTable->appArray[0].appDesc.appProfiles[0].versionMicro = 0;
+    mockAitTable->appArray[0].appDesc.appProfiles[0].appProfile = 0; // Base profile only
+
+    // ✅ Priority: Valid priority for selection
+    mockAitTable->appArray[0].appDesc.priority = 1;
+
+    // ✅ Transport: HTTP protocol with no failures (viable transport)
+    mockAitTable->appArray[0].numTransports = 1;
+    mockAitTable->appArray[0].transportArray[0].protocolId = AIT_PROTOCOL_HTTP;
+    mockAitTable->appArray[0].transportArray[0].failedToLoad = false;
+
+    // ✅ Parental ratings: Empty vector means no restrictions (IsAgeRestricted returns false)
+    mockAitTable->appArray[0].parentalRatings.clear();
+
+    // Set up expectation BEFORE moving the mock object
     EXPECT_CALL(*mockXmlParser, ParseAit(xmlContent.c_str(), xmlContent.length()))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(mockAitTable))));
+        .WillOnce(Return(ByMove(std::move(mockAitTable))));
 
     ApplicationManager appManager(std::move(mockXmlParser));
 
-    // Register callback for app creation
+    // ✅ Set network availability to true (required for HTTP transport)
+    appManager.OnNetworkAvailabilityChanged(true);
+
+    // ✅ Register callback for parental control parameters
     ON_CALL(*mockCallback, GetParentalControlRegion()).WillByDefault(Return("US"));
     ON_CALL(*mockCallback, GetParentalControlRegion3()).WillByDefault(Return("USA"));
     ON_CALL(*mockCallback, GetParentalControlAge()).WillByDefault(Return(18));
     appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
 
-    // WHEN: ProcessXmlAit is called
-    /*int result = */
-    appManager.ProcessXmlAit(xmlContent);
+    // WHEN: ProcessXmlAit is called with isDvbi=false (triggers getAutoStartApp path)
+    int result = appManager.ProcessXmlAit(xmlContent, false, "urn:hbbtv:opapp:privileged:2017");
 
-    // THEN: Should return a valid app ID (not INVALID_APP_ID)
-    // This was never tested!! Fix.
-    //EXPECT_NE(result, BaseApp::INVALID_APP_ID);
+    // THEN: Should return a valid app ID (getAutoStartApp returned non-null and app was created)
+    EXPECT_GT(result, BaseApp::INVALID_APP_ID);
 }
 
 TEST_F(ApplicationManagerTest, TestRegisterCallback)
