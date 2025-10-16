@@ -149,6 +149,30 @@ TEST_F(ApplicationManagerTest, TestProcessXmlAitWithValidAitTable)
     EXPECT_GT(result, BaseApp::INVALID_APP_ID);
 }
 
+TEST_F(ApplicationManagerTest, TestProcessXmlAitWithInvalidAitTable)
+{
+    // GIVEN: ApplicationManager and invalid AIT table
+    std::string xmlContent = "valid xml content";
+
+    // Create a mock AIT table with no apps
+    auto mockAitTable = std::make_unique<Ait::S_AIT_TABLE>();
+    mockAitTable->numApps = 0;
+
+    // Set up expectation BEFORE moving the mock object
+    EXPECT_CALL(*mockXmlParser, ParseAit(xmlContent.c_str(), xmlContent.length()))
+        .WillOnce(Return(ByMove(std::move(mockAitTable))));
+
+    ApplicationManager appManager(std::move(mockXmlParser));
+
+    // WHEN: ProcessXmlAit is called with invalid AIT table
+    int result = appManager.ProcessXmlAit(xmlContent, false, "urn:hbbtv:opapp:privileged:2017");
+
+    // THEN: Should return BaseApp::INVALID_APP_ID due to invalid AIT table
+    EXPECT_EQ(result, BaseApp::INVALID_APP_ID);
+}
+
+/* TODO Test for isDvbi=true path */
+
 TEST_F(ApplicationManagerTest, TestRegisterCallback)
 {
     // GIVEN: ApplicationManager singleton
