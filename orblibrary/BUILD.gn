@@ -160,13 +160,6 @@ source_set("test_orb_moderator_sources")
 {
 sources = [
     "test/moderator_unittest.cpp",
-    "moderator/Moderator.cpp",
-    "moderator/Network.cpp",
-    "moderator/MediaSynchroniser.cpp",
-    "moderator/AppMgrInterface.cpp",
-    "moderator/Drm.cpp",
-    "moderator/utilities/StringUtil.cpp",
-    "moderator/app_mgr/application_manager.cpp",
   ]
 
   deps = [
@@ -174,6 +167,7 @@ sources = [
     "//testing/gmock",
     "//third_party/orb/logging:orb_logging_deps",
     "//base", # For logging dependency
+    ":orb", # Link against the main orb library for integration testing
   ]
 
   include_dirs = [
@@ -272,22 +266,12 @@ source_set("test_orb_application_manager_sources")
   sources = [
     "test/application_manager_unittest.cpp",
     "test/MockApplicationSessionCallback.h",
-    "moderator/app_mgr/xml_parser.h",
-    "moderator/app_mgr/ait.cpp",
-    "moderator/app_mgr/application_manager.cpp",
-    "moderator/app_mgr/base_app.h",
-    "moderator/app_mgr/base_app.cpp",
-    "moderator/app_mgr/hbbtv_app.cpp",
-    "moderator/app_mgr/hbbtv_app.h",
-    "moderator/app_mgr/opapp.cpp",
-    "moderator/app_mgr/opapp.h",
-    "moderator/app_mgr/utils.cpp",
-    "moderator/app_mgr/utils.h",
   ]
 
   deps = [
     "//testing/gtest",
     "//testing/gmock",
+    ":orb", # Link against the main orb library for integration testing
   ]
 
   include_dirs = [
@@ -302,12 +286,12 @@ source_set("test_orb_application_manager_sources")
 executable("test_orb_all") {
   deps = [
     "//testing/gtest:gtest_main",
-    # ":test_orb_moderator_sources", # Disabled - not building without test_orb_application_manager_sources
-    #":test_opapp_package_manager_sources", # Disabled due to failing tests in Release builds
+    ":test_orb_moderator_sources",
+    # ":test_opapp_package_manager_sources", # FREE-302 Disabled due to failing tests in Release builds
     ":test_orb_video_window_sources",
     ":test_orb_util_sources",
     ":test_orb_jsonrpcservice_sources",
-    # ":test_orb_application_manager_sources" # Disabled due to failing tests in Release builds
+    ":test_orb_application_manager_sources"
   ]
 
   testonly = true
