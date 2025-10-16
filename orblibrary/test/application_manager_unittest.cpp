@@ -24,75 +24,34 @@
 #include "third_party/orb/orblibrary/moderator/app_mgr/xml_parser.h"
 #include "MockApplicationSessionCallback.h"
 #include "third_party/orb/orblibrary/moderator/app_mgr/base_app.h"
+#include "MockXmlParser.h"
 #include <gmock/gmock.h>
+
+using ::testing::NiceMock; // Suppresses warnings about unused mock objects
+using ::testing::Return;
+using ::testing::ReturnNull;
+using ::testing::ByMove;
+using ::testing::_;
 
 namespace orb
 {
-class MockXmlParser : public IXmlParser
-{
-public:
-    MockXmlParser() = default;
-    virtual ~MockXmlParser() = default;
-
-    // Control the behavior of ParseAit for testing
-    void SetParseAitResult(std::unique_ptr<Ait::S_AIT_TABLE> result)
-    {
-        parseAitResult = std::move(result);
-    }
-
-    void SetParseAitShouldFail(bool shouldFail)
-    {
-        parseAitShouldFail = shouldFail;
-    }
-
-    std::unique_ptr<Ait::S_AIT_TABLE> ParseAit(const char *content, uint32_t length) override
-    {
-        if (parseAitShouldFail)
-        {
-            return nullptr;
-        }
-
-        return std::move(parseAitResult);
-    }
-
-private:
-    std::unique_ptr<Ait::S_AIT_TABLE> parseAitResult;
-    bool parseAitShouldFail = false;
-};
-
-
 class ApplicationManagerTest : public ::testing::Test
 {
 protected:
     void SetUp() override
     {
-        // Set up test environment
-        mockCallback = std::make_unique<MockApplicationSessionCallback>();
-        mockXmlParser = std::make_unique<MockXmlParser>();
-
-        // Set up ApplicationManager with mock XML parser
-        ApplicationManager& appManager = ApplicationManager::instance();
-        appManager.SetXmlParser(std::move(mockXmlParser));
-
-        // Reset ApplicationManager singleton state to ensure test isolation
-        appManager.RegisterCallback(APP_TYPE_HBBTV, nullptr);
-        appManager.RegisterCallback(APP_TYPE_OPAPP, nullptr);
+        mockCallback = std::make_unique<NiceMock<MockApplicationSessionCallback>>();
+        mockXmlParser = std::make_unique<NiceMock<MockXmlParser>>();
     }
 
     void TearDown() override
     {
-        // Clean up test environment
         mockCallback.reset();
         mockXmlParser.reset();
-
-        // Additional cleanup to ensure test isolation for next test
-        ApplicationManager& appManager = ApplicationManager::instance();
-        appManager.RegisterCallback(APP_TYPE_HBBTV, nullptr);
-        appManager.RegisterCallback(APP_TYPE_OPAPP, nullptr);
     }
 
-    std::unique_ptr<MockApplicationSessionCallback> mockCallback;
-    std::unique_ptr<MockXmlParser> mockXmlParser;
+    std::unique_ptr<NiceMock<MockApplicationSessionCallback>> mockCallback;
+    std::unique_ptr<NiceMock<MockXmlParser>> mockXmlParser;
 };
 
 TEST_F(ApplicationManagerTest, TestSingletonInstance)
@@ -109,11 +68,10 @@ TEST_F(ApplicationManagerTest, TestSingletonInstance)
 TEST_F(ApplicationManagerTest, TestProcessXmlAitEmptyXml)
 {
     // GIVEN: ApplicationManager singleton and empty XML
-    ApplicationManager& appManager = ApplicationManager::instance();
-    std::string emptyXml = "";
+    ApplicationManager appManager(std::move(mockXmlParser));
 
     // WHEN: ProcessXmlAit is called with empty XML
-    int result = appManager.ProcessXmlAit(emptyXml);
+    int result = appManager.ProcessXmlAit("");
 
     // THEN: Should return BaseApp::INVALID_APP_ID
     EXPECT_EQ(result, BaseApp::INVALID_APP_ID);
@@ -121,17 +79,13 @@ TEST_F(ApplicationManagerTest, TestProcessXmlAitEmptyXml)
 
 TEST_F(ApplicationManagerTest, TestProcessXmlAitWithMockParserFailure)
 {
-    // GIVEN: ApplicationManager singleton and mock XML parser set to fail
-    ApplicationManager& appManager = ApplicationManager::instance();
+    // GIVEN: ApplicationManager and mock XML parser set to fail
+    ON_CALL(*mockXmlParser, ParseAit(_, _)).WillByDefault(ReturnNull());
 
-    auto failingMockParser = std::make_unique<MockXmlParser>();
-    failingMockParser->SetParseAitShouldFail(true);
-    appManager.SetXmlParser(std::move(failingMockParser));
-
-    std::string xmlContent = "some xml content";
+    ApplicationManager appManager(std::move(mockXmlParser));
 
     // WHEN: ProcessXmlAit is called
-    int result = appManager.ProcessXmlAit(xmlContent);
+    int result = appManager.ProcessXmlAit("Don't care");
 
     // THEN: Should return BaseApp::INVALID_APP_ID due to parser failure
     EXPECT_EQ(result, BaseApp::INVALID_APP_ID);
@@ -139,13 +93,8 @@ TEST_F(ApplicationManagerTest, TestProcessXmlAitWithMockParserFailure)
 
 TEST_F(ApplicationManagerTest, TestProcessXmlAitWithMockParserSuccess)
 {
-    class GMockXmlParser : public IXmlParser
-    {
-    public:
-        MOCK_METHOD(std::unique_ptr<Ait::S_AIT_TABLE>, ParseAit, (const char *content, uint32_t length), (override));
-    };
-    // GIVEN: ApplicationManager singleton and mock XML parser set to succeed
-    ApplicationManager& appManager = ApplicationManager::instance();
+    // GIVEN: ApplicationManager and valid XML content
+    std::string xmlContent = "valid xml content";
 
     // Create a mock AIT table
     auto mockAitTable = std::make_unique<Ait::S_AIT_TABLE>();
@@ -155,25 +104,32 @@ TEST_F(ApplicationManagerTest, TestProcessXmlAitWithMockParserSuccess)
     mockAitTable->appArray[0].orgId = 1;
     mockAitTable->appArray[0].scheme = "urn:hbbtv:opapp:privileged:2017";
 
-    std::string xmlContent = "valid xml content";
 
-    auto successMockParser = std::make_unique<GMockXmlParser>();
     // Expect the ParseAit method to be called with the XML content and return the mock AIT table
-    EXPECT_CALL(*successMockParser, ParseAit(xmlContent.c_str(), xmlContent.length()))
+    EXPECT_CALL(*mockXmlParser, ParseAit(xmlContent.c_str(), xmlContent.length()))
         .WillOnce(::testing::Return(::testing::ByMove(std::move(mockAitTable))));
-    appManager.SetXmlParser(std::move(successMockParser));
+
+    ApplicationManager appManager(std::move(mockXmlParser));
 
     // Register callback for app creation
+    ON_CALL(*mockCallback, GetParentalControlRegion()).WillByDefault(Return("US"));
+    ON_CALL(*mockCallback, GetParentalControlRegion3()).WillByDefault(Return("USA"));
+    ON_CALL(*mockCallback, GetParentalControlAge()).WillByDefault(Return(18));
     appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
 
     // WHEN: ProcessXmlAit is called
+    /*int result = */
     appManager.ProcessXmlAit(xmlContent);
+
+    // THEN: Should return a valid app ID (not INVALID_APP_ID)
+    // This was never tested!! Fix.
+    //EXPECT_NE(result, BaseApp::INVALID_APP_ID);
 }
 
 TEST_F(ApplicationManagerTest, TestRegisterCallback)
 {
     // GIVEN: ApplicationManager singleton
-    ApplicationManager& appManager = ApplicationManager::instance();
+    ApplicationManager appManager;
 
     // WHEN: RegisterCallback is called with valid parameters
     appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
@@ -187,7 +143,7 @@ TEST_F(ApplicationManagerTest, TestRegisterCallback)
 TEST_F(ApplicationManagerTest, TestRegisterCallbackInvalidType)
 {
     // GIVEN: ApplicationManager singleton
-    ApplicationManager& appManager = ApplicationManager::instance();
+    ApplicationManager appManager;
 
     // WHEN: RegisterCallback is called with invalid app type
     appManager.RegisterCallback(APP_TYPE_MAX, mockCallback.get());
@@ -200,7 +156,7 @@ TEST_F(ApplicationManagerTest, TestRegisterCallbackInvalidType)
 TEST_F(ApplicationManagerTest, TestRegisterCallbackNullCallback)
 {
     // GIVEN: ApplicationManager singleton
-    ApplicationManager& appManager = ApplicationManager::instance();
+    ApplicationManager appManager;
 
     // WHEN: RegisterCallback is called with null callback
     appManager.RegisterCallback(APP_TYPE_HBBTV, nullptr);
@@ -213,7 +169,7 @@ TEST_F(ApplicationManagerTest, TestRegisterCallbackNullCallback)
 TEST_F(ApplicationManagerTest, TestGetRunningAppIds)
 {
     // GIVEN: ApplicationManager singleton
-    ApplicationManager& appManager = ApplicationManager::instance();
+    ApplicationManager appManager;
 
     // WHEN: GetRunningAppIds is called
     std::vector<int> appIds = appManager.GetRunningAppIds();
@@ -226,19 +182,19 @@ TEST_F(ApplicationManagerTest, TestGetRunningAppIds)
 TEST_F(ApplicationManagerTest, TestGetOrganizationId)
 {
     // GIVEN: ApplicationManager singleton
-    ApplicationManager& appManager = ApplicationManager::instance();
+    ApplicationManager appManager;
 
     // WHEN: GetOrganizationId is called with no running apps
-    uint32_t orgId = appManager.GetOrganizationId();
+    int orgId = appManager.GetOrganizationId();
 
     // THEN: Should return -1 (indicating no running app)
-    EXPECT_EQ(orgId, static_cast<uint32_t>(-1));
+    EXPECT_EQ(orgId, -1);
 }
 
 TEST_F(ApplicationManagerTest, TestGetCurrentAppNames)
 {
     // GIVEN: ApplicationManager singleton
-    ApplicationManager& appManager = ApplicationManager::instance();
+    ApplicationManager appManager;
 
     // WHEN: GetCurrentAppNames is called with no running apps
     std::map<std::string, std::string> names = appManager.GetCurrentAppNames();
@@ -251,7 +207,7 @@ TEST_F(ApplicationManagerTest, TestGetCurrentAppNames)
 TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithValidHbbTVUrl)
 {
     // GIVEN: ApplicationManager with session callback registered
-    ApplicationManager& appManager = ApplicationManager::instance();
+    ApplicationManager appManager;
     appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
 
     std::string testUrl = "http://example.com/myapp.html";
@@ -265,14 +221,14 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithValidHbbTVUrl)
     // WHEN: CreateAndRunApp is called with HbbTV URL (runAsOpApp=false)
     int appId = appManager.CreateAndRunApp(testUrl, false);
 
-    // THEN: Should return valid app ID
-    EXPECT_GT(appId, 0);
+    // THEN: Should return a valid app ID (not INVALID_APP_ID)
+    EXPECT_GT(appId, BaseApp::INVALID_APP_ID);
 }
 
 TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithValidOpAppUrl)
 {
     // GIVEN: ApplicationManager with session callback registered for OpApp
-    ApplicationManager& appManager = ApplicationManager::instance();
+    ApplicationManager appManager;
     appManager.RegisterCallback(APP_TYPE_OPAPP, mockCallback.get());
 
     std::string testUrl = "http://operator.com/opapp.html";
@@ -289,13 +245,13 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithValidOpAppUrl)
     int appId = appManager.CreateAndRunApp(testUrl, true);
 
     // THEN: Should return valid app ID
-    EXPECT_GT(appId, 0);
+    EXPECT_GT(appId, BaseApp::INVALID_APP_ID);
 }
 
 TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithEmptyUrl)
 {
     // GIVEN: ApplicationManager with session callback registered
-    ApplicationManager& appManager = ApplicationManager::instance();
+    ApplicationManager appManager;
     appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
 
     std::string emptyUrl = "";
@@ -316,7 +272,7 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithEmptyUrl)
 TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithoutSessionCallback)
 {
     // GIVEN: ApplicationManager without session callback
-    ApplicationManager& appManager = ApplicationManager::instance();
+    ApplicationManager appManager;
     // Explicitly ensure no callback is registered for current interface
     appManager.RegisterCallback(APP_TYPE_HBBTV, nullptr);
 
@@ -332,10 +288,10 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithoutSessionCallback)
 TEST_F(ApplicationManagerTest, TestCreateAndRunAppReplacesExistingApp)
 {
     // GIVEN: ApplicationManager with session callback registered
-    ApplicationManager& appManager = ApplicationManager::instance();
+    ApplicationManager appManager;
     appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
 
-    // First app
+    // WHEN: CreateAndRunApp is called with first URL
     std::string firstUrl = "http://first.com/app.html";
 
     EXPECT_CALL(*mockCallback, LoadApplication(testing::_, testing::_, testing::_, testing::_))
@@ -344,24 +300,31 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppReplacesExistingApp)
         .Times(2);
 
     int firstAppId = appManager.CreateAndRunApp(firstUrl, false);
-    EXPECT_GT(firstAppId, 0);
+    EXPECT_GT(firstAppId, BaseApp::INVALID_APP_ID);
 
-    // Second app (replacement)
+    // THEN: first app is running and is the only app with that ID
+    auto runningApps = appManager.GetRunningAppIds();
+    EXPECT_TRUE(runningApps.size() == 1);
+    EXPECT_EQ(runningApps[0], firstAppId);
+
+    // AND WHEN: CreateAndRunApp is called with second URL
     std::string secondUrl = "http://second.com/app.html";
     int secondAppId = appManager.CreateAndRunApp(secondUrl, false);
 
-    // THEN: Both should return valid app IDs
-    EXPECT_GT(secondAppId, 0);
+    // THEN: valid next ID is returned and different from first app ID
+    EXPECT_GT(secondAppId, firstAppId);
 
-    // App should appear in running apps list
-    std::vector<int> runningApps = appManager.GetRunningAppIds();
-    EXPECT_FALSE(runningApps.empty());
+    // AND: appears in running apps list
+    runningApps = appManager.GetRunningAppIds();
+    EXPECT_TRUE(runningApps.size() == 1);
+    EXPECT_EQ(runningApps[0], secondAppId);
 }
+
 
 TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithHTTPSUrl)
 {
     // GIVEN: ApplicationManager with session callback registered
-    ApplicationManager& appManager = ApplicationManager::instance();
+    ApplicationManager appManager;
     appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
 
     std::string httpsUrl = "https://secure.example.com/myapp.html";
@@ -376,63 +339,13 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithHTTPSUrl)
     int appId = appManager.CreateAndRunApp(httpsUrl, false);
 
     // THEN: Should return valid app ID
-    EXPECT_GT(appId, 0);
+    EXPECT_GT(appId, BaseApp::INVALID_APP_ID);
 }
 
-TEST_F(ApplicationManagerTest, DISABLED_TestCreateAndRunAppParameterValidation)
-{
-    // GIVEN: ApplicationManager with session callback registered
-    ApplicationManager& appManager = ApplicationManager::instance();
-    appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
-
-    // Test various URLs and parameters
-    struct TestCase {
-        std::string url;
-        bool runAsOpApp;
-        bool shouldSucceed;
-    } testCases[] = {
-        {"http://example.com/app.html", false, true},
-        {"https://example.com/app.html", true, true},
-        {"", false, false},
-        {"http://example.com/app.html", true, true}
-    };
-
-    for (const auto& testCase : testCases) {
-        if (testCase.url.empty()) {
-            // For empty URL, expect no callbacks
-            EXPECT_CALL(*mockCallback, LoadApplication(testing::_, testing::_))
-                .Times(0);
-            EXPECT_CALL(*mockCallback, LoadApplication(testing::_, testing::_, testing::_, testing::_))
-                .Times(0);
-        } else {
-            // For valid URL, expect callbacks based on app type
-            if (testCase.runAsOpApp) {
-                // OpApp uses 2-parameter LoadApplication
-                EXPECT_CALL(*mockCallback, LoadApplication(testing::_, testing::_))
-                    .Times(1);
-            } else {
-                // HbbTV app uses 4-parameter LoadApplication
-                EXPECT_CALL(*mockCallback, LoadApplication(testing::_, testing::_, testing::_, testing::_))
-                    .Times(1);
-            }
-            EXPECT_CALL(*mockCallback, ShowApplication(testing::_))
-                .Times(1);
-        }
-
-        int appId = appManager.CreateAndRunApp(testCase.url, testCase.runAsOpApp);
-
-        if (testCase.shouldSucceed) {
-            EXPECT_GT(appId, 0) << "Failed for URL: " << testCase.url;
-        } else {
-            EXPECT_EQ(appId, BaseApp::INVALID_APP_ID) << "Should have failed for URL: " << testCase.url;
-        }
-    }
-}
-
-TEST_F(ApplicationManagerTest, TestCreateAndRunAppAppLifecycle)
+TEST_F(ApplicationManagerTest, TestUrlRetrieval)
 {
     // GIVEN: ApplicationManager with session callback
-    ApplicationManager& appManager = ApplicationManager::instance();
+    ApplicationManager appManager;
     appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
 
     std::string testUrl = "http://example.com/lifecycle_test.html";
@@ -446,21 +359,17 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppAppLifecycle)
     // WHEN: App is created
     int appId = appManager.CreateAndRunApp(testUrl, false);
 
-    // THEN: App should be running and trackable
-    EXPECT_GT(appId, 0);
-
-    std::vector<int> runningApps = appManager.GetRunningAppIds();
-    EXPECT_FALSE(runningApps.empty());
 
     // App URL should be retrievable
     std::string retrievedUrl = appManager.GetApplicationUrl(appId);
     // Note: May be empty or different based on implementation
+    EXPECT_EQ(retrievedUrl, testUrl);
 }
 
 TEST_F(ApplicationManagerTest, TestCreateAndRunAppDefaultParameters)
 {
     // GIVEN: ApplicationManager with session callback registered
-    ApplicationManager& appManager = ApplicationManager::instance();
+    ApplicationManager appManager;
     appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
 
     std::string testUrl = "http://example.com/default_test.html";
@@ -475,11 +384,11 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppDefaultParameters)
     int appId = appManager.CreateAndRunApp(testUrl);
 
     // THEN: Should return valid app ID
-    EXPECT_GT(appId, 0);
+    EXPECT_GT(appId, BaseApp::INVALID_APP_ID);
 
     // Verify it runs as HbbTV app by default
     std::string scheme = appManager.GetApplicationScheme(appId);
-    // Implementation-specific verification
+    EXPECT_EQ(scheme, "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.1");
 }
 
 } // namespace orb
