@@ -112,13 +112,7 @@ OpAppPackageManager::OpAppPackageManager(
 OpAppPackageManager::~OpAppPackageManager()
 {
   // Ensure the worker thread is stopped before destruction
-  std::lock_guard<std::mutex> lock(m_Mutex);
-  if (m_IsRunning) {
-    m_IsRunning = false;
-    if (m_WorkerThread.joinable()) {
-      m_WorkerThread.join();
-    }
-  }
+  stop();
 }
 
 // Singleton instance management
@@ -199,6 +193,17 @@ void OpAppPackageManager::start()
       checkForUpdates();
       m_IsRunning = false;
     });
+}
+
+void OpAppPackageManager::stop()
+{
+  std::lock_guard<std::mutex> lock(m_Mutex);
+  if (m_IsRunning) {
+    m_IsRunning = false;
+  }
+  if (m_WorkerThread.joinable()) {
+    m_WorkerThread.join();
+  }
 }
 
 bool OpAppPackageManager::isRunning() const

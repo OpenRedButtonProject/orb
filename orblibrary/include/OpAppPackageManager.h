@@ -104,6 +104,7 @@ public:
   OpAppPackageManager& operator=(OpAppPackageManager&&) = delete;
 
   void start();
+  void stop();
   bool isRunning() const;
   bool isUpdating() const;
   bool isPackageInstalled(const std::string& packagePath);
