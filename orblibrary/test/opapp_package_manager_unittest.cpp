@@ -184,6 +184,10 @@ TEST_F(OpAppPackageManagerTest, TestDestroyInstance)
   configuration.m_PackageLocation = PACKAGE_PATH;
   OpAppPackageManager& instance1 = OpAppPackageManager::getInstance(configuration);
 
+  // Verify initial state
+  EXPECT_FALSE(instance1.isRunning());
+  EXPECT_FALSE(instance1.isUpdating());
+
   // WHEN: destroying the instance
   OpAppPackageManager::destroyInstance();
 
@@ -197,9 +201,8 @@ TEST_F(OpAppPackageManagerTest, TestDestroyInstance)
   // Create new instance with configuration
   OpAppPackageManager& instance2 = OpAppPackageManager::getInstance(configuration);
 
-  // Both instances should be valid and accessible
-  EXPECT_FALSE(instance1.isRunning());
-  EXPECT_FALSE(instance1.isUpdating());
+  // Only the new instance should be valid and accessible
+  // Note: instance1 is no longer valid after destroyInstance() was called
   EXPECT_FALSE(instance2.isRunning());
   EXPECT_FALSE(instance2.isUpdating());
 
@@ -253,8 +256,7 @@ TEST_F(OpAppPackageManagerTest, TestConfigurationInitialization)
   EXPECT_FALSE(packageManager.isUpdating());
 }
 
-// Broken test, disabled for now
-TEST_F(OpAppPackageManagerTest, DISABLED_TestStartAndStop)
+TEST_F(OpAppPackageManagerTest, TestStartAndStop)
 {
   // GIVEN: a singleton OpAppPackageManager instance
   // and no package file in the package source location
@@ -279,6 +281,9 @@ TEST_F(OpAppPackageManagerTest, DISABLED_TestStartAndStop)
 
   // THEN: the package manager should be stopped
   EXPECT_FALSE(packageManager.isRunning());
+
+  // Ensure proper cleanup by waiting for thread completion
+  packageManager.stop();
 }
 
 TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_NoUpdates)
@@ -997,6 +1002,9 @@ TEST(OpAppPackageManagerStandalone, TestDestroyInstanceStandalone)
   auto opappPackageManager = OpAppPackageManager::getInstance();
   EXPECT_EQ(&testInterface->getPackageManager(), opappPackageManager);
 
+  EXPECT_FALSE(testInterface->isRunning());
+  EXPECT_FALSE(testInterface->isUpdating());
+
   // WHEN: destroying the instance
   OpAppPackageManager::destroyInstance();
 
@@ -1009,8 +1017,6 @@ TEST(OpAppPackageManagerStandalone, TestDestroyInstanceStandalone)
   auto testInterface3 = OpAppPackageManagerTestInterface::create(configuration);
 
   // Verify that both instances are valid and accessible
-  EXPECT_FALSE(testInterface->isRunning());
-  EXPECT_FALSE(testInterface->isUpdating());
   EXPECT_FALSE(testInterface3->isRunning());
   EXPECT_FALSE(testInterface3->isUpdating());
 

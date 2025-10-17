@@ -287,7 +287,7 @@ executable("test_orb_all") {
   deps = [
     "//testing/gtest:gtest_main",
     ":test_orb_moderator_sources",
-    # ":test_opapp_package_manager_sources", # FREE-302 Disabled due to failing tests in Release builds
+    ":test_opapp_package_manager_sources",
     ":test_orb_video_window_sources",
     ":test_orb_util_sources",
     ":test_orb_jsonrpcservice_sources",
