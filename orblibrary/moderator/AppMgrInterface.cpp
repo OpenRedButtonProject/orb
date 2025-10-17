@@ -92,7 +92,7 @@ string AppMgrInterface::executeRequest(const string& method, const string& token
         }
         else
         {
-          LOGI("app type: " << mAppType << " new AppID" << newAppId);
+          LOGI("app type: [" << mAppType << "] new AppID [" << newAppId << "]");
           response = buildJsonResponse(newAppId);
         }
     }
