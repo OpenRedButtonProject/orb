@@ -66,7 +66,7 @@ string AppMgrInterface::executeRequest(const string& method, const string& token
     int appId = params.getInteger("id");
 
     LOGI("Request with method [" + method + "] received");
-    if (method == Manager::MANAGER_CREATE_APP)
+    if (method == MANAGER_CREATE_APP)
     {
         int newAppId = appMgr.CreateApplication(
           appId, params.getString("url"), params.getBool("runAsOpApp"));
