@@ -53,21 +53,26 @@ const std::string NETWORK_STATUS = "NetworkStatus";
 
 static constexpr std::string APPLICATION_TYPE_HBBTV = "HBBTV";
 static constexpr std::string APPLICATION_TYPE_OPAPP = "OPAPP";
-static constexpr std::string APPLICATION_TYPE_VIDEO = "VIDEO";
 
-// static std::string ApplicationTypeToString(orb::ApplicationType type) {
-//   switch (type) {
-//     case orb::ApplicationType::APP_TYPE_HBBTV:
-//       return APPLICATION_TYPE_HBBTV;
-//     case orb::ApplicationType::APP_TYPE_OPAPP:
-//       return APPLICATION_TYPE_OPAPP;
-//     case orb::ApplicationType::APP_TYPE_VIDEO:
-//       return APPLICATION_TYPE_VIDEO;
-//     default:
-//       return "UNKNOWN";
-//   }
-// }
+namespace Manager {
+// Javascript ApplicationManager API methods
+const std::string MANAGER_CREATE_APP = "createApplication";
+const std::string MANAGER_DESTROY_APP = "destroyApplication";
+const std::string MANAGER_SHOW_APP = "showApplication";
+const std::string MANAGER_HIDE_APP = "hideApplication";
+const std::string MANAGER_GET_APP_IDS = "getRunningAppIds";
+const std::string MANAGER_GET_APP_URL = "getApplicationUrl";
+const std::string MANAGER_GET_APP_SCHEME = "getApplicationScheme";
+const std::string MANAGER_GET_FREE_MEM = "getFreeMem";
+const std::string MANAGER_GET_KEY_VALUES = "getKeyValues";
+const std::string MANAGER_GET_OKEY_VALUES = "getOtherKeyValues";
+const std::string MANAGER_GET_KEY_MAX_VAL = "getKeyMaximumValue";
+const std::string MANAGER_GET_MAX_OKEYS = "getKeyMaximumOtherKeys";
+const std::string MANAGER_SET_KEY_VALUE = "setKeyValue";
+const std::string MANAGER_GET_KEY_ICON = "getKeyIcon";
 
-}
+} // namespace Manager
+
+} // namespace orb
 
 #endif  /* ORB_CONSTANTS_H */
