@@ -38,7 +38,9 @@ OpApp::OpApp(ApplicationSessionCallback *sessionCallback)
 
 void OpApp::init()
 {
-    m_state = BaseApp::BACKGROUND_STATE; // ETSI TS 103 606 V1.2.1 (2024-03) page 36
+    // FREE-273: start in foreground state so we can see the loading screen. Fix in FREE-275
+    m_state = BaseApp::FOREGROUND_STATE;
+    // m_state = BaseApp::BACKGROUND_STATE; // ETSI TS 103 606 V1.2.1 (2024-03) page 36
     m_scheme = "opapp"; // FREE-273 Temporary scheme for OpApp
 }
 
