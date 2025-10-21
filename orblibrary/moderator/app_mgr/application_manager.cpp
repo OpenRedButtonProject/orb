@@ -82,10 +82,14 @@ int ApplicationManager::CreateApplication(int callingAppId, const std::string &u
 
     ApplicationSessionCallback* callback = nullptr;
 
+    auto callingApp = getAppById(callingAppId);
+
     if (runAsOpApp) {
-        // Check for existing OpApp
-        if (m_opApp != nullptr) {
-            LOG(ERROR) << "OpApp already running, early out";
+        /* No support for multiple opapp installations*/
+        /* Check if calling app is an opapp or if an opapp is already running */
+        if(callingApp || m_opApp)
+        {
+            LOG(ERROR) << "Called with runAsOpApp=true from other app or an opapp is already running, early out";
             return BaseApp::INVALID_APP_ID;
         }
 
@@ -95,17 +99,10 @@ int ApplicationManager::CreateApplication(int callingAppId, const std::string &u
             return BaseApp::INVALID_APP_ID;
         }
     }
-    else {
-        BaseApp* callingApp = getAppById(callingAppId);
+    else /** HbbTV app */ {
         if (callingApp == nullptr)
         {
             LOG(INFO) << "Called by non-running app, early out";
-            return BaseApp::INVALID_APP_ID;
-        }
-
-        if (runAsOpApp && callingApp && callingApp->GetType() != APP_TYPE_OPAPP)
-        {
-            LOG(INFO) << "Called with runAsOpApp=true from a non-opapp, early out";
             return BaseApp::INVALID_APP_ID;
         }
 
@@ -115,7 +112,6 @@ int ApplicationManager::CreateApplication(int callingAppId, const std::string &u
             return BaseApp::INVALID_APP_ID;
         }
     }
-
 
     if (url.empty())
     {
