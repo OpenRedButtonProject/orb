@@ -29,21 +29,7 @@ using namespace std;
 
 namespace orb
 {
-
-const string MANAGER_CREATE_APP = "createApplication";
-const string MANAGER_DESTROY_APP = "destroyApplication";
-const string MANAGER_SHOW_APP = "showApplication";
-const string MANAGER_HIDE_APP = "hideApplication";
-const string MANAGER_GET_APP_IDS = "getRunningAppIds";
-const string MANAGER_GET_APP_URL = "getApplicationUrl";
-const string MANAGER_GET_APP_SCHEME = "getApplicationScheme";
-const string MANAGER_GET_FREE_MEM = "getFreeMem";
-const string MANAGER_GET_KEY_VALUES = "getKeyValues";
-const string MANAGER_GET_OKEY_VALUES = "getOtherKeyValues";
-const string MANAGER_GET_KEY_MAX_VAL = "getKeyMaximumValue";
-const string MANAGER_GET_MAX_OKEYS = "getKeyMaximumOtherKeys";
-const string MANAGER_SET_KEY_VALUE = "setKeyValue";
-const string MANAGER_GET_KEY_ICON = "getKeyIcon";
+using namespace Manager;
 
 const int KEY_OTHERS_MAX = 0x416; // temporary value based on v1.0
 
@@ -92,7 +78,7 @@ string AppMgrInterface::executeRequest(const string& method, const string& token
         }
         else
         {
-          LOGI("app type: " << mAppType << " new AppID" << newAppId);
+          LOGI("app type: [" << mAppType << "] new AppID [" << newAppId << "]");
           response = buildJsonResponse(newAppId);
         }
     }

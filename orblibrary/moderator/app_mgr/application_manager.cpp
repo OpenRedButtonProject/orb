@@ -79,23 +79,38 @@ int ApplicationManager::CreateApplication(int callingAppId, const std::string &u
     int result = BaseApp::INVALID_APP_ID;
 
     LOG(INFO) << "CreateApplication";
-    BaseApp* callingApp = getAppById(callingAppId);
-    if (callingApp == nullptr)
-    {
-        LOG(INFO) << "Called by non-running app, early out";
-        return BaseApp::INVALID_APP_ID;
-    }
 
-    if (runAsOpApp && callingApp && callingApp->GetType() != APP_TYPE_OPAPP)
-    {
-        LOG(INFO) << "Called with runAsOpApp=true from a non-opapp, early out";
-        return BaseApp::INVALID_APP_ID;
-    }
+    ApplicationSessionCallback* callback = nullptr;
 
-    auto callback = m_sessionCallback[callingApp->GetType()];
-    if (callback == nullptr) {
-        LOG(ERROR) << "Session callback is NULL";
-        return BaseApp::INVALID_APP_ID;
+    auto callingApp = getAppById(callingAppId);
+
+    if (runAsOpApp) {
+        /* No support for multiple opapp installations*/
+        /* Check if calling app is an opapp or if an opapp is already running */
+        if(callingApp || m_opApp)
+        {
+            LOG(ERROR) << "Called with runAsOpApp=true from other app or an opapp is already running, early out";
+            return BaseApp::INVALID_APP_ID;
+        }
+
+        callback = m_sessionCallback[APP_TYPE_OPAPP];
+        if (callback == nullptr) {
+            LOG(ERROR) << "OpApp session callback is NULL";
+            return BaseApp::INVALID_APP_ID;
+        }
+    }
+    else /** HbbTV app */ {
+        if (callingApp == nullptr)
+        {
+            LOG(INFO) << "Called by non-running app, early out";
+            return BaseApp::INVALID_APP_ID;
+        }
+
+        callback = m_sessionCallback[callingApp->GetType()];
+        if (callback == nullptr) {
+            LOG(ERROR) << "Session callback is NULL";
+            return BaseApp::INVALID_APP_ID;
+        }
     }
 
     if (url.empty())

@@ -218,6 +218,10 @@ bool OpAppPackageManager::isUpdating() const
 
 void OpAppPackageManager::checkForUpdates()
 {
+  // In the future this would do a remote check. Check spec for how to do this.
+  // For now, we are supporting local package file checking only, e.g. sdcard, etc.
+
+  // Checks for local package file and compares hash to installed package hash?
   m_PackageStatus = doPackageFileCheck();
 
   if (m_PackageStatus != PackageStatus::UpdateAvailable) {
@@ -259,6 +263,21 @@ void OpAppPackageManager::checkForUpdates()
   // Keep the worker thread running by adding a small delay
   // This prevents the thread from exiting immediately
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
+}
+
+OpAppPackageManager::OpAppUpdateStatus OpAppPackageManager::getOpAppUpdateStatus() const {
+  // TODO Implement this. Hardcoded to allow opapp to start:
+  return m_UpdateStatus.load();
+}
+
+std::string OpAppPackageManager::getOpAppUrl() const
+{
+  // TODO: Construct the URL of the opapp. See Section 9.4.1
+
+  // This should return the URL of the currently installed OpApp, otherwise empty string
+  // This is used to update the OpApp URL in the OpApp manager.
+  // Set to localhost for testing.
+  return "http://10.0.2.2:8080/index.html";
 }
 
 OpAppPackageManager::PackageStatus OpAppPackageManager::doPackageFileCheck()

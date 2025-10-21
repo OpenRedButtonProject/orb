@@ -13,6 +13,7 @@
 struct PackageOperationResult {
   bool success;
   std::string errorMessage;
+  int statusCode; // See TS 103 606 V1.2.1 (2024-03) A.2.2.1
   std::vector<std::string> packageFiles;
 
   PackageOperationResult() : success(true) {}
@@ -38,6 +39,21 @@ public:
 class OpAppPackageManager
 {
 public:
+
+  // See TS 103 606 V1.2.1 (2024-03) A.2.2.1
+  // Note "There is no event for a successful update as the operator application will be restarted at that point."
+  enum class OpAppUpdateStatus {
+    NONE,
+    SOFTWARE_DISCOVERING,
+    SOFTWARE_DISCOVERY_FAILED,
+    SOFTWARE_CURRENT,
+    SOFTWARE_DOWNLOADING,
+    SOFTWARE_DOWNLOAD_FAILED,
+    SOFTWARE_DOWNLOADED,
+    SOFTWARE_UNPACKING,
+    SOFTWARE_INSTALLATION_FAILED,
+    INVALID_STATE
+  };
 
   enum class PackageStatus {
     None,
@@ -109,6 +125,11 @@ public:
   bool isUpdating() const;
   bool isPackageInstalled(const std::string& packagePath);
   void checkForUpdates();
+
+  OpAppUpdateStatus getOpAppUpdateStatus() const;
+
+  /* Returns the URL of the currently installed OpApp, otherwise empty string */
+  std::string getOpAppUrl() const;
 
   // Public method for calculating SHA256 hash (useful for testing and external use)
   std::string calculateFileSHA256Hash(const std::string& filePath) const;
@@ -208,7 +229,8 @@ private:
   // PackageInfo getPackageInfo();
 
   std::atomic<bool> m_IsRunning;
-  std::atomic<bool> m_IsUpdating;
+  std::atomic<bool> m_IsUpdating; // TODO replace with OpAppUpdateStatus
+  std::atomic<OpAppUpdateStatus> m_UpdateStatus = OpAppUpdateStatus::NONE;
   std::mutex m_Mutex;
 
   std::thread m_WorkerThread;

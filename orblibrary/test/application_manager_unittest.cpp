@@ -285,8 +285,9 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithValidOpAppUrl)
         .Times(1);
 
     // This seems odd. OpApp starts in background state...
-    EXPECT_CALL(*mockCallback, HideApplication(testing::_))
-        .Times(1);
+    // FREE-273: start in foreground state so we can see the loading screen. Fix in FREE-275
+    // EXPECT_CALL(*mockCallback, HideApplication(testing::_))
+    //     .Times(1);
 
     // WHEN: CreateAndRunApp is called with OpApp URL (runAsOpApp=true)
     int appId = appManager.CreateAndRunApp(testUrl, true);
