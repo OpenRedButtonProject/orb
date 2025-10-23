@@ -26,6 +26,12 @@ namespace orb
 
         // Get the endpoint and port from the capabilities
         Json::Value result = capabilities["result"];
+
+        if (!result.isObject() || result.empty()) {
+            LOGE("JSON RPC response did not return a valid object: [" << orb::JsonUtil::convertJsonToString(result) << "]");
+            return nullptr;
+        }
+
         const std::string SERVER_ENDPOINT_KEY = "jsonRpcServerEndpoint";
         const std::string SERVER_PORT_KEY = "jsonRpcServerPort";
 
