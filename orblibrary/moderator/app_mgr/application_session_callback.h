@@ -78,6 +78,16 @@ public:
     virtual void DispatchApplicationLoadErrorEvent() = 0;
 
     /**
+     *  Tell the bridge to dispatch ApplicationLoaded to the loaded application.
+     */
+    virtual void DispatchApplicationLoadedEvent(const int appId) = 0;
+
+    /**
+     *  Tell the bridge to dispatch ApplicationUnloaded to the loaded application.
+     */
+    virtual void DispatchApplicationUnloadedEvent(const int appId) = 0;
+
+    /**
      *  Tell the bridge to dispatch TransitionedToBroadcastRelated to the loaded application.
      */
     virtual void DispatchTransitionedToBroadcastRelatedEvent(const int appId) = 0;

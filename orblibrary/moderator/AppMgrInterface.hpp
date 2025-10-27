@@ -95,6 +95,8 @@ public:
     void StopBroadcast() override;
     void ResetBroadcastPresentation() override;
     void DispatchApplicationLoadErrorEvent() override;
+    void DispatchApplicationLoadedEvent(const int appId) override;
+    void DispatchApplicationUnloadedEvent(const int appId) override;
     void DispatchTransitionedToBroadcastRelatedEvent(const int appId) override;
     std::string GetXmlAitContents(const std::string &url) override;
     int GetParentalControlAge() override;

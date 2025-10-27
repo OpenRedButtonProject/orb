@@ -71,16 +71,8 @@ string AppMgrInterface::executeRequest(const string& method, const string& token
         int newAppId = appMgr.CreateApplication(
           appId, params.getString("url"), params.getBool("runAsOpApp"));
 
-        if (newAppId == BaseApp::INVALID_APP_ID)
-        {
-          LOGE("Failed to create application with ID " << appId);
-          response = buildJsonResponse("Failed to create application with ID " + std::to_string(appId));
-        }
-        else
-        {
-          LOGI("app type: [" << mAppType << "] new AppID [" << newAppId << "]");
-          response = buildJsonResponse(newAppId);
-        }
+        LOGI("app type: " << mAppType << " new AppID" << newAppId);
+        response = buildJsonResponse(newAppId);
     }
     else if (method == MANAGER_DESTROY_APP)
     {
@@ -218,6 +210,16 @@ void AppMgrInterface::ResetBroadcastPresentation() {
 
 void AppMgrInterface::DispatchApplicationLoadErrorEvent() {
     mOrbBrowser->dispatchEvent("ApplicationLoadError", "{}");
+}
+
+void AppMgrInterface::DispatchApplicationLoadedEvent(const int appId) {
+    LOGI("DispatchApplicationLoadedEvent appID: " << appId);
+    mOrbBrowser->dispatchEvent("ApplicationLoaded", buildJsonResponse("{id: " + std::to_string(appId) + "}"));
+}
+
+void AppMgrInterface::DispatchApplicationUnloadedEvent(const int appId) {
+    LOGI("DispatchApplicationUnloadedEvent appID: " << appId);
+    mOrbBrowser->dispatchEvent("ApplicationUnloaded", buildJsonResponse("{id: " + std::to_string(appId) + "}"));
 }
 
 void AppMgrInterface::DispatchTransitionedToBroadcastRelatedEvent(const int appId) {
