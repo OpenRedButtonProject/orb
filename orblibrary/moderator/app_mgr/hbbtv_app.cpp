@@ -91,8 +91,22 @@ HbbTVApp::HbbTVApp(const Utils::S_DVB_TRIPLET currentService,
         m_isBroadcast(isBroadcast),
         m_versionMinor(INT8_MAX)
 {
-    // Broadcast-related applications need to call show.
-    m_state = isBroadcast ? BaseApp::BACKGROUND_STATE : BaseApp::FOREGROUND_STATE;
+    m_state = m_isBroadcast ? BaseApp::BACKGROUND_STATE : BaseApp::FOREGROUND_STATE;
+}
+
+int HbbTVApp::Load() {
+    // Load the HbbTV application with graphics constraints
+    m_sessionCallback->LoadApplication(
+        GetId(),
+        GetEntryUrl().c_str(),
+        GetAitDescription().graphicsConstraints.size(),
+        GetAitDescription().graphicsConstraints,
+        [this](bool success) {
+            (void)success;
+            SetState(m_state); // Trigger state change event
+        });
+
+    return GetId();
 }
 
 void HbbTVApp::SetUrl(const Ait::S_AIT_APP_DESC &desc,

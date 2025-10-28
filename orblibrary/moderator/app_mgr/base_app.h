@@ -61,6 +61,9 @@ public:
 
     E_APP_STATE GetState() const;
 
+    /* Load the application and return its ID */
+    virtual int Load() = 0;
+
     /**
      * Set the application state.
      *

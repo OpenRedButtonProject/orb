@@ -38,32 +38,44 @@ OpApp::OpApp(ApplicationSessionCallback *sessionCallback)
 
 void OpApp::init()
 {
-    // FREE-273: start in foreground state so we can see the loading screen. Fix in FREE-275
-    m_state = BaseApp::FOREGROUND_STATE;
-    // m_state = BaseApp::BACKGROUND_STATE; // ETSI TS 103 606 V1.2.1 (2024-03) page 36
+    m_state = BaseApp::BACKGROUND_STATE;
     m_scheme = "opapp"; // FREE-273 Temporary scheme for OpApp
+}
+
+int OpApp::Load() {
+    m_sessionCallback->LoadApplication(
+        GetId(), GetLoadedUrl().c_str(), [this](bool success) {
+            if (success) {
+                LOG(INFO) << "Application loaded successfully";
+                SetState(m_state);
+            } else {
+                LOG(ERROR) << "Application failed to load";
+                SetState(BaseApp::BACKGROUND_STATE);
+            }
+        });
+
+    // At this point the application is not visible so SetState doesn't work.
+    return GetId();
 }
 
 bool OpApp::SetState(const E_APP_STATE &state)
 {
     if (CanTransitionToState(state))
     {
-        if (state != m_state)
-        {
-            LOG(INFO) << "AppId " << GetId() << "; state transition: " << GetState() << " -> " << state;
-            std::string previous = opAppStateToString(m_state);
-            std::string next = opAppStateToString(state);
-            m_state = state;
-            m_sessionCallback->DispatchOperatorApplicationStateChange(GetId(), previous, next);
+        int id = GetId();
+        LOG(INFO) << "AppId " << id << "; state transition: " << m_state << " -> " << state;
+        std::string previous = opAppStateToString(m_state);
+        std::string next = opAppStateToString(state);
+        m_state = state;
+        m_sessionCallback->DispatchOperatorApplicationStateChange(id, previous, next);
 
-            if (state == BaseApp::BACKGROUND_STATE)
-            {
-                m_sessionCallback->HideApplication(GetId());
-            }
-            else
-            {
-                m_sessionCallback->ShowApplication(GetId());
-            }
+        if (state == BaseApp::BACKGROUND_STATE)
+        {
+            m_sessionCallback->HideApplication(id);
+        }
+        else // Need to support other states
+        {
+            m_sessionCallback->ShowApplication(id);
         }
 
         if (state == BaseApp::TRANSIENT_STATE || state == BaseApp::OVERLAID_TRANSIENT_STATE)

@@ -65,6 +65,8 @@ public:
 
     bool SetState(const E_APP_STATE &state) override;
 
+    int Load() override;
+
     /**
      * Updates the app's state. Meant to be called by the ApplicationManager
      * when it receives a new AIT table or when the network availability is
@@ -97,6 +99,8 @@ public:
     uint8_t GetVersionMinor() const { return m_versionMinor; }
 
     Ait::S_AIT_APP_DESC GetAitDescription() const { return m_aitDesc; }
+
+    // FREE-273 Move keyset methods to base app
 
     /**
      * Get the key set mask for an application.
