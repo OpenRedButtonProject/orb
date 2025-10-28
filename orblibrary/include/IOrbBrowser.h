@@ -18,9 +18,12 @@
 #include <vector>
 #include <cstdint>
 #include <string>
+#include <functional>
 
 namespace orb
 {
+
+using onAppLoadedCallback = std::function<void(bool success)>;
 
 class IOrbBrowser
 {
@@ -29,7 +32,7 @@ public:
     virtual ~IOrbBrowser() {}
 
     // Load new application at URL with new app_id for a reference to this application
-    virtual void loadApplication(std::string app_id, std::string url) = 0;
+    virtual void loadApplication(std::string app_id, std::string url, onAppLoadedCallback callback = nullptr) = 0;
 
     // Show application
     virtual void showApplication() = 0;
