@@ -31,7 +31,8 @@ public:
     IOrbBrowser() {}
     virtual ~IOrbBrowser() {}
 
-    // Load new application at URL with new app_id for a reference to this application
+    // Load new application at URL with new app_id for a reference to this application.
+    // The callback is called when the application is loaded and ready to use.
     virtual void loadApplication(std::string app_id, std::string url, onAppLoadedCallback callback = nullptr) = 0;
 
     // Show application

@@ -38,7 +38,7 @@ OpApp::OpApp(ApplicationSessionCallback *sessionCallback)
 
 void OpApp::init()
 {
-    m_state = BaseApp::BACKGROUND_STATE;
+    m_state = BaseApp::BACKGROUND_STATE; // ETSI TS 103 606 V1.2.1 (2024-03) page 36
     m_scheme = "opapp"; // FREE-273 Temporary scheme for OpApp
 }
 
@@ -46,11 +46,10 @@ int OpApp::Load() {
     m_sessionCallback->LoadApplication(
         GetId(), GetLoadedUrl().c_str(), [this](bool success) {
             if (success) {
-                LOG(INFO) << "Application loaded successfully";
+                LOG(INFO) << "OpApp loaded successfully";
                 SetState(m_state);
             } else {
-                LOG(ERROR) << "Application failed to load";
-                SetState(BaseApp::BACKGROUND_STATE);
+                LOG(ERROR) << "Failed to load OpApp";
             }
         });
 

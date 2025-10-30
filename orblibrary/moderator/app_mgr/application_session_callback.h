@@ -37,6 +37,7 @@ public:
      *
      * @param appId The application ID.
      * @param entryUrl The entry page URL.
+     * @param callback The callback to call when the application is loaded and ready to use.
      */
     virtual void LoadApplication(
         const int appId,
@@ -51,6 +52,7 @@ public:
      * @param entryUrl The entry page URL.
      * @param size The number of the co-ordinate graphics
      * @param graphics The list of the co-ordinate graphics supported by the application
+     * @param callback The callback to call when the application is loaded and ready to use.
      */
     virtual void LoadApplication(
         const int appId,

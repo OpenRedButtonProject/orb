@@ -102,8 +102,11 @@ int HbbTVApp::Load() {
         GetAitDescription().graphicsConstraints.size(),
         GetAitDescription().graphicsConstraints,
         [this](bool success) {
-            (void)success;
-            SetState(m_state); // Trigger state change event
+            if (success) {
+                SetState(m_state); // Trigger state change event
+            } else {
+                LOG(ERROR) << "Failed to load HbbTV application";
+            }
         });
 
     return GetId();
