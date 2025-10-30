@@ -924,7 +924,9 @@ int ApplicationManager::runHbbTVApp(std::unique_ptr<HbbTVApp> app)
         m_previousService = m_currentService = Utils::MakeInvalidDvbTriplet();
     }
 
-    // Hide OpApp
+    // Hide OpApp.
+    // A better solution would be to use the callback to hide the opapp
+    // on a successful regular app load.
     if (m_opApp) {
         m_opApp->SetState(BaseApp::BACKGROUND_STATE);
     }
