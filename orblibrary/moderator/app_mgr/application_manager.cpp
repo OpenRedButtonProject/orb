@@ -106,6 +106,7 @@ int ApplicationManager::CreateApplication(int callingAppId, const std::string &u
             return BaseApp::INVALID_APP_ID;
         }
 
+        // Calling app can be either HbbTV or OpApp
         callback = m_sessionCallback[callingApp->GetType()];
         if (callback == nullptr) {
             LOG(ERROR) << "Session callback is NULL";
@@ -384,7 +385,7 @@ bool ApplicationManager::InKeySet(int appId, uint16_t keyCode)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
-    // Key masks only apply to HbbTV apps
+    // Key masks only apply to HbbTV apps - Oops: not true! Section E.2.1.28 TS 103 606 V1.2.1 (2024-03)
     if (m_hbbtvApp && m_hbbtvApp->GetId() == appId) {
         return m_hbbtvApp->InKeySet(keyCode);
     }
@@ -898,31 +899,8 @@ int ApplicationManager::runOpApp(std::unique_ptr<OpApp> app)
 
     // Clear existing OpApp
     m_opApp.reset();
-
-    // Extract callback to avoid repeated checks
-    auto callback = m_sessionCallback[APP_TYPE_OPAPP];
-    if (callback == nullptr) {
-        LOG(ERROR) << "OpApp session callback is NULL";
-        return BaseApp::INVALID_APP_ID;
-    }
-
     m_opApp = std::move(app);
-
-    int id = m_opApp->GetId();
-    callback->LoadApplication(id, m_opApp->GetLoadedUrl().c_str());
-
-    if (m_opApp->GetState() == BaseApp::BACKGROUND_STATE)
-    {
-        LOG(INFO) << "HideApplication: Type " << APP_TYPE_OPAPP << " AppId [" << id << "]";
-        callback->HideApplication(id);
-    }
-    else
-    {
-        LOG(INFO) << "ShowApplication: Type " << APP_TYPE_OPAPP << " AppId [" << id << "]";
-        callback->ShowApplication(id);
-    }
-
-    return m_opApp->GetId();
+    return m_opApp->Load();
 }
 
 int ApplicationManager::runHbbTVApp(std::unique_ptr<HbbTVApp> app)
@@ -946,29 +924,17 @@ int ApplicationManager::runHbbTVApp(std::unique_ptr<HbbTVApp> app)
         m_previousService = m_currentService = Utils::MakeInvalidDvbTriplet();
     }
 
+    // Hide OpApp.
+    // A better solution would be to use the callback to hide the opapp
+    // on a successful regular app load.
+    if (m_opApp) {
+        m_opApp->SetState(BaseApp::BACKGROUND_STATE);
+    }
+
     // Store the HbbTV app
     m_hbbtvApp = std::move(app);
 
-    int id = m_hbbtvApp->GetId();
-    // Load the HbbTV application with graphics constraints
-    callback->LoadApplication(
-        id,
-        m_hbbtvApp->GetEntryUrl().c_str(),
-        m_hbbtvApp->GetAitDescription().graphicsConstraints.size(),
-        m_hbbtvApp->GetAitDescription().graphicsConstraints);
-
-    if (m_hbbtvApp->GetState() == BaseApp::BACKGROUND_STATE)
-    {
-        LOG(INFO) << "HideApplication: Type " << APP_TYPE_HBBTV << " AppId [" << id << "]";
-        callback->HideApplication(id);
-    }
-    else
-    {
-        LOG(INFO) << "ShowApplication: Type " << APP_TYPE_HBBTV << " AppId [" << id << "]";
-        callback->ShowApplication(id);
-    }
-
-    return m_hbbtvApp->GetId();
+    return m_hbbtvApp->Load();
 }
 
 bool ApplicationManager::updateRunningApp(const Ait::S_AIT_APP_DESC &desc)

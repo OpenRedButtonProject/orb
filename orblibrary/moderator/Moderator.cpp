@@ -63,8 +63,6 @@ Moderator::~Moderator() {}
 
 string Moderator::handleOrbRequest(string jsonRqst)
 {
-    LOGI("json: " << jsonRqst);
-
     std::unique_ptr<IJson> json = IJson::create();
 
     if (!json->parse(jsonRqst))
@@ -84,19 +82,23 @@ string Moderator::handleOrbRequest(string jsonRqst)
         return "{\"error\": \"No method\"}";
     }
 
-    // add application type to params
+    // add application type to params. Guard against missing params.
+    if (!json->hasParam("params", IJson::JSON_TYPE_OBJECT)) {
+        LOGE("Request has no params");
+        return "{\"error\": \"No params\"}";
+    }
+
     json->setInteger("params", mAppMgrInterface->GetApplicationType(), "applicationType");
 
-    string component;
-    string method;
+    std::string component;
+    std::string method;
     if (!StringUtil::ResolveMethod(json->getString("method"), component, method))
     {
         return "{\"error\": \"Invalid method\"}";
     }
 
-    LOGI(component << ", method: " << method);
     std::unique_ptr<IJson> params = json->getObject("params");
-    string token = json->getString("token");
+    std::string token = json->getString("token");
     if (component == COMPONENT_MANAGER)
     {
         return mAppMgrInterface->executeRequest(method, token, *params);

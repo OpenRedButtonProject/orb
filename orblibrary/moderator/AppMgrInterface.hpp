@@ -88,8 +88,18 @@ public:
     void processXmlAit(const std::vector<uint8_t>& xmlait) override;
 
     // ApplicationSessionCallback interface implementation
-    void LoadApplication(const int appId, const char *entryUrl) override;
-    void LoadApplication(const int appId, const char *entryUrl, int size, const std::vector<uint16_t> graphics) override;
+    void LoadApplication(
+        const int appId,
+        const char *entryUrl,
+        onAppLoadedCallback callback = nullptr) override;
+
+    void LoadApplication(
+        const int appId,
+        const char *entryUrl,
+        int size,
+        const std::vector<uint16_t> graphics,
+        onAppLoadedCallback callback = nullptr) override;
+
     void ShowApplication(const int appId) override;
     void HideApplication(const int appId) override;
     void StopBroadcast() override;

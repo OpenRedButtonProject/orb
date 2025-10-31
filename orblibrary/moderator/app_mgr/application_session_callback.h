@@ -29,14 +29,20 @@ namespace orb
 class ApplicationSessionCallback
 {
 public:
+    using onAppLoadedCallback = std::function<void(bool success)>;
+
     /**
      * Tell the browser to load an application. If the entry page fails to load, the browser
      * should call ApplicationManager::OnLoadApplicationFailed.
      *
      * @param appId The application ID.
      * @param entryUrl The entry page URL.
+     * @param callback The callback to call when the application is loaded and ready to use.
      */
-    virtual void LoadApplication(const int appId, const char *entryUrl) = 0;
+    virtual void LoadApplication(
+        const int appId,
+        const char *entryUrl,
+        onAppLoadedCallback callback = nullptr) = 0;
 
     /**
      * Tell the browser to load an application. If the entry page fails to load, the browser
@@ -46,9 +52,14 @@ public:
      * @param entryUrl The entry page URL.
      * @param size The number of the co-ordinate graphics
      * @param graphics The list of the co-ordinate graphics supported by the application
+     * @param callback The callback to call when the application is loaded and ready to use.
      */
-    virtual void LoadApplication(const int appId, const char *entryUrl, int size, const
-        std::vector<uint16_t> graphics) = 0;
+    virtual void LoadApplication(
+        const int appId,
+        const char *entryUrl,
+        int size,
+        const std::vector<uint16_t> graphics,
+        onAppLoadedCallback callback = nullptr) = 0;
 
     /**
      * Tell the browser to show the loaded application.

@@ -43,6 +43,8 @@ public:
 
     bool SetState(const E_APP_STATE &state) override;
 
+    int Load() override;
+
 private:
     bool CanTransitionToState(const E_APP_STATE &state);
 
