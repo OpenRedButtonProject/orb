@@ -176,6 +176,15 @@ int ApplicationManager::CreateApplication(int callingAppId, const std::string &u
     {
         callback->DispatchApplicationLoadErrorEvent();
     }
+    else
+    {
+        if (m_sessionCallback[APP_TYPE_OPAPP] != nullptr) {
+            LOG(INFO) << "Dispatching ApplicationLoaded event to OpApp";
+            m_sessionCallback[APP_TYPE_OPAPP]->DispatchApplicationLoadedEvent(result);
+        } else {
+            LOG(ERROR) << "OpApp callback is NULL, cannot dispatch ApplicationLoaded event";
+        }
+    }
 
     return result;
 }
@@ -259,9 +268,8 @@ void ApplicationManager::DestroyApplication(int callingAppId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
-    LOG(ERROR) << "DestroyApplication";
-
-    if (callingAppId != BaseApp::INVALID_APP_ID || getAppById(callingAppId) == nullptr)
+    LOG(ERROR) << "DestroyApplication callingAppId [" << callingAppId << "]";
+    if (getAppById(callingAppId) == nullptr)
     {
         LOG(INFO) << "Called by non-running app, early out";
         return;
@@ -991,20 +999,24 @@ void ApplicationManager::killRunningApp(int appid)
     }
 
     LOG(INFO) << "killRunningApp: Type " << type << " AppId [" << appid << "]";
+    if (m_sessionCallback[APP_TYPE_OPAPP] != nullptr) {
+        LOG(INFO) << "Dispatching ApplicationUnloaded event to OpApp";
+        m_sessionCallback[APP_TYPE_OPAPP]->DispatchApplicationUnloadedEvent(appid);
+    } else {
+        LOG(ERROR) << "OpApp callback is NULL, cannot dispatch ApplicationUnloaded event";
+    }
 
     callback->HideApplication(appid);
     callback->LoadApplication(BaseApp::INVALID_APP_ID, "about:blank");
 
     if (type == APP_TYPE_HBBTV)
-    {
+    {   
         m_hbbtvApp.reset();
     }
     else /* if (type == APP_TYPE_OPAPP) */
     {
         m_opApp.reset();
     }
-
-    return;
 }
 
 /**
