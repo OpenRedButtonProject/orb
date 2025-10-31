@@ -61,6 +61,8 @@ bool OpApp::SetState(const E_APP_STATE &state)
 {
     if (CanTransitionToState(state))
     {
+        // FREE-275: Reinstate this check once we have a proper state machine.
+        // if (state != m_state) {
         int id = GetId();
         LOG(INFO) << "AppId " << id << "; state transition: " << m_state << " -> " << state;
         std::string previous = opAppStateToString(m_state);
@@ -76,6 +78,7 @@ bool OpApp::SetState(const E_APP_STATE &state)
         {
             m_sessionCallback->ShowApplication(id);
         }
+        // } // if (state != m_state)
 
         if (state == BaseApp::TRANSIENT_STATE || state == BaseApp::OVERLAID_TRANSIENT_STATE)
         {
