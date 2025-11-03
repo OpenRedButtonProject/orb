@@ -111,14 +111,16 @@ protected:
         auto anotherMockParams = std::make_unique<orb::MockJson>();
         EXPECT_CALL(*mockJson, parse(input))
             .WillOnce(::testing::Return(true));
+        EXPECT_CALL(*mockJson, hasParam("error", orb::IJson::JSON_TYPE_OBJECT))
+            .WillOnce(::testing::Return(false));
+        EXPECT_CALL(*mockJson, hasParam("method", orb::IJson::JSON_TYPE_STRING))
+            .WillOnce(::testing::Return(true));
+        EXPECT_CALL(*mockJson, hasParam("params", orb::IJson::JSON_TYPE_OBJECT))
+            .WillOnce(::testing::Return(true));
         EXPECT_CALL(*mockJson, getString("method"))
             .WillOnce(::testing::Return(methodValue));
         EXPECT_CALL(*mockJson, getString("token"))
             .WillOnce(::testing::Return("token"));
-        EXPECT_CALL(*mockJson, hasParam("method", orb::IJson::JSON_TYPE_STRING))
-            .WillOnce(::testing::Return(true));
-        EXPECT_CALL(*mockJson, hasParam("error", orb::IJson::JSON_TYPE_OBJECT))
-            .WillOnce(::testing::Return(false));
 
          int appType = orb::APP_TYPE_HBBTV;
          EXPECT_CALL(*mockJson, setInteger("params",  appType, "applicationType"))

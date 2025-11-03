@@ -46,13 +46,15 @@ public:
     MOCK_METHOD(void, processXmlAit, (const std::vector<uint8_t>& xmlait), (override));
 
     // ApplicationSessionCallback interface using Google Mock
-    MOCK_METHOD(void, LoadApplication, (const int appId, const char *entryUrl), (override));
-    MOCK_METHOD(void, LoadApplication, (const int appId, const char *entryUrl, int size, const std::vector<uint16_t> graphics), (override));
+    MOCK_METHOD(void, LoadApplication, (const int appId, const char *entryUrl, onAppLoadedCallback callback), (override));
+    MOCK_METHOD(void, LoadApplication, (const int appId, const char *entryUrl, int size, const std::vector<uint16_t> graphics, onAppLoadedCallback callback), (override));
     MOCK_METHOD(void, ShowApplication, (const int appId), (override));
     MOCK_METHOD(void, HideApplication, (const int appId), (override));
     MOCK_METHOD(void, StopBroadcast, (), (override));
     MOCK_METHOD(void, ResetBroadcastPresentation, (), (override));
     MOCK_METHOD(void, DispatchApplicationLoadErrorEvent, (), (override));
+    MOCK_METHOD(void, DispatchApplicationLoadedEvent, (const int appId), (override));
+    MOCK_METHOD(void, DispatchApplicationUnloadedEvent, (const int appId), (override));
     MOCK_METHOD(void, DispatchTransitionedToBroadcastRelatedEvent, (const int appId), (override));
     MOCK_METHOD(std::string, GetXmlAitContents, (const std::string &url), (override));
     MOCK_METHOD(int, GetParentalControlAge, (), (override));
