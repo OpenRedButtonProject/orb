@@ -266,6 +266,6 @@ void SessionCallbackImpl::DispatchApplicationSchemeUpdatedEvent(const std::strin
  * Returns true if the provided triplet is in an instance within the
  * currently playing service, otherwise false.
  */
-bool isInstanceInCurrentService(const Utils::S_DVB_TRIPLET &triplet) { return false; }
+bool SessionCallbackImpl::isInstanceInCurrentService(const Utils::S_DVB_TRIPLET &triplet) { return false; }
 
 } // namespace orb
