@@ -46,8 +46,8 @@ public:
     MOCK_METHOD(void, processXmlAit, (const std::vector<uint8_t>& xmlait), (override));
 
     // ApplicationSessionCallback interface using Google Mock
-    MOCK_METHOD(void, LoadApplication, (const int appId, const char *entryUrl, onAppLoadedCallback callback), (override));
-    MOCK_METHOD(void, LoadApplication, (const int appId, const char *entryUrl, int size, const std::vector<uint16_t> graphics, onAppLoadedCallback callback), (override));
+    MOCK_METHOD(void, LoadApplication, (const int appId, const char *entryUrl, onPageLoadedSuccess callback), (override));
+    MOCK_METHOD(void, LoadApplication, (const int appId, const char *entryUrl, int size, const std::vector<uint16_t> graphics, onPageLoadedSuccess callback), (override));
     MOCK_METHOD(void, ShowApplication, (const int appId), (override));
     MOCK_METHOD(void, HideApplication, (const int appId), (override));
     MOCK_METHOD(void, StopBroadcast, (), (override));

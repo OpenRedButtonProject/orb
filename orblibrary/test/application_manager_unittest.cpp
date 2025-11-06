@@ -261,7 +261,7 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithValidHbbTVUrl)
 
     // EXPECT: Callback methods to be called correctly
     EXPECT_CALL(*mockCallback, LoadApplication(
-        testing::_, testing::_, testing::_, testing::_, testing::An<MockApplicationSessionCallback::onAppLoadedCallback>()))
+        testing::_, testing::_, testing::_, testing::_, testing::An<MockApplicationSessionCallback::onPageLoadedSuccess>()))
         .Times(1);
 
     // WHEN: CreateAndRunApp is called with HbbTV URL (runAsOpApp=false)
@@ -281,7 +281,7 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithValidOpAppUrl)
 
     // EXPECT: Callback methods to be called correctly
     EXPECT_CALL(*mockCallback, LoadApplication(
-        testing::_, testing::_, testing::An<MockApplicationSessionCallback::onAppLoadedCallback>()))
+        testing::_, testing::_, testing::An<MockApplicationSessionCallback::onPageLoadedSuccess>()))
         .Times(1);
 
     // WHEN: CreateAndRunApp is called with OpApp URL (runAsOpApp=true)
@@ -301,7 +301,7 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithEmptyUrl)
 
     // EXPECT: No callback methods should be called for empty URL
     EXPECT_CALL(*mockCallback, LoadApplication(
-        testing::_, testing::_, testing::_, testing::_, testing::An<MockApplicationSessionCallback::onAppLoadedCallback>()))
+        testing::_, testing::_, testing::_, testing::_, testing::An<MockApplicationSessionCallback::onPageLoadedSuccess>()))
         .Times(0);
 
     // WHEN: CreateAndRunApp is called with empty URL
@@ -337,7 +337,7 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppReplacesExistingApp)
     std::string firstUrl = "http://first.com/app.html";
 
     EXPECT_CALL(*mockCallback, LoadApplication(
-        testing::_, testing::_, testing::_, testing::_, testing::An<MockApplicationSessionCallback::onAppLoadedCallback>()))
+        testing::_, testing::_, testing::_, testing::_, testing::An<MockApplicationSessionCallback::onPageLoadedSuccess>()))
         .Times(2); // Called for both apps
 
     int firstAppId = appManager.CreateAndRunApp(firstUrl, false);
@@ -372,7 +372,7 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppWithHTTPSUrl)
 
     // EXPECT: Callback methods to be called correctly
     EXPECT_CALL(*mockCallback, LoadApplication(
-        testing::_, testing::_, testing::_, testing::_, testing::An<MockApplicationSessionCallback::onAppLoadedCallback>()))
+        testing::_, testing::_, testing::_, testing::_, testing::An<MockApplicationSessionCallback::onPageLoadedSuccess>()))
         .Times(1);
 
     // WHEN: CreateAndRunApp is called with HTTPS URL
@@ -392,7 +392,7 @@ TEST_F(ApplicationManagerTest, TestUrlRetrieval)
 
     // EXPECT: App creation callbacks
     EXPECT_CALL(*mockCallback, LoadApplication(
-        testing::_, testing::_, testing::_, testing::_, testing::An<MockApplicationSessionCallback::onAppLoadedCallback>()))
+        testing::_, testing::_, testing::_, testing::_, testing::An<MockApplicationSessionCallback::onPageLoadedSuccess>()))
         .Times(1);
 
     // WHEN: App is created
@@ -415,7 +415,7 @@ TEST_F(ApplicationManagerTest, TestCreateAndRunAppDefaultParameters)
 
     // EXPECT: Callback methods to be called correctly
     EXPECT_CALL(*mockCallback, LoadApplication(
-        testing::_, testing::_, testing::_, testing::_, testing::An<MockApplicationSessionCallback::onAppLoadedCallback>()))
+        testing::_, testing::_, testing::_, testing::_, testing::An<MockApplicationSessionCallback::onPageLoadedSuccess>()))
         .Times(1);
 
     // WHEN: CreateAndRunApp is called with default parameters (runAsOpApp=false)

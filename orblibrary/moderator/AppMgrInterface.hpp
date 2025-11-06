@@ -91,14 +91,14 @@ public:
     void LoadApplication(
         const int appId,
         const char *entryUrl,
-        onAppLoadedCallback callback = nullptr) override;
+        onPageLoadedSuccess callback = nullptr) override;
 
     void LoadApplication(
         const int appId,
         const char *entryUrl,
         int size,
         const std::vector<uint16_t> graphics,
-        onAppLoadedCallback callback = nullptr) override;
+        onPageLoadedSuccess callback = nullptr) override;
 
     void ShowApplication(const int appId) override;
     void HideApplication(const int appId) override;

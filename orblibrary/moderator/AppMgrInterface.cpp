@@ -179,14 +179,14 @@ void AppMgrInterface::processXmlAit(const std::vector<uint8_t>& xmlait) {
 }
 
 // ApplicationSessionCallback implementation
-void AppMgrInterface::LoadApplication(const int appId, const char *entryUrl, onAppLoadedCallback callback) {
+void AppMgrInterface::LoadApplication(const int appId, const char *entryUrl, onPageLoadedSuccess callback) {
     LOGI("Apptyp: " << mAppType << ", appID: " << appId << ", url: " << entryUrl);
     mOrbBrowser->loadApplication(std::to_string(appId), entryUrl, callback);
 }
 
 void AppMgrInterface::LoadApplication(
     const int appId, const char *entryUrl, int size, const std::vector<uint16_t> graphics,
-    onAppLoadedCallback callback) {
+    onPageLoadedSuccess callback) {
     LOGI("Apptyp: " << mAppType << ", appID: " << appId << ", url: " << entryUrl);
     // TODO: need a different API to add extra params
     mOrbBrowser->loadApplication(std::to_string(appId), entryUrl, callback);

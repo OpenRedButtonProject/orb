@@ -23,7 +23,7 @@
 namespace orb
 {
 
-using onAppLoadedCallback = std::function<void(bool success)>;
+using onPageLoadedSuccess = std::function<void()>;
 
 class IOrbBrowser
 {
@@ -33,7 +33,7 @@ public:
 
     // Load new application at URL with new app_id for a reference to this application.
     // The callback is called when the application is loaded and ready to use.
-    virtual void loadApplication(std::string app_id, std::string url, onAppLoadedCallback callback = nullptr) = 0;
+    virtual void loadApplication(std::string app_id, std::string url, onPageLoadedSuccess callback = nullptr) = 0;
 
     // Show application
     virtual void showApplication() = 0;
