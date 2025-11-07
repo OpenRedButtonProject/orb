@@ -31,7 +31,7 @@ namespace orb
 class MockOrbBrowser : public IOrbBrowser
 {
 public:
-    MOCK_METHOD(void, loadApplication, (std::string app_id, std::string url, onAppLoadedCallback callback), (override));
+    MOCK_METHOD(void, loadApplication, (std::string app_id, std::string url, onPageLoadedSuccess callback), (override));
     MOCK_METHOD(void, showApplication, (), (override));
     MOCK_METHOD(void, hideApplication, (), (override));
     MOCK_METHOD(std::string, sendRequestToClient, (std::string jsonRequest), (override));

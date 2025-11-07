@@ -44,13 +44,9 @@ void OpApp::init()
 
 int OpApp::Load() {
     m_sessionCallback->LoadApplication(
-        GetId(), GetLoadedUrl().c_str(), [this](bool success) {
-            if (success) {
-                LOG(INFO) << "OpApp loaded successfully";
-                SetState(m_state);
-            } else {
-                LOG(ERROR) << "Failed to load OpApp";
-            }
+        GetId(), GetLoadedUrl().c_str(), [this]() {
+
+            SetState(m_state);
         });
 
     // At this point the application is not visible so SetState doesn't work.

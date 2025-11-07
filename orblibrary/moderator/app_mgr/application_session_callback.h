@@ -29,7 +29,7 @@ namespace orb
 class ApplicationSessionCallback
 {
 public:
-    using onAppLoadedCallback = std::function<void(bool success)>;
+    using onPageLoadedSuccess = std::function<void()>;
 
     /**
      * Tell the browser to load an application. If the entry page fails to load, the browser
@@ -42,7 +42,7 @@ public:
     virtual void LoadApplication(
         const int appId,
         const char *entryUrl,
-        onAppLoadedCallback callback = nullptr) = 0;
+        onPageLoadedSuccess callback = nullptr) = 0;
 
     /**
      * Tell the browser to load an application. If the entry page fails to load, the browser
@@ -59,7 +59,7 @@ public:
         const char *entryUrl,
         int size,
         const std::vector<uint16_t> graphics,
-        onAppLoadedCallback callback = nullptr) = 0;
+        onPageLoadedSuccess callback = nullptr) = 0;
 
     /**
      * Tell the browser to show the loaded application.
