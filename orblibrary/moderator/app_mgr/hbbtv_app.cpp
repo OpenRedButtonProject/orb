@@ -101,7 +101,7 @@ int HbbTVApp::Load() {
         GetEntryUrl().c_str(),
         GetAitDescription().graphicsConstraints.size(),
         GetAitDescription().graphicsConstraints,
-        [this]() { SetState(m_state); });
+        [this]() { SetState(BaseApp::FOREGROUND_STATE); });
 
     return GetId();
 }
@@ -270,25 +270,24 @@ bool HbbTVApp::InKeySet(uint16_t keyCode)
 bool HbbTVApp::SetState(const E_APP_STATE &state)
 {
     // HbbTV apps can go only to background or foreground state
-    if (state == BACKGROUND_STATE || state == FOREGROUND_STATE)
-    {
-        if (state != m_state)
-        {
-            LOG(INFO) << "AppId [" << GetId() << "]; state transition: " << GetState() << " -> " << state;
-            m_state = state;
-            if (state == BACKGROUND_STATE)
-            {
-                m_sessionCallback->HideApplication(GetId());
-            }
-            else
-            {
-                m_sessionCallback->ShowApplication(GetId());
-            }
-        }
+    if (state != BACKGROUND_STATE && state != FOREGROUND_STATE) {
+        LOG(INFO) << "Invalid state transition: " << GetState() << " -> " << state;
+        return false;
+    }
+
+    if (state == m_state) {
         return true;
     }
-    LOG(INFO) << "Invalid state transition: " << GetState() << " -> " << state;
-    return false;
+
+    LOG(INFO) << "AppId [" << GetId() << "]; state transition: " << GetState() << " -> " << state;
+    m_state = state;
+    if (state == BACKGROUND_STATE) {
+        m_sessionCallback->HideApplication(GetId());
+    }
+    else {
+        m_sessionCallback->ShowApplication(GetId());
+    }
+    return true;
 }
 
 bool HbbTVApp::IsAllowedByParentalControl(const Ait::S_AIT_APP_DESC &desc) const
