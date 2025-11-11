@@ -148,6 +148,22 @@ string AppMgrInterface::executeRequest(const string& method, const string& token
     {
         response = buildJsonResponse("AppMgrInterface; method [" + method + "] unsupported");
     }
+    else if (method == MANAGER_GET_OP_APP_STATE)
+    {
+        response = buildJsonResponse(appMgr.GetOpAppState(appId));
+    }
+    else if (method == MANAGER_OP_APP_REQUEST_BACKGROUND)
+    {
+        appMgr.OpAppRequestStateChange(appId, BaseApp::BACKGROUND_STATE);
+    }
+    else if (method == MANAGER_OP_APP_REQUEST_FOREGROUND)
+    {
+        response = buildJsonResponse(appMgr.OpAppRequestStateChange(appId, BaseApp::FOREGROUND_STATE));
+    }
+    else if (method == MANAGER_OP_APP_REQUEST_TRANSIENT)
+    {
+        response = buildJsonResponse(appMgr.OpAppRequestStateChange(appId, BaseApp::TRANSIENT_STATE));
+    }
     else
     {
         LOGI("Unknown method: " << method);

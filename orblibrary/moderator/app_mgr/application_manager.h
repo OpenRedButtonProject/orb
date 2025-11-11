@@ -270,6 +270,17 @@ public:
 
     std::vector<int> GetRunningAppIds();
 
+    std::string GetOpAppState(int appId);
+
+    /**
+     * Request a state change for an OpApp.
+     *
+     * @param appId The application ID.
+     * @param state The new state.
+     * @return true if the request was successful, false otherwise
+     */
+    bool OpAppRequestStateChange(int appId, const BaseApp::E_APP_STATE &state);
+
 private:
     void onSelectedServiceAitReceived();
     void onSelectedServiceAitTimeout();

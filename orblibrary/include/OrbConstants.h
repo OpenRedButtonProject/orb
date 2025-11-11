@@ -70,6 +70,10 @@ const std::string MANAGER_GET_KEY_MAX_VAL = "getKeyMaximumValue";
 const std::string MANAGER_GET_MAX_OKEYS = "getKeyMaximumOtherKeys";
 const std::string MANAGER_SET_KEY_VALUE = "setKeyValue";
 const std::string MANAGER_GET_KEY_ICON = "getKeyIcon";
+const std::string MANAGER_GET_OP_APP_STATE = "getOpAppState";
+const std::string MANAGER_OP_APP_REQUEST_BACKGROUND = "opAppRequestBackground";
+const std::string MANAGER_OP_APP_REQUEST_FOREGROUND = "opAppRequestForeground";
+const std::string MANAGER_OP_APP_REQUEST_TRANSIENT = "opAppRequestTransient";
 
 } // namespace Manager
 
