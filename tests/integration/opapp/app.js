@@ -475,12 +475,28 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('keydown', function(event) {
     console.log('Key pressed: ' + event.keyCode);
     switch(event.keyCode) {
-        case 37: // Left arrow
-            navigateFocus(-1);
+        case 100: // Keypad 4 / Keypad Left (Channel Previous)
+            selectPreviousChannel();
             event.preventDefault();
             break;
-        case 39: // Right arrow
-            navigateFocus(1);
+        case 102: // Keypad 6 / Keypad Right (Channel Next)
+            selectNextChannel();
+            event.preventDefault();
+            break;
+        case 188: // Comma key (,) (Channel Previous)
+            selectPreviousChannel();
+            event.preventDefault();
+            break;
+        case 190: // Period/Full stop key (.) (Channel Next)
+            selectNextChannel();
+            event.preventDefault();
+            break;
+        case 37: // Left arrow (Channel Previous)
+            selectPreviousChannel();
+            event.preventDefault();
+            break;
+        case 39: // Right arrow (Channel Next)
+            selectNextChannel();
             event.preventDefault();
             break;
         case 38: // Up arrow
@@ -489,14 +505,6 @@ document.addEventListener('keydown', function(event) {
             break;
         case 40: // Down arrow
             navigateFocus(1);
-            event.preventDefault();
-            break;
-        case 190: // Period/Full stop key (.) (Channel Next)
-            selectNextChannel();
-            event.preventDefault();
-            break;
-        case 188: // Comma key (,) (Channel Previous)
-            selectPreviousChannel();
             event.preventDefault();
             break;
         case 13: // Enter
