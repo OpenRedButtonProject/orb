@@ -20,95 +20,57 @@ object[type="application/oipfcapabilities"] {
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     margin: 0;
-    padding: 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 0;
+    background: black;
     min-height: 100vh;
+    height: 100vh;
     color: #333;
-    /* TV-optimized font size */
     font-size: 16px;
+    overflow: hidden;
 }
 
 .container {
-    max-width: 1800px; /* Increased for 1080p TV */
-    margin: 0 auto;
-    background: black;
-    border-radius: 15px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-    overflow: hidden;
-}
-
-.header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding:20px 10px; /* Increased padding for TV */
-    text-align: center;
-}
-
-.header h1 {
-    margin: 0;
-    font-size: 2em; /* Larger for TV viewing */
-    font-weight: 400;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3); /* Better contrast on TV */
-}
-
-.content {
-    padding:20px 10px; /* Increased padding for TV */
-}
-
-/* Main Layout */
-.main-content {
-    display: flex;
-    gap: 40px; /* Increased gap for TV */
-}
-
-.video-column {
-    flex: 1;
-    min-width: 0;
-}
-
-.logs-column {
-    flex: 1;
-    min-width: 500px; /* Increased minimum width for TV */
-}
-
-/* Video Section */
-.video-section {
-    height: 450px; /* Increased height for 1080p TV */
-    display: flex;
-    flex-direction: column;
-}
-
-.video-container {
     position: relative;
     width: 100%;
-    background: #000;
-    border-radius: 10px;
+    height: 100vh;
+    margin: 0;
+    background: black;
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
+}
+
+/* Full Screen Video Container */
+.video-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    z-index: 1;
 }
 
 video {
     width: 100%;
-    flex: 1;
+    height: 100%;
     display: block;
-    object-fit: contain;
-    min-height: 0;
+    object-fit: cover;
 }
 
-/* Logs Section */
+/* Logs Section - Overlaid on top of video */
 .logs-section {
-    background: black;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 500px;
+    height: calc(100vh - 20px);
+    background: rgba(0, 0, 0, 0.3);
     border-radius: 10px;
-    padding: 2px; /* Increased padding for TV */
-    height: 500px; /* Increased height to match video section */
+    padding: 2px;
+    z-index: 10;
 }
 
 .log-entries {
-    background: #2d3748;
+    background: rgba(45, 55, 72, 0.25);
     color: #e2e8f0;
     padding: 20px; /* Increased padding for TV */
     border-radius: 8px;
@@ -116,31 +78,15 @@ video {
     font-size: 8px; /* Extremely small font size for maximum log density */
     line-height: 1.1; /* Tighter line height for more compact display */
     height: 100%;
-    overflow-y: auto;
-    overflow-x: auto;
+    overflow: hidden;
     white-space: pre-wrap;
-    border: 1px solid #4a5568;
+    word-wrap: break-word;
+    word-break: break-all;
+    border: 1px solid rgba(74, 85, 104, 0.25);
     min-height: 0;
+    pointer-events: none;
 }
 
-/* Scrollbar Styles - TV Optimized */
-.log-entries::-webkit-scrollbar {
-    width: 12px; /* Increased width for TV */
-}
-
-.log-entries::-webkit-scrollbar-track {
-    background: #4a5568;
-    border-radius: 6px;
-}
-
-.log-entries::-webkit-scrollbar-thumb {
-    background: #718096;
-    border-radius: 6px;
-}
-
-.log-entries::-webkit-scrollbar-thumb:hover {
-    background: #a0aec0;
-}
 
 /* Log Entry Styles - TV Optimized */
 .log-entry {
@@ -180,146 +126,27 @@ video {
     font-weight: 500;
 }
 
-/* Responsive Design - Always Horizontal Layout */
-@media (max-width: 1920px) {
-    /* 1080p TV optimization */
-    .container {
-        max-width: 1800px;
-    }
-
-    .header h1 {
-        font-size: 3em;
-    }
-
-    .video-section {
-       height: 450px;
-    }
-    .logs-section {
-        height: 500px;
-    }
-
-    /* Always horizontal layout */
-    .main-content {
-        flex-direction: row;
-        gap: 40px;
-    }
-
-    .video-column,
-    .logs-column {
-        min-width: 0;
-    }
-
-    .logs-column {
-        min-width: 500px;
-    }
-}
-
+/* Responsive Design */
 @media (max-width: 1400px) {
-    /* Medium screens - horizontal layout with adjustments */
-    .container {
-        max-width: 1400px;
-    }
-
-    .header h1 {
-        font-size: 2.8em;
-    }
-
-    .video-section {
-        height: 480px;
-     }
     .logs-section {
-        height: 450px;
-    }
-
-    .main-content {
-        flex-direction: row;
-        gap: 30px;
-    }
-
-    .logs-column {
-        min-width: 450px;
+        width: 450px;
     }
 }
 
 @media (max-width: 1200px) {
-    /* Smaller screens - still horizontal layout */
-    .container {
-        max-width: 1200px;
-    }
-
-    .main-content {
-        flex-direction: row;
-        gap: 25px;
-    }
-
-    .video-column,
-    .logs-column {
-        min-width: 0;
-    }
-
-    .logs-column {
-        min-width: 400px;
-    }
-
-    .video-section {
-        height: 360px;
-     }
     .logs-section {
-        height: 380px;
-    }
-
-    .header h1 {
-        font-size: 2.0em;
+        width: 400px;
     }
 }
 
 @media (max-width: 768px) {
     body {
-        padding: 10px;
-        font-size: 14px; /* Adjusted for mobile */
+        font-size: 14px;
     }
-
-    .container {
-        margin: 0;
-        border-radius: 10px;
-    }
-
-    .header {
-        padding: 20px;
-    }
-
-    .header h1 {
-        font-size: 2em;
-    }
-
-    .content {
-        padding: 20px;
-    }
-
-    /* Maintain horizontal layout even on mobile */
-    .main-content {
-        flex-direction: row;
-        gap: 15px;
-    }
-
-    .video-column,
-    .logs-column {
-        min-width: 0;
-    }
-
-    .logs-column {
-        min-width: 300px;
-    }
-
-    .video-section {
-        height: 360px;
-     }
 
     .logs-section {
-        height: 400px;
+        width: 300px;
     }
-
-
 
     .log-entries {
         font-size: 7px;
@@ -328,16 +155,9 @@ video {
 }
 
 @media (max-width: 480px) {
-    .header h1 {
-        font-size: 1.8em;
-    }
-
-    .video-section {
-        height: 350px;
-     }
-
     .logs-section {
-        height: 350px;
+        width: calc(100% - 20px);
+        right: 10px;
     }
 
     .log-entries {
