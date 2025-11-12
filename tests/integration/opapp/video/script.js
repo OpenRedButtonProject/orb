@@ -106,7 +106,10 @@ class HBBTVWebSocketClient {
 
         if (this.logEntries) {
             this.logEntries.appendChild(logEntry);
-            this.logEntries.scrollTop = this.logEntries.scrollHeight;
+            // Auto-scroll to show most recent output
+            requestAnimationFrame(() => {
+                this.logEntries.scrollTop = this.logEntries.scrollHeight;
+            });
         }
 
         console.log(`[${timestamp}] WebSocket: ${message}`);
@@ -458,7 +461,10 @@ class HTML5VideoPlayer {
 
         if (this.logEntries) {
             this.logEntries.appendChild(logEntry);
-            this.logEntries.scrollTop = this.logEntries.scrollHeight;
+            // Auto-scroll to show most recent output
+            requestAnimationFrame(() => {
+                this.logEntries.scrollTop = this.logEntries.scrollHeight;
+            });
         }
 
         console.log(`[${timestamp}] Video: ${message}`);

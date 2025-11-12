@@ -1,6 +1,6 @@
 // HbbTV OpApp v1.2.1 Minimal Implementation
 let currentFocus = 0;
-const buttons = ['videoBtn', 'broadcastBtn', 'sendMsgBtn', 'infoBtn'];
+const buttons = ['broadcastBtn', 'sendMsgBtn', 'infoBtn', 'logToggleBtn'];
 
 // Event Logging Functions
 function logEvent(message, level = 'info') {
@@ -19,14 +19,6 @@ function logEvent(message, level = 'info') {
     console.log(`[${timestamp}] Event: ${message}`);
 }
 
-function clearEventLog() {
-    const eventLogContainer = document.getElementById('eventLogContainer');
-    if (eventLogContainer) {
-        eventLogContainer.innerHTML = '<div class="event-log-entry">Log cleared...</div>';
-        logEvent('Event log cleared', 'info');
-    }
-}
-
 // Video Broadcast Class
 class VideoBroadcast {
     constructor() {
@@ -37,6 +29,7 @@ class VideoBroadcast {
         this.isInitialized = false;
         this.broadcastSupervisor = null;
         this.BSPlayStateEventVerified = false;
+        this.hasChannelSelected = false;
     }
 
     initialize() {
@@ -48,7 +41,9 @@ class VideoBroadcast {
                 this.loadChannelList();
                 this.setupEventListeners();
                 setTimeout(() => {
-                    this.selectNextChannel();
+                    // Don't auto-select channel on initialization
+                    // Update button state after initialization
+                    this.updatePlayPauseButton();
                 }, 2000);
                 console.log('Video broadcast object initialized');
                 logEvent('Video broadcast object initialized', 'success');
@@ -102,6 +97,8 @@ class VideoBroadcast {
                 const playState = this.getChannelstatus(event.playState);
                 console.log('VBO.PlayStateChange event: ' + playState);
                 logEvent(`VBO.PlayStateChange: ${playState}`, 'info');
+                // Update button state when play state changes
+                this.updatePlayPauseButton();
             });
             //ComponentChanged event
             this.videoBroadcast.addEventListener('ComponentChanged', (event) => {
@@ -143,6 +140,48 @@ class VideoBroadcast {
         this.selectNextChannelWrapper(this.broadcastSupervisor);
     }
 
+    selectPreviousChannel() {
+        console.log(`Selecting previous channel through VBO...`);
+        logEvent(`Selecting previous channel through VBO...`);
+        this.selectPreviousChannelWrapper(this.videoBroadcast);
+    }
+
+    selectPreviousChannelWrapper(videoBroadcast)
+    {
+        try {
+            if (!this.isInitialized || this.channelList.length === 0) {
+                logEvent('No channels available', 'warning');
+                return false;
+            }
+
+            // Move to previous channel index
+            this.currentChannelIndex = (this.currentChannelIndex - 1 + this.channelList.length) % this.channelList.length;
+
+            // Get the current channel
+            const channel = this.channelList.item(this.currentChannelIndex);
+            const channelName = channel.name || `Channel ${this.currentChannelIndex + 1}`;
+            const channelCCID = channel.ccid;
+
+            console.log(`Selecting channel: ${channelName} (CCID: ${channelCCID})`);
+            logEvent(`Selecting channel: ${channelName} (CCID: ${channelCCID})`, 'info');
+
+            // Set the channel
+            videoBroadcast.setChannel(channel);
+            logEvent(`Channel set: ${channelName}`, 'success');
+
+            // Mark that a channel has been selected
+            this.hasChannelSelected = true;
+            this.updatePlayPauseButton();
+
+            return true;
+
+        } catch (error) {
+            console.log("Error selecting channel: " + error.message);
+            logEvent(`Error selecting channel: ${error.message}`, 'error');
+            return false;
+        }
+    }
+
     selectNextChannelWrapper(videoBroadcast)
     {
         try {
@@ -162,6 +201,10 @@ class VideoBroadcast {
             // Set the channel
             videoBroadcast.setChannel(channel);
             logEvent(`Channel set: ${channelName}`, 'success');
+
+            // Mark that a channel has been selected
+            this.hasChannelSelected = true;
+            this.updatePlayPauseButton();
 
             // Move to next channel for next selection
             this.currentChannelIndex = (this.currentChannelIndex + 1) % this.channelList.length;
@@ -221,12 +264,93 @@ class VideoBroadcast {
             this.isPlaying = false;
             console.log('Playback stopped');
             logEvent('Playback stopped', 'info');
+            this.updatePlayPauseButton();
             return true;
 
         } catch (error) {
             console.log("Could not stop playback: " + error.message);
             logEvent(`Could not stop playback: ${error.message}`, 'error');
             return false;
+        }
+    }
+
+    play() {
+        try {
+            if (!this.isInitialized) {
+                logEvent('Video broadcast not initialized', 'error');
+                return false;
+            }
+
+            // Use bindToCurrentChannel to resume playback from STOPPED state
+            // This will transition from STOPPED -> CONNECTING -> PRESENTING
+            const channel = this.videoBroadcast.bindToCurrentChannel();
+            if (channel) {
+                this.isPlaying = true;
+                console.log('Playback resumed');
+                logEvent('Playback resumed', 'info');
+                this.updatePlayPauseButton();
+                return true;
+            } else {
+                logEvent('No current channel to resume', 'error');
+                return false;
+            }
+
+        } catch (error) {
+            console.log("Could not resume playback: " + error.message);
+            logEvent(`Could not resume playback: ${error.message}`, 'error');
+            return false;
+        }
+    }
+
+    togglePlayPause() {
+        try {
+            if (!this.isInitialized) {
+                logEvent('Video broadcast not initialized', 'error');
+                return false;
+            }
+
+            const playState = this.videoBroadcast.playState;
+            // Play state values: 0=UNREALIZED, 1=CONNECTING, 2=PRESENTING, 3=STOPPED
+
+            if (playState === 3) { // STOPPED
+                // Resume playback
+                return this.play();
+            } else if (playState === 1 || playState === 2) { // CONNECTING or PRESENTING
+                // Pause playback
+                return this.stop();
+            } else {
+                // UNREALIZED or other state - try to start
+                logEvent(`Cannot toggle in current state: ${this.getChannelstatus(playState)}`, 'warning');
+                return false;
+            }
+
+        } catch (error) {
+            console.log("Could not toggle play/pause: " + error.message);
+            logEvent(`Could not toggle play/pause: ${error.message}`, 'error');
+            return false;
+        }
+    }
+
+    updatePlayPauseButton() {
+        const playPauseBtn = document.getElementById('playPauseButton');
+        if (!playPauseBtn) return;
+
+        // Disable button if no channel has been selected
+        if (!this.hasChannelSelected) {
+            playPauseBtn.disabled = true;
+            return;
+        }
+
+        // Enable button if channel is selected
+        playPauseBtn.disabled = false;
+
+        const playState = this.videoBroadcast ? this.videoBroadcast.playState : 3;
+        const isPlaying = playState === 1 || playState === 2; // CONNECTING or PRESENTING
+
+        if (isPlaying) {
+            playPauseBtn.innerHTML = '<span class="btn-icon">⏸</span>';
+        } else {
+            playPauseBtn.innerHTML = '<span class="btn-icon">▶</span>';
         }
     }
 
@@ -328,6 +452,23 @@ document.addEventListener('DOMContentLoaded', function() {
     if (channelBtn) {
         channelBtn.textContent = 'Select & Play Channel';
     }
+
+    // Initialize video hole - set width and height directly
+    const videoHole = document.getElementById('hole');
+    if (videoHole) {
+        // Set width to full available width (container width minus margins)
+        const container = document.querySelector('.container');
+        const containerWidth = container ? container.offsetWidth : 1280;
+        const fullWidth = containerWidth - 80; // 20px left + 60px right margins
+        videoHole.setAttribute('width', fullWidth.toString());
+        videoHole.setAttribute('height', '400');
+        videoHole.style.height = '400px';
+    }
+
+    // Automatically open the video window as per OpApp specification
+    // "Operator applications shall at all times have access to an additional window,
+    //  termed the operator application video window"
+    openVideoWindow();
 });
 
 // Handle keyboard navigation
@@ -350,6 +491,14 @@ document.addEventListener('keydown', function(event) {
             navigateFocus(1);
             event.preventDefault();
             break;
+        case 190: // Period/Full stop key (.) (Channel Next)
+            selectNextChannel();
+            event.preventDefault();
+            break;
+        case 188: // Comma key (,) (Channel Previous)
+            selectPreviousChannel();
+            event.preventDefault();
+            break;
         case 13: // Enter
             activateCurrentButton();
             event.preventDefault();
@@ -358,19 +507,15 @@ document.addEventListener('keydown', function(event) {
             goBack();
             event.preventDefault();
             break;
-        case 82: // R key (Red button)
-            openVideoWindow();
-            event.preventDefault();
-            break;
-        case 71: // G key (Green button)
+        case 86: // V key (Video - toggle broadcast)
             toggleVideoBroadcast();
             event.preventDefault();
             break;
-        case 72: // H key (Channel button)
-            selectNextChannel();
+        case 80: // P key (Play/Pause button)
+            togglePlayPause();
             event.preventDefault();
             break;
-        case 83: // S key (Stop button)
+        case 83: // S key (Stop button - kept for backward compatibility)
             stopVideo();
             event.preventDefault();
             break;
@@ -445,6 +590,21 @@ function showInfo() {
     infoPanel.classList.toggle('hidden');
 }
 
+function toggleLogPanel() {
+    const logPanel = document.getElementById('eventLogPanel');
+    const videoHole = document.getElementById('hole');
+
+    if (logPanel) {
+        const isHidden = logPanel.classList.toggle('hidden');
+
+        // Keep video hole height consistent to maintain transport bar position
+        // Width is handled by CSS (full width)
+        if (videoHole) {
+            videoHole.style.height = '400px';
+        }
+    }
+}
+
 function runTests() {
     // Simulate test execution
     setTimeout(() => {
@@ -513,9 +673,18 @@ function stopVideo() {
     videoBroadcast.stop();
 }
 
+function togglePlayPause() {
+    console.log('Transport: Toggle play/pause');
+    videoBroadcast.togglePlayPause();
+}
+
 // Channel selection function that uses the VideoBroadcast class
 function selectNextChannel() {
     videoBroadcast.selectNextChannel();
+}
+
+function selectPreviousChannel() {
+    videoBroadcast.selectPreviousChannel();
 }
 
 function selectNextChannelBS() {

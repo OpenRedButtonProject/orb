@@ -114,7 +114,7 @@ video {
     border-radius: 8px;
     font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
     font-size: 8px; /* Extremely small font size for maximum log density */
-    line-height: 1.2; /* Tight line height for compact display */
+    line-height: 1.1; /* Tighter line height for more compact display */
     height: 100%;
     overflow-y: auto;
     overflow-x: auto;
@@ -144,8 +144,8 @@ video {
 
 /* Log Entry Styles - TV Optimized */
 .log-entry {
-    margin-bottom: 6px; /* Increased margin for TV */
-    padding: 3px 0; /* Increased padding for TV */
+    margin-bottom: 2px; /* Reduced spacing between log events */
+    padding: 1px 0; /* Reduced padding for compact display */
     border-radius: 3px;
     transition: background-color 0.2s ease;
 }
