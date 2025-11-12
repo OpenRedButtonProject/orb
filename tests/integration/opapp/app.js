@@ -507,14 +507,6 @@ document.addEventListener('keydown', function(event) {
             navigateFocus(1);
             event.preventDefault();
             break;
-        case 190: // Period/Full stop key (.) (Channel Next)
-            selectNextChannel();
-            event.preventDefault();
-            break;
-        case 188: // Comma key (,) (Channel Previous)
-            selectPreviousChannel();
-            event.preventDefault();
-            break;
         case 13: // Enter
             activateCurrentButton();
             event.preventDefault();
