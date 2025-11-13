@@ -9,38 +9,23 @@
     <meta name="application-name" content="HBBTV Video Player">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>HBBTV Video Player with WebSocket Testing</title>
+    <title>OpApp Video</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <object type="application/oipfapplicationmanager" id="app-manager"></object>
     <object type="application/oipfcapabilities" id="capabilities"></object>
     <div class="container">
-        <div class="header">
-            <h1>🎬 HBBTV Video Window & WebSockets Service Test</h1>
+        <!-- Full Screen Video Player -->
+        <div class="video-container">
+            <video id="videoPlayer" controls crossorigin="anonymous" autoplay muted>
+                <p>Your browser doesn't support HTML5 video.</p>
+            </video>
         </div>
 
-        <div class="content">
-            <!-- Main Content Area - Two Column Layout -->
-            <div class="main-content">
-                <!-- Left Column - Video Section -->
-                <div class="video-column">
-                    <div class="video-section">
-                         <div class="video-container">
-                            <video id="videoPlayer" controls crossorigin="anonymous" autoplay muted>
-                                <p>Your browser doesn't support HTML5 video.</p>
-                            </video>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right Column - Logs Section -->
-                <div class="logs-column">
-                    <div class="logs-section">
-                        <div id="logEntries" class="log-entries"></div>
-                    </div>
-                </div>
-            </div>
+        <!-- Logs Section - Overlaid on top of video -->
+        <div class="logs-section">
+            <div id="logEntries" class="log-entries"></div>
         </div>
     </div>
 

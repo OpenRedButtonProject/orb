@@ -3,38 +3,37 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minimal HbbTV OpApp v1.2.1</title>
+    <title>OpApp Main Window</title>
 
     <link rel="stylesheet" href="app_styles.css">
 </head>
 
 <body>
-    <div class="status" id="status">OpApp Ready</div>
     <div class="container">
         <div class="header">
             <h1 class="title">HbbTV OpApp v1.2.1</h1>
             <p class="subtitle">Minimal Test Application</p>
+            <div class="status" id="status">OpApp Ready</div>
         </div>
 
         <div class="button-container">
-            <button class="button" id="videoBtn" onclick="openVideoWindow()">VideoWindow</button>
             <button class="button" id="broadcastBtn" onclick="toggleVideoBroadcast()">Broadcast</button>
             <button class="button" id="sendMsgBtn" onclick="sendMessageToVideoWindow('Hello from main window!')">
-                Send Message</button>
+                Test Message</button>
             <button class="button" id="infoBtn" onclick="showInfo()">Info</button>
+            <button class="button" id="logToggleBtn" onclick="toggleLogPanel()">OpApp Log</button>
         </div>
 
         <!-- Video broadcast hole - DOES NOT WORK INSIDE A DIV OBJECT -->
         <object type="application/oipfapplicationmanager" id="app-manager"></object>
         <object type="application/oipfcapabilities" id="capabilities"></object>
-        <object type="video/broadcast" id="hole" width="380" height="300" noshade></object>
+        <object type="video/broadcast" id="hole" noshade></object>
 
         <!-- Event Log Panel -->
-        <div class="event-log-panel">
+        <div class="event-log-panel hidden" id="eventLogPanel">
             <div class="event-log-container" id="eventLogContainer">
                 <div class="event-log-entry">Waiting for events...</div>
             </div>
-            <button class="clear-log-btn" onclick="clearEventLog()">Clear Log</button>
         </div>
 
         <div class="info-panel hidden" id="infoPanel">
@@ -61,36 +60,31 @@
             </div>
 
             <h4>Remote Control Keys:</h4>
-            <div class="key-info">
-                <strong>Arrow Keys:</strong> Navigate between buttons
-            </div>
-            <div class="key-info">
-                <strong>Enter/OK:</strong> Activate selected button
-            </div>
-            <div class="key-info">
-                <strong>Back:</strong> Return to previous screen
-            </div>
-            <div class="key-info">
-                <strong>Red (R):</strong> Open video window
-            </div>
-            <div class="key-info">
-                <strong>Green (G):</strong> Toggle broadcast
-            </div>
-            <div class="key-info">
-                <strong>Channel (H):</strong> Select next channel
-            </div>
+            <ul>
+                <li><strong>Arrow Keys:</strong> Navigate between buttons</li>
+                <li><strong>Enter/OK:</strong> Activate selected button</li>
+                <li><strong>Back:</strong> Return to previous screen</li>
+                <li><strong>&lt; or &gt;:</strong> Previous/Next channel</li>
+                <li><strong>V:</strong> Toggle broadcast</li>
+                <li><strong>Play/Pause (P):</strong> Toggle playback</li>
+                <li><strong>Hide/Show (G):</strong> Hide/Show OpApp (native)</li>
+            </ul>
         </div>
 
         <!-- Transport Bar -->
         <div class="transport-bar">
             <div class="transport-controls">
-                <button id="channelSelectBtn" class="transport-btn channel-btn" onclick="selectNextChannel()" title="Select Channel">
-                    <span class="btn-icon">📺[H]</span>
+                <button id="channelPrevBtn" class="transport-btn channel-btn" onclick="selectPreviousChannel()">
+                    <span class="btn-icon">&lt;</span>
                 </button>
-                <button id="stopButton" class="transport-btn stop-btn" onclick="stopVideo()" title="Stop">
-                    <span class="btn-icon">⏹ [S]</span>
+                <div class="channel-label">Channel</div>
+                <button id="channelNextBtn" class="transport-btn channel-btn" onclick="selectNextChannel()">
+                    <span class="btn-icon">&gt;</span>
                 </button>
-                <button id="channelSelectBtnBS" class="transport-btn channel-btn" onclick="selectNextChannelBS()" title="Select Channel BS">
+                <button id="playPauseButton" class="transport-btn play-pause-btn" onclick="togglePlayPause()" disabled>
+                    <span class="btn-icon">▶</span>
+                </button>
+                <button id="channelSelectBtnBS" class="transport-btn channel-btn" onclick="selectNextChannelBS()">
                     <span class="btn-icon">📺[BS]</span>
                 </button>
             </div>

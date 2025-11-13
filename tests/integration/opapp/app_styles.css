@@ -1,6 +1,7 @@
 body {
     margin: 0;
     padding: 0;
+    padding-bottom: 80px;
     font-family: Arial, sans-serif;
     background-color: #1a1a1a;
     color: #ffffff;
@@ -26,11 +27,12 @@ object[type="application/oipfcapabilities"] {
     margin: 0 auto;
     position: relative;
     height: 100vh;
+    overflow: hidden;
 }
 
 .header {
     background-color: #2d2d2d;
-    padding: 10px 20px;
+    padding: 5px 0;
     border-radius: 5px;
     margin-bottom: 20px;
     position: absolute;
@@ -38,24 +40,52 @@ object[type="application/oipfcapabilities"] {
     left: 10px;
     right: 10px;
     z-index: 10;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    gap: 0;
 }
 
 .title {
-    font-size: 1.5em;
-    margin-bottom: 5px;
+    font-size: 1.2em;
+    margin: 0;
+    padding: 0 20px;
     color: #00ff00;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
 }
 
 .subtitle {
-    font-size: 0.9em;
+    font-size: 0.8em;
     color: #cccccc;
-    margin-bottom: 0;
+    margin: 0;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.status {
+    background-color: #4CAF50;
+    color: white;
+    padding: 5px 20px;
+    font-size: 12px;
+    line-height: 1.2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    border-radius: 0 5px 5px 0;
+    flex-shrink: 0;
+    height: fit-content;
+    min-height: auto;
 }
 
 .button-container {
     position: absolute;
     right: 10px;
-    top: 120px;
+    top: 80px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -72,14 +102,8 @@ object[type="application/oipfcapabilities"] {
     display: inline-block;
     font-size: 9px;
     margin: 0;
-    cursor: pointer;
     border-radius: 4px;
-    transition: background-color 0.3s;
     min-width: 35px;
-}
-
-.button:hover {
-    background-color: #45a049;
 }
 
 .button:focus {
@@ -91,34 +115,58 @@ object[type="application/oipfcapabilities"] {
     top: 100px;
     left: 440px;
     background-color: #2d2d2d;
-    padding: 20px;
-    border-radius: 10px;
+    padding: 8px;
+    border-radius: 5px;
     max-width: 300px;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
     z-index: 10;
+    font-size: 10px;
+    line-height: 1.2;
 }
 
-.info-item {
-    margin: 10px 0;
+.info-panel h3 {
+    font-size: 12px;
+    margin: 4px 0;
+    padding: 0;
+}
+
+.info-panel h4 {
+    font-size: 11px;
+    margin: 4px 0;
+    padding: 0;
+}
+
+.info-panel .info-item {
+    margin: 3px 0;
     text-align: left;
+    font-size: 10px;
+    line-height: 1.2;
+}
+
+.info-panel ul {
+    margin: 3px 0;
+    padding-left: 15px;
+}
+
+.info-panel li {
+    margin: 2px 0;
+    line-height: 1.2;
+}
+
+.info-panel strong {
+    font-size: 10px;
 }
 
 .key-info {
     background-color: #333;
-    padding: 10px;
-    border-radius: 5px;
-    margin: 5px 0;
+    padding: 4px 6px;
+    border-radius: 3px;
+    margin: 3px 0;
+    font-size: 10px;
+    line-height: 1.2;
 }
 
-.status {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    background-color: #4CAF50;
-    color: white;
-    padding: 10px;
-    border-radius: 5px;
-    font-size: 14px;
-}
 
 .hidden {
     display: none;
@@ -126,21 +174,31 @@ object[type="application/oipfcapabilities"] {
 
 #hole {
     position: absolute;
-    top: 120px;
+    top: 80px;
     left: 20px;
+    right: 60px;
+    width: calc(100% - 80px);
+    max-width: calc(100% - 80px);
+    height: 400px !important;
+    transition: height 0.3s ease;
 }
 
 /* Event Log Panel Styles */
 .event-log-panel {
     position: absolute;
-    top: 120px;
-    left: 440px;
+    top: 80px;
+    left: 540px;
     background-color: #2d2d2d;
     padding: 5px;
     border-radius: 10px;
     width: 280px;
-    max-height: 280px;
-    z-index: 10;
+    max-height: 400px;
+    z-index: 20;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.event-log-panel.hidden {
+    display: none;
 }
 
 .event-log-panel h3 {
@@ -197,14 +255,8 @@ object[type="application/oipfcapabilities"] {
     display: inline-block;
     font-size: 9px;
     margin: 0;
-    cursor: pointer;
     border-radius: 3px;
-    transition: background-color 0.3s;
     width: 100%;
-}
-
-.clear-log-btn:hover {
-    background-color: #555;
 }
 
 .video-hole object {
@@ -223,12 +275,14 @@ object[type="application/oipfcapabilities"] {
     left: 0;
     right: 0;
     background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
-    padding: 15px 20px;
+    padding: 10px 20px;
     border-top: 2px solid #4CAF50;
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 100;
+    max-height: 80px;
+    box-sizing: border-box;
 }
 
 .transport-controls {
@@ -237,60 +291,78 @@ object[type="application/oipfcapabilities"] {
     align-items: center;
 }
 
+.channel-label {
+    color: #ffffff;
+    font-size: 12px;
+    text-align: center;
+    font-weight: normal;
+    display: flex;
+    align-items: center;
+    height: 45px;
+    padding: 0 5px;
+}
+
 .transport-btn {
-    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-    border: none;
+    background: #ffffff;
+    border: 2px solid #000000;
     border-radius: 50%;
-    width: 60px;
-    height: 60px;
+    width: 45px;
+    height: 45px;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    color: white;
-    font-size: 20px;
-}
-
-.transport-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-    background: linear-gradient(135deg, #45a049 0%, #4CAF50 100%);
+    color: #000000;
+    font-size: 18px;
+    padding: 0;
+    margin: 0;
 }
 
 .transport-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    background: #666666;
+    color: #ffffff;
 }
 
 .transport-btn:focus {
-    outline: 3px solid #00ff00;
+    outline: 2px solid #000000;
+    outline-offset: 2px;
 }
 
 .transport-btn:disabled {
     opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
+    background: #cccccc;
+    border-color: #999999;
+    color: #666666;
 }
 
 .channel-btn {
-    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
-}
-
-.channel-btn:hover {
-    background: linear-gradient(135deg, #1976D2 0%, #2196F3 100%);
+    background: #ffffff;
+    border: 2px solid #000000;
 }
 
 .stop-btn {
-    background: linear-gradient(135deg, #F44336 0%, #D32F2F 100%);
+    background: #ffffff;
+    border: 2px solid #000000;
 }
 
-.stop-btn:hover {
-    background: linear-gradient(135deg, #D32F2F 0%, #F44336 100%);
+.play-pause-btn {
+    background: #ffffff;
+    border: 2px solid #000000;
+    width: 45px;
+    height: 45px;
+}
+
+.play-pause-btn:active {
+    background: #666666;
+    color: #ffffff;
+}
+
+.play-pause-btn .btn-icon {
+    font-size: 18px;
+    line-height: 1;
+    filter: none;
 }
 
 .btn-icon {
-    font-size: 24px;
+    font-size: 18px;
     line-height: 1;
 }
