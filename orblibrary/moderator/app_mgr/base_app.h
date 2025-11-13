@@ -77,10 +77,62 @@ public:
     std::string GetLoadedUrl() const;
     void SetLoadedUrl(const std::string& url);
 
+    /**
+     * Get the key set mask for an application.
+     *
+     * @return The key set mask for the application.
+     */
+    uint16_t GetKeySetMask() const { return m_keySetMask; }
+
+    /**
+     * Set the key set mask for an application.
+     *
+     * @param keySetMask The key set mask.
+     * @param otherKeys optional other keys
+     * @return The key set mask for the application.
+     */
+    virtual uint16_t SetKeySetMask(const uint16_t keySetMask, const std::vector<uint16_t> &otherKeys);
+
+    /**
+     * Check the key code is accepted by the current key mask. Activate the app as a result if the
+     * key is accepted.
+     *
+     * @param appId The application.
+     * @param keyCode The key code to check.
+     * @return The supplied key_code is accepted by the current app's key set.
+     */
+    virtual bool InKeySet(const uint16_t keyCode);
+
+    /**
+     * Get the other keys for an application.
+     *
+     * @param appId The application.
+     * @return The other keys for the application.
+     */
+    std::vector<uint16_t> GetOtherKeyValues() const { return m_otherKeys; }
+
 protected:
+
+    /**
+     * Return the KeySet a key code belongs to.
+     *
+     * @param keyCode The key code.
+     * @return The key set.
+     */
+    static uint16_t GetKeySetMaskForKeyCode(const uint16_t keyCode);
+
+    static bool IsKeyNavigation(const uint16_t code);
+    static bool IsKeyNumeric(const uint16_t code);
+    static bool IsKeyAlpha(const uint16_t code);
+    static bool IsKeyVcr(const uint16_t code);
+    static bool IsKeyScroll(const uint16_t code);
+
     ApplicationSessionCallback *m_sessionCallback;
     E_APP_STATE m_state;
     std::string m_scheme;
+
+    uint16_t m_keySetMask = 0;
+    std::vector<uint16_t> m_otherKeys;
 
 private:
     const ApplicationType m_type;

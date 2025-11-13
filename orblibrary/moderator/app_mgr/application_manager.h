@@ -129,7 +129,7 @@ public:
      * @param otherKeys optional other keys
      * @return The key set mask for the application.
      */
-    uint16_t SetKeySetMask(int appId, uint16_t keySetMask, std::vector<uint16_t> otherKeys);
+    uint16_t SetKeySetMask(const int appId, const uint16_t keySetMask, const std::vector<uint16_t> &otherKeys);
 
     /**
      * Get the key set mask for an application.
@@ -137,7 +137,7 @@ public:
      * @param appId The application.
      * @return The key set mask for the application.
      */
-    uint16_t GetKeySetMask(int appId);
+    uint16_t GetKeySetMask(const int appId);
 
     /**
      * Get the other keys for an application.
@@ -145,7 +145,7 @@ public:
      * @param appId The application.
      * @return The other keys for the application.
      */
-    std::vector<uint16_t> GetOtherKeyValues(int appId);
+    std::vector<uint16_t> GetOtherKeyValues(const int appId);
 
     /**
      * Check the key code is accepted by the current key mask. Activate the app as a result if the
@@ -155,7 +155,7 @@ public:
      * @param keyCode The key code to check.
      * @return The supplied key_code is accepted by the current app's key set.
      */
-    bool InKeySet(int appId, uint16_t keyCode);
+    bool InKeySet(const int appId, const uint16_t keyCode);
 
     /**
      * Process an AIT section. The table will be processed when it is completed or updated.

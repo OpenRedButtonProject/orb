@@ -25,52 +25,11 @@
 
 #include <stdexcept>
 
-#define VK_RED 403
-#define VK_GREEN 404
-#define VK_YELLOW 405
-#define VK_BLUE 406
-#define VK_UP 38
-#define VK_DOWN 40
-#define VK_LEFT 37
-#define VK_RIGHT 39
-#define VK_ENTER 13
-#define VK_BACK 461
-#define VK_PLAY 415
-#define VK_STOP 413
-#define VK_PAUSE 19
-#define VK_FAST_FWD 417
-#define VK_REWIND 412
-#define VK_NEXT 425
-#define VK_PREV 424
-#define VK_PLAY_PAUSE 402
-#define VK_RECORD 416
-#define VK_PAGE_UP 33
-#define VK_PAGE_DOWN 34
-#define VK_INFO 457
-#define VK_NUMERIC_START 48
-#define VK_NUMERIC_END 57
-#define VK_ALPHA_START 65
-#define VK_ALPHA_END 90
-
 namespace orb
 {
 
 static std::string getAppSchemeFromUrlParams(const std::string &urlParams);
 static std::string getUrlParamsFromAppScheme(const std::string &scheme);
-
-/**
- * Return the KeySet a key code belongs to.
- *
- * @param keyCode The key code.
- * @return The key set.
- */
-static uint16_t GetKeySetMaskForKeyCode(const uint16_t &keyCode);
-
-static bool IsKeyNavigation(const uint16_t &code);
-static bool IsKeyNumeric(const uint16_t &code);
-static bool IsKeyAlpha(const uint16_t &code);
-static bool IsKeyVcr(const uint16_t &code);
-static bool IsKeyScroll(const uint16_t &code);
 
 
 HbbTVApp::HbbTVApp(const std::string &url, ApplicationSessionCallback *sessionCallback)
@@ -215,12 +174,14 @@ std::string HbbTVApp::GetScheme() const {
 }
 
 
-uint16_t HbbTVApp::SetKeySetMask(uint16_t keySetMask, const std::vector<uint16_t> &otherKeys) {
+uint16_t HbbTVApp::SetKeySetMask(const uint16_t keySetMask, const std::vector<uint16_t> &otherKeys) {
     std::string currentScheme = GetScheme();
 
     // Compatibility check for older versions
     bool isOldVersion = m_versionMinor > 1;
     bool isLinkedAppScheme12 = currentScheme == LINKED_APP_SCHEME_1_2;
+
+    uint16_t newKeySetMask = keySetMask;
 
     // Key events VK_STOP, VK_PLAY, VK_PAUSE, VK_PLAY_PAUSE, VK_FAST_FWD,
     // VK_REWIND and VK_RECORD shall always be available to linked applications
@@ -228,31 +189,34 @@ uint16_t HbbTVApp::SetKeySetMask(uint16_t keySetMask, const std::vector<uint16_t
     // to be activated first (2.0.4, App. O.7)
     bool isException = isLinkedAppScheme12 && m_versionMinor == 7;
 
-    if (!m_isActivated && currentScheme != LINKED_APP_SCHEME_2) {
-        if ((keySetMask & KEY_SET_VCR) != 0 && isOldVersion && !isException) {
-            keySetMask &= ~KEY_SET_VCR;
+    if (!m_isActivated && (currentScheme != LINKED_APP_SCHEME_2)) {
+        if (((newKeySetMask & KEY_SET_VCR) == KEY_SET_VCR)
+                && (isOldVersion && !isException)) {
+            newKeySetMask &= ~KEY_SET_VCR;
         }
-        if ((keySetMask & KEY_SET_NUMERIC) != 0 && !isLinkedAppScheme12 && isOldVersion) {
-            keySetMask &= ~KEY_SET_NUMERIC;
+        if (((newKeySetMask & KEY_SET_NUMERIC) == KEY_SET_NUMERIC)
+                && (!isLinkedAppScheme12 && isOldVersion)) {
+            newKeySetMask &= ~KEY_SET_NUMERIC;
         }
-        if ((keySetMask & KEY_SET_OTHER) != 0 && !isLinkedAppScheme12 && isOldVersion) {
-            keySetMask &= ~KEY_SET_OTHER;
+        if (((newKeySetMask & KEY_SET_OTHER) == KEY_SET_OTHER)
+                && (!isLinkedAppScheme12 && isOldVersion)) {
+            newKeySetMask &= ~KEY_SET_OTHER;
         }
     }
 
-    m_keySetMask = keySetMask;
-    if ((keySetMask & KEY_SET_OTHER) != 0) {
+    m_keySetMask = newKeySetMask;
+    if ((newKeySetMask & KEY_SET_OTHER) == KEY_SET_OTHER) {
         m_otherKeys = otherKeys; // Survived all checks
     }
 
-    return keySetMask;
+    return newKeySetMask;
 }
 
-bool HbbTVApp::InKeySet(uint16_t keyCode)
+bool HbbTVApp::InKeySet(const uint16_t keyCode)
 {
     if ((m_keySetMask & GetKeySetMaskForKeyCode(keyCode)) != 0)
     {
-        if ((m_keySetMask & KEY_SET_OTHER) != 0) {
+        if ((m_keySetMask & KEY_SET_OTHER) == KEY_SET_OTHER) {
             auto it = std::find(m_otherKeys.begin(), m_otherKeys.end(), keyCode);
             if (it == m_otherKeys.end()) {
                 return false;
@@ -333,100 +297,6 @@ static std::string getUrlParamsFromAppScheme(const std::string &scheme)
         return "?lloc=availability";
     }
     return "";
-}
-
-/**
- * Return the KeySet a key code belongs to.
- *
- * @param keyCode The key code.
- * @return The key set.
- */
-static uint16_t GetKeySetMaskForKeyCode(const uint16_t &keyCode)
-{
-    if (IsKeyNavigation(keyCode))
-    {
-        return KEY_SET_NAVIGATION;
-    }
-    else if (IsKeyNumeric(keyCode))
-    {
-        return KEY_SET_NUMERIC;
-    }
-    else if (IsKeyAlpha(keyCode))
-    {
-        return KEY_SET_ALPHA;
-    }
-    else if (IsKeyVcr(keyCode))
-    {
-        return KEY_SET_VCR;
-    }
-    else if (IsKeyScroll(keyCode))
-    {
-        return KEY_SET_SCROLL;
-    }
-    else if (keyCode == VK_RED)
-    {
-        return KEY_SET_RED;
-    }
-    else if (keyCode == VK_GREEN)
-    {
-        return KEY_SET_GREEN;
-    }
-    else if (keyCode == VK_YELLOW)
-    {
-        return KEY_SET_YELLOW;
-    }
-    else if (keyCode == VK_BLUE)
-    {
-        return KEY_SET_BLUE;
-    }
-    else if (keyCode == VK_INFO)
-    {
-        return KEY_SET_INFO;
-    }
-    else if (keyCode == VK_RECORD)
-    {
-        return KEY_SET_OTHER;
-    }
-
-    return 0;
-}
-
-static bool IsKeyNavigation(const uint16_t &code)
-{
-    return code == VK_UP ||
-           code == VK_DOWN ||
-           code == VK_LEFT ||
-           code == VK_RIGHT ||
-           code == VK_ENTER ||
-           code == VK_BACK;
-}
-
-static bool IsKeyNumeric(const uint16_t &code)
-{
-    return code >= VK_NUMERIC_START && code <= VK_NUMERIC_END;
-}
-
-static bool IsKeyAlpha(const uint16_t &code)
-{
-    return code >= VK_ALPHA_START && code <= VK_ALPHA_END;
-}
-
-static bool IsKeyVcr(const uint16_t &code)
-{
-    return code == VK_PLAY ||
-           code == VK_STOP ||
-           code == VK_PAUSE ||
-           code == VK_FAST_FWD ||
-           code == VK_REWIND ||
-           code == VK_NEXT ||
-           code == VK_PREV ||
-           code == VK_PLAY_PAUSE;
-}
-
-static bool IsKeyScroll(const uint16_t &code)
-{
-    return code == VK_PAGE_UP ||
-           code == VK_PAGE_DOWN;
 }
 
 } // namespace orb
