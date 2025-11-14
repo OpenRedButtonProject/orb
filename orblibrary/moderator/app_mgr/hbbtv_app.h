@@ -100,47 +100,12 @@ public:
 
     Ait::S_AIT_APP_DESC GetAitDescription() const { return m_aitDesc; }
 
-    // FREE-273 Move keyset methods to base app
+    uint16_t SetKeySetMask(const uint16_t keySetMask, const std::vector<uint16_t> &otherKeys) override;
 
-    /**
-     * Get the key set mask for an application.
-     *
-     * @return The key set mask for the application.
-     */
-    uint16_t GetKeySetMask() const { return m_keySetMask; }
-
-    /**
-     * Set the key set mask for an application.
-     *
-     * @param keySetMask The key set mask.
-     * @param otherKeys optional other keys
-     * @return The key set mask for the application.
-     */
-    uint16_t SetKeySetMask(uint16_t keySetMask, const std::vector<uint16_t> &otherKeys);
-
-    /**
-     * Check the key code is accepted by the current key mask. Activate the app as a result if the
-     * key is accepted.
-     *
-     * @param appId The application.
-     * @param keyCode The key code to check.
-     * @return The supplied key_code is accepted by the current app's key set.
-     */
-    bool InKeySet(uint16_t keyCode);
-
-    /**
-     * Get the other keys for an application.
-     *
-     * @param appId The application.
-     * @return The other keys for the application.
-     */
-    std::vector<uint16_t> GetOtherKeyValues() const { return m_otherKeys; }
+    bool InKeySet(const uint16_t keyCode) override;
 
 private:
     bool IsAllowedByParentalControl(const Ait::S_AIT_APP_DESC &desc) const;
-
-    uint16_t m_keySetMask = 0;
-    std::vector<uint16_t> m_otherKeys;
 
     std::string m_entryUrl;
     std::string m_baseUrl;

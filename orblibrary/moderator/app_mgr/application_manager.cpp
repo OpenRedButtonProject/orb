@@ -231,8 +231,8 @@ int ApplicationManager::CreateAndRunApp(
 ){
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
-    LOG(INFO) << "CreateAndRunApp: Type " << desc.appUsage
-        << " AppId [" << desc.appId << "] Is OpApp? " << runAsOpApp;
+    LOG(INFO) << "CreateAndRunApp: " << (runAsOpApp ? "OpApp" : "HbbTV app")
+        << " with AppId [" << desc.appId << "]";
 
     // ETSI TS 103 606 V1.2.1 (2024-03) Table 7: XML AIT Profile
     if (runAsOpApp ||
@@ -302,43 +302,53 @@ void ApplicationManager::HideApplication(int callingAppId)
     }
 }
 
-uint16_t ApplicationManager::SetKeySetMask(int appId, uint16_t keySetMask, std::vector<uint16_t> otherKeys)
+uint16_t ApplicationManager::SetKeySetMask(const int appId, const uint16_t keySetMask, const std::vector<uint16_t> &otherKeys)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
-    // Key masks only apply to HbbTV apps
-    if (m_hbbtvApp && m_hbbtvApp->GetId() == appId) {
-        return m_hbbtvApp->SetKeySetMask(keySetMask, otherKeys);
+    BaseApp* app = getAppById(appId);
+    if (app) {
+        return app->SetKeySetMask(keySetMask, otherKeys);
     }
 
-    LOG(INFO) << "SetKeySetMask(): App with id " << appId << " is not an HbbTV app or not found. Returning 0.";
+    LOG(ERROR) << "SetKeySetMask(): App with id " << appId << " not found. Returning 0.";
     return 0;
 }
 
-uint16_t ApplicationManager::GetKeySetMask(int appId)
+uint16_t ApplicationManager::GetKeySetMask(const int appId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-
-    // Key masks only apply to HbbTV apps
-    if (m_hbbtvApp && m_hbbtvApp->GetId() == appId) {
-        return m_hbbtvApp->GetKeySetMask();
+    BaseApp* app = getAppById(appId);
+    if (app) {
+        return app->GetKeySetMask();
     }
 
-    LOG(INFO) << "GetKeySetMask(): App with id " << appId << " is not an HbbTV app or not found. Returning 0.";
+    LOG(ERROR) << "GetKeySetMask(): App with id " << appId << " not found. Returning 0.";
     return 0;
+}
+
+bool ApplicationManager::InKeySet(const int appId, const uint16_t keyCode)
+{
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
+    BaseApp* app = getAppById(appId);
+    if (app) {
+        return app->InKeySet(keyCode);
+    }
+
+    LOG(ERROR) << "InKeySet(): App with id " << appId << " not found. Returning false.";
+    return false;
 }
 
 std::vector<uint16_t> ApplicationManager::GetOtherKeyValues(int appId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-
-    // Key masks only apply to HbbTV apps
-    if (m_hbbtvApp && m_hbbtvApp->GetId() == appId) {
-        return m_hbbtvApp->GetOtherKeyValues();
+    BaseApp* app = getAppById(appId);
+    if (app) {
+        return app->GetOtherKeyValues();
     }
 
-    LOG(INFO) << "GetOtherKeyValues(): App with id " << appId << " is not an HbbTV app or not found. Returning empty vector.";
-    return std::vector<uint16_t>();
+    LOG(ERROR) << "GetOtherKeyValues(): App with id " << appId << " not found. Returning empty vector.";
+    return {};
 }
 
 std::string ApplicationManager::GetApplicationScheme(int appId)
@@ -379,19 +389,6 @@ std::string ApplicationManager::GetApplicationUrl(int appId)
         return app->GetLoadedUrl();
     }
     return std::string();
-}
-
-bool ApplicationManager::InKeySet(int appId, uint16_t keyCode)
-{
-    std::lock_guard<std::recursive_mutex> lock(m_lock);
-
-    // Key masks only apply to HbbTV apps - Oops: not true! Section E.2.1.28 TS 103 606 V1.2.1 (2024-03)
-    if (m_hbbtvApp && m_hbbtvApp->GetId() == appId) {
-        return m_hbbtvApp->InKeySet(keyCode);
-    }
-
-    LOG(INFO) << "InKeySet(): App with id " << appId << " is not an HbbTV app or not found. Returning false.";
-    return false;
 }
 
 void ApplicationManager::ProcessAitSection(uint16_t aitPid, uint16_t serviceId,
@@ -976,7 +973,7 @@ void ApplicationManager::killRunningApp(int appid)
     callback->LoadApplication(BaseApp::INVALID_APP_ID, "about:blank");
 
     if (type == APP_TYPE_HBBTV)
-    {   
+    {
         m_hbbtvApp.reset();
     }
     else /* if (type == APP_TYPE_OPAPP) */
@@ -1058,7 +1055,7 @@ bool ApplicationManager::isAppTrusted(bool)
 const Ait::S_AIT_APP_DESC * ApplicationManager::getAutoStartApp(const Ait::S_AIT_TABLE *aitTable)
 {
     //int index;
-    LOG(ERROR) << "GetAutoStartApp";
+    LOG(INFO) << "GetAutoStartApp";
 
     /* Note: XML AIt uses the alpha-2 region codes as defined in ISO 3166-1.
      * DVB's parental_rating_descriptor uses the 3-character code as specified in ISO 3166. */
