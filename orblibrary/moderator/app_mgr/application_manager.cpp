@@ -85,11 +85,15 @@ int ApplicationManager::CreateApplication(int callingAppId, const std::string &u
     auto callingApp = getAppById(callingAppId);
     bool isRegularHbbTVApp = !runAsOpApp;
 
-    if (runAsOpApp && (callingApp || m_opApp)) {
-        LOG(ERROR) << "Called with runAsOpApp=true from other app or an opapp is already running, early out";
-        return BaseApp::INVALID_APP_ID;
+    if (runAsOpApp) {
+        /** OpApp case */
+        if (callingApp || m_opApp) {
+            LOG(ERROR) << "Called with runAsOpApp=true from other app or an opapp is already running, early out";
+            return BaseApp::INVALID_APP_ID;
+        }
     }
-    else if (callingApp == nullptr) /** HbbTV app */ {
+    else if (callingApp == nullptr) {
+        /** HbbTV app case */
         LOG(ERROR) << "Called by non-running app, early out";
         return BaseApp::INVALID_APP_ID;
     }

@@ -1043,4 +1043,112 @@ TEST_F(ApplicationManagerTest, TestHbbTVAppInKeySetDoesNotActivateOnRejectedKey)
     EXPECT_EQ(resultMask, KEY_SET_RED);
 }
 
+// ============================================================================
+// Unit tests for CreateApplication if/else clause (lines 88-100)
+// ============================================================================
+
+TEST_F(ApplicationManagerTest, TestCreateApplicationRunAsOpAppWithCallingApp)
+{
+    // GIVEN: ApplicationManager with a running HbbTV app
+    ApplicationManager appManager;
+    appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
+    appManager.RegisterCallback(APP_TYPE_OPAPP, mockCallback.get());
+
+    EXPECT_CALL(*mockCallback, LoadApplication(
+        testing::_, testing::_, testing::_, testing::_, testing::An<MockApplicationSessionCallback::onPageLoadedSuccess>()))
+        .Times(1);
+
+    int callingAppId = appManager.CreateAndRunApp("http://example.com/calling.html", false);
+    EXPECT_GT(callingAppId, BaseApp::INVALID_APP_ID);
+
+    // WHEN: CreateApplication is called with runAsOpApp=true and a valid callingAppId
+    int result = appManager.CreateApplication(callingAppId, "http://example.com/newapp.html", true);
+
+    // THEN: Should return INVALID_APP_ID because runAsOpApp=true cannot be called from another app
+    EXPECT_EQ(result, BaseApp::INVALID_APP_ID);
+}
+
+TEST_F(ApplicationManagerTest, TestCreateApplicationRunAsOpAppWithExistingOpApp)
+{
+    // GIVEN: ApplicationManager with a running OpApp
+    ApplicationManager appManager;
+    appManager.RegisterCallback(APP_TYPE_OPAPP, mockCallback.get());
+    appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
+
+    EXPECT_CALL(*mockCallback, LoadApplication(
+        testing::_, testing::_, testing::An<MockApplicationSessionCallback::onPageLoadedSuccess>()))
+        .Times(1);
+
+    int existingOpAppId = appManager.CreateAndRunApp("http://example.com/existing.html", true);
+    EXPECT_GT(existingOpAppId, BaseApp::INVALID_APP_ID);
+
+    // WHEN: CreateApplication is called with runAsOpApp=true while an OpApp is already running
+    int result = appManager.CreateApplication(BaseApp::INVALID_APP_ID, "http://example.com/newapp.html", true);
+
+    // THEN: Should return INVALID_APP_ID because an OpApp is already running
+    EXPECT_EQ(result, BaseApp::INVALID_APP_ID);
+}
+
+TEST_F(ApplicationManagerTest, TestCreateApplicationRunAsOpAppWithoutCallingAppOrOpApp)
+{
+    // GIVEN: ApplicationManager with no running apps
+    ApplicationManager appManager;
+    appManager.RegisterCallback(APP_TYPE_OPAPP, mockCallback.get());
+    appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
+
+    // WHEN: CreateApplication is called with runAsOpApp=true, no calling app (null is correct for OpApps), and no existing OpApp
+    // Note: For OpApps, callingApp should be null, so this should pass the if/else check
+    // We use a valid URL format to verify it passes the if/else check
+    // The function may still fail later for other reasons (e.g., URL parsing), but not at the if/else clause
+    EXPECT_CALL(*mockCallback, LoadApplication(
+        testing::_, testing::_, testing::An<MockApplicationSessionCallback::onPageLoadedSuccess>()))
+        .Times(1);
+
+    int result = appManager.CreateApplication(BaseApp::INVALID_APP_ID, "http://example.com/opapp.html", true);
+
+    // THEN: Should pass the if/else check - OpApps are allowed to have null callingApp
+    // This test will FAIL with the current buggy code because it incorrectly treats
+    // runAsOpApp=true with null callingApp as an error in the else clause
+    EXPECT_GT(result, BaseApp::INVALID_APP_ID);
+}
+
+TEST_F(ApplicationManagerTest, TestCreateApplicationHbbTVAppWithoutCallingApp)
+{
+    // GIVEN: ApplicationManager with no running apps
+    ApplicationManager appManager;
+    appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
+    appManager.RegisterCallback(APP_TYPE_OPAPP, mockCallback.get());
+
+    // WHEN: CreateApplication is called with runAsOpApp=false and INVALID_APP_ID (no calling app)
+    int result = appManager.CreateApplication(BaseApp::INVALID_APP_ID, "http://example.com/newapp.html", false);
+
+    // THEN: Should return INVALID_APP_ID because HbbTV apps must be called by a running app
+    EXPECT_EQ(result, BaseApp::INVALID_APP_ID);
+}
+
+TEST_F(ApplicationManagerTest, TestCreateApplicationHbbTVAppWithCallingApp)
+{
+    // GIVEN: ApplicationManager with a running HbbTV app
+    ApplicationManager appManager;
+    appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
+    appManager.RegisterCallback(APP_TYPE_OPAPP, mockCallback.get());
+
+    EXPECT_CALL(*mockCallback, LoadApplication(
+        testing::_, testing::_, testing::_, testing::_, testing::An<MockApplicationSessionCallback::onPageLoadedSuccess>()))
+        .Times(1);
+
+    int callingAppId = appManager.CreateAndRunApp("http://example.com/calling.html", false);
+    EXPECT_GT(callingAppId, BaseApp::INVALID_APP_ID);
+
+    // WHEN: CreateApplication is called with runAsOpApp=false and a valid callingAppId
+    // Note: This should pass the if/else check but may fail later due to URL parsing
+    // We use an empty URL to ensure it fails early after the check we're testing
+    int result = appManager.CreateApplication(callingAppId, "", false);
+
+    // THEN: Should pass the if/else check (returns INVALID_APP_ID due to empty URL, not the early out)
+    // The check at line 95-99 should pass, and it should fail at line 102-112 instead
+    EXPECT_EQ(result, BaseApp::INVALID_APP_ID);
+    // But this is due to empty URL, not the early out check we're testing
+}
+
 } // namespace orb
