@@ -22,6 +22,7 @@
 #include "app_mgr/application_manager.h"
 #include "app_mgr/xml_parser.h"
 #include "log.h"
+#include "JsonRpcService.h"
 
 #define LINKED_APP_SCHEME_1_1 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.1"
 
@@ -180,7 +181,31 @@ void AppMgrInterface::onNetworkStatusChange(bool available) {
 
 void AppMgrInterface::onChannelChange(uint16_t onetId, uint16_t transId, uint16_t serviceId) {
     std::lock_guard<std::mutex> lock(mMutex);
+    
+    LOGI("AppMgrInterface::onChannelChange called - onetId: " << onetId << ", transId: " << transId << ", serviceId: " << serviceId);
+    
+    // Before switching to a DVB channel, stop any active IP player session
+    // This ensures the IP player is properly stopped when switching from IP to DVB
+    if (mWebSocketService) {
+        int currentSessionId = mWebSocketService->GetCurrentSessionId();
+        LOGI("AppMgrInterface::onChannelChange - WebSocket service available, currentSessionId: " << currentSessionId);
+        if (currentSessionId > 0) {
+            LOGI("Stopping IP player session " << currentSessionId << " before switching to DVB channel");
+            mWebSocketService->SendIPPlayerStop(currentSessionId);
+        } else {
+            LOGI("AppMgrInterface::onChannelChange - No active IP player session (sessionId <= 0)");
+        }
+    } else {
+        LOGI("AppMgrInterface::onChannelChange - WebSocket service not available");
+    }
+    
     ApplicationManager::instance().OnChannelChanged(onetId, transId, serviceId);
+}
+
+void AppMgrInterface::setWebSocketService(std::shared_ptr<networkServices::JsonRpcService> webSocketService) {
+    std::lock_guard<std::mutex> lock(mMutex);
+    mWebSocketService = webSocketService;
+    LOGI("AppMgrInterface::setWebSocketService - WebSocket service " << (webSocketService ? "set" : "cleared"));
 }
 
 void AppMgrInterface::processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section) {

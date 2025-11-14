@@ -26,6 +26,10 @@ namespace orb
 class ComponentBase;
 class IAppMgrInterface;
 
+namespace networkServices {
+    class JsonRpcService;
+}
+
 class Moderator
 {
 public:
@@ -78,6 +82,13 @@ public:
     bool handleBridgeEvent(const std::string& etype, const std::string& properties);
     void processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section);
     void processXmlAit(const std::vector<uint8_t>& xmlait);
+
+    /**
+     * @brief Set the WebSocket service for AppMgrInterface
+     *
+     * @param webSocketService WebSocket service instance
+     */
+    void setWebSocketService(std::shared_ptr<networkServices::JsonRpcService> webSocketService);
 
 private:
     //Todo: use smart pointers to manager IOrbBrowser
