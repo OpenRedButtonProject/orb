@@ -45,6 +45,8 @@ public:
 
     int Load() override;
 
+    static std::string opAppStateToString(const E_APP_STATE &state);
+
 private:
     bool CanTransitionToState(const E_APP_STATE &state);
 

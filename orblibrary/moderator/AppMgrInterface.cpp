@@ -65,6 +65,19 @@ string AppMgrInterface::executeRequest(const string& method, const string& token
     auto &appMgr = ApplicationManager::instance();
     int appId = params.getInteger("id");
 
+    // Helper function to check if the request is supported for OpApp
+    auto isOpAppRequest = [this](const string& method, std::string& json_response) -> bool {
+        // The response is built by the isOpAppRequest function if the method is not supported for OpApp
+        // and returned to the caller
+        if (mAppType != ApplicationType::APP_TYPE_OPAPP) {
+            std::string errorMessage = "method [" + method + "] is only supported for OpApp";
+            LOGE(errorMessage);
+            json_response = buildJsonResponse(errorMessage);
+            return false;
+        }
+        return true;
+    };
+
     LOGI("Request with method [" + method + "] received");
     if (method == MANAGER_CREATE_APP)
     {
@@ -277,11 +290,13 @@ void AppMgrInterface::DispatchApplicationSchemeUpdatedEvent(const int appId, con
 }
 
 void AppMgrInterface::DispatchOperatorApplicationStateChange(const int appId, const std::string &oldState, const std::string &newState) {
-    LOGI("appID: " << appId);
+    // TODO FREE-282
+    LOGI("TO DO FREE-282: DispatchOperatorApplicationStateChange");
 }
 
 void AppMgrInterface::DispatchOperatorApplicationStateChangeCompleted(const int appId, const std::string &oldState, const std::string &newState) {
-    LOGI("appID: " << appId);
+    // TODO FREE-282
+    LOGI("TO DO FREE-282: DispatchOperatorApplicationStateChangeCompleted");
 }
 
 void AppMgrInterface::DispatchOperatorApplicationContextChange(const int appId, const std::string &startupLocation, const std::string &launchLocation) {

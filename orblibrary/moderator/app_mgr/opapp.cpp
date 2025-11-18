@@ -6,7 +6,8 @@
 
 namespace orb
 {
-static std::string opAppStateToString(const BaseApp::E_APP_STATE &state)
+// static
+std::string OpApp::opAppStateToString(const E_APP_STATE &state)
 {
     switch (state)
     {

@@ -602,24 +602,38 @@ bool ApplicationManager::IsRequestAllowed(int callingAppId, const
     }
 }
 
-bool ApplicationManager::OpAppRequestForeground(int callingAppId)
+bool ApplicationManager::OpAppRequestState(int callingAppId, const BaseApp::E_APP_STATE &state)
 {
-    LOG(DEBUG) << "OpAppRequestForeground";
+    std::string stateString = OpApp::opAppStateToString(state);
 
     if ((m_opApp == nullptr) || (m_opApp->GetId() != callingAppId))
     {
-        LOG(ERROR) << "OpAppRequestForeground: Calling app not found";
+        LOG(ERROR) << "OpAppRequestState: " << stateString
+            << " for app with id [" << callingAppId << "]: Calling app not found";
         return false;
     }
 
-    if (!m_opApp->SetState(BaseApp::FOREGROUND_STATE))
+    if (!m_opApp->SetState(state))
     {
-        LOG(ERROR) << "OpAppRequestForeground: Failed to set state to foreground";
+        LOG(ERROR) << "OpAppRequestState: " << stateString << " - failed";
         return false;
     }
 
-    LOG(INFO) << "OpAppRequestForeground: Success";
+    LOG(INFO) << "OpAppRequestState: " << stateString << " - successful";
     return true;
+}
+
+std::string ApplicationManager::OpAppGetState(int callingAppId)
+{
+    LOG(DEBUG) << "OpAppGetState";
+
+    if ((m_opApp == nullptr) || (m_opApp->GetId() != callingAppId))
+    {
+        LOG(ERROR) << "OpAppGetState: Calling app not found";
+        return std::string();
+    }
+
+    return OpApp::opAppStateToString(m_opApp->GetState());
 }
 
 std::map<std::string, std::string> ApplicationManager::GetCurrentAppNames()

@@ -195,11 +195,21 @@ public:
     bool RunTeletextApplication(void);
 
     /**
-     * Request the foreground for the OpApp.
+     * State change requests for the OpApp.
      *
-     * @return true if the foreground request is allowed, otherwise false
+     * @param callingAppId The app ID making the request.
+     * @param state The desired state to transition to.
+     * @return true if the state change is successful, otherwise false
      */
-    bool OpAppRequestForeground(int callingAppId);
+    bool OpAppRequestState(int callingAppId, const BaseApp::E_APP_STATE &state);
+
+    /**
+     * Get the state of the OpApp as a string. See TSI 103 606 V1.2.1 (2024-03) A.2.2.1
+     *
+     * @param callingAppId The app ID making the request.
+     * @return The state of the OpApp.
+     */
+    std::string OpAppGetState(int callingAppId);
 
     /**
      * Check whether a request from the polyfill is allowed.
