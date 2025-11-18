@@ -602,6 +602,26 @@ bool ApplicationManager::IsRequestAllowed(int callingAppId, const
     }
 }
 
+bool ApplicationManager::OpAppRequestForeground(int callingAppId)
+{
+    LOG(DEBUG) << "OpAppRequestForeground";
+
+    if ((m_opApp == nullptr) || (m_opApp->GetId() != callingAppId))
+    {
+        LOG(ERROR) << "OpAppRequestForeground: Calling app not found";
+        return false;
+    }
+
+    if (!m_opApp->SetState(BaseApp::FOREGROUND_STATE))
+    {
+        LOG(ERROR) << "OpAppRequestForeground: Failed to set state to foreground";
+        return false;
+    }
+
+    LOG(INFO) << "OpAppRequestForeground: Success";
+    return true;
+}
+
 std::map<std::string, std::string> ApplicationManager::GetCurrentAppNames()
 {
     std::map<std::string, std::string> result;

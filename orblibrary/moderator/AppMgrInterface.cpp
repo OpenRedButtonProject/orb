@@ -180,9 +180,9 @@ void AppMgrInterface::onNetworkStatusChange(bool available) {
 
 void AppMgrInterface::onChannelChange(uint16_t onetId, uint16_t transId, uint16_t serviceId) {
     std::lock_guard<std::mutex> lock(mMutex);
-    
+
     LOGI("AppMgrInterface::onChannelChange called - onetId: " << onetId << ", transId: " << transId << ", serviceId: " << serviceId);
-    
+
     ApplicationManager::instance().OnChannelChanged(onetId, transId, serviceId);
 }
 

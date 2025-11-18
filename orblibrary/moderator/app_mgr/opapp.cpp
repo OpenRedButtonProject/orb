@@ -10,15 +10,19 @@ static std::string opAppStateToString(const BaseApp::E_APP_STATE &state)
 {
     switch (state)
     {
-    case BaseApp::BACKGROUND_STATE: return "background";
-    case BaseApp::FOREGROUND_STATE: return "foreground";
-    case BaseApp::TRANSIENT_STATE: return "transient";
-    case BaseApp::OVERLAID_TRANSIENT_STATE: return "overlaid-transient";
-    case BaseApp::OVERLAID_FOREGROUND_STATE: return "overlaid-foreground";
-    default: break;
+    case BaseApp::BACKGROUND_STATE:
+        return "background";
+    case BaseApp::FOREGROUND_STATE:
+        return "foreground";
+    case BaseApp::TRANSIENT_STATE:
+        return "transient";
+    case BaseApp::OVERLAID_TRANSIENT_STATE:
+        return "overlaid-transient";
+    case BaseApp::OVERLAID_FOREGROUND_STATE:
+        return "overlaid-foreground";
+    default:
+        return "undefined";
     }
-    // should never get here
-    return "undefined";
 }
 
 OpApp::OpApp(const std::string &url, ApplicationSessionCallback *sessionCallback)
@@ -55,53 +59,61 @@ int OpApp::Load() {
 
 bool OpApp::SetState(const E_APP_STATE &state)
 {
-    if (CanTransitionToState(state))
+    std::string current = opAppStateToString(m_state);
+    std::string next    = opAppStateToString(state);
+
+    if (!CanTransitionToState(state))
     {
-        // FREE-275: Reinstate this check once we have a proper state machine.
-        // if (state != m_state) {
-        int id = GetId();
-        LOG(INFO) << "AppId " << id << "; state transition: " << m_state << " -> " << state;
-        std::string previous = opAppStateToString(m_state);
-        std::string next = opAppStateToString(state);
-        m_state = state;
-        m_sessionCallback->DispatchOperatorApplicationStateChange(id, previous, next);
-
-        if (state == BaseApp::BACKGROUND_STATE)
-        {
-            m_sessionCallback->HideApplication(id);
-        }
-        else // Need to support other states
-        {
-            m_sessionCallback->ShowApplication(id);
-        }
-        // } // if (state != m_state)
-
-        if (state == BaseApp::TRANSIENT_STATE || state == BaseApp::OVERLAID_TRANSIENT_STATE)
-        {
-            m_countdown.start(std::chrono::milliseconds(COUNT_DOWN_TIMEOUT));
-        }
-        else
-        {
-            m_countdown.stop();
-        }
-        return true;
+        LOG(INFO) << "Invalid state transition: " << current << " -> " << next;
+        return false;
     }
-    LOG(INFO) << "Invalid state transition: " << GetState() << " -> " << state;
-    return false;
+
+    // FREE-275: Reinstate this check once we have a proper state machine.
+    // if (state != m_state) {
+    int id = GetId();
+    LOG(INFO) << "AppId " << id << "; state transition: " << current << " -> " << next;
+
+    m_sessionCallback->DispatchOperatorApplicationStateChange(id, current, next);
+
+    if (state == BACKGROUND_STATE)
+    {
+        m_sessionCallback->HideApplication(id);
+    }
+    else if (state == FOREGROUND_STATE)
+    {
+        m_sessionCallback->ShowApplication(id);
+    }
+
+    if (state == TRANSIENT_STATE || state == OVERLAID_TRANSIENT_STATE) {
+        m_countdown.start(std::chrono::milliseconds(COUNT_DOWN_TIMEOUT));
+    }
+    else {
+        m_countdown.stop();
+    }
+
+    m_state = state;
+    return true;
 }
 
 bool OpApp::CanTransitionToState(const E_APP_STATE &state)
 {
-    if (state != m_state)
+    // FREE-278 - TODO Integrate this check into the state machine above.
+    if (state == m_state) {
+        return true;
+    }
+
+    switch (m_state)
     {
-        switch (m_state)
-        {
-        case FOREGROUND_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.2 Page 38
-            // Allowed transitions from FOREGROUND_STATE
-            if (state == BaseApp::BACKGROUND_STATE || state == BaseApp::TRANSIENT_STATE) {
-                return true;
-            }
-            break;
+    case BACKGROUND_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.1 Page 36
+        // Background state can transition to any other state
+        return true;
+
+    case FOREGROUND_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.2 Page 38
+        // Allowed transitions from FOREGROUND_STATE
+        if (state == BACKGROUND_STATE || state == TRANSIENT_STATE) {
+            return true;
+        }
+        break;
 
         case TRANSIENT_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.4 Page 41
         case BaseApp::OVERLAID_TRANSIENT_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.6 Page 42

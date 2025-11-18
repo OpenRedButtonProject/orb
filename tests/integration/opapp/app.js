@@ -465,10 +465,62 @@ document.addEventListener('DOMContentLoaded', function() {
         videoHole.style.height = '400px';
     }
 
+    // Initialize video broadcast object
+    videoBroadcast.initialize();
+
     // Automatically open the video window as per OpApp specification
     // "Operator applications shall at all times have access to an additional window,
     //  termed the operator application video window"
     openVideoWindow();
+});
+
+// Handle window load event (fires after all resources are loaded)
+window.addEventListener('load', function() {
+    console.log('Window fully loaded');
+    logEvent('Window fully loaded', 'success');
+
+    // Example: Request foreground using standard HbbTV/OIPF API
+    // According to ETSI TS 103 606 (OpApp spec), opAppRequestForeground is a method
+    // on the Application object, not the ApplicationManager
+    try {
+        const appManager = document.getElementById('app-manager');
+        if (appManager) {
+            // getOwnerApplication() is part of the OIPF ApplicationManager API
+            // It returns the Application object representing the current application
+            const ownerApp = appManager.getOwnerApplication(document);
+            if (ownerApp) {
+                console.log('Requesting foreground for OpApp');
+                logEvent('Requesting foreground for OpApp', 'info');
+
+                // opAppRequestForeground() is a method on the Application object
+                // It doesn't take parameters - it uses the Application's own ID
+                const result = ownerApp.opAppRequestForeground();
+                if (result !== null) {
+                    // Result is a JSON formatted string
+                    console.log('opAppRequestForeground result:', result);
+                    try {
+                        // Try to parse and pretty-print the JSON
+                        const parsedResult = typeof result === 'string' ? JSON.parse(result) : result;
+                        const formattedResult = JSON.stringify(parsedResult, null, 2);
+                        logEvent('opAppRequestForeground result: ' + formattedResult, 'success');
+                        console.log('opAppRequestForeground parsed result:', parsedResult);
+                    } catch (e) {
+                        // If parsing fails, just log the raw result
+                        logEvent('opAppRequestForeground result: ' + result, 'success');
+                    }
+                } else {
+                    logEvent('opAppRequestForeground returned null', 'warning');
+                }
+            } else {
+                logEvent('Could not get owner application', 'warning');
+            }
+        } else {
+            logEvent('Application Manager object not found', 'error');
+        }
+    } catch (error) {
+        console.error('Error calling opAppRequestForeground: ' + error.message);
+        logEvent('Error calling opAppRequestForeground: ' + error.message, 'error');
+    }
 });
 
 // Handle keyboard navigation
@@ -669,11 +721,6 @@ function UserAgentTest() {
 console.log('User Agent: ' + navigator.userAgent);
 logEvent('User Agent: ' + navigator.userAgent, 'info');
 UserAgentTest();
-
-// Initialize video broadcast when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    videoBroadcast.initialize();
-});
 
 // Transport Bar Methods
 function stopVideo() {

@@ -195,6 +195,13 @@ public:
     bool RunTeletextApplication(void);
 
     /**
+     * Request the foreground for the OpApp.
+     *
+     * @return true if the foreground request is allowed, otherwise false
+     */
+    bool OpAppRequestForeground(int callingAppId);
+
+    /**
      * Check whether a request from the polyfill is allowed.
      *
      * @param callingAppId The app ID making the request.
