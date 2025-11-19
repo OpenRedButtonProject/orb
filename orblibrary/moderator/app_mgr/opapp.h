@@ -53,6 +53,7 @@ private:
     void init();
 
     Utils::Timeout m_countdown;
+    int m_countdownTimeout;
 };
 
 } // namespace orb

@@ -2,7 +2,8 @@
 #include "third_party/orb/logging/include/log.h"
 #include "application_manager.h"
 
-#define COUNT_DOWN_TIMEOUT 60000
+
+const int DEFAULT_COUNT_DOWN_TIMEOUT = 60000;
 
 namespace orb
 {
@@ -43,6 +44,7 @@ OpApp::OpApp(ApplicationSessionCallback *sessionCallback)
 
 void OpApp::init()
 {
+    m_countdownTimeout = DEFAULT_COUNT_DOWN_TIMEOUT;
     m_state = BaseApp::BACKGROUND_STATE; // ETSI TS 103 606 V1.2.1 (2024-03) page 36
     m_scheme = "opapp"; // FREE-273 Temporary scheme for OpApp
 }
@@ -84,9 +86,8 @@ bool OpApp::SetState(const E_APP_STATE &state)
     {
         m_sessionCallback->ShowApplication(id);
     }
-
-    if (state == TRANSIENT_STATE || state == OVERLAID_TRANSIENT_STATE) {
-        m_countdown.start(std::chrono::milliseconds(COUNT_DOWN_TIMEOUT));
+    else if (state == TRANSIENT_STATE || state == OVERLAID_TRANSIENT_STATE) {
+        m_countdown.start(std::chrono::milliseconds(m_countdownTimeout));
     }
     else {
         m_countdown.stop();
