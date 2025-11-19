@@ -474,59 +474,159 @@ document.addEventListener('DOMContentLoaded', function() {
     openVideoWindow();
 });
 
+// Helper function to get the owner application object
+// Returns the Application object if successful, null otherwise
+function getOwnerApplication() {
+    try {
+        const appManager = document.getElementById('app-manager');
+        if (!appManager) {
+            logEvent('Application Manager object not found', 'error');
+            return null;
+        }
+
+        // getOwnerApplication() is part of the OIPF ApplicationManager API
+        // It returns the Application object representing the current application
+        const ownerApp = appManager.getOwnerApplication(document);
+        if (!ownerApp) {
+            logEvent('Could not get owner application', 'warning');
+            return null;
+        }
+
+        return ownerApp;
+    } catch (error) {
+        console.error('Error getting owner application: ' + error.message);
+        logEvent('Error getting owner application: ' + error.message, 'error');
+        return null;
+    }
+}
+
+// Helper function to parse and log JSON result
+function parseAndLogResult(result, methodName) {
+    if (result === null) {
+        logEvent(methodName + ' returned null', 'warning');
+        return;
+    }
+
+    console.log(methodName + ' result:', result);
+    try {
+        // Try to parse and pretty-print the JSON
+        const parsedResult = typeof result === 'string' ? JSON.parse(result) : result;
+        const formattedResult = JSON.stringify(parsedResult, null, 2);
+        logEvent(methodName + ' result: ' + formattedResult, 'success');
+        console.log(methodName + ' parsed result:', parsedResult);
+    } catch (e) {
+        // If parsing fails, just log the raw result
+        logEvent(methodName + ' result: ' + result, 'success');
+    }
+}
+
+// Function to request foreground state
+// According to ETSI TS 103 606, opAppRequestForeground must be called within
+// a handler for keydown, keyup or keypress events to be successful
+function requestForeground(context) {
+    const ownerApp = getOwnerApplication();
+    if (!ownerApp) {
+        return;
+    }
+
+    const contextMsg = context ? ` (${context})` : '';
+    console.log('Requesting foreground for OpApp' + contextMsg);
+    logEvent('Requesting foreground for OpApp' + contextMsg, 'info');
+
+    try {
+        // opAppRequestForeground() is a method on the Application object
+        // It doesn't take parameters - it uses the Application's own ID
+        // Note: Per TS 103 606, this call should be made within a keydown/keyup/keypress
+        // handler to be successful, but it can be called from other contexts too
+        const result = ownerApp.opAppRequestForeground();
+        parseAndLogResult(result, 'opAppRequestForeground');
+    } catch (error) {
+        console.error('Error calling opAppRequestForeground: ' + error.message);
+        logEvent('Error calling opAppRequestForeground: ' + error.message, 'error');
+    }
+}
+
+// Function to request background state
+// According to ETSI TS 103 606, opAppRequestBackground can be called to transition
+// the OpApp to background state
+function requestBackground(context) {
+    const ownerApp = getOwnerApplication();
+    if (!ownerApp) {
+        return;
+    }
+
+    const contextMsg = context ? ` (${context})` : '';
+    console.log('Requesting background for OpApp' + contextMsg);
+    logEvent('Requesting background for OpApp' + contextMsg, 'info');
+
+    try {
+        // opAppRequestBackground() is a method on the Application object
+        // It doesn't take parameters - it uses the Application's own ID
+        const result = ownerApp.opAppRequestBackground();
+        parseAndLogResult(result, 'opAppRequestBackground');
+    } catch (error) {
+        console.error('Error calling opAppRequestBackground: ' + error.message);
+        logEvent('Error calling opAppRequestBackground: ' + error.message, 'error');
+    }
+}
+
+// Function to get the current OpApp state
+function getOpAppState() {
+    const ownerApp = getOwnerApplication();
+    if (!ownerApp) {
+        return null;
+    }
+
+    try {
+        // opAppState is a property of the Application object
+        // It returns the current state as a string
+        const state = ownerApp.opAppState;
+        console.log('Current OpApp state: ' + state);
+        return state;
+    } catch (error) {
+        console.error('Error getting OpApp state: ' + error.message);
+        logEvent('Error getting OpApp state: ' + error.message, 'error');
+        return null;
+    }
+}
+
+// Function to toggle between foreground and background state
+// If currently in foreground, transitions to background; otherwise transitions to foreground
+function toggleForegroundBackground(context) {
+    const currentState = getOpAppState();
+    const contextMsg = context ? ` (${context})` : '';
+
+    // Check state case-insensitively to handle any potential variations
+    if (currentState && currentState.toLowerCase() === 'foreground') {
+        logEvent('Toggling to background' + contextMsg, 'info');
+        requestBackground(context || 'toggle');
+    } else {
+        logEvent('Toggling to foreground' + contextMsg, 'info');
+        requestForeground(context || 'toggle');
+    }
+}
+
 // Handle window load event (fires after all resources are loaded)
 window.addEventListener('load', function() {
     console.log('Window fully loaded');
     logEvent('Window fully loaded', 'success');
 
-    // Example: Request foreground using standard HbbTV/OIPF API
+    // Request foreground using standard HbbTV/OIPF API
     // According to ETSI TS 103 606 (OpApp spec), opAppRequestForeground is a method
     // on the Application object, not the ApplicationManager
-    try {
-        const appManager = document.getElementById('app-manager');
-        if (appManager) {
-            // getOwnerApplication() is part of the OIPF ApplicationManager API
-            // It returns the Application object representing the current application
-            const ownerApp = appManager.getOwnerApplication(document);
-            if (ownerApp) {
-                console.log('Requesting foreground for OpApp');
-                logEvent('Requesting foreground for OpApp', 'info');
-
-                // opAppRequestForeground() is a method on the Application object
-                // It doesn't take parameters - it uses the Application's own ID
-                const result = ownerApp.opAppRequestForeground();
-                if (result !== null) {
-                    // Result is a JSON formatted string
-                    console.log('opAppRequestForeground result:', result);
-                    try {
-                        // Try to parse and pretty-print the JSON
-                        const parsedResult = typeof result === 'string' ? JSON.parse(result) : result;
-                        const formattedResult = JSON.stringify(parsedResult, null, 2);
-                        logEvent('opAppRequestForeground result: ' + formattedResult, 'success');
-                        console.log('opAppRequestForeground parsed result:', parsedResult);
-                    } catch (e) {
-                        // If parsing fails, just log the raw result
-                        logEvent('opAppRequestForeground result: ' + result, 'success');
-                    }
-                } else {
-                    logEvent('opAppRequestForeground returned null', 'warning');
-                }
-            } else {
-                logEvent('Could not get owner application', 'warning');
-            }
-        } else {
-            logEvent('Application Manager object not found', 'error');
-        }
-    } catch (error) {
-        console.error('Error calling opAppRequestForeground: ' + error.message);
-        logEvent('Error calling opAppRequestForeground: ' + error.message, 'error');
-    }
+    // Note: This call is not within a keyboard event handler, so it may not succeed
+    // per TS 103 606 spec, but it's useful for initial foreground request on load
+    requestForeground('window load event');
 });
 
 // Handle keyboard navigation
 document.addEventListener('keydown', function(event) {
     console.log('Key pressed: ' + event.keyCode);
     switch(event.keyCode) {
+        case 71: // G key (GUIDE key for testing)
+            toggleForegroundBackground('GUIDE key pressed');
+            event.preventDefault();
+            break;
         case 100: // Keypad 4 / Keypad Left (Channel Previous)
             selectPreviousChannel();
             event.preventDefault();
