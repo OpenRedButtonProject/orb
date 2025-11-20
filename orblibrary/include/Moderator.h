@@ -25,6 +25,7 @@ namespace orb
 
 class ComponentBase;
 class IAppMgrInterface;
+class VideoWindow;
 
 namespace networkServices {
     class JsonRpcService;
@@ -97,6 +98,7 @@ private:
     std::unique_ptr<ComponentBase> mMediaSynchroniser;
     std::unique_ptr<IAppMgrInterface> mAppMgrInterface;
     std::unique_ptr<ComponentBase> mDrm;
+    std::unique_ptr<VideoWindow> mVideoWindow;
 }; // class Moderator
 
 } // namespace orb

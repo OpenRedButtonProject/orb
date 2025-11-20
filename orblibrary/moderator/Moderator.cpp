@@ -21,11 +21,13 @@
 #include "AppMgrInterface.hpp"
 #include "Network.hpp"
 #include "MediaSynchroniser.hpp"
+#include "VideoWindow.hpp"
 #include "log.h"
 #include "StringUtil.h"
 #include "IJson.h"
 #include "Drm.hpp"
 #include "JsonRpcService.h"
+#include "OrbConstants.h"
 
 using namespace std;
 
@@ -44,6 +46,7 @@ Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
     , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
     , mAppMgrInterface(std::make_unique<AppMgrInterface>(browser, apptype))
     , mDrm(std::make_unique<Drm>())
+    , mVideoWindow(std::make_unique<VideoWindow>(browser))
 {
     LOGI("HbbTV version " << ORB_HBBTV_VERSION);
 }
@@ -58,6 +61,7 @@ Moderator::Moderator(
     , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
     , mAppMgrInterface(std::move(appMgrInterface))
     , mDrm(std::move(drm))
+    , mVideoWindow(std::make_unique<VideoWindow>(browser))
 {}
 
 Moderator::~Moderator() {}
@@ -150,17 +154,14 @@ bool Moderator::handleBridgeEvent(const std::string& etype, const std::string& p
                 // We call it for CONNECTING status to stop IP player when switching from IP to DVB
                 // Note: When switching from IP to DVB, the event might come with PRESENTING status
                 // if the switch already happened, but we still need to stop the IP player
-                if (status == CHANNEL_STATUS_CONNECTING) {
-                    LOGI("Moderator::handleBridgeEvent - DVB channel change detected (CONNECTING), calling onChannelChange");
-                    mAppMgrInterface->onChannelChange(onetId, transId, serviceId);
-                } else if (status == CHANNEL_STATUS_PRESENTING) {
-                    // Also call onChannelChange for PRESENTING status if we're switching from IP to DVB
-                    // This ensures we stop the IP player even if the event comes with PRESENTING status
-                    LOGI("Moderator::handleBridgeEvent - DVB channel change detected (PRESENTING), calling onChannelChange to stop IP player");
-                    mAppMgrInterface->onChannelChange(onetId, transId, serviceId);
-                } else {
-                    LOGI("Moderator::handleBridgeEvent - DVB channel change detected but status is " << status << ", skipping onChannelChange");
+                // Use VideoWindow::handleRequest to stop IP player when switching to DVB channel
+                if (status == CHANNEL_STATUS_CONNECTING || status == CHANNEL_STATUS_PRESENTING) {
+                    if (mVideoWindow) {
+                        LOGI("Moderator::handleBridgeEvent - Stopping IP player via VideoWindow for DVB channel change");
+                        mVideoWindow->handleRequest("VideoWindow.stop", "{}");
+                    }
                 }
+                mAppMgrInterface->onChannelChange(onetId, transId, serviceId);
             } else {
                 LOGI("Moderator::handleBridgeEvent - ChannelStatusChanged event without DVB triplet information");
             }
