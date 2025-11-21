@@ -269,7 +269,7 @@ void ApplicationManager::DestroyApplication(int callingAppId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
-    LOG(ERROR) << "DestroyApplication callingAppId [" << callingAppId << "]";
+    LOG(INFO) << "DestroyApplication callingAppId [" << callingAppId << "]";
     if (getAppById(callingAppId) == nullptr)
     {
         LOG(INFO) << "Called by non-running app, early out";
@@ -387,6 +387,28 @@ std::string ApplicationManager::GetApplicationUrl(int appId)
     {
         LOG(INFO) << "GetApplicationUrl(" << appId << "): " << app->GetLoadedUrl();
         return app->GetLoadedUrl();
+    }
+    return std::string();
+}
+
+std::string ApplicationManager::GetOpAppState(int appId)
+{
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
+    if (m_opApp && m_opApp->GetId() == appId) {
+        switch (m_opApp->GetState()) {
+            case BaseApp::FOREGROUND_STATE:
+                return "foreground";
+            case BaseApp::BACKGROUND_STATE:
+                return "background";
+            case BaseApp::TRANSIENT_STATE:
+                return "transient";
+            case BaseApp::OVERLAID_TRANSIENT_STATE:
+                return "overlaid-transient";
+            case BaseApp::OVERLAID_FOREGROUND_STATE:
+                return "overlaid-foreground";
+            default:
+                break;
+        }
     }
     return std::string();
 }
@@ -715,6 +737,21 @@ void ApplicationManager::OnApplicationPageChanged(int appId, const std::string &
             }
         }
     }
+}
+
+bool ApplicationManager::OpAppRequestStateChange(int appId, const BaseApp::E_APP_STATE &state)
+{
+    LOG(INFO) << "OpAppRequestStateChange appId [" << appId << "] state [" << state << "]";
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
+    if (m_opApp)
+    {
+        return m_opApp->SetState(state);
+    }
+    else
+    {
+        LOG(ERROR) << "OpApp not found";
+    }
+    return false;
 }
 
 // Private methods...

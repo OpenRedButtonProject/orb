@@ -111,7 +111,12 @@ bool OpApp::CanTransitionToState(const E_APP_STATE &state)
                 return true;
             }
             break;
-
+        case BACKGROUND_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.2 Page 38
+            // Allowed transitions from BACKGROUND_STATE
+            if (state == BaseApp::FOREGROUND_STATE) {
+                return true;
+            }
+            break;
         default:
             break;
         }

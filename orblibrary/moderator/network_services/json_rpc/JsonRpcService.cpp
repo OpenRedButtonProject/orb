@@ -1859,7 +1859,11 @@ void JsonRpcService::SendIPPlayerPause(int sessionId)
 
 void JsonRpcService::SendIPPlayerStop(int sessionId)
 {
-    SendIPPlayerMessageToClients(MD_IPPLAYER_STOP, sessionId);
+    LOGI("JsonRpcService::SendIPPlayerStop called with sessionId: " << sessionId);
+    // Create params object with sessionID as a number (not string)
+    Json::Value params;
+    params[JSONRPC_SESSION_ID_KEY] = sessionId;
+    SendIPPlayerMessageToClients(MD_IPPLAYER_STOP, params);
 }
 
 void JsonRpcService::SendIPPlayerResume(int sessionId)

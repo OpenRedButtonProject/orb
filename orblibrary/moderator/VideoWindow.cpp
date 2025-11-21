@@ -26,6 +26,7 @@ namespace orb
     const string SELECT_CHANNEL_METHOD = "VideoWindow.selectChannel";
     const string VIDEO_WINDOW_PAUSE = "VideoWindow.pause";
     const string VIDEO_WINDOW_RESUME = "VideoWindow.resume";
+    const string VIDEO_WINDOW_STOP = "VideoWindow.stop";
 
     const string VIDEO_WINDOW_CHANNEL_STATUS_CHANGE = "VideoWindow.ChannelStatusChanged";
 
@@ -62,6 +63,14 @@ namespace orb
         {
             if (method == SELECT_CHANNEL_METHOD)
             {
+                // Before selecting a new channel, stop the current session if one exists
+                int currentSessionId = mWebSocketService->GetCurrentSessionId();
+                if (currentSessionId > 0)
+                {
+                    // Stop the previous session before selecting the new channel
+                    mWebSocketService->SendIPPlayerStop(currentSessionId);
+                }
+                // Select the new channel
                 mWebSocketService->SendIPPlayerSelectChannel(
                     params["channelType"].asInt(),
                     params["idType"].asInt(),
@@ -74,6 +83,10 @@ namespace orb
             else if (method == VIDEO_WINDOW_RESUME)
             {
                 mWebSocketService->SendIPPlayerResume(mWebSocketService->GetCurrentSessionId());
+            }
+            else if (method == VIDEO_WINDOW_STOP)
+            {
+                mWebSocketService->SendIPPlayerStop(mWebSocketService->GetCurrentSessionId());
             }
             else
             {

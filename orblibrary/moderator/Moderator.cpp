@@ -136,13 +136,10 @@ bool Moderator::handleBridgeEvent(const std::string& etype, const std::string& p
     if (etype == CHANNEL_STATUS_CHANGE) {
         std::unique_ptr<IJson> json = IJson::create();
         if (json->parse(properties)) {
-            int status = json->getInteger("statusCode");
-            if (status == CHANNEL_STATUS_CONNECTING) {
-                uint16_t onetId = json->getInteger("onetId");
-                uint16_t transId = json->getInteger("transId");
-                uint16_t serviceId = json->getInteger("servId");
-                mAppMgrInterface->onChannelChange(onetId, transId, serviceId);
-            }
+            uint16_t onetId = json->getInteger("onetId");
+            uint16_t transId = json->getInteger("transId");
+            uint16_t serviceId = json->getInteger("servId");
+            mAppMgrInterface->onChannelChange(onetId, transId, serviceId);
         }
         // Javascript also needs this event
     }
