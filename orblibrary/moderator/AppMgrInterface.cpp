@@ -184,21 +184,6 @@ void AppMgrInterface::onChannelChange(uint16_t onetId, uint16_t transId, uint16_
     
     LOGI("AppMgrInterface::onChannelChange called - onetId: " << onetId << ", transId: " << transId << ", serviceId: " << serviceId);
     
-    // Before switching to a DVB channel, stop any active IP player session
-    // This ensures the IP player is properly stopped when switching from IP to DVB
-    if (mWebSocketService) {
-        int currentSessionId = mWebSocketService->GetCurrentSessionId();
-        LOGI("AppMgrInterface::onChannelChange - WebSocket service available, currentSessionId: " << currentSessionId);
-        if (currentSessionId > 0) {
-            LOGI("Stopping IP player session " << currentSessionId << " before switching to DVB channel");
-            mWebSocketService->SendIPPlayerStop(currentSessionId);
-        } else {
-            LOGI("AppMgrInterface::onChannelChange - No active IP player session (sessionId <= 0)");
-        }
-    } else {
-        LOGI("AppMgrInterface::onChannelChange - WebSocket service not available");
-    }
-    
     ApplicationManager::instance().OnChannelChanged(onetId, transId, serviceId);
 }
 
