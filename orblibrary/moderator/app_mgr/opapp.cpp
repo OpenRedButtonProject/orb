@@ -117,25 +117,19 @@ bool OpApp::CanTransitionToState(const E_APP_STATE &state)
         }
         break;
 
-        case TRANSIENT_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.4 Page 41
-        case BaseApp::OVERLAID_TRANSIENT_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.6 Page 42
-        case BaseApp::OVERLAID_FOREGROUND_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.5 Page 41
-            // Allowed transitions from these states
-            if (state == BaseApp::FOREGROUND_STATE || state == BaseApp::BACKGROUND_STATE) {
-                return true;
-            }
-            break;
-        case BACKGROUND_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.2 Page 38
-            // Allowed transitions from BACKGROUND_STATE
-            if (state == BaseApp::FOREGROUND_STATE) {
-                return true;
-            }
-            break;
-        default:
-            break;
+    case TRANSIENT_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.4 Page 41
+    case OVERLAID_TRANSIENT_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.6 Page 42
+    case OVERLAID_FOREGROUND_STATE: // ETSI TS 103 606 V1.2.1 (2024-03) 6.3.3.5 Page 41
+        // Allowed transitions from these states
+        if (state == FOREGROUND_STATE || state == BACKGROUND_STATE) {
+            return true;
         }
-        return false;
+        break;
+
+    default:
+        break;
     }
-    return true;
+
+    return false;
 }
 } // namespace orb

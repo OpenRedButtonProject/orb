@@ -130,9 +130,7 @@ string AppMgrInterface::executeRequest(const string& method, const string& token
     }
     else if (method == MANAGER_GET_KEY_VALUES)
     {
-        uint16_t keyset = appMgr.GetKeySetMask(appId);
-
-        response = buildJsonResponse(keyset);
+        response = buildJsonResponse(appMgr.GetKeySetMask(appId));
     }
     else if (method == MANAGER_GET_OKEY_VALUES)
     {
@@ -161,20 +159,32 @@ string AppMgrInterface::executeRequest(const string& method, const string& token
     {
         response = buildJsonResponse("AppMgrInterface; method [" + method + "] unsupported");
     }
-    else if (method == MANAGER_GET_OP_APP_STATE)
+    else if (method == MANAGER_OPAPP_GET_STATE)
     {
+        if (!isOpAppRequest(method, response)) {
+            return response;
+        }
         response = buildJsonResponse(appMgr.GetOpAppState(appId));
     }
-    else if (method == MANAGER_OP_APP_REQUEST_BACKGROUND)
+    else if (method == MANAGER_OPAPP_REQUEST_BACKGROUND)
     {
-        appMgr.OpAppRequestStateChange(appId, BaseApp::BACKGROUND_STATE);
+        if (!isOpAppRequest(method, response)) {
+            return response;
+        }
+        response = buildJsonResponse(appMgr.OpAppRequestStateChange(appId, BaseApp::BACKGROUND_STATE));
     }
-    else if (method == MANAGER_OP_APP_REQUEST_FOREGROUND)
+    else if (method == MANAGER_OPAPP_REQUEST_FOREGROUND)
     {
+        if (!isOpAppRequest(method, response)) {
+            return response;
+        }
         response = buildJsonResponse(appMgr.OpAppRequestStateChange(appId, BaseApp::FOREGROUND_STATE));
     }
-    else if (method == MANAGER_OP_APP_REQUEST_TRANSIENT)
+    else if (method == MANAGER_OPAPP_REQUEST_TRANSIENT)
     {
+        if (!isOpAppRequest(method, response)) {
+            return response;
+        }
         response = buildJsonResponse(appMgr.OpAppRequestStateChange(appId, BaseApp::TRANSIENT_STATE));
     }
     else
