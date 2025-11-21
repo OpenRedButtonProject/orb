@@ -19,7 +19,6 @@
 #include "Moderator.h"
 #include "ComponentBase.hpp"
 #include "app_mgr/application_session_callback.h"
-#include "JsonRpcService.h"
 
 namespace orb
 {
