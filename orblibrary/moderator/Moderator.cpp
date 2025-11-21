@@ -21,13 +21,10 @@
 #include "AppMgrInterface.hpp"
 #include "Network.hpp"
 #include "MediaSynchroniser.hpp"
-#include "VideoWindow.hpp"
 #include "log.h"
 #include "StringUtil.h"
 #include "IJson.h"
 #include "Drm.hpp"
-#include "JsonRpcService.h"
-#include "OrbConstants.h"
 
 using namespace std;
 
@@ -46,7 +43,6 @@ Moderator::Moderator(IOrbBrowser* browser, ApplicationType apptype)
     , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
     , mAppMgrInterface(std::make_unique<AppMgrInterface>(browser, apptype))
     , mDrm(std::make_unique<Drm>())
-    , mVideoWindow(std::make_unique<VideoWindow>(browser))
 {
     LOGI("HbbTV version " << ORB_HBBTV_VERSION);
 }
@@ -61,7 +57,6 @@ Moderator::Moderator(
     , mMediaSynchroniser(std::make_unique<MediaSynchroniser>())
     , mAppMgrInterface(std::move(appMgrInterface))
     , mDrm(std::move(drm))
-    , mVideoWindow(std::make_unique<VideoWindow>(browser))
 {}
 
 Moderator::~Moderator() {}
@@ -141,30 +136,10 @@ bool Moderator::handleBridgeEvent(const std::string& etype, const std::string& p
     if (etype == CHANNEL_STATUS_CHANGE) {
         std::unique_ptr<IJson> json = IJson::create();
         if (json->parse(properties)) {
-            int status = json->getInteger("statusCode");
-            // Check if we have DVB triplet information (indicates DVB channel change)
-            // Note: hasParam defaults to JSON_TYPE_OBJECT, but these are integers, so we check for integer type
-            if (json->hasParam("onetId", IJson::JSON_TYPE_INTEGER) && 
-                json->hasParam("transId", IJson::JSON_TYPE_INTEGER) && 
-                json->hasParam("servId", IJson::JSON_TYPE_INTEGER)) {
-                uint16_t onetId = json->getInteger("onetId");
-                uint16_t transId = json->getInteger("transId");
-                uint16_t serviceId = json->getInteger("servId");
-                // Call onChannelChange for DVB channel changes
-                // We call it for CONNECTING status to stop IP player when switching from IP to DVB
-                // Note: When switching from IP to DVB, the event might come with PRESENTING status
-                // if the switch already happened, but we still need to stop the IP player
-                // Use VideoWindow::handleRequest to stop IP player when switching to DVB channel
-                if (status == CHANNEL_STATUS_CONNECTING || status == CHANNEL_STATUS_PRESENTING) {
-                    if (mVideoWindow) {
-                        LOGI("Moderator::handleBridgeEvent - Stopping IP player via VideoWindow for DVB channel change");
-                        mVideoWindow->handleRequest("VideoWindow.stop", "{}");
-                    }
-                }
-                mAppMgrInterface->onChannelChange(onetId, transId, serviceId);
-            } else {
-                LOGI("Moderator::handleBridgeEvent - ChannelStatusChanged event without DVB triplet information");
-            }
+            uint16_t onetId = json->getInteger("onetId");
+            uint16_t transId = json->getInteger("transId");
+            uint16_t serviceId = json->getInteger("servId");
+            mAppMgrInterface->onChannelChange(onetId, transId, serviceId);
         }
         // Javascript also needs this event
     }
@@ -188,10 +163,5 @@ void Moderator::processXmlAit(const vector<uint8_t>& xmlait)
 {
     LOGI("");
     mAppMgrInterface->processXmlAit(xmlait);
-}
-
-void Moderator::setWebSocketService(std::shared_ptr<networkServices::JsonRpcService> webSocketService)
-{
-    mAppMgrInterface->setWebSocketService(webSocketService);
 }
 } // namespace orb

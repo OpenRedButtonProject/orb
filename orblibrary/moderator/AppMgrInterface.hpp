@@ -62,13 +62,6 @@ public:
     virtual void processXmlAit(const std::vector<uint8_t>& xmlait) = 0;
 
     virtual ApplicationType GetApplicationType() const = 0;
-
-    /**
-     * @brief Set the WebSocket service
-     *
-     * @param webSocketService WebSocket service instance
-     */
-    virtual void setWebSocketService(std::shared_ptr<networkServices::JsonRpcService> webSocketService) = 0;
 };
 
 class AppMgrInterface : public IAppMgrInterface
@@ -94,13 +87,6 @@ public:
     void onChannelChange(uint16_t onetId, uint16_t transId, uint16_t serviceId) override;
     void processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section) override;
     void processXmlAit(const std::vector<uint8_t>& xmlait) override;
-
-    /**
-     * @brief Set the WebSocket service
-     *
-     * @param webSocketService WebSocket service instance
-     */
-    void setWebSocketService(std::shared_ptr<networkServices::JsonRpcService> webSocketService) override;
 
     // ApplicationSessionCallback interface implementation
     void LoadApplication(
@@ -138,7 +124,6 @@ private:
     IOrbBrowser *mOrbBrowser;
     ApplicationType mAppType;
     mutable std::mutex mMutex;
-    std::shared_ptr<networkServices::JsonRpcService> mWebSocketService;
 
     bool IsRequestAllowed(std::string token);
 

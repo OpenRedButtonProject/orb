@@ -25,11 +25,6 @@ namespace orb
 
 class ComponentBase;
 class IAppMgrInterface;
-class VideoWindow;
-
-namespace networkServices {
-    class JsonRpcService;
-}
 
 class Moderator
 {
@@ -84,13 +79,6 @@ public:
     void processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section);
     void processXmlAit(const std::vector<uint8_t>& xmlait);
 
-    /**
-     * @brief Set the WebSocket service for AppMgrInterface
-     *
-     * @param webSocketService WebSocket service instance
-     */
-    void setWebSocketService(std::shared_ptr<networkServices::JsonRpcService> webSocketService);
-
 private:
     //Todo: use smart pointers to manager IOrbBrowser
     IOrbBrowser *mOrbBrowser;
@@ -98,7 +86,6 @@ private:
     std::unique_ptr<ComponentBase> mMediaSynchroniser;
     std::unique_ptr<IAppMgrInterface> mAppMgrInterface;
     std::unique_ptr<ComponentBase> mDrm;
-    std::unique_ptr<VideoWindow> mVideoWindow;
 }; // class Moderator
 
 } // namespace orb

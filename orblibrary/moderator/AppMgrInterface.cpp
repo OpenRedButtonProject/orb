@@ -22,7 +22,6 @@
 #include "app_mgr/application_manager.h"
 #include "app_mgr/xml_parser.h"
 #include "log.h"
-#include "JsonRpcService.h"
 
 #define LINKED_APP_SCHEME_1_1 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.1"
 
@@ -185,12 +184,6 @@ void AppMgrInterface::onChannelChange(uint16_t onetId, uint16_t transId, uint16_
     LOGI("AppMgrInterface::onChannelChange called - onetId: " << onetId << ", transId: " << transId << ", serviceId: " << serviceId);
     
     ApplicationManager::instance().OnChannelChanged(onetId, transId, serviceId);
-}
-
-void AppMgrInterface::setWebSocketService(std::shared_ptr<networkServices::JsonRpcService> webSocketService) {
-    std::lock_guard<std::mutex> lock(mMutex);
-    mWebSocketService = webSocketService;
-    LOGI("AppMgrInterface::setWebSocketService - WebSocket service " << (webSocketService ? "set" : "cleared"));
 }
 
 void AppMgrInterface::processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section) {

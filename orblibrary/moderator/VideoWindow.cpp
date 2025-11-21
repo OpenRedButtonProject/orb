@@ -86,15 +86,7 @@ namespace orb
             }
             else if (method == VIDEO_WINDOW_STOP)
             {
-                int currentSessionId = mWebSocketService->GetCurrentSessionId();
-                if (currentSessionId > 0)
-                {
-                    mWebSocketService->SendIPPlayerStop(currentSessionId);
-                }
-                else
-                {
-                    LOGI("VideoWindow::handleRequest - No active IP player session to stop (sessionId <= 0)");
-                }
+                mWebSocketService->SendIPPlayerStop(mWebSocketService->GetCurrentSessionId());
             }
             else
             {
