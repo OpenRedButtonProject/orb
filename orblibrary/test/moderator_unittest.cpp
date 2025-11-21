@@ -223,8 +223,6 @@ TEST_F(ModeratorTest, HandleBridgeEventForChannelStatusChange)
 
     EXPECT_CALL(*mockJson, parse(properties))
         .WillOnce(::testing::Return(true));
-    EXPECT_CALL(*mockJson, getInteger("statusCode"))
-        .WillOnce(::testing::Return(orb::CHANNEL_STATUS_CONNECTING));
     EXPECT_CALL(*mockJson, getInteger("onetId"))
         .WillOnce(::testing::Return(1));
     EXPECT_CALL(*mockJson, getInteger("transId"))
