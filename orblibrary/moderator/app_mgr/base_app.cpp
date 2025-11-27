@@ -1,4 +1,5 @@
 #include "base_app.h"
+#include "third_party/orb/logging/include/log.h"
 
 
 namespace orb
@@ -24,7 +25,7 @@ const uint16_t VK_REWIND = 412;
 const uint16_t VK_NEXT = 425;
 const uint16_t VK_PREV = 424;
 const uint16_t VK_PLAY_PAUSE = 402;
-const uint16_t VK_RECORD = 416;
+// const uint16_t VK_RECORD = 416;
 const uint16_t VK_PAGE_UP = 33;
 const uint16_t VK_PAGE_DOWN = 34;
 const uint16_t VK_INFO = 457;
@@ -89,20 +90,22 @@ uint16_t BaseApp::SetKeySetMask(const uint16_t keySetMask, const std::vector<uin
     return keySetMask;
 }
 
-// TODO Test this!!
 bool BaseApp::InKeySet(const uint16_t keyCode)
 {
+    // Check regular key set mask first.
     if ((m_keySetMask & GetKeySetMaskForKeyCode(keyCode)) != 0)
     {
-        if ((m_keySetMask & KEY_SET_OTHER) == KEY_SET_OTHER) {
-            auto it = std::find(m_otherKeys.begin(), m_otherKeys.end(), keyCode);
-            if (it == m_otherKeys.end()) {
-                return false;
-            }
-        }
-
         return true;
     }
+
+    // Check other keys if the key set mask contains KEY_SET_OTHER.
+    if ((m_keySetMask & KEY_SET_OTHER) == KEY_SET_OTHER) {
+        auto it = std::find(m_otherKeys.begin(), m_otherKeys.end(), keyCode);
+        if (it != m_otherKeys.end()) {
+            return true;
+        }
+    }
+
     return false;
 }
 
@@ -149,10 +152,10 @@ uint16_t BaseApp::GetKeySetMaskForKeyCode(const uint16_t keyCode)
     {
         return KEY_SET_INFO;
     }
-    else if (keyCode == VK_RECORD)
-    {
-        return KEY_SET_OTHER;
-    }
+    // else if (keyCode == VK_RECORD)
+    // {
+    //     return KEY_SET_OTHER;
+    // }
 
     return 0;
 }

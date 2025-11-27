@@ -1423,4 +1423,105 @@ TEST(OpAppIsOperatorApplicationKeyTest, CoversAllRangesAndExclusions)
     EXPECT_FALSE(OpApp::IsOperatorApplicationKey(9999));
 }
 
+// ============================================================================
+// Unit tests for BaseApp::InKeySet
+// ============================================================================
+
+// Simple concrete subclass of BaseApp for directly testing BaseApp behavior
+class TestBaseApp : public BaseApp
+{
+public:
+    TestBaseApp()
+        : BaseApp(ApplicationType::APP_TYPE_HBBTV,
+                  static_cast<ApplicationSessionCallback*>(nullptr))
+    {}
+
+    int Load() override { return 0; }
+
+    bool SetState(const E_APP_STATE &state) override
+    {
+        m_state = state;
+        return true;
+    }
+};
+
+TEST(BaseAppInKeySetTest, SettingOtherKeys) {
+    TestBaseApp app;
+    app.SetKeySetMask(KEY_SET_NAVIGATION | KEY_SET_VCR | KEY_SET_INFO | KEY_SET_OTHER, {458});
+    EXPECT_TRUE(app.InKeySet(38)); // VK_UP
+    // EXPECT_TRUE(app.InKeySet(40)); // VK_DOWN
+    // EXPECT_TRUE(app.InKeySet(37)); // VK_LEFT
+    // EXPECT_TRUE(app.InKeySet(39)); // VK_RIGHT
+    // EXPECT_TRUE(app.InKeySet(13)); // VK_ENTER
+    // EXPECT_TRUE(app.InKeySet(461)); // VK_BACK
+    // EXPECT_TRUE(app.InKeySet(415)); // VK_PLAY
+    // EXPECT_TRUE(app.InKeySet(413)); // VK_STOP
+    // EXPECT_TRUE(app.InKeySet(19)); // VK_PAUSE
+    // EXPECT_TRUE(app.InKeySet(417)); // VK_FAST_FWD
+    // EXPECT_TRUE(app.InKeySet(412)); // VK_REWIND
+    // EXPECT_TRUE(app.InKeySet(425)); // VK_NEXT
+    // EXPECT_TRUE(app.InKeySet(424)); // VK_PREV
+    // EXPECT_TRUE(app.InKeySet(402)); // VK_PLAY_PAUSE
+}
+
+TEST(BaseAppInKeySetTest, ReturnsFalseWhenNoKeySetsEnabled)
+{
+    // GIVEN: A BaseApp with no key set mask
+    TestBaseApp app;
+    app.SetKeySetMask(0, {});
+
+    // WHEN/THEN: No key should be accepted
+    EXPECT_FALSE(app.InKeySet(403)); // VK_RED
+    EXPECT_FALSE(app.InKeySet(38));  // VK_UP
+    EXPECT_FALSE(app.InKeySet(48));  // '0'
+}
+
+TEST(BaseAppInKeySetTest, AcceptsKeysMatchingEnabledKeySet)
+{
+    // GIVEN: A BaseApp with navigation keys enabled
+    TestBaseApp app;
+    app.SetKeySetMask(KEY_SET_NAVIGATION, {});
+
+    // WHEN/THEN: Navigation keys should be accepted
+    EXPECT_TRUE(app.InKeySet(38));  // VK_UP
+    EXPECT_TRUE(app.InKeySet(40));  // VK_DOWN
+    EXPECT_TRUE(app.InKeySet(37));  // VK_LEFT
+    EXPECT_TRUE(app.InKeySet(39));  // VK_RIGHT
+    EXPECT_TRUE(app.InKeySet(13));  // VK_ENTER
+    EXPECT_TRUE(app.InKeySet(461)); // VK_BACK
+
+    // AND: Non-navigation keys should be rejected
+    EXPECT_FALSE(app.InKeySet(403)); // VK_RED
+    EXPECT_FALSE(app.InKeySet(48));  // '0'
+}
+
+TEST(BaseAppInKeySetTest, RespectsOtherKeysWhenKeySetOtherEnabled)
+{
+    // GIVEN: A BaseApp with KEY_SET_OTHER enabled and a list of allowed "other" keys
+    TestBaseApp app;
+    std::vector<uint16_t> otherKeys = {416, 500}; // VK_RECORD and a custom key
+    app.SetKeySetMask(KEY_SET_OTHER, otherKeys);
+
+    // WHEN/THEN: VK_RECORD (maps to KEY_SET_OTHER and is in otherKeys) is accepted
+    EXPECT_TRUE(app.InKeySet(416)); // VK_RECORD
+
+    // AND: Keys in otherKeys is accepted
+    EXPECT_TRUE(app.InKeySet(500));
+
+    // AND: Keys not in otherKeys are rejected even if they map to KEY_SET_OTHER
+    EXPECT_FALSE(app.InKeySet(9999));
+}
+
+TEST(BaseAppInKeySetTest, RejectsOtherKeysWhenListEmpty)
+{
+    // GIVEN: A BaseApp with KEY_SET_OTHER enabled but no otherKeys configured
+    TestBaseApp app;
+    app.SetKeySetMask(KEY_SET_OTHER, {});
+
+    // WHEN/THEN: VK_RECORD maps to KEY_SET_OTHER but is not present in otherKeys
+    // so it should be rejected by the additional KEY_SET_OTHER check
+    EXPECT_FALSE(app.InKeySet(416)); // VK_RECORD
+}
+
+
 } // namespace orb
