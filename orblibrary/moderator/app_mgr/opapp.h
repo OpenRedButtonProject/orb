@@ -47,6 +47,8 @@ public:
 
     static std::string opAppStateToString(const E_APP_STATE &state);
 
+    static bool IsOperatorApplicationKey(const uint16_t keyCode);
+
 private:
     bool CanTransitionToState(const E_APP_STATE &state);
 

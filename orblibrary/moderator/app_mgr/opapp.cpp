@@ -7,6 +7,23 @@ const int DEFAULT_COUNT_DOWN_TIMEOUT = 60000;
 
 namespace orb
 {
+// From TS 103 606 V1.2.1 (2024-03) 10.1.3 Table 17
+// Since we use a range based approach, we don't define all keys here.
+// But putting them here for reference.
+const uint16_t VK_CHANNEL_UP   = 401;
+const uint16_t VK_CHANNEL_DOWN = 400;
+const uint16_t VK_INFO         = 457;
+//             VK_GUIDE        = 458;
+//             VK_CHANNELS     = 459;
+const uint16_t VK_MENU         = 460;
+const uint16_t VK_VOLUME_UP    = 462;
+//             VK_VOLUME_DOWN  = 463;
+//             VK_MUTE         = 464;
+//             VK_SUBTITLE     = 465;
+//             VK_AUDIO_TRACK  = 466;
+//             VK_AUDIO_DESC   = 467;
+const uint16_t VK_EXIT         = 468;
+
 // static
 std::string OpApp::opAppStateToString(const E_APP_STATE &state)
 {
@@ -25,6 +42,18 @@ std::string OpApp::opAppStateToString(const E_APP_STATE &state)
     default:
         return "undefined";
     }
+}
+
+// static
+bool OpApp::IsOperatorApplicationKey(const uint16_t keyCode)
+{
+    // See TS 103 606 V1.2.1 (2024-03) 10.1.3 Table 17
+    // OpApp keys form three ranges: 400-401, 457-460, 462-468
+    bool isKeyChannelRange = (keyCode >= VK_CHANNEL_DOWN && keyCode <= VK_CHANNEL_UP);
+    bool isKeyInfoRange    = (keyCode >= VK_INFO         && keyCode <= VK_MENU);
+    bool isKeyVolumeRange  = (keyCode >= VK_VOLUME_UP    && keyCode <= VK_EXIT);
+    
+    return isKeyChannelRange || isKeyInfoRange || isKeyVolumeRange;
 }
 
 OpApp::OpApp(const std::string &url, ApplicationSessionCallback *sessionCallback)

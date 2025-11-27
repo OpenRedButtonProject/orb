@@ -26,6 +26,14 @@ namespace orb
 class ComponentBase;
 class IAppMgrInterface;
 
+// These must match the Java values
+enum class KeyType {
+    UNKNOWN = 0,
+    OPERATOR_APPLICATION,
+    REGULAR_HBBTV,
+    SYSTEM
+};
+
 class Moderator
 {
 public:
@@ -78,6 +86,10 @@ public:
     bool handleBridgeEvent(const std::string& etype, const std::string& properties);
     void processAitSection(int32_t aitPid, int32_t serviceId, const std::vector<uint8_t>& section);
     void processXmlAit(const std::vector<uint8_t>& xmlait);
+
+    bool InKeySet(const uint16_t keyCode);
+
+    static KeyType ClassifyKey(const uint16_t keyCode);
 
 private:
     //Todo: use smart pointers to manager IOrbBrowser

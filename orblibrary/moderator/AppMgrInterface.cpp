@@ -78,7 +78,7 @@ string AppMgrInterface::executeRequest(const string& method, const string& token
         return true;
     };
 
-    LOGI("Request with method [" + method + "] received");
+    LOG(INFO) << "Request with method [" << method << "] received for app [" << appId << "]";
     if (method == MANAGER_CREATE_APP)
     {
         int newAppId = appMgr.CreateApplication(
@@ -326,6 +326,25 @@ bool AppMgrInterface::IsRequestAllowed(string token)
 {
     // TODO implement
     return true;
+}
+
+bool AppMgrInterface::InKeySet(const uint16_t keyCode) {
+    return ApplicationManager::instance().InKeySet(mAppType, keyCode);
+}
+
+// static
+KeyType AppMgrInterface::ClassifyKey(const uint16_t keyCode)
+{
+    LOGI("ClassifyKey keyCode: " << keyCode);
+    if (BaseApp::GetKeySetMaskForKeyCode(keyCode) != 0) {
+        return KeyType::REGULAR_HBBTV;
+    }
+
+    if (OpApp::IsOperatorApplicationKey(keyCode)) {
+        return KeyType::OPERATOR_APPLICATION;
+    }
+
+    return KeyType::SYSTEM;
 }
 
 } // namespace orb

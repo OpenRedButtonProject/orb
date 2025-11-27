@@ -24,6 +24,7 @@
 #include "third_party/orb/orblibrary/moderator/app_mgr/xml_parser.h"
 #include "MockApplicationSessionCallback.h"
 #include "third_party/orb/orblibrary/moderator/app_mgr/base_app.h"
+#include "third_party/orb/orblibrary/moderator/AppMgrInterface.hpp"
 #include "MockXmlParser.h"
 #include <gmock/gmock.h>
 
@@ -1290,6 +1291,136 @@ TEST_F(ApplicationManagerTest, TestOpAppRequestForegroundWithInvalidAppId)
 
     // THEN: Should return false because INVALID_APP_ID doesn't match the OpApp ID
     EXPECT_FALSE(result);
+}
+
+// ============================================================================
+// Unit tests for AppMgrInterface::ClassifyKey
+// ============================================================================
+
+TEST(AppMgrInterfaceClassifyKeyTest, CoversAllKeyCategoriesAndBoundaries)
+{
+    // GIVEN: Various key codes that should map to different KeyType values
+    // WHEN: ClassifyKey is called
+    // THEN: All categories (HbbTV, OpApp, system) and boundary/priority rules are respected
+
+    // Regular HbbTV color keys
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(403), KeyType::REGULAR_HBBTV); // VK_RED
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(404), KeyType::REGULAR_HBBTV); // VK_GREEN
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(405), KeyType::REGULAR_HBBTV); // VK_YELLOW
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(406), KeyType::REGULAR_HBBTV); // VK_BLUE
+
+    // Regular HbbTV navigation keys
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(37), KeyType::REGULAR_HBBTV);  // VK_LEFT
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(38), KeyType::REGULAR_HBBTV);  // VK_UP
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(39), KeyType::REGULAR_HBBTV);  // VK_RIGHT
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(40), KeyType::REGULAR_HBBTV);  // VK_DOWN
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(13), KeyType::REGULAR_HBBTV);  // VK_ENTER
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(461), KeyType::REGULAR_HBBTV); // VK_BACK
+
+    // Regular HbbTV VCR keys
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(415), KeyType::REGULAR_HBBTV); // VK_PLAY
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(413), KeyType::REGULAR_HBBTV); // VK_STOP
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(19),  KeyType::REGULAR_HBBTV); // VK_PAUSE
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(417), KeyType::REGULAR_HBBTV); // VK_FAST_FWD
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(412), KeyType::REGULAR_HBBTV); // VK_REWIND
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(425), KeyType::REGULAR_HBBTV); // VK_NEXT
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(424), KeyType::REGULAR_HBBTV); // VK_PREV
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(402), KeyType::REGULAR_HBBTV); // VK_PLAY_PAUSE
+
+    // Regular HbbTV numeric keys (0-9)
+    for (uint16_t key = 48; key <= 57; ++key) {
+        EXPECT_EQ(AppMgrInterface::ClassifyKey(key), KeyType::REGULAR_HBBTV);
+    }
+
+    // Regular HbbTV alpha keys (A-Z)
+    for (uint16_t key = 65; key <= 90; ++key) {
+        EXPECT_EQ(AppMgrInterface::ClassifyKey(key), KeyType::REGULAR_HBBTV);
+    }
+
+    // Regular HbbTV scroll keys
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(33), KeyType::REGULAR_HBBTV); // VK_PAGE_UP
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(34), KeyType::REGULAR_HBBTV); // VK_PAGE_DOWN
+
+    // INFO key: both keyset and OpApp key, but should classify as REGULAR_HBBTV
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(457), KeyType::REGULAR_HBBTV); // VK_INFO
+
+    // RECORD key: maps to KEY_SET_OTHER, still REGULAR_HBBTV
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(416), KeyType::REGULAR_HBBTV); // VK_RECORD
+
+    // Operator application keys that don't map to keysets
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(400), KeyType::OPERATOR_APPLICATION); // VK_CHANNEL_DOWN
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(401), KeyType::OPERATOR_APPLICATION); // VK_CHANNEL_UP
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(458), KeyType::OPERATOR_APPLICATION); // VK_GUIDE
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(459), KeyType::OPERATOR_APPLICATION); // VK_CHANNELS
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(460), KeyType::OPERATOR_APPLICATION); // VK_MENU
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(462), KeyType::OPERATOR_APPLICATION); // VK_VOLUME_UP
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(463), KeyType::OPERATOR_APPLICATION); // VK_VOLUME_DOWN
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(464), KeyType::OPERATOR_APPLICATION); // VK_MUTE
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(465), KeyType::OPERATOR_APPLICATION); // VK_SUBTITLE
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(466), KeyType::OPERATOR_APPLICATION); // VK_AUDIO_TRACK
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(467), KeyType::OPERATOR_APPLICATION); // VK_AUDIO_DESC
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(468), KeyType::OPERATOR_APPLICATION); // VK_EXIT
+
+    // System keys (unknown / unmapped)
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(0),    KeyType::SYSTEM); // Invalid/unknown
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(1),    KeyType::SYSTEM); // Unknown
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(100),  KeyType::SYSTEM); // Unknown
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(500),  KeyType::SYSTEM); // Unknown
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(9999), KeyType::SYSTEM); // Unknown
+
+    // Boundary values for numeric range
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(47), KeyType::SYSTEM);        // Just before numeric (0-9)
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(48), KeyType::REGULAR_HBBTV); // First numeric (0)
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(57), KeyType::REGULAR_HBBTV); // Last numeric (9)
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(58), KeyType::SYSTEM);        // Just after numeric
+
+    // Boundary values for alpha range
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(64), KeyType::SYSTEM);        // Just before alpha (A-Z)
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(65), KeyType::REGULAR_HBBTV); // First alpha (A)
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(90), KeyType::REGULAR_HBBTV); // Last alpha (Z)
+    EXPECT_EQ(AppMgrInterface::ClassifyKey(91), KeyType::SYSTEM);        // Just after alpha
+}
+
+// ============================================================================
+// Unit tests for OpApp::IsOperatorApplicationKey
+// ============================================================================
+
+TEST(OpAppIsOperatorApplicationKeyTest, CoversAllRangesAndExclusions)
+{
+    // GIVEN: Channel, info/menu, and volume-related keys defined as OpApp keys
+    // WHEN: IsOperatorApplicationKey is called
+    // THEN: Should return true for all defined ranges and false for excluded or unrelated keys
+
+    // Channel range: 400-401
+    EXPECT_TRUE(OpApp::IsOperatorApplicationKey(400)); // VK_CHANNEL_DOWN
+    EXPECT_TRUE(OpApp::IsOperatorApplicationKey(401)); // VK_CHANNEL_UP
+    EXPECT_FALSE(OpApp::IsOperatorApplicationKey(399)); // Just below range
+    EXPECT_FALSE(OpApp::IsOperatorApplicationKey(402)); // Just above range
+
+    // Info/menu range: 457-460 (with VK_BACK excluded)
+    EXPECT_TRUE(OpApp::IsOperatorApplicationKey(457)); // VK_INFO
+    EXPECT_TRUE(OpApp::IsOperatorApplicationKey(458)); // VK_GUIDE
+    EXPECT_TRUE(OpApp::IsOperatorApplicationKey(459)); // VK_CHANNELS
+    EXPECT_TRUE(OpApp::IsOperatorApplicationKey(460)); // VK_MENU
+    EXPECT_FALSE(OpApp::IsOperatorApplicationKey(461)); // VK_BACK (explicitly not an OpApp key)
+    EXPECT_FALSE(OpApp::IsOperatorApplicationKey(456)); // Just below range
+
+    // Volume range: 462-468
+    EXPECT_TRUE(OpApp::IsOperatorApplicationKey(462)); // VK_VOLUME_UP
+    EXPECT_TRUE(OpApp::IsOperatorApplicationKey(463)); // VK_VOLUME_DOWN
+    EXPECT_TRUE(OpApp::IsOperatorApplicationKey(464)); // VK_MUTE
+    EXPECT_TRUE(OpApp::IsOperatorApplicationKey(465)); // VK_SUBTITLE
+    EXPECT_TRUE(OpApp::IsOperatorApplicationKey(466)); // VK_AUDIO_TRACK
+    EXPECT_TRUE(OpApp::IsOperatorApplicationKey(467)); // VK_AUDIO_DESC
+    EXPECT_TRUE(OpApp::IsOperatorApplicationKey(468)); // VK_EXIT
+    EXPECT_FALSE(OpApp::IsOperatorApplicationKey(469)); // Just above range
+
+    // Clearly unrelated keys
+    EXPECT_FALSE(OpApp::IsOperatorApplicationKey(0));
+    EXPECT_FALSE(OpApp::IsOperatorApplicationKey(100));
+    EXPECT_FALSE(OpApp::IsOperatorApplicationKey(403)); // VK_RED (regular HbbTV)
+    EXPECT_FALSE(OpApp::IsOperatorApplicationKey(416)); // VK_RECORD (KEY_SET_OTHER)
+    EXPECT_FALSE(OpApp::IsOperatorApplicationKey(9999));
 }
 
 } // namespace orb

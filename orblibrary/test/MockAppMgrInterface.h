@@ -66,6 +66,7 @@ public:
     MOCK_METHOD(void, DispatchOperatorApplicationContextChange, (const int appId, const std::string &startupLocation, const std::string &launchLocation), (override));
     MOCK_METHOD(void, DispatchOpAppUpdate, (const int appId, const std::string &updateEvent), (override));
     MOCK_METHOD(bool, isInstanceInCurrentService, (const Utils::S_DVB_TRIPLET &triplet), (override));
+    MOCK_METHOD(bool, InKeySet, (const uint16_t keyCode), (override));
 };
 
 } // namespace orb

@@ -164,4 +164,14 @@ void Moderator::processXmlAit(const vector<uint8_t>& xmlait)
     LOGI("");
     mAppMgrInterface->processXmlAit(xmlait);
 }
+
+bool Moderator::InKeySet(const uint16_t keyCode)
+{
+    return mAppMgrInterface->InKeySet(keyCode);
+}
+
+KeyType Moderator::ClassifyKey(const uint16_t keyCode)
+{
+    return AppMgrInterface::ClassifyKey(keyCode);
+}
 } // namespace orb

@@ -60,6 +60,8 @@ public:
      */
     virtual void processXmlAit(const std::vector<uint8_t>& xmlait) = 0;
 
+    virtual bool InKeySet(const uint16_t keyCode) = 0;
+
     virtual ApplicationType GetApplicationType() const = 0;
 };
 
@@ -118,6 +120,10 @@ public:
     void DispatchOperatorApplicationContextChange(const int appId, const std::string &startupLocation, const std::string &launchLocation = "") override;
     void DispatchOpAppUpdate(const int appId, const std::string &updateEvent) override;
     bool isInstanceInCurrentService(const Utils::S_DVB_TRIPLET &triplet) override;
+
+    bool InKeySet(const uint16_t keyCode) override;
+
+    static KeyType ClassifyKey(const uint16_t keyCode);
 
 private:
     IOrbBrowser *mOrbBrowser;
