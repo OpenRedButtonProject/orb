@@ -441,6 +441,36 @@ class VideoBroadcast {
 // Create global video broadcast instance
 const videoBroadcast = new VideoBroadcast();
 
+// Configure KeySet so the OpApp receives required remote-control keys
+function initializeKeySet() {
+    const ownerApp = getOwnerApplication();
+    if (!ownerApp || !ownerApp.privateData || !ownerApp.privateData.keyset) {
+        logEvent('KeySet not available for this application', 'error');
+        return;
+    }
+
+    const keyset = ownerApp.privateData.keyset;
+
+    // Request the key groups that cover:
+    // - VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, VK_ENTER  -> NAVIGATION
+    // - VK_STOP, VK_PLAY, VK_PAUSE, VK_PLAY_PAUSE    -> VCR
+    // - VK_INFO                                      -> INFO
+    // - VK_GUIDE and other operator keys             -> OTHER
+    const requestedKeys =
+        keyset.NAVIGATION |
+        keyset.VCR |
+        keyset.INFO |
+        keyset.OTHER;
+
+    try {
+        const result = keyset.setValue(requestedKeys, [KeyEvent.VK_GUIDE]);
+        logEvent('KeySet configured (NAVIGATION | VCR | INFO | OTHER), result=' + result, 'success');
+    } catch (e) {
+        logEvent('Error configuring KeySet: ' + e.message, 'error');
+        console.error('Error configuring KeySet', e);
+    }
+}
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     console.log('HbbTV OpApp v1.2.1 initialized');
@@ -467,6 +497,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize video broadcast object
     videoBroadcast.initialize();
+
+    // Request required operator keys on startup using the KeySet API
+    initializeKeySet();
 
     // Automatically open the video window as per OpApp specification
     // "Operator applications shall at all times have access to an additional window,
