@@ -122,7 +122,13 @@ string AppMgrInterface::executeRequest(const string& method, const string& token
     else if (method == MANAGER_SET_KEY_VALUE)
     {
         uint16_t keyset = params.getInteger("value");
-        std::vector<uint16_t> otherkeys = params.getUint16Array("otherKeys");
+
+        // otherKeys is an optional parameter.
+        std::vector<uint16_t> otherkeys = {};
+        if (params.hasParam("otherKeys")) {
+            otherkeys = params.getUint16Array("otherKeys");
+        }
+
         uint16_t kMask = appMgr.SetKeySetMask(appId, keyset, otherkeys);
         if (kMask > 0) {
             mOrbBrowser->notifyKeySetChange(keyset, otherkeys);
@@ -335,8 +341,7 @@ bool AppMgrInterface::InKeySet(const uint16_t keyCode) {
 // static
 KeyType AppMgrInterface::ClassifyKey(const uint16_t keyCode)
 {
-    LOGI("ClassifyKey keyCode: " << keyCode);
-    if (BaseApp::GetKeySetMaskForKeyCode(keyCode) != 0) {
+    if ((BaseApp::GetKeySetMaskForKeyCode(keyCode) != 0) || HbbTVApp::IsAllowedOtherKey(keyCode)) {
         return KeyType::REGULAR_HBBTV;
     }
 

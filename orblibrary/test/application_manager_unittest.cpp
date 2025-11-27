@@ -745,22 +745,16 @@ TEST_F(ApplicationManagerTest, TestInKeySetWithOtherKeys)
 
     int appId = appManager.CreateAndRunApp("http://example.com/app.html", false);
 
-    // Note: GetKeySetMaskForKeyCode returns 0 for keys that don't map to any known key set.
-    // For KEY_SET_OTHER, InKeySet only checks otherKeys if GetKeySetMaskForKeyCode returns
-    // a non-zero value that matches the mask. Since VK_RECORD (416) maps to KEY_SET_OTHER,
-    // it will work. However, keys like 500 and 600 that don't map to any key set will return
-    // false because GetKeySetMaskForKeyCode(500) = 0, so the first condition in InKeySet fails.
     std::vector<uint16_t> otherKeys = {416, 500, 600}; // VK_RECORD is the ONLY key that maps to KEY_SET_OTHER
     appManager.SetKeySetMask(appId, KEY_SET_OTHER, otherKeys);
 
-    // WHEN: InKeySet is called with VK_RECORD (which maps to KEY_SET_OTHER and is in otherKeys)
+    // WHEN: InKeySet is called with listed other keys
     // THEN: Should return true
-    EXPECT_TRUE(appManager.InKeySet(appId, 416)); // VK_RECORD (in otherKeys, maps to KEY_SET_OTHER)
-    // AND: Should return false for keys that don't map to any key set (GetKeySetMaskForKeyCode returns 0)
-    // because InKeySet checks GetKeySetMaskForKeyCode first, and if it returns 0, it never checks otherKeys
-    EXPECT_FALSE(appManager.InKeySet(appId, 500)); // Doesn't map to any key set, returns false
-    EXPECT_FALSE(appManager.InKeySet(appId, 600)); // Doesn't map to any key set, returns false
-    EXPECT_FALSE(appManager.InKeySet(appId, 700)); // Doesn't map to any key set, returns false
+    EXPECT_TRUE(appManager.InKeySet(appId, 416));
+    EXPECT_TRUE(appManager.InKeySet(appId, 500));
+    EXPECT_TRUE(appManager.InKeySet(appId, 600));
+    // AND: Should return false for keys that are not listed in otherKeys
+    EXPECT_FALSE(appManager.InKeySet(appId, 700));
 }
 
 TEST_F(ApplicationManagerTest, TestInKeySetUnknownKey)

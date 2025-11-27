@@ -32,6 +32,15 @@ static std::string getAppSchemeFromUrlParams(const std::string &urlParams);
 static std::string getUrlParamsFromAppScheme(const std::string &scheme);
 
 
+// static
+bool HbbTVApp::IsAllowedOtherKey(const uint16_t keyCode)
+{
+    // FREE-308: TS 102 796 v1.71 Annex A Table A.1.
+    const uint16_t VK_RECORD = 416;
+    return keyCode == VK_RECORD;
+}
+
+
 HbbTVApp::HbbTVApp(const std::string &url, ApplicationSessionCallback *sessionCallback)
     : BaseApp(APP_TYPE_HBBTV, url, sessionCallback),
     m_entryUrl(url),

@@ -25,7 +25,7 @@ const uint16_t VK_REWIND = 412;
 const uint16_t VK_NEXT = 425;
 const uint16_t VK_PREV = 424;
 const uint16_t VK_PLAY_PAUSE = 402;
-// const uint16_t VK_RECORD = 416;
+// const uint16_t VK_RECORD = 416; HbbTVApp only
 const uint16_t VK_PAGE_UP = 33;
 const uint16_t VK_PAGE_DOWN = 34;
 const uint16_t VK_INFO = 457;
@@ -152,10 +152,6 @@ uint16_t BaseApp::GetKeySetMaskForKeyCode(const uint16_t keyCode)
     {
         return KEY_SET_INFO;
     }
-    // else if (keyCode == VK_RECORD)
-    // {
-    //     return KEY_SET_OTHER;
-    // }
 
     return 0;
 }
