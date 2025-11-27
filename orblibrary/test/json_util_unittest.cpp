@@ -139,6 +139,24 @@ TEST_F(JsonUtilTest, TestHasJsonParam_EmptyObject) {
     EXPECT_TRUE(result);
 }
 
+TEST_F(JsonUtilTest, TestGetIntegerArray) {
+    // GIVEN: a minimal JSON string where 'key' is an integer array
+    const std::string jsonString = R"({"key":[458,65535, -1, 0]})";
+
+    Json::Value root;
+    ASSERT_TRUE(orb::JsonUtil::decodeJson(jsonString, &root));
+
+    // WHEN: getIntegerArray is called on the 'key' field
+    auto result = orb::JsonUtil::getIntegerArray(root, "key");
+
+    // THEN: the result contains the integer values from 'key'
+    ASSERT_EQ(result.size(), 4u);
+    EXPECT_EQ(result[0], 458);
+    EXPECT_EQ(result[1], 65535);
+    EXPECT_EQ(result[2], -1);
+    EXPECT_EQ(result[3], 0);
+}
+
 TEST_F(JsonUtilTest, TestConvertJsonToString_SimpleObject) {
     // GIVEN: a simple JSON object
     Json::Value jsonObject;

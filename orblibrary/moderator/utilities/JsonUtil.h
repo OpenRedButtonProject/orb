@@ -111,14 +111,14 @@ public:
     static std::string getStringValue(const Json::Value& json, const std::string& key);
 
     /**
-     * Gets an array of unsigned 16-bit integers from a JSON object by key.
+     * Gets an array of integers from a JSON object by key. Non-integer values are skipped.
      *
      * @param json The JSON object to extract the integer array from.
      * @param key The key of the integer array in the JSON object.
-     * @return A vector of uint16_t if the key exists and the value is an array of strings
-     *         that can be converted to unsigned 16-bit integers, empty vector otherwise.
+     * @return A vector of integers if the key exists, otherwise an empty vector.
+     *         Any non-integer values are skipped.
      */
-    static std::vector<uint16_t> getIntegerArray(const Json::Value& json, const std::string& key);
+    static std::vector<int> getIntegerArray(const Json::Value& json, const std::string& key);
 
     /**
      * Get a JSON array containing the methods in a set.
