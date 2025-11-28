@@ -354,6 +354,20 @@ std::string ApplicationManager::GetApplicationScheme(int appId)
     return "Error: App not found";
 }
 
+int ApplicationManager::GetRunningAppId(const ApplicationType appType) const
+{
+    if (appType == APP_TYPE_HBBTV) {
+        return getCurrentHbbTVAppId();
+    }
+    else if (appType == APP_TYPE_OPAPP) {
+        return getCurrentOpAppId();
+    }
+
+    LOG(ERROR) << "GetRunningAppId(): Invalid app type "
+        << appType << ". Returning INVALID_APP_ID.";
+    return BaseApp::INVALID_APP_ID;
+}
+
 std::vector<int> ApplicationManager::GetRunningAppIds()
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);

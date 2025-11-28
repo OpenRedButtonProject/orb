@@ -285,6 +285,8 @@ public:
 
     std::string GetApplicationUrl(int appId);
 
+    int GetRunningAppId(const ApplicationType appType) const;
+
     std::vector<int> GetRunningAppIds();
 
     std::string GetOpAppState(int appId);

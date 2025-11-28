@@ -335,7 +335,8 @@ bool AppMgrInterface::IsRequestAllowed(string token)
 }
 
 bool AppMgrInterface::InKeySet(const uint16_t keyCode) {
-    return ApplicationManager::instance().InKeySet(mAppType, keyCode);
+    return ApplicationManager::instance().InKeySet(
+        ApplicationManager::instance().GetRunningAppId(mAppType), keyCode);
 }
 
 // static
