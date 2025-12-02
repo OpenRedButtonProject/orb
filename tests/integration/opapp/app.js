@@ -656,7 +656,7 @@ window.addEventListener('load', function() {
 document.addEventListener('keydown', function(event) {
     console.log('Key pressed: ' + event.keyCode);
     switch(event.keyCode) {
-        case 71: // G key (GUIDE key for testing)
+        case KeyEvent.VK_GUIDE:
             toggleForegroundBackground('GUIDE key pressed');
             event.preventDefault();
             break;
