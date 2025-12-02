@@ -1456,6 +1456,8 @@ TEST(BaseAppInKeySetTest, SettingOtherKeys) {
     // EXPECT_TRUE(app.InKeySet(425)); // VK_NEXT
     // EXPECT_TRUE(app.InKeySet(424)); // VK_PREV
     // EXPECT_TRUE(app.InKeySet(402)); // VK_PLAY_PAUSE
+    EXPECT_TRUE(app.InKeySet(458)); // VK_GUIDE
+    EXPECT_FALSE(app.InKeySet(459)); // VK_CHANNELS
 }
 
 TEST(BaseAppInKeySetTest, ReturnsFalseWhenNoKeySetsEnabled)

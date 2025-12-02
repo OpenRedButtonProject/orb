@@ -125,7 +125,7 @@ string AppMgrInterface::executeRequest(const string& method, const string& token
 
         // otherKeys is an optional parameter.
         std::vector<uint16_t> otherkeys = {};
-        if (params.hasParam("otherKeys")) {
+        if (params.hasParam("otherKeys", IJson::JSON_TYPE_ARRAY)) {
             otherkeys = params.getUint16Array("otherKeys");
         }
 
