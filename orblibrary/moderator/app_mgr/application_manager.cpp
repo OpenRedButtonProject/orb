@@ -354,8 +354,9 @@ std::string ApplicationManager::GetApplicationScheme(int appId)
     return "Error: App not found";
 }
 
-int ApplicationManager::GetRunningAppId(const ApplicationType appType) const
+int ApplicationManager::GetRunningAppId(const ApplicationType appType)
 {
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (appType == APP_TYPE_HBBTV) {
         return getCurrentHbbTVAppId();
     }
@@ -400,23 +401,13 @@ std::string ApplicationManager::GetApplicationUrl(int appId)
 std::string ApplicationManager::GetOpAppState(int appId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    if (m_opApp && m_opApp->GetId() == appId) {
-        switch (m_opApp->GetState()) {
-            case BaseApp::FOREGROUND_STATE:
-                return "foreground";
-            case BaseApp::BACKGROUND_STATE:
-                return "background";
-            case BaseApp::TRANSIENT_STATE:
-                return "transient";
-            case BaseApp::OVERLAID_TRANSIENT_STATE:
-                return "overlaid-transient";
-            case BaseApp::OVERLAID_FOREGROUND_STATE:
-                return "overlaid-foreground";
-            default:
-                break;
-        }
+    if ((m_opApp == nullptr) || (m_opApp->GetId() != appId))
+    {
+        LOG(ERROR) << "GetOpAppState: Calling app not found";
+        return std::string();
     }
-    return std::string();
+
+    return OpApp::opAppStateToString(m_opApp->GetState());
 }
 
 void ApplicationManager::ProcessAitSection(uint16_t aitPid, uint16_t serviceId,
@@ -616,40 +607,6 @@ bool ApplicationManager::IsRequestAllowed(int callingAppId, const
     }
 }
 
-bool ApplicationManager::OpAppRequestState(int callingAppId, const BaseApp::E_APP_STATE &state)
-{
-    std::string stateString = OpApp::opAppStateToString(state);
-
-    if ((m_opApp == nullptr) || (m_opApp->GetId() != callingAppId))
-    {
-        LOG(ERROR) << "OpAppRequestState: " << stateString
-            << " for app with id [" << callingAppId << "]: Calling app not found";
-        return false;
-    }
-
-    if (!m_opApp->SetState(state))
-    {
-        LOG(ERROR) << "OpAppRequestState: " << stateString << " - failed";
-        return false;
-    }
-
-    LOG(INFO) << "OpAppRequestState: " << stateString << " - successful";
-    return true;
-}
-
-std::string ApplicationManager::OpAppGetState(int callingAppId)
-{
-    LOG(DEBUG) << "OpAppGetState";
-
-    if ((m_opApp == nullptr) || (m_opApp->GetId() != callingAppId))
-    {
-        LOG(ERROR) << "OpAppGetState: Calling app not found";
-        return std::string();
-    }
-
-    return OpApp::opAppStateToString(m_opApp->GetState());
-}
-
 std::map<std::string, std::string> ApplicationManager::GetCurrentAppNames()
 {
     std::map<std::string, std::string> result;
@@ -781,23 +738,24 @@ void ApplicationManager::OnApplicationPageChanged(int appId, const std::string &
 
 bool ApplicationManager::OpAppRequestStateChange(int appId, const BaseApp::E_APP_STATE &state)
 {
-    LOG(INFO) << "OpAppRequestStateChange appId [" << appId << "] state [" << state << "]";
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    if (m_opApp)
+    LOG(INFO) << "OpAppRequestStateChange: App with id ["
+              << appId << "] state ["
+              << OpApp::opAppStateToString(state) << "]";
+    if ((m_opApp == nullptr) || (m_opApp->GetId() != appId))
     {
-        return m_opApp->SetState(state);
+        LOG(ERROR) << "OpAppRequestStateChange: App with id [" << appId << "] not found";
+        return false;
     }
-    else
-    {
-        LOG(ERROR) << "OpApp not found";
-    }
-    return false;
+
+    return m_opApp->SetState(state);
 }
 
 // Private methods...
 
 void ApplicationManager::onSelectedServiceAitReceived()
 {
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
     LOG(INFO) << "OnSelectedServiceAitReceived";
     auto ait = m_ait.Get();
     if (ait != nullptr)
@@ -877,6 +835,7 @@ void ApplicationManager::onSelectedServiceAitTimeout()
 
 void ApplicationManager::onSelectedServiceAitUpdated()
 {
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
     auto ait = m_ait.Get();
     LOG(INFO) << "OnSelectedServiceAitUpdated";
     if (ait == nullptr)

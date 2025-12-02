@@ -1170,7 +1170,7 @@ TEST_F(ApplicationManagerTest, TestOpAppRequestForegroundSuccess)
     EXPECT_GT(opAppId, BaseApp::INVALID_APP_ID);
 
     // WHEN: OpAppRequestForeground is called with the correct OpApp ID
-    bool result = appManager.OpAppRequestState(opAppId, BaseApp::FOREGROUND_STATE);
+    bool result = appManager.OpAppRequestStateChange(opAppId, BaseApp::FOREGROUND_STATE);
 
     // THEN: Should return true and transition OpApp to foreground state
     EXPECT_TRUE(result);
@@ -1184,7 +1184,7 @@ TEST_F(ApplicationManagerTest, TestOpAppRequestForegroundWithNullOpApp)
     appManager.RegisterCallback(APP_TYPE_HBBTV, mockCallback.get());
 
     // WHEN: OpAppRequestForeground is called with any app ID
-    bool result = appManager.OpAppRequestState(123, BaseApp::FOREGROUND_STATE);
+    bool result = appManager.OpAppRequestStateChange(123, BaseApp::FOREGROUND_STATE);
 
     // THEN: Should return false because m_opApp is null
     EXPECT_FALSE(result);
@@ -1206,7 +1206,7 @@ TEST_F(ApplicationManagerTest, TestOpAppRequestForegroundWithWrongAppId)
 
     // WHEN: OpAppRequestForeground is called with a different (wrong) app ID
     int wrongAppId = opAppId + 100;
-    bool result = appManager.OpAppRequestState(wrongAppId, BaseApp::FOREGROUND_STATE);
+    bool result = appManager.OpAppRequestStateChange(wrongAppId, BaseApp::FOREGROUND_STATE);
 
     // THEN: Should return false because the calling app ID doesn't match the OpApp ID
     EXPECT_FALSE(result);
@@ -1241,7 +1241,7 @@ TEST_F(ApplicationManagerTest, TestOpAppRequestForegroundSetStateFailure)
 
     // We use a real OpApp instance to test the actual behavior
     // If SetState fails, no ShowApplication or DispatchOperatorApplicationStateChange should be called
-    bool result = appManager.OpAppRequestState(opAppId, BaseApp::FOREGROUND_STATE);
+    bool result = appManager.OpAppRequestStateChange(opAppId, BaseApp::FOREGROUND_STATE);
 
     // THEN: Verify the method correctly handles SetState result
     // The key test is: if SetState returns false, OpAppRequestForeground must return false (line 593-597)
@@ -1281,7 +1281,7 @@ TEST_F(ApplicationManagerTest, TestOpAppRequestForegroundWithInvalidAppId)
     EXPECT_GT(opAppId, BaseApp::INVALID_APP_ID);
 
     // WHEN: OpAppRequestForeground is called with INVALID_APP_ID
-    bool result = appManager.OpAppRequestState(BaseApp::INVALID_APP_ID, BaseApp::FOREGROUND_STATE);
+    bool result = appManager.OpAppRequestStateChange(BaseApp::INVALID_APP_ID, BaseApp::FOREGROUND_STATE);
 
     // THEN: Should return false because INVALID_APP_ID doesn't match the OpApp ID
     EXPECT_FALSE(result);

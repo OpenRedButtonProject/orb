@@ -72,12 +72,12 @@ const std::string MANAGER_SET_KEY_VALUE = "setKeyValue";
 const std::string MANAGER_GET_KEY_ICON = "getKeyIcon";
 
 // OpApp API methods
-const std::string MANAGER_OPAPP_REQUEST_FOREGROUND = "opAppRequestForeground";
-const std::string MANAGER_OPAPP_REQUEST_BACKGROUND = "opAppRequestBackground";
-const std::string MANAGER_OPAPP_REQUEST_TRANSIENT = "opAppRequestTransient";
-const std::string MANAGER_OPAPP_REQUEST_OTRANSIENT = "opAppRequestOverlaidTransient";
-const std::string MANAGER_OPAPP_REQUEST_OFOREGROUND = "opAppRequestOverlaidForeground";
-const std::string MANAGER_OPAPP_GET_STATE = "getOpAppState";
+const std::string MANAGER_GET_OP_APP_STATE = "getOpAppState";
+const std::string MANAGER_OP_APP_REQUEST_BACKGROUND = "opAppRequestBackground";
+const std::string MANAGER_OP_APP_REQUEST_FOREGROUND = "opAppRequestForeground";
+const std::string MANAGER_OP_APP_REQUEST_TRANSIENT = "opAppRequestTransient";
+const std::string MANAGER_OP_APP_REQUEST_OTRANSIENT = "opAppRequestOverlaidTransient";
+const std::string MANAGER_OP_APP_REQUEST_OFOREGROUND = "opAppRequestOverlaidForeground";
 } // namespace Manager
 
 } // namespace orb

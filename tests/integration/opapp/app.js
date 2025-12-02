@@ -463,8 +463,16 @@ function initializeKeySet() {
         keyset.OTHER;
 
     try {
-        const result = keyset.setValue(requestedKeys, [KeyEvent.VK_GUIDE]);
-        logEvent('KeySet configured (NAVIGATION | VCR | INFO | OTHER), result=' + result, 'success');
+        const result = keyset.setValue(
+            requestedKeys,
+            [
+                KeyEvent.VK_GUIDE,
+                KeyEvent.VK_CHANNEL_DOWN,
+                KeyEvent.VK_CHANNEL_UP,
+            ]);
+        logEvent(
+            'KeySet configured (NAVIGATION | VCR | INFO | OTHER | CHANNEL_DOWN | CHANNEL_UP), result='
+                + result, 'success');
     } catch (e) {
         logEvent('Error configuring KeySet: ' + e.message, 'error');
         console.error('Error configuring KeySet', e);
@@ -660,43 +668,31 @@ document.addEventListener('keydown', function(event) {
             toggleForegroundBackground('GUIDE key pressed');
             event.preventDefault();
             break;
-        case 100: // Keypad 4 / Keypad Left (Channel Previous)
+        case KeyEvent.VK_INFO:
+            showInfo();
+            event.preventDefault();
+            break;
+        case KeyEvent.VK_CHANNEL_DOWN: // Keypad 4 / Keypad Left (Channel Previous)
             selectPreviousChannel();
             event.preventDefault();
             break;
-        case 102: // Keypad 6 / Keypad Right (Channel Next)
+        case KeyEvent.VK_CHANNEL_UP: // Keypad 6 / Keypad Right (Channel Next)
             selectNextChannel();
             event.preventDefault();
             break;
-        case 188: // Comma key (,) (Channel Previous)
-            selectPreviousChannel();
-            event.preventDefault();
-            break;
-        case 190: // Period/Full stop key (.) (Channel Next)
-            selectNextChannel();
-            event.preventDefault();
-            break;
-        case 37: // Left arrow (Channel Previous)
-            selectPreviousChannel();
-            event.preventDefault();
-            break;
-        case 39: // Right arrow (Channel Next)
-            selectNextChannel();
-            event.preventDefault();
-            break;
-        case 38: // Up arrow
+        case KeyEvent.VK_UP: // Up arrow
             navigateFocus(-1);
             event.preventDefault();
             break;
-        case 40: // Down arrow
+        case KeyEvent.VK_DOWN: // Down arrow
             navigateFocus(1);
             event.preventDefault();
             break;
-        case 13: // Enter
+        case KeyEvent.VK_ENTER: // Enter
             activateCurrentButton();
             event.preventDefault();
             break;
-        case 8: // Backspace
+        case KeyEvent.VK_BACK: // Backspace
             goBack();
             event.preventDefault();
             break;
@@ -704,11 +700,11 @@ document.addEventListener('keydown', function(event) {
             toggleVideoBroadcast();
             event.preventDefault();
             break;
-        case 80: // P key (Play/Pause button)
+        case KeyEvent.VK_PLAY_PAUSE: // P key (Play/Pause button)
             togglePlayPause();
             event.preventDefault();
             break;
-        case 83: // S key (Stop button - kept for backward compatibility)
+        case KeyEvent.VK_STOP: // S key (Stop button - kept for backward compatibility)
             stopVideo();
             event.preventDefault();
             break;
@@ -746,7 +742,7 @@ function openVideoWindow() {
     // In a real implementation, this would open the video window
     // For this minimal version, we'll just show a message
     setTimeout(() => {
-        const videoWindow = window.open('video/video.html', '_opappVideo');
+        const videoWindow = window.open('video/video.html', '_opappvideo');
         updateStatus('[TEST]Video window opened');
 
         // Store reference to video window for communication

@@ -195,23 +195,6 @@ public:
     bool RunTeletextApplication(void);
 
     /**
-     * State change requests for the OpApp.
-     *
-     * @param callingAppId The app ID making the request.
-     * @param state The desired state to transition to.
-     * @return true if the state change is successful, otherwise false
-     */
-    bool OpAppRequestState(int callingAppId, const BaseApp::E_APP_STATE &state);
-
-    /**
-     * Get the state of the OpApp as a string. See TSI 103 606 V1.2.1 (2024-03) A.2.2.1
-     *
-     * @param callingAppId The app ID making the request.
-     * @return The state of the OpApp.
-     */
-    std::string OpAppGetState(int callingAppId);
-
-    /**
      * Check whether a request from the polyfill is allowed.
      *
      * @param callingAppId The app ID making the request.
@@ -285,10 +268,16 @@ public:
 
     std::string GetApplicationUrl(int appId);
 
-    int GetRunningAppId(const ApplicationType appType) const;
+    int GetRunningAppId(const ApplicationType appType);
 
     std::vector<int> GetRunningAppIds();
 
+    /**
+     * Get the state of the OpApp as a string. See TSI 103 606 V1.2.1 (2024-03) A.2.2.1
+     *
+     * @param callingAppId The app ID making the request.
+     * @return The state of the OpApp.
+     */
     std::string GetOpAppState(int appId);
 
     /**
