@@ -185,17 +185,40 @@ hbbtv.mediaManager = (function() {
         const observer = new MutationObserver(function(mutationsList) {
             for (const mutation of mutationsList) {
                 for (const node of mutation.addedNodes) {
-                    if (
-                        node.nodeName && (node.nodeName.toLowerCase() === 'video' ||
-                        node.nodeName.toLowerCase() === 'audio')
-                    ) {
-                        if (node.src) {
-                            upgradeObject.call(node, node.src).catch((e) => upgradeToFallback(node, node.src, e));
+                    if (node.nodeName) {
+                        if (
+                            (node.nodeName.toLowerCase() === 'video' ||
+                            node.nodeName.toLowerCase() === 'audio')
+                        ) {
+                            if (node.src) {
+                                upgradeObject.call(node, node.src).catch((e) => upgradeToFallback(node, node.src, e));
+                            }
+                            else if (!node.src) {
+                                const source = node.getElementsByTagName("source")[0];
+                                if (source) {
+                                    node.src = source.src;
+                                }
+                            }
                         }
-                        else if (!node.src) {
-                            const source = node.getElementsByTagName("source")[0];
-                            if (source) {
-                                node.src = source.src;
+                        else if (
+                            node.nodeName.toLowerCase() === 'source' &&
+                            node.parentNode &&
+                            !node.parentNode.src
+                        ) {
+                            console.log(
+                                'MediaManager: intercepted source element addition with src ' +
+                                node.src +
+                                ' and type ' +
+                                node.type
+                            );
+                            if (node.type) {
+                                const nextHandler =
+                                    getHandlerByContentType(node.type) || fallbackHandlers;
+                                setObjectHandler.call(node.parentNode, nextHandler, node.src);
+                            } else {
+                                upgradeObject
+                                    .call(node.parentNode, node.src)
+                                    .catch((e) => upgradeToFallback(node.parentNode, e));
                             }
                         }
                     }
