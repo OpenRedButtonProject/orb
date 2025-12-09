@@ -45,12 +45,17 @@ public:
 
     int Load() override;
 
+    static std::string opAppStateToString(const E_APP_STATE &state);
+
+    static bool IsOperatorApplicationKey(const uint16_t keyCode);
+
 private:
     bool CanTransitionToState(const E_APP_STATE &state);
 
     void init();
 
     Utils::Timeout m_countdown;
+    int m_countdownTimeout;
 };
 
 } // namespace orb

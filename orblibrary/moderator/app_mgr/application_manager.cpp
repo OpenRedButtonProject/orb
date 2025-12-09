@@ -76,51 +76,42 @@ void ApplicationManager::RegisterCallback(ApplicationType apptype, ApplicationSe
 int ApplicationManager::CreateApplication(int callingAppId, const std::string &url, bool runAsOpApp)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    int result = BaseApp::INVALID_APP_ID;
 
     LOG(INFO) << "CreateApplication";
 
-    ApplicationSessionCallback* callback = nullptr;
+    assert(m_sessionCallback[APP_TYPE_OPAPP]);
+    assert(m_sessionCallback[APP_TYPE_HBBTV]);
 
     auto callingApp = getAppById(callingAppId);
+    bool isRegularHbbTVApp = !runAsOpApp;
 
     if (runAsOpApp) {
-        /* No support for multiple opapp installations*/
-        /* Check if calling app is an opapp or if an opapp is already running */
-        if(callingApp || m_opApp)
-        {
+        /** OpApp case */
+        if (callingApp || m_opApp) {
             LOG(ERROR) << "Called with runAsOpApp=true from other app or an opapp is already running, early out";
             return BaseApp::INVALID_APP_ID;
         }
-
-        callback = m_sessionCallback[APP_TYPE_OPAPP];
-        if (callback == nullptr) {
-            LOG(ERROR) << "OpApp session callback is NULL";
-            return BaseApp::INVALID_APP_ID;
-        }
     }
-    else /** HbbTV app */ {
-        if (callingApp == nullptr)
-        {
-            LOG(INFO) << "Called by non-running app, early out";
-            return BaseApp::INVALID_APP_ID;
-        }
-
-        // Calling app can be either HbbTV or OpApp
-        callback = m_sessionCallback[callingApp->GetType()];
-        if (callback == nullptr) {
-            LOG(ERROR) << "Session callback is NULL";
-            return BaseApp::INVALID_APP_ID;
-        }
+    else if (callingApp == nullptr) {
+        /** HbbTV app case */
+        LOG(ERROR) << "Called by non-running app, early out";
+        return BaseApp::INVALID_APP_ID;
     }
 
     if (url.empty())
     {
-        LOG(INFO) << "Called with empty URL, early out";
-        callback->DispatchApplicationLoadErrorEvent();
+        LOG(ERROR) << "Called with empty URL, early out";
+        // Per TS 103 606 (OpApp spec), ApplicationLoadErrorEvent should be dispatched on the
+        // BroadcastSupervisor object (which is part of OpApp) when a regular HbbTV application
+        // fails to load. An empty URL means no load attempt was made, so don't dispatch the event.
+        if (isRegularHbbTVApp) {
+            LOG(INFO) << "Dispatching ApplicationLoadError event to OpApp BroadcastSupervisor";
+            m_sessionCallback[APP_TYPE_OPAPP]->DispatchApplicationLoadErrorEvent();
+        }
         return BaseApp::INVALID_APP_ID;
     }
 
+    int result = BaseApp::INVALID_APP_ID;
     Utils::CreateLocatorInfo info = Utils::ParseCreateLocatorInfo(url, m_currentService);
     switch (info.type)
     {
@@ -150,6 +141,7 @@ int ApplicationManager::CreateApplication(int callingAppId, const std::string &u
             LOG(INFO) << "Create for ENTRY_PAGE_OR_XML_AIT_LOCATOR (url=" << url << ")";
             std::string contents;
 
+            auto callback = m_sessionCallback[isRegularHbbTVApp ? APP_TYPE_HBBTV : APP_TYPE_OPAPP];
             contents = callback->GetXmlAitContents(url);
 
             if (!contents.empty())
@@ -168,22 +160,22 @@ int ApplicationManager::CreateApplication(int callingAppId, const std::string &u
         case Utils::CreateLocatorType::UNKNOWN_LOCATOR:
         {
             LOG(INFO) << "Do not create for UNKNOWN_LOCATOR (url=" << url << ")";
-            result = BaseApp::INVALID_APP_ID;
             break;
         }
     }
 
-    if (result == BaseApp::INVALID_APP_ID)
-    {
-        callback->DispatchApplicationLoadErrorEvent();
-    }
-    else
-    {
-        if (m_sessionCallback[APP_TYPE_OPAPP] != nullptr) {
-            LOG(INFO) << "Dispatching ApplicationLoaded event to OpApp";
+    if (isRegularHbbTVApp) {
+        // Per TS 103 606 (OpApp spec): When a regular HbbTV application is successfully loaded or
+        // fails to load, ApplicationLoaded/ApplicationLoadError events shall be triggered on the
+        // BroadcastSupervisor object. BroadcastSupervisor is part of the OpApp context.
+        // These events are only for regular HbbTV applications (not OpApps themselves).
+        if (result == BaseApp::INVALID_APP_ID) {
+            LOG(ERROR) << "Dispatching ApplicationLoadError event to OpApp BroadcastSupervisor";
+            m_sessionCallback[APP_TYPE_OPAPP]->DispatchApplicationLoadErrorEvent();
+        }
+        else {
+            LOG(INFO) << "Dispatching ApplicationLoaded event to OpApp BroadcastSupervisor";
             m_sessionCallback[APP_TYPE_OPAPP]->DispatchApplicationLoadedEvent(result);
-        } else {
-            LOG(ERROR) << "OpApp callback is NULL, cannot dispatch ApplicationLoaded event";
         }
     }
 
@@ -362,6 +354,21 @@ std::string ApplicationManager::GetApplicationScheme(int appId)
     return "Error: App not found";
 }
 
+int ApplicationManager::GetRunningAppId(const ApplicationType appType)
+{
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
+    if (appType == APP_TYPE_HBBTV) {
+        return getCurrentHbbTVAppId();
+    }
+    else if (appType == APP_TYPE_OPAPP) {
+        return getCurrentOpAppId();
+    }
+
+    LOG(ERROR) << "GetRunningAppId(): Invalid app type "
+        << appType << ". Returning INVALID_APP_ID.";
+    return BaseApp::INVALID_APP_ID;
+}
+
 std::vector<int> ApplicationManager::GetRunningAppIds()
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
@@ -394,23 +401,13 @@ std::string ApplicationManager::GetApplicationUrl(int appId)
 std::string ApplicationManager::GetOpAppState(int appId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    if (m_opApp && m_opApp->GetId() == appId) {
-        switch (m_opApp->GetState()) {
-            case BaseApp::FOREGROUND_STATE:
-                return "foreground";
-            case BaseApp::BACKGROUND_STATE:
-                return "background";
-            case BaseApp::TRANSIENT_STATE:
-                return "transient";
-            case BaseApp::OVERLAID_TRANSIENT_STATE:
-                return "overlaid-transient";
-            case BaseApp::OVERLAID_FOREGROUND_STATE:
-                return "overlaid-foreground";
-            default:
-                break;
-        }
+    if ((m_opApp == nullptr) || (m_opApp->GetId() != appId))
+    {
+        LOG(ERROR) << "GetOpAppState: Calling app not found";
+        return std::string();
     }
-    return std::string();
+
+    return OpApp::opAppStateToString(m_opApp->GetState());
 }
 
 void ApplicationManager::ProcessAitSection(uint16_t aitPid, uint16_t serviceId,
@@ -741,23 +738,24 @@ void ApplicationManager::OnApplicationPageChanged(int appId, const std::string &
 
 bool ApplicationManager::OpAppRequestStateChange(int appId, const BaseApp::E_APP_STATE &state)
 {
-    LOG(INFO) << "OpAppRequestStateChange appId [" << appId << "] state [" << state << "]";
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    if (m_opApp)
+    LOG(INFO) << "OpAppRequestStateChange: App with id ["
+              << appId << "] state ["
+              << OpApp::opAppStateToString(state) << "]";
+    if ((m_opApp == nullptr) || (m_opApp->GetId() != appId))
     {
-        return m_opApp->SetState(state);
+        LOG(ERROR) << "OpAppRequestStateChange: App with id [" << appId << "] not found";
+        return false;
     }
-    else
-    {
-        LOG(ERROR) << "OpApp not found";
-    }
-    return false;
+
+    return m_opApp->SetState(state);
 }
 
 // Private methods...
 
 void ApplicationManager::onSelectedServiceAitReceived()
 {
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
     LOG(INFO) << "OnSelectedServiceAitReceived";
     auto ait = m_ait.Get();
     if (ait != nullptr)
@@ -837,6 +835,7 @@ void ApplicationManager::onSelectedServiceAitTimeout()
 
 void ApplicationManager::onSelectedServiceAitUpdated()
 {
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
     auto ait = m_ait.Get();
     LOG(INFO) << "OnSelectedServiceAitUpdated";
     if (ait == nullptr)

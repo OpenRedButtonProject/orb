@@ -111,8 +111,6 @@ public:
      */
     std::vector<uint16_t> GetOtherKeyValues() const { return m_otherKeys; }
 
-protected:
-
     /**
      * Return the KeySet a key code belongs to.
      *
@@ -120,6 +118,8 @@ protected:
      * @return The key set.
      */
     static uint16_t GetKeySetMaskForKeyCode(const uint16_t keyCode);
+
+protected:
 
     static bool IsKeyNavigation(const uint16_t code);
     static bool IsKeyNumeric(const uint16_t code);

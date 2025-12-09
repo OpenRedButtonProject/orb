@@ -36,7 +36,7 @@ public:
     MOCK_METHOD(void, hideApplication, (), (override));
     MOCK_METHOD(std::string, sendRequestToClient, (std::string jsonRequest), (override));
     MOCK_METHOD(void, dispatchEvent, (const std::string& etype, const std::string& properties), (override));
-    MOCK_METHOD(void, notifyKeySetChange, (uint16_t keyset, (std::vector<uint16_t>) otherkeys), (override));
+    MOCK_METHOD(void, notifyKeySetChange, (const uint16_t keyset, const std::vector<uint16_t> &otherkeys), (override));
 };
 
 } // namespace orb

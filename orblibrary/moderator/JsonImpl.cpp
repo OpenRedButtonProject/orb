@@ -135,7 +135,11 @@ void JsonImpl::setJsonArray(const std::string& key, const std::vector<T>& array)
 
 std::vector<uint16_t> JsonImpl::getUint16Array(const std::string& key) const
 {
-    return JsonUtil::getIntegerArray(mJson, key);
+    std::vector<uint16_t> result;
+    for (const auto& item : JsonUtil::getIntegerArray(mJson, key)) {
+        result.push_back(static_cast<uint16_t>(item));
+    }
+    return result;
 }
 
 /**

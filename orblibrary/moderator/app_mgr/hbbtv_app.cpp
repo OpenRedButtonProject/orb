@@ -32,6 +32,15 @@ static std::string getAppSchemeFromUrlParams(const std::string &urlParams);
 static std::string getUrlParamsFromAppScheme(const std::string &scheme);
 
 
+// static
+bool HbbTVApp::IsAllowedOtherKey(const uint16_t keyCode)
+{
+    // FREE-308: TS 102 796 v1.71 Annex A Table A.1.
+    const uint16_t VK_RECORD = 416;
+    return keyCode == VK_RECORD;
+}
+
+
 HbbTVApp::HbbTVApp(const std::string &url, ApplicationSessionCallback *sessionCallback)
     : BaseApp(APP_TYPE_HBBTV, url, sessionCallback),
     m_entryUrl(url),
@@ -214,21 +223,13 @@ uint16_t HbbTVApp::SetKeySetMask(const uint16_t keySetMask, const std::vector<ui
 
 bool HbbTVApp::InKeySet(const uint16_t keyCode)
 {
-    if ((m_keySetMask & GetKeySetMaskForKeyCode(keyCode)) != 0)
-    {
-        if ((m_keySetMask & KEY_SET_OTHER) == KEY_SET_OTHER) {
-            auto it = std::find(m_otherKeys.begin(), m_otherKeys.end(), keyCode);
-            if (it == m_otherKeys.end()) {
-                return false;
-            }
-        }
-        if (!m_isActivated)
-        {
-            m_isActivated = true;
-        }
-        return true;
+    bool result = BaseApp::InKeySet(keyCode);
+    if (result) {
+        // We don't care what state m_isActivated is, just set it.
+        m_isActivated = true;
     }
-    return false;
+
+    return result;
 }
 
 bool HbbTVApp::SetState(const E_APP_STATE &state)

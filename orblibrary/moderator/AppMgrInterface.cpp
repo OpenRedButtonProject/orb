@@ -65,7 +65,20 @@ string AppMgrInterface::executeRequest(const string& method, const string& token
     auto &appMgr = ApplicationManager::instance();
     int appId = params.getInteger("id");
 
-    LOGI("Request with method [" + method + "] received");
+    // Helper function to check if the request is supported for OpApp
+    auto isOpAppRequest = [this](const string& method, std::string& json_response) -> bool {
+        // The response is built by the isOpAppRequest function if the method is not supported for OpApp
+        // and returned to the caller
+        if (mAppType != ApplicationType::APP_TYPE_OPAPP) {
+            std::string errorMessage = "method [" + method + "] is only supported for OpApp";
+            LOGE(errorMessage);
+            json_response = buildJsonResponse(errorMessage);
+            return false;
+        }
+        return true;
+    };
+
+    LOG(INFO) << "Request with method [" << method << "] received for app [" << appId << "]";
     if (method == MANAGER_CREATE_APP)
     {
         int newAppId = appMgr.CreateApplication(
@@ -109,7 +122,13 @@ string AppMgrInterface::executeRequest(const string& method, const string& token
     else if (method == MANAGER_SET_KEY_VALUE)
     {
         uint16_t keyset = params.getInteger("value");
-        std::vector<uint16_t> otherkeys = params.getUint16Array("otherKeys");
+
+        // otherKeys is an optional parameter.
+        std::vector<uint16_t> otherkeys = {};
+        if (params.hasParam("otherKeys", IJson::JSON_TYPE_ARRAY)) {
+            otherkeys = params.getUint16Array("otherKeys");
+        }
+
         uint16_t kMask = appMgr.SetKeySetMask(appId, keyset, otherkeys);
         if (kMask > 0) {
             mOrbBrowser->notifyKeySetChange(keyset, otherkeys);
@@ -117,9 +136,7 @@ string AppMgrInterface::executeRequest(const string& method, const string& token
     }
     else if (method == MANAGER_GET_KEY_VALUES)
     {
-        uint16_t keyset = appMgr.GetKeySetMask(appId);
-
-        response = buildJsonResponse(keyset);
+        response = buildJsonResponse(appMgr.GetKeySetMask(appId));
     }
     else if (method == MANAGER_GET_OKEY_VALUES)
     {
@@ -150,18 +167,30 @@ string AppMgrInterface::executeRequest(const string& method, const string& token
     }
     else if (method == MANAGER_GET_OP_APP_STATE)
     {
+        if (!isOpAppRequest(method, response)) {
+            return response;
+        }
         response = buildJsonResponse(appMgr.GetOpAppState(appId));
     }
     else if (method == MANAGER_OP_APP_REQUEST_BACKGROUND)
     {
-        appMgr.OpAppRequestStateChange(appId, BaseApp::BACKGROUND_STATE);
+        if (!isOpAppRequest(method, response)) {
+            return response;
+        }
+        response = buildJsonResponse(appMgr.OpAppRequestStateChange(appId, BaseApp::BACKGROUND_STATE));
     }
     else if (method == MANAGER_OP_APP_REQUEST_FOREGROUND)
     {
+        if (!isOpAppRequest(method, response)) {
+            return response;
+        }
         response = buildJsonResponse(appMgr.OpAppRequestStateChange(appId, BaseApp::FOREGROUND_STATE));
     }
     else if (method == MANAGER_OP_APP_REQUEST_TRANSIENT)
     {
+        if (!isOpAppRequest(method, response)) {
+            return response;
+        }
         response = buildJsonResponse(appMgr.OpAppRequestStateChange(appId, BaseApp::TRANSIENT_STATE));
     }
     else
@@ -180,9 +209,9 @@ void AppMgrInterface::onNetworkStatusChange(bool available) {
 
 void AppMgrInterface::onChannelChange(uint16_t onetId, uint16_t transId, uint16_t serviceId) {
     std::lock_guard<std::mutex> lock(mMutex);
-    
+
     LOGI("AppMgrInterface::onChannelChange called - onetId: " << onetId << ", transId: " << transId << ", serviceId: " << serviceId);
-    
+
     ApplicationManager::instance().OnChannelChanged(onetId, transId, serviceId);
 }
 
@@ -277,11 +306,13 @@ void AppMgrInterface::DispatchApplicationSchemeUpdatedEvent(const int appId, con
 }
 
 void AppMgrInterface::DispatchOperatorApplicationStateChange(const int appId, const std::string &oldState, const std::string &newState) {
-    LOGI("appID: " << appId);
+    // TODO FREE-282
+    LOGI("TO DO FREE-282: DispatchOperatorApplicationStateChange");
 }
 
 void AppMgrInterface::DispatchOperatorApplicationStateChangeCompleted(const int appId, const std::string &oldState, const std::string &newState) {
-    LOGI("appID: " << appId);
+    // TODO FREE-282
+    LOGI("TO DO FREE-282: DispatchOperatorApplicationStateChangeCompleted");
 }
 
 void AppMgrInterface::DispatchOperatorApplicationContextChange(const int appId, const std::string &startupLocation, const std::string &launchLocation) {
@@ -301,6 +332,25 @@ bool AppMgrInterface::IsRequestAllowed(string token)
 {
     // TODO implement
     return true;
+}
+
+bool AppMgrInterface::InKeySet(const uint16_t keyCode) {
+    return ApplicationManager::instance().InKeySet(
+        ApplicationManager::instance().GetRunningAppId(mAppType), keyCode);
+}
+
+// static
+KeyType AppMgrInterface::ClassifyKey(const uint16_t keyCode)
+{
+    if ((BaseApp::GetKeySetMaskForKeyCode(keyCode) != 0) || HbbTVApp::IsAllowedOtherKey(keyCode)) {
+        return KeyType::REGULAR_HBBTV;
+    }
+
+    if (OpApp::IsOperatorApplicationKey(keyCode)) {
+        return KeyType::OPERATOR_APPLICATION;
+    }
+
+    return KeyType::SYSTEM;
 }
 
 } // namespace orb

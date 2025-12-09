@@ -441,6 +441,44 @@ class VideoBroadcast {
 // Create global video broadcast instance
 const videoBroadcast = new VideoBroadcast();
 
+// Configure KeySet so the OpApp receives required remote-control keys
+function initializeKeySet() {
+    const ownerApp = getOwnerApplication();
+    if (!ownerApp || !ownerApp.privateData || !ownerApp.privateData.keyset) {
+        logEvent('KeySet not available for this application', 'error');
+        return;
+    }
+
+    const keyset = ownerApp.privateData.keyset;
+
+    // Request the key groups that cover:
+    // - VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, VK_ENTER  -> NAVIGATION
+    // - VK_STOP, VK_PLAY, VK_PAUSE, VK_PLAY_PAUSE    -> VCR
+    // - VK_INFO                                      -> INFO
+    // - VK_GUIDE and other operator keys             -> OTHER
+    const requestedKeys =
+        keyset.NAVIGATION |
+        keyset.VCR |
+        keyset.INFO |
+        keyset.OTHER;
+
+    try {
+        const result = keyset.setValue(
+            requestedKeys,
+            [
+                KeyEvent.VK_GUIDE,
+                KeyEvent.VK_CHANNEL_DOWN,
+                KeyEvent.VK_CHANNEL_UP,
+            ]);
+        logEvent(
+            'KeySet configured (NAVIGATION | VCR | INFO | OTHER | CHANNEL_DOWN | CHANNEL_UP), result='
+                + result, 'success');
+    } catch (e) {
+        logEvent('Error configuring KeySet: ' + e.message, 'error');
+        console.error('Error configuring KeySet', e);
+    }
+}
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     console.log('HbbTV OpApp v1.2.1 initialized');
@@ -465,53 +503,196 @@ document.addEventListener('DOMContentLoaded', function() {
         videoHole.style.height = '400px';
     }
 
+    // Initialize video broadcast object
+    videoBroadcast.initialize();
+
+    // Request required operator keys on startup using the KeySet API
+    initializeKeySet();
+
     // Automatically open the video window as per OpApp specification
     // "Operator applications shall at all times have access to an additional window,
     //  termed the operator application video window"
     openVideoWindow();
 });
 
+// Helper function to get the owner application object
+// Returns the Application object if successful, null otherwise
+function getOwnerApplication() {
+    try {
+        const appManager = document.getElementById('app-manager');
+        if (!appManager) {
+            logEvent('Application Manager object not found', 'error');
+            return null;
+        }
+
+        // getOwnerApplication() is part of the OIPF ApplicationManager API
+        // It returns the Application object representing the current application
+        const ownerApp = appManager.getOwnerApplication(document);
+        if (!ownerApp) {
+            logEvent('Could not get owner application', 'warning');
+            return null;
+        }
+
+        return ownerApp;
+    } catch (error) {
+        console.error('Error getting owner application: ' + error.message);
+        logEvent('Error getting owner application: ' + error.message, 'error');
+        return null;
+    }
+}
+
+// Helper function to parse and log JSON result
+function parseAndLogResult(result, methodName) {
+    if (result === null) {
+        logEvent(methodName + ' returned null', 'warning');
+        return;
+    }
+
+    console.log(methodName + ' result:', result);
+    try {
+        // Try to parse and pretty-print the JSON
+        const parsedResult = typeof result === 'string' ? JSON.parse(result) : result;
+        const formattedResult = JSON.stringify(parsedResult, null, 2);
+        logEvent(methodName + ' result: ' + formattedResult, 'success');
+        console.log(methodName + ' parsed result:', parsedResult);
+    } catch (e) {
+        // If parsing fails, just log the raw result
+        logEvent(methodName + ' result: ' + result, 'success');
+    }
+}
+
+// Function to request foreground state
+// According to ETSI TS 103 606, opAppRequestForeground must be called within
+// a handler for keydown, keyup or keypress events to be successful
+function requestForeground(context) {
+    const ownerApp = getOwnerApplication();
+    if (!ownerApp) {
+        return;
+    }
+
+    const contextMsg = context ? ` (${context})` : '';
+    console.log('Requesting foreground for OpApp' + contextMsg);
+    logEvent('Requesting foreground for OpApp' + contextMsg, 'info');
+
+    try {
+        // opAppRequestForeground() is a method on the Application object
+        // It doesn't take parameters - it uses the Application's own ID
+        // Note: Per TS 103 606, this call should be made within a keydown/keyup/keypress
+        // handler to be successful, but it can be called from other contexts too
+        const result = ownerApp.opAppRequestForeground();
+        parseAndLogResult(result, 'opAppRequestForeground');
+    } catch (error) {
+        console.error('Error calling opAppRequestForeground: ' + error.message);
+        logEvent('Error calling opAppRequestForeground: ' + error.message, 'error');
+    }
+}
+
+// Function to request background state
+// According to ETSI TS 103 606, opAppRequestBackground can be called to transition
+// the OpApp to background state
+function requestBackground(context) {
+    const ownerApp = getOwnerApplication();
+    if (!ownerApp) {
+        return;
+    }
+
+    const contextMsg = context ? ` (${context})` : '';
+    console.log('Requesting background for OpApp' + contextMsg);
+    logEvent('Requesting background for OpApp' + contextMsg, 'info');
+
+    try {
+        // opAppRequestBackground() is a method on the Application object
+        // It doesn't take parameters - it uses the Application's own ID
+        const result = ownerApp.opAppRequestBackground();
+        parseAndLogResult(result, 'opAppRequestBackground');
+    } catch (error) {
+        console.error('Error calling opAppRequestBackground: ' + error.message);
+        logEvent('Error calling opAppRequestBackground: ' + error.message, 'error');
+    }
+}
+
+// Function to get the current OpApp state
+function getOpAppState() {
+    const ownerApp = getOwnerApplication();
+    if (!ownerApp) {
+        return null;
+    }
+
+    try {
+        // opAppState is a property of the Application object
+        // It returns the current state as a string
+        const state = ownerApp.opAppState;
+        console.log('Current OpApp state: ' + state);
+        return state;
+    } catch (error) {
+        console.error('Error getting OpApp state: ' + error.message);
+        logEvent('Error getting OpApp state: ' + error.message, 'error');
+        return null;
+    }
+}
+
+// Function to toggle between foreground and background state
+// If currently in foreground, transitions to background; otherwise transitions to foreground
+function toggleForegroundBackground(context) {
+    const currentState = getOpAppState();
+    const contextMsg = context ? ` (${context})` : '';
+
+    // Check state case-insensitively to handle any potential variations
+    if (currentState && currentState.toLowerCase() === 'foreground') {
+        logEvent('Toggling to background' + contextMsg, 'info');
+        requestBackground(context || 'toggle');
+    } else {
+        logEvent('Toggling to foreground' + contextMsg, 'info');
+        requestForeground(context || 'toggle');
+    }
+}
+
+// Handle window load event (fires after all resources are loaded)
+window.addEventListener('load', function() {
+    console.log('Window fully loaded');
+    logEvent('Window fully loaded', 'success');
+
+    // Request foreground using standard HbbTV/OIPF API
+    // According to ETSI TS 103 606 (OpApp spec), opAppRequestForeground is a method
+    // on the Application object, not the ApplicationManager
+    // Note: This call is not within a keyboard event handler, so it may not succeed
+    // per TS 103 606 spec, but it's useful for initial foreground request on load
+    requestForeground('window load event');
+});
+
 // Handle keyboard navigation
 document.addEventListener('keydown', function(event) {
     console.log('Key pressed: ' + event.keyCode);
     switch(event.keyCode) {
-        case 100: // Keypad 4 / Keypad Left (Channel Previous)
+        case KeyEvent.VK_GUIDE:
+            toggleForegroundBackground('GUIDE key pressed');
+            event.preventDefault();
+            break;
+        case KeyEvent.VK_INFO:
+            showInfo();
+            event.preventDefault();
+            break;
+        case KeyEvent.VK_CHANNEL_DOWN: // Keypad 4 / Keypad Left (Channel Previous)
             selectPreviousChannel();
             event.preventDefault();
             break;
-        case 102: // Keypad 6 / Keypad Right (Channel Next)
+        case KeyEvent.VK_CHANNEL_UP: // Keypad 6 / Keypad Right (Channel Next)
             selectNextChannel();
             event.preventDefault();
             break;
-        case 188: // Comma key (,) (Channel Previous)
-            selectPreviousChannel();
-            event.preventDefault();
-            break;
-        case 190: // Period/Full stop key (.) (Channel Next)
-            selectNextChannel();
-            event.preventDefault();
-            break;
-        case 37: // Left arrow (Channel Previous)
-            selectPreviousChannel();
-            event.preventDefault();
-            break;
-        case 39: // Right arrow (Channel Next)
-            selectNextChannel();
-            event.preventDefault();
-            break;
-        case 38: // Up arrow
+        case KeyEvent.VK_UP: // Up arrow
             navigateFocus(-1);
             event.preventDefault();
             break;
-        case 40: // Down arrow
+        case KeyEvent.VK_DOWN: // Down arrow
             navigateFocus(1);
             event.preventDefault();
             break;
-        case 13: // Enter
+        case KeyEvent.VK_ENTER: // Enter
             activateCurrentButton();
             event.preventDefault();
             break;
-        case 8: // Backspace
+        case KeyEvent.VK_BACK: // Backspace
             goBack();
             event.preventDefault();
             break;
@@ -519,11 +700,11 @@ document.addEventListener('keydown', function(event) {
             toggleVideoBroadcast();
             event.preventDefault();
             break;
-        case 80: // P key (Play/Pause button)
+        case KeyEvent.VK_PLAY_PAUSE: // P key (Play/Pause button)
             togglePlayPause();
             event.preventDefault();
             break;
-        case 83: // S key (Stop button - kept for backward compatibility)
+        case KeyEvent.VK_STOP: // S key (Stop button - kept for backward compatibility)
             stopVideo();
             event.preventDefault();
             break;
@@ -561,7 +742,7 @@ function openVideoWindow() {
     // In a real implementation, this would open the video window
     // For this minimal version, we'll just show a message
     setTimeout(() => {
-        const videoWindow = window.open('video/video.html', '_opappVideo');
+        const videoWindow = window.open('video/video.html', '_opappvideo');
         updateStatus('[TEST]Video window opened');
 
         // Store reference to video window for communication
@@ -669,11 +850,6 @@ function UserAgentTest() {
 console.log('User Agent: ' + navigator.userAgent);
 logEvent('User Agent: ' + navigator.userAgent, 'info');
 UserAgentTest();
-
-// Initialize video broadcast when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    videoBroadcast.initialize();
-});
 
 // Transport Bar Methods
 function stopVideo() {

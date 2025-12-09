@@ -268,8 +268,16 @@ public:
 
     std::string GetApplicationUrl(int appId);
 
+    int GetRunningAppId(const ApplicationType appType);
+
     std::vector<int> GetRunningAppIds();
 
+    /**
+     * Get the state of the OpApp as a string. See TSI 103 606 V1.2.1 (2024-03) A.2.2.1
+     *
+     * @param callingAppId The app ID making the request.
+     * @return The state of the OpApp.
+     */
     std::string GetOpAppState(int appId);
 
     /**

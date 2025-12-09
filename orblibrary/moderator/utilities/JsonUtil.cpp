@@ -76,7 +76,7 @@ namespace orb
         return false;
     }
 
-    std::vector<uint16_t> JsonUtil::getIntegerArray(const Json::Value& json, const std::string& key)
+    std::vector<int> JsonUtil::getIntegerArray(const Json::Value& json, const std::string& key)
     {
         if (!json.isMember(key))
         {
@@ -91,54 +91,16 @@ namespace orb
             return {};
         }
 
-        std::vector<uint16_t> result;
+        std::vector<int> result;
         for (const auto& element : value)
         {
-            if (!element.isString())
+            if (!element.isInt() && !element.isUInt())
             {
-                LOGE("Array element is not a string in key '" << key << "'");
-                return {};
+                LOGE("Array element is not an integer in key '" << key << "'. Skipping!");
+                continue;
             }
 
-            const std::string& strValue = element.asString();
-            if (strValue.empty())
-            {
-                LOGE("Array element is empty string in key '" << key << "'");
-                return {};
-            }
-
-            // Check if string contains only digits (no negative numbers for uint16_t)
-            bool isValid = true;
-            for (size_t i = 0; i < strValue.length(); ++i)
-            {
-                if (strValue[i] < '0' || strValue[i] > '9')
-                {
-                    isValid = false;
-                    break;
-                }
-            }
-
-            if (!isValid)
-            {
-                LOGE("Array element '" << strValue << "' cannot be converted to uint16_t in key '" << key << "'");
-                return {};
-            }
-
-            // Manual conversion to avoid exceptions
-            uint16_t uintValue = 0;
-            for (size_t i = 0; i < strValue.length(); ++i)
-            {
-                uintValue = uintValue * 10 + (strValue[i] - '0');
-
-                // Check for overflow (uint16_t max value is 65535)
-                if (uintValue > 65535)
-                {
-                    LOGE("Array element '" << strValue << "' is too large for uint16_t in key '" << key << "'");
-                    return {};
-                }
-            }
-
-            result.push_back(uintValue);
+            result.push_back(element.asInt());
         }
 
         return result;

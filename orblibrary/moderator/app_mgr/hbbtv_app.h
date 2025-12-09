@@ -104,7 +104,15 @@ public:
 
     bool InKeySet(const uint16_t keyCode) override;
 
-private:
+    /**
+     * Return true if the key code is an allowed other key, i.e. VK_RECORD.
+     *
+     * @param keyCode The key code.
+     * @return True if the key code is an allowed other key, false otherwise.
+     */
+    static bool IsAllowedOtherKey(const uint16_t keyCode);
+
+ private:
     bool IsAllowedByParentalControl(const Ait::S_AIT_APP_DESC &desc) const;
 
     std::string m_entryUrl;
