@@ -335,6 +335,7 @@ hbbtv.objects.NativeProxy = (function() {
             const p = privates.get(this);
             const subtitlesRenderDiv = document.createElement('div');
             p.subs = subtitlesRenderDiv;
+            subtitlesRenderDiv.id = 'subtitles-render-div';
             p.audioTracks = hbbtv.objects.createAudioTrackList();
             p.videoTracks = hbbtv.objects.createVideoTrackList();
             p.onTextTrackChange = onTextTrackChange.bind(this);

@@ -776,6 +776,7 @@ hbbtv.objects.DashProxy = (function() {
                 }
                 const subtitlesRenderDiv = document.createElement('div');
                 p.subs = subtitlesRenderDiv;
+                subtitlesRenderDiv.id = 'subtitles-render-div';
                 p.player.attachTTMLRenderingDiv(subtitlesRenderDiv);
                 
                 this.textTracks.addEventListener('change', p.onTextTrackChange);
