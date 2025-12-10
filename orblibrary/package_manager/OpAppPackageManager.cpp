@@ -211,7 +211,7 @@ std::string OpAppPackageManager::getOpAppUrl() const
   // This should return the URL of the currently installed OpApp, otherwise empty string
   // This is used to update the OpApp URL in the OpApp manager.
   // Set to localhost for testing.
-  return "https://taco.freeviewplay.tv/";//"http://10.0.2.2:8080/index.html";
+  return "http://10.0.2.2:8080/index.html";
 }
 
 OpAppPackageManager::PackageStatus OpAppPackageManager::doPackageFileCheck()
