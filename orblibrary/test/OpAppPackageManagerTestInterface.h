@@ -5,9 +5,8 @@
 #include <memory>
 #include <string>
 
-// Forward declarations
-class IHashCalculator;
-class IDecryptor;
+namespace orb
+{
 
 /**
  * @brief Test interface for OpAppPackageManager that provides controlled access
@@ -123,5 +122,7 @@ private:
 
     std::unique_ptr<OpAppPackageManager> m_PackageManager;
 };
+
+} // namespace orb
 
 #endif /* OP_APP_PACKAGE_MANAGER_TEST_INTERFACE_H */

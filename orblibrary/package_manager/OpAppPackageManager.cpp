@@ -13,6 +13,9 @@
 #include "HashCalculator.h"
 #include "Decryptor.h"
 
+namespace orb
+{
+
 static std::string statusCodeToString(OpAppPackageManager::PackageStatus status)
 {
   switch (status) {
@@ -446,3 +449,5 @@ bool OpAppPackageManager::unzipPackageFile(const std::string& filePath) const
 {
   return false;
 }
+
+} // namespace orb

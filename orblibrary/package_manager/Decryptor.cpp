@@ -10,7 +10,12 @@
 #include <openssl/sha.h>
 #endif
 
+namespace orb
+{
+
 PackageOperationResult Decryptor::decrypt(const std::string& filePath) const
 {
   return PackageOperationResult(true, "", {filePath});
 }
+
+} // namespace orb
