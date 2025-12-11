@@ -1,6 +1,9 @@
 #include "OpAppPackageManagerTestInterface.h"
 #include "third_party/orb/orblibrary/include/OpAppPackageManager.h"
 
+namespace orb
+{
+
 std::unique_ptr<OpAppPackageManagerTestInterface> OpAppPackageManagerTestInterface::create(
     const OpAppPackageManager::Configuration& configuration)
 {
@@ -104,3 +107,5 @@ bool OpAppPackageManagerTestInterface::unzipPackageFile(const std::string& fileP
     // Access private method directly since we're a friend class
     return m_PackageManager->unzipPackageFile(filePath);
 }
+
+} // namespace orb

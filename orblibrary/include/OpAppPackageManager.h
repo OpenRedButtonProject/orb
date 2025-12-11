@@ -9,6 +9,9 @@
 #include <mutex>
 #include <functional>
 
+namespace orb
+{
+
 // Error handling structure for package operations
 struct PackageOperationResult {
   bool success;
@@ -224,5 +227,7 @@ private:
   std::string m_CandidatePackageFile;
   std::string m_CandidatePackageHash;
 };
+
+} // namespace orb
 
 #endif /* OP_APP_PACKAGE_MANAGER_H */

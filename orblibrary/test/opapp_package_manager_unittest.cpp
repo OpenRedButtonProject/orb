@@ -10,6 +10,8 @@
 #include "OpAppPackageManagerTestInterface.h"
 #include <fstream>
 
+using namespace orb;
+
 class MockDecryptor : public IDecryptor {
 public:
   MockDecryptor() = default;

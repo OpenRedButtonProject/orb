@@ -10,6 +10,9 @@
 #include <openssl/sha.h> // TODO: use local ssl library instead
 #endif
 
+namespace orb
+{
+
 std::string HashCalculator::calculateSHA256Hash(const std::string& filePath) const
 {
   std::ifstream file(filePath, std::ios::binary);
@@ -47,3 +50,5 @@ std::string HashCalculator::calculateSHA256Hash(const std::string& filePath) con
 
   return ss.str();
 }
+
+} // namespace orb
