@@ -6,6 +6,7 @@
 #include "third_party/orb/orblibrary/include/OpAppAcquisition.h"
 #include "OpAppAcquisitionTestInterface.h"
 
+using namespace orb;
 class OpAppAcquisitionTest : public ::testing::Test {
 protected:
     void SetUp() override {

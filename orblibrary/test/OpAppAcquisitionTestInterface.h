@@ -13,6 +13,9 @@
  *
  * This interface should only be used in test code.
  */
+namespace orb
+{
+
 class OpAppAcquisitionTestInterface
 {
 public:
@@ -92,5 +95,7 @@ private:
 
     std::unique_ptr<OpAppAcquisition> m_acquisition;
 };
+
+} // namespace orb
 
 #endif /* OP_APP_ACQUISITION_TEST_INTERFACE_H */

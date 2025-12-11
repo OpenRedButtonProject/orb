@@ -20,6 +20,9 @@
 #include <vector>
 #include <cstdint>
 
+namespace orb
+{
+
 /**
  * @brief Represents a DNS SRV record
  */
@@ -89,5 +92,7 @@ private:
     std::string m_opapp_fqdn;
     bool m_is_network_available;
 };
+
+} // namespace orb
 
 #endif // OP_APP_ACQUISITION_H

@@ -9,6 +9,9 @@
 #include <algorithm>
 #include <random>
 
+namespace orb
+{
+
 // DNS constants
 namespace {
     constexpr uint16_t DNS_PORT = 53;
@@ -438,3 +441,5 @@ std::string OpAppAcquisition::doDnsSrvLookup()
 
     return result;
 }
+
+} // namespace orb

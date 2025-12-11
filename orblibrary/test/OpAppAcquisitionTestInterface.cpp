@@ -1,5 +1,8 @@
 #include "OpAppAcquisitionTestInterface.h"
 
+namespace orb
+{
+
 OpAppAcquisitionTestInterface::OpAppAcquisitionTestInterface(
     const std::string& opapp_fqdn,
     bool is_network_available)
@@ -52,3 +55,5 @@ std::vector<SrvRecord> OpAppAcquisitionTestInterface::querySrvRecords(
 {
     return m_acquisition->querySrvRecords(serviceName, dnsServer, timeoutMs);
 }
+
+} // namespace orb
