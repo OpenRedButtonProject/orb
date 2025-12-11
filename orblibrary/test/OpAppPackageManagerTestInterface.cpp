@@ -4,8 +4,8 @@
 std::unique_ptr<OpAppPackageManagerTestInterface> OpAppPackageManagerTestInterface::create(
     const OpAppPackageManager::Configuration& configuration)
 {
-    OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
-    return std::unique_ptr<OpAppPackageManagerTestInterface>(new OpAppPackageManagerTestInterface(packageManager));
+    auto packageManager = std::make_unique<OpAppPackageManager>(configuration);
+    return std::unique_ptr<OpAppPackageManagerTestInterface>(new OpAppPackageManagerTestInterface(std::move(packageManager)));
 }
 
 std::unique_ptr<OpAppPackageManagerTestInterface> OpAppPackageManagerTestInterface::create(
@@ -13,12 +13,12 @@ std::unique_ptr<OpAppPackageManagerTestInterface> OpAppPackageManagerTestInterfa
     std::unique_ptr<IHashCalculator> hashCalculator,
     std::unique_ptr<IDecryptor> decryptor)
 {
-    OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration, std::move(hashCalculator), std::move(decryptor));
-    return std::unique_ptr<OpAppPackageManagerTestInterface>(new OpAppPackageManagerTestInterface(packageManager));
+    auto packageManager = std::make_unique<OpAppPackageManager>(configuration, std::move(hashCalculator), std::move(decryptor));
+    return std::unique_ptr<OpAppPackageManagerTestInterface>(new OpAppPackageManagerTestInterface(std::move(packageManager)));
 }
 
-OpAppPackageManagerTestInterface::OpAppPackageManagerTestInterface(OpAppPackageManager& packageManager)
-    : m_PackageManager(&packageManager)
+OpAppPackageManagerTestInterface::OpAppPackageManagerTestInterface(std::unique_ptr<OpAppPackageManager> packageManager)
+    : m_PackageManager(std::move(packageManager))
 {
 }
 
