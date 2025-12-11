@@ -221,15 +221,15 @@ private:
    */
   bool unzipPackageFile(const std::string& filePath) const;
 
-  PackageStatus m_PackageStatus;
+  PackageStatus m_PackageStatus = PackageStatus::None;
 
   // void uninstallPackage(const std::string& packagePath);
   // void updatePackage(const std::string& packagePath);
   // PackageInfo getPackageInfo();
 
-  std::atomic<bool> m_IsRunning;
-  std::atomic<bool> m_IsUpdating; // TODO replace with OpAppUpdateStatus
-  std::atomic<OpAppUpdateStatus> m_UpdateStatus = OpAppUpdateStatus::NONE;
+  std::atomic<bool> m_IsRunning{false};
+  std::atomic<bool> m_IsUpdating{false}; // TODO replace with OpAppUpdateStatus
+  std::atomic<OpAppUpdateStatus> m_UpdateStatus{OpAppUpdateStatus::NONE};
   std::mutex m_Mutex;
 
   std::thread m_WorkerThread;

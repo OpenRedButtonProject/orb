@@ -69,34 +69,18 @@ static int readJsonField(
 }
 
 OpAppPackageManager::OpAppPackageManager(const Configuration& configuration)
-  : m_PackageStatus(PackageStatus::None)
-  , m_IsRunning(false)
-  , m_IsUpdating(false)
-  , m_Configuration(configuration)
-  , m_LastErrorMessage()
-  , m_HashCalculator(std::make_unique<HashCalculator>())
-  , m_Decryptor(std::make_unique<Decryptor>())
+  : OpAppPackageManager(configuration, std::make_unique<HashCalculator>(), std::make_unique<Decryptor>())
 {
 }
 
 OpAppPackageManager::OpAppPackageManager(const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator)
-  : m_PackageStatus(PackageStatus::None)
-  , m_IsRunning(false)
-  , m_IsUpdating(false)
-  , m_Configuration(configuration)
-  , m_LastErrorMessage()
-  , m_HashCalculator(std::move(hashCalculator))
-  , m_Decryptor(std::make_unique<Decryptor>())
+  : OpAppPackageManager(configuration, std::move(hashCalculator), std::make_unique<Decryptor>())
 {
 }
 
 OpAppPackageManager::OpAppPackageManager(
   const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator, std::unique_ptr<IDecryptor> decryptor)
-  : m_PackageStatus(PackageStatus::None)
-  , m_IsRunning(false)
-  , m_IsUpdating(false)
-  , m_Configuration(configuration)
-  , m_LastErrorMessage()
+  : m_Configuration(configuration)
   , m_HashCalculator(std::move(hashCalculator))
   , m_Decryptor(std::move(decryptor))
 {
