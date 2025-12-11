@@ -117,11 +117,11 @@ public:
 private:
     /**
      * @brief Private constructor - use create() methods instead
-     * @param packageManager The package manager instance
+     * @param packageManager The package manager instance (takes ownership)
      */
-    explicit OpAppPackageManagerTestInterface(OpAppPackageManager& packageManager);
+    explicit OpAppPackageManagerTestInterface(std::unique_ptr<OpAppPackageManager> packageManager);
 
-    OpAppPackageManager* m_PackageManager;
+    std::unique_ptr<OpAppPackageManager> m_PackageManager;
 };
 
 #endif /* OP_APP_PACKAGE_MANAGER_TEST_INTERFACE_H */

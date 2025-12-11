@@ -92,25 +92,17 @@ public:
       UpdateFailureCallback m_OnUpdateFailure; /* Callback called when update fails */
   };
 
-
-
-  // Singleton instance management
-  // getInstance() returns nullptr if not configured yet
-  static OpAppPackageManager* getInstance();
-  // getInstance(configuration) creates and configures the instance
-  static OpAppPackageManager& getInstance(const Configuration& configuration);
-  // getInstance(configuration, hashCalculator) creates instance with custom hash calculator (for testing)
-  static OpAppPackageManager& getInstance(
+  // Constructors
+  explicit OpAppPackageManager(const Configuration& configuration);
+  // Constructor with custom hash calculator (for testing)
+  OpAppPackageManager(
     const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator);
-  // getInstance(configuration, decryptor) creates instance with custom decryptor (for testing)
-  static OpAppPackageManager& getInstance(
-    const Configuration& configuration, std::unique_ptr<IDecryptor> decryptor);
-  // getInstance(configuration, hashCalculator, decryptor) creates instance with custom hash calculator and decryptor (for testing)
-  static OpAppPackageManager& getInstance(
-    const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator, std::unique_ptr<IDecryptor> decryptor);
-  static void destroyInstance();
+  // Constructor with custom hash calculator and decryptor (for testing)
+  OpAppPackageManager(
+    const Configuration& configuration,
+    std::unique_ptr<IHashCalculator> hashCalculator,
+    std::unique_ptr<IDecryptor> decryptor);
 
-  // Destructor must be public for std::unique_ptr to work
   ~OpAppPackageManager();
 
   // Prevent copying and moving
@@ -145,17 +137,6 @@ public:
   friend class OpAppPackageManagerTestInterface;
 
 private:
-  // Private constructor for singleton pattern
-  OpAppPackageManager(const Configuration& configuration);
-  // Private constructor with custom hash calculator (for testing)
-  OpAppPackageManager(
-    const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator);
-  // Private constructor with custom hash calculator and decryptor (for testing)
-  OpAppPackageManager(
-    const Configuration& configuration,
-    std::unique_ptr<IHashCalculator> hashCalculator,
-    std::unique_ptr<IDecryptor> decryptor);
-
   /**
    * doPackageFileCheck()
    *
@@ -235,10 +216,6 @@ private:
 
   std::thread m_WorkerThread;
   Configuration m_Configuration;
-
-  // Singleton instance
-  static std::unique_ptr<OpAppPackageManager> s_Instance;
-  static std::mutex s_InstanceMutex;
 
   std::string m_LastErrorMessage;
   std::unique_ptr<IHashCalculator> m_HashCalculator;

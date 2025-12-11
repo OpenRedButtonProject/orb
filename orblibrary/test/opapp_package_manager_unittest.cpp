@@ -96,17 +96,12 @@ public:
 
 protected:
   void SetUp() override {
-    // Clean up any existing instance before each test
-    OpAppPackageManager::destroyInstance();
-
     // Create test directory structure in temporary directory
     PACKAGE_PATH = std::filesystem::temp_directory_path() / "orb_test_packages";
     std::filesystem::create_directories(PACKAGE_PATH);
   }
 
   void TearDown() override {
-    // Clean up after each test
-    OpAppPackageManager::destroyInstance();
     // Remove the package file in the package source location
     std::string packagePath = PACKAGE_PATH + "/package.opk";
     std::remove(packagePath.c_str());
@@ -119,117 +114,13 @@ protected:
 // Static member definition
 std::string OpAppPackageManagerTest::PACKAGE_PATH;
 
-TEST_F(OpAppPackageManagerTest, TestGetInstanceWithoutConfiguration)
-{
-  // GIVEN: no preconditions
-
-  // WHEN: getting the singleton instance without configuration
-  OpAppPackageManager* packageManager = OpAppPackageManager::getInstance();
-
-  // THEN: nullptr should be returned since no configuration was provided
-  EXPECT_EQ(packageManager, nullptr);
-}
-
-TEST_F(OpAppPackageManagerTest, TestGetInstanceWithConfiguration)
-{
-  // GIVEN: a configuration object
-  OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = PACKAGE_PATH;
-
-  // WHEN: getting the singleton instance with configuration
-  OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
-
-  // THEN: the instance should be created successfully with the provided configuration
-  // Verify the instance is valid by checking its state
-  EXPECT_FALSE(packageManager.isRunning());
-  EXPECT_FALSE(packageManager.isUpdating());
-}
-
-TEST_F(OpAppPackageManagerTest, TestGetInstanceMultipleCalls)
-{
-  // GIVEN: a configuration object
-  OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = PACKAGE_PATH;
-  // WHEN: calling getInstance multiple times after configuration
-  OpAppPackageManager& instance1 = OpAppPackageManager::getInstance(configuration);
-  OpAppPackageManager* instance2 = OpAppPackageManager::getInstance();
-  OpAppPackageManager* instance3 = OpAppPackageManager::getInstance();
-
-  // THEN: all calls should return the same instance
-  EXPECT_EQ(&instance1, instance2);
-  EXPECT_EQ(instance2, instance3);
-  EXPECT_EQ(&instance1, instance3);
-}
-
-TEST_F(OpAppPackageManagerTest, TestGetInstanceWithConfigurationAfterInstanceExists)
-{
-  // GIVEN: an existing singleton instance
-  OpAppPackageManager::Configuration config1;
-  config1.m_PackageLocation = PACKAGE_PATH;
-  OpAppPackageManager& instance1 = OpAppPackageManager::getInstance(config1);
-
-  // WHEN: trying to get instance with different configuration when instance already exists
-  OpAppPackageManager::Configuration config2;
-  config2.m_PackageLocation = "/different/packages";
-
-  // THEN: the existing instance should be returned (no exception thrown)
-  OpAppPackageManager& instance2 = OpAppPackageManager::getInstance(config2);
-  EXPECT_EQ(&instance1, &instance2);
-}
-
-TEST_F(OpAppPackageManagerTest, TestDestroyInstance)
-{
-  // GIVEN: a singleton instance
-  OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = PACKAGE_PATH;
-  OpAppPackageManager& instance1 = OpAppPackageManager::getInstance(configuration);
-
-  // Verify initial state
-  EXPECT_FALSE(instance1.isRunning());
-  EXPECT_FALSE(instance1.isUpdating());
-
-  // WHEN: destroying the instance
-  OpAppPackageManager::destroyInstance();
-
-  // THEN: a new instance should be created when getInstance is called again
-  // Note: We can't rely on memory addresses being different due to memory reuse
-  // Instead, we verify that the singleton pattern works by ensuring
-  // the instance can be destroyed and recreated without errors
-  OpAppPackageManager* instance2_ptr = OpAppPackageManager::getInstance();
-  EXPECT_EQ(instance2_ptr, nullptr); // Should be nullptr since no configuration provided
-
-  // Create new instance with configuration
-  OpAppPackageManager& instance2 = OpAppPackageManager::getInstance(configuration);
-
-  // Only the new instance should be valid and accessible
-  // Note: instance1 is no longer valid after destroyInstance() was called
-  EXPECT_FALSE(instance2.isRunning());
-  EXPECT_FALSE(instance2.isUpdating());
-
-  // The test passes if we can successfully destroy and recreate the instance
-  // Memory address reuse is not a failure condition
-}
-
-TEST_F(OpAppPackageManagerTest, TestDestroyInstanceMultipleCalls)
-{
-  // GIVEN: no preconditions
-
-  // WHEN: calling destroyInstance multiple times
-  OpAppPackageManager::destroyInstance();
-  OpAppPackageManager::destroyInstance();
-  OpAppPackageManager::destroyInstance();
-
-  // THEN: no errors should occur
-  // (This test verifies that multiple destroy calls are safe)
-}
-
 TEST_F(OpAppPackageManagerTest, TestDefaultInitialization)
 {
   // GIVEN: a configuration object
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   // WHEN: creating instance with configuration
-  OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
+  OpAppPackageManager packageManager(configuration);
 
   // THEN: the instance should be in a valid initial state
   EXPECT_FALSE(packageManager.isRunning());
@@ -249,7 +140,7 @@ TEST_F(OpAppPackageManagerTest, TestConfigurationInitialization)
   configuration.m_OpAppInstallDirectory = "/install";
 
   // WHEN: creating instance with custom configuration
-  OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
+  OpAppPackageManager packageManager(configuration);
 
   // THEN: the instance should be created successfully
   EXPECT_FALSE(packageManager.isRunning());
@@ -258,11 +149,11 @@ TEST_F(OpAppPackageManagerTest, TestConfigurationInitialization)
 
 TEST_F(OpAppPackageManagerTest, TestStartAndStop)
 {
-  // GIVEN: a singleton OpAppPackageManager instance
+  // GIVEN: an OpAppPackageManager instance
   // and no package file in the package source location
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
+  OpAppPackageManager packageManager(configuration);
 
   // WHEN: starting the package manager
   packageManager.start();
@@ -990,43 +881,6 @@ TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_NoCallbacksSet)
   EXPECT_EQ(status, OpAppPackageManager::PackageStatus::NoUpdateAvailable);
 }
 
-// Standalone test to isolate destroyInstance issue
-TEST(OpAppPackageManagerStandalone, TestDestroyInstanceStandalone)
-{
-  // GIVEN: a singleton instance
-  OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = OpAppPackageManagerTest::PACKAGE_PATH;
-  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
-
-  // Verify that the test interface is pointing to the same instance as the singleton
-  auto opappPackageManager = OpAppPackageManager::getInstance();
-  EXPECT_EQ(&testInterface->getPackageManager(), opappPackageManager);
-
-  EXPECT_FALSE(testInterface->isRunning());
-  EXPECT_FALSE(testInterface->isUpdating());
-
-  // WHEN: destroying the instance
-  OpAppPackageManager::destroyInstance();
-
-  // THEN: a new instance should be created when getInstance is called again
-  auto opappPackageManager2 = OpAppPackageManager::getInstance();
-  EXPECT_EQ(opappPackageManager2, nullptr);
-  // Should be nullptr since instance destroyed and no configuration provided.
-
-  // Create new instance with configuration
-  auto testInterface3 = OpAppPackageManagerTestInterface::create(configuration);
-
-  // Verify that both instances are valid and accessible
-  EXPECT_FALSE(testInterface3->isRunning());
-  EXPECT_FALSE(testInterface3->isUpdating());
-
-  // The test passes if we can successfully destroy and recreate the instance
-  // Memory address reuse is not a failure condition
-
-  // Clean up after test
-  OpAppPackageManager::destroyInstance();
-}
-
 TEST_F(OpAppPackageManagerTest, TestCalculateSHA256Hash)
 {
   // GIVEN: a singleton OpAppPackageManager instance and a test file
@@ -1185,13 +1039,13 @@ TEST_F(OpAppPackageManagerTest, TestGetPackageFiles_SinglePackageFile_ReturnsSuc
 
 TEST_F(OpAppPackageManagerTest, TestGetPackageFiles_NoPackageFiles_ReturnsSuccess)
 {
-  // GIVEN: a singleton OpAppPackageManager instance
+  // GIVEN: an OpAppPackageManager instance
   // and no package files in the package source location
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   configuration.m_PackageSuffix = ".opk";
 
-  OpAppPackageManager& packageManager = OpAppPackageManager::getInstance(configuration);
+  OpAppPackageManager packageManager(configuration);
 
   // WHEN: getPackageFiles is called
   PackageOperationResult result = packageManager.getPackageFiles();

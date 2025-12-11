@@ -65,10 +65,6 @@ static int readJsonField(
   return -2;
 }
 
-// Static member initialization
-std::unique_ptr<OpAppPackageManager> OpAppPackageManager::s_Instance = nullptr;
-std::mutex OpAppPackageManager::s_InstanceMutex;
-
 OpAppPackageManager::OpAppPackageManager(const Configuration& configuration)
   : m_PackageStatus(PackageStatus::None)
   , m_IsRunning(false)
@@ -113,71 +109,6 @@ OpAppPackageManager::~OpAppPackageManager()
 {
   // Ensure the worker thread is stopped before destruction
   stop();
-}
-
-// Singleton instance management
-OpAppPackageManager* OpAppPackageManager::getInstance()
-{
-  std::lock_guard<std::mutex> lock(s_InstanceMutex);
-
-  // Return nullptr if no instance has been created yet
-  return s_Instance ? s_Instance.get() : nullptr;
-}
-
-OpAppPackageManager& OpAppPackageManager::getInstance(const Configuration& configuration)
-{
-  std::lock_guard<std::mutex> lock(s_InstanceMutex);
-
-  if (!s_Instance) {
-    s_Instance = std::unique_ptr<OpAppPackageManager>(new OpAppPackageManager(configuration));
-  }
-  // If instance already exists, we just return the existing instance
-  // This is a design decision - you could also log a warning or handle it differently
-
-  return *s_Instance;
-}
-
-OpAppPackageManager& OpAppPackageManager::getInstance(const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator)
-{
-  std::lock_guard<std::mutex> lock(s_InstanceMutex);
-
-  if (!s_Instance) {
-    s_Instance = std::unique_ptr<OpAppPackageManager>(new OpAppPackageManager(configuration, std::move(hashCalculator)));
-  }
-  // If instance already exists, we just return the existing instance
-  // This is a design decision - you could also log a warning or handle it differently
-
-  return *s_Instance;
-}
-
-OpAppPackageManager& OpAppPackageManager::getInstance(
-  const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator, std::unique_ptr<IDecryptor> decryptor)
-{
-  std::lock_guard<std::mutex> lock(s_InstanceMutex);
-
-  if (!s_Instance) {
-    s_Instance = std::unique_ptr<OpAppPackageManager>(new OpAppPackageManager(configuration, std::move(hashCalculator), std::move(decryptor)));
-  }
-
-  return *s_Instance;
-}
-
-void OpAppPackageManager::destroyInstance()
-{
-  std::unique_ptr<OpAppPackageManager> instanceToDestroy;
-
-  // Move the instance out of the singleton while holding the lock
-  {
-    std::lock_guard<std::mutex> lock(s_InstanceMutex);
-    if (s_Instance) {
-      instanceToDestroy = std::move(s_Instance);
-      s_Instance = nullptr;
-    }
-  }
-
-  // Destroy the instance outside the lock to avoid deadlock
-  // The destructor will handle thread cleanup safely
-  instanceToDestroy.reset();
 }
 
 void OpAppPackageManager::start()
