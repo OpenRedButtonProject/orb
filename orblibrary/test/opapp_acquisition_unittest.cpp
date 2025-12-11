@@ -369,3 +369,22 @@ TEST_F(OpAppAcquisitionTest, TestSrvRecord_ParameterizedConstructor)
     EXPECT_EQ(record.port, 8080);
     EXPECT_EQ(record.target, "server.example.com");
 }
+
+// Disabled - useful for manual testing
+TEST_F(OpAppAcquisitionTest, DISABLED_TestDoDnsSrvLookup_ValidFqdn)
+{
+    // GIVEN: a test interface with a real-world FQDN
+    const std::string fqdn = "test.freeviewplay.tv";
+    auto testInterface = OpAppAcquisitionTestInterface::create(fqdn, true);
+
+    // WHEN: performing DNS SRV lookup
+    std::string result = testInterface->doDnsSrvLookup();
+
+    // THEN: the result should not be empty
+    EXPECT_FALSE(result.empty());
+
+    // THEN: all fields should be set correctly
+    // Care: this test is dependent on the actual
+    // DNS server being used and the results it returns.
+    EXPECT_EQ(result, "refplayer-dev.cloud.digitaluk.co.uk:443");
+}
