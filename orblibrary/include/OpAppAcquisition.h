@@ -44,14 +44,19 @@ public:
 
     friend class OpAppAcquisitionTestInterface;
 
+    // Uses doDnsSrvLookup() to retrieve the AIT service URL and then retrieves the AIT XML file from the URL.
+    //
+    // @return The AIT XML file contents, or empty string on failure
+    std::string retrieveOpAppAitXml();
+
 private:
     /**
      * Perform a DNS SRV lookup for the OpApp as defined in TS 103 606 V1.2.1 (2024-03)
-     * Section 6.1.4 and returns the URL of the AIT service.
+     * Section 6.1.4 and returns the SRV records for the AIT service.
      *
-     * @return The URL (host:port) from the SRV record, or empty string on failure
+     * @return Vector of SRV records, empty on failure
      */
-    std::string doDnsSrvLookup();
+    std::vector<SrvRecord> doDnsSrvLookup();
 
     /**
      * Query DNS SRV records for a given service name.
@@ -65,6 +70,15 @@ private:
         const std::string& serviceName,
         const std::string& dnsServer = "8.8.8.8",
         int timeoutMs = 5000);
+
+    /**
+     * Pops the next SRV record from a list of SRV records based on priority and weight.
+     * Removes the returned SRV record from the input records vector.
+     *
+     * @param records The SRV records to get the next from
+     * @return The next SRV record, or empty record if none available
+     */
+    SrvRecord popNextSrvRecord(std::vector<SrvRecord>& records);
 
     /**
      * Select the best SRV record based on priority and weight.
@@ -88,6 +102,9 @@ private:
     /* Parse a domain name from DNS wire format */
     std::string parseDomainName(const uint8_t* response, size_t responseLen,
                                  size_t& offset);
+
+    /* Perform an HTTP GET request to the given URL and port */
+    std::string performHttpGet(const std::string& url, uint16_t port);
 
     std::string m_opapp_fqdn;
     bool m_is_network_available;

@@ -316,6 +316,109 @@ TEST_F(OpAppAcquisitionTest, TestSelectBestSrvRecord_ZeroWeights)
 }
 
 // =============================================================================
+// popNextSrvRecord Tests
+// =============================================================================
+
+TEST_F(OpAppAcquisitionTest, TestpopNextSrvRecord_EmptyList)
+{
+    // GIVEN: a test interface instance and an empty list
+    auto testInterface = OpAppAcquisitionTestInterface::create("example.com", true);
+    std::vector<SrvRecord> records;
+
+    // WHEN: getting the next record
+    SrvRecord next = testInterface->popNextSrvRecord(records);
+
+    // THEN: an empty record should be returned
+    EXPECT_TRUE(next.target.empty());
+    EXPECT_EQ(next.port, 0);
+
+    // AND: the list should still be empty
+    EXPECT_TRUE(records.empty());
+}
+
+TEST_F(OpAppAcquisitionTest, TestpopNextSrvRecord_SingleRecord)
+{
+    // GIVEN: a test interface instance and a single SRV record
+    auto testInterface = OpAppAcquisitionTestInterface::create("example.com", true);
+    std::vector<SrvRecord> records = {
+        SrvRecord(10, 100, 8080, "server.example.com")
+    };
+
+    // WHEN: getting the next record
+    SrvRecord next = testInterface->popNextSrvRecord(records);
+
+    // THEN: the single record should be returned
+    EXPECT_EQ(next.priority, 10);
+    EXPECT_EQ(next.weight, 100);
+    EXPECT_EQ(next.port, 8080);
+    EXPECT_EQ(next.target, "server.example.com");
+
+    // AND: the list should now be empty
+    EXPECT_TRUE(records.empty());
+}
+
+TEST_F(OpAppAcquisitionTest, TestpopNextSrvRecord_MultipleRecords_RemovesSelected)
+{
+    // GIVEN: a test interface instance and multiple SRV records
+    auto testInterface = OpAppAcquisitionTestInterface::create("example.com", true);
+    std::vector<SrvRecord> records = {
+        SrvRecord(20, 100, 8081, "backup.example.com"),
+        SrvRecord(10, 100, 8080, "primary.example.com"),
+        SrvRecord(30, 100, 8082, "tertiary.example.com")
+    };
+
+    // WHEN: getting the next record
+    SrvRecord next = testInterface->popNextSrvRecord(records);
+
+    // THEN: the record with lowest priority should be returned
+    EXPECT_EQ(next.priority, 10);
+    EXPECT_EQ(next.target, "primary.example.com");
+
+    // AND: the list should have 2 records remaining
+    EXPECT_EQ(records.size(), size_t(2));
+
+    // AND: the returned record should not be in the list
+    for (const auto& record : records) {
+        EXPECT_NE(record.target, "primary.example.com");
+    }
+}
+
+TEST_F(OpAppAcquisitionTest, TestpopNextSrvRecord_IterateThroughAll)
+{
+    // GIVEN: a test interface instance and multiple SRV records with different priorities
+    auto testInterface = OpAppAcquisitionTestInterface::create("example.com", true);
+    std::vector<SrvRecord> records = {
+        SrvRecord(20, 100, 8081, "backup.example.com"),
+        SrvRecord(10, 100, 8080, "primary.example.com"),
+        SrvRecord(30, 100, 8082, "tertiary.example.com")
+    };
+
+    // WHEN: getting all records one by one
+    SrvRecord first = testInterface->popNextSrvRecord(records);
+    EXPECT_EQ(records.size(), size_t(2));
+
+    SrvRecord second = testInterface->popNextSrvRecord(records);
+    EXPECT_EQ(records.size(), size_t(1));
+
+    SrvRecord third = testInterface->popNextSrvRecord(records);
+    EXPECT_EQ(records.size(), size_t(0));
+
+    // THEN: records should be returned in priority order
+    EXPECT_EQ(first.priority, 10);
+    EXPECT_EQ(first.target, "primary.example.com");
+
+    EXPECT_EQ(second.priority, 20);
+    EXPECT_EQ(second.target, "backup.example.com");
+
+    EXPECT_EQ(third.priority, 30);
+    EXPECT_EQ(third.target, "tertiary.example.com");
+
+    // AND: getting next from empty list returns empty record
+    SrvRecord fourth = testInterface->popNextSrvRecord(records);
+    EXPECT_TRUE(fourth.target.empty());
+}
+
+// =============================================================================
 // DNS SRV Lookup Integration Tests
 // =============================================================================
 
@@ -325,10 +428,10 @@ TEST_F(OpAppAcquisitionTest, TestDoDnsSrvLookup_NetworkUnavailable)
     auto testInterface = OpAppAcquisitionTestInterface::create("example.com", false);
 
     // WHEN: performing DNS SRV lookup
-    std::string result = testInterface->doDnsSrvLookup();
+    std::vector<SrvRecord> records = testInterface->doDnsSrvLookup();
 
     // THEN: the result should be empty due to network unavailability
-    EXPECT_TRUE(result.empty());
+    EXPECT_TRUE(records.empty());
 }
 
 TEST_F(OpAppAcquisitionTest, TestDoDnsSrvLookup_InvalidFqdn)
@@ -337,9 +440,53 @@ TEST_F(OpAppAcquisitionTest, TestDoDnsSrvLookup_InvalidFqdn)
     auto testInterface = OpAppAcquisitionTestInterface::create("invalid", true);
 
     // WHEN: performing DNS SRV lookup
-    std::string result = testInterface->doDnsSrvLookup();
+    std::vector<SrvRecord> records = testInterface->doDnsSrvLookup();
 
     // THEN: the result should be empty due to invalid FQDN
+    EXPECT_TRUE(records.empty());
+}
+
+// =============================================================================
+// retrieveOpAppAitXml Tests
+// =============================================================================
+
+TEST_F(OpAppAcquisitionTest, TestRetrieveOpAppAitXml_NetworkUnavailable)
+{
+    // GIVEN: a test interface with network unavailable
+    auto testInterface = OpAppAcquisitionTestInterface::create("example.com", false);
+
+    // WHEN: retrieving AIT XML
+    std::string result = testInterface->retrieveOpAppAitXml();
+
+    // THEN: the result should be empty due to network unavailability
+    EXPECT_TRUE(result.empty());
+}
+
+TEST_F(OpAppAcquisitionTest, TestRetrieveOpAppAitXml_InvalidFqdn)
+{
+    // GIVEN: a test interface with invalid FQDN
+    auto testInterface = OpAppAcquisitionTestInterface::create("invalid", true);
+
+    // WHEN: retrieving AIT XML
+    std::string result = testInterface->retrieveOpAppAitXml();
+
+    // THEN: the result should be empty due to invalid FQDN
+    EXPECT_TRUE(result.empty());
+}
+
+// =============================================================================
+// performHttpGet Tests
+// =============================================================================
+
+TEST_F(OpAppAcquisitionTest, TestPerformHttpGet_NotImplemented)
+{
+    // GIVEN: a test interface instance
+    auto testInterface = OpAppAcquisitionTestInterface::create("example.com", true);
+
+    // WHEN: performing an HTTP GET request (currently not implemented)
+    std::string result = testInterface->performHttpGet("example.com", 80);
+
+    // THEN: the result should be empty (TODO implementation)
     EXPECT_TRUE(result.empty());
 }
 
@@ -371,7 +518,11 @@ TEST_F(OpAppAcquisitionTest, TestSrvRecord_ParameterizedConstructor)
     EXPECT_EQ(record.target, "server.example.com");
 }
 
-// Disabled - useful for manual testing
+// =============================================================================
+// Disabled Tests - Useful for manual/integration testing
+// =============================================================================
+
+// Disabled - useful for manual testing with real DNS
 TEST_F(OpAppAcquisitionTest, DISABLED_TestDoDnsSrvLookup_ValidFqdn)
 {
     // GIVEN: a test interface with a real-world FQDN
@@ -379,13 +530,17 @@ TEST_F(OpAppAcquisitionTest, DISABLED_TestDoDnsSrvLookup_ValidFqdn)
     auto testInterface = OpAppAcquisitionTestInterface::create(fqdn, true);
 
     // WHEN: performing DNS SRV lookup
-    std::string result = testInterface->doDnsSrvLookup();
+    std::vector<SrvRecord> records = testInterface->doDnsSrvLookup();
 
-    // THEN: the result should not be empty
-    EXPECT_FALSE(result.empty());
+    // THEN: at least one record should be returned
+    EXPECT_FALSE(records.empty());
 
-    // THEN: all fields should be set correctly
     // Care: this test is dependent on the actual
     // DNS server being used and the results it returns.
-    EXPECT_EQ(result, "refplayer-dev.cloud.digitaluk.co.uk:443");
+    if (!records.empty()) {
+        // Select best record and verify expected values
+        SrvRecord best = testInterface->selectBestSrvRecord(records);
+        EXPECT_EQ(best.target, "refplayer-dev.cloud.digitaluk.co.uk");
+        EXPECT_EQ(best.port, 443);
+    }
 }

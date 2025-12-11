@@ -43,6 +43,44 @@ bool OpAppAcquisition::validateFqdn(const std::string &fqdn)
     return true;
 }
 
+std::string OpAppAcquisition::retrieveOpAppAitXml()
+{
+    /* TS 103 606 V1.2.1 (2024-03) Section 6.1.5.1 XML AIT Acquisition
+     * "If the terminal discovers the location of an XML AIT using DNS SRV as
+     * defined in clause 6.1.4, the terminal shall perform a HTTP GET request
+     * based on the priority and weighting of the returned SRV records..."
+     */
+    auto records = doDnsSrvLookup();
+
+    while (!records.empty()) {
+        const auto nextSrvRecord = popNextSrvRecord(records);
+        if (nextSrvRecord.target.empty()) {
+            LOG(ERROR) << "Failed to select SRV record";
+            return "";
+        }
+
+        // Perform HTTP GET request to the next SRV record
+        LOG(INFO) << "Performing HTTP GET request to: " << nextSrvRecord.target << ":" << nextSrvRecord.port;
+        std::string response = performHttpGet(nextSrvRecord.target, nextSrvRecord.port);
+        if (response.empty()) {
+            LOG(ERROR) << "Failed to perform HTTP GET request";
+            return "";
+        }
+
+        // // Parse the response
+        // std::string aitXml = parseAitXml(response);
+        // if (aitXml.empty()) {
+        //     LOG(ERROR) << "Failed to parse AIT XML";
+        //     return "";
+        // }
+
+        return response;
+    }
+
+    LOG(INFO) << "No SRV records found";
+    return "";
+}
+
 std::vector<uint8_t> OpAppAcquisition::buildDnsQuery(const std::string& name, uint16_t transactionId)
 {
     std::vector<uint8_t> query;
@@ -350,6 +388,20 @@ std::vector<SrvRecord> OpAppAcquisition::querySrvRecords(
     return records;
 }
 
+SrvRecord OpAppAcquisition::popNextSrvRecord(std::vector<SrvRecord>& records)
+{
+    if (records.empty()) {
+        return SrvRecord();
+    }
+    const SrvRecord record = selectBestSrvRecord(records);
+    // Remove the selected record from the input records vector
+    records.erase(std::find_if(records.begin(), records.end(),
+                                [&record](const SrvRecord& r) {
+                                    return r.target == record.target && r.port == record.port;
+                                }));
+    return record;
+}
+
 SrvRecord OpAppAcquisition::selectBestSrvRecord(const std::vector<SrvRecord>& records)
 {
     if (records.empty()) {
@@ -406,16 +458,16 @@ SrvRecord OpAppAcquisition::selectBestSrvRecord(const std::vector<SrvRecord>& re
     return candidates[0];
 }
 
-std::string OpAppAcquisition::doDnsSrvLookup()
+std::vector<SrvRecord> OpAppAcquisition::doDnsSrvLookup()
 {
     if (!m_is_network_available) {
         LOG(ERROR) << "Network is not available";
-        return "";
+        return std::vector<SrvRecord>();
     }
 
     if (!validateFqdn(m_opapp_fqdn)) {
         LOG(ERROR) << "Invalid FQDN: " << m_opapp_fqdn;
-        return "";
+        return std::vector<SrvRecord>();
     }
 
     // Section 6.1.4 of TS 103 606 V1.2.1 (2024-03)
@@ -426,20 +478,17 @@ std::string OpAppAcquisition::doDnsSrvLookup()
     std::vector<SrvRecord> records = querySrvRecords(serviceName);
     if (records.empty()) {
         LOG(ERROR) << "No SRV records found for: " << serviceName;
-        return "";
+        return std::vector<SrvRecord>();
     }
 
-    SrvRecord best = selectBestSrvRecord(records);
-    if (best.target.empty()) {
-        LOG(ERROR) << "Failed to select SRV record";
-        return "";
-    }
+    return records;
+}
 
-    // Return target:port format
-    std::string result = best.target + ":" + std::to_string(best.port);
-    LOG(INFO) << "Selected SRV record: " << result;
-
-    return result;
+std::string OpAppAcquisition::performHttpGet(const std::string& url, uint16_t port)
+{
+    // TODO: Implement HTTP GET request
+    std::string response;
+    return response;
 }
 
 } // namespace orb

@@ -49,9 +49,9 @@ public:
 
     /**
      * @brief Performs DNS SRV lookup
-     * @return The result of the DNS lookup (target:port) or empty string
+     * @return Vector of SRV records, empty on failure
      */
-    std::string doDnsSrvLookup();
+    std::vector<SrvRecord> doDnsSrvLookup();
 
     /**
      * @brief Builds a DNS query packet for testing
@@ -77,6 +77,13 @@ public:
     SrvRecord selectBestSrvRecord(const std::vector<SrvRecord>& records);
 
     /**
+     * @brief Gets the next SRV record and removes it from the list
+     * @param records The SRV records to get from (modified in place)
+     * @return The next SRV record based on priority/weight
+     */
+    SrvRecord popNextSrvRecord(std::vector<SrvRecord>& records);
+
+    /**
      * @brief Queries SRV records from a DNS server
      * @param serviceName The full service name to query
      * @param dnsServer The DNS server IP address
@@ -87,6 +94,20 @@ public:
         const std::string& serviceName,
         const std::string& dnsServer = "8.8.8.8",
         int timeoutMs = 5000);
+
+    /**
+     * @brief Retrieves the OpApp AIT XML
+     * @return The AIT XML content or empty string on failure
+     */
+    std::string retrieveOpAppAitXml();
+
+    /**
+     * @brief Performs an HTTP GET request
+     * @param url The URL to request
+     * @param port The port to use
+     * @return The response body or empty string on failure
+     */
+    std::string performHttpGet(const std::string& url, uint16_t port);
 
 private:
     explicit OpAppAcquisitionTestInterface(

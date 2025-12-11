@@ -25,7 +25,7 @@ bool OpAppAcquisitionTestInterface::validateFqdn(const std::string& fqdn)
     return m_acquisition->validateFqdn(fqdn);
 }
 
-std::string OpAppAcquisitionTestInterface::doDnsSrvLookup()
+std::vector<SrvRecord> OpAppAcquisitionTestInterface::doDnsSrvLookup()
 {
     return m_acquisition->doDnsSrvLookup();
 }
@@ -48,12 +48,29 @@ SrvRecord OpAppAcquisitionTestInterface::selectBestSrvRecord(
     return m_acquisition->selectBestSrvRecord(records);
 }
 
+SrvRecord OpAppAcquisitionTestInterface::popNextSrvRecord(
+    std::vector<SrvRecord>& records)
+{
+    return m_acquisition->popNextSrvRecord(records);
+}
+
 std::vector<SrvRecord> OpAppAcquisitionTestInterface::querySrvRecords(
     const std::string& serviceName,
     const std::string& dnsServer,
     int timeoutMs)
 {
     return m_acquisition->querySrvRecords(serviceName, dnsServer, timeoutMs);
+}
+
+std::string OpAppAcquisitionTestInterface::retrieveOpAppAitXml()
+{
+    return m_acquisition->retrieveOpAppAitXml();
+}
+
+std::string OpAppAcquisitionTestInterface::performHttpGet(
+    const std::string& url, uint16_t port)
+{
+    return m_acquisition->performHttpGet(url, port);
 }
 
 } // namespace orb
