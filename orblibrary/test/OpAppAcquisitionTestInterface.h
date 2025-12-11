@@ -77,7 +77,7 @@ public:
     SrvRecord selectBestSrvRecord(const std::vector<SrvRecord>& records);
 
     /**
-     * @brief Gets the next SRV record and removes it from the list
+     * @brief Pops the next SRV record and removes it from the list
      * @param records The SRV records to get from (modified in place)
      * @return The next SRV record based on priority/weight
      */
@@ -101,13 +101,6 @@ public:
      */
     std::string retrieveOpAppAitXml();
 
-    /**
-     * @brief Performs an HTTP GET request
-     * @param url The URL to request
-     * @param port The port to use
-     * @return The response body or empty string on failure
-     */
-    std::string performHttpGet(const std::string& url, uint16_t port);
 
 private:
     explicit OpAppAcquisitionTestInterface(

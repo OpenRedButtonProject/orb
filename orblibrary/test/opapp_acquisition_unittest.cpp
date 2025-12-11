@@ -1,3 +1,19 @@
+/**
+ * ORB Software. Copyright (c) 2022 Ocean Blue Software Limited
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include <string>
 #include <vector>
 #include <cstdint>
@@ -7,6 +23,7 @@
 #include "OpAppAcquisitionTestInterface.h"
 
 using namespace orb;
+
 class OpAppAcquisitionTest : public ::testing::Test {
 protected:
     void SetUp() override {
@@ -319,7 +336,7 @@ TEST_F(OpAppAcquisitionTest, TestSelectBestSrvRecord_ZeroWeights)
 // popNextSrvRecord Tests
 // =============================================================================
 
-TEST_F(OpAppAcquisitionTest, TestpopNextSrvRecord_EmptyList)
+TEST_F(OpAppAcquisitionTest, TestPopNextSrvRecord_EmptyList)
 {
     // GIVEN: a test interface instance and an empty list
     auto testInterface = OpAppAcquisitionTestInterface::create("example.com", true);
@@ -336,7 +353,7 @@ TEST_F(OpAppAcquisitionTest, TestpopNextSrvRecord_EmptyList)
     EXPECT_TRUE(records.empty());
 }
 
-TEST_F(OpAppAcquisitionTest, TestpopNextSrvRecord_SingleRecord)
+TEST_F(OpAppAcquisitionTest, TestPopNextSrvRecord_SingleRecord)
 {
     // GIVEN: a test interface instance and a single SRV record
     auto testInterface = OpAppAcquisitionTestInterface::create("example.com", true);
@@ -357,7 +374,7 @@ TEST_F(OpAppAcquisitionTest, TestpopNextSrvRecord_SingleRecord)
     EXPECT_TRUE(records.empty());
 }
 
-TEST_F(OpAppAcquisitionTest, TestpopNextSrvRecord_MultipleRecords_RemovesSelected)
+TEST_F(OpAppAcquisitionTest, TestPopNextSrvRecord_MultipleRecords_RemovesSelected)
 {
     // GIVEN: a test interface instance and multiple SRV records
     auto testInterface = OpAppAcquisitionTestInterface::create("example.com", true);
@@ -383,7 +400,7 @@ TEST_F(OpAppAcquisitionTest, TestpopNextSrvRecord_MultipleRecords_RemovesSelecte
     }
 }
 
-TEST_F(OpAppAcquisitionTest, TestpopNextSrvRecord_IterateThroughAll)
+TEST_F(OpAppAcquisitionTest, TestPopNextSrvRecord_IterateThroughAll)
 {
     // GIVEN: a test interface instance and multiple SRV records with different priorities
     auto testInterface = OpAppAcquisitionTestInterface::create("example.com", true);
@@ -471,22 +488,6 @@ TEST_F(OpAppAcquisitionTest, TestRetrieveOpAppAitXml_InvalidFqdn)
     std::string result = testInterface->retrieveOpAppAitXml();
 
     // THEN: the result should be empty due to invalid FQDN
-    EXPECT_TRUE(result.empty());
-}
-
-// =============================================================================
-// performHttpGet Tests
-// =============================================================================
-
-TEST_F(OpAppAcquisitionTest, TestPerformHttpGet_NotImplemented)
-{
-    // GIVEN: a test interface instance
-    auto testInterface = OpAppAcquisitionTestInterface::create("example.com", true);
-
-    // WHEN: performing an HTTP GET request (currently not implemented)
-    std::string result = testInterface->performHttpGet("example.com", 80);
-
-    // THEN: the result should be empty (TODO implementation)
     EXPECT_TRUE(result.empty());
 }
 

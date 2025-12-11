@@ -44,9 +44,12 @@ public:
 
     friend class OpAppAcquisitionTestInterface;
 
-    // Uses doDnsSrvLookup() to retrieve the AIT service URL and then retrieves the AIT XML file from the URL.
-    //
-    // @return The AIT XML file contents, or empty string on failure
+    /**
+     * Uses doDnsSrvLookup() to retrieve the AIT service URL and then retrieves
+     * the AIT XML file from the URL.
+     *
+     * @return The AIT XML file contents, or empty string on failure
+     */
     std::string retrieveOpAppAitXml();
 
 private:
@@ -102,9 +105,6 @@ private:
     /* Parse a domain name from DNS wire format */
     std::string parseDomainName(const uint8_t* response, size_t responseLen,
                                  size_t& offset);
-
-    /* Perform an HTTP GET request to the given URL and port */
-    std::string performHttpGet(const std::string& url, uint16_t port);
 
     std::string m_opapp_fqdn;
     bool m_is_network_available;

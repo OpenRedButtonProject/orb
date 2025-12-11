@@ -1,4 +1,21 @@
+/**
+ * ORB Software. Copyright (c) 2022 Ocean Blue Software Limited
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "OpAppAcquisition.h"
+#include "HttpDownloader.h"
 #include "log.h"
 
 #include <sys/socket.h>
@@ -50,34 +67,50 @@ std::string OpAppAcquisition::retrieveOpAppAitXml()
      * defined in clause 6.1.4, the terminal shall perform a HTTP GET request
      * based on the priority and weighting of the returned SRV records..."
      */
+    if (!m_is_network_available) {
+        LOG(ERROR) << "Network is not available";
+        return "";
+    }
+
     auto records = doDnsSrvLookup();
+
+    // Create HTTP downloader with appropriate Accept header for AIT
+    HttpDownloader downloader;
+    downloader.SetAcceptHeader("application/vnd.dvb.ait+xml, application/xml, text/xml");
 
     while (!records.empty()) {
         const auto nextSrvRecord = popNextSrvRecord(records);
         if (nextSrvRecord.target.empty()) {
             LOG(ERROR) << "Failed to select SRV record";
-            return "";
+            continue;
         }
 
         // Perform HTTP GET request to the next SRV record
-        LOG(INFO) << "Performing HTTP GET request to: " << nextSrvRecord.target << ":" << nextSrvRecord.port;
-        std::string response = performHttpGet(nextSrvRecord.target, nextSrvRecord.port);
-        if (response.empty()) {
-            LOG(ERROR) << "Failed to perform HTTP GET request";
-            return "";
+        // TS 103 606 specifies the path should be /.well-known/hbbtv for XML AIT
+        LOG(INFO) << "Attempting to retrieve AIT from: " << nextSrvRecord.target
+                  << ":" << nextSrvRecord.port;
+
+        auto result = downloader.Download(nextSrvRecord.target, nextSrvRecord.port,
+                                          "/.well-known/hbbtv");
+
+        if (result && result->IsSuccess()) {
+            // Optionally validate content type
+            std::string contentType = result->GetContentType();
+            if (contentType.find("xml") != std::string::npos ||
+                contentType.find("application/vnd.dvb.ait") != std::string::npos) {
+                LOG(INFO) << "Successfully retrieved AIT XML";
+                return result->GetContent();
+            }
+            LOG(WARNING) << "Unexpected content type: " << contentType;
+            // Still return content as it may be valid
+            return result->GetContent();
         }
 
-        // // Parse the response
-        // std::string aitXml = parseAitXml(response);
-        // if (aitXml.empty()) {
-        //     LOG(ERROR) << "Failed to parse AIT XML";
-        //     return "";
-        // }
-
-        return response;
+        LOG(WARNING) << "Failed to retrieve AIT from " << nextSrvRecord.target
+                     << ", trying next SRV record...";
     }
 
-    LOG(INFO) << "No SRV records found";
+    LOG(ERROR) << "Failed to retrieve AIT from any SRV record";
     return "";
 }
 
@@ -482,13 +515,6 @@ std::vector<SrvRecord> OpAppAcquisition::doDnsSrvLookup()
     }
 
     return records;
-}
-
-std::string OpAppAcquisition::performHttpGet(const std::string& url, uint16_t port)
-{
-    // TODO: Implement HTTP GET request
-    std::string response;
-    return response;
 }
 
 } // namespace orb
