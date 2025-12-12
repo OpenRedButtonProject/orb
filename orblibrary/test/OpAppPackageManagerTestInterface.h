@@ -8,6 +8,9 @@
 namespace orb
 {
 
+// Forward declaration
+class IOpAppAcquisition;
+
 /**
  * @brief Test interface for OpAppPackageManager that provides controlled access
  * to internal functionality for testing purposes while maintaining encapsulation.
@@ -38,6 +41,20 @@ public:
         const OpAppPackageManager::Configuration& configuration,
         std::unique_ptr<IHashCalculator> hashCalculator,
         std::unique_ptr<IDecryptor> decryptor);
+
+    /**
+     * @brief Creates a test interface with all custom dependencies for testing
+     * @param configuration The configuration for the package manager
+     * @param hashCalculator Custom hash calculator for testing
+     * @param decryptor Custom decryptor for testing
+     * @param acquisition Custom acquisition interface for testing
+     * @return A test interface instance
+     */
+    static std::unique_ptr<OpAppPackageManagerTestInterface> create(
+        const OpAppPackageManager::Configuration& configuration,
+        std::unique_ptr<IHashCalculator> hashCalculator,
+        std::unique_ptr<IDecryptor> decryptor,
+        std::unique_ptr<IOpAppAcquisition> acquisition);
 
     /**
      * @brief Destructor
