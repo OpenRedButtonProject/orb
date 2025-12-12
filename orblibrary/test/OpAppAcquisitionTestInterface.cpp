@@ -3,21 +3,17 @@
 namespace orb
 {
 
-OpAppAcquisitionTestInterface::OpAppAcquisitionTestInterface(
-    const std::string& opapp_fqdn,
-    bool is_network_available)
-    : m_acquisition(std::make_unique<OpAppAcquisition>(opapp_fqdn, is_network_available))
+OpAppAcquisitionTestInterface::OpAppAcquisitionTestInterface()
+    : m_acquisition(std::make_unique<OpAppAcquisition>())
 {
 }
 
 OpAppAcquisitionTestInterface::~OpAppAcquisitionTestInterface() = default;
 
-std::unique_ptr<OpAppAcquisitionTestInterface> OpAppAcquisitionTestInterface::create(
-    const std::string& opapp_fqdn,
-    bool is_network_available)
+std::unique_ptr<OpAppAcquisitionTestInterface> OpAppAcquisitionTestInterface::create()
 {
     return std::unique_ptr<OpAppAcquisitionTestInterface>(
-        new OpAppAcquisitionTestInterface(opapp_fqdn, is_network_available));
+        new OpAppAcquisitionTestInterface());
 }
 
 bool OpAppAcquisitionTestInterface::validateFqdn(const std::string& fqdn)
@@ -25,9 +21,9 @@ bool OpAppAcquisitionTestInterface::validateFqdn(const std::string& fqdn)
     return m_acquisition->validateFqdn(fqdn);
 }
 
-std::vector<SrvRecord> OpAppAcquisitionTestInterface::doDnsSrvLookup()
+std::vector<SrvRecord> OpAppAcquisitionTestInterface::doDnsSrvLookup(const std::string& fqdn)
 {
-    return m_acquisition->doDnsSrvLookup();
+    return m_acquisition->doDnsSrvLookup(fqdn);
 }
 
 SrvRecord OpAppAcquisitionTestInterface::selectBestSrvRecord(
@@ -42,14 +38,16 @@ SrvRecord OpAppAcquisitionTestInterface::popNextSrvRecord(
     return m_acquisition->popNextSrvRecord(records);
 }
 
-int OpAppAcquisitionTestInterface::retrieveOpAppAitXml()
+AcquisitionResult OpAppAcquisitionTestInterface::FetchAitXml(
+    const std::string& fqdn, bool networkAvailable)
 {
-    return m_acquisition->retrieveOpAppAitXml();
+    return m_acquisition->FetchAitXml(fqdn, networkAvailable);
 }
 
-std::string OpAppAcquisitionTestInterface::getDownloadedContent() const
+AcquisitionResult OpAppAcquisitionTestInterface::StaticFetch(
+    const std::string& fqdn, bool networkAvailable)
 {
-    return m_acquisition->getDownloadedContent();
+    return OpAppAcquisition::Fetch(fqdn, networkAvailable);
 }
 
 } // namespace orb

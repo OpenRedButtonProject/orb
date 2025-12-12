@@ -27,6 +27,9 @@
 namespace orb
 {
 
+// Forward declaration
+class IOpAppAcquisition;
+
 // Error handling structure for package operations
 struct PackageOperationResult {
   bool success;
@@ -113,14 +116,24 @@ public:
 
   // Constructors
   explicit OpAppPackageManager(const Configuration& configuration);
+
   // Constructor with custom hash calculator (for testing)
   OpAppPackageManager(
-    const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator);
+    const Configuration& configuration,
+    std::unique_ptr<IHashCalculator> hashCalculator);
+
   // Constructor with custom hash calculator and decryptor (for testing)
   OpAppPackageManager(
     const Configuration& configuration,
     std::unique_ptr<IHashCalculator> hashCalculator,
     std::unique_ptr<IDecryptor> decryptor);
+
+  // Constructor with all dependencies (for testing)
+  OpAppPackageManager(
+    const Configuration& configuration,
+    std::unique_ptr<IHashCalculator> hashCalculator,
+    std::unique_ptr<IDecryptor> decryptor,
+    std::unique_ptr<IOpAppAcquisition> acquisition);
 
   ~OpAppPackageManager();
 
@@ -256,6 +269,7 @@ private:
   std::string m_LastErrorMessage;
   std::unique_ptr<IHashCalculator> m_HashCalculator;
   std::unique_ptr<IDecryptor> m_Decryptor;
+  std::unique_ptr<IOpAppAcquisition> m_Acquisition;
 
   std::string m_CandidatePackageFile;
   std::string m_CandidatePackageHash;

@@ -1,6 +1,7 @@
 #include <string>
 #include <vector>
 #include <cstdint>
+#include <iostream>
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "OpAppAcquisition.h"
@@ -25,7 +26,7 @@ protected:
 TEST_F(OpAppAcquisitionTest, TestValidateFqdn_ValidFqdn)
 {
     // GIVEN: a test interface instance
-    auto testInterface = OpAppAcquisitionTestInterface::create("test.example.com", true);
+    auto testInterface = OpAppAcquisitionTestInterface::create();
 
     // WHEN: validating a valid FQDN
     bool result = testInterface->validateFqdn("example.com");
@@ -37,7 +38,7 @@ TEST_F(OpAppAcquisitionTest, TestValidateFqdn_ValidFqdn)
 TEST_F(OpAppAcquisitionTest, TestValidateFqdn_EmptyString)
 {
     // GIVEN: a test interface instance
-    auto testInterface = OpAppAcquisitionTestInterface::create("test.example.com", true);
+    auto testInterface = OpAppAcquisitionTestInterface::create();
 
     // WHEN: validating an empty string
     bool result = testInterface->validateFqdn("");
@@ -49,7 +50,7 @@ TEST_F(OpAppAcquisitionTest, TestValidateFqdn_EmptyString)
 TEST_F(OpAppAcquisitionTest, TestValidateFqdn_NoDot)
 {
     // GIVEN: a test interface instance
-    auto testInterface = OpAppAcquisitionTestInterface::create("test.example.com", true);
+    auto testInterface = OpAppAcquisitionTestInterface::create();
 
     // WHEN: validating an FQDN without a dot
     bool result = testInterface->validateFqdn("localhost");
@@ -61,7 +62,7 @@ TEST_F(OpAppAcquisitionTest, TestValidateFqdn_NoDot)
 TEST_F(OpAppAcquisitionTest, TestValidateFqdn_SubdomainFqdn)
 {
     // GIVEN: a test interface instance
-    auto testInterface = OpAppAcquisitionTestInterface::create("test.example.com", true);
+    auto testInterface = OpAppAcquisitionTestInterface::create();
 
     // WHEN: validating an FQDN with subdomain
     bool result = testInterface->validateFqdn("sub.domain.example.com");
@@ -77,7 +78,7 @@ TEST_F(OpAppAcquisitionTest, TestValidateFqdn_SubdomainFqdn)
 TEST_F(OpAppAcquisitionTest, TestSelectBestSrvRecord_EmptyList)
 {
     // GIVEN: a test interface instance and an empty list
-    auto testInterface = OpAppAcquisitionTestInterface::create("example.com", true);
+    auto testInterface = OpAppAcquisitionTestInterface::create();
     std::vector<SrvRecord> records;
 
     // WHEN: selecting the best record
@@ -91,7 +92,7 @@ TEST_F(OpAppAcquisitionTest, TestSelectBestSrvRecord_EmptyList)
 TEST_F(OpAppAcquisitionTest, TestSelectBestSrvRecord_SingleRecord)
 {
     // GIVEN: a test interface instance and a single SRV record
-    auto testInterface = OpAppAcquisitionTestInterface::create("example.com", true);
+    auto testInterface = OpAppAcquisitionTestInterface::create();
     std::vector<SrvRecord> records = {
         SrvRecord(10, 100, 8080, "server.example.com")
     };
@@ -109,7 +110,7 @@ TEST_F(OpAppAcquisitionTest, TestSelectBestSrvRecord_SingleRecord)
 TEST_F(OpAppAcquisitionTest, TestSelectBestSrvRecord_PrioritySelection)
 {
     // GIVEN: a test interface instance and multiple SRV records with different priorities
-    auto testInterface = OpAppAcquisitionTestInterface::create("example.com", true);
+    auto testInterface = OpAppAcquisitionTestInterface::create();
     std::vector<SrvRecord> records = {
         SrvRecord(20, 100, 8081, "backup.example.com"),
         SrvRecord(10, 100, 8080, "primary.example.com"),
@@ -127,7 +128,7 @@ TEST_F(OpAppAcquisitionTest, TestSelectBestSrvRecord_PrioritySelection)
 TEST_F(OpAppAcquisitionTest, TestSelectBestSrvRecord_ZeroWeights)
 {
     // GIVEN: multiple records with same priority and zero weights
-    auto testInterface = OpAppAcquisitionTestInterface::create("example.com", true);
+    auto testInterface = OpAppAcquisitionTestInterface::create();
     std::vector<SrvRecord> records = {
         SrvRecord(10, 0, 8080, "server1.example.com"),
         SrvRecord(10, 0, 8081, "server2.example.com")
@@ -148,7 +149,7 @@ TEST_F(OpAppAcquisitionTest, TestSelectBestSrvRecord_ZeroWeights)
 TEST_F(OpAppAcquisitionTest, TestPopNextSrvRecord_EmptyList)
 {
     // GIVEN: a test interface instance and an empty list
-    auto testInterface = OpAppAcquisitionTestInterface::create("example.com", true);
+    auto testInterface = OpAppAcquisitionTestInterface::create();
     std::vector<SrvRecord> records;
 
     // WHEN: getting the next record
@@ -165,7 +166,7 @@ TEST_F(OpAppAcquisitionTest, TestPopNextSrvRecord_EmptyList)
 TEST_F(OpAppAcquisitionTest, TestPopNextSrvRecord_SingleRecord)
 {
     // GIVEN: a test interface instance and a single SRV record
-    auto testInterface = OpAppAcquisitionTestInterface::create("example.com", true);
+    auto testInterface = OpAppAcquisitionTestInterface::create();
     std::vector<SrvRecord> records = {
         SrvRecord(10, 100, 8080, "server.example.com")
     };
@@ -186,7 +187,7 @@ TEST_F(OpAppAcquisitionTest, TestPopNextSrvRecord_SingleRecord)
 TEST_F(OpAppAcquisitionTest, TestPopNextSrvRecord_MultipleRecords_RemovesSelected)
 {
     // GIVEN: a test interface instance and multiple SRV records
-    auto testInterface = OpAppAcquisitionTestInterface::create("example.com", true);
+    auto testInterface = OpAppAcquisitionTestInterface::create();
     std::vector<SrvRecord> records = {
         SrvRecord(20, 100, 8081, "backup.example.com"),
         SrvRecord(10, 100, 8080, "primary.example.com"),
@@ -212,7 +213,7 @@ TEST_F(OpAppAcquisitionTest, TestPopNextSrvRecord_MultipleRecords_RemovesSelecte
 TEST_F(OpAppAcquisitionTest, TestPopNextSrvRecord_IterateThroughAll)
 {
     // GIVEN: a test interface instance and multiple SRV records with different priorities
-    auto testInterface = OpAppAcquisitionTestInterface::create("example.com", true);
+    auto testInterface = OpAppAcquisitionTestInterface::create();
     std::vector<SrvRecord> records = {
         SrvRecord(20, 100, 8081, "backup.example.com"),
         SrvRecord(10, 100, 8080, "primary.example.com"),
@@ -245,59 +246,106 @@ TEST_F(OpAppAcquisitionTest, TestPopNextSrvRecord_IterateThroughAll)
 }
 
 // =============================================================================
-// DNS SRV Lookup Integration Tests
+// FetchAitXml Tests (new simplified interface)
 // =============================================================================
 
-TEST_F(OpAppAcquisitionTest, TestDoDnsSrvLookup_NetworkUnavailable)
+TEST_F(OpAppAcquisitionTest, TestFetchAitXml_NetworkUnavailable)
 {
-    // GIVEN: a test interface with network unavailable
-    auto testInterface = OpAppAcquisitionTestInterface::create("example.com", false);
+    // GIVEN: a test interface
+    auto testInterface = OpAppAcquisitionTestInterface::create();
 
-    // WHEN: performing DNS SRV lookup
-    std::vector<SrvRecord> records = testInterface->doDnsSrvLookup();
+    // WHEN: fetching AIT XML with network unavailable
+    AcquisitionResult result = testInterface->FetchAitXml("example.com", false);
 
-    // THEN: the result should be empty due to network unavailability
-    EXPECT_TRUE(records.empty());
+    // THEN: the result should indicate failure
+    EXPECT_FALSE(result.success);
+    EXPECT_FALSE(result.errorMessage.empty());
+    EXPECT_TRUE(result.content.empty());
 }
 
-TEST_F(OpAppAcquisitionTest, TestDoDnsSrvLookup_InvalidFqdn)
+TEST_F(OpAppAcquisitionTest, TestFetchAitXml_InvalidFqdn)
 {
-    // GIVEN: a test interface with invalid FQDN
-    auto testInterface = OpAppAcquisitionTestInterface::create("invalid", true);
+    // GIVEN: a test interface
+    auto testInterface = OpAppAcquisitionTestInterface::create();
 
-    // WHEN: performing DNS SRV lookup
-    std::vector<SrvRecord> records = testInterface->doDnsSrvLookup();
+    // WHEN: fetching AIT XML with invalid FQDN
+    AcquisitionResult result = testInterface->FetchAitXml("invalid", true);
 
-    // THEN: the result should be empty due to invalid FQDN
-    EXPECT_TRUE(records.empty());
+    // THEN: the result should indicate failure
+    EXPECT_FALSE(result.success);
+    EXPECT_FALSE(result.errorMessage.empty());
+}
+
+TEST_F(OpAppAcquisitionTest, TestFetchAitXml_EmptyFqdn)
+{
+    // GIVEN: a test interface
+    auto testInterface = OpAppAcquisitionTestInterface::create();
+
+    // WHEN: fetching AIT XML with empty FQDN
+    AcquisitionResult result = testInterface->FetchAitXml("", true);
+
+    // THEN: the result should indicate failure
+    EXPECT_FALSE(result.success);
+    EXPECT_FALSE(result.errorMessage.empty());
+}
+
+TEST_F(OpAppAcquisitionTest, TestStaticFetch_NetworkUnavailable)
+{
+    // WHEN: using static fetch with network unavailable
+    AcquisitionResult result = OpAppAcquisitionTestInterface::StaticFetch("example.com", false);
+
+    // THEN: the result should indicate failure
+    EXPECT_FALSE(result.success);
+    EXPECT_FALSE(result.errorMessage.empty());
+}
+
+TEST_F(OpAppAcquisitionTest, TestStaticFetch_InvalidFqdn)
+{
+    // WHEN: using static fetch with invalid FQDN
+    AcquisitionResult result = OpAppAcquisitionTestInterface::StaticFetch("invalid", true);
+
+    // THEN: the result should indicate failure
+    EXPECT_FALSE(result.success);
 }
 
 // =============================================================================
-// retrieveOpAppAitXml Tests
+// AcquisitionResult Tests
 // =============================================================================
 
-TEST_F(OpAppAcquisitionTest, TestRetrieveOpAppAitXml_NetworkUnavailable)
+TEST_F(OpAppAcquisitionTest, TestAcquisitionResult_DefaultConstructor)
 {
-    // GIVEN: a test interface with network unavailable
-    auto testInterface = OpAppAcquisitionTestInterface::create("example.com", false);
+    // GIVEN/WHEN: creating a default AcquisitionResult
+    AcquisitionResult result;
 
-    // WHEN: retrieving AIT XML
-    int result = testInterface->retrieveOpAppAitXml();
-
-    // THEN: the result should be -1 (failure) due to network unavailability
-    EXPECT_EQ(result, -1);
+    // THEN: default values should indicate failure
+    EXPECT_FALSE(result.success);
+    EXPECT_TRUE(result.content.empty());
+    EXPECT_TRUE(result.errorMessage.empty());
+    EXPECT_EQ(result.statusCode, -1);
 }
 
-TEST_F(OpAppAcquisitionTest, TestRetrieveOpAppAitXml_InvalidFqdn)
+TEST_F(OpAppAcquisitionTest, TestAcquisitionResult_Success)
 {
-    // GIVEN: a test interface with invalid FQDN
-    auto testInterface = OpAppAcquisitionTestInterface::create("invalid", true);
+    // WHEN: creating a success result
+    AcquisitionResult result = AcquisitionResult::Success("test content", 200);
 
-    // WHEN: retrieving AIT XML
-    int result = testInterface->retrieveOpAppAitXml();
+    // THEN: values should indicate success
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(result.content, "test content");
+    EXPECT_TRUE(result.errorMessage.empty());
+    EXPECT_EQ(result.statusCode, 200);
+}
 
-    // THEN: the result should be -1 (failure) due to invalid FQDN
-    EXPECT_EQ(result, -1);
+TEST_F(OpAppAcquisitionTest, TestAcquisitionResult_Failure)
+{
+    // WHEN: creating a failure result
+    AcquisitionResult result = AcquisitionResult::Failure("error message");
+
+    // THEN: values should indicate failure
+    EXPECT_FALSE(result.success);
+    EXPECT_TRUE(result.content.empty());
+    EXPECT_EQ(result.errorMessage, "error message");
+    EXPECT_EQ(result.statusCode, -1);
 }
 
 // =============================================================================
@@ -337,10 +385,10 @@ TEST_F(OpAppAcquisitionTest, DISABLED_TestDoDnsSrvLookup_ValidFqdn)
 {
     // GIVEN: a test interface with a real-world FQDN
     const std::string fqdn = "test.freeviewplay.tv";
-    auto testInterface = OpAppAcquisitionTestInterface::create(fqdn, true);
+    auto testInterface = OpAppAcquisitionTestInterface::create();
 
     // WHEN: performing DNS SRV lookup
-    std::vector<SrvRecord> records = testInterface->doDnsSrvLookup();
+    std::vector<SrvRecord> records = testInterface->doDnsSrvLookup(fqdn);
 
     // THEN: at least one record should be returned
     EXPECT_FALSE(records.empty());
@@ -355,20 +403,35 @@ TEST_F(OpAppAcquisitionTest, DISABLED_TestDoDnsSrvLookup_ValidFqdn)
     }
 }
 
-TEST_F(OpAppAcquisitionTest, DISABLED_TestRetrieveOpAppAitXml_ValidFqdn)
+TEST_F(OpAppAcquisitionTest, DISABLED_TestFetchAitXml_ValidFqdn)
 {
     // GIVEN: a test interface with a real-world FQDN
     const std::string fqdn = "test.freeviewplay.tv";
-    auto testInterface = OpAppAcquisitionTestInterface::create(fqdn, true);
+    auto testInterface = OpAppAcquisitionTestInterface::create();
 
-    // WHEN: retrieving AIT XML
-    int result = testInterface->retrieveOpAppAitXml();
+    // WHEN: fetching AIT XML
+    AcquisitionResult result = testInterface->FetchAitXml(fqdn, true);
 
-    // THEN: on success, result should be 0 and content should not be empty
-    if (result == 0) {
-        std::string content = testInterface->getDownloadedContent();
-        EXPECT_FALSE(content.empty());
+    // THEN: on success, content should not be empty
+    if (result.success) {
+        EXPECT_FALSE(result.content.empty());
+        std::cout << "Content:\n\n" << result.content << std::endl;
+    } else {
+        std::cout << "Fetch failed: " << result.errorMessage << std::endl;
+    }
+}
 
-        std::cout << "Content:\n\n" << content << std::endl;
+TEST_F(OpAppAcquisitionTest, DISABLED_TestStaticFetch_ValidFqdn)
+{
+    // WHEN: using static fetch with valid FQDN
+    const std::string fqdn = "test.freeviewplay.tv";
+    AcquisitionResult result = OpAppAcquisition::Fetch(fqdn, true);
+
+    // THEN: on success, content should not be empty
+    if (result.success) {
+        EXPECT_FALSE(result.content.empty());
+        std::cout << "Static fetch content:\n\n" << result.content << std::endl;
+    } else {
+        std::cout << "Static fetch failed: " << result.errorMessage << std::endl;
     }
 }

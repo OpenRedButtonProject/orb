@@ -21,13 +21,9 @@ class OpAppAcquisitionTestInterface
 public:
     /**
      * @brief Creates a test interface for OpAppAcquisition
-     * @param opapp_fqdn The fully qualified domain name of the OpApp
-     * @param is_network_available Whether network is available
      * @return A test interface instance
      */
-    static std::unique_ptr<OpAppAcquisitionTestInterface> create(
-        const std::string& opapp_fqdn,
-        bool is_network_available);
+    static std::unique_ptr<OpAppAcquisitionTestInterface> create();
 
     /**
      * @brief Destructor
@@ -49,9 +45,10 @@ public:
 
     /**
      * @brief Performs DNS SRV lookup
+     * @param fqdn The FQDN to query
      * @return Vector of SRV records, empty on failure
      */
-    std::vector<SrvRecord> doDnsSrvLookup();
+    std::vector<SrvRecord> doDnsSrvLookup(const std::string& fqdn);
 
     /**
      * @brief Selects the best SRV record based on priority/weight
@@ -68,21 +65,23 @@ public:
     SrvRecord popNextSrvRecord(std::vector<SrvRecord>& records);
 
     /**
-     * @brief Retrieves the OpApp AIT XML
-     * @return 0 on success, -1 on failure
+     * @brief Fetches AIT XML using the simplified interface
+     * @param fqdn The FQDN to query
+     * @param networkAvailable Whether network is available
+     * @return AcquisitionResult with success status and content/error
      */
-    int retrieveOpAppAitXml();
+    AcquisitionResult FetchAitXml(const std::string& fqdn, bool networkAvailable);
 
     /**
-     * @brief Gets the downloaded content after retrieveOpAppAitXml()
-     * @return The downloaded content or empty string
+     * @brief Static fetch method test (convenience wrapper)
+     * @param fqdn The FQDN to query
+     * @param networkAvailable Whether network is available
+     * @return AcquisitionResult with success status and content/error
      */
-    std::string getDownloadedContent() const;
+    static AcquisitionResult StaticFetch(const std::string& fqdn, bool networkAvailable);
 
 private:
-    explicit OpAppAcquisitionTestInterface(
-        const std::string& opapp_fqdn,
-        bool is_network_available);
+    OpAppAcquisitionTestInterface();
 
     std::unique_ptr<OpAppAcquisition> m_acquisition;
 };

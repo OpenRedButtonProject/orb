@@ -73,10 +73,11 @@ static_library("opapp_package_manager") {
   deps = [
     "//base", # For logging dependency
     "//third_party/jsoncpp",
-    "//third_party/boringssl:boringssl"
+    "//third_party/boringssl:boringssl",
   ]
 
-  public_deps = []
+  # OpAppAcquisition provides IOpAppAcquisition interface via public_configs
+  public_deps = [ ":opapp_acquisition" ]
 
   public_configs = [ ":external_lib_config" ]
 }
@@ -107,6 +108,7 @@ static_library("orb_network") {
 static_library("opapp_acquisition") {
   sources = [
     "package_manager/OpAppAcquisition.cpp",
+    "package_manager/OpAppAcquisition.h",
   ]
 
   deps = [
@@ -117,7 +119,16 @@ static_library("opapp_acquisition") {
   # Depend on orb_network for HttpDownloader, DnsSrvResolver
   public_deps = [ ":orb_network" ]
 
-  public_configs = [ ":external_lib_config" ]
+  # Export package_manager include path for consumers to access IOpAppAcquisition
+  public_configs = [
+    ":external_lib_config",
+    ":opapp_acquisition_config",
+  ]
+}
+
+# Config to expose OpAppAcquisition.h to dependents
+config("opapp_acquisition_config") {
+  include_dirs = [ "package_manager" ]
 }
 
 static_library("orb_integration")
