@@ -98,6 +98,7 @@ public:
   };
 
   struct Configuration {
+      std::string m_OpAppFqdn; /* Fully Qualified Domain Name (Section 6.1.4 of TS 103 606 V1.2.1) */
       std::string m_PackageLocation;
       std::string m_PackageSuffix;
       std::string m_PrivateKeyFilePath;
@@ -144,7 +145,12 @@ public:
   // Public method for calculating SHA256 hash (useful for testing and external use)
   std::string calculateFileSHA256Hash(const std::string& filePath) const;
 
-  // Package status methods
+  // Search the local package location 'Configuration::m_PackageLocation' for package files.
+  // Returns a PackageOperationResult containing the list of package files found.
+  // If no package files are found, the success flag is false and the error message is set.
+  // If multiple package files are found, the success flag is false and the error message is set.
+  // If a single package file is found, the success flag is true and the package file is set.
+  // If an error occurs, the success flag is false and the error message is set.
   PackageOperationResult getPackageFiles();
 
   // Error handling
@@ -172,6 +178,18 @@ private:
    *  PackageStatus::ConfigurationError for any other error.
    */
   PackageStatus doPackageFileCheck();
+
+  /**
+   * doRemotePackageCheck()
+   *
+   * Checks for a remote package file and compares hash to installed package hash.
+   *
+   * Returns:
+   *  PackageStatus::NoUpdateAvailable if no remote package file is found.
+   *  PackageStatus::UpdateAvailable if the remote package file exists and the hash is different.
+   *  PackageStatus::Installed if the remote package file is already installed.
+   */
+  PackageStatus doRemotePackageCheck();
 
   /**
    * tryPackageInstall()

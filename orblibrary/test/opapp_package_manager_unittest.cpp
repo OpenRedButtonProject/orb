@@ -385,7 +385,7 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_DifferentHa
 
 TEST_F(OpAppPackageManagerTest, TestInstallPackage_NoPackageFile)
 {
-  // GIVEN: a singleton OpAppPackageManager instance and no package file set
+  // GIVEN: an OpAppPackageManager instance and no package file set
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
@@ -399,7 +399,7 @@ TEST_F(OpAppPackageManagerTest, TestInstallPackage_NoPackageFile)
 
 TEST_F(OpAppPackageManagerTest, TestInstallPackage_PackageFileDoesNotExist)
 {
-  // GIVEN: a singleton OpAppPackageManager instance and a package file that does not exist
+  // GIVEN: an OpAppPackageManager instance and a package file that does not exist
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
@@ -414,7 +414,7 @@ TEST_F(OpAppPackageManagerTest, TestInstallPackage_PackageFileDoesNotExist)
 
 TEST_F(OpAppPackageManagerTest, TestInstallPackage_PackageFileExists)
 {
-  // GIVEN: a singleton OpAppPackageManager instance and a package file that exists
+  // GIVEN: an OpAppPackageManager instance and a package file that exists
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   configuration.m_PackageSuffix = ".opk";
@@ -455,7 +455,7 @@ TEST_F(OpAppPackageManagerTest, TestInstallPackage_PackageFileExists)
 
 TEST_F(OpAppPackageManagerTest, TestInstallPackage_PackageFileExists_DecryptFailed)
 {
-  // GIVEN: a singleton OpAppPackageManager instance and a package file that exists
+  // GIVEN: an OpAppPackageManager instance and a package file that exists
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   configuration.m_PackageSuffix = ".opk";
@@ -494,7 +494,7 @@ TEST_F(OpAppPackageManagerTest, TestInstallPackage_PackageFileExists_DecryptFail
 
 TEST_F(OpAppPackageManagerTest, TestUninstallPackage)
 {
-  // GIVEN: a singleton OpAppPackageManager instance and a package ID
+  // GIVEN: an OpAppPackageManager instance and a package ID
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
@@ -514,7 +514,7 @@ TEST_F(OpAppPackageManagerTest, TestUninstallPackage)
 
 TEST_F(OpAppPackageManagerTest, TestListInstalledPackages)
 {
-  // GIVEN: a singleton OpAppPackageManager instance
+  // GIVEN: an OpAppPackageManager instance
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
@@ -532,7 +532,7 @@ TEST_F(OpAppPackageManagerTest, TestListInstalledPackages)
 
 TEST_F(OpAppPackageManagerTest, TestGetPackageInfo)
 {
-  // GIVEN: a singleton OpAppPackageManager instance and a package ID
+  // GIVEN: an OpAppPackageManager instance and a package ID
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
@@ -552,7 +552,7 @@ TEST_F(OpAppPackageManagerTest, TestGetPackageInfo)
 
 TEST_F(OpAppPackageManagerTest, TestUpdatePackage)
 {
-  // GIVEN: a singleton OpAppPackageManager instance and a package update
+  // GIVEN: an OpAppPackageManager instance and a package update
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
@@ -572,7 +572,7 @@ TEST_F(OpAppPackageManagerTest, TestUpdatePackage)
 
 TEST_F(OpAppPackageManagerTest, TestIsPackageInstalled)
 {
-  // GIVEN: a singleton OpAppPackageManager instance and a package ID
+  // GIVEN: an OpAppPackageManager instance and a package ID
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
@@ -592,7 +592,7 @@ TEST_F(OpAppPackageManagerTest, TestIsPackageInstalled)
 
 TEST_F(OpAppPackageManagerTest, TestGetPackageVersion)
 {
-  // GIVEN: a singleton OpAppPackageManager instance and a package ID
+  // GIVEN: an OpAppPackageManager instance and a package ID
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
@@ -612,7 +612,7 @@ TEST_F(OpAppPackageManagerTest, TestGetPackageVersion)
 
 TEST_F(OpAppPackageManagerTest, TestValidatePackage)
 {
-  // GIVEN: a singleton OpAppPackageManager instance and a package path
+  // GIVEN: an OpAppPackageManager instance and a package path
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
@@ -633,7 +633,7 @@ TEST_F(OpAppPackageManagerTest, TestValidatePackage)
 // Error handling tests
 TEST_F(OpAppPackageManagerTest, TestInstallInvalidPackage)
 {
-  // GIVEN: a singleton OpAppPackageManager instance and an invalid package path
+  // GIVEN: an OpAppPackageManager instance and an invalid package path
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
@@ -653,7 +653,7 @@ TEST_F(OpAppPackageManagerTest, TestInstallInvalidPackage)
 
 TEST_F(OpAppPackageManagerTest, TestGetInfoForNonexistentPackage)
 {
-  // GIVEN: a singleton OpAppPackageManager instance and a nonexistent package ID
+  // GIVEN: an OpAppPackageManager instance and a nonexistent package ID
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
@@ -674,7 +674,7 @@ TEST_F(OpAppPackageManagerTest, TestGetInfoForNonexistentPackage)
 // Performance and stress tests
 TEST_F(OpAppPackageManagerTest, TestConcurrentOperations)
 {
-  // GIVEN: a singleton OpAppPackageManager instance
+  // GIVEN: an OpAppPackageManager instance
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
@@ -691,7 +691,7 @@ TEST_F(OpAppPackageManagerTest, TestConcurrentOperations)
 
 TEST_F(OpAppPackageManagerTest, TestLargePackageHandling)
 {
-  // GIVEN: a singleton OpAppPackageManager instance and a large package
+  // GIVEN: an OpAppPackageManager instance and a large package
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
@@ -710,7 +710,7 @@ TEST_F(OpAppPackageManagerTest, TestLargePackageHandling)
 // Integration tests
 TEST_F(OpAppPackageManagerTest, TestFullPackageLifecycle)
 {
-  // GIVEN: a singleton OpAppPackageManager instance and a valid package
+  // GIVEN: an OpAppPackageManager instance and a valid package
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
@@ -730,7 +730,7 @@ TEST_F(OpAppPackageManagerTest, TestFullPackageLifecycle)
 
 TEST_F(OpAppPackageManagerTest, TestPackageUpdateWorkflow)
 {
-  // GIVEN: a singleton OpAppPackageManager instance and package versions
+  // GIVEN: an OpAppPackageManager instance and package versions
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
@@ -750,7 +750,7 @@ TEST_F(OpAppPackageManagerTest, TestPackageUpdateWorkflow)
 
 TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_NoUpdateAvailable_NoCallbacksCalled)
 {
-  // GIVEN: a singleton OpAppPackageManager instance with callbacks
+  // GIVEN: an OpAppPackageManager instance with callbacks
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   configuration.m_PackageSuffix = ".opk";
@@ -778,7 +778,7 @@ TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_NoUpdateAvailable_NoCallback
 
 TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_Installed_NoCallbacksCalled)
 {
-  // GIVEN: a singleton OpAppPackageManager instance with callbacks and installed package
+  // GIVEN: an OpAppPackageManager instance with callbacks and installed package
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   configuration.m_PackageSuffix = ".opk";
@@ -821,7 +821,7 @@ TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_Installed_NoCallbacksCalled)
 
 TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_ConfigurationError_CallsFailureCallback)
 {
-  // GIVEN: a singleton OpAppPackageManager instance with callbacks
+  // GIVEN: an OpAppPackageManager instance with callbacks
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   configuration.m_PackageSuffix = ".opk";
@@ -869,7 +869,7 @@ TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_ConfigurationError_CallsFail
 
 TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_NoCallbacksSet)
 {
-  // GIVEN: a singleton OpAppPackageManager instance without callbacks
+  // GIVEN: an OpAppPackageManager instance without callbacks
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   configuration.m_PackageSuffix = ".opk";
@@ -885,7 +885,7 @@ TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_NoCallbacksSet)
 
 TEST_F(OpAppPackageManagerTest, TestCalculateSHA256Hash)
 {
-  // GIVEN: a singleton OpAppPackageManager instance and a test file
+  // GIVEN: an OpAppPackageManager instance and a test file
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
@@ -912,7 +912,7 @@ TEST_F(OpAppPackageManagerTest, TestCalculateSHA256Hash)
 
 TEST_F(OpAppPackageManagerTest, TestCalculateSHA256HashEmptyFile)
 {
-  // GIVEN: a singleton OpAppPackageManager instance and an empty test file
+  // GIVEN: an OpAppPackageManager instance and an empty test file
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
@@ -935,7 +935,7 @@ TEST_F(OpAppPackageManagerTest, TestCalculateSHA256HashEmptyFile)
 
 TEST_F(OpAppPackageManagerTest, TestCalculateSHA256HashNonexistentFile)
 {
-  // GIVEN: a singleton OpAppPackageManager instance
+  // GIVEN: an OpAppPackageManager instance
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
@@ -949,7 +949,7 @@ TEST_F(OpAppPackageManagerTest, TestCalculateSHA256HashNonexistentFile)
 
 TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_MultiplePackageFiles_ReturnsError)
 {
-  // GIVEN: a singleton OpAppPackageManager instance
+  // GIVEN: an OpAppPackageManager instance
   // and multiple package files in the package source location
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
@@ -979,7 +979,7 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_MultiplePackageFiles_Returns
 
 TEST_F(OpAppPackageManagerTest, TestGetPackageFiles_MultiplePackageFiles_ReturnsError)
 {
-  // GIVEN: a singleton OpAppPackageManager instance
+  // GIVEN: an OpAppPackageManager instance
   // and multiple package files in the package source location
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
@@ -1013,7 +1013,7 @@ TEST_F(OpAppPackageManagerTest, TestGetPackageFiles_MultiplePackageFiles_Returns
 
 TEST_F(OpAppPackageManagerTest, TestGetPackageFiles_SinglePackageFile_ReturnsSuccess)
 {
-  // GIVEN: a singleton OpAppPackageManager instance
+  // GIVEN: an OpAppPackageManager instance
   // and a single package file in the package source location
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
@@ -1060,7 +1060,7 @@ TEST_F(OpAppPackageManagerTest, TestGetPackageFiles_NoPackageFiles_ReturnsSucces
 
 TEST_F(OpAppPackageManagerTest, TestClearLastError)
 {
-  // GIVEN: a singleton OpAppPackageManager instance with an error
+  // GIVEN: an OpAppPackageManager instance with an error
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   configuration.m_PackageSuffix = ".opk";
