@@ -42,9 +42,14 @@ SrvRecord OpAppAcquisitionTestInterface::popNextSrvRecord(
     return m_acquisition->popNextSrvRecord(records);
 }
 
-std::string OpAppAcquisitionTestInterface::retrieveOpAppAitXml()
+int OpAppAcquisitionTestInterface::retrieveOpAppAitXml()
 {
     return m_acquisition->retrieveOpAppAitXml();
+}
+
+std::string OpAppAcquisitionTestInterface::getDownloadedContent() const
+{
+    return m_acquisition->getDownloadedContent();
 }
 
 } // namespace orb

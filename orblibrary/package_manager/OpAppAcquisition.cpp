@@ -13,12 +13,13 @@ namespace orb
 OpAppAcquisition::OpAppAcquisition(const std::string &opapp_fqdn, bool is_network_available)
     : m_opapp_fqdn(opapp_fqdn)
     , m_is_network_available(is_network_available)
+    , m_downloader(std::make_unique<HttpDownloader>())
 {
+    // Set appropriate Accept header for AIT
+    m_downloader->SetAcceptHeader("application/vnd.dvb.ait+xml, application/xml, text/xml");
 }
 
-OpAppAcquisition::~OpAppAcquisition()
-{
-}
+OpAppAcquisition::~OpAppAcquisition() = default;
 
 bool OpAppAcquisition::validateFqdn(const std::string &fqdn)
 {
@@ -31,7 +32,7 @@ bool OpAppAcquisition::validateFqdn(const std::string &fqdn)
     return true;
 }
 
-std::string OpAppAcquisition::retrieveOpAppAitXml()
+int OpAppAcquisition::retrieveOpAppAitXml()
 {
     /* TS 103 606 V1.2.1 (2024-03) Section 6.1.5.1 XML AIT Acquisition
      * "If the terminal discovers the location of an XML AIT using DNS SRV as
@@ -40,15 +41,10 @@ std::string OpAppAcquisition::retrieveOpAppAitXml()
      */
     if (!m_is_network_available) {
         LOG(ERROR) << "Network is not available";
-        return "";
+        return -1;
     }
 
     auto records = doDnsSrvLookup();
-
-    // Create HTTP downloader with appropriate Accept header for AIT
-    HttpDownloader downloader;
-    downloader.SetAcceptHeader("application/vnd.dvb.ait+xml, application/xml, text/xml");
-
     while (!records.empty()) {
         const auto nextSrvRecord = popNextSrvRecord(records);
         if (nextSrvRecord.target.empty()) {
@@ -61,20 +57,20 @@ std::string OpAppAcquisition::retrieveOpAppAitXml()
         LOG(INFO) << "Attempting to retrieve AIT from: " << nextSrvRecord.target
                   << ":" << nextSrvRecord.port;
 
-        auto result = downloader.Download(nextSrvRecord.target, nextSrvRecord.port,
-                                          "/.well-known/hbbtv");
+        m_downloadedObject = m_downloader->Download(nextSrvRecord.target, nextSrvRecord.port,
+                                                    "/.well-known/hbbtv");
 
-        if (result && result->IsSuccess()) {
+        if (m_downloadedObject && m_downloadedObject->IsSuccess()) {
             // Optionally validate content type
-            std::string contentType = result->GetContentType();
+            std::string contentType = m_downloadedObject->GetContentType();
             if (contentType.find("xml") != std::string::npos ||
                 contentType.find("application/vnd.dvb.ait") != std::string::npos) {
                 LOG(INFO) << "Successfully retrieved AIT XML";
-                return result->GetContent();
+                return 0;
             }
             LOG(WARNING) << "Unexpected content type: " << contentType;
-            // Still return content as it may be valid
-            return result->GetContent();
+            // Still return success as content may be valid
+            return 0;
         }
 
         LOG(WARNING) << "Failed to retrieve AIT from " << nextSrvRecord.target
@@ -82,7 +78,15 @@ std::string OpAppAcquisition::retrieveOpAppAitXml()
     }
 
     LOG(ERROR) << "Failed to retrieve AIT from any SRV record";
-    return "";
+    return -1;
+}
+
+std::string OpAppAcquisition::getDownloadedContent() const
+{
+    if (!m_downloadedObject) {
+        return "";
+    }
+    return m_downloadedObject->GetContent();
 }
 
 SrvRecord OpAppAcquisition::popNextSrvRecord(std::vector<SrvRecord>& records)

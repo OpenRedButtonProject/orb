@@ -1,12 +1,15 @@
 #ifndef OP_APP_ACQUISITION_H
 #define OP_APP_ACQUISITION_H
 
+#include <memory>
 #include <string>
 #include <vector>
 
 namespace orb
 {
 struct SrvRecord;
+class HttpDownloader;
+class DownloadedObject;  // Now a standalone class, can be forward declared
 
 class OpAppAcquisition {
 public:
@@ -18,10 +21,18 @@ public:
     /**
      * Uses doDnsSrvLookup() to retrieve the AIT service URL and then retrieves
      * the AIT XML file from the URL.
+     * Downloaded content is stored in m_downloadedObject.
      *
-     * @return The AIT XML file contents, or empty string on failure
+     * @return 0 on success, -1 on failure
      */
-    std::string retrieveOpAppAitXml();
+    int retrieveOpAppAitXml();
+
+    /**
+     * Get the downloaded content.
+     *
+     * @return The downloaded content, or empty string if none available
+     */
+    std::string getDownloadedContent() const;
 
 private:
     /**
@@ -56,6 +67,9 @@ private:
 
     std::string m_opapp_fqdn;
     bool m_is_network_available;
+
+    std::unique_ptr<HttpDownloader> m_downloader;
+    std::shared_ptr<DownloadedObject> m_downloadedObject;
 };
 
 } // namespace orb

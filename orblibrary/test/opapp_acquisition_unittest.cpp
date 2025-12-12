@@ -282,10 +282,10 @@ TEST_F(OpAppAcquisitionTest, TestRetrieveOpAppAitXml_NetworkUnavailable)
     auto testInterface = OpAppAcquisitionTestInterface::create("example.com", false);
 
     // WHEN: retrieving AIT XML
-    std::string result = testInterface->retrieveOpAppAitXml();
+    int result = testInterface->retrieveOpAppAitXml();
 
-    // THEN: the result should be empty due to network unavailability
-    EXPECT_TRUE(result.empty());
+    // THEN: the result should be -1 (failure) due to network unavailability
+    EXPECT_EQ(result, -1);
 }
 
 TEST_F(OpAppAcquisitionTest, TestRetrieveOpAppAitXml_InvalidFqdn)
@@ -294,10 +294,10 @@ TEST_F(OpAppAcquisitionTest, TestRetrieveOpAppAitXml_InvalidFqdn)
     auto testInterface = OpAppAcquisitionTestInterface::create("invalid", true);
 
     // WHEN: retrieving AIT XML
-    std::string result = testInterface->retrieveOpAppAitXml();
+    int result = testInterface->retrieveOpAppAitXml();
 
-    // THEN: the result should be empty due to invalid FQDN
-    EXPECT_TRUE(result.empty());
+    // THEN: the result should be -1 (failure) due to invalid FQDN
+    EXPECT_EQ(result, -1);
 }
 
 // =============================================================================
@@ -352,5 +352,23 @@ TEST_F(OpAppAcquisitionTest, DISABLED_TestDoDnsSrvLookup_ValidFqdn)
         SrvRecord best = testInterface->selectBestSrvRecord(records);
         EXPECT_EQ(best.target, "refplayer-dev.cloud.digitaluk.co.uk");
         EXPECT_EQ(best.port, 443);
+    }
+}
+
+TEST_F(OpAppAcquisitionTest, TestRetrieveOpAppAitXml_ValidFqdn)
+{
+    // GIVEN: a test interface with a real-world FQDN
+    const std::string fqdn = "test.freeviewplay.tv";
+    auto testInterface = OpAppAcquisitionTestInterface::create(fqdn, true);
+
+    // WHEN: retrieving AIT XML
+    int result = testInterface->retrieveOpAppAitXml();
+
+    // THEN: on success, result should be 0 and content should not be empty
+    if (result == 0) {
+        std::string content = testInterface->getDownloadedContent();
+        EXPECT_FALSE(content.empty());
+
+        std::cout << "Content:\n\n" << content << std::endl;
     }
 }

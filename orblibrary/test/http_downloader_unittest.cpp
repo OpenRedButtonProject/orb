@@ -37,7 +37,7 @@ protected:
 TEST_F(HttpDownloaderTest, TestDownloadedObject_Construction)
 {
     // GIVEN/WHEN: creating a DownloadedObject
-    HttpDownloader::DownloadedObject obj("test content", "text/plain", 200);
+    DownloadedObject obj("test content", "text/plain", 200);
 
     // THEN: all fields should be accessible
     EXPECT_EQ(obj.GetContent(), "test content");
@@ -49,9 +49,9 @@ TEST_F(HttpDownloaderTest, TestDownloadedObject_Construction)
 TEST_F(HttpDownloaderTest, TestDownloadedObject_Success2xx)
 {
     // GIVEN: various 2xx status codes
-    HttpDownloader::DownloadedObject obj200("", "", 200);
-    HttpDownloader::DownloadedObject obj201("", "", 201);
-    HttpDownloader::DownloadedObject obj204("", "", 204);
+    DownloadedObject obj200("", "", 200);
+    DownloadedObject obj201("", "", 201);
+    DownloadedObject obj204("", "", 204);
 
     // THEN: all should report success
     EXPECT_TRUE(obj200.IsSuccess());
@@ -62,10 +62,10 @@ TEST_F(HttpDownloaderTest, TestDownloadedObject_Success2xx)
 TEST_F(HttpDownloaderTest, TestDownloadedObject_FailureNon2xx)
 {
     // GIVEN: various non-2xx status codes
-    HttpDownloader::DownloadedObject obj301("", "", 301);
-    HttpDownloader::DownloadedObject obj400("", "", 400);
-    HttpDownloader::DownloadedObject obj404("", "", 404);
-    HttpDownloader::DownloadedObject obj500("", "", 500);
+    DownloadedObject obj301("", "", 301);
+    DownloadedObject obj400("", "", 400);
+    DownloadedObject obj404("", "", 404);
+    DownloadedObject obj500("", "", 500);
 
     // THEN: all should report failure
     EXPECT_FALSE(obj301.IsSuccess());

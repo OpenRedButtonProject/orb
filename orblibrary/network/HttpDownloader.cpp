@@ -36,7 +36,7 @@ namespace {
 
 // DownloadedObject implementation
 
-HttpDownloader::DownloadedObject::DownloadedObject(
+DownloadedObject::DownloadedObject(
     const std::string& content,
     const std::string& contentType,
     int statusCode)
@@ -199,7 +199,7 @@ bool HttpDownloader::ParseResponseHeaders(const std::string& response, int& stat
     return true;
 }
 
-std::shared_ptr<HttpDownloader::DownloadedObject> HttpDownloader::Download(const std::string& url)
+std::shared_ptr<DownloadedObject> HttpDownloader::Download(const std::string& url)
 {
     std::string host;
     uint16_t port;
@@ -212,7 +212,7 @@ std::shared_ptr<HttpDownloader::DownloadedObject> HttpDownloader::Download(const
     return Download(host, port, path);
 }
 
-std::shared_ptr<HttpDownloader::DownloadedObject> HttpDownloader::Download(
+std::shared_ptr<DownloadedObject> HttpDownloader::Download(
     const std::string& host, uint16_t port, const std::string& path)
 {
     LOG(INFO) << "HttpDownloader: GET " << host << ":" << port << path;
@@ -320,4 +320,3 @@ std::shared_ptr<HttpDownloader::DownloadedObject> HttpDownloader::Download(
 }
 
 } // namespace orb
-

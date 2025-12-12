@@ -1,19 +1,3 @@
-/**
- * ORB Software. Copyright (c) 2022 Ocean Blue Software Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 #ifndef ORB_HTTP_DOWNLOADER_H
 #define ORB_HTTP_DOWNLOADER_H
 
@@ -23,31 +7,31 @@
 namespace orb {
 
 /**
+ * @brief Representation of downloaded content.
+ */
+class DownloadedObject {
+public:
+    DownloadedObject(const std::string& content, const std::string& contentType, int statusCode);
+    ~DownloadedObject() = default;
+
+    std::string GetContent() const { return m_content; }
+    std::string GetContentType() const { return m_contentType; }
+    int GetStatusCode() const { return m_statusCode; }
+    bool IsSuccess() const { return m_statusCode >= 200 && m_statusCode < 300; }
+
+private:
+    std::string m_content;
+    std::string m_contentType;
+    int m_statusCode;
+};
+
+/**
  * @brief Simple HTTP downloader using raw sockets.
  *
  * Provides basic HTTP GET functionality without external dependencies.
  */
 class HttpDownloader {
 public:
-    /**
-     * @brief Representation of downloaded content.
-     */
-    class DownloadedObject {
-    public:
-        DownloadedObject(const std::string& content, const std::string& contentType, int statusCode);
-        ~DownloadedObject() = default;
-
-        std::string GetContent() const { return m_content; }
-        std::string GetContentType() const { return m_contentType; }
-        int GetStatusCode() const { return m_statusCode; }
-        bool IsSuccess() const { return m_statusCode >= 200 && m_statusCode < 300; }
-
-    private:
-        std::string m_content;
-        std::string m_contentType;
-        int m_statusCode;
-    };
-
     /**
      * @brief Constructor.
      * @param timeoutMs Connection and receive timeout in milliseconds (default: 10000)
@@ -120,4 +104,3 @@ private:
 } // namespace orb
 
 #endif // ORB_HTTP_DOWNLOADER_H
-

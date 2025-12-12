@@ -69,9 +69,15 @@ public:
 
     /**
      * @brief Retrieves the OpApp AIT XML
-     * @return The AIT XML content or empty string on failure
+     * @return 0 on success, -1 on failure
      */
-    std::string retrieveOpAppAitXml();
+    int retrieveOpAppAitXml();
+
+    /**
+     * @brief Gets the downloaded content after retrieveOpAppAitXml()
+     * @return The downloaded content or empty string
+     */
+    std::string getDownloadedContent() const;
 
 private:
     explicit OpAppAcquisitionTestInterface(
