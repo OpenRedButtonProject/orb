@@ -106,7 +106,8 @@ OpAppPackageManager::OpAppPackageManager(
     m_Decryptor = std::make_unique<Decryptor>();
   }
   if (!m_Acquisition) {
-    m_Acquisition = std::make_unique<OpAppAcquisition>();
+    // Pass User-Agent from configuration (TS 103 606 Section 6.1.5.1)
+    m_Acquisition = std::make_unique<OpAppAcquisition>(m_Configuration.m_UserAgent);
   }
 }
 

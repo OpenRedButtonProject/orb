@@ -3,17 +3,18 @@
 namespace orb
 {
 
-OpAppAcquisitionTestInterface::OpAppAcquisitionTestInterface()
-    : m_acquisition(std::make_unique<OpAppAcquisition>())
+OpAppAcquisitionTestInterface::OpAppAcquisitionTestInterface(const std::string& userAgent)
+    : m_acquisition(std::make_unique<OpAppAcquisition>(userAgent))
 {
 }
 
 OpAppAcquisitionTestInterface::~OpAppAcquisitionTestInterface() = default;
 
-std::unique_ptr<OpAppAcquisitionTestInterface> OpAppAcquisitionTestInterface::create()
+std::unique_ptr<OpAppAcquisitionTestInterface> OpAppAcquisitionTestInterface::create(
+    const std::string& userAgent)
 {
     return std::unique_ptr<OpAppAcquisitionTestInterface>(
-        new OpAppAcquisitionTestInterface());
+        new OpAppAcquisitionTestInterface(userAgent));
 }
 
 bool OpAppAcquisitionTestInterface::validateFqdn(const std::string& fqdn)

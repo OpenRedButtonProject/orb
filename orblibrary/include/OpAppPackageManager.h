@@ -112,6 +112,11 @@ public:
       std::string m_OpAppInstallDirectory; /* Directory where the OpApp is installed */
       UpdateSuccessCallback m_OnUpdateSuccess; /* Callback called when update completes successfully */
       UpdateFailureCallback m_OnUpdateFailure; /* Callback called when update fails */
+
+      /* HTTP User-Agent header for AIT requests (TS 103 606 V1.2.1 Section 6.1.5.1)
+       * Format per ETSI TS 102 796 Section 7.3.2.4 (HbbTV User-Agent string)
+       * Example: "HbbTV/1.6.1 (+DRM;+PVR;+RTSP;+OMID) vendor/1.0" */
+      std::string m_UserAgent = "HbbTV/1.6.1 (+DRM;+PVR;+RTSP;+OMID) orb/1.0";
   };
 
   // Constructors

@@ -83,7 +83,11 @@ public:
  */
 class OpAppAcquisition : public IOpAppAcquisition {
 public:
-    OpAppAcquisition();
+    /**
+     * @brief Constructor.
+     * @param userAgent HTTP User-Agent header value (TS 103 606 Section 6.1.5.1)
+     */
+    explicit OpAppAcquisition(const std::string& userAgent = "");
     ~OpAppAcquisition() override;
 
     // Prevent copying
@@ -109,9 +113,11 @@ public:
      *
      * @param fqdn The fully qualified domain name of the OpApp
      * @param networkAvailable Whether network is currently available
+     * @param userAgent HTTP User-Agent header value
      * @return AcquisitionResult containing success status and content/error
      */
-    static AcquisitionResult Fetch(const std::string& fqdn, bool networkAvailable);
+    static AcquisitionResult Fetch(const std::string& fqdn, bool networkAvailable,
+                                   const std::string& userAgent = "");
 
     // Friend class for testing private methods
     friend class OpAppAcquisitionTestInterface;

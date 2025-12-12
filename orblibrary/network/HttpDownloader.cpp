@@ -83,9 +83,10 @@ DownloadedObject::DownloadedObject(
 
 // HttpDownloader implementation
 
-HttpDownloader::HttpDownloader(int timeoutMs)
+HttpDownloader::HttpDownloader(int timeoutMs, const std::string& userAgent)
     : m_timeoutMs(timeoutMs)
     , m_acceptHeader("*/*")
+    , m_userAgent(userAgent)
 {
 }
 
@@ -307,6 +308,9 @@ std::shared_ptr<DownloadedObject> HttpDownloader::DownloadHttp(
     request << "GET " << path << " HTTP/1.1\r\n";
     request << "Host: " << host << "\r\n";
     request << "Accept: " << m_acceptHeader << "\r\n";
+    if (!m_userAgent.empty()) {
+        request << "User-Agent: " << m_userAgent << "\r\n";
+    }
     request << "Connection: close\r\n";
     request << "\r\n";
 
@@ -444,6 +448,9 @@ std::shared_ptr<DownloadedObject> HttpDownloader::DownloadHttps(
     request << "GET " << path << " HTTP/1.1\r\n";
     request << "Host: " << host << "\r\n";
     request << "Accept: " << m_acceptHeader << "\r\n";
+    if (!m_userAgent.empty()) {
+        request << "User-Agent: " << m_userAgent << "\r\n";
+    }
     request << "Connection: close\r\n";
     request << "\r\n";
 

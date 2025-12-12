@@ -25,9 +25,10 @@
 
 namespace orb
 {
+const unsigned int DEFAULT_TIMEOUT_MS = 10000;
 
-OpAppAcquisition::OpAppAcquisition()
-    : m_downloader(std::make_unique<HttpDownloader>())
+OpAppAcquisition::OpAppAcquisition(const std::string& userAgent)
+    : m_downloader(std::make_unique<HttpDownloader>(DEFAULT_TIMEOUT_MS, userAgent))
 {
     // Set appropriate Accept header for AIT
     m_downloader->SetAcceptHeader("application/vnd.dvb.ait+xml, application/xml, text/xml");
@@ -35,9 +36,10 @@ OpAppAcquisition::OpAppAcquisition()
 
 OpAppAcquisition::~OpAppAcquisition() = default;
 
-AcquisitionResult OpAppAcquisition::Fetch(const std::string& fqdn, bool networkAvailable)
+AcquisitionResult OpAppAcquisition::Fetch(const std::string& fqdn, bool networkAvailable,
+                                          const std::string& userAgent)
 {
-    OpAppAcquisition acquisition;
+    OpAppAcquisition acquisition(userAgent);
     return acquisition.FetchAitXml(fqdn, networkAvailable);
 }
 

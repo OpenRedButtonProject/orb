@@ -21,9 +21,10 @@ class OpAppAcquisitionTestInterface
 public:
     /**
      * @brief Creates a test interface for OpAppAcquisition
+     * @param userAgent HTTP User-Agent header value (default: empty)
      * @return A test interface instance
      */
-    static std::unique_ptr<OpAppAcquisitionTestInterface> create();
+    static std::unique_ptr<OpAppAcquisitionTestInterface> create(const std::string& userAgent = "");
 
     /**
      * @brief Destructor
@@ -81,7 +82,7 @@ public:
     static AcquisitionResult StaticFetch(const std::string& fqdn, bool networkAvailable);
 
 private:
-    OpAppAcquisitionTestInterface();
+    explicit OpAppAcquisitionTestInterface(const std::string& userAgent);
 
     std::unique_ptr<OpAppAcquisition> m_acquisition;
 };

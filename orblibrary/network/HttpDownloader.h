@@ -35,8 +35,9 @@ public:
     /**
      * @brief Constructor.
      * @param timeoutMs Connection and receive timeout in milliseconds (default: 10000)
+     * @param userAgent HTTP User-Agent header value (default: empty, no header sent)
      */
-    explicit HttpDownloader(int timeoutMs = 10000);
+    explicit HttpDownloader(int timeoutMs = 10000, const std::string& userAgent = "");
     ~HttpDownloader() = default;
 
     // Prevent copying
@@ -117,6 +118,7 @@ private:
 
     int m_timeoutMs;
     std::string m_acceptHeader;
+    std::string m_userAgent;
 };
 
 } // namespace orb
