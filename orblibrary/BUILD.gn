@@ -56,6 +56,11 @@ config("external_lib_config") {
   defines = [ "IS_CHROMIUM", "ORB_HBBTV_VERSION=204"]
 }
 
+# Expose network include directory
+config("orb_network_config") {
+  include_dirs = [ "network" ]
+}
+
 static_library("opapp_package_manager") {
   sources = [
     "package_manager/OpAppPackageManager.cpp",
@@ -76,9 +81,8 @@ static_library("opapp_package_manager") {
   public_configs = [ ":external_lib_config" ]
 }
 
-static_library("opapp_acquisition") {
+static_library("orb_network") {
   sources = [
-    "package_manager/OpAppAcquisition.cpp",
     "network/SrvRecord.h",
     "network/DnsSrvResolver.cpp",
     "network/DnsSrvResolver.h",
@@ -87,15 +91,28 @@ static_library("opapp_acquisition") {
   ]
 
   deps = [
-    "//base", # For logging dependency
+    "//base",
     "//third_party/orb/logging:orb_logging_deps",
   ]
 
-  include_dirs = [
-    "network",
+  # Export include paths for consumers
+  public_configs = [
+    ":orb_network_config",
+  ]
+}
+
+static_library("opapp_acquisition") {
+  sources = [
+    "package_manager/OpAppAcquisition.cpp",
   ]
 
-  public_deps = []
+  deps = [
+    "//base",
+    "//third_party/orb/logging:orb_logging_deps",
+  ]
+
+  # Depend on orb_network for HttpDownloader, DnsSrvResolver
+  public_deps = [ ":orb_network" ]
 
   public_configs = [ ":external_lib_config" ]
 }
@@ -231,11 +248,7 @@ source_set("test_opapp_acquisition_sources")
 
   deps = [
     "//testing/gtest",
-    ":opapp_acquisition"
-  ]
-
-  include_dirs = [
-    "network",
+    ":opapp_acquisition"  # Includes orb_network via public_deps
   ]
 
   testonly = true
@@ -249,11 +262,7 @@ source_set("test_http_downloader_sources")
 
   deps = [
     "//testing/gtest",
-    ":opapp_acquisition"
-  ]
-
-  include_dirs = [
-    "network",
+    ":orb_network"  # Only needs network library
   ]
 
   testonly = true
@@ -267,11 +276,7 @@ source_set("test_dns_srv_resolver_sources")
 
   deps = [
     "//testing/gtest",
-    ":opapp_acquisition"
-  ]
-
-  include_dirs = [
-    "network",
+    ":orb_network"  # Only needs network library
   ]
 
   testonly = true
