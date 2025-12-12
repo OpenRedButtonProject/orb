@@ -25,6 +25,10 @@
 #include <cstring>
 #include <sstream>
 
+// BoringSSL headers for HTTPS support
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+
 namespace orb {
 
 namespace {
@@ -32,6 +36,37 @@ namespace {
     constexpr size_t MAX_RESPONSE_SIZE = 1024 * 1024; // 1MB
     constexpr uint16_t DEFAULT_HTTP_PORT = 80;
     constexpr uint16_t DEFAULT_HTTPS_PORT = 443;
+
+    // RAII wrapper for socket
+    class SocketGuard {
+    public:
+        explicit SocketGuard(int fd) : m_fd(fd) {}
+        ~SocketGuard() { if (m_fd >= 0) close(m_fd); }
+        int get() const { return m_fd; }
+        int release() { int fd = m_fd; m_fd = -1; return fd; }
+    private:
+        int m_fd;
+    };
+
+    // RAII wrapper for SSL
+    class SslGuard {
+    public:
+        explicit SslGuard(SSL* ssl) : m_ssl(ssl) {}
+        ~SslGuard() { if (m_ssl) SSL_free(m_ssl); }
+        SSL* get() const { return m_ssl; }
+    private:
+        SSL* m_ssl;
+    };
+
+    // RAII wrapper for SSL_CTX
+    class SslCtxGuard {
+    public:
+        explicit SslCtxGuard(SSL_CTX* ctx) : m_ctx(ctx) {}
+        ~SslCtxGuard() { if (m_ctx) SSL_CTX_free(m_ctx); }
+        SSL_CTX* get() const { return m_ctx; }
+    private:
+        SSL_CTX* m_ctx;
+    };
 }
 
 // DownloadedObject implementation
@@ -76,11 +111,12 @@ std::string HttpDownloader::ResolveHostname(const std::string& hostname)
 }
 
 bool HttpDownloader::ParseUrl(const std::string& url, std::string& host,
-                               uint16_t& port, std::string& path)
+                               uint16_t& port, std::string& path, bool& useHttps)
 {
     // Default values
     port = DEFAULT_HTTP_PORT;
     path = "/";
+    useHttps = false;
 
     std::string remaining = url;
 
@@ -88,12 +124,11 @@ bool HttpDownloader::ParseUrl(const std::string& url, std::string& host,
     if (remaining.find("http://") == 0) {
         remaining = remaining.substr(7);
         port = DEFAULT_HTTP_PORT;
+        useHttps = false;
     } else if (remaining.find("https://") == 0) {
         remaining = remaining.substr(8);
         port = DEFAULT_HTTPS_PORT;
-        // Note: HTTPS not supported with raw sockets
-        LOG(WARNING) << "HTTPS not supported, attempting plain HTTP";
-        port = DEFAULT_HTTP_PORT;
+        useHttps = true;
     }
 
     // Find path separator
@@ -204,18 +239,20 @@ std::shared_ptr<DownloadedObject> HttpDownloader::Download(const std::string& ur
     std::string host;
     uint16_t port;
     std::string path;
+    bool useHttps;
 
-    if (!ParseUrl(url, host, port, path)) {
+    if (!ParseUrl(url, host, port, path, useHttps)) {
         return nullptr;
     }
 
-    return Download(host, port, path);
+    return Download(host, port, path, useHttps);
 }
 
 std::shared_ptr<DownloadedObject> HttpDownloader::Download(
-    const std::string& host, uint16_t port, const std::string& path)
+    const std::string& host, uint16_t port, const std::string& path, bool useHttps)
 {
-    LOG(INFO) << "HttpDownloader: GET " << host << ":" << port << path;
+    LOG(INFO) << "HttpDownloader: " << (useHttps ? "HTTPS" : "HTTP")
+              << " GET " << host << ":" << port << path;
 
     // Resolve hostname
     std::string ipAddress = ResolveHostname(host);
@@ -223,12 +260,24 @@ std::shared_ptr<DownloadedObject> HttpDownloader::Download(
         return nullptr;
     }
 
+    if (useHttps) {
+        return DownloadHttps(host, port, path, ipAddress);
+    } else {
+        return DownloadHttp(host, port, path, ipAddress);
+    }
+}
+
+std::shared_ptr<DownloadedObject> HttpDownloader::DownloadHttp(
+    const std::string& host, uint16_t port, const std::string& path,
+    const std::string& ipAddress)
+{
     // Create TCP socket
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
         LOG(ERROR) << "Failed to create socket: " << strerror(errno);
         return nullptr;
     }
+    SocketGuard sockGuard(sock);
 
     // Set timeouts
     struct timeval tv;
@@ -238,7 +287,6 @@ std::shared_ptr<DownloadedObject> HttpDownloader::Download(
     if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0 ||
         setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0) {
         LOG(ERROR) << "Failed to set socket timeout: " << strerror(errno);
-        close(sock);
         return nullptr;
     }
 
@@ -251,7 +299,6 @@ std::shared_ptr<DownloadedObject> HttpDownloader::Download(
 
     if (connect(sock, reinterpret_cast<struct sockaddr*>(&serverAddr), sizeof(serverAddr)) < 0) {
         LOG(ERROR) << "Failed to connect to " << host << ":" << port << ": " << strerror(errno);
-        close(sock);
         return nullptr;
     }
 
@@ -266,7 +313,6 @@ std::shared_ptr<DownloadedObject> HttpDownloader::Download(
     std::string requestStr = request.str();
     if (send(sock, requestStr.c_str(), requestStr.length(), 0) < 0) {
         LOG(ERROR) << "Failed to send request: " << strerror(errno);
-        close(sock);
         return nullptr;
     }
 
@@ -283,7 +329,6 @@ std::shared_ptr<DownloadedObject> HttpDownloader::Download(
             } else {
                 LOG(ERROR) << "Failed to receive response: " << strerror(errno);
             }
-            close(sock);
             return nullptr;
         }
 
@@ -294,7 +339,147 @@ std::shared_ptr<DownloadedObject> HttpDownloader::Download(
         response.append(buffer, received);
     }
 
-    close(sock);
+    if (response.empty()) {
+        LOG(ERROR) << "Empty response";
+        return nullptr;
+    }
+
+    // Parse response
+    int statusCode;
+    std::string contentType;
+    size_t bodyStart;
+
+    if (!ParseResponseHeaders(response, statusCode, contentType, bodyStart)) {
+        return nullptr;
+    }
+
+    std::string body = (bodyStart < response.length()) ? response.substr(bodyStart) : "";
+
+    LOG(INFO) << "HttpDownloader: status=" << statusCode
+              << " contentType=" << contentType
+              << " bodySize=" << body.length();
+
+    return std::make_shared<DownloadedObject>(body, contentType, statusCode);
+}
+
+std::shared_ptr<DownloadedObject> HttpDownloader::DownloadHttps(
+    const std::string& host, uint16_t port, const std::string& path,
+    const std::string& ipAddress)
+{
+    // Initialize SSL context
+    SSL_CTX* ctx = SSL_CTX_new(TLS_client_method());
+    if (!ctx) {
+        LOG(ERROR) << "Failed to create SSL context";
+        return nullptr;
+    }
+    SslCtxGuard ctxGuard(ctx);
+
+    // Set reasonable security options
+    SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+    SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
+
+    // Create TCP socket
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        LOG(ERROR) << "Failed to create socket: " << strerror(errno);
+        return nullptr;
+    }
+    SocketGuard sockGuard(sock);
+
+    // Set timeouts
+    struct timeval tv;
+    tv.tv_sec = m_timeoutMs / 1000;
+    tv.tv_usec = (m_timeoutMs % 1000) * 1000;
+
+    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0 ||
+        setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0) {
+        LOG(ERROR) << "Failed to set socket timeout: " << strerror(errno);
+        return nullptr;
+    }
+
+    // Connect
+    struct sockaddr_in serverAddr;
+    memset(&serverAddr, 0, sizeof(serverAddr));
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_port = htons(port);
+    inet_pton(AF_INET, ipAddress.c_str(), &serverAddr.sin_addr);
+
+    if (connect(sock, reinterpret_cast<struct sockaddr*>(&serverAddr), sizeof(serverAddr)) < 0) {
+        LOG(ERROR) << "Failed to connect to " << host << ":" << port << ": " << strerror(errno);
+        return nullptr;
+    }
+
+    // Create SSL object
+    SSL* ssl = SSL_new(ctx);
+    if (!ssl) {
+        LOG(ERROR) << "Failed to create SSL object";
+        return nullptr;
+    }
+    SslGuard sslGuard(ssl);
+
+    // Set SNI hostname (required for many servers)
+    if (SSL_set_tlsext_host_name(ssl, host.c_str()) != 1) {
+        LOG(ERROR) << "Failed to set SNI hostname";
+        return nullptr;
+    }
+
+    // Attach socket to SSL
+    if (SSL_set_fd(ssl, sock) != 1) {
+        LOG(ERROR) << "Failed to attach socket to SSL";
+        return nullptr;
+    }
+
+    // Perform TLS handshake
+    int ret = SSL_connect(ssl);
+    if (ret != 1) {
+        int sslError = SSL_get_error(ssl, ret);
+        LOG(ERROR) << "SSL handshake failed, error: " << sslError;
+        return nullptr;
+    }
+
+    LOG(INFO) << "SSL connection established, protocol: " << SSL_get_version(ssl);
+
+    // Build and send request
+    std::ostringstream request;
+    request << "GET " << path << " HTTP/1.1\r\n";
+    request << "Host: " << host << "\r\n";
+    request << "Accept: " << m_acceptHeader << "\r\n";
+    request << "Connection: close\r\n";
+    request << "\r\n";
+
+    std::string requestStr = request.str();
+    ret = SSL_write(ssl, requestStr.c_str(), requestStr.length());
+    if (ret <= 0) {
+        int sslError = SSL_get_error(ssl, ret);
+        LOG(ERROR) << "Failed to send request over SSL, error: " << sslError;
+        return nullptr;
+    }
+
+    // Receive response
+    std::string response;
+    char buffer[RECEIVE_BUFFER_SIZE];
+
+    while (response.length() < MAX_RESPONSE_SIZE) {
+        ret = SSL_read(ssl, buffer, sizeof(buffer) - 1);
+
+        if (ret < 0) {
+            int sslError = SSL_get_error(ssl, ret);
+            if (sslError == SSL_ERROR_WANT_READ || sslError == SSL_ERROR_WANT_WRITE) {
+                continue; // Retry
+            }
+            LOG(ERROR) << "Failed to receive response over SSL, error: " << sslError;
+            return nullptr;
+        }
+
+        if (ret == 0) {
+            break; // Connection closed
+        }
+
+        response.append(buffer, ret);
+    }
+
+    // Gracefully shutdown SSL
+    SSL_shutdown(ssl);
 
     if (response.empty()) {
         LOG(ERROR) << "Empty response";

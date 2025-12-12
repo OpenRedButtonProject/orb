@@ -58,7 +58,7 @@ int OpAppAcquisition::retrieveOpAppAitXml()
                   << ":" << nextSrvRecord.port;
 
         m_downloadedObject = m_downloader->Download(nextSrvRecord.target, nextSrvRecord.port,
-                                                    "/.well-known/hbbtv");
+                                                    "/opapp.aitx", true /* use HTTPS */);
 
         if (m_downloadedObject && m_downloadedObject->IsSuccess()) {
             // Optionally validate content type

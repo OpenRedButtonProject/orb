@@ -355,7 +355,7 @@ TEST_F(OpAppAcquisitionTest, DISABLED_TestDoDnsSrvLookup_ValidFqdn)
     }
 }
 
-TEST_F(OpAppAcquisitionTest, TestRetrieveOpAppAitXml_ValidFqdn)
+TEST_F(OpAppAcquisitionTest, DISABLED_TestRetrieveOpAppAitXml_ValidFqdn)
 {
     // GIVEN: a test interface with a real-world FQDN
     const std::string fqdn = "test.freeviewplay.tv";

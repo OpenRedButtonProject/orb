@@ -92,11 +92,14 @@ static_library("orb_network") {
 
   deps = [
     "//base",
+    "//third_party/boringssl",  # For HTTPS/TLS support
     "//third_party/orb/logging:orb_logging_deps",
   ]
 
   # Export include paths for consumers
+  # Note: external_lib_config defines IS_CHROMIUM which is needed for logging
   public_configs = [
+    ":external_lib_config",
     ":orb_network_config",
   ]
 }

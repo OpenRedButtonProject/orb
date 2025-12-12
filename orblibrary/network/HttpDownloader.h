@@ -26,9 +26,9 @@ private:
 };
 
 /**
- * @brief Simple HTTP downloader using raw sockets.
+ * @brief Simple HTTP/HTTPS downloader using raw sockets and BoringSSL.
  *
- * Provides basic HTTP GET functionality without external dependencies.
+ * Provides basic HTTP GET functionality. Supports both HTTP and HTTPS.
  */
 class HttpDownloader {
 public:
@@ -46,7 +46,7 @@ public:
     /**
      * @brief Download content from a URL.
      *
-     * @param url The URL to download (e.g., "http://example.com/path")
+     * @param url The URL to download (supports http:// and https://)
      * @return The downloaded object, or nullptr on failure
      */
     std::shared_ptr<DownloadedObject> Download(const std::string& url);
@@ -57,10 +57,12 @@ public:
      * @param host The hostname
      * @param port The port number
      * @param path The path (default: "/")
+     * @param useHttps Whether to use HTTPS (default: false)
      * @return The downloaded object, or nullptr on failure
      */
     std::shared_ptr<DownloadedObject> Download(const std::string& host, uint16_t port,
-                                                const std::string& path = "/");
+                                                const std::string& path = "/",
+                                                bool useHttps = false);
 
     /**
      * @brief Set custom Accept header value.
@@ -82,9 +84,11 @@ private:
      * @param host Output: hostname
      * @param port Output: port number
      * @param path Output: path
+     * @param useHttps Output: true if https scheme
      * @return true if parsing succeeded
      */
-    bool ParseUrl(const std::string& url, std::string& host, uint16_t& port, std::string& path);
+    bool ParseUrl(const std::string& url, std::string& host, uint16_t& port,
+                  std::string& path, bool& useHttps);
 
     /**
      * @brief Parse HTTP response headers and extract metadata.
@@ -96,6 +100,20 @@ private:
      */
     bool ParseResponseHeaders(const std::string& response, int& statusCode,
                               std::string& contentType, size_t& bodyStart);
+
+    /**
+     * @brief Perform HTTP download (no TLS).
+     */
+    std::shared_ptr<DownloadedObject> DownloadHttp(const std::string& host, uint16_t port,
+                                                    const std::string& path,
+                                                    const std::string& ipAddress);
+
+    /**
+     * @brief Perform HTTPS download (with TLS).
+     */
+    std::shared_ptr<DownloadedObject> DownloadHttps(const std::string& host, uint16_t port,
+                                                     const std::string& path,
+                                                     const std::string& ipAddress);
 
     int m_timeoutMs;
     std::string m_acceptHeader;
