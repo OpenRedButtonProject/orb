@@ -116,6 +116,29 @@ private:
                                                      const std::string& path,
                                                      const std::string& ipAddress);
 
+    /**
+     * @brief Create a TCP socket and connect to server.
+     * @param ipAddress The IP address to connect to
+     * @param port The port number
+     * @return Socket file descriptor, or -1 on failure
+     */
+    int CreateAndConnectSocket(const std::string& ipAddress, uint16_t port, const std::string& host);
+
+    /**
+     * @brief Build HTTP GET request string.
+     * @param host The hostname (for Host header)
+     * @param path The request path
+     * @return The HTTP request string
+     */
+    std::string BuildHttpRequest(const std::string& host, const std::string& path);
+
+    /**
+     * @brief Parse response and create DownloadedObject.
+     * @param response The raw HTTP response
+     * @return The downloaded object, or nullptr on failure
+     */
+    std::shared_ptr<DownloadedObject> ParseAndCreateResponse(const std::string& response);
+
     int m_timeoutMs;
     std::string m_acceptHeader;
     std::string m_userAgent;
