@@ -1,5 +1,6 @@
 #include "OpAppPackageManagerTestInterface.h"
-#include "third_party/orb/orblibrary/include/OpAppPackageManager.h"
+#include "OpAppPackageManager.h"
+#include "OpAppAcquisition.h"  // For IOpAppAcquisition
 
 namespace orb
 {
@@ -16,7 +17,19 @@ std::unique_ptr<OpAppPackageManagerTestInterface> OpAppPackageManagerTestInterfa
     std::unique_ptr<IHashCalculator> hashCalculator,
     std::unique_ptr<IDecryptor> decryptor)
 {
-    auto packageManager = std::make_unique<OpAppPackageManager>(configuration, std::move(hashCalculator), std::move(decryptor));
+    auto packageManager = std::make_unique<OpAppPackageManager>(
+        configuration, std::move(hashCalculator), std::move(decryptor));
+    return std::unique_ptr<OpAppPackageManagerTestInterface>(new OpAppPackageManagerTestInterface(std::move(packageManager)));
+}
+
+std::unique_ptr<OpAppPackageManagerTestInterface> OpAppPackageManagerTestInterface::create(
+    const OpAppPackageManager::Configuration& configuration,
+    std::unique_ptr<IHashCalculator> hashCalculator,
+    std::unique_ptr<IDecryptor> decryptor,
+    std::unique_ptr<IOpAppAcquisition> acquisition)
+{
+    auto packageManager = std::make_unique<OpAppPackageManager>(
+        configuration, std::move(hashCalculator), std::move(decryptor), std::move(acquisition));
     return std::unique_ptr<OpAppPackageManagerTestInterface>(new OpAppPackageManagerTestInterface(std::move(packageManager)));
 }
 

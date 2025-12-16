@@ -27,6 +27,9 @@
 namespace orb
 {
 
+// Forward declaration
+class IOpAppAcquisition;
+
 // Error handling structure for package operations
 struct PackageOperationResult {
   bool success;
@@ -98,6 +101,7 @@ public:
   };
 
   struct Configuration {
+      std::string m_OpAppFqdn; /* Fully Qualified Domain Name (Section 6.1.4 of TS 103 606 V1.2.1) */
       std::string m_PackageLocation;
       std::string m_PackageSuffix;
       std::string m_PrivateKeyFilePath;
@@ -108,18 +112,33 @@ public:
       std::string m_OpAppInstallDirectory; /* Directory where the OpApp is installed */
       UpdateSuccessCallback m_OnUpdateSuccess; /* Callback called when update completes successfully */
       UpdateFailureCallback m_OnUpdateFailure; /* Callback called when update fails */
+
+      /* HTTP User-Agent header for AIT requests (TS 103 606 V1.2.1 Section 6.1.5.1)
+       * Format per ETSI TS 102 796 Section 7.3.2.4 (HbbTV User-Agent string)
+       * Example: "HbbTV/1.6.1 (+DRM;+PVR;+RTSP;+OMID) vendor/1.0" */
+      std::string m_UserAgent = "HbbTV/1.6.1 (+DRM;+PVR;+RTSP;+OMID) orb/1.0";
   };
 
   // Constructors
   explicit OpAppPackageManager(const Configuration& configuration);
+
   // Constructor with custom hash calculator (for testing)
   OpAppPackageManager(
-    const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator);
+    const Configuration& configuration,
+    std::unique_ptr<IHashCalculator> hashCalculator);
+
   // Constructor with custom hash calculator and decryptor (for testing)
   OpAppPackageManager(
     const Configuration& configuration,
     std::unique_ptr<IHashCalculator> hashCalculator,
     std::unique_ptr<IDecryptor> decryptor);
+
+  // Constructor with all dependencies (for testing)
+  OpAppPackageManager(
+    const Configuration& configuration,
+    std::unique_ptr<IHashCalculator> hashCalculator,
+    std::unique_ptr<IDecryptor> decryptor,
+    std::unique_ptr<IOpAppAcquisition> acquisition);
 
   ~OpAppPackageManager();
 
@@ -144,7 +163,12 @@ public:
   // Public method for calculating SHA256 hash (useful for testing and external use)
   std::string calculateFileSHA256Hash(const std::string& filePath) const;
 
-  // Package status methods
+  // Search the local package location 'Configuration::m_PackageLocation' for package files.
+  // Returns a PackageOperationResult containing the list of package files found.
+  // If no package files are found, the success flag is false and the error message is set.
+  // If multiple package files are found, the success flag is false and the error message is set.
+  // If a single package file is found, the success flag is true and the package file is set.
+  // If an error occurs, the success flag is false and the error message is set.
   PackageOperationResult getPackageFiles();
 
   // Error handling
@@ -172,6 +196,18 @@ private:
    *  PackageStatus::ConfigurationError for any other error.
    */
   PackageStatus doPackageFileCheck();
+
+  /**
+   * doRemotePackageCheck()
+   *
+   * Checks for a remote package file and compares hash to installed package hash.
+   *
+   * Returns:
+   *  PackageStatus::NoUpdateAvailable if no remote package file is found.
+   *  PackageStatus::UpdateAvailable if the remote package file exists and the hash is different.
+   *  PackageStatus::Installed if the remote package file is already installed.
+   */
+  PackageStatus doRemotePackageCheck();
 
   /**
    * tryPackageInstall()
@@ -221,15 +257,15 @@ private:
    */
   bool unzipPackageFile(const std::string& filePath) const;
 
-  PackageStatus m_PackageStatus;
+  PackageStatus m_PackageStatus = PackageStatus::None;
 
   // void uninstallPackage(const std::string& packagePath);
   // void updatePackage(const std::string& packagePath);
   // PackageInfo getPackageInfo();
 
-  std::atomic<bool> m_IsRunning;
-  std::atomic<bool> m_IsUpdating; // TODO replace with OpAppUpdateStatus
-  std::atomic<OpAppUpdateStatus> m_UpdateStatus = OpAppUpdateStatus::NONE;
+  std::atomic<bool> m_IsRunning{false};
+  std::atomic<bool> m_IsUpdating{false}; // TODO replace with OpAppUpdateStatus
+  std::atomic<OpAppUpdateStatus> m_UpdateStatus{OpAppUpdateStatus::NONE};
   std::mutex m_Mutex;
 
   std::thread m_WorkerThread;
@@ -238,6 +274,7 @@ private:
   std::string m_LastErrorMessage;
   std::unique_ptr<IHashCalculator> m_HashCalculator;
   std::unique_ptr<IDecryptor> m_Decryptor;
+  std::unique_ptr<IOpAppAcquisition> m_Acquisition;
 
   std::string m_CandidatePackageFile;
   std::string m_CandidatePackageHash;

@@ -1,4 +1,6 @@
 #include "OpAppPackageManager.h"
+#include "OpAppAcquisition.h"
+
 #include <mutex>
 #include <filesystem>
 #include <fstream>
@@ -69,42 +71,43 @@ static int readJsonField(
 }
 
 OpAppPackageManager::OpAppPackageManager(const Configuration& configuration)
-  : m_PackageStatus(PackageStatus::None)
-  , m_IsRunning(false)
-  , m_IsUpdating(false)
-  , m_Configuration(configuration)
-  , m_LastErrorMessage()
-  , m_HashCalculator(std::make_unique<HashCalculator>())
-  , m_Decryptor(std::make_unique<Decryptor>())
+  : OpAppPackageManager(configuration, nullptr, nullptr, nullptr)
 {
 }
 
 OpAppPackageManager::OpAppPackageManager(const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator)
-  : m_PackageStatus(PackageStatus::None)
-  , m_IsRunning(false)
-  , m_IsUpdating(false)
-  , m_Configuration(configuration)
-  , m_LastErrorMessage()
-  , m_HashCalculator(std::move(hashCalculator))
-  , m_Decryptor(std::make_unique<Decryptor>())
+  : OpAppPackageManager(configuration, std::move(hashCalculator), nullptr, nullptr)
 {
 }
 
 OpAppPackageManager::OpAppPackageManager(
-  const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator, std::unique_ptr<IDecryptor> decryptor)
-  : m_PackageStatus(PackageStatus::None)
-  , m_IsRunning(false)
-  , m_IsUpdating(false)
-  , m_Configuration(configuration)
-  , m_LastErrorMessage()
+  const Configuration& configuration,
+  std::unique_ptr<IHashCalculator> hashCalculator,
+  std::unique_ptr<IDecryptor> decryptor)
+  : OpAppPackageManager(configuration, std::move(hashCalculator), std::move(decryptor), nullptr)
+{
+}
+
+OpAppPackageManager::OpAppPackageManager(
+  const Configuration& configuration,
+  std::unique_ptr<IHashCalculator> hashCalculator,
+  std::unique_ptr<IDecryptor> decryptor,
+  std::unique_ptr<IOpAppAcquisition> acquisition)
+  : m_Configuration(configuration)
   , m_HashCalculator(std::move(hashCalculator))
   , m_Decryptor(std::move(decryptor))
+  , m_Acquisition(std::move(acquisition))
 {
+  // Create default implementations if not provided
   if (!m_HashCalculator) {
     m_HashCalculator = std::make_unique<HashCalculator>();
   }
   if (!m_Decryptor) {
     m_Decryptor = std::make_unique<Decryptor>();
+  }
+  if (!m_Acquisition) {
+    // Pass User-Agent from configuration (TS 103 606 Section 6.1.5.1)
+    m_Acquisition = std::make_unique<OpAppAcquisition>(m_Configuration.m_UserAgent);
   }
 }
 
@@ -152,11 +155,16 @@ bool OpAppPackageManager::isUpdating() const
 
 void OpAppPackageManager::checkForUpdates()
 {
-  // In the future this would do a remote check. Check spec for how to do this.
-  // For now, we are supporting local package file checking only, e.g. sdcard, etc.
+  if (!m_Configuration.m_PackageLocation.empty()) {
+    // Checks for local package file and compares hash to installed package hash?
+    m_PackageStatus = doPackageFileCheck();
+  }
 
-  // Checks for local package file and compares hash to installed package hash?
-  m_PackageStatus = doPackageFileCheck();
+  if (m_PackageStatus == PackageStatus::None || m_PackageStatus == PackageStatus::NoUpdateAvailable) {
+    // No local file or no update available.
+    // Do a full remote check.
+    m_PackageStatus = doRemotePackageCheck();
+  }
 
   if (m_PackageStatus != PackageStatus::UpdateAvailable) {
     if (m_PackageStatus == PackageStatus::ConfigurationError)
@@ -244,6 +252,40 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::doPackageFileCheck()
 
   // Save the package file name to the m_CandidatePackageFile variable
   m_CandidatePackageFile = packageFile;
+
+  return PackageStatus::UpdateAvailable;
+}
+
+OpAppPackageManager::PackageStatus OpAppPackageManager::doRemotePackageCheck()
+{
+  // Check for a remote package file via AIT acquisition.
+  // Needs the FQDN passed in. Use the FQDN from the Configuration::m_OpAppFqdn.
+  if (m_Configuration.m_OpAppFqdn.empty()) {
+    // No FQDN configured means remote check is not enabled - not an error condition
+    // FREE-312: Will leave this in for testing purposes...
+    LOG(INFO) << "No OpApp FQDN configured, skipping remote package check";
+    return PackageStatus::NoUpdateAvailable;
+  }
+
+  // Use the injected acquisition interface to fetch AIT XML
+  AcquisitionResult result = m_Acquisition->FetchAitXml(
+      m_Configuration.m_OpAppFqdn, true /* network available */);
+
+  if (!result.success) {
+    LOG(ERROR) << "AIT acquisition failed: " << result.errorMessage;
+    m_LastErrorMessage = result.errorMessage;
+    return PackageStatus::ConfigurationError;
+  }
+
+  if (result.content.empty()) {
+    LOG(ERROR) << "AIT acquisition returned empty content";
+    m_LastErrorMessage = "AIT acquisition returned empty content";
+    return PackageStatus::ConfigurationError;
+  }
+
+  LOG(INFO) << "AIT XML retrieved successfully, content size: " << result.content.size();
+
+  // TODO Once the AIT XML is downloaded, we need to parse it to get the package URL.
 
   return PackageStatus::UpdateAvailable;
 }
