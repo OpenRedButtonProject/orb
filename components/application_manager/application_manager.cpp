@@ -275,12 +275,12 @@ uint16_t ApplicationManager::SetKeySetMask(uint16_t appId, uint16_t keySetMask, 
     std::string currentScheme = m_app.getScheme();
 
     // Compatibility check for older versions
-    bool isOldVersion = m_app.versionMinor > 1; 
+    bool isOldVersion = m_app.versionMinor > 1;
     bool isLinkedAppScheme12 = currentScheme == LINKED_APP_SCHEME_1_2;
 
     // Key events VK_STOP, VK_PLAY, VK_PAUSE, VK_PLAY_PAUSE, VK_FAST_FWD,
-    // VK_REWIND and VK_RECORD shall always be available to linked applications 
-    // that are controlling media presentation without requiring the application 
+    // VK_REWIND and VK_RECORD shall always be available to linked applications
+    // that are controlling media presentation without requiring the application
     // to be activated first (2.0.4, App. O.7)
     bool isException = isLinkedAppScheme12 && m_app.versionMinor == 7;
 
@@ -357,25 +357,29 @@ std::string ApplicationManager::GetApplicationScheme(uint16_t appId)
 bool ApplicationManager::InKeySet(uint16_t appId, uint16_t keyCode)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    bool otherFound = false;
-    if (m_app.id == appId)
+
+    if (m_app.id != appId)
     {
-        if ((m_app.keySetMask & GetKeySet(keyCode)) != 0)
-        {
-            if ((m_app.keySetMask & KEY_SET_OTHER) != 0) {
-                auto it = std::find(m_app.otherKeys.begin(), m_app.otherKeys.end(), keyCode);
-                if (it == m_app.otherKeys.end()) {
-                    return false;
-                }
-            }
-            if (!m_app.isActivated)
-            {
-                m_app.isActivated = true;
-            }
-            return true;
+        return false;
+    }
+
+    bool result = false;
+    if ((m_app.keySetMask & GetKeySet(keyCode)) != 0)
+    {
+        result = true;
+    }
+    else if ((m_app.keySetMask & KEY_SET_OTHER) == KEY_SET_OTHER) {
+        auto it = std::find(m_app.otherKeys.begin(), m_app.otherKeys.end(), keyCode);
+        if (it != m_app.otherKeys.end()) {
+            result = true;
         }
     }
-    return false;
+
+    if (result) {
+        m_app.isActivated = true;
+    }
+
+    return result;
 }
 
 /**
@@ -740,7 +744,7 @@ void ApplicationManager::OnApplicationPageChanged(uint16_t appId, const std::str
     if (m_app.isRunning && m_app.id == appId)
     {
         m_app.loadedUrl = url;
-        if (!Utils::IsInvalidDvbTriplet(m_currentService) && 
+        if (!Utils::IsInvalidDvbTriplet(m_currentService) &&
             url.find("https://www.live.bbctvapps.co.uk/tap/iplayer") == std::string::npos)
         {
             // For broadcast-related applications we reset the broadcast presentation on page change,
@@ -1195,10 +1199,6 @@ uint16_t ApplicationManager::GetKeySet(const uint16_t keyCode)
     else if (keyCode == VK_INFO)
     {
         return KEY_SET_INFO;
-    }
-    else if (keyCode == VK_RECORD)
-    {
-        return KEY_SET_OTHER;
     }
 
     return 0;
