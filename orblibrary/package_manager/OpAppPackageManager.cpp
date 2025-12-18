@@ -1,5 +1,6 @@
 #include "OpAppPackageManager.h"
 #include "AitFetcher.h"
+#include "xml_parser.h"
 
 #include <mutex>
 #include <filesystem>
@@ -303,10 +304,16 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::doRemotePackageCheck()
     LOG(WARNING) << "AIT acquisition warning: " << error;
   }
 
-  // TODO: Process each AIT file to parse and extract package information
-  // for (const auto& aitFile : result.aitFiles) {
-  //   parseAitXml(aitFile);
-  // }
+  // Parse the AIT files
+  if (!parseAitFiles(result.aitFiles)) {
+    LOG(INFO) << "No applications found in any AIT";
+    return PackageStatus::NoUpdateAvailable;
+  }
+
+  // TODO: Select the best application based on priority, control code, etc.
+  // TODO: Download and install the selected OpApp package
+  // For now, just indicate an update is available
+  LOG(INFO) << "Found " << m_AitAppDescriptors.size() << " application(s) across all AITs";
 
   return PackageStatus::UpdateAvailable;
 }
@@ -511,6 +518,61 @@ PackageOperationResult OpAppPackageManager::verifyPackageFile(const std::string&
 bool OpAppPackageManager::unzipPackageFile(const std::string& filePath) const
 {
   return false;
+}
+
+bool OpAppPackageManager::parseAitFiles(
+    const std::vector<std::string>& aitFiles)
+{
+  m_AitAppDescriptors.clear();
+  auto xmlParser = IXmlParser::create();
+
+  for (const auto& aitFile : aitFiles) {
+    // Read file content
+    std::ifstream file(aitFile, std::ios::binary);
+    if (!file) {
+      LOG(WARNING) << "Failed to open AIT file: " << aitFile;
+      continue;
+    }
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    std::string content = buffer.str();
+
+    // Parse the AIT XML
+    auto aitTable = xmlParser->ParseAit(content.c_str(), content.size());
+    if (!aitTable) {
+      LOG(WARNING) << "Failed to parse AIT file: " << aitFile;
+      continue;
+    }
+
+    LOG(INFO) << "Parsed AIT from " << aitFile << ": "
+              << static_cast<int>(aitTable->numApps) << " app(s)";
+
+    // Extract application descriptors
+    for (const auto& app : aitTable->appArray) {
+      AitAppDescriptor desc;
+      desc.orgId = app.orgId;
+      desc.appId = app.appId;
+      desc.controlCode = app.controlCode;
+      desc.priority = app.appDesc.priority;
+      desc.location = app.location;
+
+      // Get the first name if available
+      if (app.appName.numLangs > 0) {
+        desc.name = app.appName.names[0].name;
+      }
+
+      LOG(INFO) << "  App: orgId=" << desc.orgId << ", appId=" << desc.appId
+                << ", controlCode=" << static_cast<int>(desc.controlCode)
+                << ", priority=" << static_cast<int>(desc.priority)
+                << ", location=" << desc.location
+                << ", name=" << desc.name;
+
+      m_AitAppDescriptors.push_back(desc);
+    }
+  }
+
+  return !m_AitAppDescriptors.empty();
 }
 
 } // namespace orb

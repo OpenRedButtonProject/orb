@@ -27,8 +27,21 @@
 namespace orb
 {
 
-// Forward declaration
+// Forward declarations
 class IAitFetcher;
+
+/**
+ * @brief Simplified application descriptor for OpApp selection.
+ * Contains the fields needed from Ait::S_AIT_APP_DESC for package management.
+ */
+struct AitAppDescriptor {
+    uint32_t orgId;
+    uint16_t appId;
+    uint8_t controlCode;
+    uint8_t priority;
+    std::string location;
+    std::string name;
+};
 
 // Error handling structure for package operations
 struct PackageOperationResult {
@@ -261,6 +274,16 @@ private:
    */
   bool unzipPackageFile(const std::string& filePath) const;
 
+  /**
+   * parseAitFiles()
+   *
+   * Parses AIT XML files and extracts application descriptors into m_AitAppDescriptors.
+   *
+   * @param aitFiles Vector of paths to AIT XML files
+   * @return true if at least one AIT was successfully parsed
+   */
+  bool parseAitFiles(const std::vector<std::string>& aitFiles);
+
   PackageStatus m_PackageStatus = PackageStatus::None;
 
   // void uninstallPackage(const std::string& packagePath);
@@ -279,6 +302,7 @@ private:
   std::unique_ptr<IHashCalculator> m_HashCalculator;
   std::unique_ptr<IDecryptor> m_Decryptor;
   std::unique_ptr<IAitFetcher> m_AitFetcher;
+  std::vector<AitAppDescriptor> m_AitAppDescriptors;
 
   std::string m_CandidatePackageFile;
   std::string m_CandidatePackageHash;

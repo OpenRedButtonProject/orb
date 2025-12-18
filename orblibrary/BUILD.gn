@@ -101,7 +101,8 @@ static_library("opapp_package_manager") {
   ]
 
   # AitFetcher provides IAitFetcher interface via public_deps
-  public_deps = [ ":ait_fetcher" ]
+  # ait_common provides XmlParser for AIT parsing
+  public_deps = [ ":ait_fetcher", ":ait_common" ]
 
   public_configs = [ ":external_lib_config" ]
 }
