@@ -39,16 +39,27 @@ SrvRecord OpAppAcquisitionTestInterface::popNextSrvRecord(
     return m_acquisition->popNextSrvRecord(records);
 }
 
-AcquisitionResult OpAppAcquisitionTestInterface::FetchAitXml(
-    const std::string& fqdn, bool networkAvailable)
+AcquisitionResult OpAppAcquisitionTestInterface::FetchAitXmls(
+    const std::string& fqdn, bool networkAvailable, const std::string& outputDirectory)
 {
-    return m_acquisition->FetchAitXml(fqdn, networkAvailable);
+    return m_acquisition->FetchAitXmls(fqdn, networkAvailable, outputDirectory);
 }
 
 AcquisitionResult OpAppAcquisitionTestInterface::StaticFetch(
-    const std::string& fqdn, bool networkAvailable)
+    const std::string& fqdn, bool networkAvailable, const std::string& outputDirectory)
 {
-    return OpAppAcquisition::Fetch(fqdn, networkAvailable);
+    return OpAppAcquisition::Fetch(fqdn, networkAvailable, outputDirectory);
+}
+
+std::string OpAppAcquisitionTestInterface::generateAitFilename(int index, const std::string& target)
+{
+    return m_acquisition->generateAitFilename(index, target);
+}
+
+bool OpAppAcquisitionTestInterface::writeAitToFile(const std::string& content,
+                                                    const std::string& filePath)
+{
+    return m_acquisition->writeAitToFile(content, filePath);
 }
 
 } // namespace orb

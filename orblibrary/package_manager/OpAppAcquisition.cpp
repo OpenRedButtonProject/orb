@@ -21,7 +21,10 @@
 #include "log.h"
 
 #include <algorithm>
+#include <filesystem>
+#include <fstream>
 #include <random>
+#include <regex>
 
 namespace orb
 {
@@ -37,34 +40,57 @@ OpAppAcquisition::OpAppAcquisition(const std::string& userAgent)
 OpAppAcquisition::~OpAppAcquisition() = default;
 
 AcquisitionResult OpAppAcquisition::Fetch(const std::string& fqdn, bool networkAvailable,
+                                          const std::string& outputDirectory,
                                           const std::string& userAgent)
 {
     OpAppAcquisition acquisition(userAgent);
-    return acquisition.FetchAitXml(fqdn, networkAvailable);
+    return acquisition.FetchAitXmls(fqdn, networkAvailable, outputDirectory);
 }
 
-AcquisitionResult OpAppAcquisition::FetchAitXml(const std::string& fqdn, bool networkAvailable)
+AcquisitionResult OpAppAcquisition::FetchAitXmls(const std::string& fqdn,
+                                                           bool networkAvailable,
+                                                           const std::string& outputDirectory)
 {
     /* TS 103 606 V1.2.1 (2024-03) Section 6.1.5.1 XML AIT Acquisition
-     * "If the terminal discovers the location of an XML AIT using DNS SRV as
-     * defined in clause 6.1.4, the terminal shall perform a HTTP GET request
-     * based on the priority and weighting of the returned SRV records..."
+     * "The result of the process is a number of (XML) AITs..."
+     * This method fetches AITs from ALL reachable SRV record targets.
      */
     if (!networkAvailable) {
         LOG(ERROR) << "Network is not available";
-        return AcquisitionResult::Failure("Network is not available");
+        return AcquisitionResult("Network is not available");
     }
 
     if (!validateFqdn(fqdn)) {
         LOG(ERROR) << "Invalid FQDN: " << fqdn;
-        return AcquisitionResult::Failure("Invalid FQDN: " + fqdn);
+        return AcquisitionResult("Invalid FQDN: " + fqdn);
+    }
+
+    if (outputDirectory.empty()) {
+        LOG(ERROR) << "Output directory not specified";
+        return AcquisitionResult("Output directory not specified");
+    }
+
+    // Ensure output directory exists
+    std::error_code ec;
+    if (!std::filesystem::exists(outputDirectory)) {
+        if (!std::filesystem::create_directories(outputDirectory, ec)) {
+            LOG(ERROR) << "Failed to create output directory: " << outputDirectory
+                       << ", error: " << ec.message();
+            return AcquisitionResult(
+                "Failed to create output directory: " + outputDirectory);
+        }
     }
 
     auto records = doDnsSrvLookup(fqdn);
     if (records.empty()) {
-        return AcquisitionResult::Failure("No SRV records found for FQDN: " + fqdn);
+        return AcquisitionResult("No SRV records found for FQDN: " + fqdn);
     }
 
+    std::vector<std::string> acquiredFiles;
+    std::vector<std::string> errors;
+    int fileIndex = 0;
+
+    // Process ALL records, don't stop on first success
     while (!records.empty()) {
         const auto nextSrvRecord = popNextSrvRecord(records);
         if (nextSrvRecord.target.empty()) {
@@ -72,8 +98,6 @@ AcquisitionResult OpAppAcquisition::FetchAitXml(const std::string& fqdn, bool ne
             continue;
         }
 
-        // Perform HTTPS GET request to the next SRV record
-        // TS 103 606 specifies the path for XML AIT
         LOG(INFO) << "Attempting to retrieve AIT from: " << nextSrvRecord.target
                   << ":" << nextSrvRecord.port;
 
@@ -82,26 +106,46 @@ AcquisitionResult OpAppAcquisition::FetchAitXml(const std::string& fqdn, bool ne
             "/opapp.aitx", true /* use HTTPS */);
 
         if (downloadedObject && downloadedObject->IsSuccess()) {
-            // Optionally validate content type
+            // Validate content type - See TS 102796 Section 7.3.2.4
             std::string contentType = downloadedObject->GetContentType();
             if (contentType.find("xml") != std::string::npos ||
                 contentType.find("application/vnd.dvb.ait") != std::string::npos) {
-                LOG(INFO) << "Successfully retrieved AIT XML";
-            } else {
-                LOG(WARNING) << "Unexpected content type: " << contentType;
-            }
-            // Return success - content may be valid even with unexpected content type
-            return AcquisitionResult::Success(
-                downloadedObject->GetContent(),
-                downloadedObject->GetStatusCode());
-        }
+                LOG(INFO) << "Successfully retrieved AIT XML from " << nextSrvRecord.target;
 
-        LOG(WARNING) << "Failed to retrieve AIT from " << nextSrvRecord.target
-                     << ", trying next SRV record...";
+                // Generate unique filename and write to disk
+                std::string filename = generateAitFilename(fileIndex++, nextSrvRecord.target);
+                std::string filePath = outputDirectory + "/" + filename;
+
+                if (writeAitToFile(downloadedObject->GetContent(), filePath)) {
+                    acquiredFiles.push_back(filePath);
+                    LOG(INFO) << "AIT written to: " << filePath;
+                } else {
+                    std::string error = "Failed to write AIT from " + nextSrvRecord.target +
+                                        " to " + filePath;
+                    LOG(ERROR) << error;
+                    errors.push_back(error);
+                }
+            } else {
+                // Ignore unexpected content type
+                LOG(WARNING) << "Unexpected content type from " << nextSrvRecord.target
+                             << ": " << contentType;
+            }
+
+        } else {
+            std::string error = "Failed to download AIT from " + nextSrvRecord.target +
+                                ":" + std::to_string(nextSrvRecord.port);
+            LOG(WARNING) << error << ", trying next SRV record...";
+            errors.push_back(error);
+        }
     }
 
-    LOG(ERROR) << "Failed to retrieve AIT from any SRV record";
-    return AcquisitionResult::Failure("Failed to retrieve AIT from any SRV record");
+    if (acquiredFiles.empty()) {
+        LOG(ERROR) << "Failed to retrieve AIT from any SRV record";
+        return AcquisitionResult("Failed to retrieve AIT from any SRV record");
+    }
+
+    LOG(INFO) << "Successfully acquired " << acquiredFiles.size() << " AIT file(s)";
+    return AcquisitionResult(acquiredFiles, errors);
 }
 
 bool OpAppAcquisition::validateFqdn(const std::string& fqdn)
@@ -200,6 +244,51 @@ SrvRecord OpAppAcquisition::selectBestSrvRecord(const std::vector<SrvRecord>& re
 
     // Fallback (shouldn't reach here)
     return candidates[0];
+}
+
+std::string OpAppAcquisition::generateAitFilename(int index, const std::string& target)
+{
+    // Sanitize target hostname for use in filename
+    // Replace characters that are invalid in filenames with underscores
+    std::string sanitized = target;
+    std::regex invalidChars("[^a-zA-Z0-9._-]");
+    sanitized = std::regex_replace(sanitized, invalidChars, "_");
+
+    // Format: ait_<index>_<sanitized_target>.xml
+    return "ait_" + std::to_string(index) + "_" + sanitized + ".xml";
+}
+
+bool OpAppAcquisition::writeAitToFile(const std::string& content, const std::string& filePath)
+{
+    // Write to a temporary file first, then rename for atomic operation
+    std::string tempPath = filePath + ".tmp";
+    std::error_code ec;
+
+    std::ofstream outFile(tempPath, std::ios::binary | std::ios::trunc);
+    if (!outFile.is_open()) {
+        LOG(ERROR) << "Failed to open temp file for writing: " << tempPath;
+        return false;
+    }
+
+    outFile.write(content.c_str(), content.size());
+    outFile.close();
+
+    if (outFile.fail()) {
+        LOG(ERROR) << "Failed to write content to temp file: " << tempPath;
+        std::filesystem::remove(tempPath, ec);
+        return false;
+    }
+
+    // Atomic rename
+    std::filesystem::rename(tempPath, filePath, ec);
+    if (ec) {
+        LOG(ERROR) << "Failed to rename temp file to " << filePath
+                   << ": " << ec.message();
+        std::filesystem::remove(tempPath, ec);
+        return false;
+    }
+
+    return true;
 }
 
 } // namespace orb

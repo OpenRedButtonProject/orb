@@ -267,25 +267,46 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::doRemotePackageCheck()
     return PackageStatus::NoUpdateAvailable;
   }
 
-  // Use the injected acquisition interface to fetch AIT XML
-  AcquisitionResult result = m_Acquisition->FetchAitXml(
-      m_Configuration.m_OpAppFqdn, true /* network available */);
+  // Determine AIT output directory
+  std::string aitDir = m_Configuration.m_AitOutputDirectory;
+  if (aitDir.empty()) {
+    aitDir = m_Configuration.m_DestinationDirectory + "/ait_cache";
+  }
 
-  if (!result.success) {
-    LOG(ERROR) << "AIT acquisition failed: " << result.errorMessage;
-    m_LastErrorMessage = result.errorMessage;
+  // Clear the AIT directory before acquisition to remove stale files
+  std::error_code ec;
+  if (std::filesystem::exists(aitDir)) {
+    std::filesystem::remove_all(aitDir, ec);
+    if (ec) {
+      LOG(WARNING) << "Failed to clear AIT directory: " << aitDir
+                   << ", error: " << ec.message();
+    }
+  }
+
+  // Use the injected acquisition interface to fetch ALL AIT XMLs
+  AcquisitionResult result = m_Acquisition->FetchAitXmls(
+      m_Configuration.m_OpAppFqdn, true /* network available */, aitDir);
+
+  if (!result.success || result.aitFiles.empty()) {
+    std::string error = result.fatalError.empty()
+        ? "AIT acquisition failed: no AITs acquired"
+        : result.fatalError;
+    LOG(ERROR) << "AIT acquisition failed: " << error;
+    m_LastErrorMessage = error;
     return PackageStatus::ConfigurationError;
   }
 
-  if (result.content.empty()) {
-    LOG(ERROR) << "AIT acquisition returned empty content";
-    m_LastErrorMessage = "AIT acquisition returned empty content";
-    return PackageStatus::ConfigurationError;
+  LOG(INFO) << "Successfully acquired " << result.aitFiles.size() << " AIT file(s)";
+
+  // Log any non-fatal errors encountered during acquisition
+  for (const auto& error : result.errors) {
+    LOG(WARNING) << "AIT acquisition warning: " << error;
   }
 
-  LOG(INFO) << "AIT XML retrieved successfully, content size: " << result.content.size();
-
-  // TODO Once the AIT XML is downloaded, we need to parse it to get the package URL.
+  // TODO: Process each AIT file to parse and extract package information
+  // for (const auto& aitFile : result.aitFiles) {
+  //   parseAitXml(aitFile);
+  // }
 
   return PackageStatus::UpdateAvailable;
 }
