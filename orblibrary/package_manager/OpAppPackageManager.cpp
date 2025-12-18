@@ -1,5 +1,5 @@
 #include "OpAppPackageManager.h"
-#include "OpAppAcquisition.h"
+#include "AitFetcher.h"
 
 #include <mutex>
 #include <filesystem>
@@ -92,11 +92,11 @@ OpAppPackageManager::OpAppPackageManager(
   const Configuration& configuration,
   std::unique_ptr<IHashCalculator> hashCalculator,
   std::unique_ptr<IDecryptor> decryptor,
-  std::unique_ptr<IOpAppAcquisition> acquisition)
+  std::unique_ptr<IAitFetcher> aitFetcher)
   : m_Configuration(configuration)
   , m_HashCalculator(std::move(hashCalculator))
   , m_Decryptor(std::move(decryptor))
-  , m_Acquisition(std::move(acquisition))
+  , m_AitFetcher(std::move(aitFetcher))
 {
   // Create default implementations if not provided
   if (!m_HashCalculator) {
@@ -105,9 +105,9 @@ OpAppPackageManager::OpAppPackageManager(
   if (!m_Decryptor) {
     m_Decryptor = std::make_unique<Decryptor>();
   }
-  if (!m_Acquisition) {
+  if (!m_AitFetcher) {
     // Pass User-Agent from configuration (TS 103 606 Section 6.1.5.1)
-    m_Acquisition = std::make_unique<OpAppAcquisition>(m_Configuration.m_UserAgent);
+    m_AitFetcher = std::make_unique<AitFetcher>(m_Configuration.m_UserAgent);
   }
 }
 
@@ -283,8 +283,8 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::doRemotePackageCheck()
     }
   }
 
-  // Use the injected acquisition interface to fetch ALL AIT XMLs
-  AcquisitionResult result = m_Acquisition->FetchAitXmls(
+  // Use the injected AIT fetcher to fetch ALL AIT XMLs
+  AitFetchResult result = m_AitFetcher->FetchAitXmls(
       m_Configuration.m_OpAppFqdn, true /* network available */, aitDir);
 
   if (!result.success || result.aitFiles.empty()) {

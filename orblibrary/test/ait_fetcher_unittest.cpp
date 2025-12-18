@@ -6,13 +6,13 @@
 #include <fstream>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "OpAppAcquisition.h"
+#include "AitFetcher.h"
 #include "SrvRecord.h"
-#include "OpAppAcquisitionTestInterface.h"
+#include "AitFetcherTestInterface.h"
 
 using namespace orb;
 
-class OpAppAcquisitionTest : public ::testing::Test {
+class AitFetcherTest : public ::testing::Test {
 protected:
     void SetUp() override {
     }
@@ -25,10 +25,10 @@ protected:
 // FQDN Validation Tests
 // =============================================================================
 
-TEST_F(OpAppAcquisitionTest, TestValidateFqdn_ValidFqdn)
+TEST_F(AitFetcherTest, TestValidateFqdn_ValidFqdn)
 {
     // GIVEN: a test interface instance
-    auto testInterface = OpAppAcquisitionTestInterface::create();
+    auto testInterface = AitFetcherTestInterface::create();
 
     // WHEN: validating a valid FQDN
     bool result = testInterface->validateFqdn("example.com");
@@ -37,10 +37,10 @@ TEST_F(OpAppAcquisitionTest, TestValidateFqdn_ValidFqdn)
     EXPECT_TRUE(result);
 }
 
-TEST_F(OpAppAcquisitionTest, TestValidateFqdn_EmptyString)
+TEST_F(AitFetcherTest, TestValidateFqdn_EmptyString)
 {
     // GIVEN: a test interface instance
-    auto testInterface = OpAppAcquisitionTestInterface::create();
+    auto testInterface = AitFetcherTestInterface::create();
 
     // WHEN: validating an empty string
     bool result = testInterface->validateFqdn("");
@@ -49,10 +49,10 @@ TEST_F(OpAppAcquisitionTest, TestValidateFqdn_EmptyString)
     EXPECT_FALSE(result);
 }
 
-TEST_F(OpAppAcquisitionTest, TestValidateFqdn_NoDot)
+TEST_F(AitFetcherTest, TestValidateFqdn_NoDot)
 {
     // GIVEN: a test interface instance
-    auto testInterface = OpAppAcquisitionTestInterface::create();
+    auto testInterface = AitFetcherTestInterface::create();
 
     // WHEN: validating an FQDN without a dot
     bool result = testInterface->validateFqdn("localhost");
@@ -61,10 +61,10 @@ TEST_F(OpAppAcquisitionTest, TestValidateFqdn_NoDot)
     EXPECT_FALSE(result);
 }
 
-TEST_F(OpAppAcquisitionTest, TestValidateFqdn_SubdomainFqdn)
+TEST_F(AitFetcherTest, TestValidateFqdn_SubdomainFqdn)
 {
     // GIVEN: a test interface instance
-    auto testInterface = OpAppAcquisitionTestInterface::create();
+    auto testInterface = AitFetcherTestInterface::create();
 
     // WHEN: validating an FQDN with subdomain
     bool result = testInterface->validateFqdn("sub.domain.example.com");
@@ -77,10 +77,10 @@ TEST_F(OpAppAcquisitionTest, TestValidateFqdn_SubdomainFqdn)
 // SRV Record Selection Tests
 // =============================================================================
 
-TEST_F(OpAppAcquisitionTest, TestSelectBestSrvRecord_EmptyList)
+TEST_F(AitFetcherTest, TestSelectBestSrvRecord_EmptyList)
 {
     // GIVEN: a test interface instance and an empty list
-    auto testInterface = OpAppAcquisitionTestInterface::create();
+    auto testInterface = AitFetcherTestInterface::create();
     std::vector<SrvRecord> records;
 
     // WHEN: selecting the best record
@@ -91,10 +91,10 @@ TEST_F(OpAppAcquisitionTest, TestSelectBestSrvRecord_EmptyList)
     EXPECT_EQ(best.port, 0);
 }
 
-TEST_F(OpAppAcquisitionTest, TestSelectBestSrvRecord_SingleRecord)
+TEST_F(AitFetcherTest, TestSelectBestSrvRecord_SingleRecord)
 {
     // GIVEN: a test interface instance and a single SRV record
-    auto testInterface = OpAppAcquisitionTestInterface::create();
+    auto testInterface = AitFetcherTestInterface::create();
     std::vector<SrvRecord> records = {
         SrvRecord(10, 100, 8080, "server.example.com")
     };
@@ -109,10 +109,10 @@ TEST_F(OpAppAcquisitionTest, TestSelectBestSrvRecord_SingleRecord)
     EXPECT_EQ(best.target, "server.example.com");
 }
 
-TEST_F(OpAppAcquisitionTest, TestSelectBestSrvRecord_PrioritySelection)
+TEST_F(AitFetcherTest, TestSelectBestSrvRecord_PrioritySelection)
 {
     // GIVEN: a test interface instance and multiple SRV records with different priorities
-    auto testInterface = OpAppAcquisitionTestInterface::create();
+    auto testInterface = AitFetcherTestInterface::create();
     std::vector<SrvRecord> records = {
         SrvRecord(20, 100, 8081, "backup.example.com"),
         SrvRecord(10, 100, 8080, "primary.example.com"),
@@ -127,10 +127,10 @@ TEST_F(OpAppAcquisitionTest, TestSelectBestSrvRecord_PrioritySelection)
     EXPECT_EQ(best.target, "primary.example.com");
 }
 
-TEST_F(OpAppAcquisitionTest, TestSelectBestSrvRecord_ZeroWeights)
+TEST_F(AitFetcherTest, TestSelectBestSrvRecord_ZeroWeights)
 {
     // GIVEN: multiple records with same priority and zero weights
-    auto testInterface = OpAppAcquisitionTestInterface::create();
+    auto testInterface = AitFetcherTestInterface::create();
     std::vector<SrvRecord> records = {
         SrvRecord(10, 0, 8080, "server1.example.com"),
         SrvRecord(10, 0, 8081, "server2.example.com")
@@ -148,10 +148,10 @@ TEST_F(OpAppAcquisitionTest, TestSelectBestSrvRecord_ZeroWeights)
 // popNextSrvRecord Tests
 // =============================================================================
 
-TEST_F(OpAppAcquisitionTest, TestPopNextSrvRecord_EmptyList)
+TEST_F(AitFetcherTest, TestPopNextSrvRecord_EmptyList)
 {
     // GIVEN: a test interface instance and an empty list
-    auto testInterface = OpAppAcquisitionTestInterface::create();
+    auto testInterface = AitFetcherTestInterface::create();
     std::vector<SrvRecord> records;
 
     // WHEN: getting the next record
@@ -165,10 +165,10 @@ TEST_F(OpAppAcquisitionTest, TestPopNextSrvRecord_EmptyList)
     EXPECT_TRUE(records.empty());
 }
 
-TEST_F(OpAppAcquisitionTest, TestPopNextSrvRecord_SingleRecord)
+TEST_F(AitFetcherTest, TestPopNextSrvRecord_SingleRecord)
 {
     // GIVEN: a test interface instance and a single SRV record
-    auto testInterface = OpAppAcquisitionTestInterface::create();
+    auto testInterface = AitFetcherTestInterface::create();
     std::vector<SrvRecord> records = {
         SrvRecord(10, 100, 8080, "server.example.com")
     };
@@ -186,10 +186,10 @@ TEST_F(OpAppAcquisitionTest, TestPopNextSrvRecord_SingleRecord)
     EXPECT_TRUE(records.empty());
 }
 
-TEST_F(OpAppAcquisitionTest, TestPopNextSrvRecord_MultipleRecords_RemovesSelected)
+TEST_F(AitFetcherTest, TestPopNextSrvRecord_MultipleRecords_RemovesSelected)
 {
     // GIVEN: a test interface instance and multiple SRV records
-    auto testInterface = OpAppAcquisitionTestInterface::create();
+    auto testInterface = AitFetcherTestInterface::create();
     std::vector<SrvRecord> records = {
         SrvRecord(20, 100, 8081, "backup.example.com"),
         SrvRecord(10, 100, 8080, "primary.example.com"),
@@ -212,10 +212,10 @@ TEST_F(OpAppAcquisitionTest, TestPopNextSrvRecord_MultipleRecords_RemovesSelecte
     }
 }
 
-TEST_F(OpAppAcquisitionTest, TestPopNextSrvRecord_IterateThroughAll)
+TEST_F(AitFetcherTest, TestPopNextSrvRecord_IterateThroughAll)
 {
     // GIVEN: a test interface instance and multiple SRV records with different priorities
-    auto testInterface = OpAppAcquisitionTestInterface::create();
+    auto testInterface = AitFetcherTestInterface::create();
     std::vector<SrvRecord> records = {
         SrvRecord(20, 100, 8081, "backup.example.com"),
         SrvRecord(10, 100, 8080, "primary.example.com"),
@@ -251,7 +251,7 @@ TEST_F(OpAppAcquisitionTest, TestPopNextSrvRecord_IterateThroughAll)
 // SrvRecord Struct Tests
 // =============================================================================
 
-TEST_F(OpAppAcquisitionTest, TestSrvRecord_DefaultConstructor)
+TEST_F(AitFetcherTest, TestSrvRecord_DefaultConstructor)
 {
     // GIVEN/WHEN: creating a default SrvRecord
     SrvRecord record;
@@ -263,7 +263,7 @@ TEST_F(OpAppAcquisitionTest, TestSrvRecord_DefaultConstructor)
     EXPECT_TRUE(record.target.empty());
 }
 
-TEST_F(OpAppAcquisitionTest, TestSrvRecord_ParameterizedConstructor)
+TEST_F(AitFetcherTest, TestSrvRecord_ParameterizedConstructor)
 {
     // GIVEN/WHEN: creating an SrvRecord with parameters
     SrvRecord record(10, 20, 8080, "server.example.com");
@@ -280,11 +280,11 @@ TEST_F(OpAppAcquisitionTest, TestSrvRecord_ParameterizedConstructor)
 // =============================================================================
 
 // Disabled - useful for manual testing with real DNS
-TEST_F(OpAppAcquisitionTest, DISABLED_TestDoDnsSrvLookup_ValidFqdn)
+TEST_F(AitFetcherTest, DISABLED_TestDoDnsSrvLookup_ValidFqdn)
 {
     // GIVEN: a test interface with a real-world FQDN
     const std::string fqdn = "test.freeviewplay.tv";
-    auto testInterface = OpAppAcquisitionTestInterface::create();
+    auto testInterface = AitFetcherTestInterface::create();
 
     // WHEN: performing DNS SRV lookup
     std::vector<SrvRecord> records = testInterface->doDnsSrvLookup(fqdn);
@@ -303,13 +303,13 @@ TEST_F(OpAppAcquisitionTest, DISABLED_TestDoDnsSrvLookup_ValidFqdn)
 }
 
 // =============================================================================
-// AcquisitionResult Tests
+// AitFetchResult Tests
 // =============================================================================
 
-TEST_F(OpAppAcquisitionTest, TestAcquisitionResult_DefaultConstructor)
+TEST_F(AitFetcherTest, TestAitFetchResult_DefaultConstructor)
 {
-    // GIVEN/WHEN: creating a default AcquisitionResult
-    AcquisitionResult result;
+    // GIVEN/WHEN: creating a default AitFetchResult
+    AitFetchResult result;
 
     // THEN: default values should indicate failure
     EXPECT_FALSE(result.success);
@@ -318,12 +318,12 @@ TEST_F(OpAppAcquisitionTest, TestAcquisitionResult_DefaultConstructor)
     EXPECT_TRUE(result.fatalError.empty());
 }
 
-TEST_F(OpAppAcquisitionTest, TestAcquisitionResult_FullSuccess)
+TEST_F(AitFetcherTest, TestAitFetchResult_FullSuccess)
 {
     // WHEN: creating a full success result with multiple files (no errors)
     std::vector<std::string> files = {"/tmp/ait_0_server1.xml", "/tmp/ait_1_server2.xml"};
     std::vector<std::string> noErrors;
-    AcquisitionResult result = AcquisitionResult(files, noErrors);
+    AitFetchResult result = AitFetchResult(files, noErrors);
 
     // THEN: values should indicate success
     EXPECT_TRUE(result.success);
@@ -334,10 +334,10 @@ TEST_F(OpAppAcquisitionTest, TestAcquisitionResult_FullSuccess)
     EXPECT_TRUE(result.fatalError.empty());
 }
 
-TEST_F(OpAppAcquisitionTest, TestAcquisitionResult_Failure)
+TEST_F(AitFetcherTest, TestAitFetchResult_Failure)
 {
     // WHEN: creating a failure result
-    AcquisitionResult result = AcquisitionResult("fatal error");
+    AitFetchResult result = AitFetchResult("fatal error");
 
     // THEN: values should indicate failure
     EXPECT_FALSE(result.success);
@@ -346,12 +346,12 @@ TEST_F(OpAppAcquisitionTest, TestAcquisitionResult_Failure)
     EXPECT_EQ(result.fatalError, "fatal error");
 }
 
-TEST_F(OpAppAcquisitionTest, TestAcquisitionResult_PartialSuccess)
+TEST_F(AitFetcherTest, TestAitFetchResult_PartialSuccess)
 {
     // WHEN: creating a partial success result
     std::vector<std::string> files = {"/tmp/ait_0_server1.xml"};
     std::vector<std::string> errors = {"Failed to download from server2"};
-    AcquisitionResult result = AcquisitionResult(files, errors);
+    AitFetchResult result = AitFetchResult(files, errors);
 
     // THEN: values should indicate partial success
     EXPECT_TRUE(result.success);
@@ -360,12 +360,12 @@ TEST_F(OpAppAcquisitionTest, TestAcquisitionResult_PartialSuccess)
     EXPECT_EQ(result.errors[0], "Failed to download from server2");
 }
 
-TEST_F(OpAppAcquisitionTest, TestAcquisitionResult_PartialSuccess_NoFiles)
+TEST_F(AitFetcherTest, TestAitFetchResult_PartialSuccess_NoFiles)
 {
     // WHEN: creating a partial success result with no files (all failed)
     std::vector<std::string> files;
     std::vector<std::string> errors = {"Failed from server1", "Failed from server2"};
-    AcquisitionResult result = AcquisitionResult(files, errors);
+    AitFetchResult result = AitFetchResult(files, errors);
 
     // THEN: success should be false since no files were acquired
     EXPECT_FALSE(result.success);
@@ -377,13 +377,13 @@ TEST_F(OpAppAcquisitionTest, TestAcquisitionResult_PartialSuccess_NoFiles)
 // FetchAitXmls Tests
 // =============================================================================
 
-TEST_F(OpAppAcquisitionTest, TestFetchAitXmls_NetworkUnavailable)
+TEST_F(AitFetcherTest, TestFetchAitXmls_NetworkUnavailable)
 {
     // GIVEN: a test interface
-    auto testInterface = OpAppAcquisitionTestInterface::create();
+    auto testInterface = AitFetcherTestInterface::create();
 
     // WHEN: fetching all AITs with network unavailable
-    AcquisitionResult result = testInterface->FetchAitXmls(
+    AitFetchResult result = testInterface->FetchAitXmls(
         "example.com", false, "/tmp/test_ait");
 
     // THEN: the result should indicate failure
@@ -392,13 +392,13 @@ TEST_F(OpAppAcquisitionTest, TestFetchAitXmls_NetworkUnavailable)
     EXPECT_TRUE(result.aitFiles.empty());
 }
 
-TEST_F(OpAppAcquisitionTest, TestFetchAitXmls_InvalidFqdn)
+TEST_F(AitFetcherTest, TestFetchAitXmls_InvalidFqdn)
 {
     // GIVEN: a test interface
-    auto testInterface = OpAppAcquisitionTestInterface::create();
+    auto testInterface = AitFetcherTestInterface::create();
 
     // WHEN: fetching all AITs with invalid FQDN
-    AcquisitionResult result = testInterface->FetchAitXmls(
+    AitFetchResult result = testInterface->FetchAitXmls(
         "invalid", true, "/tmp/test_ait");
 
     // THEN: the result should indicate failure
@@ -406,13 +406,13 @@ TEST_F(OpAppAcquisitionTest, TestFetchAitXmls_InvalidFqdn)
     EXPECT_FALSE(result.fatalError.empty());
 }
 
-TEST_F(OpAppAcquisitionTest, TestFetchAitXmls_EmptyFqdn)
+TEST_F(AitFetcherTest, TestFetchAitXmls_EmptyFqdn)
 {
     // GIVEN: a test interface
-    auto testInterface = OpAppAcquisitionTestInterface::create();
+    auto testInterface = AitFetcherTestInterface::create();
 
     // WHEN: fetching all AITs with empty FQDN
-    AcquisitionResult result = testInterface->FetchAitXmls(
+    AitFetchResult result = testInterface->FetchAitXmls(
         "", true, "/tmp/test_ait");
 
     // THEN: the result should indicate failure
@@ -420,13 +420,13 @@ TEST_F(OpAppAcquisitionTest, TestFetchAitXmls_EmptyFqdn)
     EXPECT_FALSE(result.fatalError.empty());
 }
 
-TEST_F(OpAppAcquisitionTest, TestFetchAitXmls_EmptyOutputDirectory)
+TEST_F(AitFetcherTest, TestFetchAitXmls_EmptyOutputDirectory)
 {
     // GIVEN: a test interface
-    auto testInterface = OpAppAcquisitionTestInterface::create();
+    auto testInterface = AitFetcherTestInterface::create();
 
     // WHEN: fetching all AITs with empty output directory
-    AcquisitionResult result = testInterface->FetchAitXmls(
+    AitFetchResult result = testInterface->FetchAitXmls(
         "example.com", true, "");
 
     // THEN: the result should indicate failure
@@ -434,10 +434,10 @@ TEST_F(OpAppAcquisitionTest, TestFetchAitXmls_EmptyOutputDirectory)
     EXPECT_EQ(result.fatalError, "Output directory not specified");
 }
 
-TEST_F(OpAppAcquisitionTest, TestStaticFetch_NetworkUnavailable)
+TEST_F(AitFetcherTest, TestStaticFetch_NetworkUnavailable)
 {
     // WHEN: using static fetch all with network unavailable
-    AcquisitionResult result = OpAppAcquisitionTestInterface::StaticFetch(
+    AitFetchResult result = AitFetcherTestInterface::StaticFetch(
         "example.com", false, "/tmp/test_ait");
 
     // THEN: the result should indicate failure
@@ -445,10 +445,10 @@ TEST_F(OpAppAcquisitionTest, TestStaticFetch_NetworkUnavailable)
     EXPECT_FALSE(result.fatalError.empty());
 }
 
-TEST_F(OpAppAcquisitionTest, TestStaticFetch_InvalidFqdn)
+TEST_F(AitFetcherTest, TestStaticFetch_InvalidFqdn)
 {
     // WHEN: using static fetch all with invalid FQDN
-    AcquisitionResult result = OpAppAcquisitionTestInterface::StaticFetch(
+    AitFetchResult result = AitFetcherTestInterface::StaticFetch(
         "invalid", true, "/tmp/test_ait");
 
     // THEN: the result should indicate failure
@@ -459,10 +459,10 @@ TEST_F(OpAppAcquisitionTest, TestStaticFetch_InvalidFqdn)
 // Helper Function Tests
 // =============================================================================
 
-TEST_F(OpAppAcquisitionTest, TestGenerateAitFilename_SimpleHostname)
+TEST_F(AitFetcherTest, TestGenerateAitFilename_SimpleHostname)
 {
     // GIVEN: a test interface
-    auto testInterface = OpAppAcquisitionTestInterface::create();
+    auto testInterface = AitFetcherTestInterface::create();
 
     // WHEN: generating a filename for a simple hostname
     std::string filename = testInterface->generateAitFilename(0, "server.example.com");
@@ -471,10 +471,10 @@ TEST_F(OpAppAcquisitionTest, TestGenerateAitFilename_SimpleHostname)
     EXPECT_EQ(filename, "ait_0_server.example.com.xml");
 }
 
-TEST_F(OpAppAcquisitionTest, TestGenerateAitFilename_SpecialCharacters)
+TEST_F(AitFetcherTest, TestGenerateAitFilename_SpecialCharacters)
 {
     // GIVEN: a test interface
-    auto testInterface = OpAppAcquisitionTestInterface::create();
+    auto testInterface = AitFetcherTestInterface::create();
 
     // WHEN: generating a filename with special characters in hostname
     std::string filename = testInterface->generateAitFilename(1, "server:8080/path?query=1");
@@ -483,10 +483,10 @@ TEST_F(OpAppAcquisitionTest, TestGenerateAitFilename_SpecialCharacters)
     EXPECT_EQ(filename, "ait_1_server_8080_path_query_1.xml");
 }
 
-TEST_F(OpAppAcquisitionTest, TestGenerateAitFilename_MultipleIndices)
+TEST_F(AitFetcherTest, TestGenerateAitFilename_MultipleIndices)
 {
     // GIVEN: a test interface
-    auto testInterface = OpAppAcquisitionTestInterface::create();
+    auto testInterface = AitFetcherTestInterface::create();
 
     // WHEN: generating filenames with different indices
     std::string filename0 = testInterface->generateAitFilename(0, "server.com");
@@ -499,11 +499,11 @@ TEST_F(OpAppAcquisitionTest, TestGenerateAitFilename_MultipleIndices)
     EXPECT_EQ(filename99, "ait_99_server.com.xml");
 }
 
-TEST_F(OpAppAcquisitionTest, TestWriteAitToFile_Success)
+TEST_F(AitFetcherTest, TestWriteAitToFile_Success)
 {
     // GIVEN: a test interface and a temporary directory
-    auto testInterface = OpAppAcquisitionTestInterface::create();
-    std::string testDir = "/tmp/opapp_test_" + std::to_string(getpid());
+    auto testInterface = AitFetcherTestInterface::create();
+    std::string testDir = "/tmp/ait_fetcher_test_" + std::to_string(getpid());
     std::filesystem::create_directories(testDir);
     std::string testFile = testDir + "/test_ait.xml";
     std::string content = "<?xml version=\"1.0\"?><ait>test content</ait>";
@@ -525,11 +525,11 @@ TEST_F(OpAppAcquisitionTest, TestWriteAitToFile_Success)
     std::filesystem::remove_all(testDir);
 }
 
-TEST_F(OpAppAcquisitionTest, TestWriteAitToFile_CreatesParentDirectory)
+TEST_F(AitFetcherTest, TestWriteAitToFile_CreatesParentDirectory)
 {
     // GIVEN: a test interface and a path with non-existent parent directory
-    auto testInterface = OpAppAcquisitionTestInterface::create();
-    std::string testDir = "/tmp/opapp_test_" + std::to_string(getpid());
+    auto testInterface = AitFetcherTestInterface::create();
+    std::string testDir = "/tmp/ait_fetcher_test_" + std::to_string(getpid());
     std::string testFile = testDir + "/test_ait.xml";
     std::string content = "<?xml version=\"1.0\"?><ait>test</ait>";
 
@@ -547,11 +547,11 @@ TEST_F(OpAppAcquisitionTest, TestWriteAitToFile_CreatesParentDirectory)
     std::filesystem::remove_all(testDir);
 }
 
-TEST_F(OpAppAcquisitionTest, TestWriteAitToFile_EmptyContent)
+TEST_F(AitFetcherTest, TestWriteAitToFile_EmptyContent)
 {
     // GIVEN: a test interface and empty content
-    auto testInterface = OpAppAcquisitionTestInterface::create();
-    std::string testDir = "/tmp/opapp_test_" + std::to_string(getpid());
+    auto testInterface = AitFetcherTestInterface::create();
+    std::string testDir = "/tmp/ait_fetcher_test_" + std::to_string(getpid());
     std::filesystem::create_directories(testDir);
     std::string testFile = testDir + "/empty_ait.xml";
 
@@ -567,10 +567,10 @@ TEST_F(OpAppAcquisitionTest, TestWriteAitToFile_EmptyContent)
     std::filesystem::remove_all(testDir);
 }
 
-TEST_F(OpAppAcquisitionTest, TestWriteAitToFile_InvalidPath)
+TEST_F(AitFetcherTest, TestWriteAitToFile_InvalidPath)
 {
     // GIVEN: a test interface and an invalid path
-    auto testInterface = OpAppAcquisitionTestInterface::create();
+    auto testInterface = AitFetcherTestInterface::create();
     std::string invalidPath = "/nonexistent_root_dir_12345/subdir/test.xml";
 
     // WHEN: writing to an invalid path
@@ -584,15 +584,15 @@ TEST_F(OpAppAcquisitionTest, TestWriteAitToFile_InvalidPath)
 // Disabled Integration Tests - For manual testing with real DNS/network
 // =============================================================================
 
-TEST_F(OpAppAcquisitionTest, DISABLED_TestFetchAitXmls_ValidFqdn)
+TEST_F(AitFetcherTest, DISABLED_TestFetchAitXmls_ValidFqdn)
 {
     // GIVEN: a test interface with a real-world FQDN
     const std::string fqdn = "test.freeviewplay.tv";
-    auto testInterface = OpAppAcquisitionTestInterface::create();
-    std::string testDir = "/tmp/opapp_ait_test_" + std::to_string(getpid());
+    auto testInterface = AitFetcherTestInterface::create();
+    std::string testDir = "/tmp/ait_fetcher_test_" + std::to_string(getpid());
 
     // WHEN: fetching all AITs
-    AcquisitionResult result = testInterface->FetchAitXmls(fqdn, true, testDir);
+    AitFetchResult result = testInterface->FetchAitXmls(fqdn, true, testDir);
 
     // THEN: on success, at least one AIT file should be created
     if (result.success) {
@@ -619,21 +619,22 @@ TEST_F(OpAppAcquisitionTest, DISABLED_TestFetchAitXmls_ValidFqdn)
     std::filesystem::remove_all(testDir);
 }
 
-TEST_F(OpAppAcquisitionTest, DISABLED_TestStaticFetch_ValidFqdn)
+TEST_F(AitFetcherTest, DISABLED_TestStaticFetch_ValidFqdn)
 {
     // WHEN: using static fetch all with valid FQDN
     const std::string fqdn = "test.freeviewplay.tv";
-    std::string testDir = "/tmp/opapp_static_ait_test_" + std::to_string(getpid());
-    AcquisitionResult result = OpAppAcquisition::Fetch(fqdn, true, testDir);
+    std::string testDir = "/tmp/ait_fetcher_static_test_" + std::to_string(getpid());
+    AitFetchResult result = AitFetcher::Fetch(fqdn, true, testDir);
 
     // THEN: on success, at least one AIT file should be created
     if (result.success) {
         EXPECT_FALSE(result.aitFiles.empty());
-        std::cout << "Static FetchAll acquired " << result.aitFiles.size() << " AIT file(s)" << std::endl;
+        std::cout << "Static Fetch acquired " << result.aitFiles.size() << " AIT file(s)" << std::endl;
     } else {
-        std::cout << "Static FetchAll failed: " << result.fatalError << std::endl;
+        std::cout << "Static Fetch failed: " << result.fatalError << std::endl;
     }
 
     // Cleanup
     std::filesystem::remove_all(testDir);
 }
+

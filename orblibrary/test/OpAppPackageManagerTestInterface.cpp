@@ -1,6 +1,6 @@
 #include "OpAppPackageManagerTestInterface.h"
 #include "OpAppPackageManager.h"
-#include "OpAppAcquisition.h"  // For IOpAppAcquisition
+#include "AitFetcher.h"  // For IAitFetcher
 
 namespace orb
 {
@@ -26,10 +26,10 @@ std::unique_ptr<OpAppPackageManagerTestInterface> OpAppPackageManagerTestInterfa
     const OpAppPackageManager::Configuration& configuration,
     std::unique_ptr<IHashCalculator> hashCalculator,
     std::unique_ptr<IDecryptor> decryptor,
-    std::unique_ptr<IOpAppAcquisition> acquisition)
+    std::unique_ptr<IAitFetcher> aitFetcher)
 {
     auto packageManager = std::make_unique<OpAppPackageManager>(
-        configuration, std::move(hashCalculator), std::move(decryptor), std::move(acquisition));
+        configuration, std::move(hashCalculator), std::move(decryptor), std::move(aitFetcher));
     return std::unique_ptr<OpAppPackageManagerTestInterface>(new OpAppPackageManagerTestInterface(std::move(packageManager)));
 }
 

@@ -28,7 +28,7 @@ namespace orb
 {
 
 // Forward declaration
-class IOpAppAcquisition;
+class IAitFetcher;
 
 // Error handling structure for package operations
 struct PackageOperationResult {
@@ -142,7 +142,7 @@ public:
     const Configuration& configuration,
     std::unique_ptr<IHashCalculator> hashCalculator,
     std::unique_ptr<IDecryptor> decryptor,
-    std::unique_ptr<IOpAppAcquisition> acquisition);
+    std::unique_ptr<IAitFetcher> aitFetcher);
 
   ~OpAppPackageManager();
 
@@ -278,7 +278,7 @@ private:
   std::string m_LastErrorMessage;
   std::unique_ptr<IHashCalculator> m_HashCalculator;
   std::unique_ptr<IDecryptor> m_Decryptor;
-  std::unique_ptr<IOpAppAcquisition> m_Acquisition;
+  std::unique_ptr<IAitFetcher> m_AitFetcher;
 
   std::string m_CandidatePackageFile;
   std::string m_CandidatePackageHash;

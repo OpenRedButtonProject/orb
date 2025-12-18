@@ -1,14 +1,14 @@
-#ifndef OP_APP_ACQUISITION_TEST_INTERFACE_H
-#define OP_APP_ACQUISITION_TEST_INTERFACE_H
+#ifndef AIT_FETCHER_TEST_INTERFACE_H
+#define AIT_FETCHER_TEST_INTERFACE_H
 
-#include "OpAppAcquisition.h"
+#include "AitFetcher.h"
 #include "SrvRecord.h"
 #include <memory>
 #include <string>
 #include <vector>
 
 /**
- * @brief Test interface for OpAppAcquisition that provides controlled access
+ * @brief Test interface for AitFetcher that provides controlled access
  * to internal functionality for testing purposes while maintaining encapsulation.
  *
  * This interface should only be used in test code.
@@ -16,26 +16,26 @@
 namespace orb
 {
 
-class OpAppAcquisitionTestInterface
+class AitFetcherTestInterface
 {
 public:
     /**
-     * @brief Creates a test interface for OpAppAcquisition
+     * @brief Creates a test interface for AitFetcher
      * @param userAgent HTTP User-Agent header value (default: empty)
      * @return A test interface instance
      */
-    static std::unique_ptr<OpAppAcquisitionTestInterface> create(const std::string& userAgent = "");
+    static std::unique_ptr<AitFetcherTestInterface> create(const std::string& userAgent = "");
 
     /**
      * @brief Destructor
      */
-    ~OpAppAcquisitionTestInterface();
+    ~AitFetcherTestInterface();
 
     // Prevent copying and moving
-    OpAppAcquisitionTestInterface(const OpAppAcquisitionTestInterface&) = delete;
-    OpAppAcquisitionTestInterface& operator=(const OpAppAcquisitionTestInterface&) = delete;
-    OpAppAcquisitionTestInterface(OpAppAcquisitionTestInterface&&) = delete;
-    OpAppAcquisitionTestInterface& operator=(OpAppAcquisitionTestInterface&&) = delete;
+    AitFetcherTestInterface(const AitFetcherTestInterface&) = delete;
+    AitFetcherTestInterface& operator=(const AitFetcherTestInterface&) = delete;
+    AitFetcherTestInterface(AitFetcherTestInterface&&) = delete;
+    AitFetcherTestInterface& operator=(AitFetcherTestInterface&&) = delete;
 
     /**
      * @brief Validates an FQDN string
@@ -70,20 +70,20 @@ public:
      * @param fqdn The FQDN to query
      * @param networkAvailable Whether network is available
      * @param outputDirectory Directory where AIT files will be written
-     * @return AcquisitionResult with file paths and status
+     * @return AitFetchResult with file paths and status
      */
-    AcquisitionResult FetchAitXmls(const std::string& fqdn, bool networkAvailable,
-                                             const std::string& outputDirectory);
+    AitFetchResult FetchAitXmls(const std::string& fqdn, bool networkAvailable,
+                                const std::string& outputDirectory);
 
     /**
      * @brief Static fetch method test (convenience wrapper)
      * @param fqdn The FQDN to query
      * @param networkAvailable Whether network is available
      * @param outputDirectory Directory where AIT files will be written
-     * @return AcquisitionResult with file paths and status
+     * @return AitFetchResult with file paths and status
      */
-    static AcquisitionResult StaticFetch(const std::string& fqdn, bool networkAvailable,
-                                         const std::string& outputDirectory);
+    static AitFetchResult StaticFetch(const std::string& fqdn, bool networkAvailable,
+                                      const std::string& outputDirectory);
 
     /**
      * @brief Test helper to generate an AIT filename
@@ -102,11 +102,12 @@ public:
     bool writeAitToFile(const std::string& content, const std::string& filePath);
 
 private:
-    explicit OpAppAcquisitionTestInterface(const std::string& userAgent);
+    explicit AitFetcherTestInterface(const std::string& userAgent);
 
-    std::unique_ptr<OpAppAcquisition> m_acquisition;
+    std::unique_ptr<AitFetcher> m_fetcher;
 };
 
 } // namespace orb
 
-#endif /* OP_APP_ACQUISITION_TEST_INTERFACE_H */
+#endif /* AIT_FETCHER_TEST_INTERFACE_H */
+

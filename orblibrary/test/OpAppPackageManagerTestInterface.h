@@ -9,7 +9,7 @@ namespace orb
 {
 
 // Forward declaration
-class IOpAppAcquisition;
+class IAitFetcher;
 
 /**
  * @brief Test interface for OpAppPackageManager that provides controlled access
@@ -54,7 +54,7 @@ public:
         const OpAppPackageManager::Configuration& configuration,
         std::unique_ptr<IHashCalculator> hashCalculator,
         std::unique_ptr<IDecryptor> decryptor,
-        std::unique_ptr<IOpAppAcquisition> acquisition);
+        std::unique_ptr<IAitFetcher> aitFetcher);
 
     /**
      * @brief Destructor
