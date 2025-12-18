@@ -29,7 +29,6 @@
 
 #include "log.h"
 #include "utils.h"
-#include "application_manager.h"
 
 #define DTAG_APP_DESC 0x00
 #define DTAG_APP_NAME 0x01
@@ -47,6 +46,9 @@
 
 namespace orb
 {
+
+// Helper to convert uint8_t to int for stream logging (uint8_t is treated as char otherwise)
+static inline int u8(uint8_t val) { return static_cast<int>(val); }
 
 /**
  * Get the last completed AIT table. This value may be invalidated by calling ProcessSection(),
@@ -86,14 +88,14 @@ bool Ait::ProcessSection(const uint8_t *data, uint32_t nbytes)
         aitSize = ((static_cast<uint32_t>(data[1]) << 8u | data[2]) & 0xFFFu) + 3;
         if (nbytes != aitSize)
         {
-            LOG(LOG_ERROR, "Ait::ProcessSection Data size mismatch %d/%d.", nbytes, aitSize);
+            LOG(ERROR) << "Ait::ProcessSection Data size mismatch " << nbytes << "/" << aitSize;
 
             return updated;
         }
     }
     else
     {
-        LOG(LOG_ERROR, "Ait::ProcessSection Data size too small.");
+        LOG(ERROR) << "Ait::ProcessSection Data size too small.";
 
         return updated;
     }
@@ -160,14 +162,12 @@ const Ait::S_AIT_APP_DESC * Ait::AutoStartApp(const S_AIT_TABLE *aitTable, int
                         }
                         else
                         {
-                            LOG(LOG_ERROR, "Ait::AutoStartApp '%d' profile not supported.",
-                                ad.appProfile);
+                            LOG(ERROR) << "Ait::AutoStartApp '" << ad.appProfile << "' profile not supported.";
                         }
                     }
                     else
                     {
-                        LOG(LOG_ERROR, "Ait::AutoStartApp %d.%d.%d Version not supported.",
-                            ad.versionMajor, ad.versionMinor, ad.versionMicro);
+                        LOG(ERROR) << "Ait::AutoStartApp " << u8(ad.versionMajor) << "." << u8(ad.versionMinor) << "." << u8(ad.versionMicro) << " Version not supported.";
                     }
                 }
                 if (!supported)
@@ -179,9 +179,9 @@ const Ait::S_AIT_APP_DESC * Ait::AutoStartApp(const S_AIT_TABLE *aitTable, int
                 if (IsAgeRestricted(candidate->parentalRatings, parentalControlAge,
                     parentalControlRegion, parentalControlRegion3))
                 {
-                    LOG(LOG_DEBUG,
-                        "Parental Control Age RESTRICTED for %s: only %d content accepted",
-                        parentalControlRegion.c_str(), parentalControlAge);
+                    LOG(DEBUG) <<
+                        "Parental Control Age RESTRICTED for "
+                        << parentalControlRegion << ": only " << parentalControlAge << " content accepted";
                     continue;
                 }
 
@@ -310,47 +310,40 @@ bool Ait::PrintInfo(const S_AIT_TABLE *parsedAit)
     const S_AIT_TABLE *sTable;
 
     sTable = parsedAit;
-    LOG(LOG_INFO, "Available apps: %d", sTable->numApps);
+    LOG(INFO) << "Available apps: " << u8(sTable->numApps);
     for (int i = 0; i < sTable->numApps; i++)
     {
-        LOG(LOG_INFO, "HbbTVApp(%d):", i);
+        LOG(INFO) << "HbbTVApp(" << i << "):";
         hAitApp = sTable->appArray[i];
-        LOG(LOG_INFO, "\tApplication ID: %d", hAitApp.appId);
-        LOG(LOG_INFO, "\tOrganization ID: %d", hAitApp.orgId);
-        LOG(LOG_INFO, "\tClassification scheme: %s", hAitApp.scheme.c_str());
-        LOG(LOG_INFO, "\tNumber of transports: %d", hAitApp.numTransports);
+        LOG(INFO) << "\tApplication ID: " << hAitApp.appId;
+        LOG(INFO) << "\tOrganization ID: " << hAitApp.orgId;
+        LOG(INFO) << "\tClassification scheme: " << hAitApp.scheme;
+        LOG(INFO) << "\tNumber of transports: " << u8(hAitApp.numTransports);
         for (int j = 0; j < hAitApp.numTransports; j++)
         {
-            LOG(LOG_INFO, "\t\tTransport ID: %d ", (uint8_t)hAitApp.transportArray[j].protocolId);
+            LOG(INFO) << "\t\tTransport ID: " << hAitApp.transportArray[j].protocolId;
             switch (hAitApp.transportArray[j].protocolId)
             {
                 case 3:
                 {
-                    LOG(LOG_INFO, "\t\t\tBase URL: %s",
-                        hAitApp.transportArray[j].url.baseUrl.c_str());
+                    LOG(INFO) << "\t\t\tBase URL: " << hAitApp.transportArray[j].url.baseUrl;
                     iExtUrl = hAitApp.transportArray[j].url.extensionUrls.size();
                     if (iExtUrl > 1)
                     {
                         for (int k = 1; k < iExtUrl; k++)
                         {
-                            LOG(LOG_INFO, "\t\t\tExtension url(%d): %s", k,
-                                hAitApp.transportArray[j].url.extensionUrls[k].c_str());
+                            LOG(INFO) << "\t\t\tExtension url(" << k << "): " << hAitApp.transportArray[j].url.extensionUrls[k];
                         }
                     }
                     break;
                 }
                 case 1:
                 {
-                    LOG(LOG_INFO, "\t\t\tRemote connection: %d",
-                        hAitApp.transportArray[j].oc.remoteConnection);
-                    LOG(LOG_INFO, "\t\t\tNet ID: %u",
-                        hAitApp.transportArray[j].oc.dvb.originalNetworkId);
-                    LOG(LOG_INFO, "\t\t\tStream ID: %u",
-                        hAitApp.transportArray[j].oc.dvb.transportStreamId);
-                    LOG(LOG_INFO, "\t\t\tService ID: %u",
-                        hAitApp.transportArray[j].oc.dvb.serviceId);
-                    LOG(LOG_INFO, "\t\t\tComponent tag: %d",
-                        hAitApp.transportArray[j].oc.componentTag);
+                    LOG(INFO) << "\t\t\tRemote connection: " << hAitApp.transportArray[j].oc.remoteConnection;
+                    LOG(INFO) << "\t\t\tNet ID: " << hAitApp.transportArray[j].oc.dvb.originalNetworkId;
+                    LOG(INFO) << "\t\t\tStream ID: " << hAitApp.transportArray[j].oc.dvb.transportStreamId;
+                    LOG(INFO) << "\t\t\tService ID: " << hAitApp.transportArray[j].oc.dvb.serviceId;
+                    LOG(INFO) << "\t\t\tComponent tag: " << u8(hAitApp.transportArray[j].oc.componentTag);
                     break;
                 }
                 default:
@@ -359,40 +352,32 @@ bool Ait::PrintInfo(const S_AIT_TABLE *parsedAit)
                 }
             }
         }
-        LOG(LOG_INFO, "\t\tLocation: %s", hAitApp.location.c_str());
+        LOG(INFO) << "\t\tLocation: " << hAitApp.location;
         for (int j = 0; j < hAitApp.appName.numLangs; j++)
         {
-            LOG(LOG_INFO, "\t\tName(%d): %s (lang code: %c%c%c)", j,
-                hAitApp.appName.names[j].name.c_str(),
-                (hAitApp.appName.names[j].langCode >> 16u) & 0xFFu,
-                (hAitApp.appName.names[j].langCode >> 8u) & 0xFFu,
-                hAitApp.appName.names[j].langCode & 0xFFu);
+            LOG(INFO) << "\t\tName(" << j << "): " << hAitApp.appName.names[j].name << " (lang code: "
+            << static_cast<char>((hAitApp.appName.names[j].langCode >> 16u) & 0xFFu)
+            << static_cast<char>((hAitApp.appName.names[j].langCode >> 8u) & 0xFFu)
+            << static_cast<char>(hAitApp.appName.names[j].langCode & 0xFFu) << ")";
         }
-        LOG(LOG_INFO, "\t\tXML type: %d", hAitApp.xmlType);
-        LOG(LOG_INFO, "\t\tXML version: %d", hAitApp.xmlVersion);
-        LOG(LOG_INFO, "\t\tUsage type: %d", hAitApp.usageType);
-        LOG(LOG_INFO, "\t\tVisibility: %d", hAitApp.appDesc.visibility);
-        LOG(LOG_INFO, "\t\tPriority: %d", hAitApp.appDesc.priority);
-        LOG(LOG_INFO, "\t\tService bound: %d", hAitApp.appDesc.serviceBound);
+        LOG(INFO) << "\t\tXML type: " << u8(hAitApp.xmlType);
+        LOG(INFO) << "\t\tXML version: " << u8(hAitApp.xmlVersion);
+        LOG(INFO) << "\t\tUsage type: " << u8(hAitApp.usageType);
+        LOG(INFO) << "\t\tVisibility: " << u8(hAitApp.appDesc.visibility);
+        LOG(INFO) << "\t\tPriority: " << u8(hAitApp.appDesc.priority);
+        LOG(INFO) << "\t\tService bound: " << hAitApp.appDesc.serviceBound;
         for (unsigned int j = 0; j < hAitApp.appDesc.appProfiles.size(); j++)
         {
-            LOG(LOG_INFO, "\t\tProfile(%d): %d, version %d.%d.%d", j,
-                hAitApp.appDesc.appProfiles[j].appProfile,
-                hAitApp.appDesc.appProfiles[j].versionMajor,
-                hAitApp.appDesc.appProfiles[j].versionMinor,
-                hAitApp.appDesc.appProfiles[j].versionMicro);
+            LOG(INFO) << "\t\tProfile(" << j << "): " << hAitApp.appDesc.appProfiles[j].appProfile << ", version " << u8(hAitApp.appDesc.appProfiles[j].versionMajor) << "." << u8(hAitApp.appDesc.appProfiles[j].versionMinor) << "." << u8(hAitApp.appDesc.appProfiles[j].versionMicro);
         }
         for (int j = 0, num_boundaries = hAitApp.boundaries.size(); j < num_boundaries; j++)
         {
-            LOG(LOG_INFO, "\t\tBoundary(%d): %s", j, hAitApp.boundaries[j].c_str());
+            LOG(INFO) << "\t\tBoundary(" << j << "): " << hAitApp.boundaries[j];
         }
-        LOG(LOG_INFO, "\t\tControl code: %d", hAitApp.controlCode);
+        LOG(INFO) << "\t\tControl code: " << u8(hAitApp.controlCode);
         for (int j = 0, num_prs = hAitApp.parentalRatings.size(); j < num_prs; j++)
         {
-            LOG(LOG_INFO, "\t\tParentalRating(%d): %d Scheme: %s Region: %s", j,
-                hAitApp.parentalRatings[j].value,
-                hAitApp.parentalRatings[j].scheme.c_str(),
-                hAitApp.parentalRatings[j].region.c_str());
+            LOG(INFO) << "\t\tParentalRating(" << j << "): " << u8(hAitApp.parentalRatings[j].value) << " Scheme: " << hAitApp.parentalRatings[j].scheme << " Region: " << hAitApp.parentalRatings[j].region;
         }
         if (!hAitApp.graphicsConstraints.empty())
         {
@@ -402,7 +387,7 @@ bool Ait::PrintInfo(const S_AIT_TABLE *parsedAit)
                 std::string sep = (j < hAitApp.graphicsConstraints.size() - 1) ? "p, " : "p";
                 ss << std::to_string(hAitApp.graphicsConstraints[j]) << sep;
             }
-            LOG(LOG_INFO, "\t\tGraphics constraints: %s", ss.str().c_str());
+            LOG(INFO) << "\t\tGraphics constraints: " << ss.str();
         }
     }
     return true;
@@ -456,14 +441,14 @@ std::string Ait::ExtractBaseURL(const Ait::S_AIT_APP_DESC &appDescription,
         }
         else
         {
-            LOG(LOG_ERROR, "transport[%u] is not viable!", ti);
+            LOG(ERROR) << "transport[" << ti << "] is not viable!";
         }
     }
     if (result.empty())
     {
         // There are no valid transports for appDescription, but we should never get here because,
         // Ait::HasViableTransport should have been called and the return checked before calling this function
-        LOG(LOG_ERROR, "Eek! no valid transports");
+        LOG(ERROR) << "Eek! no valid transports";
         //ASSERT(0);
     }
     return result;
@@ -577,18 +562,15 @@ void Ait::ParseAppDesc(const uint8_t *dataPtr, S_APP_DESC *desc)
 #ifdef ANDROID_DEBUG
         {
             uint8_t num;
-            LOG(LOG_DEBUG, "\tapp desc: bound=%u, visibility=%u, priority=%u", desc->serviceBound,
-                desc->visibility, desc->priority);
+            LOG(DEBUG) << "\tapp desc: bound=" << desc->serviceBound << ", visibility=" << u8(desc->visibility) << ", priority=" << u8(desc->priority);
             for (num = 0; num < desc->appProfiles.size(); num++)
             {
-                LOG(LOG_DEBUG,
-                    "\tprofile %u: profile=0x%04x, major=%u, minor=%u, micro=%u", num,
-                    desc->appProfiles[num].appProfile, desc->appProfiles[num].versionMajor,
-                    desc->appProfiles[num].versionMinor, desc->appProfiles[num].versionMicro);
+                LOG(DEBUG) <<
+                    "\tprofile " << num << ": profile=0x" << std::hex << desc->appProfiles[num].appProfile << ", major=" << desc->appProfiles[num].versionMajor << ", minor=" << desc->appProfiles[num].versionMinor << ", micro=" << desc->appProfiles[num].versionMicro;
             }
             for (num = 0; num < desc->numLabels; num++)
             {
-                LOG(LOG_DEBUG, "\tlabel %u: 0x%02x", num, desc->transportProtocolLabels[num]);
+                LOG(DEBUG) << "\tlabel " << u8(num) << ": 0x" << std::hex << u8(desc->transportProtocolLabels[num]);
             }
         }
 #endif
@@ -596,7 +578,7 @@ void Ait::ParseAppDesc(const uint8_t *dataPtr, S_APP_DESC *desc)
     else
     {
         /* Already parsed for this application, skip */
-        LOG(LOG_DEBUG, "Ait::ParseAppDesc Already parsed for this app, skipping");
+        LOG(DEBUG) << "Ait::ParseAppDesc Already parsed for this app, skipping";
     }
 }
 
@@ -660,7 +642,7 @@ void Ait::ParseAppNameDesc(const uint8_t *dataPtr, S_APP_NAME_DESC *appName)
     }
     else
     {
-        LOG(LOG_DEBUG, "Ait::ParseAppNameDesc Already parsed for this app, skipping");
+        LOG(DEBUG) << "Ait::ParseAppNameDesc Already parsed for this app, skipping";
     }
 }
 
@@ -701,7 +683,7 @@ bool Ait::ParseTransportProtocolDesc(const uint8_t *dataPtr, S_TRANSPORT_PROTOCO
         }
         if (freeIndex == AIT_MAX_NUM_PROTOCOLS)
         {
-            LOG(LOG_ERROR, "No free slots for this protocol: %d", protocolId);
+            LOG(ERROR) << "No free slots for this protocol: " << protocolId;
             i = AIT_MAX_NUM_PROTOCOLS;
         }
 
@@ -719,8 +701,7 @@ bool Ait::ParseTransportProtocolDesc(const uint8_t *dataPtr, S_TRANSPORT_PROTOCO
             dataPtr++;
             descLen--;
 
-            LOG(LOG_DEBUG, "\ttransport: protocol_id=0x%04x, label=0x%02x",
-                trnsPtr->protocolId, trnsPtr->transportProtocolLabel);
+            LOG(DEBUG) << "\ttransport: protocol_id=0x" << std::hex << trnsPtr->protocolId << ", label=0x" << std::hex << u8(trnsPtr->transportProtocolLabel);
 
             /* Any remaining data are selector bytes */
             if (descLen > 0)
@@ -814,12 +795,12 @@ void Ait::ParseSimpleAppLocationDesc(const uint8_t *dataPtr, std::string &str)
         {
             dataPtr++;
             str = std::string(reinterpret_cast<const char *>(dataPtr), descLen);
-            LOG(LOG_DEBUG, "\tapp location: \"%s\"", str.c_str());
+            LOG(DEBUG) << "\tapp location: \"" << str << "\"";
         }
     }
     else
     {
-        LOG(LOG_DEBUG, "Ait::ParseSimpleAppLocationDesc Already parsed for this app, skipping");
+        LOG(DEBUG) << "Ait::ParseSimpleAppLocationDesc Already parsed for this app, skipping";
     }
 }
 
@@ -874,7 +855,7 @@ void Ait::ParseParentalRatingDesc(const uint8_t *dataPtr, S_AIT_APP_DESC *appPtr
     }
     else
     {
-        LOG(LOG_DEBUG, "Ait::ParseParentalRatingDesc Already parsed for this app, skipping");
+        LOG(DEBUG) << "Ait::ParseParentalRatingDesc Already parsed for this app, skipping";
     }
 }
 
@@ -910,7 +891,7 @@ void Ait::ParseGraphicsConstraints(const uint8_t *dataPtr, S_AIT_APP_DESC *appPt
     }
     else
     {
-        LOG(LOG_DEBUG, "Ait::ParseGraphicsConstraints Already parsed for this app, skipping");
+        LOG(DEBUG) << "Ait::ParseGraphicsConstraints Already parsed for this app, skipping";
     }
 }
 
@@ -1096,9 +1077,8 @@ bool Ait::ParseSection(const uint8_t *dataPtr)
 
     if (appType != 0x0010)
     {
-        LOG(LOG_DEBUG,
-            "Ait::ParseSection AIT sub-table with unsupported application_type %x IGNORED",
-            appType);
+        LOG(DEBUG) <<
+            "Ait::ParseSection AIT sub-table with unsupported application_type " << std::hex << appType << " IGNORED";
     }
     else if (m_ait == nullptr || !SectionReceived(m_ait.get(), sectionNumber) || m_ait->version !=
              version)
@@ -1154,8 +1134,7 @@ bool Ait::ParseSection(const uint8_t *dataPtr)
             numNewApps = numApps;
         }
 
-        LOG(LOG_DEBUG, "appType=%x, version=%u numApps=%u, section=%d/%d", appType, version,
-            numApps, sectionNumber, lastSectionNumber);
+        LOG(DEBUG) << "appType=" << std::hex << appType << ", version=[" << u8(version) << "] numApps=[" << u8(numApps) << "], section=" << u8(sectionNumber) << "/" << u8(lastSectionNumber);
 
         if (m_ait != nullptr)
         {
@@ -1172,7 +1151,7 @@ bool Ait::ParseSection(const uint8_t *dataPtr)
         ait->complete = MarkSectionReceived(ait.get(), sectionNumber, lastSectionNumber);
         if (numNewApps > 0)
         {
-            LOG(LOG_DEBUG, "Ait::ParseSection %d new apps in this section", numNewApps);
+            LOG(DEBUG) << "Ait::ParseSection " << u8(numNewApps) << " new apps in this section";
             {
                 ait->appArray.resize(ait->numApps + numNewApps);
                 for (numApps = 0, appData = dataPtr; appData < loopEnd; numApps++)
@@ -1243,8 +1222,7 @@ bool Ait::ParseSection(const uint8_t *dataPtr)
         }
         else
         {
-            LOG(LOG_DEBUG, "Ait::ParseSection Skip this section, no new apps (version=%u)",
-                version);
+            LOG(DEBUG) << "Ait::ParseSection Skip this section, no new apps (version=" << u8(version) << ")";
         }
 
         m_ait.swap(ait);
@@ -1258,8 +1236,8 @@ bool Ait::ParseSection(const uint8_t *dataPtr)
     }
     else
     {
-        LOG(LOG_DEBUG,
-            "Ait::ParseSection Section already received and existing ait_ is same version");
+        LOG(DEBUG) <<
+            "Ait::ParseSection Section already received and existing ait_ is same version";
     }
 
     return changed;
@@ -1282,18 +1260,18 @@ bool Ait::IsAgeRestricted(const std::vector<Ait::S_APP_PARENTAL_RATING> parental
         restricted = true;
         for (const Ait::S_APP_PARENTAL_RATING& pr : parentalRatings)
         {
-            LOG(LOG_ERROR, "APP_PARENTAL_RATING %s %s/%s/%s %d/%d", pr.scheme.c_str(),
-                pr.region.c_str(), parentalControlRegion.c_str(),
-                parentalControlRegion3.c_str(),
-                pr.value, parentalControlAge);
-            LOG(LOG_ERROR, "%d %d %d %d", (pr.scheme == "dvb-si"),
-                ((pr.region.size() == 2) && (strcasecmp(pr.region.c_str(),
-                    parentalControlRegion.c_str()) == 0)),
-                ((pr.region.size() == 3) && (strcasecmp(pr.region.c_str(),
-                    parentalControlRegion3.c_str()) == 0)),
-                (pr.value <= parentalControlAge));
-            LOG(LOG_ERROR, "%d %d", strcasecmp(pr.region.c_str(), parentalControlRegion.c_str()),
-                (strcasecmp(pr.region.c_str(), parentalControlRegion3.c_str()) == 0));
+            LOG(ERROR) << "APP_PARENTAL_RATING " << pr.scheme << " "
+                       << pr.region << "/" << parentalControlRegion << "/" << parentalControlRegion3 << " "
+                       << pr.value << "/" << parentalControlAge;
+
+            LOG(ERROR) << (pr.scheme == "dvb-si") << " "
+                       << ((pr.region.size() == 2) && (strcasecmp(pr.region.c_str(), parentalControlRegion.c_str()) == 0)) << " "
+                       << ((pr.region.size() == 3) && (strcasecmp(pr.region.c_str(), parentalControlRegion3.c_str()) == 0)) << " "
+                       << (pr.value <= parentalControlAge);
+
+            LOG(ERROR) << strcasecmp(pr.region.c_str(), parentalControlRegion.c_str()) << " "
+                       << (strcasecmp(pr.region.c_str(), parentalControlRegion3.c_str()) == 0);
+
             if ((pr.scheme == "dvb-si") &&
                 (((pr.region.size() == 2) && (strcasecmp(pr.region.c_str(),
                     parentalControlRegion.c_str()) == 0)) ||

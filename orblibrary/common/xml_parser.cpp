@@ -50,6 +50,9 @@
 namespace orb
 {
 
+// Helper to convert uint8_t to int for stream logging (uint8_t is treated as char otherwise)
+static inline int u8(uint8_t val) { return static_cast<int>(val); }
+
 std::unique_ptr<IXmlParser> IXmlParser::create()
 {
     return std::make_unique<XmlParser>();
@@ -231,7 +234,7 @@ static void XmlAllocApplication(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
         if (node->type == XML_ELEMENT_NODE)
         {
             cptr = node->name;
-            LOG(LOG_DEBUG, "node name=%s", cptr);
+            LOG(DEBUG) << "node name=" << cptr;
             if (xmlStrEqual(cptr, (const xmlChar *)"appName"))
             {
                 NODE_CONTENT_GET(node, dptr);
@@ -668,7 +671,7 @@ static uint32_t XmlParseAppBoundary(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_pt
                 {
                     len = xmlStrlen(dptr);
                     std::string boundary(reinterpret_cast<char *>(dptr), len);
-                    LOG(LOG_DEBUG, "additional boundary: \"%s\"", boundary.c_str());
+                    LOG(DEBUG) << "additional boundary: \"" << boundary << "\"";
                     app_ptr->boundaries.push_back(boundary);
                     NODE_CONTENT_RELEASE();
                 }
@@ -751,7 +754,7 @@ static void XmlParseAppTransport(xmlNodePtr node, Ait::S_TRANSPORT_PROTOCOL_DESC
     }
     if (freeIndex == AIT_MAX_NUM_PROTOCOLS)
     {
-        LOG(LOG_ERROR, "No free slots for this protocol: %d", protocolId);
+        LOG(ERROR) << "No free slots for this protocol: " << protocolId;
         i = AIT_MAX_NUM_PROTOCOLS;
     }
 
@@ -804,7 +807,7 @@ static void XmlParseAppTransport(xmlNodePtr node, Ait::S_TRANSPORT_PROTOCOL_DESC
                     if (node->type == XML_ELEMENT_NODE)
                     {
                         cptr = node->name;
-                        LOG(LOG_DEBUG, "OC: node name=%s", cptr);
+                        LOG(DEBUG) << "OC: node name=" << cptr;
                         if (xmlStrEqual(cptr, (const xmlChar *)"DvbTriplet"))
                         {
                             XmlParseDvbTriplet(node, &trns_ptr->oc.dvb);
@@ -820,12 +823,12 @@ static void XmlParseAppTransport(xmlNodePtr node, Ait::S_TRANSPORT_PROTOCOL_DESC
                             if (dptr)
                             {
                                 trns_ptr->oc.componentTag = (uint8_t)XmlParseHex(dptr, 2);
-                                LOG(LOG_DEBUG, "ComponentTag=%x", trns_ptr->oc.componentTag);
+                                LOG(DEBUG) << "ComponentTag=" << std::hex << u8(trns_ptr->oc.componentTag);
                                 NODE_PROP_FREE(dptr)
                             }
                             else
                             {
-                                LOG(LOG_ERROR, "No ComponentTag attr");
+                                LOG(ERROR) << "No ComponentTag attr";
                             }
                         }
                     }
@@ -840,7 +843,7 @@ static void XmlParseAppTransport(xmlNodePtr node, Ait::S_TRANSPORT_PROTOCOL_DESC
     }
     else
     {
-        LOG(LOG_DEBUG, "protocol %d already parsed for this app, skipping", protocolId);
+        LOG(DEBUG) << "protocol " << protocolId << " already parsed for this app, skipping";
     }
 }
 
@@ -857,7 +860,7 @@ static void XmlParseAppLocation(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
     if (dptr)
     {
         app_ptr->location = std::string(reinterpret_cast<char *>(dptr), xmlStrlen(dptr));
-        LOG(LOG_DEBUG, "location: %s", app_ptr->location.c_str());
+        LOG(DEBUG) << "location: " << app_ptr->location;
         NODE_CONTENT_RELEASE();
     }
 }
@@ -876,7 +879,7 @@ static void XmlParseApplication(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
         if (node->type == XML_ELEMENT_NODE)
         {
             cptr = node->name;
-            LOG(LOG_DEBUG, "node name=%s", cptr);
+            LOG(DEBUG) << "node name=" << cptr;
             if (xmlStrEqual(cptr, (const xmlChar *)"appName"))
             {
                 XmlParseAppName(node, &app_ptr->appName);
@@ -1020,18 +1023,18 @@ std::unique_ptr<Ait::S_AIT_TABLE> XmlParser::ParseAit(const char *content, uint3
 #endif
 
 
-    LOG(LOG_DEBUG, "data=%p len=%d", content, length);
+    LOG(DEBUG) << "data=" << content << " len=" << length;
     doc = xmlReadMemory(content, length, "noname.xml", nullptr, options);
     if (doc == nullptr)
     {
-        LOG(LOG_ERROR, "Failed to parse document!!");
+        LOG(ERROR) << "Failed to parse document!!";
     }
     else
     {
         node = xmlDocGetRootElement(doc);
         if (node == nullptr)
         {
-            LOG(LOG_ERROR, "Empty document");
+            LOG(ERROR) << "Empty document";
         }
         else
         {
@@ -1180,11 +1183,11 @@ XmlParser::S_XML_DSMCC * XmlParser::ParseDsmcc(uint8_t *content, uint32_t length
     XmlParser::S_XML_SE_OBJ *se_objs;
     XmlParser::S_XML_SEVENT *events;
 
-    LOG(LOG_DEBUG, "data=%p len=%d", content, length);
+    LOG(DEBUG) << "data=" << content << " len=" << length;
     doc = xmlReadMemory((const char *)content, length, "noname.xml", nullptr, 0);
     if (doc == nullptr)
     {
-        LOG(LOG_ERROR, "Failed to parse document");
+        LOG(ERROR) << "Failed to parse document";
         dsmcc_objs = nullptr;
     }
     else
@@ -1192,13 +1195,13 @@ XmlParser::S_XML_DSMCC * XmlParser::ParseDsmcc(uint8_t *content, uint32_t length
         node = xmlDocGetRootElement(doc);
         if (node == nullptr)
         {
-            LOG(LOG_ERROR, "Empty document");
+            LOG(ERROR) << "Empty document";
             dsmcc_objs = nullptr;
         }
         else if (node->type != XML_ELEMENT_NODE || !xmlStrEqual(node->name, (const
                                                                              xmlChar *)"dsmcc"))
         {
-            LOG(LOG_ERROR, "Wrong root object");
+            LOG(ERROR) << "Wrong root object";
             dsmcc_objs = nullptr;
         }
         else

@@ -20,7 +20,7 @@
 #define MOCK_XML_PARSER_H
 
 #include "testing/gmock/include/gmock/gmock.h"
-#include "third_party/orb/orblibrary/moderator/app_mgr/xml_parser.h"
+#include "xml_parser.h"
 
 namespace orb
 {

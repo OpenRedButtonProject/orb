@@ -10,7 +10,6 @@ static_library("orb") {
     "moderator/AppMgrInterface.cpp",
     "moderator/Network.cpp",
     "moderator/MediaSynchroniser.cpp",
-    "moderator/app_mgr/ait.cpp",
     "moderator/app_mgr/application_manager.cpp",
     "moderator/app_mgr/base_app.h",
     "moderator/app_mgr/base_app.cpp",
@@ -18,9 +17,6 @@ static_library("orb") {
     "moderator/app_mgr/hbbtv_app.h",
     "moderator/app_mgr/opapp.cpp",
     "moderator/app_mgr/opapp.h",
-    "moderator/app_mgr/utils.cpp",
-    "moderator/app_mgr/utils.h",
-    "moderator/app_mgr/xml_parser.cpp",
     "moderator/Drm.cpp",
     "moderator/JsonRpcCallback.cpp",
     "moderator/VideoWindow.cpp",
@@ -31,7 +27,6 @@ static_library("orb") {
   deps = [
     "//base", # For logging dependency
     "//third_party/jsoncpp",
-    "//third_party/libxml",
     "//third_party/orb/logging:orb_logging_deps",
     ":orb_util",
     ":orb_network_services",
@@ -42,7 +37,8 @@ static_library("orb") {
    "moderator/utilities"
   ]
 
-  public_deps = []
+  # ait_common provides ait.h, utils.h, xml_parser.h
+  public_deps = [ ":ait_common" ]
 
   public_configs = [ ":external_lib_config" ]
 }
@@ -59,6 +55,34 @@ config("external_lib_config") {
 # Expose network include directory
 config("orb_network_config") {
   include_dirs = [ "network" ]
+}
+
+# Shared AIT/utils/xml_parser library - used by orb and package_manager
+static_library("ait_common") {
+  sources = [
+    "common/ait.cpp",
+    "common/ait.h",
+    "common/utils.cpp",
+    "common/utils.h",
+    "common/xml_parser.cpp",
+    "common/xml_parser.h",
+  ]
+
+  deps = [
+    "//base",
+    "//third_party/libxml",
+    "//third_party/orb/logging:orb_logging_deps",
+  ]
+
+  public_configs = [
+    ":external_lib_config",
+    ":ait_common_config",
+  ]
+}
+
+# Config to expose common/ include directory
+config("ait_common_config") {
+  include_dirs = [ "common" ]
 }
 
 static_library("opapp_package_manager") {

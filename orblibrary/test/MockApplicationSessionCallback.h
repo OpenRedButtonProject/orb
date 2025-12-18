@@ -20,7 +20,7 @@
 #define MOCK_APPLICATION_SESSION_CALLBACK_H
 
 #include "third_party/orb/orblibrary/moderator/app_mgr/application_session_callback.h"
-#include "third_party/orb/orblibrary/moderator/app_mgr/utils.h"
+#include "utils.h"
 #include <gmock/gmock.h>
 
 namespace orb

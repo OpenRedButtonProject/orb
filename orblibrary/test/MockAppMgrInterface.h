@@ -20,7 +20,7 @@
 #define MOCK_APP_MGR_INTERFACE_H
 
 #include "AppMgrInterface.hpp"
-#include "app_mgr/utils.h"
+#include "utils.h"
 #include <gmock/gmock.h>
 
 namespace orb
