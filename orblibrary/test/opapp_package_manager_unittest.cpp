@@ -7,6 +7,8 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/orb/orblibrary/include/OpAppPackageManager.h"
+#include "third_party/orb/orblibrary/package_manager/AitFetcher.h"
+#include "third_party/orb/orblibrary/common/xml_parser.h"
 #include "OpAppPackageManagerTestInterface.h"
 #include <fstream>
 
@@ -46,6 +48,69 @@ private:
   PackageOperationResult m_DecryptResult;
   mutable bool m_WasDecryptCalled = false;
   mutable std::string m_LastFilePath;
+};
+
+// Mock AIT fetcher for testing remote package check
+class MockAitFetcher : public IAitFetcher {
+public:
+  MockAitFetcher() = default;
+
+  void setFetchResult(const AitFetchResult& result) {
+    m_FetchResult = result;
+  }
+
+  // Set file content to write when FetchAitXmls is called
+  // Maps filename (not full path) to content
+  void setFileContent(const std::string& filename, const std::string& content) {
+    m_FileContents[filename] = content;
+  }
+
+  AitFetchResult FetchAitXmls(
+      const std::string& fqdn,
+      bool networkAvailable,
+      const std::string& outputDirectory) override {
+    m_LastFqdn = fqdn;
+    m_LastNetworkAvailable = networkAvailable;
+    m_LastOutputDirectory = outputDirectory;
+    m_WasFetchCalled = true;
+
+    // Create directory and write files if content was provided
+    if (!m_FileContents.empty()) {
+      std::filesystem::create_directories(outputDirectory);
+      std::vector<std::string> createdFiles;
+      for (const auto& [filename, content] : m_FileContents) {
+        std::string filePath = outputDirectory + "/" + filename;
+        std::ofstream file(filePath);
+        file << content;
+        file.close();
+        createdFiles.push_back(filePath);
+      }
+      // Return result with actual created file paths
+      return AitFetchResult(createdFiles, m_FetchResult.errors);
+    }
+
+    return m_FetchResult;
+  }
+
+  bool wasFetchCalled() const { return m_WasFetchCalled; }
+  std::string getLastFqdn() const { return m_LastFqdn; }
+  bool getLastNetworkAvailable() const { return m_LastNetworkAvailable; }
+  std::string getLastOutputDirectory() const { return m_LastOutputDirectory; }
+
+  void reset() {
+    m_WasFetchCalled = false;
+    m_LastFqdn.clear();
+    m_LastOutputDirectory.clear();
+    m_FileContents.clear();
+  }
+
+private:
+  AitFetchResult m_FetchResult;
+  std::map<std::string, std::string> m_FileContents;
+  mutable bool m_WasFetchCalled = false;
+  mutable std::string m_LastFqdn;
+  mutable bool m_LastNetworkAvailable = false;
+  mutable std::string m_LastOutputDirectory;
 };
 
 // Mock hash calculator for testing
@@ -1090,4 +1155,456 @@ TEST_F(OpAppPackageManagerTest, TestClearLastError)
   // Clean up test files
   std::remove(packagePath1.c_str());
   std::remove(packagePath2.c_str());
+}
+
+// =============================================================================
+// AIT Fetcher and Parser Tests
+// =============================================================================
+
+TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_NoFqdn_ReturnsNoUpdate)
+{
+  // GIVEN: an OpAppPackageManager with no FQDN configured
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_DestinationDirectory = PACKAGE_PATH + "/dest";
+  // m_OpAppFqdn is empty
+
+  auto mockAitFetcher = std::make_unique<MockAitFetcher>();
+  MockAitFetcher* mockAitFetcherPtr = mockAitFetcher.get();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, std::move(mockAitFetcher));
+
+  // WHEN: doRemotePackageCheck is called
+  OpAppPackageManager::PackageStatus status = testInterface->doRemotePackageCheck();
+
+  // THEN: should return NoUpdateAvailable and not call fetcher
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::NoUpdateAvailable);
+  EXPECT_FALSE(mockAitFetcherPtr->wasFetchCalled());
+}
+
+TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_FetchFails_ReturnsConfigurationError)
+{
+  // GIVEN: an OpAppPackageManager with FQDN configured and mock fetcher that fails
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_DestinationDirectory = PACKAGE_PATH + "/dest";
+  configuration.m_OpAppFqdn = "test.example.com";
+
+  auto mockAitFetcher = std::make_unique<MockAitFetcher>();
+  mockAitFetcher->setFetchResult(AitFetchResult("DNS lookup failed"));
+  MockAitFetcher* mockAitFetcherPtr = mockAitFetcher.get();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, std::move(mockAitFetcher));
+
+  // WHEN: doRemotePackageCheck is called
+  OpAppPackageManager::PackageStatus status = testInterface->doRemotePackageCheck();
+
+  // THEN: should return ConfigurationError and have called fetcher
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::ConfigurationError);
+  EXPECT_TRUE(mockAitFetcherPtr->wasFetchCalled());
+  EXPECT_EQ(mockAitFetcherPtr->getLastFqdn(), "test.example.com");
+}
+
+TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_NoAitFiles_ReturnsConfigurationError)
+{
+  // GIVEN: an OpAppPackageManager with FQDN and mock fetcher returning empty result
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_DestinationDirectory = PACKAGE_PATH + "/dest";
+  configuration.m_OpAppFqdn = "test.example.com";
+
+  auto mockAitFetcher = std::make_unique<MockAitFetcher>();
+  // Empty success result (no files)
+  mockAitFetcher->setFetchResult(AitFetchResult(std::vector<std::string>{}, std::vector<std::string>{}));
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, std::move(mockAitFetcher));
+
+  // WHEN: doRemotePackageCheck is called
+  OpAppPackageManager::PackageStatus status = testInterface->doRemotePackageCheck();
+
+  // THEN: should return ConfigurationError (no AITs acquired)
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::ConfigurationError);
+}
+
+TEST_F(OpAppPackageManagerTest, TestParseAitFiles_EmptyFileList_ReturnsFalse)
+{
+  // GIVEN: a test interface with real XML parser
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
+
+  // WHEN: parseAitFiles is called with empty list
+  bool result = testInterface->parseAitFiles(std::vector<std::string>{});
+
+  // THEN: should return false and have no descriptors
+  EXPECT_FALSE(result);
+  EXPECT_TRUE(testInterface->getAitAppDescriptors().empty());
+}
+
+TEST_F(OpAppPackageManagerTest, TestParseAitFiles_NonexistentFile_ReturnsFalse)
+{
+  // GIVEN: a test interface with real XML parser
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
+
+  // WHEN: parseAitFiles is called with nonexistent file
+  bool result = testInterface->parseAitFiles({"/nonexistent/ait.xml"});
+
+  // THEN: should return false and have no descriptors
+  EXPECT_FALSE(result);
+  EXPECT_TRUE(testInterface->getAitAppDescriptors().empty());
+}
+
+TEST_F(OpAppPackageManagerTest, TestParseAitFiles_InvalidXml_ReturnsFalse)
+{
+  // GIVEN: a test interface with real XML parser and an invalid XML file
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+
+  std::string invalidXmlPath = PACKAGE_PATH + "/invalid.xml";
+  std::ofstream invalidFile(invalidXmlPath);
+  invalidFile << "This is not valid XML content";
+  invalidFile.close();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
+
+  // WHEN: parseAitFiles is called with invalid XML
+  bool result = testInterface->parseAitFiles({invalidXmlPath});
+
+  // THEN: should return false and have no descriptors
+  EXPECT_FALSE(result);
+  EXPECT_TRUE(testInterface->getAitAppDescriptors().empty());
+
+  // Clean up
+  std::remove(invalidXmlPath.c_str());
+}
+
+TEST_F(OpAppPackageManagerTest, TestParseAitFiles_ValidAitXml_ExtractsDescriptors)
+{
+  // GIVEN: a test interface with real XML parser and a valid AIT XML file
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+
+  std::string aitXmlPath = PACKAGE_PATH + "/valid_ait.xml";
+  std::ofstream aitFile(aitXmlPath);
+  // Minimal valid AIT XML structure based on TS 102 809
+  aitFile << R"(<?xml version="1.0" encoding="UTF-8"?>
+<mhp:ServiceDiscovery xmlns:mhp="urn:dvb:mhp:2009">
+  <mhp:ApplicationDiscovery DomainName="test.example.com">
+    <mhp:ApplicationList>
+      <mhp:Application>
+        <mhp:appName Language="eng">Test App</mhp:appName>
+        <mhp:applicationIdentifier>
+          <mhp:orgId>12345</mhp:orgId>
+          <mhp:appId>1</mhp:appId>
+        </mhp:applicationIdentifier>
+        <mhp:applicationDescriptor>
+          <mhp:type>
+            <mhp:OtherApp>application/vnd.hbbtv.xhtml+xml</mhp:OtherApp>
+          </mhp:type>
+          <mhp:controlCode>AUTOSTART</mhp:controlCode>
+          <mhp:visibility>VISIBLE_ALL</mhp:visibility>
+          <mhp:serviceBound>false</mhp:serviceBound>
+          <mhp:priority>1</mhp:priority>
+          <mhp:version>01.00.00</mhp:version>
+        </mhp:applicationDescriptor>
+        <mhp:applicationTransport xsi:type="mhp:HTTPTransportType" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <mhp:URLBase>https://test.example.com/app/</mhp:URLBase>
+        </mhp:applicationTransport>
+        <mhp:applicationLocation>index.html</mhp:applicationLocation>
+      </mhp:Application>
+    </mhp:ApplicationList>
+  </mhp:ApplicationDiscovery>
+</mhp:ServiceDiscovery>)";
+  aitFile.close();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
+
+  // WHEN: parseAitFiles is called with valid AIT XML
+  bool result = testInterface->parseAitFiles({aitXmlPath});
+
+  // THEN: should return true and have extracted descriptors
+  EXPECT_TRUE(result);
+  EXPECT_FALSE(testInterface->getAitAppDescriptors().empty());
+
+  const auto& descriptors = testInterface->getAitAppDescriptors();
+  EXPECT_EQ(descriptors.size(), size_t(1));
+  EXPECT_EQ(descriptors[0].orgId, uint32_t(12345));
+  EXPECT_EQ(descriptors[0].appId, uint16_t(1));
+
+  // Clean up
+  std::remove(aitXmlPath.c_str());
+}
+
+TEST_F(OpAppPackageManagerTest, TestParseAitFiles_MultipleAits_CombinesApps)
+{
+  // GIVEN: a test interface with real XML parser and multiple AIT XML files
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+
+  // Create first AIT file
+  std::string ait1Path = PACKAGE_PATH + "/ait1.xml";
+  std::ofstream ait1File(ait1Path);
+  ait1File << R"(<?xml version="1.0" encoding="UTF-8"?>
+<mhp:ServiceDiscovery xmlns:mhp="urn:dvb:mhp:2009">
+  <mhp:ApplicationDiscovery DomainName="test1.example.com">
+    <mhp:ApplicationList>
+      <mhp:Application>
+        <mhp:appName Language="eng">App One</mhp:appName>
+        <mhp:applicationIdentifier>
+          <mhp:orgId>11111</mhp:orgId>
+          <mhp:appId>1</mhp:appId>
+        </mhp:applicationIdentifier>
+        <mhp:applicationDescriptor>
+          <mhp:type>
+            <mhp:OtherApp>application/vnd.hbbtv.xhtml+xml</mhp:OtherApp>
+          </mhp:type>
+          <mhp:controlCode>AUTOSTART</mhp:controlCode>
+          <mhp:visibility>VISIBLE_ALL</mhp:visibility>
+          <mhp:serviceBound>false</mhp:serviceBound>
+          <mhp:priority>1</mhp:priority>
+          <mhp:version>01.00.00</mhp:version>
+        </mhp:applicationDescriptor>
+        <mhp:applicationTransport xsi:type="mhp:HTTPTransportType" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <mhp:URLBase>https://test1.example.com/</mhp:URLBase>
+        </mhp:applicationTransport>
+        <mhp:applicationLocation>index.html</mhp:applicationLocation>
+      </mhp:Application>
+    </mhp:ApplicationList>
+  </mhp:ApplicationDiscovery>
+</mhp:ServiceDiscovery>)";
+  ait1File.close();
+
+  // Create second AIT file
+  std::string ait2Path = PACKAGE_PATH + "/ait2.xml";
+  std::ofstream ait2File(ait2Path);
+  ait2File << R"(<?xml version="1.0" encoding="UTF-8"?>
+<mhp:ServiceDiscovery xmlns:mhp="urn:dvb:mhp:2009">
+  <mhp:ApplicationDiscovery DomainName="test2.example.com">
+    <mhp:ApplicationList>
+      <mhp:Application>
+        <mhp:appName Language="eng">App Two</mhp:appName>
+        <mhp:applicationIdentifier>
+          <mhp:orgId>22222</mhp:orgId>
+          <mhp:appId>2</mhp:appId>
+        </mhp:applicationIdentifier>
+        <mhp:applicationDescriptor>
+          <mhp:type>
+            <mhp:OtherApp>application/vnd.hbbtv.xhtml+xml</mhp:OtherApp>
+          </mhp:type>
+          <mhp:controlCode>PRESENT</mhp:controlCode>
+          <mhp:visibility>VISIBLE_ALL</mhp:visibility>
+          <mhp:serviceBound>false</mhp:serviceBound>
+          <mhp:priority>2</mhp:priority>
+          <mhp:version>01.00.00</mhp:version>
+        </mhp:applicationDescriptor>
+        <mhp:applicationTransport xsi:type="mhp:HTTPTransportType" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <mhp:URLBase>https://test2.example.com/</mhp:URLBase>
+        </mhp:applicationTransport>
+        <mhp:applicationLocation>index.html</mhp:applicationLocation>
+      </mhp:Application>
+    </mhp:ApplicationList>
+  </mhp:ApplicationDiscovery>
+</mhp:ServiceDiscovery>)";
+  ait2File.close();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
+
+  // WHEN: parseAitFiles is called with multiple AIT files
+  bool result = testInterface->parseAitFiles({ait1Path, ait2Path});
+
+  // THEN: should return true and combine apps from both files
+  EXPECT_TRUE(result);
+  const auto& descriptors = testInterface->getAitAppDescriptors();
+  EXPECT_EQ(descriptors.size(), size_t(2));
+
+  // Verify first app
+  bool foundApp1 = false;
+  bool foundApp2 = false;
+  for (const auto& desc : descriptors) {
+    if (desc.orgId == 11111 && desc.appId == 1) {
+      foundApp1 = true;
+    }
+    if (desc.orgId == 22222 && desc.appId == 2) {
+      foundApp2 = true;
+    }
+  }
+  EXPECT_TRUE(foundApp1);
+  EXPECT_TRUE(foundApp2);
+
+  // Clean up
+  std::remove(ait1Path.c_str());
+  std::remove(ait2Path.c_str());
+}
+
+TEST_F(OpAppPackageManagerTest, TestParseAitFiles_ClearsOldDescriptors)
+{
+  // GIVEN: a test interface with real XML parser and previously parsed descriptors
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+
+  std::string aitXmlPath = PACKAGE_PATH + "/test_ait.xml";
+  std::ofstream aitFile(aitXmlPath);
+  aitFile << R"(<?xml version="1.0" encoding="UTF-8"?>
+<mhp:ServiceDiscovery xmlns:mhp="urn:dvb:mhp:2009">
+  <mhp:ApplicationDiscovery DomainName="test.example.com">
+    <mhp:ApplicationList>
+      <mhp:Application>
+        <mhp:appName Language="eng">Test App</mhp:appName>
+        <mhp:applicationIdentifier>
+          <mhp:orgId>99999</mhp:orgId>
+          <mhp:appId>9</mhp:appId>
+        </mhp:applicationIdentifier>
+        <mhp:applicationDescriptor>
+          <mhp:type>
+            <mhp:OtherApp>application/vnd.hbbtv.xhtml+xml</mhp:OtherApp>
+          </mhp:type>
+          <mhp:controlCode>AUTOSTART</mhp:controlCode>
+          <mhp:visibility>VISIBLE_ALL</mhp:visibility>
+          <mhp:serviceBound>false</mhp:serviceBound>
+          <mhp:priority>1</mhp:priority>
+          <mhp:version>01.00.00</mhp:version>
+        </mhp:applicationDescriptor>
+        <mhp:applicationTransport xsi:type="mhp:HTTPTransportType" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <mhp:URLBase>https://test.example.com/</mhp:URLBase>
+        </mhp:applicationTransport>
+        <mhp:applicationLocation>index.html</mhp:applicationLocation>
+      </mhp:Application>
+    </mhp:ApplicationList>
+  </mhp:ApplicationDiscovery>
+</mhp:ServiceDiscovery>)";
+  aitFile.close();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
+
+  // First parse
+  testInterface->parseAitFiles({aitXmlPath});
+  size_t firstCount = testInterface->getAitAppDescriptors().size();
+
+  // WHEN: parseAitFiles is called again with the same file
+  testInterface->parseAitFiles({aitXmlPath});
+
+  // THEN: should have same count (cleared and repopulated, not appended)
+  EXPECT_EQ(testInterface->getAitAppDescriptors().size(), firstCount);
+
+  // Clean up
+  std::remove(aitXmlPath.c_str());
+}
+
+TEST_F(OpAppPackageManagerTest, TestAitAppDescriptor_DefaultValues)
+{
+  // GIVEN: a default-constructed AitAppDescriptor
+  AitAppDescriptor desc;
+
+  // THEN: all values should be default initialized
+  EXPECT_EQ(desc.orgId, uint32_t(0));
+  EXPECT_EQ(desc.appId, uint16_t(0));
+  EXPECT_EQ(desc.controlCode, uint8_t(0));
+  EXPECT_EQ(desc.priority, uint8_t(0));
+  EXPECT_TRUE(desc.location.empty());
+  EXPECT_TRUE(desc.name.empty());
+}
+
+TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_ValidAit_ReturnsUpdateAvailable)
+{
+  // GIVEN: an OpAppPackageManager with FQDN and mock fetcher that writes valid AIT file
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_DestinationDirectory = PACKAGE_PATH + "/dest";
+  configuration.m_OpAppFqdn = "test.example.com";
+
+  // Valid AIT XML content
+  std::string aitContent = R"(<?xml version="1.0" encoding="UTF-8"?>
+<mhp:ServiceDiscovery xmlns:mhp="urn:dvb:mhp:2009">
+  <mhp:ApplicationDiscovery DomainName="test.example.com">
+    <mhp:ApplicationList>
+      <mhp:Application>
+        <mhp:appName Language="eng">Test OpApp</mhp:appName>
+        <mhp:applicationIdentifier>
+          <mhp:orgId>12345</mhp:orgId>
+          <mhp:appId>1</mhp:appId>
+        </mhp:applicationIdentifier>
+        <mhp:applicationDescriptor>
+          <mhp:type>
+            <mhp:OtherApp>application/vnd.hbbtv.xhtml+xml</mhp:OtherApp>
+          </mhp:type>
+          <mhp:controlCode>AUTOSTART</mhp:controlCode>
+          <mhp:visibility>VISIBLE_ALL</mhp:visibility>
+          <mhp:serviceBound>false</mhp:serviceBound>
+          <mhp:priority>1</mhp:priority>
+          <mhp:version>01.00.00</mhp:version>
+        </mhp:applicationDescriptor>
+        <mhp:applicationTransport xsi:type="mhp:HTTPTransportType" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <mhp:URLBase>https://test.example.com/app/</mhp:URLBase>
+        </mhp:applicationTransport>
+        <mhp:applicationLocation>index.html</mhp:applicationLocation>
+      </mhp:Application>
+    </mhp:ApplicationList>
+  </mhp:ApplicationDiscovery>
+</mhp:ServiceDiscovery>)";
+
+  auto mockAitFetcher = std::make_unique<MockAitFetcher>();
+  // Mock will create this file when FetchAitXmls is called
+  mockAitFetcher->setFileContent("ait_0.xml", aitContent);
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, std::move(mockAitFetcher), std::make_unique<XmlParser>());
+
+  // WHEN: doRemotePackageCheck is called
+  OpAppPackageManager::PackageStatus status = testInterface->doRemotePackageCheck();
+
+  // THEN: should return UpdateAvailable
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::UpdateAvailable);
+  EXPECT_FALSE(testInterface->getAitAppDescriptors().empty());
+  EXPECT_EQ(testInterface->getAitAppDescriptors()[0].orgId, uint32_t(12345));
+
+  // Clean up
+  std::filesystem::remove_all(PACKAGE_PATH + "/dest");
+}
+
+TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_AitWithNoApps_ReturnsNoUpdate)
+{
+  // GIVEN: an OpAppPackageManager with FQDN and AIT file with no applications
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_DestinationDirectory = PACKAGE_PATH + "/dest";
+  configuration.m_OpAppFqdn = "test.example.com";
+
+  // AIT with empty application list
+  std::string aitContent = R"(<?xml version="1.0" encoding="UTF-8"?>
+<mhp:ServiceDiscovery xmlns:mhp="urn:dvb:mhp:2009">
+  <mhp:ApplicationDiscovery DomainName="test.example.com">
+    <mhp:ApplicationList>
+    </mhp:ApplicationList>
+  </mhp:ApplicationDiscovery>
+</mhp:ServiceDiscovery>)";
+
+  auto mockAitFetcher = std::make_unique<MockAitFetcher>();
+  // Mock will create this file when FetchAitXmls is called
+  mockAitFetcher->setFileContent("ait_0.xml", aitContent);
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, std::move(mockAitFetcher), std::make_unique<XmlParser>());
+
+  // WHEN: doRemotePackageCheck is called
+  OpAppPackageManager::PackageStatus status = testInterface->doRemotePackageCheck();
+
+  // THEN: should return NoUpdateAvailable (no apps found)
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::NoUpdateAvailable);
+  EXPECT_TRUE(testInterface->getAitAppDescriptors().empty());
+
+  // Clean up
+  std::filesystem::remove_all(PACKAGE_PATH + "/dest");
 }

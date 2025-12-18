@@ -9,7 +9,6 @@
 #include "MockJson.h"
 #include "MockAppMgrInterface.h"
 #include "MockComponentBase.h"
-#include "MockXmlParser.h"
 
 
 /**
@@ -30,10 +29,8 @@ namespace orb {
         return std::make_unique<orb::MockJson>();
     }
 
-    std::unique_ptr<orb::IXmlParser> IXmlParser::create()
-    {
-        return std::make_unique<orb::MockXmlParser>();
-    }
+    // Note: IXmlParser::create() is provided by the real xml_parser.cpp
+    // If moderator tests need a mock, use dependency injection instead
 }
 
 /**

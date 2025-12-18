@@ -29,6 +29,7 @@ namespace orb
 
 // Forward declarations
 class IAitFetcher;
+class IXmlParser;
 
 /**
  * @brief Simplified application descriptor for OpApp selection.
@@ -156,6 +157,14 @@ public:
     std::unique_ptr<IHashCalculator> hashCalculator,
     std::unique_ptr<IDecryptor> decryptor,
     std::unique_ptr<IAitFetcher> aitFetcher);
+
+  // Constructor with all dependencies including XML parser (for testing)
+  OpAppPackageManager(
+    const Configuration& configuration,
+    std::unique_ptr<IHashCalculator> hashCalculator,
+    std::unique_ptr<IDecryptor> decryptor,
+    std::unique_ptr<IAitFetcher> aitFetcher,
+    std::unique_ptr<IXmlParser> xmlParser);
 
   ~OpAppPackageManager();
 
@@ -302,6 +311,7 @@ private:
   std::unique_ptr<IHashCalculator> m_HashCalculator;
   std::unique_ptr<IDecryptor> m_Decryptor;
   std::unique_ptr<IAitFetcher> m_AitFetcher;
+  std::unique_ptr<IXmlParser> m_XmlParser;
   std::vector<AitAppDescriptor> m_AitAppDescriptors;
 
   std::string m_CandidatePackageFile;

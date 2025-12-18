@@ -8,8 +8,9 @@
 namespace orb
 {
 
-// Forward declaration
+// Forward declarations
 class IAitFetcher;
+class IXmlParser;
 
 /**
  * @brief Test interface for OpAppPackageManager that provides controlled access
@@ -47,7 +48,7 @@ public:
      * @param configuration The configuration for the package manager
      * @param hashCalculator Custom hash calculator for testing
      * @param decryptor Custom decryptor for testing
-     * @param acquisition Custom acquisition interface for testing
+     * @param aitFetcher Custom AIT fetcher for testing
      * @return A test interface instance
      */
     static std::unique_ptr<OpAppPackageManagerTestInterface> create(
@@ -55,6 +56,22 @@ public:
         std::unique_ptr<IHashCalculator> hashCalculator,
         std::unique_ptr<IDecryptor> decryptor,
         std::unique_ptr<IAitFetcher> aitFetcher);
+
+    /**
+     * @brief Creates a test interface with all custom dependencies including XML parser
+     * @param configuration The configuration for the package manager
+     * @param hashCalculator Custom hash calculator for testing
+     * @param decryptor Custom decryptor for testing
+     * @param aitFetcher Custom AIT fetcher for testing
+     * @param xmlParser Custom XML parser for testing
+     * @return A test interface instance
+     */
+    static std::unique_ptr<OpAppPackageManagerTestInterface> create(
+        const OpAppPackageManager::Configuration& configuration,
+        std::unique_ptr<IHashCalculator> hashCalculator,
+        std::unique_ptr<IDecryptor> decryptor,
+        std::unique_ptr<IAitFetcher> aitFetcher,
+        std::unique_ptr<IXmlParser> xmlParser);
 
     /**
      * @brief Destructor
@@ -117,6 +134,25 @@ public:
      * @return Success status
      */
     bool unzipPackageFile(const std::string& filePath) const;
+
+    /**
+     * @brief Performs remote package check (internal method exposed for testing)
+     * @return Package status
+     */
+    OpAppPackageManager::PackageStatus doRemotePackageCheck();
+
+    /**
+     * @brief Parses AIT files (internal method exposed for testing)
+     * @param aitFiles Vector of paths to AIT XML files
+     * @return true if at least one AIT was successfully parsed
+     */
+    bool parseAitFiles(const std::vector<std::string>& aitFiles);
+
+    /**
+     * @brief Gets the parsed AIT app descriptors
+     * @return Const reference to the vector of AIT app descriptors
+     */
+    const std::vector<AitAppDescriptor>& getAitAppDescriptors() const;
 
     /**
      * @brief Gets the underlying package manager instance

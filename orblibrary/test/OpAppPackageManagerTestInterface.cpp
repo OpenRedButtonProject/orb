@@ -1,6 +1,7 @@
 #include "OpAppPackageManagerTestInterface.h"
 #include "OpAppPackageManager.h"
 #include "AitFetcher.h"  // For IAitFetcher
+#include "xml_parser.h"  // For IXmlParser
 
 namespace orb
 {
@@ -30,6 +31,19 @@ std::unique_ptr<OpAppPackageManagerTestInterface> OpAppPackageManagerTestInterfa
 {
     auto packageManager = std::make_unique<OpAppPackageManager>(
         configuration, std::move(hashCalculator), std::move(decryptor), std::move(aitFetcher));
+    return std::unique_ptr<OpAppPackageManagerTestInterface>(new OpAppPackageManagerTestInterface(std::move(packageManager)));
+}
+
+std::unique_ptr<OpAppPackageManagerTestInterface> OpAppPackageManagerTestInterface::create(
+    const OpAppPackageManager::Configuration& configuration,
+    std::unique_ptr<IHashCalculator> hashCalculator,
+    std::unique_ptr<IDecryptor> decryptor,
+    std::unique_ptr<IAitFetcher> aitFetcher,
+    std::unique_ptr<IXmlParser> xmlParser)
+{
+    auto packageManager = std::make_unique<OpAppPackageManager>(
+        configuration, std::move(hashCalculator), std::move(decryptor),
+        std::move(aitFetcher), std::move(xmlParser));
     return std::unique_ptr<OpAppPackageManagerTestInterface>(new OpAppPackageManagerTestInterface(std::move(packageManager)));
 }
 
@@ -119,6 +133,24 @@ bool OpAppPackageManagerTestInterface::unzipPackageFile(const std::string& fileP
 {
     // Access private method directly since we're a friend class
     return m_PackageManager->unzipPackageFile(filePath);
+}
+
+OpAppPackageManager::PackageStatus OpAppPackageManagerTestInterface::doRemotePackageCheck()
+{
+    // Access private method directly since we're a friend class
+    return m_PackageManager->doRemotePackageCheck();
+}
+
+bool OpAppPackageManagerTestInterface::parseAitFiles(const std::vector<std::string>& aitFiles)
+{
+    // Access private method directly since we're a friend class
+    return m_PackageManager->parseAitFiles(aitFiles);
+}
+
+const std::vector<AitAppDescriptor>& OpAppPackageManagerTestInterface::getAitAppDescriptors() const
+{
+    // Access private member directly since we're a friend class
+    return m_PackageManager->m_AitAppDescriptors;
 }
 
 } // namespace orb

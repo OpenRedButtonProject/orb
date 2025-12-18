@@ -94,10 +94,22 @@ OpAppPackageManager::OpAppPackageManager(
   std::unique_ptr<IHashCalculator> hashCalculator,
   std::unique_ptr<IDecryptor> decryptor,
   std::unique_ptr<IAitFetcher> aitFetcher)
+  : OpAppPackageManager(configuration, std::move(hashCalculator), std::move(decryptor),
+                        std::move(aitFetcher), nullptr)
+{
+}
+
+OpAppPackageManager::OpAppPackageManager(
+  const Configuration& configuration,
+  std::unique_ptr<IHashCalculator> hashCalculator,
+  std::unique_ptr<IDecryptor> decryptor,
+  std::unique_ptr<IAitFetcher> aitFetcher,
+  std::unique_ptr<IXmlParser> xmlParser)
   : m_Configuration(configuration)
   , m_HashCalculator(std::move(hashCalculator))
   , m_Decryptor(std::move(decryptor))
   , m_AitFetcher(std::move(aitFetcher))
+  , m_XmlParser(std::move(xmlParser))
 {
   // Create default implementations if not provided
   if (!m_HashCalculator) {
@@ -109,6 +121,9 @@ OpAppPackageManager::OpAppPackageManager(
   if (!m_AitFetcher) {
     // Pass User-Agent from configuration (TS 103 606 Section 6.1.5.1)
     m_AitFetcher = std::make_unique<AitFetcher>(m_Configuration.m_UserAgent);
+  }
+  if (!m_XmlParser) {
+    m_XmlParser = IXmlParser::create();
   }
 }
 
@@ -524,7 +539,6 @@ bool OpAppPackageManager::parseAitFiles(
     const std::vector<std::string>& aitFiles)
 {
   m_AitAppDescriptors.clear();
-  auto xmlParser = IXmlParser::create();
 
   for (const auto& aitFile : aitFiles) {
     // Read file content
@@ -539,7 +553,7 @@ bool OpAppPackageManager::parseAitFiles(
     std::string content = buffer.str();
 
     // Parse the AIT XML
-    auto aitTable = xmlParser->ParseAit(content.c_str(), content.size());
+    auto aitTable = m_XmlParser->ParseAit(content.c_str(), content.size());
     if (!aitTable) {
       LOG(WARNING) << "Failed to parse AIT file: " << aitFile;
       continue;
