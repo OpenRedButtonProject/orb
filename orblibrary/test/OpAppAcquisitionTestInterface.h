@@ -66,20 +66,40 @@ public:
     SrvRecord popNextSrvRecord(std::vector<SrvRecord>& records);
 
     /**
-     * @brief Fetches AIT XML using the simplified interface
+     * @brief Fetches ALL AIT XMLs and writes them to files
      * @param fqdn The FQDN to query
      * @param networkAvailable Whether network is available
-     * @return AcquisitionResult with success status and content/error
+     * @param outputDirectory Directory where AIT files will be written
+     * @return AcquisitionResult with file paths and status
      */
-    AcquisitionResult FetchAitXml(const std::string& fqdn, bool networkAvailable);
+    AcquisitionResult FetchAitXmls(const std::string& fqdn, bool networkAvailable,
+                                             const std::string& outputDirectory);
 
     /**
      * @brief Static fetch method test (convenience wrapper)
      * @param fqdn The FQDN to query
      * @param networkAvailable Whether network is available
-     * @return AcquisitionResult with success status and content/error
+     * @param outputDirectory Directory where AIT files will be written
+     * @return AcquisitionResult with file paths and status
      */
-    static AcquisitionResult StaticFetch(const std::string& fqdn, bool networkAvailable);
+    static AcquisitionResult StaticFetch(const std::string& fqdn, bool networkAvailable,
+                                         const std::string& outputDirectory);
+
+    /**
+     * @brief Test helper to generate an AIT filename
+     * @param index The index of the AIT file
+     * @param target The target server hostname
+     * @return A sanitized filename
+     */
+    std::string generateAitFilename(int index, const std::string& target);
+
+    /**
+     * @brief Test helper to write AIT content to a file
+     * @param content The AIT XML content
+     * @param filePath The destination file path
+     * @return true on success
+     */
+    bool writeAitToFile(const std::string& content, const std::string& filePath);
 
 private:
     explicit OpAppAcquisitionTestInterface(const std::string& userAgent);

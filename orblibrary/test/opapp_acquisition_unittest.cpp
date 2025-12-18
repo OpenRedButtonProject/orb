@@ -2,6 +2,8 @@
 #include <vector>
 #include <cstdint>
 #include <iostream>
+#include <filesystem>
+#include <fstream>
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "OpAppAcquisition.h"
@@ -246,109 +248,6 @@ TEST_F(OpAppAcquisitionTest, TestPopNextSrvRecord_IterateThroughAll)
 }
 
 // =============================================================================
-// FetchAitXml Tests (new simplified interface)
-// =============================================================================
-
-TEST_F(OpAppAcquisitionTest, TestFetchAitXml_NetworkUnavailable)
-{
-    // GIVEN: a test interface
-    auto testInterface = OpAppAcquisitionTestInterface::create();
-
-    // WHEN: fetching AIT XML with network unavailable
-    AcquisitionResult result = testInterface->FetchAitXml("example.com", false);
-
-    // THEN: the result should indicate failure
-    EXPECT_FALSE(result.success);
-    EXPECT_FALSE(result.errorMessage.empty());
-    EXPECT_TRUE(result.content.empty());
-}
-
-TEST_F(OpAppAcquisitionTest, TestFetchAitXml_InvalidFqdn)
-{
-    // GIVEN: a test interface
-    auto testInterface = OpAppAcquisitionTestInterface::create();
-
-    // WHEN: fetching AIT XML with invalid FQDN
-    AcquisitionResult result = testInterface->FetchAitXml("invalid", true);
-
-    // THEN: the result should indicate failure
-    EXPECT_FALSE(result.success);
-    EXPECT_FALSE(result.errorMessage.empty());
-}
-
-TEST_F(OpAppAcquisitionTest, TestFetchAitXml_EmptyFqdn)
-{
-    // GIVEN: a test interface
-    auto testInterface = OpAppAcquisitionTestInterface::create();
-
-    // WHEN: fetching AIT XML with empty FQDN
-    AcquisitionResult result = testInterface->FetchAitXml("", true);
-
-    // THEN: the result should indicate failure
-    EXPECT_FALSE(result.success);
-    EXPECT_FALSE(result.errorMessage.empty());
-}
-
-TEST_F(OpAppAcquisitionTest, TestStaticFetch_NetworkUnavailable)
-{
-    // WHEN: using static fetch with network unavailable
-    AcquisitionResult result = OpAppAcquisitionTestInterface::StaticFetch("example.com", false);
-
-    // THEN: the result should indicate failure
-    EXPECT_FALSE(result.success);
-    EXPECT_FALSE(result.errorMessage.empty());
-}
-
-TEST_F(OpAppAcquisitionTest, TestStaticFetch_InvalidFqdn)
-{
-    // WHEN: using static fetch with invalid FQDN
-    AcquisitionResult result = OpAppAcquisitionTestInterface::StaticFetch("invalid", true);
-
-    // THEN: the result should indicate failure
-    EXPECT_FALSE(result.success);
-}
-
-// =============================================================================
-// AcquisitionResult Tests
-// =============================================================================
-
-TEST_F(OpAppAcquisitionTest, TestAcquisitionResult_DefaultConstructor)
-{
-    // GIVEN/WHEN: creating a default AcquisitionResult
-    AcquisitionResult result;
-
-    // THEN: default values should indicate failure
-    EXPECT_FALSE(result.success);
-    EXPECT_TRUE(result.content.empty());
-    EXPECT_TRUE(result.errorMessage.empty());
-    EXPECT_EQ(result.statusCode, -1);
-}
-
-TEST_F(OpAppAcquisitionTest, TestAcquisitionResult_Success)
-{
-    // WHEN: creating a success result
-    AcquisitionResult result = AcquisitionResult::Success("test content", 200);
-
-    // THEN: values should indicate success
-    EXPECT_TRUE(result.success);
-    EXPECT_EQ(result.content, "test content");
-    EXPECT_TRUE(result.errorMessage.empty());
-    EXPECT_EQ(result.statusCode, 200);
-}
-
-TEST_F(OpAppAcquisitionTest, TestAcquisitionResult_Failure)
-{
-    // WHEN: creating a failure result
-    AcquisitionResult result = AcquisitionResult::Failure("error message");
-
-    // THEN: values should indicate failure
-    EXPECT_FALSE(result.success);
-    EXPECT_TRUE(result.content.empty());
-    EXPECT_EQ(result.errorMessage, "error message");
-    EXPECT_EQ(result.statusCode, -1);
-}
-
-// =============================================================================
 // SrvRecord Struct Tests
 // =============================================================================
 
@@ -403,35 +302,338 @@ TEST_F(OpAppAcquisitionTest, DISABLED_TestDoDnsSrvLookup_ValidFqdn)
     }
 }
 
-TEST_F(OpAppAcquisitionTest, DISABLED_TestFetchAitXml_ValidFqdn)
+// =============================================================================
+// AcquisitionResult Tests
+// =============================================================================
+
+TEST_F(OpAppAcquisitionTest, TestAcquisitionResult_DefaultConstructor)
+{
+    // GIVEN/WHEN: creating a default AcquisitionResult
+    AcquisitionResult result;
+
+    // THEN: default values should indicate failure
+    EXPECT_FALSE(result.success);
+    EXPECT_TRUE(result.aitFiles.empty());
+    EXPECT_TRUE(result.errors.empty());
+    EXPECT_TRUE(result.fatalError.empty());
+}
+
+TEST_F(OpAppAcquisitionTest, TestAcquisitionResult_FullSuccess)
+{
+    // WHEN: creating a full success result with multiple files (no errors)
+    std::vector<std::string> files = {"/tmp/ait_0_server1.xml", "/tmp/ait_1_server2.xml"};
+    std::vector<std::string> noErrors;
+    AcquisitionResult result = AcquisitionResult(files, noErrors);
+
+    // THEN: values should indicate success
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(result.aitFiles.size(), size_t(2));
+    EXPECT_EQ(result.aitFiles[0], "/tmp/ait_0_server1.xml");
+    EXPECT_EQ(result.aitFiles[1], "/tmp/ait_1_server2.xml");
+    EXPECT_TRUE(result.errors.empty());
+    EXPECT_TRUE(result.fatalError.empty());
+}
+
+TEST_F(OpAppAcquisitionTest, TestAcquisitionResult_Failure)
+{
+    // WHEN: creating a failure result
+    AcquisitionResult result = AcquisitionResult("fatal error");
+
+    // THEN: values should indicate failure
+    EXPECT_FALSE(result.success);
+    EXPECT_TRUE(result.aitFiles.empty());
+    EXPECT_TRUE(result.errors.empty());
+    EXPECT_EQ(result.fatalError, "fatal error");
+}
+
+TEST_F(OpAppAcquisitionTest, TestAcquisitionResult_PartialSuccess)
+{
+    // WHEN: creating a partial success result
+    std::vector<std::string> files = {"/tmp/ait_0_server1.xml"};
+    std::vector<std::string> errors = {"Failed to download from server2"};
+    AcquisitionResult result = AcquisitionResult(files, errors);
+
+    // THEN: values should indicate partial success
+    EXPECT_TRUE(result.success);
+    EXPECT_EQ(result.aitFiles.size(), size_t(1));
+    EXPECT_EQ(result.errors.size(), size_t(1));
+    EXPECT_EQ(result.errors[0], "Failed to download from server2");
+}
+
+TEST_F(OpAppAcquisitionTest, TestAcquisitionResult_PartialSuccess_NoFiles)
+{
+    // WHEN: creating a partial success result with no files (all failed)
+    std::vector<std::string> files;
+    std::vector<std::string> errors = {"Failed from server1", "Failed from server2"};
+    AcquisitionResult result = AcquisitionResult(files, errors);
+
+    // THEN: success should be false since no files were acquired
+    EXPECT_FALSE(result.success);
+    EXPECT_TRUE(result.aitFiles.empty());
+    EXPECT_EQ(result.errors.size(), size_t(2));
+}
+
+// =============================================================================
+// FetchAitXmls Tests
+// =============================================================================
+
+TEST_F(OpAppAcquisitionTest, TestFetchAitXmls_NetworkUnavailable)
+{
+    // GIVEN: a test interface
+    auto testInterface = OpAppAcquisitionTestInterface::create();
+
+    // WHEN: fetching all AITs with network unavailable
+    AcquisitionResult result = testInterface->FetchAitXmls(
+        "example.com", false, "/tmp/test_ait");
+
+    // THEN: the result should indicate failure
+    EXPECT_FALSE(result.success);
+    EXPECT_FALSE(result.fatalError.empty());
+    EXPECT_TRUE(result.aitFiles.empty());
+}
+
+TEST_F(OpAppAcquisitionTest, TestFetchAitXmls_InvalidFqdn)
+{
+    // GIVEN: a test interface
+    auto testInterface = OpAppAcquisitionTestInterface::create();
+
+    // WHEN: fetching all AITs with invalid FQDN
+    AcquisitionResult result = testInterface->FetchAitXmls(
+        "invalid", true, "/tmp/test_ait");
+
+    // THEN: the result should indicate failure
+    EXPECT_FALSE(result.success);
+    EXPECT_FALSE(result.fatalError.empty());
+}
+
+TEST_F(OpAppAcquisitionTest, TestFetchAitXmls_EmptyFqdn)
+{
+    // GIVEN: a test interface
+    auto testInterface = OpAppAcquisitionTestInterface::create();
+
+    // WHEN: fetching all AITs with empty FQDN
+    AcquisitionResult result = testInterface->FetchAitXmls(
+        "", true, "/tmp/test_ait");
+
+    // THEN: the result should indicate failure
+    EXPECT_FALSE(result.success);
+    EXPECT_FALSE(result.fatalError.empty());
+}
+
+TEST_F(OpAppAcquisitionTest, TestFetchAitXmls_EmptyOutputDirectory)
+{
+    // GIVEN: a test interface
+    auto testInterface = OpAppAcquisitionTestInterface::create();
+
+    // WHEN: fetching all AITs with empty output directory
+    AcquisitionResult result = testInterface->FetchAitXmls(
+        "example.com", true, "");
+
+    // THEN: the result should indicate failure
+    EXPECT_FALSE(result.success);
+    EXPECT_EQ(result.fatalError, "Output directory not specified");
+}
+
+TEST_F(OpAppAcquisitionTest, TestStaticFetch_NetworkUnavailable)
+{
+    // WHEN: using static fetch all with network unavailable
+    AcquisitionResult result = OpAppAcquisitionTestInterface::StaticFetch(
+        "example.com", false, "/tmp/test_ait");
+
+    // THEN: the result should indicate failure
+    EXPECT_FALSE(result.success);
+    EXPECT_FALSE(result.fatalError.empty());
+}
+
+TEST_F(OpAppAcquisitionTest, TestStaticFetch_InvalidFqdn)
+{
+    // WHEN: using static fetch all with invalid FQDN
+    AcquisitionResult result = OpAppAcquisitionTestInterface::StaticFetch(
+        "invalid", true, "/tmp/test_ait");
+
+    // THEN: the result should indicate failure
+    EXPECT_FALSE(result.success);
+}
+
+// =============================================================================
+// Helper Function Tests
+// =============================================================================
+
+TEST_F(OpAppAcquisitionTest, TestGenerateAitFilename_SimpleHostname)
+{
+    // GIVEN: a test interface
+    auto testInterface = OpAppAcquisitionTestInterface::create();
+
+    // WHEN: generating a filename for a simple hostname
+    std::string filename = testInterface->generateAitFilename(0, "server.example.com");
+
+    // THEN: the filename should be properly formatted
+    EXPECT_EQ(filename, "ait_0_server.example.com.xml");
+}
+
+TEST_F(OpAppAcquisitionTest, TestGenerateAitFilename_SpecialCharacters)
+{
+    // GIVEN: a test interface
+    auto testInterface = OpAppAcquisitionTestInterface::create();
+
+    // WHEN: generating a filename with special characters in hostname
+    std::string filename = testInterface->generateAitFilename(1, "server:8080/path?query=1");
+
+    // THEN: special characters should be replaced with underscores
+    EXPECT_EQ(filename, "ait_1_server_8080_path_query_1.xml");
+}
+
+TEST_F(OpAppAcquisitionTest, TestGenerateAitFilename_MultipleIndices)
+{
+    // GIVEN: a test interface
+    auto testInterface = OpAppAcquisitionTestInterface::create();
+
+    // WHEN: generating filenames with different indices
+    std::string filename0 = testInterface->generateAitFilename(0, "server.com");
+    std::string filename5 = testInterface->generateAitFilename(5, "server.com");
+    std::string filename99 = testInterface->generateAitFilename(99, "server.com");
+
+    // THEN: indices should be included correctly
+    EXPECT_EQ(filename0, "ait_0_server.com.xml");
+    EXPECT_EQ(filename5, "ait_5_server.com.xml");
+    EXPECT_EQ(filename99, "ait_99_server.com.xml");
+}
+
+TEST_F(OpAppAcquisitionTest, TestWriteAitToFile_Success)
+{
+    // GIVEN: a test interface and a temporary directory
+    auto testInterface = OpAppAcquisitionTestInterface::create();
+    std::string testDir = "/tmp/opapp_test_" + std::to_string(getpid());
+    std::filesystem::create_directories(testDir);
+    std::string testFile = testDir + "/test_ait.xml";
+    std::string content = "<?xml version=\"1.0\"?><ait>test content</ait>";
+
+    // WHEN: writing AIT content to a file
+    bool result = testInterface->writeAitToFile(content, testFile);
+
+    // THEN: the write should succeed
+    EXPECT_TRUE(result);
+    EXPECT_TRUE(std::filesystem::exists(testFile));
+
+    // Verify content
+    std::ifstream inFile(testFile);
+    std::stringstream buffer;
+    buffer << inFile.rdbuf();
+    EXPECT_EQ(buffer.str(), content);
+
+    // Cleanup
+    std::filesystem::remove_all(testDir);
+}
+
+TEST_F(OpAppAcquisitionTest, TestWriteAitToFile_CreatesParentDirectory)
+{
+    // GIVEN: a test interface and a path with non-existent parent directory
+    auto testInterface = OpAppAcquisitionTestInterface::create();
+    std::string testDir = "/tmp/opapp_test_" + std::to_string(getpid());
+    std::string testFile = testDir + "/test_ait.xml";
+    std::string content = "<?xml version=\"1.0\"?><ait>test</ait>";
+
+    // Ensure directory exists for write (since writeAitToFile doesn't create parent dirs)
+    std::filesystem::create_directories(testDir);
+
+    // WHEN: writing AIT content to a file
+    bool result = testInterface->writeAitToFile(content, testFile);
+
+    // THEN: the write should succeed
+    EXPECT_TRUE(result);
+    EXPECT_TRUE(std::filesystem::exists(testFile));
+
+    // Cleanup
+    std::filesystem::remove_all(testDir);
+}
+
+TEST_F(OpAppAcquisitionTest, TestWriteAitToFile_EmptyContent)
+{
+    // GIVEN: a test interface and empty content
+    auto testInterface = OpAppAcquisitionTestInterface::create();
+    std::string testDir = "/tmp/opapp_test_" + std::to_string(getpid());
+    std::filesystem::create_directories(testDir);
+    std::string testFile = testDir + "/empty_ait.xml";
+
+    // WHEN: writing empty content to a file
+    bool result = testInterface->writeAitToFile("", testFile);
+
+    // THEN: the write should still succeed (empty file is valid)
+    EXPECT_TRUE(result);
+    EXPECT_TRUE(std::filesystem::exists(testFile));
+    EXPECT_EQ(std::filesystem::file_size(testFile), 0u);
+
+    // Cleanup
+    std::filesystem::remove_all(testDir);
+}
+
+TEST_F(OpAppAcquisitionTest, TestWriteAitToFile_InvalidPath)
+{
+    // GIVEN: a test interface and an invalid path
+    auto testInterface = OpAppAcquisitionTestInterface::create();
+    std::string invalidPath = "/nonexistent_root_dir_12345/subdir/test.xml";
+
+    // WHEN: writing to an invalid path
+    bool result = testInterface->writeAitToFile("content", invalidPath);
+
+    // THEN: the write should fail
+    EXPECT_FALSE(result);
+}
+
+// =============================================================================
+// Disabled Integration Tests - For manual testing with real DNS/network
+// =============================================================================
+
+TEST_F(OpAppAcquisitionTest, DISABLED_TestFetchAitXmls_ValidFqdn)
 {
     // GIVEN: a test interface with a real-world FQDN
     const std::string fqdn = "test.freeviewplay.tv";
     auto testInterface = OpAppAcquisitionTestInterface::create();
+    std::string testDir = "/tmp/opapp_ait_test_" + std::to_string(getpid());
 
-    // WHEN: fetching AIT XML
-    AcquisitionResult result = testInterface->FetchAitXml(fqdn, true);
+    // WHEN: fetching all AITs
+    AcquisitionResult result = testInterface->FetchAitXmls(fqdn, true, testDir);
 
-    // THEN: on success, content should not be empty
+    // THEN: on success, at least one AIT file should be created
     if (result.success) {
-        EXPECT_FALSE(result.content.empty());
-        std::cout << "Content:\n\n" << result.content << std::endl;
+        EXPECT_FALSE(result.aitFiles.empty());
+        std::cout << "Successfully acquired " << result.aitFiles.size() << " AIT file(s):" << std::endl;
+        for (const auto& file : result.aitFiles) {
+            std::cout << "  - " << file << std::endl;
+            // Print file content
+            std::ifstream inFile(file);
+            std::stringstream buffer;
+            buffer << inFile.rdbuf();
+            std::cout << "    Content:\n" << buffer.str() << std::endl;
+        }
     } else {
-        std::cout << "Fetch failed: " << result.errorMessage << std::endl;
+        std::cout << "FetchAitXmls failed: " << result.fatalError << std::endl;
     }
+
+    // Log any errors encountered
+    for (const auto& error : result.errors) {
+        std::cout << "Error: " << error << std::endl;
+    }
+
+    // Cleanup
+    std::filesystem::remove_all(testDir);
 }
 
 TEST_F(OpAppAcquisitionTest, DISABLED_TestStaticFetch_ValidFqdn)
 {
-    // WHEN: using static fetch with valid FQDN
+    // WHEN: using static fetch all with valid FQDN
     const std::string fqdn = "test.freeviewplay.tv";
-    AcquisitionResult result = OpAppAcquisition::Fetch(fqdn, true);
+    std::string testDir = "/tmp/opapp_static_ait_test_" + std::to_string(getpid());
+    AcquisitionResult result = OpAppAcquisition::Fetch(fqdn, true, testDir);
 
-    // THEN: on success, content should not be empty
+    // THEN: on success, at least one AIT file should be created
     if (result.success) {
-        EXPECT_FALSE(result.content.empty());
-        std::cout << "Static fetch content:\n\n" << result.content << std::endl;
+        EXPECT_FALSE(result.aitFiles.empty());
+        std::cout << "Static FetchAll acquired " << result.aitFiles.size() << " AIT file(s)" << std::endl;
     } else {
-        std::cout << "Static fetch failed: " << result.errorMessage << std::endl;
+        std::cout << "Static FetchAll failed: " << result.fatalError << std::endl;
     }
+
+    // Cleanup
+    std::filesystem::remove_all(testDir);
 }

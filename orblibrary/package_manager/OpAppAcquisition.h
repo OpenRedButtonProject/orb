@@ -35,26 +35,28 @@ class DownloadedObject;
 
 /**
  * @brief Result of an AIT acquisition attempt.
+ *
+ * AITs are written to files to avoid heap pressure with large/many files.
+ * Per TS 103 606: "The result of the process is a number of (XML) AITs..."
  */
 struct AcquisitionResult {
-    bool success;
-    std::string content;
-    std::string errorMessage;
-    int statusCode;  // HTTP status code if available, -1 otherwise
+    bool success;                        // True if at least one AIT was acquired
+    std::vector<std::string> aitFiles;   // Paths to acquired AIT XML files
+    std::vector<std::string> errors;     // Non-fatal errors encountered
+    std::string fatalError;              // Fatal error (empty if success)
 
+    // Default constructor - failure state
     AcquisitionResult()
-        : success(false), statusCode(-1) {}
+        : success(false) {}
 
-    AcquisitionResult(bool s, const std::string& c, const std::string& err = "", int code = -1)
-        : success(s), content(c), errorMessage(err), statusCode(code) {}
+    // Failure constructor - with fatal error message
+    explicit AcquisitionResult(const std::string& fatalError)
+        : success(false), fatalError(fatalError) {}
 
-    static AcquisitionResult Success(const std::string& content, int statusCode = 200) {
-        return AcquisitionResult(true, content, "", statusCode);
-    }
-
-    static AcquisitionResult Failure(const std::string& errorMessage) {
-        return AcquisitionResult(false, "", errorMessage, -1);
-    }
+    // Success constructor - with acquired files and any non-fatal errors
+    AcquisitionResult(const std::vector<std::string>& aitFiles,
+                      const std::vector<std::string>& errors)
+        : success(!aitFiles.empty()), aitFiles(aitFiles), errors(errors) {}
 };
 
 /**
@@ -65,13 +67,20 @@ public:
     virtual ~IOpAppAcquisition() = default;
 
     /**
-     * @brief Fetch the AIT XML for a given FQDN.
+     * @brief Fetch ALL AIT XMLs for a given FQDN, writing each to a file.
+     *
+     * Iterates through all SRV records and downloads AIT from each reachable target.
+     * AITs are written to individual files in the specified output directory.
      *
      * @param fqdn The fully qualified domain name of the OpApp
      * @param networkAvailable Whether network is currently available
-     * @return AcquisitionResult containing success status and content/error
+     * @param outputDirectory Directory where AIT files will be written
+     * @return AcquisitionResult containing file paths and status
      */
-    virtual AcquisitionResult FetchAitXml(const std::string& fqdn, bool networkAvailable) = 0;
+    virtual AcquisitionResult FetchAitXmls(
+        const std::string& fqdn,
+        bool networkAvailable,
+        const std::string& outputDirectory) = 0;
 };
 
 /**
@@ -95,28 +104,35 @@ public:
     OpAppAcquisition& operator=(const OpAppAcquisition&) = delete;
 
     /**
-     * @brief Fetch the AIT XML for a given FQDN.
+     * @brief Fetch ALL AIT XMLs for a given FQDN, writing each to a file.
      *
-     * Performs DNS SRV lookup followed by HTTPS GET to retrieve the AIT XML.
-     * Tries multiple SRV records in priority/weight order until success.
+     * Performs DNS SRV lookup followed by HTTPS GET to retrieve AIT XML from
+     * ALL reachable SRV record targets. Each AIT is written to an individual
+     * file in the specified output directory.
      *
      * @param fqdn The fully qualified domain name of the OpApp
      * @param networkAvailable Whether network is currently available
-     * @return AcquisitionResult containing success status and content/error
+     * @param outputDirectory Directory where AIT files will be written
+     * @return AcquisitionResult containing file paths and status
      */
-    AcquisitionResult FetchAitXml(const std::string& fqdn, bool networkAvailable) override;
+    AcquisitionResult FetchAitXmls(
+        const std::string& fqdn,
+        bool networkAvailable,
+        const std::string& outputDirectory) override;
 
     /**
-     * @brief Static convenience method for one-shot AIT fetching.
+     * @brief Static convenience method for fetching AITs.
      *
-     * Creates a temporary OpAppAcquisition instance and fetches AIT XML.
+     * Creates a temporary OpAppAcquisition instance and fetches all AIT XMLs.
      *
      * @param fqdn The fully qualified domain name of the OpApp
      * @param networkAvailable Whether network is currently available
+     * @param outputDirectory Directory where AIT files will be written
      * @param userAgent HTTP User-Agent header value
-     * @return AcquisitionResult containing success status and content/error
+     * @return AcquisitionResult containing file paths and status
      */
     static AcquisitionResult Fetch(const std::string& fqdn, bool networkAvailable,
+                                   const std::string& outputDirectory,
                                    const std::string& userAgent = "");
 
     // Friend class for testing private methods
@@ -150,6 +166,22 @@ private:
      * @return true if valid
      */
     bool validateFqdn(const std::string& fqdn);
+
+    /**
+     * @brief Generate a unique filename for an AIT file.
+     * @param index The index of the AIT file
+     * @param target The target server hostname
+     * @return A sanitized filename
+     */
+    std::string generateAitFilename(int index, const std::string& target);
+
+    /**
+     * @brief Write AIT content to file atomically.
+     * @param content The AIT XML content
+     * @param filePath The destination file path
+     * @return true on success
+     */
+    bool writeAitToFile(const std::string& content, const std::string& filePath);
 
     std::unique_ptr<HttpDownloader> m_downloader;
 };

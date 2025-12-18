@@ -117,6 +117,10 @@ public:
        * Format per ETSI TS 102 796 Section 7.3.2.4 (HbbTV User-Agent string)
        * Example: "HbbTV/1.6.1 (+DRM;+PVR;+RTSP;+OMID) vendor/1.0" */
       std::string m_UserAgent = "HbbTV/1.6.1 (+DRM;+PVR;+RTSP;+OMID) orb/1.0";
+
+      /* Directory where acquired AIT XML files are stored.
+       * If empty, uses a subdirectory "ait_cache" of m_DestinationDirectory. */
+      std::string m_AitOutputDirectory;
   };
 
   // Constructors
