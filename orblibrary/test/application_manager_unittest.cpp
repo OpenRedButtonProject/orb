@@ -21,7 +21,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/orb/orblibrary/moderator/app_mgr/application_manager.h"
-#include "third_party/orb/orblibrary/moderator/app_mgr/xml_parser.h"
+#include "xml_parser.h"
 #include "MockApplicationSessionCallback.h"
 #include "third_party/orb/orblibrary/moderator/app_mgr/base_app.h"
 #include "third_party/orb/orblibrary/moderator/AppMgrInterface.hpp"

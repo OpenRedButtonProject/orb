@@ -28,7 +28,6 @@
 #include <string>
 #include <errno.h>
 
-#include "ait.h"
 #include "log.h"
 
 namespace orb
@@ -106,7 +105,7 @@ Utils::CreateLocatorInfo Utils::ParseCreateLocatorInfo(const std::string &url, c
                     triplet.originalNetworkId = std::strtoul(original_network_id.c_str(), &end, 16);
                     if (errno == ERANGE || *end != '\0' || end == original_network_id.c_str())
                     {
-                        LOG(LOG_ERROR, "failed to convert orginal network id");
+                        LOG(ERROR) << "failed to convert orginal network id";
                         isAitFilterCurrentService = false;
                     }
                     else
@@ -114,7 +113,7 @@ Utils::CreateLocatorInfo Utils::ParseCreateLocatorInfo(const std::string &url, c
                         triplet.serviceId = std::strtoul(service_id.c_str(), &end, 16);
                         if (errno == ERANGE || *end != '\0' || end == service_id.c_str())
                         {
-                            LOG(LOG_ERROR, "failed to convert service id");
+                            LOG(ERROR) << "failed to convert service id";
                             isAitFilterCurrentService = false;
                         }
                         else if (transport_stream_id.empty())
@@ -128,7 +127,7 @@ Utils::CreateLocatorInfo Utils::ParseCreateLocatorInfo(const std::string &url, c
                             triplet.transportStreamId = std::strtoul(transport_stream_id.c_str(), &end, 16);
                             if (errno == ERANGE || *end != '\0' || end == transport_stream_id.c_str())
                             {
-                                LOG(LOG_ERROR, "failed to convert org_id");
+                                LOG(ERROR) << "failed to convert org_id";
                                 isAitFilterCurrentService = false;
                             }
                             else
@@ -172,7 +171,7 @@ Utils::CreateLocatorInfo Utils::ParseCreateLocatorInfo(const std::string &url, c
                 urlInfo.orgId = std::strtoul(url_org_id.c_str(), &end, 16);
                 if (errno == ERANGE || *end != '\0' || end == url_org_id.c_str())
                 {
-                    LOG(LOG_ERROR, "failed to convert org_id");
+                    LOG(ERROR) << "failed to convert org_id";
                     urlInfo.type = CreateLocatorType::UNKNOWN_LOCATOR;
                     urlInfo.orgId = 0;
                 }
@@ -180,7 +179,7 @@ Utils::CreateLocatorInfo Utils::ParseCreateLocatorInfo(const std::string &url, c
                 urlInfo.appId = std::strtoul(url_app_id.c_str(), &end, 16);
                 if (errno == ERANGE || *end != '\0' || end == url_org_id.c_str())
                 {
-                    LOG(LOG_ERROR, "failed to convert app_id");
+                    LOG(ERROR) << "failed to convert app_id";
                     urlInfo.type = CreateLocatorType::UNKNOWN_LOCATOR;
                     urlInfo.appId = 0;
                 }
@@ -188,12 +187,12 @@ Utils::CreateLocatorInfo Utils::ParseCreateLocatorInfo(const std::string &url, c
 
             if (urlInfo.type != CreateLocatorType::AIT_APPLICATION_LOCATOR)
             {
-                LOG(LOG_DEBUG, "Unknown URL: %s (could not parse org_id/app_id)", url.c_str());
+                LOG(DEBUG) << "Unknown URL: " << url << " (could not parse org_id/app_id)";
             }
         }
         else
         {
-            LOG(LOG_DEBUG, "Unknown URL: %s (not for current service)", url.c_str());
+            LOG(DEBUG) << "Unknown URL: " << url << " (not for current service)";
         }
     }
     else if (url.substr(0, 7) == "http://" || url.substr(0, 8) == "https://")
@@ -203,7 +202,7 @@ Utils::CreateLocatorInfo Utils::ParseCreateLocatorInfo(const std::string &url, c
     else
     {
         urlInfo.type = CreateLocatorType::UNKNOWN_LOCATOR;
-        LOG(LOG_DEBUG, "Unknown URL: %s (unknown scheme)", url.c_str());
+        LOG(DEBUG) << "Unknown URL: " << url << " (unknown scheme)";
     }
 
     return urlInfo;
@@ -296,7 +295,7 @@ std::string Utils::StrGetUrlOrigin(const std::string &url)
                     else
                     {
                         state = 5;
-                        LOG(LOG_DEBUG, "Error parsing URL %s", url.c_str());
+                        LOG(DEBUG) << "Error parsing URL " << url;
                     }
                 }
                 countChars++;
@@ -313,7 +312,7 @@ std::string Utils::StrGetUrlOrigin(const std::string &url)
                 else
                 {
                     state = 5;
-                    LOG(LOG_DEBUG, "Error parsing URL %s", url.c_str());
+                    LOG(DEBUG) << "Error parsing URL " << url;
                 }
                 break;
             }
@@ -344,7 +343,7 @@ std::string Utils::StrGetUrlOrigin(const std::string &url)
                 else if (portStrIndex > 5)
                 {
                     state = 5;
-                    LOG(LOG_DEBUG, "Error parsing URL %s", url.c_str());
+                    LOG(DEBUG) << "Error parsing URL " << url;
                 }
                 else
                 {
