@@ -44,6 +44,7 @@ public:
 public:
 
         WebSocketConnection(struct lws *wsi, const std::string &uri);
+        virtual ~WebSocketConnection();
 
         std::string Uri() const
         {
@@ -93,7 +94,7 @@ private:
 
     WebSocketService(const std::string &server_name, int port, bool use_ssl, const
         std::string &interface_name);
-    virtual ~WebSocketService() = default;
+    virtual ~WebSocketService();
     virtual bool Start();
     virtual void Stop();
     virtual bool OnConnection(WebSocketConnection *connection) = 0;
@@ -134,6 +135,7 @@ private:
     struct lws_protocols mProtocols[2];
     struct lws_context_creation_info mContextInfo;
     struct lws_context *mContext;
+    pthread_t mMainThread;
 };
 } // namespace NetworkServices
 

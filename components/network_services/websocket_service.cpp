@@ -33,6 +33,10 @@ WebSocketService::WebSocketConnection::WebSocketConnection(struct lws *wsi, cons
     mId = sNextConnectionId++;
 }
 
+WebSocketService::WebSocketConnection::~WebSocketConnection() {
+    while (!mWriteQueue.empty()) { mWriteQueue.pop(); }
+}
+
 void WebSocketService::WebSocketConnection::SendMessage(const std::string &text)
 {
     std::vector<uint8_t> data(text.begin(), text.end());
@@ -138,7 +142,8 @@ WebSocketService::WebSocketService(const std::string &protocol_name, int port, b
                SECS_SINCE_VALID_HANGUP},
 #endif
     mProtocols{Protocol(mProtocolName.c_str()), LWS_PROTOCOL_LIST_TERM},
-    mContext(nullptr)
+    mContext(nullptr),
+    mMainThread((pthread_t)0)
 {
     mContextInfo =
     {
@@ -168,44 +173,74 @@ WebSocketService::WebSocketService(const std::string &protocol_name, int port, b
                      // | LLL_DEBUG | LLL_CLIENT | LLL_PARSER | LLL_HEADER | LLL_EXT | LLL_LATENCY
                      , lws_log_to_logcat);
 
-    LOGD("created WebSocketService")
+    mContext = lws_create_context(&mContextInfo);
+    if (mContext != nullptr)
+    {
+        LOGD("created WebSocketService")
+    }
+    else
+    {
+        LOGE("FAILED to WebSocket context")
+    }
+}
+
+WebSocketService::~WebSocketService()
+{
+    // Stop the service first
+    Stop();
+
+    if (mContext != nullptr)
+    {
+        lws_context_destroy(mContext);
+        mContext = nullptr;
+    }
 }
 
 bool WebSocketService::Start()
 {
     bool ret = false;
-    mConnectionsMutex.lock();
-    if (mContext == nullptr
-        && (mContext = lws_create_context(&mContextInfo)) != nullptr)
+    if (mContext != nullptr)
     {
         mStop = false;
-        pthread_t thread;
-        pthread_create(&thread, nullptr, EnterMainLooper, this);
-        mConnectionsMutex.unlock();
-        ret = true;
+        int err = pthread_create(&mMainThread, nullptr, EnterMainLooper, this);
+        if (err == 0)
+        {
+            ret = true;
+        }
+        else
+        {
+            LOGE("pthread_create failed with %d", err)
+            mMainThread = (pthread_t)0;
+        }
     }
-    mConnectionsMutex.unlock();
     return ret;
 }
 
 void WebSocketService::Stop()
 {
-    LOGD("Stopping")
     mConnectionsMutex.lock();
-    mStop = true;
+    if (!mStop)
+    {
+        LOGD("Stopping")
+        mStop = true;
+    }
     if (mConnections.size() > 0)
     {
         for (auto &it : mConnections)
         {
             it.second->Close();
         }
-    }
-    else if (mContext != nullptr)
-    {
-        lws_cancel_service(mContext);
+        mConnections.clear();
     }
     mConnectionsMutex.unlock();
-    LOGD("Stopped")
+
+    // Wait for the main looper thread to finish
+    if (mMainThread != (pthread_t)0)
+    {
+        pthread_join(mMainThread, nullptr);
+        mMainThread = (pthread_t)0;
+        LOGD("Stopped")
+    }
 }
 
 void * WebSocketService::EnterMainLooper(void *instance)
@@ -217,7 +252,7 @@ void * WebSocketService::EnterMainLooper(void *instance)
 void WebSocketService::MainLooper()
 {
     mConnectionsMutex.lock();
-    while (!mStop || mConnections.size() > 0)
+    while (!mStop)
     {
         mConnectionsMutex.unlock();
         if (lws_service(mContext, 0) < 0)
@@ -225,16 +260,11 @@ void WebSocketService::MainLooper()
             mConnectionsMutex.lock();
             mStop = true;
             mConnections.clear();
-            lws_cancel_service(mContext);
             break;
         }
         mConnectionsMutex.lock();
     }
-    if (mContext != nullptr)
-    {
-        lws_context_destroy(mContext);
-        mContext = nullptr;
-    }
+    lws_cancel_service(mContext);
     mConnectionsMutex.unlock();
     OnServiceStopped();
 }
