@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+#define LOG_TAG "ORB/WS_Server"
 
+#include "log.h"
 #include "websocket_service.h"
 
 #define         LWS_PROTOCOL_LIST_TERM   { NULL, NULL, 0, 0, 0, NULL, 0 }
@@ -75,6 +77,42 @@ void WebSocketService::WebSocketConnection::Close()
     lws_callback_on_writable(mWsi);
 }
 
+// Custom logging callback to route libwebsockets logs to Android logcat
+static void lws_log_to_logcat(int level, const char *line)
+{
+    // Map libwebsockets log levels to Android log levels
+    android_LogPriority android_level;
+    switch (level) {
+        case LLL_ERR:
+            android_level = ANDROID_LOG_ERROR;
+            break;
+        case LLL_WARN:
+            android_level = ANDROID_LOG_WARN;
+            break;
+        case LLL_NOTICE:
+        case LLL_INFO:
+            android_level = ANDROID_LOG_INFO;
+            break;
+        case LLL_DEBUG:
+        case LLL_PARSER:
+        case LLL_HEADER:
+        case LLL_EXT:
+        case LLL_CLIENT:
+        case LLL_LATENCY:
+        case LLL_USER:
+        default:
+            android_level = ANDROID_LOG_DEBUG;
+            break;
+    }
+
+    // Remove trailing newline if present (libwebsockets includes it)
+    size_t len = strlen(line);
+    if (len > 0 && line[len - 1] == '\n') {
+        len--;
+    }
+    __android_log_print(android_level, "libwebsockets", "%.*s", (int)len, line);
+}
+
 WebSocketService::WebSocketService(const std::string &protocol_name, int port, bool use_ssl,
                                    const std::string &interface_name) :
     mStop(true),
@@ -109,7 +147,14 @@ WebSocketService::WebSocketService(const std::string &protocol_name, int port, b
     {
         mContextInfo.iface = mInterfaceName.c_str();
     }
-    lws_set_log_level(LLL_ERR | LLL_WARN /*| LLL_NOTICE*/, nullptr);
+    // Enable LibWebSockets logging and route to Android logcat via custom callback
+    // Enable: ERR, WARN, NOTICE, INFO,
+    // but not: DEBUG, CLIENT, PARSER, HEADER, EXT, LATENCY
+    lws_set_log_level( LLL_ERR | LLL_WARN | LLL_NOTICE | LLL_INFO
+                     // | LLL_DEBUG | LLL_CLIENT | LLL_PARSER | LLL_HEADER | LLL_EXT | LLL_LATENCY
+                     , lws_log_to_logcat);
+
+    LOGD("created WebSocketService")
 }
 
 bool WebSocketService::Start()
@@ -131,6 +176,7 @@ bool WebSocketService::Start()
 
 void WebSocketService::Stop()
 {
+    LOGD("Stopping")
     mConnectionsMutex.lock();
     mStop = true;
     if (mConnections.size() > 0)
@@ -145,6 +191,7 @@ void WebSocketService::Stop()
         lws_cancel_service(mContext);
     }
     mConnectionsMutex.unlock();
+    LOGD("Stopped")
 }
 
 void * WebSocketService::EnterMainLooper(void *instance)
@@ -311,6 +358,7 @@ void WebSocketService::OnFragmentReceived(WebSocketConnection *connection,
     else
     {
         // Not implemented
+        LOGI("Binary data received, but not handled.");
     }
 }
 
