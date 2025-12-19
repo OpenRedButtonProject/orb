@@ -253,7 +253,7 @@ TEST_F(XmlParserTest, ParseAit_ApplicationDescriptor_ParsesVersion)
     // THEN: The xmlVersion field should be parsed correctly
     ASSERT_NE(aitTable, nullptr);
     ASSERT_EQ(aitTable->numApps, 1);
-    EXPECT_EQ(aitTable->appArray[0].xmlVersion, 42);
+    EXPECT_EQ(aitTable->appArray[0].xmlVersion, 42u);
 }
 
 TEST_F(XmlParserTest, ParseAit_ApplicationDescriptor_VersionZero)
@@ -267,7 +267,7 @@ TEST_F(XmlParserTest, ParseAit_ApplicationDescriptor_VersionZero)
     // THEN: The xmlVersion field should be 0
     ASSERT_NE(aitTable, nullptr);
     ASSERT_EQ(aitTable->numApps, 1);
-    EXPECT_EQ(aitTable->appArray[0].xmlVersion, 0);
+    EXPECT_EQ(aitTable->appArray[0].xmlVersion, 0u);
 }
 
 TEST_F(XmlParserTest, ParseAit_ApplicationDescriptor_VersionLargeValue)
@@ -279,12 +279,10 @@ TEST_F(XmlParserTest, ParseAit_ApplicationDescriptor_VersionLargeValue)
     // WHEN: Parsing the AIT XML
     auto aitTable = parseAitXml(aitXml);
 
-    // THEN: The xmlVersion field should parse the value
-    // Note: Current implementation stores as uint8_t, so only lower 8 bits are preserved
+    // THEN: The xmlVersion field should parse the full value (uint32_t supports unsignedInt31Bit)
     ASSERT_NE(aitTable, nullptr);
     ASSERT_EQ(aitTable->numApps, 1);
-    // 123456789 & 0xFF = 21 (truncation to uint8_t)
-    EXPECT_EQ(aitTable->appArray[0].xmlVersion, static_cast<uint8_t>(123456789));
+    EXPECT_EQ(aitTable->appArray[0].xmlVersion, 123456789u);
 }
 
 TEST_F(XmlParserTest, ParseAit_ApplicationDescriptor_VersionMaxUnsignedInt31Bit)
@@ -295,11 +293,10 @@ TEST_F(XmlParserTest, ParseAit_ApplicationDescriptor_VersionMaxUnsignedInt31Bit)
     // WHEN: Parsing the AIT XML
     auto aitTable = parseAitXml(aitXml);
 
-    // THEN: The value should be parsed (truncated to uint8_t in current implementation)
+    // THEN: The full value should be parsed (uint32_t supports unsignedInt31Bit range)
     ASSERT_NE(aitTable, nullptr);
     ASSERT_EQ(aitTable->numApps, 1);
-    // 2147483647 & 0xFF = 255
-    EXPECT_EQ(aitTable->appArray[0].xmlVersion, static_cast<uint8_t>(2147483647));
+    EXPECT_EQ(aitTable->appArray[0].xmlVersion, 2147483647u);
 }
 
 // =============================================================================
@@ -319,6 +316,21 @@ TEST_F(XmlParserTest, ParseAit_ApplicationDescriptorType_OtherApp_HbbTV)
     ASSERT_NE(aitTable, nullptr);
     ASSERT_EQ(aitTable->numApps, 1);
     EXPECT_EQ(aitTable->appArray[0].xmlType, Ait::XML_TYP_OTHER);
+}
+
+TEST_F(XmlParserTest, ParseAit_ApplicationDescriptorType_OtherApp_OpApp)
+{
+    // GIVEN: An AIT XML with OtherApp type set to OpApp type
+    // TS 103606 Table 7: "Shall be "application/vnd.hbbtv.opapp.pkg".
+    std::string aitXml = buildAitXml("1", "", "application/vnd.hbbtv.opapp.pkg");
+
+    // WHEN: Parsing the AIT XML
+    auto aitTable = parseAitXml(aitXml);
+
+    // THEN: The xmlType field should be XML_TYP_OPAPP
+    ASSERT_NE(aitTable, nullptr);
+    ASSERT_EQ(aitTable->numApps, 1);
+    EXPECT_EQ(aitTable->appArray[0].xmlType, Ait::XML_TYP_OPAPP);
 }
 
 TEST_F(XmlParserTest, ParseAit_ApplicationDescriptorType_OtherApp_Unknown)
@@ -489,8 +501,8 @@ TEST_F(XmlParserTest, ParseAit_OpAppExtensions_AllFieldsPresent)
     // Verify applicationUsageDescriptor/ApplicationUsage
     EXPECT_EQ(app.appUsage, "urn:dvb:opapp:usage:launcher");
 
-    // Verify applicationDescriptor/version (stored as uint8_t, so truncated)
-    EXPECT_EQ(app.xmlVersion, static_cast<uint8_t>(1000017));
+    // Verify applicationDescriptor/version (uint32_t supports full unsignedInt31Bit range)
+    EXPECT_EQ(app.xmlVersion, 1000017u);
 
     // Verify applicationDescriptor/type/OtherApp
     EXPECT_EQ(app.xmlType, Ait::XML_TYP_OTHER);
@@ -571,13 +583,13 @@ TEST_F(XmlParserTest, ParseAit_OpAppExtensions_MultipleApplications)
 
     // Verify first app (EPG)
     EXPECT_EQ(aitTable->appArray[0].appUsage, "urn:dvb:opapp:usage:epg");
-    EXPECT_EQ(aitTable->appArray[0].xmlVersion, 10);
+    EXPECT_EQ(aitTable->appArray[0].xmlVersion, 10u);
     EXPECT_EQ(aitTable->appArray[0].xmlType, Ait::XML_TYP_OTHER);
     EXPECT_EQ(aitTable->appArray[0].transportArray[0].url.baseUrl, "https://epg.example.com/");
 
     // Verify second app (Launcher)
     EXPECT_EQ(aitTable->appArray[1].appUsage, "urn:dvb:opapp:usage:launcher");
-    EXPECT_EQ(aitTable->appArray[1].xmlVersion, 20);
+    EXPECT_EQ(aitTable->appArray[1].xmlVersion, 20u);
     EXPECT_EQ(aitTable->appArray[1].xmlType, Ait::XML_TYP_OTHER);
     EXPECT_EQ(aitTable->appArray[1].transportArray[0].url.baseUrl, "https://launcher.example.com/");
 }

@@ -455,6 +455,10 @@ static void XmlParseAppDescType(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
                     {
                         app_ptr->xmlType = Ait::XML_TYP_OTHER;
                     }
+                    else if (xmlStrEqual(dptr, (const xmlChar *)"application/vnd.hbbtv.opapp.pkg"))
+                    {
+                        app_ptr->xmlType = Ait::XML_TYP_OPAPP;
+                    }
                     NODE_CONTENT_RELEASE();
                 }
             }
@@ -606,7 +610,8 @@ static void XmlParseAppDesc(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
             }
             else if (xmlStrEqual(cptr, (const xmlChar *)"version"))
             {
-                app_ptr->xmlVersion = (uint8_t)XmlGetContentInt(node);
+                // OpApp specific version is stored as uint32_t
+                app_ptr->xmlVersion = XmlGetContentInt(node);
             }
             else if (xmlStrEqual(cptr, (const xmlChar *)"mhpVersion"))
             {

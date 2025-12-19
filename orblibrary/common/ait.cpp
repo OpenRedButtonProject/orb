@@ -361,7 +361,7 @@ bool Ait::PrintInfo(const S_AIT_TABLE *parsedAit)
             << static_cast<char>(hAitApp.appName.names[j].langCode & 0xFFu) << ")";
         }
         LOG(INFO) << "\t\tXML type: " << u8(hAitApp.xmlType);
-        LOG(INFO) << "\t\tXML version: " << u8(hAitApp.xmlVersion);
+        LOG(INFO) << "\t\tXML version: " << hAitApp.xmlVersion;
         LOG(INFO) << "\t\tUsage type: " << u8(hAitApp.usageType);
         LOG(INFO) << "\t\tVisibility: " << u8(hAitApp.appDesc.visibility);
         LOG(INFO) << "\t\tPriority: " << u8(hAitApp.appDesc.priority);

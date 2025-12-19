@@ -74,6 +74,7 @@ public:
         XML_TYP_OTHER    = 0x01,
         XML_TYP_DVB_HTML = 0x10,
         XML_TYP_DVB_J    = 0x11,
+        XML_TYP_OPAPP    = 0x80,
     } E_AIT_XML_TYPE;
 
     typedef enum
@@ -159,7 +160,7 @@ public:
         S_APP_NAME_DESC appName;
         S_APP_DESC appDesc;
         uint8_t xmlType;
-        uint8_t xmlVersion;
+        uint32_t xmlVersion;  // unsignedInt31Bit per XSD definition for OpApp.
         uint8_t usageType;
         std::vector<std::string> boundaries;
         std::vector<S_APP_PARENTAL_RATING> parentalRatings;
