@@ -53,7 +53,14 @@ void WebSocketService::WebSocketConnection::SendFragment(std::vector<uint8_t> &&
         .data = std::move(data),
     };
     mWriteQueue.emplace(fragment);
-    lws_callback_on_writable(mWsi);
+    if (mWsi != nullptr)
+    {
+        lws_callback_on_writable(mWsi);
+    }
+    else
+    {
+        LOGE("Wsi is null, cannot send data.");
+    }
 }
 
 bool WebSocketService::WebSocketConnection::ClosePaired()
@@ -74,7 +81,14 @@ void WebSocketService::WebSocketConnection::Close()
         .close = true,
     };
     mWriteQueue.emplace(fragment);
-    lws_callback_on_writable(mWsi);
+    if (mWsi != nullptr)
+    {
+        lws_callback_on_writable(mWsi);
+    }
+    else
+    {
+        LOGE("Wsi is null, cannot send data.");
+    }
 }
 
 // Custom logging callback to route libwebsockets logs to Android logcat
@@ -242,12 +256,28 @@ int WebSocketService::LwsCallback(struct lws *wsi, enum lws_callback_reasons rea
 {
     int result = 0;
     mConnectionsMutex.lock();
+
+    std::unordered_map<void *, std::unique_ptr<WebSocketConnection>>::iterator it;
+
+    // Check if conection exists
+    if (reason == LWS_CALLBACK_CLOSED
+        || reason == LWS_CALLBACK_RECEIVE
+        || reason == LWS_CALLBACK_SERVER_WRITEABLE)
+    {
+        // For these reasons, we need to find the connection by user pointer
+        it = mConnections.find(user);
+        if (it == mConnections.end())
+        {
+            LOGE("LwsCallback: Connection not found for user: %p", user);
+            result = -1; // User not found
+            // set reason to avoid doing anything else in this function
+            reason = LWS_CALLBACK_PROTOCOL_INIT;
+        }
+    }
+
+    //handle the callback reason
     switch (reason)
     {
-        case LWS_CALLBACK_PROTOCOL_INIT: {
-            break;
-        }
-
         case LWS_CALLBACK_ESTABLISHED: {
             std::string uri = Header(wsi, WSI_TOKEN_GET_URI);
             std::string args = Header(wsi, WSI_TOKEN_HTTP_URI_ARGS);
@@ -267,29 +297,12 @@ int WebSocketService::LwsCallback(struct lws *wsi, enum lws_callback_reasons rea
         }
 
         case LWS_CALLBACK_CLOSED: {
-            auto it = mConnections.find(user);
-            if (it == mConnections.end())
-            {
-                result = -1;
-                break;
-            }
             OnDisconnected(it->second.get());
             mConnections.erase(it);
-
-            if (mStop && mConnections.size() <= 0 && mContext != nullptr)
-            {
-                lws_cancel_service(mContext);
-            }
             break;
         }
 
         case LWS_CALLBACK_SERVER_WRITEABLE: {
-            auto it = mConnections.find(user);
-            if (it == mConnections.end())
-            {
-                result = -1;
-                break;
-            }
             while (!it->second->mWriteQueue.empty())
             {
                 auto fragment = std::move(it->second->mWriteQueue.front());
@@ -313,12 +326,6 @@ int WebSocketService::LwsCallback(struct lws *wsi, enum lws_callback_reasons rea
         }
 
         case LWS_CALLBACK_RECEIVE: {
-            auto it = mConnections.find(user);
-            if (it == mConnections.end())
-            {
-                result = -1;
-                break;
-            }
             std::vector<uint8_t> data(static_cast<uint8_t *>(in), static_cast<uint8_t *>(in) + len);
             OnFragmentReceived(it->second.get(), std::move(data), lws_is_first_fragment(wsi),
                 lws_is_final_fragment(wsi), lws_frame_is_binary(wsi));
