@@ -330,9 +330,7 @@ public:
 
     void OnDisconnected(WebSocketConnection *connection) override;
 
-    void updateAllClients();
-
-    void updateClient(WebSocketConnection *connection);
+    void UpdateClient(WebSocketConnection *connection) override;
 
     void attachTimelineSource(TimelineSource *);
 

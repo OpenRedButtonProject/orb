@@ -20,14 +20,16 @@
 #define         LWS_PROTOCOL_LIST_TERM   { NULL, NULL, 0, 0, 0, NULL, 0 }
 
 namespace NetworkServices {
-#define VHOST_NAME "localhost"
-#define SSL_CERT_FILEPATH "todo.cert"
-#define SSL_PRIVATE_KEY_FILEPATH "todo.key"
-#define SECS_SINCE_VALID_PING 3
-#define SECS_SINCE_VALID_HANGUP 10
-#define RX_BUFFER_SIZE 4096
 
-static int next_connection_id_ = 0;
+static int sNextConnectionId = 0;
+
+// Implementation of WebSocketConnection methods
+
+WebSocketService::WebSocketConnection::WebSocketConnection(struct lws *wsi, const std::string &uri)
+    : mWsi(wsi), mUri(uri), mTextBuffer(""), mPairedConnection(nullptr)
+{
+    mId = sNextConnectionId++;
+}
 
 void WebSocketService::WebSocketConnection::SendMessage(const std::string &text)
 {
@@ -48,8 +50,20 @@ void WebSocketService::WebSocketConnection::SendFragment(std::vector<uint8_t> &&
         .write_protocol = static_cast<lws_write_protocol>(protocol),
         .data = std::move(data),
     };
-    write_queue_.emplace(fragment);
-    lws_callback_on_writable(wsi_);
+    mWriteQueue.emplace(fragment);
+    lws_callback_on_writable(mWsi);
+}
+
+bool WebSocketService::WebSocketConnection::ClosePaired()
+{
+    if (mPairedConnection ==  nullptr)
+    {
+        return false;
+    }
+    mPairedConnection->mPairedConnection = nullptr;
+    mPairedConnection->Close();
+    mPairedConnection = nullptr;
+    return true;
 }
 
 void WebSocketService::WebSocketConnection::Close()
@@ -57,43 +71,43 @@ void WebSocketService::WebSocketConnection::Close()
     struct FragmentWriteInfo fragment = {
         .close = true,
     };
-    write_queue_.emplace(fragment);
-    lws_callback_on_writable(wsi_);
+    mWriteQueue.emplace(fragment);
+    lws_callback_on_writable(mWsi);
 }
 
 WebSocketService::WebSocketService(const std::string &protocol_name, int port, bool use_ssl,
                                    const std::string &interface_name) :
-    stop_(true),
-    protocol_name_(protocol_name),
-    use_ssl_(use_ssl),
-    interface_name_(interface_name),
+    mStop(true),
+    mProtocolName(protocol_name),
+    mUseSSL(use_ssl),
+    mInterfaceName(interface_name),
 #if LWS_LIBRARY_VERSION_NUMBER > 4000000
-    retry_{.secs_since_valid_ping = SECS_SINCE_VALID_PING, .secs_since_valid_hangup =
+    mRetry{.secs_since_valid_ping = SECS_SINCE_VALID_PING, .secs_since_valid_hangup =
                SECS_SINCE_VALID_HANGUP},
 #endif
-    protocols_{Protocol(protocol_name_.c_str()), LWS_PROTOCOL_LIST_TERM},
-    context_(nullptr)
+    mProtocols{Protocol(mProtocolName.c_str()), LWS_PROTOCOL_LIST_TERM},
+    mContext(nullptr)
 {
-    info_ =
+    mContextInfo =
     {
-        .protocols = protocols_,
+        .protocols = mProtocols,
         .port = port,
         .options = LWS_SERVER_OPTION_HTTP_HEADERS_SECURITY_BEST_PRACTICES_ENFORCE
             /* | LWS_SERVER_OPTION_VHOST_UPG_STRICT_HOST_CHECK */,
-        .vhost_name = VHOST_NAME,
+        .vhost_name = VHOST_NAME.c_str(),
 #if LWS_LIBRARY_VERSION_NUMBER > 4000000
-        .retry_and_idle_policy = &retry_,
+        .retry_and_idle_policy = &mRetry,
 #endif
     };
-    if (use_ssl_)
+    if (mUseSSL)
     {
-        info_.options |= LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
-        info_.ssl_cert_filepath = SSL_CERT_FILEPATH;
-        info_.ssl_private_key_filepath = SSL_PRIVATE_KEY_FILEPATH;
+        mContextInfo.options |= LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
+        mContextInfo.ssl_cert_filepath = SSL_CERT_FILEPATH.c_str();
+        mContextInfo.ssl_private_key_filepath = SSL_PRIVATE_KEY_FILEPATH.c_str();
     }
-    if (!interface_name_.empty())
+    if (!mInterfaceName.empty())
     {
-        info_.iface = interface_name_.c_str();
+        mContextInfo.iface = mInterfaceName.c_str();
     }
     lws_set_log_level(LLL_ERR | LLL_WARN /*| LLL_NOTICE*/, nullptr);
 }
@@ -101,35 +115,36 @@ WebSocketService::WebSocketService(const std::string &protocol_name, int port, b
 bool WebSocketService::Start()
 {
     bool ret = false;
-    connections_mutex_.lock();
-    if (context_ == nullptr && (context_ = lws_create_context(&info_)) != nullptr)
+    mConnectionsMutex.lock();
+    if (mContext == nullptr
+        && (mContext = lws_create_context(&mContextInfo)) != nullptr)
     {
-        stop_ = false;
+        mStop = false;
         pthread_t thread;
         pthread_create(&thread, nullptr, EnterMainLooper, this);
-        connections_mutex_.unlock();
+        mConnectionsMutex.unlock();
         ret = true;
     }
-    connections_mutex_.unlock();
+    mConnectionsMutex.unlock();
     return ret;
 }
 
 void WebSocketService::Stop()
 {
-    connections_mutex_.lock();
-    stop_ = true;
-    if (connections_.size() > 0)
+    mConnectionsMutex.lock();
+    mStop = true;
+    if (mConnections.size() > 0)
     {
-        for (auto &it : connections_)
+        for (auto &it : mConnections)
         {
             it.second->Close();
         }
     }
-    else if (context_ != nullptr)
+    else if (mContext != nullptr)
     {
-        lws_cancel_service(context_);
+        lws_cancel_service(mContext);
     }
-    connections_mutex_.unlock();
+    mConnectionsMutex.unlock();
 }
 
 void * WebSocketService::EnterMainLooper(void *instance)
@@ -140,26 +155,26 @@ void * WebSocketService::EnterMainLooper(void *instance)
 
 void WebSocketService::MainLooper()
 {
-    connections_mutex_.lock();
-    while (!stop_ || connections_.size() > 0)
+    mConnectionsMutex.lock();
+    while (!mStop || mConnections.size() > 0)
     {
-        connections_mutex_.unlock();
-        if (lws_service(context_, 0) < 0)
+        mConnectionsMutex.unlock();
+        if (lws_service(mContext, 0) < 0)
         {
-            connections_mutex_.lock();
-            stop_ = true;
-            connections_.clear();
-            lws_cancel_service(context_);
+            mConnectionsMutex.lock();
+            mStop = true;
+            mConnections.clear();
+            lws_cancel_service(mContext);
             break;
         }
-        connections_mutex_.lock();
+        mConnectionsMutex.lock();
     }
-    if (context_ != nullptr)
+    if (mContext != nullptr)
     {
-        lws_context_destroy(context_);
-        context_ = nullptr;
+        lws_context_destroy(mContext);
+        mContext = nullptr;
     }
-    connections_mutex_.unlock();
+    mConnectionsMutex.unlock();
     OnServiceStopped();
 }
 
@@ -179,7 +194,7 @@ int WebSocketService::LwsCallback(struct lws *wsi, enum lws_callback_reasons rea
     void *user, void *in, size_t len)
 {
     int result = 0;
-    connections_mutex_.lock();
+    mConnectionsMutex.lock();
     switch (reason)
     {
         case LWS_CALLBACK_PROTOCOL_INIT: {
@@ -200,38 +215,38 @@ int WebSocketService::LwsCallback(struct lws *wsi, enum lws_callback_reasons rea
                 result = -1;
                 break;
             }
-            connections_[user] = std::move(connection);
+            mConnections[user] = std::move(connection);
             break;
         }
 
         case LWS_CALLBACK_CLOSED: {
-            auto it = connections_.find(user);
-            if (it == connections_.end())
+            auto it = mConnections.find(user);
+            if (it == mConnections.end())
             {
                 result = -1;
                 break;
             }
             OnDisconnected(it->second.get());
-            connections_.erase(it);
+            mConnections.erase(it);
 
-            if (stop_ && connections_.size() <= 0 && context_ != nullptr)
+            if (mStop && mConnections.size() <= 0 && mContext != nullptr)
             {
-                lws_cancel_service(context_);
+                lws_cancel_service(mContext);
             }
             break;
         }
 
         case LWS_CALLBACK_SERVER_WRITEABLE: {
-            auto it = connections_.find(user);
-            if (it == connections_.end())
+            auto it = mConnections.find(user);
+            if (it == mConnections.end())
             {
                 result = -1;
                 break;
             }
-            while (!it->second->write_queue_.empty())
+            while (!it->second->mWriteQueue.empty())
             {
-                auto fragment = std::move(it->second->write_queue_.front());
-                it->second->write_queue_.pop();
+                auto fragment = std::move(it->second->mWriteQueue.front());
+                it->second->mWriteQueue.pop();
                 if (fragment.close)
                 {
                     lws_close_reason(wsi, LWS_CLOSE_STATUS_GOINGAWAY, nullptr, 0);
@@ -251,8 +266,8 @@ int WebSocketService::LwsCallback(struct lws *wsi, enum lws_callback_reasons rea
         }
 
         case LWS_CALLBACK_RECEIVE: {
-            auto it = connections_.find(user);
-            if (it == connections_.end())
+            auto it = mConnections.find(user);
+            if (it == mConnections.end())
             {
                 result = -1;
                 break;
@@ -267,7 +282,7 @@ int WebSocketService::LwsCallback(struct lws *wsi, enum lws_callback_reasons rea
             break;
         }
     }
-    connections_mutex_.unlock();
+    mConnectionsMutex.unlock();
     return result;
 }
 
@@ -279,18 +294,18 @@ void WebSocketService::OnFragmentReceived(WebSocketConnection *connection,
     {
         if (is_first)
         {
-            connection->text_buffer_ = std::string(reinterpret_cast<char *>(data.data()),
+            connection->mTextBuffer = std::string(reinterpret_cast<char *>(data.data()),
                 data.size());
         }
         else
         {
-            connection->text_buffer_ += std::string(reinterpret_cast<char *>(data.data()),
+            connection->mTextBuffer += std::string(reinterpret_cast<char *>(data.data()),
                 data.size());
         }
 
         if (is_final)
         {
-            OnMessageReceived(connection, connection->text_buffer_);
+            OnMessageReceived(connection, connection->mTextBuffer);
         }
     }
     else
@@ -302,6 +317,54 @@ void WebSocketService::OnFragmentReceived(WebSocketConnection *connection,
 void WebSocketService::OnMessageReceived(WebSocketConnection *connection, const std::string &text)
 {
     // Possibly called by the implementation of OnFragmentReceived
+}
+
+void WebSocketService::UpdateClient(WebSocketConnection *connection)
+{
+    // Overriden by sub class
+}
+
+void WebSocketService::OnUpdateClients()
+{
+    // Overriden by sub class
+}
+
+void WebSocketService::UpdateClients()
+{
+    for (auto const &connection : mConnections)
+    {
+        UpdateClient(connection.second.get());
+    }
+    OnUpdateClients();
+}
+
+int WebSocketService::TotalClients() const
+{
+    int total;
+    total = mConnections.size();
+    return total;
+}
+
+WebSocketService::WebSocketConnection* WebSocketService::GetConnection(int id)
+{
+    for (auto &connection : mConnections)
+    {
+        if (connection.second->mId == id)
+        {
+            return connection.second.get();
+        }
+    }
+    return nullptr;
+}
+
+void WebSocketService::WssMutexLock()
+{
+    mConnectionsMutex.lock();
+}
+
+void WebSocketService::WssMutexUnlock()
+{
+    mConnectionsMutex.unlock();
 }
 
 struct lws_protocols WebSocketService::Protocol(const char *protocol_name)
@@ -332,9 +395,5 @@ std::string WebSocketService::Header(struct lws *wsi, enum lws_token_indexes hea
     return "";
 }
 
-WebSocketService::WebSocketConnection::WebSocketConnection(struct lws *wsi, const std::string &uri)
-    : wsi_(wsi), uri_(uri), paired_connection_(nullptr)
-{
-    id_ = next_connection_id_++;
-}
+
 } // namespace NetworkServices

@@ -382,7 +382,7 @@ void SimpleClockTimelineSource::notify()
         {
             if (sink.second)
             {
-                sink.first->updateAllClients();
+                sink.first->UpdateClients();
             }
         }
     }
@@ -410,8 +410,8 @@ void TimelineSyncService::setContentId(const std::string &cid, const bool forceU
             m_ciiService->setCIIMessageProperty("contentId", getContentId());
             if (forceUpdate)
             {
-                updateAllClients();
-                m_ciiService->updateClients(true);
+                UpdateClients();
+                m_ciiService->UpdateClients();
             }
         }
     }
@@ -435,8 +435,8 @@ void TimelineSyncService::setContentIdOverride(const std::string &cid, const boo
         m_ciiService->setCIIMessageProperty("contentIdStatus", "final");
         if (forceUpdate)
         {
-            updateAllClients();
-            m_ciiService->updateClients(true);
+            UpdateClients();
+            m_ciiService->UpdateClients();
         }
     }
 }
@@ -498,15 +498,7 @@ void TimelineSyncService::OnMessageReceived(WebSocketService::WebSocketConnectio
     }
 }
 
-void TimelineSyncService::updateAllClients()
-{
-    for (auto const &connection : connections_)
-    {
-        updateClient(connection.second.get());
-    }
-}
-
-void TimelineSyncService::updateClient(WebSocketService::WebSocketConnection *connection)
+void TimelineSyncService::UpdateClient(WebSocketService::WebSocketConnection *connection)
 {
     if (!m_connectionSetupData[connection].isEmpty())
     {
@@ -635,7 +627,7 @@ void TimelineSyncService::configureConnectionWithSetupData(
                     src.first->timelineSelectorNeeded(tSel);
                 }
             }
-            updateClient(connection);
+            UpdateClient(connection);
         }
     }
 }

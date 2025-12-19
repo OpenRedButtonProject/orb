@@ -160,9 +160,8 @@ bool ContentIdentificationService::OnConnection(WebSocketService::WebSocketConne
 {
     LOG(LOG_INFO, "%s connected to CII service\n", connection->Uri().c_str());
 
-    Json::Value currentMessage(std::move(m_properties->toJson()));
-    connection->SendMessage(pack(currentMessage, false));
-    m_previousMessage = std::move(currentMessage);
+    UpdateClient(connection);
+    OnUpdateClients();
     return true;
 }
 
@@ -179,14 +178,18 @@ void ContentIdentificationService::OnDisconnected(WebSocketService::WebSocketCon
     LOG(LOG_INFO, "%s disconnected from CII service\n", connection->Uri().c_str());
 }
 
-void ContentIdentificationService::updateClients(bool onlydiff)
+void ContentIdentificationService::UpdateClient(WebSocketConnection *connection)
 {
-    Json::Value currentMessage(std::move(m_properties->toJson()));
-    for (auto const &connection : connections_)
-    {
-        connection.second->SendMessage(pack(currentMessage, onlydiff));
-    }
-    m_previousMessage = std::move(currentMessage);
+#if JSONCPP_VERSION_HEXA > 0x01080200
+    connection->SendMessage(Json::writeString(m_wbuilder, m_properties->toJson()));
+#else
+    connection->SendMessage(m_writer.write(m_properties->toJson()));
+#endif
+}
+
+void ContentIdentificationService::OnUpdateClients()
+{
+    m_previousMessage = std::move(m_properties->toJson());
 }
 
 bool ContentIdentificationService::setCIIMessageProperty(const std::string &key,
@@ -195,34 +198,4 @@ bool ContentIdentificationService::setCIIMessageProperty(const std::string &key,
     return m_properties->setProperty(key, value);
 }
 
-std::string ContentIdentificationService::pack(const Json::Value &currentMessage, bool onlydiff,
-    bool alwaysSendTimelines)
-{
-    Json::Value diffMessage;
-    for (auto const &CIIKey : CSSUtilities::CIIMessageProperties::keys)
-    {
-        if (currentMessage[CIIKey] != m_previousMessage[CIIKey])
-        {
-            diffMessage[CIIKey] = currentMessage[CIIKey];
-        }
-    }
-
-    if (alwaysSendTimelines)
-    {
-        diffMessage["timelines"] = currentMessage["timelines"];
-    }
-
-    // if (onlydiff) {
-    //     LOG(LOG_DEBUG, "ContentIdentificationService::pack:: \n%s\n", diffMessage.toStyledString().c_str());
-    //     return Json::writeString(m_wbuilder, diffMessage);
-    // }
-
-    LOG(LOG_DEBUG, "ContentIdentificationService::pack:: \n%s\n",
-        currentMessage.toStyledString().c_str());
-#if JSONCPP_VERSION_HEXA > 0x01080200
-    return Json::writeString(m_wbuilder, currentMessage);
-#else
-    return m_writer.write(currentMessage);
-#endif
-}
 }

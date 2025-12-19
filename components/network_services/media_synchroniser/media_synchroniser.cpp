@@ -371,7 +371,7 @@ int MediaSynchroniser::nrOfSlaves()
         ServiceManager::GetInstance().FindService<ContentIdentificationService>(m_ciiService);
     if (cii != nullptr)
     {
-        ret = cii->nrOfClients();
+        ret = cii->TotalClients();
     }
     return ret;
 }
@@ -383,7 +383,7 @@ void MediaSynchroniser::updateAllCIIClients()
         ServiceManager::GetInstance().FindService<ContentIdentificationService>(m_ciiService);
     if (cii != nullptr)
     {
-        cii->updateClients(true);
+        cii->UpdateClients();
     }
 }
 
@@ -394,7 +394,7 @@ void MediaSynchroniser::updateAllTSClients()
     LOG(LOG_DEBUG, "MediaSynchroniser::updateAllTSClients(). tsService: %p\n", ts);
     if (ts != nullptr)
     {
-        ts->updateAllClients();
+        ts->UpdateClients();
     }
 }
 

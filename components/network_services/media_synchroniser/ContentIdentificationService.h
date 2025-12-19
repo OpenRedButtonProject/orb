@@ -81,14 +81,11 @@ public:
 
     void OnDisconnected(WebSocketConnection *connection) override;
 
-    void updateClients(bool onlydiff);
+    void UpdateClient(WebSocketConnection *connection) override;
+
+    void OnUpdateClients() override;
 
     bool setCIIMessageProperty(const std::string &key, const Json::Value &value);
-
-    int nrOfClients() const
-    {
-        return connections_.size();
-    }
 
 private:
     ContentIdentificationProperties *m_properties;
@@ -100,8 +97,6 @@ private:
 #endif
     std::stringstream m_pattern;
 
-    std::string pack(const Json::Value &currentMessage, bool onlydiff, bool alwaysSendTimelines =
-            true);
 };
 }
 #endif //WIP_DVBCSS_HBBTV_CONTENTIDENTIFICATIONSERVICE_H
