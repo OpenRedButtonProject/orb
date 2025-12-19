@@ -406,6 +406,20 @@ source_set("test_orb_application_manager_sources")
   testonly = true
 }
 
+source_set("test_xml_parser_sources")
+{
+  sources = [
+    "test/xml_parser_unittest.cpp",
+  ]
+
+  deps = [
+    "//testing/gtest",
+    ":ait_common",  # Provides XmlParser and Ait classes
+  ]
+
+  testonly = true
+}
+
 # Single executable that combines all test sources
 executable("test_orb_all") {
   deps = [
@@ -418,7 +432,8 @@ executable("test_orb_all") {
     ":test_orb_video_window_sources",
     ":test_orb_util_sources",
     ":test_orb_jsonrpcservice_sources",
-    ":test_orb_application_manager_sources"
+    ":test_orb_application_manager_sources",
+    ":test_xml_parser_sources"
   ]
 
   testonly = true
