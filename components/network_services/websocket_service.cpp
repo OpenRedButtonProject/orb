@@ -24,6 +24,7 @@
 namespace NetworkServices {
 
 static int sNextConnectionId = 0;
+static int sNextServerId = 0;
 
 // Implementation of WebSocketConnection methods
 
@@ -31,6 +32,10 @@ WebSocketService::WebSocketConnection::WebSocketConnection(struct lws *wsi, cons
     : mWsi(wsi), mUri(uri), mTextBuffer(""), mPairedConnection(nullptr)
 {
     mId = sNextConnectionId++;
+}
+
+WebSocketService::WebSocketConnection::~WebSocketConnection() {
+    while (!mWriteQueue.empty()) { mWriteQueue.pop(); }
 }
 
 void WebSocketService::WebSocketConnection::SendMessage(const std::string &text)
@@ -138,7 +143,8 @@ WebSocketService::WebSocketService(const std::string &protocol_name, int port, b
                SECS_SINCE_VALID_HANGUP},
 #endif
     mProtocols{Protocol(mProtocolName.c_str()), LWS_PROTOCOL_LIST_TERM},
-    mContext(nullptr)
+    mContext(nullptr),
+    mMainThread((pthread_t)0)
 {
     mContextInfo =
     {
@@ -161,6 +167,8 @@ WebSocketService::WebSocketService(const std::string &protocol_name, int port, b
     {
         mContextInfo.iface = mInterfaceName.c_str();
     }
+    mSid = sNextServerId++;
+
     // Enable LibWebSockets logging and route to Android logcat via custom callback
     // Enable: ERR, WARN, NOTICE, INFO,
     // but not: DEBUG, CLIENT, PARSER, HEADER, EXT, LATENCY
@@ -168,44 +176,82 @@ WebSocketService::WebSocketService(const std::string &protocol_name, int port, b
                      // | LLL_DEBUG | LLL_CLIENT | LLL_PARSER | LLL_HEADER | LLL_EXT | LLL_LATENCY
                      , lws_log_to_logcat);
 
-    LOGD("created WebSocketService")
+    mContext = lws_create_context(&mContextInfo);
+    if (mContext != nullptr)
+    {
+        LOGD("created %s, id=%d", protocol_name.c_str(), mSid)
+    }
+    else
+    {
+        LOGE("FAILED to WebSocket context for %s, id=%d", protocol_name.c_str(), mSid)
+    }
+}
+
+WebSocketService::~WebSocketService()
+{
+    // Stop the service first
+    Stop();
+
+    if (mContext != nullptr)
+    {
+        lws_context_destroy(mContext);
+        mContext = nullptr;
+    }
 }
 
 bool WebSocketService::Start()
 {
     bool ret = false;
-    mConnectionsMutex.lock();
-    if (mContext == nullptr
-        && (mContext = lws_create_context(&mContextInfo)) != nullptr)
+    if (mContext != nullptr)
     {
         mStop = false;
-        pthread_t thread;
-        pthread_create(&thread, nullptr, EnterMainLooper, this);
-        mConnectionsMutex.unlock();
-        ret = true;
+        int err = pthread_create(&mMainThread, nullptr, EnterMainLooper, this);
+        if (err == 0)
+        {
+            ret = true;
+        }
+        else
+        {
+            LOGE("pthread_create failed with %d", err)
+            mMainThread = (pthread_t)0;
+        }
     }
-    mConnectionsMutex.unlock();
     return ret;
 }
 
 void WebSocketService::Stop()
 {
-    LOGD("Stopping")
     mConnectionsMutex.lock();
-    mStop = true;
+    if (!mStop)
+    {
+        LOGD("[%d] Stopping", mSid)
+        mStop = true;
+    }
     if (mConnections.size() > 0)
     {
         for (auto &it : mConnections)
         {
             it.second->Close();
         }
+        mConnections.clear();
     }
-    else if (mContext != nullptr)
+    mConnectionsMutex.unlock();
+
+    // Cancel any blocking lws_service() call to wake up the MainLooper thread
+    // so it can check mStop and exit
+    if (mContext != nullptr)
     {
         lws_cancel_service(mContext);
     }
-    mConnectionsMutex.unlock();
-    LOGD("Stopped")
+
+    // Wait for the main looper thread to finish
+    if (mMainThread != (pthread_t)0)
+    {
+        pthread_join(mMainThread, nullptr);
+        mMainThread = (pthread_t)0;
+        LOGD("[%d]  Stopped", mSid)
+    }
+
 }
 
 void * WebSocketService::EnterMainLooper(void *instance)
@@ -216,12 +262,14 @@ void * WebSocketService::EnterMainLooper(void *instance)
 
 void WebSocketService::MainLooper()
 {
+    LOGD("[%d] enter MainLooper", mSid)
     mConnectionsMutex.lock();
-    while (!mStop || mConnections.size() > 0)
+    while (!mStop)
     {
         mConnectionsMutex.unlock();
         if (lws_service(mContext, 0) < 0)
         {
+            LOGD("[%d] lws_service failed", mSid)
             mConnectionsMutex.lock();
             mStop = true;
             mConnections.clear();
@@ -230,13 +278,9 @@ void WebSocketService::MainLooper()
         }
         mConnectionsMutex.lock();
     }
-    if (mContext != nullptr)
-    {
-        lws_context_destroy(mContext);
-        mContext = nullptr;
-    }
     mConnectionsMutex.unlock();
     OnServiceStopped();
+    LOGD("[%d] exit MainLooper", mSid)
 }
 
 int WebSocketService::EnterLwsCallback(struct lws *wsi, enum lws_callback_reasons reason,
