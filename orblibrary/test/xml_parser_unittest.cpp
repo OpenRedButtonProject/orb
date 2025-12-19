@@ -515,6 +515,64 @@ TEST_F(XmlParserTest, ParseAit_OpAppExtensions_AllFieldsPresent)
     EXPECT_EQ(app.transportArray[0].url.extensionUrls[0], "v2/");
 }
 
+TEST_F(XmlParserTest, ParseAit_Privileged_OpApp)
+{
+    // GIVEN: An AIT XML with all opapp extension fields
+    // Using version 1000017 to test unsignedInt31Bit range (XSD spec)
+    std::string aitXml = buildAitXml(
+        "1000017",  // version (unsignedInt31Bit per XSD)
+        buildUsageDescriptor("urn:hbbtv:opapp:privileged:2017"),
+        "application/vnd.hbbtv.opapp.pkg"
+    );
+
+    // WHEN: Parsing the AIT XML
+    auto aitTable = parseAitXml(aitXml);
+
+    // THEN: All opapp extension fields should be parsed correctly
+    ASSERT_NE(aitTable, nullptr);
+    ASSERT_EQ(aitTable->numApps, 1);
+
+    const auto& app = aitTable->appArray[0];
+
+    // Verify applicationUsageDescriptor/ApplicationUsage
+    EXPECT_EQ(app.appUsage, "urn:hbbtv:opapp:privileged:2017");
+
+    // Verify applicationDescriptor/version (uint32_t supports full unsignedInt31Bit range)
+    EXPECT_EQ(app.xmlVersion, 1000017u);
+
+    // Verify applicationDescriptor/type/OtherApp
+    EXPECT_EQ(app.xmlType, Ait::XML_TYP_OPAPP);
+}
+
+TEST_F(XmlParserTest, ParseAit_Specific_OpApp)
+{
+    // GIVEN: An AIT XML with all opapp extension fields
+    // Using version 1000017 to test unsignedInt31Bit range (XSD spec)
+    std::string aitXml = buildAitXml(
+        "1000017",  // version (unsignedInt31Bit per XSD)
+        buildUsageDescriptor("urn:hbbtv:opapp:specific:2017"),
+        "application/vnd.hbbtv.opapp.pkg"
+    );
+
+    // WHEN: Parsing the AIT XML
+    auto aitTable = parseAitXml(aitXml);
+
+    // THEN: All opapp extension fields should be parsed correctly
+    ASSERT_NE(aitTable, nullptr);
+    ASSERT_EQ(aitTable->numApps, 1);
+
+    const auto& app = aitTable->appArray[0];
+
+    // Verify applicationUsageDescriptor/ApplicationUsage
+    EXPECT_EQ(app.appUsage, "urn:hbbtv:opapp:specific:2017");
+
+    // Verify applicationDescriptor/version (uint32_t supports full unsignedInt31Bit range)
+    EXPECT_EQ(app.xmlVersion, 1000017u);
+
+    // Verify applicationDescriptor/type/OtherApp
+    EXPECT_EQ(app.xmlType, Ait::XML_TYP_OPAPP+1);
+}
+
 TEST_F(XmlParserTest, ParseAit_OpAppExtensions_MultipleApplications)
 {
     // GIVEN: An AIT XML with multiple applications, each with different opapp extensions

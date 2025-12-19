@@ -450,13 +450,14 @@ static void XmlParseAppDescType(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
                 NODE_CONTENT_GET(node, dptr);
                 if (dptr)
                 {
-                    /* Only recognise mime type for hbbtv ... */
+                    /* Recognise mime type for hbbtv and opapp */
                     if (xmlStrEqual(dptr, (const xmlChar *)"application/vnd.hbbtv.xhtml+xml"))
                     {
                         app_ptr->xmlType = Ait::XML_TYP_OTHER;
                     }
                     else if (xmlStrEqual(dptr, (const xmlChar *)"application/vnd.hbbtv.opapp.pkg"))
                     {
+                        // Once complete, there is a further check for the Specific or Privileged type
                         app_ptr->xmlType = Ait::XML_TYP_OPAPP;
                     }
                     NODE_CONTENT_RELEASE();
@@ -891,7 +892,7 @@ static void XmlParseApplication(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
             }
             else if (!xmlStrncmp(cptr, (const xmlChar *)"application", 11))
             {
-                cptr += 11;
+                cptr += 11; // Skip "application" prefix
                 if (xmlStrEqual(cptr, (const xmlChar *)"Identifier"))
                 {
                     XmlParseAppId(node, app_ptr);
@@ -922,6 +923,20 @@ static void XmlParseApplication(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
             }
         }
         node = node->next;
+    }
+
+    // For OpApp, check the ApplicationUsage against the OtherApp type
+    if (app_ptr->xmlType == Ait::XML_TYP_OPAPP)
+    {
+        if (app_ptr->appUsage == "urn:hbbtv:opapp:specific:2017")
+        {
+            app_ptr->xmlType = 0x81; // See TS 103606 Table 8
+        }
+        else if (app_ptr->appUsage != "urn:hbbtv:opapp:privileged:2017")
+        {
+            // Sanity check that it was set. Just report and move on.
+            LOG(ERROR) << "OpApp ApplicationUsage does not match the OpApp type: " << app_ptr->appUsage;
+        }
     }
 }
 
