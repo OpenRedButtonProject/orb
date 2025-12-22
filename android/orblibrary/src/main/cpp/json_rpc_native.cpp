@@ -16,6 +16,8 @@
 
 #include "jni_utils.h"
 
+#define ERRLOG(x, ...) __android_log_print(ANDROID_LOG_ERROR, "Orb/JsonRpc", "%s:%u " x "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__);
+#define DBGLOG(x, ...) __android_log_print(ANDROID_LOG_DEBUG, "Orb/JsonRpc", "%s:%u " x "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__);
 
 #define CB_REQUEST_NEGOTIATE_METHODS 0
 #define CB_REQUEST_SUBSCRIBE_UNSUBSCRIBE 1
@@ -298,20 +300,36 @@ void InitialiseJsonRpcNative()
 }
 
 extern "C"
-JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_JsonRpc_nativeOpen(
+JNIEXPORT jboolean JNICALL Java_org_orbtv_orblibrary_JsonRpc_nativeOpen(
     JNIEnv *env,
     jobject object,
     jint port,
     jstring endpoint)
 {
-    // We use a raw pointer here, as the common way to associate native objects with a Java object
-    // is to store the pointer in a long. Java is responsible for calling nativeClose
     auto sessionCallback = std::make_unique<JsonRpcCallback>(object);
-    auto *service = new NetworkServices::JsonRpcService(
-        port, JniUtils::MakeStdString(env, endpoint),
-        std::move(sessionCallback));
-    service->Start();
+    std::string endpointStr = JniUtils::MakeStdString(env, endpoint);
+
+    DBGLOG("nativeOpen: Starting JSON-RPC WebSocket server on port %d, endpoint: %s", port, endpointStr.c_str());
+
+    NetworkServices::JsonRpcService *service =
+        new NetworkServices::JsonRpcService(port, endpointStr, std::move(sessionCallback));
+    if (service == nullptr)
+    {
+        ERRLOG("Failed to create JsonRpcService");
+        return JNI_FALSE;
+    }
+    if (!service->Start())
+    {
+        ERRLOG("%p service->Start() FAILED - server did not start", service);
+        delete service;
+        service = nullptr;
+        return JNI_FALSE;
+    }
+
+    // We use a raw pointer here, as the common way to associate native objects with a Java object
     env->SetLongField(object, g_service, jlong(service));
+    DBGLOG("started service %p, JSON-RPC WebSocket server ready at ws://localhost:%d%s", service, port, endpointStr.c_str());
+    return JNI_TRUE;
 }
 
 extern "C"
@@ -319,7 +337,19 @@ JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_JsonRpc_nativeClose(
     JNIEnv *env,
     jobject object)
 {
-    delete GetService(env, object);
+    auto *service = GetService(env, object);
+    if (service != nullptr)
+    {
+        DBGLOG("Closing JSON-RPC WebSocket server %p", service);
+        service->Stop();
+        delete service;
+        // Clear the field to prevent double-deletion
+        env->SetLongField(object, g_service, 0);
+    }
+    else
+    {
+        ERRLOG("Service pointer is null");
+    }
 }
 
 // java -> cpp

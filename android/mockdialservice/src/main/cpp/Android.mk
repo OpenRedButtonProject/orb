@@ -17,7 +17,7 @@ LOCAL_CFLAGS := -Wno-unused-parameter \
    -Wno-unused-private-field
 
 LOCAL_C_INCLUDES := \
-   $(LOCAL_PATH)/../symlink.mock_dial_service/
+   $(LOCAL_PATH)/../../../../../components/mock_dial_service/
    
 LOCAL_STATIC_LIBRARIES := \
    liborg.dtvkit.inputsource.mockdialservice \

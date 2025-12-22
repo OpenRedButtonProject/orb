@@ -26,12 +26,18 @@
 #define LOG_INFO ANDROID_LOG_INFO
 #define LOG_DEBUG ANDROID_LOG_DEBUG
 #define LOG(level, args ...) __android_log_print(level, LOG_TAG, args)
+#define LOGE(args ...) __android_log_print(LOG_ERROR, LOG_TAG, args);
+#define LOGI(args ...) __android_log_print(LOG_INFO, LOG_TAG, args);
+#define LOGD(args ...) __android_log_print(LOG_DEBUG, LOG_TAG, args);
 #define ASSERT(condition) assert(condition)
 #else
 #define LOG_ERROR 0
 #define LOG_INFO 1
 #define LOG_DEBUG 2
 #define LOG(level, args ...)
+#define LOGE(args ...)
+#define LOGI(args ...)
+#define LOGD(args ...)
 #define ASSERT(condition)
 #endif
 #endif // __MANAGER_LOG_H

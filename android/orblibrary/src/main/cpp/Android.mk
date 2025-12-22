@@ -11,19 +11,19 @@ endif
 
 ifeq ($(ORB_VENDOR), true)
     LOCAL_VENDOR_MODULE := true
-    
+
     LOCAL_SHARED_LIBRARIES := \
         libbase \
         libcutils \
         libutils \
         liblog
-    
+
     LOCAL_STATIC_LIBRARIES := \
         libcap \
         libssl \
         libcrypto_static \
         libjsoncpp_ORB
-        
+
     LOCAL_HEADER_LIBRARIES := jni_headers
 else
     LOCAL_SHARED_LIBRARIES := \
@@ -31,7 +31,7 @@ else
         libssl \
         libcrypto \
         libjsoncpp_ORB
-       
+
     LOCAL_STATIC_LIBRARIES := \
         liblog
 endif
@@ -41,16 +41,16 @@ LOCAL_SRC_FILES := \
    application_manager_native.cpp \
    network_services_native.cpp \
    native.cpp
-   
+
 LOCAL_C_INCLUDES := \
-   $(LOCAL_PATH)/../symlink.application_manager/ \
-   $(LOCAL_PATH)/../symlink.network_services/ \
-   $(LOCAL_PATH)/../symlink.network_services/media_synchroniser/ \
-   $(LOCAL_PATH)/../symlink.network_services/app2app/
-   
+   $(LOCAL_PATH)/../../../../../components/application_manager/ \
+   $(LOCAL_PATH)/../../../../../components/network_services/ \
+   $(LOCAL_PATH)/../../../../../components/network_services/media_synchroniser/ \
+   $(LOCAL_PATH)/../../../../../components/network_services/app2app/
+
 ifeq ($(ORB_HBBTV_VERSION),204)
 LOCAL_SRC_FILES += json_rpc_native.cpp
-LOCAL_C_INCLUDES += $(LOCAL_PATH)/../symlink.network_services/json_rpc/
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/../../../../../components/network_services/json_rpc/
 endif
 
 LOCAL_STATIC_LIBRARIES += liborg.orbtv.orblibrary.applicationmanager

@@ -42,5 +42,9 @@ LOCAL_PRODUCT_MODULE := true
 LOCAL_UNINSTALLABLE_MODULE := true
 include $(BUILD_PREBUILT)
 ##################################################
-include $(call all-makefiles-under,$(LOCAL_PATH))
+ORB_COMPONENT_PATH := $(LOCAL_PATH)/../../../../components
+#include $(call all-makefiles-under,$(LOCAL_PATH))
+include $(LOCAL_PATH)/cpp/Android.mk
+include $(ORB_COMPONENT_PATH)/application_manager/Android.mk
+include $(ORB_COMPONENT_PATH)/network_services/Android.mk
 

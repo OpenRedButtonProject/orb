@@ -288,9 +288,9 @@ void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const st
 
 void JsonRpcService::OnDisconnected(WebSocketConnection *connection)
 {
-    connections_mutex_.lock();
+    WssMutexLock();
     m_connectionData.erase(connection->Id());
-    connections_mutex_.unlock();
+    WssMutexUnlock();
 }
 
 void JsonRpcService::OnServiceStopped()
@@ -1458,7 +1458,7 @@ void JsonRpcService::SendJsonMessageToClient(int connectionId,
 {
     Json::FastWriter writer;
     std::string message = writer.write(jsonResponse);
-    connections_mutex_.lock();
+    WssMutexLock();
     WebSocketConnection *connection = GetConnection(connectionId);
     if (connection != nullptr)
     {
@@ -1466,7 +1466,7 @@ void JsonRpcService::SendJsonMessageToClient(int connectionId,
         oss << message;
         connection->SendMessage(oss.str());
     }
-    connections_mutex_.unlock();
+    WssMutexUnlock();
 }
 
 /**
@@ -1705,13 +1705,13 @@ void JsonRpcService::CheckIntentMethod(std::vector<int> &result, const std::stri
  */
 std::vector<int> JsonRpcService::GetAllConnectionIds()
 {
-    connections_mutex_.lock();
+    WssMutexLock();
     std::vector<int> connectionIds;
     for (const auto& entry : m_connectionData)
     {
         connectionIds.push_back(entry.first);
     }
-    connections_mutex_.unlock();
+    WssMutexUnlock();
     return connectionIds;
 }
 
@@ -1722,10 +1722,10 @@ std::vector<int> JsonRpcService::GetAllConnectionIds()
  */
 void JsonRpcService::InitialConnectionData(int connectionId)
 {
-    connections_mutex_.lock();
+    WssMutexLock();
     m_connectionData[connectionId].intentIdCount = 0;
     m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_NEGOTIATE_METHODS);
-    connections_mutex_.unlock();
+    WssMutexUnlock();
 }
 
 /**
@@ -1738,7 +1738,7 @@ void JsonRpcService::InitialConnectionData(int connectionId)
 void JsonRpcService::SetConnectionData(int connectionId, ConnectionDataType type, const
     Json::Value& value)
 {
-    connections_mutex_.lock();
+    WssMutexLock();
     if (m_connectionData.find(connectionId) == m_connectionData.end())
     {
         return;
@@ -1768,7 +1768,7 @@ void JsonRpcService::SetConnectionData(int connectionId, ConnectionDataType type
         default:
             break;
     }
-    connections_mutex_.unlock();
+    WssMutexUnlock();
 }
 
 /**
@@ -1780,7 +1780,7 @@ void JsonRpcService::SetConnectionData(int connectionId, ConnectionDataType type
 void JsonRpcService::SetStateMediaToConnectionData(int connectionId, const
     ConnectionData& mediaData)
 {
-    connections_mutex_.lock();
+    WssMutexLock();
     if (m_connectionData.find(connectionId) == m_connectionData.end())
     {
         return;
@@ -1803,7 +1803,7 @@ void JsonRpcService::SetStateMediaToConnectionData(int connectionId, const
     connectionData.mediaId = mediaData.mediaId;
     connectionData.secondTitle = mediaData.secondTitle;
     connectionData.synopsis = mediaData.synopsis;
-    connections_mutex_.unlock();
+    WssMutexUnlock();
 }
 
 /**
@@ -1826,7 +1826,7 @@ void JsonRpcService::SetStateMediaToConnectionData(int connectionId, const
  */
 Json::Value JsonRpcService::GetConnectionData(int connectionId, ConnectionDataType type)
 {
-    connections_mutex_.lock();
+    WssMutexLock();
     Json::Value value;
 
     if (m_connectionData.find(connectionId) != m_connectionData.end())
@@ -1913,7 +1913,7 @@ Json::Value JsonRpcService::GetConnectionData(int connectionId, ConnectionDataTy
                 break;
         }
     }
-    connections_mutex_.unlock();
+    WssMutexUnlock();
     return value;
 }
 

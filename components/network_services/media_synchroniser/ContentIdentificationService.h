@@ -81,27 +81,22 @@ public:
 
     void OnDisconnected(WebSocketConnection *connection) override;
 
-    void updateClients(bool onlydiff);
+    void UpdateClient(WebSocketConnection *connection) override;
+
+    void OnUpdateClients() override;
 
     bool setCIIMessageProperty(const std::string &key, const Json::Value &value);
-
-    int nrOfClients() const
-    {
-        return connections_.size();
-    }
 
 private:
     ContentIdentificationProperties *m_properties;
     Json::Value m_previousMessage;
-#if JSONCPP_VERSION_1_9_4 == 1
+#if JSONCPP_VERSION_HEXA > 0x01080200
     Json::StreamWriterBuilder m_wbuilder;
 #else
     Json::FastWriter m_writer;
 #endif
     std::stringstream m_pattern;
 
-    std::string pack(const Json::Value &currentMessage, bool onlydiff, bool alwaysSendTimelines =
-            true);
 };
 }
 #endif //WIP_DVBCSS_HBBTV_CONTENTIDENTIFICATIONSERVICE_H

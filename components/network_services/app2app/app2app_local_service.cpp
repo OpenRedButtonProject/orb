@@ -56,8 +56,8 @@ bool App2AppLocalService::OnConnection(WebSocketConnection *connection)
     {
         LOG(LOG_INFO, "Pair local (%p) to waiting remote (%p)",
             connection, remote_connection);
-        remote_connection->paired_connection_ = connection;
-        connection->paired_connection_ = remote_connection;
+        remote_connection->SetPaired(connection);
+        connection->SetPaired(remote_connection);
         connection->SendMessage(PAIRING_COMPLETED_MESSAGE);
         remote_connection->SendMessage(PAIRING_COMPLETED_MESSAGE);
     }
@@ -80,10 +80,10 @@ void App2AppLocalService::OnFragmentReceived(WebSocketConnection *connection,
         mutex_.unlock();
         return;
     }
-    if (connection->paired_connection_ != nullptr)
+    WebSocketConnection *paired = connection->GetPaired();
+    if (paired != nullptr)
     {
-        connection->paired_connection_->SendFragment(std::move(data), is_first, is_final,
-            is_binary);
+        paired->SendFragment(std::move(data), is_first, is_final, is_binary);
     }
     mutex_.unlock();
 }
@@ -102,13 +102,7 @@ void App2AppLocalService::OnDisconnected(WebSocketConnection *connection)
         mutex_.unlock();
         return;
     }
-    if (connection->paired_connection_ != nullptr)
-    {
-        connection->paired_connection_->paired_connection_ = nullptr;
-        connection->paired_connection_->Close();
-        connection->paired_connection_ = nullptr;
-    }
-    else
+    if (!connection->ClosePaired())
     {
         RemoveWaitingConnection(LOCAL_TYPE, app_endpoint, connection);
     }
@@ -135,8 +129,8 @@ bool App2AppLocalService::OnRemoteConnection(WebSocketConnection *connection)
     {
         LOG(LOG_INFO, "Pair remote (%p) to waiting local (%p)",
             connection, local_connection);
-        local_connection->paired_connection_ = connection;
-        connection->paired_connection_ = local_connection;
+        local_connection->SetPaired(connection);
+        connection->SetPaired(local_connection);
         connection->SendMessage(PAIRING_COMPLETED_MESSAGE);
         local_connection->SendMessage(PAIRING_COMPLETED_MESSAGE);
     }
@@ -158,10 +152,10 @@ void App2AppLocalService::OnRemoteFragmentReceived(WebSocketConnection *connecti
         mutex_.unlock();
         return;
     }
-    if (connection->paired_connection_ != nullptr)
+    WebSocketConnection *paired = connection->GetPaired();
+    if (paired != nullptr)
     {
-        connection->paired_connection_->SendFragment(std::move(data), is_first, is_final,
-            is_binary);
+        paired->SendFragment(std::move(data), is_first, is_final, is_binary);
     }
     mutex_.unlock();
 }
@@ -180,13 +174,7 @@ void App2AppLocalService::OnRemoteDisconnected(WebSocketConnection *connection)
         mutex_.unlock();
         return;
     }
-    if (connection->paired_connection_ != nullptr)
-    {
-        connection->paired_connection_->paired_connection_ = nullptr;
-        connection->paired_connection_->Close();
-        connection->paired_connection_ = nullptr;
-    }
-    else
+    if (!connection->ClosePaired())
     {
         RemoveWaitingConnection(REMOTE_TYPE, app_endpoint, connection);
     }

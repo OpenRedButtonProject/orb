@@ -1,5 +1,6 @@
 package org.orbtv.orblibrary;
 
+import android.util.Log;
 import java.util.UUID;
 
 public class JsonRpc {
@@ -11,24 +12,47 @@ public class JsonRpc {
     private final int mPort;
     private final String mEndpoint;
     private final IOrbSessionCallback mOrbSessionCallback;
+    private boolean mIsRunning;
     private long mServicePointerField; // Pointer field used by native code
 
     JsonRpc(int port, IOrbSessionCallback orbSessionCallback) {
         mPort = port;
         mOrbSessionCallback = orbSessionCallback;
         mEndpoint = "/hbbtv/" + UUID.randomUUID().toString() + "/";
-        nativeOpen(mPort, mEndpoint);
+        String url = JSON_RPC_SERVER_BASE_URL + mPort + mEndpoint;
+        Log.i(TAG, "Creating JSON-RPC WebSocket server on port " + mPort + ", endpoint: " + mEndpoint);
+        Log.i(TAG, "Server URL will be: " + url);
+        mIsRunning = nativeOpen(mPort, mEndpoint);
+
+        if (!mIsRunning) {
+            Log.e(TAG, "CRITICAL ERROR - JSON-RPC server failed to start on port " + mPort);
+        } else {
+            Log.i(TAG, "Server started successfully and is ready to accept connections");
+        }
     }
 
     public void close() {
-        nativeClose();
+        if (mIsRunning) {
+            Log.i(TAG, "close(): Closing JSON-RPC WebSocket server");
+            nativeClose();
+            mIsRunning = false;
+        }
+        Log.i(TAG, "close(): Server closed");
     }
 
     public String getUrl() {
-        return JSON_RPC_SERVER_BASE_URL + mPort + mEndpoint;
+        if (!mIsRunning) {
+            return null;
+        }
+        String url = JSON_RPC_SERVER_BASE_URL + mPort + mEndpoint;
+        Log.d(TAG, "JsonRpc.getUrl(): Returning URL: " + url);
+        return url;
     }
 
     public String getVersion() {
+        if (!mIsRunning) {
+            return null;
+        }
         return JSON_RPC_SERVER_VERSION;
     }
 
@@ -207,7 +231,7 @@ public class JsonRpc {
      * be instantiated by builds for < 204.
      */
 
-    private native void nativeOpen(int port, String endpoint);
+    private native boolean nativeOpen(int port, String endpoint);
 
     private native void nativeClose();
 
