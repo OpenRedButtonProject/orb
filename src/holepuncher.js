@@ -146,6 +146,9 @@
             // as default is "inline"
             object.style.display="block";
             object.appendChild(video);
+
+            // remove any absolute positioning - as this offsets the image by -320 px
+            object.style.removeProperty('position');
         }
         if (object.parentNode) {
             observeObject(object);
