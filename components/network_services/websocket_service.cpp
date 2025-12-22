@@ -251,7 +251,9 @@ void WebSocketService::Stop()
         mMainThread = (pthread_t)0;
         LOGD("[%d]  Stopped", mSid)
     }
-
+    // Call OnServiceStopped() after the thread has exited to avoid any potential
+    // deadlocks or blocking operations in the MainLooper thread
+    OnServiceStopped();
 }
 
 void * WebSocketService::EnterMainLooper(void *instance)
@@ -279,7 +281,6 @@ void WebSocketService::MainLooper()
         mConnectionsMutex.lock();
     }
     mConnectionsMutex.unlock();
-    OnServiceStopped();
     LOGD("[%d] exit MainLooper", mSid)
 }
 
