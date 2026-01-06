@@ -115,13 +115,29 @@ public:
   };
 
   struct Configuration {
-      std::string m_OpAppFqdn; /* Fully Qualified Domain Name (Section 6.1.4 of TS 103 606 V1.2.1) */
+
+      /* Fully Qualified Domain Name (Section 6.1.4 of TS 103 606 V1.2.1) */
+      std::string m_OpAppFqdn;
+
+      // For local package checking, the following three fields must be set:
+
+      /* Location of installable package files (e.g. /mnt/sdcard/orb/packages).
+       * If empty, does a remote check for updates. */
       std::string m_PackageLocation;
+
+      /* Suffix of local, installable package files (e.g. .zip or .cms)
+       * If empty, does not check for package files. */
       std::string m_PackageSuffix;
+
+      /* File path to the hash of the installed OpApp package.
+       * If empty, does not check for package hash.
+       * FREE-315 Used for local package checking, may be useful for remote package checking.*/
+      std::string m_PackageHashFilePath;
+
       std::string m_PrivateKeyFilePath;
       std::string m_PublicKeyFilePath;
       std::string m_CertificateFilePath;
-      std::string m_PackageHashFilePath;
+
       std::string m_DestinationDirectory; /* Directory where the package is decrypted, unzipped and verified */
       std::string m_OpAppInstallDirectory; /* Directory where the OpApp is installed */
       UpdateSuccessCallback m_OnUpdateSuccess; /* Callback called when update completes successfully */
@@ -178,6 +194,29 @@ public:
   void stop();
   bool isRunning() const;
   bool isUpdating() const;
+
+
+  /**
+   * isPackageInstalled(const std::vector<std::string>& aitFiles)
+   *
+   * Checks if the package is installed by checking the vector of AIT XML files.
+   *
+   * Returns:
+   *  true if the package is installed.
+   *  false if the package is not installed.
+   */
+  //bool isPackageInstalled(const std::vector<std::string>& aitFiles);
+
+
+  /**
+   * isPackageInstalled(const std::string& packagePath)
+   *
+   * Checks if the package at the given path is installed by comparing hashes.
+   *
+   * Returns:
+   *  true if the package is installed.
+   *  false if the package is not installed.
+   */
   bool isPackageInstalled(const std::string& packagePath);
   void checkForUpdates();
 
@@ -286,12 +325,13 @@ private:
   /**
    * parseAitFiles()
    *
-   * Parses AIT XML files and extracts application descriptors into m_AitAppDescriptors.
+   * Parses AIT XML files and extracts application descriptors into aitAppDescriptors.
    *
    * @param aitFiles Vector of paths to AIT XML files
-   * @return true if at least one AIT was successfully parsed
+   * @param aitAppDescriptors Vector of AIT application descriptors
+   * @return true if the AIT files were successfully parsed and the application descriptors were extracted.
    */
-  bool parseAitFiles(const std::vector<std::string>& aitFiles);
+  bool parseAitFiles(const std::vector<std::string>& aitFiles, std::vector<AitAppDescriptor>& aitAppDescriptors);
 
   PackageStatus m_PackageStatus = PackageStatus::None;
 
@@ -312,7 +352,6 @@ private:
   std::unique_ptr<IDecryptor> m_Decryptor;
   std::unique_ptr<IAitFetcher> m_AitFetcher;
   std::unique_ptr<IXmlParser> m_XmlParser;
-  std::vector<AitAppDescriptor> m_AitAppDescriptors;
 
   std::string m_CandidatePackageFile;
   std::string m_CandidatePackageHash;

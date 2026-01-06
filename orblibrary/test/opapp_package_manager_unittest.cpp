@@ -1239,11 +1239,12 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_EmptyFileList_ReturnsFalse)
       configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
 
   // WHEN: parseAitFiles is called with empty list
-  bool result = testInterface->parseAitFiles(std::vector<std::string>{});
+  std::vector<AitAppDescriptor> aitAppDescriptors;
+  bool result = testInterface->parseAitFiles(std::vector<std::string>{}, aitAppDescriptors);
 
   // THEN: should return false and have no descriptors
   EXPECT_FALSE(result);
-  EXPECT_TRUE(testInterface->getAitAppDescriptors().empty());
+  EXPECT_TRUE(aitAppDescriptors.empty());
 }
 
 TEST_F(OpAppPackageManagerTest, TestParseAitFiles_NonexistentFile_ReturnsFalse)
@@ -1256,11 +1257,12 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_NonexistentFile_ReturnsFalse)
       configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
 
   // WHEN: parseAitFiles is called with nonexistent file
-  bool result = testInterface->parseAitFiles({"/nonexistent/ait.xml"});
+  std::vector<AitAppDescriptor> aitAppDescriptors;
+  bool result = testInterface->parseAitFiles({"/nonexistent/ait.xml"}, aitAppDescriptors);
 
   // THEN: should return false and have no descriptors
   EXPECT_FALSE(result);
-  EXPECT_TRUE(testInterface->getAitAppDescriptors().empty());
+  EXPECT_TRUE(aitAppDescriptors.empty());
 }
 
 TEST_F(OpAppPackageManagerTest, TestParseAitFiles_InvalidXml_ReturnsFalse)
@@ -1278,11 +1280,12 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_InvalidXml_ReturnsFalse)
       configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
 
   // WHEN: parseAitFiles is called with invalid XML
-  bool result = testInterface->parseAitFiles({invalidXmlPath});
+  std::vector<AitAppDescriptor> aitAppDescriptors;
+  bool result = testInterface->parseAitFiles({invalidXmlPath}, aitAppDescriptors);
 
   // THEN: should return false and have no descriptors
   EXPECT_FALSE(result);
-  EXPECT_TRUE(testInterface->getAitAppDescriptors().empty());
+  EXPECT_TRUE(aitAppDescriptors.empty());
 
   // Clean up
   std::remove(invalidXmlPath.c_str());
@@ -1331,16 +1334,16 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_ValidAitXml_ExtractsDescriptor
       configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
 
   // WHEN: parseAitFiles is called with valid AIT XML
-  bool result = testInterface->parseAitFiles({aitXmlPath});
+  std::vector<AitAppDescriptor> aitAppDescriptors;
+  bool result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
 
   // THEN: should return true and have extracted descriptors
   EXPECT_TRUE(result);
-  EXPECT_FALSE(testInterface->getAitAppDescriptors().empty());
+  EXPECT_FALSE(aitAppDescriptors.empty());
 
-  const auto& descriptors = testInterface->getAitAppDescriptors();
-  EXPECT_EQ(descriptors.size(), size_t(1));
-  EXPECT_EQ(descriptors[0].orgId, uint32_t(12345));
-  EXPECT_EQ(descriptors[0].appId, uint16_t(1));
+  EXPECT_EQ(aitAppDescriptors.size(), size_t(1));
+  EXPECT_EQ(aitAppDescriptors[0].orgId, uint32_t(12345));
+  EXPECT_EQ(aitAppDescriptors[0].appId, uint16_t(1));
 
   // Clean up
   std::remove(aitXmlPath.c_str());
@@ -1422,17 +1425,17 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_MultipleAits_CombinesApps)
       configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
 
   // WHEN: parseAitFiles is called with multiple AIT files
-  bool result = testInterface->parseAitFiles({ait1Path, ait2Path});
+  std::vector<AitAppDescriptor> aitAppDescriptors;
+  bool result = testInterface->parseAitFiles({ait1Path, ait2Path}, aitAppDescriptors);
 
   // THEN: should return true and combine apps from both files
   EXPECT_TRUE(result);
-  const auto& descriptors = testInterface->getAitAppDescriptors();
-  EXPECT_EQ(descriptors.size(), size_t(2));
+  EXPECT_EQ(aitAppDescriptors.size(), size_t(2));
 
   // Verify first app
   bool foundApp1 = false;
   bool foundApp2 = false;
-  for (const auto& desc : descriptors) {
+  for (const auto& desc : aitAppDescriptors) {
     if (desc.orgId == 11111 && desc.appId == 1) {
       foundApp1 = true;
     }
@@ -1490,14 +1493,16 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_ClearsOldDescriptors)
       configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
 
   // First parse
-  testInterface->parseAitFiles({aitXmlPath});
-  size_t firstCount = testInterface->getAitAppDescriptors().size();
+  std::vector<AitAppDescriptor> aitAppDescriptors;
+  testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
+  size_t firstCount = aitAppDescriptors.size();
 
   // WHEN: parseAitFiles is called again with the same file
-  testInterface->parseAitFiles({aitXmlPath});
+  aitAppDescriptors.clear();
+  testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
 
   // THEN: should have same count (cleared and repopulated, not appended)
-  EXPECT_EQ(testInterface->getAitAppDescriptors().size(), firstCount);
+  EXPECT_EQ(aitAppDescriptors.size(), firstCount);
 
   // Clean up
   std::remove(aitXmlPath.c_str());
@@ -1567,8 +1572,6 @@ TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_ValidAit_ReturnsUpdateA
 
   // THEN: should return UpdateAvailable
   EXPECT_EQ(status, OpAppPackageManager::PackageStatus::UpdateAvailable);
-  EXPECT_FALSE(testInterface->getAitAppDescriptors().empty());
-  EXPECT_EQ(testInterface->getAitAppDescriptors()[0].orgId, uint32_t(12345));
 
   // Clean up
   std::filesystem::remove_all(PACKAGE_PATH + "/dest");
@@ -1603,7 +1606,6 @@ TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_AitWithNoApps_ReturnsNo
 
   // THEN: should return NoUpdateAvailable (no apps found)
   EXPECT_EQ(status, OpAppPackageManager::PackageStatus::NoUpdateAvailable);
-  EXPECT_TRUE(testInterface->getAitAppDescriptors().empty());
 
   // Clean up
   std::filesystem::remove_all(PACKAGE_PATH + "/dest");

@@ -171,8 +171,11 @@ bool OpAppPackageManager::isUpdating() const
 
 void OpAppPackageManager::checkForUpdates()
 {
-  if (!m_Configuration.m_PackageLocation.empty()) {
+  if (!m_Configuration.m_PackageLocation.empty() && !m_Configuration.m_PackageHashFilePath.empty()) {
     // Checks for local package file and compares hash to installed package hash?
+    LOG(INFO) << "Local package check enabled. Checking package file in "
+      << m_Configuration.m_PackageLocation << " and comparing hash to installed package hash in "
+      << m_Configuration.m_PackageHashFilePath;
     m_PackageStatus = doPackageFileCheck();
   }
 
@@ -320,18 +323,34 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::doRemotePackageCheck()
   }
 
   // Parse the AIT files
-  if (!parseAitFiles(result.aitFiles)) {
+  std::vector<AitAppDescriptor> aitAppDescriptors;
+
+  if (!parseAitFiles(result.aitFiles, aitAppDescriptors)) {
     LOG(INFO) << "No applications found in any AIT";
     return PackageStatus::NoUpdateAvailable;
   }
 
+  // Validate the AIT app descriptors against the spec
+
   // TODO: Select the best application based on priority, control code, etc.
   // TODO: Download and install the selected OpApp package
   // For now, just indicate an update is available
-  LOG(INFO) << "Found " << m_AitAppDescriptors.size() << " application(s) across all AITs";
+  LOG(INFO) << "Found " << aitAppDescriptors.size() << " application(s) across all AITs";
 
   return PackageStatus::UpdateAvailable;
 }
+
+// bool OpAppPackageManager::isPackageInstalled()
+// {
+//   // TODO: Implement this.
+//   /* parse the AIT XML and check if the package is installed. */
+
+
+//   // For each AIT descriptor, validate
+
+//   m_AitAppDescriptors
+//   return false;
+// }
 
 bool OpAppPackageManager::isPackageInstalled(const std::string& packagePath)
 {
@@ -536,9 +555,10 @@ bool OpAppPackageManager::unzipPackageFile(const std::string& filePath) const
 }
 
 bool OpAppPackageManager::parseAitFiles(
-    const std::vector<std::string>& aitFiles)
+    const std::vector<std::string>& aitFiles, std::vector<AitAppDescriptor>& aitAppDescriptors)
 {
-  m_AitAppDescriptors.clear();
+  // Clear the vector of AIT app descriptors
+  aitAppDescriptors.clear();
 
   for (const auto& aitFile : aitFiles) {
     // Read file content
@@ -564,6 +584,8 @@ bool OpAppPackageManager::parseAitFiles(
 
     // Extract application descriptors
     for (const auto& app : aitTable->appArray) {
+      // FREE-313: Go through this and figure out what is needed for validation.
+      // And also for the URL of the OpApp!
       AitAppDescriptor desc;
       desc.orgId = app.orgId;
       desc.appId = app.appId;
@@ -582,11 +604,11 @@ bool OpAppPackageManager::parseAitFiles(
                 << ", location=" << desc.location
                 << ", name=" << desc.name;
 
-      m_AitAppDescriptors.push_back(desc);
+      aitAppDescriptors.push_back(desc);
     }
   }
 
-  return !m_AitAppDescriptors.empty();
+  return !aitAppDescriptors.empty();
 }
 
 } // namespace orb
