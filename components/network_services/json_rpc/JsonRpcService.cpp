@@ -288,9 +288,8 @@ void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const st
 
 void JsonRpcService::OnDisconnected(WebSocketConnection *connection)
 {
-    WssMutexLock();
+    std::lock_guard<std::recursive_mutex> lockGuard(mConnectionsMutex);
     m_connectionData.erase(connection->Id());
-    WssMutexUnlock();
 }
 
 void JsonRpcService::OnServiceStopped()
@@ -1458,7 +1457,7 @@ void JsonRpcService::SendJsonMessageToClient(int connectionId,
 {
     Json::FastWriter writer;
     std::string message = writer.write(jsonResponse);
-    WssMutexLock();
+    std::lock_guard<std::recursive_mutex> lockGuard(mConnectionsMutex);
     WebSocketConnection *connection = GetConnection(connectionId);
     if (connection != nullptr)
     {
@@ -1466,7 +1465,6 @@ void JsonRpcService::SendJsonMessageToClient(int connectionId,
         oss << message;
         connection->SendMessage(oss.str());
     }
-    WssMutexUnlock();
 }
 
 /**
@@ -1705,13 +1703,12 @@ void JsonRpcService::CheckIntentMethod(std::vector<int> &result, const std::stri
  */
 std::vector<int> JsonRpcService::GetAllConnectionIds()
 {
-    WssMutexLock();
     std::vector<int> connectionIds;
+    std::lock_guard<std::recursive_mutex> lockGuard(mConnectionsMutex);
     for (const auto& entry : m_connectionData)
     {
         connectionIds.push_back(entry.first);
     }
-    WssMutexUnlock();
     return connectionIds;
 }
 
@@ -1722,10 +1719,9 @@ std::vector<int> JsonRpcService::GetAllConnectionIds()
  */
 void JsonRpcService::InitialConnectionData(int connectionId)
 {
-    WssMutexLock();
+    std::lock_guard<std::recursive_mutex> lockGuard(mConnectionsMutex);
     m_connectionData[connectionId].intentIdCount = 0;
     m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_NEGOTIATE_METHODS);
-    WssMutexUnlock();
 }
 
 /**
@@ -1738,7 +1734,7 @@ void JsonRpcService::InitialConnectionData(int connectionId)
 void JsonRpcService::SetConnectionData(int connectionId, ConnectionDataType type, const
     Json::Value& value)
 {
-    WssMutexLock();
+    std::lock_guard<std::recursive_mutex> lockGuard(mConnectionsMutex);
     if (m_connectionData.find(connectionId) == m_connectionData.end())
     {
         return;
@@ -1768,7 +1764,6 @@ void JsonRpcService::SetConnectionData(int connectionId, ConnectionDataType type
         default:
             break;
     }
-    WssMutexUnlock();
 }
 
 /**
@@ -1780,7 +1775,7 @@ void JsonRpcService::SetConnectionData(int connectionId, ConnectionDataType type
 void JsonRpcService::SetStateMediaToConnectionData(int connectionId, const
     ConnectionData& mediaData)
 {
-    WssMutexLock();
+    std::lock_guard<std::recursive_mutex> lockGuard(mConnectionsMutex);
     if (m_connectionData.find(connectionId) == m_connectionData.end())
     {
         return;
@@ -1803,7 +1798,6 @@ void JsonRpcService::SetStateMediaToConnectionData(int connectionId, const
     connectionData.mediaId = mediaData.mediaId;
     connectionData.secondTitle = mediaData.secondTitle;
     connectionData.synopsis = mediaData.synopsis;
-    WssMutexUnlock();
 }
 
 /**
@@ -1826,7 +1820,7 @@ void JsonRpcService::SetStateMediaToConnectionData(int connectionId, const
  */
 Json::Value JsonRpcService::GetConnectionData(int connectionId, ConnectionDataType type)
 {
-    WssMutexLock();
+    std::lock_guard<std::recursive_mutex> lockGuard(mConnectionsMutex);
     Json::Value value;
 
     if (m_connectionData.find(connectionId) != m_connectionData.end())
@@ -1913,7 +1907,6 @@ Json::Value JsonRpcService::GetConnectionData(int connectionId, ConnectionDataTy
                 break;
         }
     }
-    WssMutexUnlock();
     return value;
 }
 

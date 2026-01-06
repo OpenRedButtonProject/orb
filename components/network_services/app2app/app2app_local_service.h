@@ -52,7 +52,7 @@ private:
 
     ServiceManager *manager_;
     App2AppRemoteService remote_service_;
-    std::recursive_mutex mutex_;
+    std::recursive_mutex mMutex;
     std::unordered_map<std::string, std::deque<WebSocketConnection *> > waiting_connections_;
     bool service_stopped_;
     bool remote_service_stopped_;

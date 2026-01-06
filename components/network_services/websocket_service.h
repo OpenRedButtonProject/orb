@@ -102,20 +102,24 @@ private:
     virtual void OnDisconnected(WebSocketConnection *connection) = 0;
     virtual void OnFragmentReceived(WebSocketConnection *connection, std::vector<uint8_t> &&data,
         bool is_first, bool is_final, bool is_binary);
-    virtual void OnMessageReceived(WebSocketConnection *connection, const std::string &text);
-    virtual void UpdateClient(WebSocketConnection *connection);
-    virtual void OnUpdateClients();
+
+    virtual void OnMessageReceived(WebSocketConnection *connection, const std::string &text) {}
+    virtual void UpdateClient(WebSocketConnection *connection) {}
+    virtual void OnUpdateClients() {}
+
     int TotalClients() const;
     void UpdateClients();
 
 protected:
     WebSocketConnection* GetConnection(int id);
-    void WssMutexLock();
-    void WssMutexUnlock();
+
+    std::recursive_mutex mConnectionsMutex;
 
 private:
     static void* EnterMainLooper(void *instance);
     void MainLooper();
+    void OnServiceFailure();
+    void CloseConnections();
     static int EnterLwsCallback(struct lws *wsi, enum lws_callback_reasons reason, void *user,
         void *in, size_t len);
     int LwsCallback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t
@@ -123,10 +127,9 @@ private:
     struct lws_protocols Protocol(const char *protocol_name);
     std::string Header(struct lws *wsi, enum lws_token_indexes header);
 
-    std::recursive_mutex mConnectionsMutex;
     std::unordered_map<void *, std::unique_ptr<WebSocketConnection> > mConnections;
 
-    bool mStop;
+    std::atomic<bool> mIsRunning;
     int mSid;
     std::string mProtocolName;
     bool mUseSSL;

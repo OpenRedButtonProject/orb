@@ -134,7 +134,7 @@ static void lws_log_to_logcat(int level, const char *line)
 
 WebSocketService::WebSocketService(const std::string &protocol_name, int port, bool use_ssl,
                                    const std::string &interface_name) :
-    mStop(true),
+    mIsRunning(false),
     mProtocolName(protocol_name),
     mUseSSL(use_ssl),
     mInterfaceName(interface_name),
@@ -172,8 +172,8 @@ WebSocketService::WebSocketService(const std::string &protocol_name, int port, b
     // Enable LibWebSockets logging and route to Android logcat via custom callback
     // Enable: ERR, WARN, NOTICE, INFO,
     // but not: DEBUG, CLIENT, PARSER, HEADER, EXT, LATENCY
-    lws_set_log_level( LLL_ERR | LLL_WARN | LLL_NOTICE | LLL_INFO
-                     // | LLL_DEBUG | LLL_CLIENT | LLL_PARSER | LLL_HEADER | LLL_EXT | LLL_LATENCY
+    lws_set_log_level( LLL_ERR | LLL_WARN | LLL_NOTICE
+                     // | LLL_INFO | LLL_DEBUG | LLL_CLIENT | LLL_PARSER | LLL_HEADER | LLL_EXT | LLL_LATENCY
                      , lws_log_to_logcat);
 
     mContext = lws_create_context(&mContextInfo);
@@ -204,7 +204,7 @@ bool WebSocketService::Start()
     bool ret = false;
     if (mContext != nullptr)
     {
-        mStop = false;
+        mIsRunning.store(true);
         int err = pthread_create(&mMainThread, nullptr, EnterMainLooper, this);
         if (err == 0)
         {
@@ -221,21 +221,11 @@ bool WebSocketService::Start()
 
 void WebSocketService::Stop()
 {
-    mConnectionsMutex.lock();
-    if (!mStop)
-    {
-        LOGD("[%d] Stopping", mSid)
-        mStop = true;
-    }
-    if (mConnections.size() > 0)
-    {
-        for (auto &it : mConnections)
-        {
-            it.second->Close();
-        }
-        mConnections.clear();
-    }
-    mConnectionsMutex.unlock();
+    LOGD("[%d] Stopping", mSid)
+
+    mIsRunning.store(false);
+
+    CloseConnections();
 
     // Cancel any blocking lws_service() call to wake up the MainLooper thread
     // so it can check mStop and exit
@@ -251,6 +241,7 @@ void WebSocketService::Stop()
         mMainThread = (pthread_t)0;
         LOGD("[%d]  Stopped", mSid)
     }
+
     // Call OnServiceStopped() after the thread has exited to avoid any potential
     // deadlocks or blocking operations in the MainLooper thread
     OnServiceStopped();
@@ -265,23 +256,37 @@ void * WebSocketService::EnterMainLooper(void *instance)
 void WebSocketService::MainLooper()
 {
     LOGD("[%d] enter MainLooper", mSid)
-    mConnectionsMutex.lock();
-    while (!mStop)
+    while (mIsRunning.load())
     {
-        mConnectionsMutex.unlock();
         if (lws_service(mContext, 0) < 0)
         {
             LOGD("[%d] lws_service failed", mSid)
-            mConnectionsMutex.lock();
-            mStop = true;
-            mConnections.clear();
-            lws_cancel_service(mContext);
+            OnServiceFailure();
             break;
         }
-        mConnectionsMutex.lock();
     }
-    mConnectionsMutex.unlock();
     LOGD("[%d] exit MainLooper", mSid)
+}
+
+void WebSocketService::OnServiceFailure()
+{
+    std::lock_guard<std::recursive_mutex> lock(mConnectionsMutex);
+    mIsRunning.store(false);
+    mConnections.clear();
+    lws_cancel_service(mContext);
+}
+
+void WebSocketService::CloseConnections()
+{
+    std::lock_guard<std::recursive_mutex> lock(mConnectionsMutex);
+    if (mConnections.size() > 0)
+    {
+        for (auto &it : mConnections)
+        {
+            it.second->Close();
+        }
+        mConnections.clear();
+    }
 }
 
 int WebSocketService::EnterLwsCallback(struct lws *wsi, enum lws_callback_reasons reason,
@@ -300,9 +305,10 @@ int WebSocketService::LwsCallback(struct lws *wsi, enum lws_callback_reasons rea
     void *user, void *in, size_t len)
 {
     int result = 0;
-    mConnectionsMutex.lock();
 
     std::unordered_map<void *, std::unique_ptr<WebSocketConnection>>::iterator it;
+
+    std::lock_guard<std::recursive_mutex> lock(mConnectionsMutex);
 
     // Check if conection exists
     if (reason == LWS_CALLBACK_CLOSED
@@ -314,9 +320,7 @@ int WebSocketService::LwsCallback(struct lws *wsi, enum lws_callback_reasons rea
         if (it == mConnections.end())
         {
             LOGE("LwsCallback: Connection not found for user: %p", user);
-            result = -1; // User not found
-            // set reason to avoid doing anything else in this function
-            reason = LWS_CALLBACK_PROTOCOL_INIT;
+            return -1; // User not found
         }
     }
 
@@ -381,7 +385,6 @@ int WebSocketService::LwsCallback(struct lws *wsi, enum lws_callback_reasons rea
             break;
         }
     }
-    mConnectionsMutex.unlock();
     return result;
 }
 
@@ -414,21 +417,6 @@ void WebSocketService::OnFragmentReceived(WebSocketConnection *connection,
     }
 }
 
-void WebSocketService::OnMessageReceived(WebSocketConnection *connection, const std::string &text)
-{
-    // Possibly called by the implementation of OnFragmentReceived
-}
-
-void WebSocketService::UpdateClient(WebSocketConnection *connection)
-{
-    // Overriden by sub class
-}
-
-void WebSocketService::OnUpdateClients()
-{
-    // Overriden by sub class
-}
-
 void WebSocketService::UpdateClients()
 {
     for (auto const &connection : mConnections)
@@ -440,9 +428,7 @@ void WebSocketService::UpdateClients()
 
 int WebSocketService::TotalClients() const
 {
-    int total;
-    total = mConnections.size();
-    return total;
+    return mConnections.size();
 }
 
 WebSocketService::WebSocketConnection* WebSocketService::GetConnection(int id)
@@ -455,16 +441,6 @@ WebSocketService::WebSocketConnection* WebSocketService::GetConnection(int id)
         }
     }
     return nullptr;
-}
-
-void WebSocketService::WssMutexLock()
-{
-    mConnectionsMutex.lock();
-}
-
-void WebSocketService::WssMutexUnlock()
-{
-    mConnectionsMutex.unlock();
 }
 
 struct lws_protocols WebSocketService::Protocol(const char *protocol_name)
