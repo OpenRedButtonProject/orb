@@ -611,7 +611,7 @@ bool OpAppPackageManager::parseAitFiles(
         // If it fails then set an error, e.g. "Application not supported by this device."
       }
 
-      if (app.transportArray[0].protocolId != Ait::AIT_PROTOCOL_HTTP) {
+      if (app.transportArray[0].protocolId != Ait::PROTOCOL_HTTP) {
         LOG(WARNING) << "AIT table has application descriptor with unexpected or unsupported transport protocol: "
           << app.transportArray[0].protocolId
           << " expected 'HTTPTransportType' (0x3). Ignoring AIT application descriptor.";
@@ -624,7 +624,7 @@ bool OpAppPackageManager::parseAitFiles(
           << app.controlCode << " expected AUTOSTART (0x1). Ignoring AIT application descriptor.";
       }
 
-      if (app.appDesc.visibility != Ait::AIT_VISIBLE_ALL) {
+      if (app.appDesc.visibility != Ait::VISIBLE_ALL) {
         // Warning only - process anyway.
         LOG(WARNING) << "AIT table has application descriptor with unexpected visibility: "
           << app.appDesc.visibility << " expected VISIBLE_ALL (0x3). Ignoring AIT application descriptor.";

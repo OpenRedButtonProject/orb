@@ -26,8 +26,6 @@
 #include <vector>
 #include <string>
 
-#define AIT_NUM_RECEIVED_SECTION_MASK_BYTES (256 / 8)
-
 
 #if ORB_HBBTV_VERSION == 204
     #define HBBTV_VERSION_MAJOR 1
@@ -47,15 +45,19 @@ namespace orb
 class Ait
 {
 public:
-    static constexpr uint8_t AIT_USAGE_TELETEXT = 0x01;
+    static constexpr uint8_t AIT_NUM_RECEIVED_SECTION_MASK_BYTES = 256 / 8;
 
-    static constexpr uint8_t AIT_MAX_NUM_PROTOCOLS = 2;
-    static constexpr uint16_t AIT_PROTOCOL_OBJECT_CAROUSEL = 0x0001;
-    static constexpr uint16_t AIT_PROTOCOL_HTTP = 0x0003;
+    // TS102796 Table 7 applicationUsageDescriptor
+    static constexpr uint8_t USAGE_TELETEXT = 0x01;
 
-    static constexpr uint8_t AIT_NOT_VISIBLE_ALL = 0x00;
-    static constexpr uint8_t AIT_NOT_VISIBLE_USERS = 0x01;
-    static constexpr uint8_t AIT_VISIBLE_ALL = 0x03;
+    // TS102796 Table 7 applicationTransport
+    static constexpr uint8_t MAX_NUM_PROTOCOLS = 2;
+    static constexpr uint16_t PROTOCOL_OBJECT_CAROUSEL = 0x0001;
+    static constexpr uint16_t PROTOCOL_HTTP = 0x0003;
+
+    // TS102796 Table 7 applicationDescriptor/visibility
+    static constexpr uint8_t NOT_VISIBLE_USERS = 0x01;
+    static constexpr uint8_t VISIBLE_ALL = 0x03;
 
     typedef enum
     {
@@ -151,7 +153,7 @@ public:
         uint16_t appId;
         uint8_t controlCode;
         uint8_t numTransports;
-        S_TRANSPORT_PROTOCOL_DESC transportArray[AIT_MAX_NUM_PROTOCOLS];
+        S_TRANSPORT_PROTOCOL_DESC transportArray[MAX_NUM_PROTOCOLS];
         std::string location;
         S_APP_NAME_DESC appName;
         S_APP_DESC appDesc;

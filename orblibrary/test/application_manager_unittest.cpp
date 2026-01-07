@@ -77,7 +77,7 @@ protected:
         // Priority and transport with defaults
         mockAitTable->appArray[0].appDesc.priority = 1;
         mockAitTable->appArray[0].numTransports = 1;
-        mockAitTable->appArray[0].transportArray[0].protocolId = Ait::AIT_PROTOCOL_HTTP;
+        mockAitTable->appArray[0].transportArray[0].protocolId = Ait::PROTOCOL_HTTP;
         mockAitTable->appArray[0].transportArray[0].failedToLoad = false;
         mockAitTable->appArray[0].parentalRatings.clear();
 

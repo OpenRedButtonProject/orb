@@ -212,8 +212,8 @@ bool Ait::HasViableTransport(const S_AIT_APP_DESC *appDesc, const bool isNetwork
     {
         for (int j = 0; j < appDesc->numTransports; j++)
         {
-            if (appDesc->transportArray[j].protocolId == AIT_PROTOCOL_HTTP ||
-                appDesc->transportArray[j].protocolId == AIT_PROTOCOL_OBJECT_CAROUSEL)
+            if (appDesc->transportArray[j].protocolId == PROTOCOL_HTTP ||
+                appDesc->transportArray[j].protocolId == PROTOCOL_OBJECT_CAROUSEL)
             {
                 if (!appDesc->transportArray[j].failedToLoad)
                 {
@@ -227,7 +227,7 @@ bool Ait::HasViableTransport(const S_AIT_APP_DESC *appDesc, const bool isNetwork
     {
         for (int j = 0; j < appDesc->numTransports; j++)
         {
-            if (appDesc->transportArray[j].protocolId == AIT_PROTOCOL_OBJECT_CAROUSEL)
+            if (appDesc->transportArray[j].protocolId == PROTOCOL_OBJECT_CAROUSEL)
             {
                 if (!appDesc->transportArray[j].failedToLoad)
                 {
@@ -255,7 +255,7 @@ const Ait::S_AIT_APP_DESC * Ait::TeletextApp(const S_AIT_TABLE *aitTable)
     {
         for (index = 0; index != aitTable->numApps; index++)
         {
-            if (aitTable->appArray[index].usageType == Ait::AIT_USAGE_TELETEXT)
+            if (aitTable->appArray[index].usageType == Ait::USAGE_TELETEXT)
             {
                 app = &aitTable->appArray[index];
                 break;
@@ -406,14 +406,14 @@ std::string Ait::ExtractBaseURL(const Ait::S_AIT_APP_DESC &appDescription,
 
     for (int ti = 0; ti != appDescription.numTransports; ti++)
     {
-        if (appDescription.transportArray[ti].protocolId == AIT_PROTOCOL_HTTP &&
+        if (appDescription.transportArray[ti].protocolId == PROTOCOL_HTTP &&
             !appDescription.transportArray[ti].failedToLoad &&
             isNetworkAvailable)
         {
             result = appDescription.transportArray[ti].url.baseUrl;
             break;
         }
-        else if (appDescription.transportArray[ti].protocolId == AIT_PROTOCOL_OBJECT_CAROUSEL &&
+        else if (appDescription.transportArray[ti].protocolId == PROTOCOL_OBJECT_CAROUSEL &&
                  !appDescription.transportArray[ti].failedToLoad)
         {
             strcpy(tmp_url, "dvb://");
@@ -458,16 +458,16 @@ uint16_t Ait::ExtractProtocolId(const Ait::S_AIT_APP_DESC &appDescription, const
 {
     for (int ti = 0; ti != appDescription.numTransports; ti++)
     {
-        if (appDescription.transportArray[ti].protocolId == AIT_PROTOCOL_HTTP &&
+        if (appDescription.transportArray[ti].protocolId == PROTOCOL_HTTP &&
             !appDescription.transportArray[ti].failedToLoad &&
             isNetworkAvailable)
         {
-            return AIT_PROTOCOL_HTTP;
+            return PROTOCOL_HTTP;
         }
-        else if (appDescription.transportArray[ti].protocolId == AIT_PROTOCOL_OBJECT_CAROUSEL &&
+        else if (appDescription.transportArray[ti].protocolId == PROTOCOL_OBJECT_CAROUSEL &&
                  !appDescription.transportArray[ti].failedToLoad)
         {
-            return AIT_PROTOCOL_OBJECT_CAROUSEL;
+            return PROTOCOL_OBJECT_CAROUSEL;
         }
     }
 
@@ -667,27 +667,27 @@ bool Ait::ParseTransportProtocolDesc(const uint8_t *dataPtr, S_TRANSPORT_PROTOCO
     if (descLen >= 3)
     {
         protocolId = (*dataPtr << 8u) + *(dataPtr + 1);
-        freeIndex = AIT_MAX_NUM_PROTOCOLS;
+        freeIndex = MAX_NUM_PROTOCOLS;
 
-        for (i = 0; i < AIT_MAX_NUM_PROTOCOLS; i++)
+        for (i = 0; i < MAX_NUM_PROTOCOLS; i++)
         {
             if (protocolId == trns[i].protocolId)
             {
                 break;
             }
-            if ((trns[i].protocolId == 0) && (freeIndex == AIT_MAX_NUM_PROTOCOLS))
+            if ((trns[i].protocolId == 0) && (freeIndex == MAX_NUM_PROTOCOLS))
             {
                 /* Save the first free index to be used for the new protocol */
                 freeIndex = i;
             }
         }
-        if (freeIndex == AIT_MAX_NUM_PROTOCOLS)
+        if (freeIndex == MAX_NUM_PROTOCOLS)
         {
             LOG(ERROR) << "No free slots for this protocol: " << protocolId;
-            i = AIT_MAX_NUM_PROTOCOLS;
+            i = MAX_NUM_PROTOCOLS;
         }
 
-        if (i >= AIT_MAX_NUM_PROTOCOLS)
+        if (i >= MAX_NUM_PROTOCOLS)
         {
             new_desc = true;
             trnsPtr = &(trns[freeIndex]);
@@ -708,7 +708,7 @@ bool Ait::ParseTransportProtocolDesc(const uint8_t *dataPtr, S_TRANSPORT_PROTOCO
             {
                 switch (trnsPtr->protocolId)
                 {
-                    case AIT_PROTOCOL_OBJECT_CAROUSEL:
+                    case PROTOCOL_OBJECT_CAROUSEL:
                         /* The selector bytes represent an object carousel description */
                         trnsPtr->oc.remoteConnection = ((*dataPtr & 0x80u) != 0);
                         dataPtr++;
@@ -740,7 +740,7 @@ bool Ait::ParseTransportProtocolDesc(const uint8_t *dataPtr, S_TRANSPORT_PROTOCO
                         // trns_ptr->oc.component_tag);
                         break;
 
-                    case AIT_PROTOCOL_HTTP:
+                    case PROTOCOL_HTTP:
                         /* The selector bytes represent a url description */
                         urlLen = *dataPtr;
                         dataPtr++;
