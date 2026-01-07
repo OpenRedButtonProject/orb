@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cctype>
 #include <map>
+#include <sstream>
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/orb/orblibrary/include/OpAppPackageManager.h"
@@ -154,6 +155,51 @@ private:
   std::map<std::string, std::string> m_FileHashes;
   std::string m_DefaultHash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"; // Empty file hash
 };
+
+// Helper function to generate valid OpApp AIT XML for testing
+static std::string createValidOpAppAitXml(
+    uint32_t orgId,
+    uint16_t appId,
+    const std::string& appName,
+    const std::string& baseUrl,
+    const std::string& location = "index.html",
+    const std::string& controlCode = "AUTOSTART",
+    const std::string& appUsage = "urn:hbbtv:opapp:privileged:2017")
+{
+  std::ostringstream ss;
+  ss << R"(<?xml version="1.0" encoding="UTF-8"?>
+<mhp:ServiceDiscovery xmlns:mhp="urn:dvb:mhp:2009">
+  <mhp:ApplicationDiscovery DomainName="test.example.com">
+    <mhp:ApplicationList>
+      <mhp:Application>
+        <mhp:appName Language="eng">)" << appName << R"(</mhp:appName>
+        <mhp:applicationIdentifier>
+          <mhp:orgId>)" << orgId << R"(</mhp:orgId>
+          <mhp:appId>)" << appId << R"(</mhp:appId>
+        </mhp:applicationIdentifier>
+        <mhp:applicationDescriptor>
+          <mhp:type>
+            <mhp:OtherApp>application/vnd.hbbtv.opapp.pkg</mhp:OtherApp>
+          </mhp:type>
+          <mhp:controlCode>)" << controlCode << R"(</mhp:controlCode>
+          <mhp:visibility>VISIBLE_ALL</mhp:visibility>
+          <mhp:serviceBound>false</mhp:serviceBound>
+          <mhp:priority>1</mhp:priority>
+          <mhp:version>1</mhp:version>
+        </mhp:applicationDescriptor>
+        <mhp:applicationUsageDescriptor>
+          <mhp:ApplicationUsage>)" << appUsage << R"(</mhp:ApplicationUsage>
+        </mhp:applicationUsageDescriptor>
+        <mhp:applicationTransport xsi:type="mhp:HTTPTransportType" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <mhp:URLBase>)" << baseUrl << R"(</mhp:URLBase>
+        </mhp:applicationTransport>
+        <mhp:applicationLocation>)" << location << R"(</mhp:applicationLocation>
+      </mhp:Application>
+    </mhp:ApplicationList>
+  </mhp:ApplicationDiscovery>
+</mhp:ServiceDiscovery>)";
+  return ss.str();
+}
 
 class OpAppPackageManagerTest : public ::testing::Test {
 
@@ -1293,41 +1339,13 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_InvalidXml_ReturnsFalse)
 
 TEST_F(OpAppPackageManagerTest, TestParseAitFiles_ValidAitXml_ExtractsDescriptors)
 {
-  // GIVEN: a test interface with real XML parser and a valid AIT XML file
+  // GIVEN: a test interface with real XML parser and a valid OpApp AIT XML file
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
 
   std::string aitXmlPath = PACKAGE_PATH + "/valid_ait.xml";
   std::ofstream aitFile(aitXmlPath);
-  // Minimal valid AIT XML structure based on TS 102 809
-  aitFile << R"(<?xml version="1.0" encoding="UTF-8"?>
-<mhp:ServiceDiscovery xmlns:mhp="urn:dvb:mhp:2009">
-  <mhp:ApplicationDiscovery DomainName="test.example.com">
-    <mhp:ApplicationList>
-      <mhp:Application>
-        <mhp:appName Language="eng">Test App</mhp:appName>
-        <mhp:applicationIdentifier>
-          <mhp:orgId>12345</mhp:orgId>
-          <mhp:appId>1</mhp:appId>
-        </mhp:applicationIdentifier>
-        <mhp:applicationDescriptor>
-          <mhp:type>
-            <mhp:OtherApp>application/vnd.hbbtv.xhtml+xml</mhp:OtherApp>
-          </mhp:type>
-          <mhp:controlCode>AUTOSTART</mhp:controlCode>
-          <mhp:visibility>VISIBLE_ALL</mhp:visibility>
-          <mhp:serviceBound>false</mhp:serviceBound>
-          <mhp:priority>1</mhp:priority>
-          <mhp:version>01.00.00</mhp:version>
-        </mhp:applicationDescriptor>
-        <mhp:applicationTransport xsi:type="mhp:HTTPTransportType" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-          <mhp:URLBase>https://test.example.com/app/</mhp:URLBase>
-        </mhp:applicationTransport>
-        <mhp:applicationLocation>index.html</mhp:applicationLocation>
-      </mhp:Application>
-    </mhp:ApplicationList>
-  </mhp:ApplicationDiscovery>
-</mhp:ServiceDiscovery>)";
+  aitFile << createValidOpAppAitXml(12345, 1, "Test OpApp", "https://test.example.com/app/");
   aitFile.close();
 
   auto testInterface = OpAppPackageManagerTestInterface::create(
@@ -1339,11 +1357,12 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_ValidAitXml_ExtractsDescriptor
 
   // THEN: should return true and have extracted descriptors
   EXPECT_TRUE(result);
-  EXPECT_FALSE(aitAppDescriptors.empty());
-
-  EXPECT_EQ(aitAppDescriptors.size(), size_t(1));
+  ASSERT_EQ(aitAppDescriptors.size(), size_t(1));
   EXPECT_EQ(aitAppDescriptors[0].orgId, uint32_t(12345));
   EXPECT_EQ(aitAppDescriptors[0].appId, uint16_t(1));
+  EXPECT_EQ(aitAppDescriptors[0].baseUrl, "https://test.example.com/app/");
+  EXPECT_EQ(aitAppDescriptors[0].location, "index.html");
+  EXPECT_EQ(aitAppDescriptors[0].name, "Test OpApp");
 
   // Clean up
   std::remove(aitXmlPath.c_str());
@@ -1351,74 +1370,20 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_ValidAitXml_ExtractsDescriptor
 
 TEST_F(OpAppPackageManagerTest, TestParseAitFiles_MultipleAits_CombinesApps)
 {
-  // GIVEN: a test interface with real XML parser and multiple AIT XML files
+  // GIVEN: a test interface with real XML parser and multiple OpApp AIT XML files
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
 
   // Create first AIT file
   std::string ait1Path = PACKAGE_PATH + "/ait1.xml";
   std::ofstream ait1File(ait1Path);
-  ait1File << R"(<?xml version="1.0" encoding="UTF-8"?>
-<mhp:ServiceDiscovery xmlns:mhp="urn:dvb:mhp:2009">
-  <mhp:ApplicationDiscovery DomainName="test1.example.com">
-    <mhp:ApplicationList>
-      <mhp:Application>
-        <mhp:appName Language="eng">App One</mhp:appName>
-        <mhp:applicationIdentifier>
-          <mhp:orgId>11111</mhp:orgId>
-          <mhp:appId>1</mhp:appId>
-        </mhp:applicationIdentifier>
-        <mhp:applicationDescriptor>
-          <mhp:type>
-            <mhp:OtherApp>application/vnd.hbbtv.xhtml+xml</mhp:OtherApp>
-          </mhp:type>
-          <mhp:controlCode>AUTOSTART</mhp:controlCode>
-          <mhp:visibility>VISIBLE_ALL</mhp:visibility>
-          <mhp:serviceBound>false</mhp:serviceBound>
-          <mhp:priority>1</mhp:priority>
-          <mhp:version>01.00.00</mhp:version>
-        </mhp:applicationDescriptor>
-        <mhp:applicationTransport xsi:type="mhp:HTTPTransportType" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-          <mhp:URLBase>https://test1.example.com/</mhp:URLBase>
-        </mhp:applicationTransport>
-        <mhp:applicationLocation>index.html</mhp:applicationLocation>
-      </mhp:Application>
-    </mhp:ApplicationList>
-  </mhp:ApplicationDiscovery>
-</mhp:ServiceDiscovery>)";
+  ait1File << createValidOpAppAitXml(11111, 1, "App One", "https://test1.example.com/");
   ait1File.close();
 
   // Create second AIT file
   std::string ait2Path = PACKAGE_PATH + "/ait2.xml";
   std::ofstream ait2File(ait2Path);
-  ait2File << R"(<?xml version="1.0" encoding="UTF-8"?>
-<mhp:ServiceDiscovery xmlns:mhp="urn:dvb:mhp:2009">
-  <mhp:ApplicationDiscovery DomainName="test2.example.com">
-    <mhp:ApplicationList>
-      <mhp:Application>
-        <mhp:appName Language="eng">App Two</mhp:appName>
-        <mhp:applicationIdentifier>
-          <mhp:orgId>22222</mhp:orgId>
-          <mhp:appId>2</mhp:appId>
-        </mhp:applicationIdentifier>
-        <mhp:applicationDescriptor>
-          <mhp:type>
-            <mhp:OtherApp>application/vnd.hbbtv.xhtml+xml</mhp:OtherApp>
-          </mhp:type>
-          <mhp:controlCode>PRESENT</mhp:controlCode>
-          <mhp:visibility>VISIBLE_ALL</mhp:visibility>
-          <mhp:serviceBound>false</mhp:serviceBound>
-          <mhp:priority>2</mhp:priority>
-          <mhp:version>01.00.00</mhp:version>
-        </mhp:applicationDescriptor>
-        <mhp:applicationTransport xsi:type="mhp:HTTPTransportType" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-          <mhp:URLBase>https://test2.example.com/</mhp:URLBase>
-        </mhp:applicationTransport>
-        <mhp:applicationLocation>index.html</mhp:applicationLocation>
-      </mhp:Application>
-    </mhp:ApplicationList>
-  </mhp:ApplicationDiscovery>
-</mhp:ServiceDiscovery>)";
+  ait2File << createValidOpAppAitXml(22222, 2, "App Two", "https://test2.example.com/");
   ait2File.close();
 
   auto testInterface = OpAppPackageManagerTestInterface::create(
@@ -1432,7 +1397,7 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_MultipleAits_CombinesApps)
   EXPECT_TRUE(result);
   EXPECT_EQ(aitAppDescriptors.size(), size_t(2));
 
-  // Verify first app
+  // Verify both apps are present
   bool foundApp1 = false;
   bool foundApp2 = false;
   for (const auto& desc : aitAppDescriptors) {
@@ -1459,34 +1424,7 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_ClearsOldDescriptors)
 
   std::string aitXmlPath = PACKAGE_PATH + "/test_ait.xml";
   std::ofstream aitFile(aitXmlPath);
-  aitFile << R"(<?xml version="1.0" encoding="UTF-8"?>
-<mhp:ServiceDiscovery xmlns:mhp="urn:dvb:mhp:2009">
-  <mhp:ApplicationDiscovery DomainName="test.example.com">
-    <mhp:ApplicationList>
-      <mhp:Application>
-        <mhp:appName Language="eng">Test App</mhp:appName>
-        <mhp:applicationIdentifier>
-          <mhp:orgId>99999</mhp:orgId>
-          <mhp:appId>9</mhp:appId>
-        </mhp:applicationIdentifier>
-        <mhp:applicationDescriptor>
-          <mhp:type>
-            <mhp:OtherApp>application/vnd.hbbtv.xhtml+xml</mhp:OtherApp>
-          </mhp:type>
-          <mhp:controlCode>AUTOSTART</mhp:controlCode>
-          <mhp:visibility>VISIBLE_ALL</mhp:visibility>
-          <mhp:serviceBound>false</mhp:serviceBound>
-          <mhp:priority>1</mhp:priority>
-          <mhp:version>01.00.00</mhp:version>
-        </mhp:applicationDescriptor>
-        <mhp:applicationTransport xsi:type="mhp:HTTPTransportType" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-          <mhp:URLBase>https://test.example.com/</mhp:URLBase>
-        </mhp:applicationTransport>
-        <mhp:applicationLocation>index.html</mhp:applicationLocation>
-      </mhp:Application>
-    </mhp:ApplicationList>
-  </mhp:ApplicationDiscovery>
-</mhp:ServiceDiscovery>)";
+  aitFile << createValidOpAppAitXml(99999, 9, "Test App", "https://test.example.com/");
   aitFile.close();
 
   auto testInterface = OpAppPackageManagerTestInterface::create(
@@ -1516,53 +1454,24 @@ TEST_F(OpAppPackageManagerTest, TestAitAppDescriptor_DefaultValues)
   // THEN: all values should be default initialized
   EXPECT_EQ(desc.orgId, uint32_t(0));
   EXPECT_EQ(desc.appId, uint16_t(0));
-  EXPECT_EQ(desc.controlCode, uint8_t(0));
-  EXPECT_EQ(desc.priority, uint8_t(0));
+  EXPECT_EQ(desc.xmlVersion, uint32_t(0));
   EXPECT_TRUE(desc.location.empty());
+  EXPECT_TRUE(desc.baseUrl.empty());
   EXPECT_TRUE(desc.name.empty());
 }
 
 TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_ValidAit_ReturnsUpdateAvailable)
 {
-  // GIVEN: an OpAppPackageManager with FQDN and mock fetcher that writes valid AIT file
+  // GIVEN: an OpAppPackageManager with FQDN and mock fetcher that writes valid OpApp AIT file
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   configuration.m_DestinationDirectory = PACKAGE_PATH + "/dest";
   configuration.m_OpAppFqdn = "test.example.com";
 
-  // Valid AIT XML content
-  std::string aitContent = R"(<?xml version="1.0" encoding="UTF-8"?>
-<mhp:ServiceDiscovery xmlns:mhp="urn:dvb:mhp:2009">
-  <mhp:ApplicationDiscovery DomainName="test.example.com">
-    <mhp:ApplicationList>
-      <mhp:Application>
-        <mhp:appName Language="eng">Test OpApp</mhp:appName>
-        <mhp:applicationIdentifier>
-          <mhp:orgId>12345</mhp:orgId>
-          <mhp:appId>1</mhp:appId>
-        </mhp:applicationIdentifier>
-        <mhp:applicationDescriptor>
-          <mhp:type>
-            <mhp:OtherApp>application/vnd.hbbtv.xhtml+xml</mhp:OtherApp>
-          </mhp:type>
-          <mhp:controlCode>AUTOSTART</mhp:controlCode>
-          <mhp:visibility>VISIBLE_ALL</mhp:visibility>
-          <mhp:serviceBound>false</mhp:serviceBound>
-          <mhp:priority>1</mhp:priority>
-          <mhp:version>01.00.00</mhp:version>
-        </mhp:applicationDescriptor>
-        <mhp:applicationTransport xsi:type="mhp:HTTPTransportType" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-          <mhp:URLBase>https://test.example.com/app/</mhp:URLBase>
-        </mhp:applicationTransport>
-        <mhp:applicationLocation>index.html</mhp:applicationLocation>
-      </mhp:Application>
-    </mhp:ApplicationList>
-  </mhp:ApplicationDiscovery>
-</mhp:ServiceDiscovery>)";
-
   auto mockAitFetcher = std::make_unique<MockAitFetcher>();
   // Mock will create this file when FetchAitXmls is called
-  mockAitFetcher->setFileContent("ait_0.xml", aitContent);
+  mockAitFetcher->setFileContent("ait_0.xml",
+      createValidOpAppAitXml(12345, 1, "Test OpApp", "https://test.example.com/app/"));
 
   auto testInterface = OpAppPackageManagerTestInterface::create(
       configuration, nullptr, nullptr, std::move(mockAitFetcher), std::make_unique<XmlParser>());
@@ -1609,4 +1518,257 @@ TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_AitWithNoApps_ReturnsNo
 
   // Clean up
   std::filesystem::remove_all(PACKAGE_PATH + "/dest");
+}
+
+// =============================================================================
+// AIT Validation Tests
+// =============================================================================
+
+TEST_F(OpAppPackageManagerTest, TestParseAitFiles_NonOpAppType_Rejected)
+{
+  // GIVEN: an AIT XML with HbbTV app type (not OpApp)
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+
+  std::string aitXmlPath = PACKAGE_PATH + "/hbbtv_ait.xml";
+  std::ofstream aitFile(aitXmlPath);
+  // Use HbbTV type instead of OpApp type
+  aitFile << R"(<?xml version="1.0" encoding="UTF-8"?>
+<mhp:ServiceDiscovery xmlns:mhp="urn:dvb:mhp:2009">
+  <mhp:ApplicationDiscovery DomainName="test.example.com">
+    <mhp:ApplicationList>
+      <mhp:Application>
+        <mhp:appName Language="eng">HbbTV App</mhp:appName>
+        <mhp:applicationIdentifier>
+          <mhp:orgId>12345</mhp:orgId>
+          <mhp:appId>1</mhp:appId>
+        </mhp:applicationIdentifier>
+        <mhp:applicationDescriptor>
+          <mhp:type>
+            <mhp:OtherApp>application/vnd.hbbtv.xhtml+xml</mhp:OtherApp>
+          </mhp:type>
+          <mhp:controlCode>AUTOSTART</mhp:controlCode>
+          <mhp:visibility>VISIBLE_ALL</mhp:visibility>
+          <mhp:serviceBound>false</mhp:serviceBound>
+          <mhp:priority>1</mhp:priority>
+          <mhp:version>1</mhp:version>
+        </mhp:applicationDescriptor>
+        <mhp:applicationTransport xsi:type="mhp:HTTPTransportType" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <mhp:URLBase>https://test.example.com/</mhp:URLBase>
+        </mhp:applicationTransport>
+        <mhp:applicationLocation>index.html</mhp:applicationLocation>
+      </mhp:Application>
+    </mhp:ApplicationList>
+  </mhp:ApplicationDiscovery>
+</mhp:ServiceDiscovery>)";
+  aitFile.close();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
+
+  // WHEN: parseAitFiles is called
+  std::vector<AitAppDescriptor> aitAppDescriptors;
+  bool result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
+
+  // THEN: should return false (no valid OpApp descriptors)
+  EXPECT_FALSE(result);
+  EXPECT_TRUE(aitAppDescriptors.empty());
+
+  // Clean up
+  std::remove(aitXmlPath.c_str());
+}
+
+TEST_F(OpAppPackageManagerTest, TestParseAitFiles_InvalidAppUsage_Rejected)
+{
+  // GIVEN: an OpApp AIT XML with invalid applicationUsage
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+
+  std::string aitXmlPath = PACKAGE_PATH + "/invalid_usage_ait.xml";
+  std::ofstream aitFile(aitXmlPath);
+  // Use invalid app usage URN
+  aitFile << R"(<?xml version="1.0" encoding="UTF-8"?>
+<mhp:ServiceDiscovery xmlns:mhp="urn:dvb:mhp:2009">
+  <mhp:ApplicationDiscovery DomainName="test.example.com">
+    <mhp:ApplicationList>
+      <mhp:Application>
+        <mhp:appName Language="eng">Invalid Usage App</mhp:appName>
+        <mhp:applicationIdentifier>
+          <mhp:orgId>12345</mhp:orgId>
+          <mhp:appId>1</mhp:appId>
+        </mhp:applicationIdentifier>
+        <mhp:applicationDescriptor>
+          <mhp:type>
+            <mhp:OtherApp>application/vnd.hbbtv.opapp.pkg</mhp:OtherApp>
+          </mhp:type>
+          <mhp:controlCode>AUTOSTART</mhp:controlCode>
+          <mhp:visibility>VISIBLE_ALL</mhp:visibility>
+          <mhp:serviceBound>false</mhp:serviceBound>
+          <mhp:priority>1</mhp:priority>
+          <mhp:version>1</mhp:version>
+        </mhp:applicationDescriptor>
+        <mhp:applicationUsageDescriptor>
+          <mhp:ApplicationUsage>urn:invalid:usage:2017</mhp:ApplicationUsage>
+        </mhp:applicationUsageDescriptor>
+        <mhp:applicationTransport xsi:type="mhp:HTTPTransportType" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <mhp:URLBase>https://test.example.com/</mhp:URLBase>
+        </mhp:applicationTransport>
+        <mhp:applicationLocation>index.html</mhp:applicationLocation>
+      </mhp:Application>
+    </mhp:ApplicationList>
+  </mhp:ApplicationDiscovery>
+</mhp:ServiceDiscovery>)";
+  aitFile.close();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
+
+  // WHEN: parseAitFiles is called
+  std::vector<AitAppDescriptor> aitAppDescriptors;
+  bool result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
+
+  // THEN: should return false (invalid app usage rejected)
+  EXPECT_FALSE(result);
+  EXPECT_TRUE(aitAppDescriptors.empty());
+
+  // Clean up
+  std::remove(aitXmlPath.c_str());
+}
+
+TEST_F(OpAppPackageManagerTest, TestParseAitFiles_PrivilegedOpApp_Accepted)
+{
+  // GIVEN: an OpApp AIT XML with privileged usage
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+
+  std::string aitXmlPath = PACKAGE_PATH + "/privileged_ait.xml";
+  std::ofstream aitFile(aitXmlPath);
+  aitFile << createValidOpAppAitXml(12345, 1, "Privileged OpApp",
+      "https://test.example.com/", "index.html", "AUTOSTART",
+      "urn:hbbtv:opapp:privileged:2017");
+  aitFile.close();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
+
+  // WHEN: parseAitFiles is called
+  std::vector<AitAppDescriptor> aitAppDescriptors;
+  bool result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
+
+  // THEN: should return true (privileged usage accepted)
+  EXPECT_TRUE(result);
+  ASSERT_EQ(aitAppDescriptors.size(), size_t(1));
+  EXPECT_EQ(aitAppDescriptors[0].orgId, uint32_t(12345));
+
+  // Clean up
+  std::remove(aitXmlPath.c_str());
+}
+
+TEST_F(OpAppPackageManagerTest, TestParseAitFiles_SpecificOpApp_Accepted)
+{
+  // GIVEN: an OpApp AIT XML with specific usage
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+
+  std::string aitXmlPath = PACKAGE_PATH + "/specific_ait.xml";
+  std::ofstream aitFile(aitXmlPath);
+  aitFile << createValidOpAppAitXml(12345, 1, "Specific OpApp",
+      "https://test.example.com/", "index.html", "AUTOSTART",
+      "urn:hbbtv:opapp:specific:2017");
+  aitFile.close();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
+
+  // WHEN: parseAitFiles is called
+  std::vector<AitAppDescriptor> aitAppDescriptors;
+  bool result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
+
+  // THEN: should return true (specific usage accepted)
+  EXPECT_TRUE(result);
+  ASSERT_EQ(aitAppDescriptors.size(), size_t(1));
+  EXPECT_EQ(aitAppDescriptors[0].orgId, uint32_t(12345));
+
+  // Clean up
+  std::remove(aitXmlPath.c_str());
+}
+
+TEST_F(OpAppPackageManagerTest, TestParseAitFiles_MixedValidAndInvalid_OnlyValidExtracted)
+{
+  // GIVEN: an AIT with multiple apps - one valid OpApp, one invalid HbbTV app
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+
+  std::string aitXmlPath = PACKAGE_PATH + "/mixed_ait.xml";
+  std::ofstream aitFile(aitXmlPath);
+  aitFile << R"(<?xml version="1.0" encoding="UTF-8"?>
+<mhp:ServiceDiscovery xmlns:mhp="urn:dvb:mhp:2009">
+  <mhp:ApplicationDiscovery DomainName="test.example.com">
+    <mhp:ApplicationList>
+      <mhp:Application>
+        <mhp:appName Language="eng">Invalid HbbTV App</mhp:appName>
+        <mhp:applicationIdentifier>
+          <mhp:orgId>11111</mhp:orgId>
+          <mhp:appId>1</mhp:appId>
+        </mhp:applicationIdentifier>
+        <mhp:applicationDescriptor>
+          <mhp:type>
+            <mhp:OtherApp>application/vnd.hbbtv.xhtml+xml</mhp:OtherApp>
+          </mhp:type>
+          <mhp:controlCode>AUTOSTART</mhp:controlCode>
+          <mhp:visibility>VISIBLE_ALL</mhp:visibility>
+          <mhp:serviceBound>false</mhp:serviceBound>
+          <mhp:priority>1</mhp:priority>
+          <mhp:version>1</mhp:version>
+        </mhp:applicationDescriptor>
+        <mhp:applicationTransport xsi:type="mhp:HTTPTransportType" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <mhp:URLBase>https://hbbtv.example.com/</mhp:URLBase>
+        </mhp:applicationTransport>
+        <mhp:applicationLocation>index.html</mhp:applicationLocation>
+      </mhp:Application>
+      <mhp:Application>
+        <mhp:appName Language="eng">Valid OpApp</mhp:appName>
+        <mhp:applicationIdentifier>
+          <mhp:orgId>22222</mhp:orgId>
+          <mhp:appId>2</mhp:appId>
+        </mhp:applicationIdentifier>
+        <mhp:applicationDescriptor>
+          <mhp:type>
+            <mhp:OtherApp>application/vnd.hbbtv.opapp.pkg</mhp:OtherApp>
+          </mhp:type>
+          <mhp:controlCode>AUTOSTART</mhp:controlCode>
+          <mhp:visibility>VISIBLE_ALL</mhp:visibility>
+          <mhp:serviceBound>false</mhp:serviceBound>
+          <mhp:priority>1</mhp:priority>
+          <mhp:version>1</mhp:version>
+        </mhp:applicationDescriptor>
+        <mhp:applicationUsageDescriptor>
+          <mhp:ApplicationUsage>urn:hbbtv:opapp:privileged:2017</mhp:ApplicationUsage>
+        </mhp:applicationUsageDescriptor>
+        <mhp:applicationTransport xsi:type="mhp:HTTPTransportType" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <mhp:URLBase>https://opapp.example.com/</mhp:URLBase>
+        </mhp:applicationTransport>
+        <mhp:applicationLocation>app.html</mhp:applicationLocation>
+      </mhp:Application>
+    </mhp:ApplicationList>
+  </mhp:ApplicationDiscovery>
+</mhp:ServiceDiscovery>)";
+  aitFile.close();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
+
+  // WHEN: parseAitFiles is called
+  std::vector<AitAppDescriptor> aitAppDescriptors;
+  bool result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
+
+  // THEN: should return true with only the valid OpApp extracted
+  EXPECT_TRUE(result);
+  ASSERT_EQ(aitAppDescriptors.size(), size_t(1));
+  EXPECT_EQ(aitAppDescriptors[0].orgId, uint32_t(22222));
+  EXPECT_EQ(aitAppDescriptors[0].appId, uint16_t(2));
+  EXPECT_EQ(aitAppDescriptors[0].baseUrl, "https://opapp.example.com/");
+
+  // Clean up
+  std::remove(aitXmlPath.c_str());
 }

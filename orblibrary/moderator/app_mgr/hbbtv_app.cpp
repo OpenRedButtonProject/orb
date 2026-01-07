@@ -145,7 +145,7 @@ bool HbbTVApp::TransitionToBroadcastRelated()
         return false;
     }
 
-    if (m_protocolId == AIT_PROTOCOL_HTTP)
+    if (m_protocolId == Ait::AIT_PROTOCOL_HTTP)
     {
         if (!Utils::CheckBoundaries(m_entryUrl, m_baseUrl, m_aitDesc.boundaries))
         {

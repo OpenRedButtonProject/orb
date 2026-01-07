@@ -255,7 +255,7 @@ const Ait::S_AIT_APP_DESC * Ait::TeletextApp(const S_AIT_TABLE *aitTable)
     {
         for (index = 0; index != aitTable->numApps; index++)
         {
-            if (aitTable->appArray[index].usageType == AIT_USAGE_TELETEXT)
+            if (aitTable->appArray[index].usageType == Ait::AIT_USAGE_TELETEXT)
             {
                 app = &aitTable->appArray[index];
                 break;

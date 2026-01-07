@@ -406,22 +406,22 @@ static Ait::E_AIT_APP_CONTROL XmlGetContentEnumControl(xmlNodePtr node)
 static uint8_t XmlGetContentVisibility(xmlNodePtr node)
 {
     xmlChar *dptr;
-    uint8_t visibility = AIT_NOT_VISIBLE_ALL;
+    uint8_t visibility = Ait::AIT_NOT_VISIBLE_ALL;
 
     NODE_CONTENT_GET(node, dptr);
     if (dptr)
     {
         if (xmlStrEqual(dptr, (const xmlChar *)"VISIBLE_ALL"))
         {
-            visibility = AIT_VISIBLE_ALL;
+            visibility = Ait::AIT_VISIBLE_ALL;
         }
         else if (xmlStrEqual(dptr, (const xmlChar *)"NOT_VISIBLE_ALL"))
         {
-            visibility = AIT_NOT_VISIBLE_ALL;
+            visibility = Ait::AIT_NOT_VISIBLE_ALL;
         }
         else if (xmlStrEqual(dptr, (const xmlChar *)"NOT_VISIBLE_USERS"))
         {
-            visibility = AIT_NOT_VISIBLE_USERS;
+            visibility = Ait::AIT_NOT_VISIBLE_USERS;
         }
         NODE_CONTENT_RELEASE();
     }
@@ -736,35 +736,35 @@ static void XmlParseAppTransport(xmlNodePtr node, Ait::S_TRANSPORT_PROTOCOL_DESC
     {
         if (xmlStrEqual(dptr, (const xmlChar *)"mhp:HTTPTransportType"))
         {
-            protocolId = AIT_PROTOCOL_HTTP;
+            protocolId = Ait::AIT_PROTOCOL_HTTP;
         }
         else if (xmlStrEqual(dptr, (const xmlChar *)"mhp:OCTransportType"))
         {
-            protocolId = AIT_PROTOCOL_OBJECT_CAROUSEL;
+            protocolId = Ait::AIT_PROTOCOL_OBJECT_CAROUSEL;
         }
         NODE_PROP_FREE(dptr)
     }
 
-    freeIndex = AIT_MAX_NUM_PROTOCOLS;
-    for (i = 0; i < AIT_MAX_NUM_PROTOCOLS; i++)
+    freeIndex = Ait::AIT_MAX_NUM_PROTOCOLS;
+    for (i = 0; i < Ait::AIT_MAX_NUM_PROTOCOLS; i++)
     {
         if (protocolId == trns[i].protocolId)
         {
             break;
         }
-        if ((trns[i].protocolId == 0) && (freeIndex == AIT_MAX_NUM_PROTOCOLS))
+        if ((trns[i].protocolId == 0) && (freeIndex == Ait::AIT_MAX_NUM_PROTOCOLS))
         {
             /* Save the first free index to be used for the new protocol */
             freeIndex = i;
         }
     }
-    if (freeIndex == AIT_MAX_NUM_PROTOCOLS)
+    if (freeIndex == Ait::AIT_MAX_NUM_PROTOCOLS)
     {
         LOG(ERROR) << "No free slots for this protocol: " << protocolId;
-        i = AIT_MAX_NUM_PROTOCOLS;
+        i = Ait::AIT_MAX_NUM_PROTOCOLS;
     }
 
-    if (i >= AIT_MAX_NUM_PROTOCOLS)
+    if (i >= Ait::AIT_MAX_NUM_PROTOCOLS)
     {
         trns_ptr = &(trns[freeIndex]);
         trns_ptr->protocolId = protocolId;
@@ -772,7 +772,7 @@ static void XmlParseAppTransport(xmlNodePtr node, Ait::S_TRANSPORT_PROTOCOL_DESC
         node = node->xmlChildrenNode;
         switch (protocolId)
         {
-            case AIT_PROTOCOL_HTTP:
+            case Ait::AIT_PROTOCOL_HTTP:
                 // See TS 102 809, section 5.4.4.20
                 /* Length the URL extensions */
                 while (node != nullptr)
@@ -806,7 +806,7 @@ static void XmlParseAppTransport(xmlNodePtr node, Ait::S_TRANSPORT_PROTOCOL_DESC
                 }
                 break;
 
-            case AIT_PROTOCOL_OBJECT_CAROUSEL:
+            case Ait::AIT_PROTOCOL_OBJECT_CAROUSEL:
                 // See TS 102 809, section 5.4.4.21
                 while (node != nullptr)
                 {

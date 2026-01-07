@@ -36,11 +36,11 @@ class IXmlParser;
  * Contains the fields needed from Ait::S_AIT_APP_DESC for package management.
  */
 struct AitAppDescriptor {
-    uint32_t orgId;
-    uint16_t appId;
-    uint8_t controlCode;
-    uint8_t priority;
+    uint32_t orgId = 0;
+    uint16_t appId = 0;
+    uint32_t xmlVersion = 0;
     std::string location;
+    std::string baseUrl;
     std::string name;
 };
 

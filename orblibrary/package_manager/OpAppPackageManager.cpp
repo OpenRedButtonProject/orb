@@ -582,16 +582,68 @@ bool OpAppPackageManager::parseAitFiles(
     LOG(INFO) << "Parsed AIT from " << aitFile << ": "
               << static_cast<int>(aitTable->numApps) << " app(s)";
 
-    // Extract application descriptors
+    // AIT Table should have exactly one application descriptor.
+    if (aitTable->numApps != 1) {
+      LOG(WARNING) << "AIT table has " << aitTable->numApps << " application descriptors, expected 1";
+    }
+
+    // It may be that there are more than one application descriptor in the AIT table.
+    // We need to process each one.
     for (const auto& app : aitTable->appArray) {
+
+      // Basic validation. See TS 102796 Table 7 and TS 103606 Table 7.
+      if ((app.xmlType & Ait::XML_TYP_OPAPP) != Ait::XML_TYP_OPAPP) {
+        LOG(WARNING) << "AIT table has application descriptor with unexpected application type: "
+          << app.xmlType << " expected OPAPP TYPE (0x80 or 0x81). Ignoring AIT application descriptor.";
+        continue;
+      }
+
+      if (app.appUsage != "urn:hbbtv:opapp:privileged:2017" && app.appUsage != "urn:hbbtv:opapp:specific:2017") {
+        LOG(WARNING) << "AIT table has application descriptor with unexpected application usage: "
+          << app.appUsage
+          << " expected 'urn:hbbtv:opapp:privileged:2017' or 'urn:hbbtv:opapp:opspecific:2017'. Ignoring AIT application descriptor.";
+        continue;
+      }
+      else {
+        LOG(INFO) << "AIT table has application descriptor with expected application usage: " << app.appUsage;
+        // TODO Check against the bilateral agreement on this device.
+        // This will require a some callback to the moderator to check the bilateral agreement.
+        // If it fails then set an error, e.g. "Application not supported by this device."
+      }
+
+      if (app.transportArray[0].protocolId != Ait::AIT_PROTOCOL_HTTP) {
+        LOG(WARNING) << "AIT table has application descriptor with unexpected or unsupported transport protocol: "
+          << app.transportArray[0].protocolId
+          << " expected 'HTTPTransportType' (0x3). Ignoring AIT application descriptor.";
+        continue;
+      }
+
+      if (app.controlCode != Ait::APP_CTL_AUTOSTART) {
+        // Warning only - process anyway.
+        LOG(WARNING) << "AIT table has application descriptor with unexpected control code: "
+          << app.controlCode << " expected AUTOSTART (0x1). Ignoring AIT application descriptor.";
+      }
+
+      if (app.appDesc.visibility != Ait::AIT_VISIBLE_ALL) {
+        // Warning only - process anyway.
+        LOG(WARNING) << "AIT table has application descriptor with unexpected visibility: "
+          << app.appDesc.visibility << " expected VISIBLE_ALL (0x3). Ignoring AIT application descriptor.";
+      }
+
+      if (app.appDesc.serviceBound) {
+        // Warning only - process anyway.
+        LOG(WARNING) << "AIT table has application descriptor with unexpected service bound: "
+          << app.appDesc.serviceBound << " expected false. Ignoring AIT application descriptor.";
+      }
+
       // FREE-313: Go through this and figure out what is needed for validation.
       // And also for the URL of the OpApp!
       AitAppDescriptor desc;
       desc.orgId = app.orgId;
       desc.appId = app.appId;
-      desc.controlCode = app.controlCode;
-      desc.priority = app.appDesc.priority;
       desc.location = app.location;
+      desc.baseUrl = app.transportArray[0].url.baseUrl;
+      desc.xmlVersion = app.xmlVersion;
 
       // Get the first name if available
       if (app.appName.numLangs > 0) {
@@ -599,8 +651,8 @@ bool OpAppPackageManager::parseAitFiles(
       }
 
       LOG(INFO) << "  App: orgId=" << desc.orgId << ", appId=" << desc.appId
-                << ", controlCode=" << static_cast<int>(desc.controlCode)
-                << ", priority=" << static_cast<int>(desc.priority)
+                << ", baseUrl=" << desc.baseUrl
+                << ", xmlVersion=" << desc.xmlVersion
                 << ", location=" << desc.location
                 << ", name=" << desc.name;
 

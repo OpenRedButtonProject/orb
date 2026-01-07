@@ -378,7 +378,7 @@ TEST_F(XmlParserTest, ParseAit_ApplicationTransport_HTTPTransportType)
     ASSERT_NE(aitTable, nullptr);
     ASSERT_EQ(aitTable->numApps, 1);
     EXPECT_EQ(aitTable->appArray[0].numTransports, 1);
-    EXPECT_EQ(aitTable->appArray[0].transportArray[0].protocolId, AIT_PROTOCOL_HTTP);
+    EXPECT_EQ(aitTable->appArray[0].transportArray[0].protocolId, Ait::AIT_PROTOCOL_HTTP);
     EXPECT_EQ(aitTable->appArray[0].transportArray[0].url.baseUrl, "https://test.example.com/app/");
     EXPECT_FALSE(aitTable->appArray[0].transportArray[0].failedToLoad);
 }
@@ -395,7 +395,7 @@ TEST_F(XmlParserTest, ParseAit_ApplicationTransport_HTTPWithURLExtensions)
     // THEN: The HTTP transport with URL extensions should be parsed correctly
     ASSERT_NE(aitTable, nullptr);
     ASSERT_EQ(aitTable->numApps, 1);
-    EXPECT_EQ(aitTable->appArray[0].transportArray[0].protocolId, AIT_PROTOCOL_HTTP);
+    EXPECT_EQ(aitTable->appArray[0].transportArray[0].protocolId, Ait::AIT_PROTOCOL_HTTP);
     EXPECT_EQ(aitTable->appArray[0].transportArray[0].url.baseUrl, "https://test.example.com/");
     ASSERT_EQ(aitTable->appArray[0].transportArray[0].url.extensionUrls.size(), size_t(2));
     EXPECT_EQ(aitTable->appArray[0].transportArray[0].url.extensionUrls[0], "app/v1/");
@@ -415,7 +415,7 @@ TEST_F(XmlParserTest, ParseAit_ApplicationTransport_OCTransportType)
     ASSERT_NE(aitTable, nullptr);
     ASSERT_EQ(aitTable->numApps, 1);
     EXPECT_EQ(aitTable->appArray[0].numTransports, 1);
-    EXPECT_EQ(aitTable->appArray[0].transportArray[0].protocolId, AIT_PROTOCOL_OBJECT_CAROUSEL);
+    EXPECT_EQ(aitTable->appArray[0].transportArray[0].protocolId, Ait::AIT_PROTOCOL_OBJECT_CAROUSEL);
     EXPECT_EQ(aitTable->appArray[0].transportArray[0].oc.dvb.originalNetworkId, 1);
     EXPECT_EQ(aitTable->appArray[0].transportArray[0].oc.dvb.transportStreamId, 2);
     EXPECT_EQ(aitTable->appArray[0].transportArray[0].oc.dvb.serviceId, 3);
@@ -443,11 +443,11 @@ TEST_F(XmlParserTest, ParseAit_ApplicationTransport_MultipleTransports)
     bool foundHttp = false;
     bool foundOC = false;
     for (int i = 0; i < aitTable->appArray[0].numTransports; i++) {
-        if (aitTable->appArray[0].transportArray[i].protocolId == AIT_PROTOCOL_HTTP) {
+        if (aitTable->appArray[0].transportArray[i].protocolId == Ait::AIT_PROTOCOL_HTTP) {
             foundHttp = true;
             EXPECT_EQ(aitTable->appArray[0].transportArray[i].url.baseUrl, "https://test.example.com/app/");
         }
-        if (aitTable->appArray[0].transportArray[i].protocolId == AIT_PROTOCOL_OBJECT_CAROUSEL) {
+        if (aitTable->appArray[0].transportArray[i].protocolId == Ait::AIT_PROTOCOL_OBJECT_CAROUSEL) {
             foundOC = true;
             EXPECT_EQ(aitTable->appArray[0].transportArray[i].oc.dvb.originalNetworkId, 100);
             EXPECT_EQ(aitTable->appArray[0].transportArray[i].oc.dvb.transportStreamId, 200);
@@ -509,7 +509,7 @@ TEST_F(XmlParserTest, ParseAit_OpAppExtensions_AllFieldsPresent)
 
     // Verify applicationTransport
     EXPECT_EQ(app.numTransports, 1);
-    EXPECT_EQ(app.transportArray[0].protocolId, AIT_PROTOCOL_HTTP);
+    EXPECT_EQ(app.transportArray[0].protocolId, Ait::AIT_PROTOCOL_HTTP);
     EXPECT_EQ(app.transportArray[0].url.baseUrl, "https://opapp.example.com/launcher/");
     ASSERT_EQ(app.transportArray[0].url.extensionUrls.size(), size_t(1));
     EXPECT_EQ(app.transportArray[0].url.extensionUrls[0], "v2/");

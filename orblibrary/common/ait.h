@@ -26,16 +26,6 @@
 #include <vector>
 #include <string>
 
-#define AIT_USAGE_TELETEXT 0x01
-
-#define AIT_MAX_NUM_PROTOCOLS 2
-#define AIT_PROTOCOL_OBJECT_CAROUSEL 0x0001
-#define AIT_PROTOCOL_HTTP 0x0003
-
-#define AIT_NOT_VISIBLE_ALL 0x00
-#define AIT_NOT_VISIBLE_USERS 0x01
-#define AIT_VISIBLE_ALL 0x03
-
 #define AIT_NUM_RECEIVED_SECTION_MASK_BYTES (256 / 8)
 
 
@@ -61,6 +51,17 @@ namespace orb
 class Ait
 {
 public:
+
+    static constexpr uint8_t AIT_USAGE_TELETEXT = 0x01;
+
+    static constexpr uint8_t AIT_MAX_NUM_PROTOCOLS = 2;
+    static constexpr uint16_t AIT_PROTOCOL_OBJECT_CAROUSEL = 0x0001;
+    static constexpr uint16_t AIT_PROTOCOL_HTTP = 0x0003;
+
+    static constexpr uint8_t AIT_NOT_VISIBLE_ALL = 0x00;
+    static constexpr uint8_t AIT_NOT_VISIBLE_USERS = 0x01;
+    static constexpr uint8_t AIT_VISIBLE_ALL = 0x03;
+
     typedef enum
     {
         APP_TYP_MHEG5 = 0x0008,
