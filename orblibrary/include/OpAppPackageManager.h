@@ -24,6 +24,8 @@
 #include <mutex>
 #include <functional>
 
+#include "ait.h"
+
 namespace orb
 {
 
@@ -328,10 +330,22 @@ private:
    * Parses AIT XML files and extracts application descriptors into aitAppDescriptors.
    *
    * @param aitFiles Vector of paths to AIT XML files
-   * @param aitAppDescriptors Vector of AIT application descriptors
-   * @return true if the AIT files were successfully parsed and the application descriptors were extracted.
+   * @param aitAppDescriptors Vector of AIT application descriptors (output)
+   * @return PackageOperationResult with success status and any error messages.
    */
-  bool parseAitFiles(const std::vector<std::string>& aitFiles, std::vector<AitAppDescriptor>& aitAppDescriptors);
+  PackageOperationResult parseAitFiles(const std::vector<std::string>& aitFiles, std::vector<AitAppDescriptor>& aitAppDescriptors);
+
+private:
+  /**
+   * validateOpAppDescriptor()
+   *
+   * Validates an AIT application descriptor for OpApp requirements.
+   * See TS 102796 Table 7 and TS 103606 Table 7.
+   *
+   * @param app The AIT application descriptor to validate
+   * @return PackageOperationResult with success=true if valid, or success=false with error details if invalid.
+   */
+  PackageOperationResult validateOpAppDescriptor(const Ait::S_AIT_APP_DESC& app) const;
 
   PackageStatus m_PackageStatus = PackageStatus::None;
 

@@ -1286,10 +1286,11 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_EmptyFileList_ReturnsFalse)
 
   // WHEN: parseAitFiles is called with empty list
   std::vector<AitAppDescriptor> aitAppDescriptors;
-  bool result = testInterface->parseAitFiles(std::vector<std::string>{}, aitAppDescriptors);
+  auto result = testInterface->parseAitFiles(std::vector<std::string>{}, aitAppDescriptors);
 
-  // THEN: should return false and have no descriptors
-  EXPECT_FALSE(result);
+  // THEN: should return failure and have no descriptors
+  EXPECT_FALSE(result.success);
+  EXPECT_FALSE(result.errorMessage.empty());
   EXPECT_TRUE(aitAppDescriptors.empty());
 }
 
@@ -1304,10 +1305,11 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_NonexistentFile_ReturnsFalse)
 
   // WHEN: parseAitFiles is called with nonexistent file
   std::vector<AitAppDescriptor> aitAppDescriptors;
-  bool result = testInterface->parseAitFiles({"/nonexistent/ait.xml"}, aitAppDescriptors);
+  auto result = testInterface->parseAitFiles({"/nonexistent/ait.xml"}, aitAppDescriptors);
 
-  // THEN: should return false and have no descriptors
-  EXPECT_FALSE(result);
+  // THEN: should return failure and have no descriptors
+  EXPECT_FALSE(result.success);
+  EXPECT_FALSE(result.errorMessage.empty());
   EXPECT_TRUE(aitAppDescriptors.empty());
 }
 
@@ -1327,10 +1329,11 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_InvalidXml_ReturnsFalse)
 
   // WHEN: parseAitFiles is called with invalid XML
   std::vector<AitAppDescriptor> aitAppDescriptors;
-  bool result = testInterface->parseAitFiles({invalidXmlPath}, aitAppDescriptors);
+  auto result = testInterface->parseAitFiles({invalidXmlPath}, aitAppDescriptors);
 
-  // THEN: should return false and have no descriptors
-  EXPECT_FALSE(result);
+  // THEN: should return failure and have no descriptors
+  EXPECT_FALSE(result.success);
+  EXPECT_FALSE(result.errorMessage.empty());
   EXPECT_TRUE(aitAppDescriptors.empty());
 
   // Clean up
@@ -1353,10 +1356,10 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_ValidAitXml_ExtractsDescriptor
 
   // WHEN: parseAitFiles is called with valid AIT XML
   std::vector<AitAppDescriptor> aitAppDescriptors;
-  bool result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
+  auto result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
 
-  // THEN: should return true and have extracted descriptors
-  EXPECT_TRUE(result);
+  // THEN: should return success and have extracted descriptors
+  EXPECT_TRUE(result.success);
   ASSERT_EQ(aitAppDescriptors.size(), size_t(1));
   EXPECT_EQ(aitAppDescriptors[0].orgId, uint32_t(12345));
   EXPECT_EQ(aitAppDescriptors[0].appId, uint16_t(1));
@@ -1391,10 +1394,10 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_MultipleAits_CombinesApps)
 
   // WHEN: parseAitFiles is called with multiple AIT files
   std::vector<AitAppDescriptor> aitAppDescriptors;
-  bool result = testInterface->parseAitFiles({ait1Path, ait2Path}, aitAppDescriptors);
+  auto result = testInterface->parseAitFiles({ait1Path, ait2Path}, aitAppDescriptors);
 
-  // THEN: should return true and combine apps from both files
-  EXPECT_TRUE(result);
+  // THEN: should return success and combine apps from both files
+  EXPECT_TRUE(result.success);
   EXPECT_EQ(aitAppDescriptors.size(), size_t(2));
 
   // Verify both apps are present
@@ -1568,10 +1571,10 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_NonOpAppType_Rejected)
 
   // WHEN: parseAitFiles is called
   std::vector<AitAppDescriptor> aitAppDescriptors;
-  bool result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
+  auto result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
 
-  // THEN: should return false (no valid OpApp descriptors)
-  EXPECT_FALSE(result);
+  // THEN: should return failure (no valid OpApp descriptors)
+  EXPECT_FALSE(result.success);
   EXPECT_TRUE(aitAppDescriptors.empty());
 
   // Clean up
@@ -1625,10 +1628,10 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_InvalidAppUsage_Rejected)
 
   // WHEN: parseAitFiles is called
   std::vector<AitAppDescriptor> aitAppDescriptors;
-  bool result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
+  auto result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
 
-  // THEN: should return false (invalid app usage rejected)
-  EXPECT_FALSE(result);
+  // THEN: should return failure (invalid app usage rejected)
+  EXPECT_FALSE(result.success);
   EXPECT_TRUE(aitAppDescriptors.empty());
 
   // Clean up
@@ -1653,10 +1656,10 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_PrivilegedOpApp_Accepted)
 
   // WHEN: parseAitFiles is called
   std::vector<AitAppDescriptor> aitAppDescriptors;
-  bool result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
+  auto result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
 
-  // THEN: should return true (privileged usage accepted)
-  EXPECT_TRUE(result);
+  // THEN: should return success (privileged usage accepted)
+  EXPECT_TRUE(result.success);
   ASSERT_EQ(aitAppDescriptors.size(), size_t(1));
   EXPECT_EQ(aitAppDescriptors[0].orgId, uint32_t(12345));
 
@@ -1682,10 +1685,10 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_SpecificOpApp_Accepted)
 
   // WHEN: parseAitFiles is called
   std::vector<AitAppDescriptor> aitAppDescriptors;
-  bool result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
+  auto result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
 
-  // THEN: should return true (specific usage accepted)
-  EXPECT_TRUE(result);
+  // THEN: should return success (specific usage accepted)
+  EXPECT_TRUE(result.success);
   ASSERT_EQ(aitAppDescriptors.size(), size_t(1));
   EXPECT_EQ(aitAppDescriptors[0].orgId, uint32_t(12345));
 
@@ -1760,10 +1763,10 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_MixedValidAndInvalid_OnlyValid
 
   // WHEN: parseAitFiles is called
   std::vector<AitAppDescriptor> aitAppDescriptors;
-  bool result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
+  auto result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
 
-  // THEN: should return true with only the valid OpApp extracted
-  EXPECT_TRUE(result);
+  // THEN: should return success with only the valid OpApp extracted
+  EXPECT_TRUE(result.success);
   ASSERT_EQ(aitAppDescriptors.size(), size_t(1));
   EXPECT_EQ(aitAppDescriptors[0].orgId, uint32_t(22222));
   EXPECT_EQ(aitAppDescriptors[0].appId, uint16_t(2));

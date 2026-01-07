@@ -145,9 +145,9 @@ public:
      * @brief Parses AIT files (internal method exposed for testing)
      * @param aitFiles Vector of paths to AIT XML files
      * @param aitAppDescriptors Vector of AIT application descriptors
-     * @return true if the AIT files were successfully parsed and the application descriptors were extracted.
+     * @return PackageOperationResult with success status and any error messages.
      */
-    bool parseAitFiles(const std::vector<std::string>& aitFiles, std::vector<AitAppDescriptor>& aitAppDescriptors);
+    PackageOperationResult parseAitFiles(const std::vector<std::string>& aitFiles, std::vector<AitAppDescriptor>& aitAppDescriptors);
 
     /**
      * @brief Gets the underlying package manager instance

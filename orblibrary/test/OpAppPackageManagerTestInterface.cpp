@@ -141,7 +141,7 @@ OpAppPackageManager::PackageStatus OpAppPackageManagerTestInterface::doRemotePac
     return m_PackageManager->doRemotePackageCheck();
 }
 
-bool OpAppPackageManagerTestInterface::parseAitFiles(const std::vector<std::string>& aitFiles, std::vector<AitAppDescriptor>& aitAppDescriptors)
+PackageOperationResult OpAppPackageManagerTestInterface::parseAitFiles(const std::vector<std::string>& aitFiles, std::vector<AitAppDescriptor>& aitAppDescriptors)
 {
     // Access private method directly since we're a friend class
     return m_PackageManager->parseAitFiles(aitFiles, aitAppDescriptors);

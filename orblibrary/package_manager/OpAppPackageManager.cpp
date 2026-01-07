@@ -324,9 +324,10 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::doRemotePackageCheck()
 
   // Parse the AIT files
   std::vector<AitAppDescriptor> aitAppDescriptors;
+  auto parseResult = parseAitFiles(result.aitFiles, aitAppDescriptors);
 
-  if (!parseAitFiles(result.aitFiles, aitAppDescriptors)) {
-    LOG(INFO) << "No applications found in any AIT";
+  if (!parseResult.success) {
+    LOG(INFO) << "No applications found in any AIT: " << parseResult.errorMessage;
     return PackageStatus::NoUpdateAvailable;
   }
 
@@ -554,17 +555,77 @@ bool OpAppPackageManager::unzipPackageFile(const std::string& filePath) const
   return false;
 }
 
-bool OpAppPackageManager::parseAitFiles(
+PackageOperationResult OpAppPackageManager::validateOpAppDescriptor(const Ait::S_AIT_APP_DESC& app) const
+{
+  // Basic validation. See TS 102796 Table 7 and TS 103606 Table 7.
+  if ((app.xmlType & Ait::XML_TYP_OPAPP) != Ait::XML_TYP_OPAPP) {
+    std::string msg = "Unexpected application type: " + std::to_string(app.xmlType) +
+                      " expected OPAPP TYPE (0x80 or 0x81)";
+    LOG(WARNING) << "AIT validation failed: " << msg;
+    return PackageOperationResult(false, msg);
+  }
+
+  if (app.appUsage != "urn:hbbtv:opapp:privileged:2017" && app.appUsage != "urn:hbbtv:opapp:specific:2017") {
+    std::string msg = "Unexpected application usage: " + app.appUsage +
+                      " expected 'urn:hbbtv:opapp:privileged:2017' or 'urn:hbbtv:opapp:specific:2017'";
+    LOG(WARNING) << "AIT validation failed: " << msg;
+    return PackageOperationResult(false, msg);
+  }
+
+  LOG(INFO) << "AIT application descriptor has expected application usage: " << app.appUsage;
+  // TODO Check against the bilateral agreement on this device.
+  // This will require a callback to the moderator to check the bilateral agreement.
+  // If it fails then set an error, e.g. "Application not supported by this device."
+
+  if (app.numTransports == 0) {
+    std::string msg = "No transport defined for application";
+    LOG(WARNING) << "AIT validation failed: " << msg;
+    return PackageOperationResult(false, msg);
+  }
+
+  if (app.transportArray[0].protocolId != Ait::PROTOCOL_HTTP) {
+    std::string msg = "Unexpected transport protocol: " + std::to_string(app.transportArray[0].protocolId) +
+                      " expected HTTPTransportType (0x3)";
+    LOG(WARNING) << "AIT validation failed: " << msg;
+    return PackageOperationResult(false, msg);
+  }
+
+  // The following are warnings only - we still process the descriptor
+  if (app.controlCode != Ait::APP_CTL_AUTOSTART) {
+    LOG(WARNING) << "AIT application descriptor has unexpected control code: "
+                 << static_cast<int>(app.controlCode) << " expected AUTOSTART (0x1)";
+  }
+
+  if (app.appDesc.visibility != Ait::VISIBLE_ALL) {
+    LOG(WARNING) << "AIT application descriptor has unexpected visibility: "
+                 << static_cast<int>(app.appDesc.visibility) << " expected VISIBLE_ALL (0x3)";
+  }
+
+  if (app.appDesc.serviceBound) {
+    LOG(WARNING) << "AIT application descriptor has unexpected serviceBound=true, expected false";
+  }
+
+  return PackageOperationResult(true, "");
+}
+
+PackageOperationResult OpAppPackageManager::parseAitFiles(
     const std::vector<std::string>& aitFiles, std::vector<AitAppDescriptor>& aitAppDescriptors)
 {
-  // Clear the vector of AIT app descriptors
   aitAppDescriptors.clear();
+
+  if (aitFiles.empty()) {
+    return PackageOperationResult(false, "No AIT files provided");
+  }
+
+  std::vector<std::string> errors;
 
   for (const auto& aitFile : aitFiles) {
     // Read file content
     std::ifstream file(aitFile, std::ios::binary);
     if (!file) {
-      LOG(WARNING) << "Failed to open AIT file: " << aitFile;
+      std::string msg = "Failed to open AIT file: " + aitFile;
+      LOG(WARNING) << msg;
+      errors.push_back(msg);
       continue;
     }
 
@@ -575,69 +636,29 @@ bool OpAppPackageManager::parseAitFiles(
     // Parse the AIT XML
     auto aitTable = m_XmlParser->ParseAit(content.c_str(), content.size());
     if (!aitTable) {
-      LOG(WARNING) << "Failed to parse AIT file: " << aitFile;
+      std::string msg = "Failed to parse AIT file: " + aitFile;
+      LOG(WARNING) << msg;
+      errors.push_back(msg);
       continue;
     }
 
     LOG(INFO) << "Parsed AIT from " << aitFile << ": "
               << static_cast<int>(aitTable->numApps) << " app(s)";
 
-    // AIT Table should have exactly one application descriptor.
     if (aitTable->numApps != 1) {
-      LOG(WARNING) << "AIT table has " << aitTable->numApps << " application descriptors, expected 1";
+      LOG(WARNING) << "AIT table has " << static_cast<int>(aitTable->numApps)
+                   << " application descriptors, expected 1";
     }
 
-    // It may be that there are more than one application descriptor in the AIT table.
-    // We need to process each one.
+    // Process each application descriptor in the AIT table
     for (const auto& app : aitTable->appArray) {
-
-      // Basic validation. See TS 102796 Table 7 and TS 103606 Table 7.
-      if ((app.xmlType & Ait::XML_TYP_OPAPP) != Ait::XML_TYP_OPAPP) {
-        LOG(WARNING) << "AIT table has application descriptor with unexpected application type: "
-          << app.xmlType << " expected OPAPP TYPE (0x80 or 0x81). Ignoring AIT application descriptor.";
+      PackageOperationResult validationResult = validateOpAppDescriptor(app);
+      if (!validationResult.success) {
+        errors.push_back(validationResult.errorMessage);
         continue;
       }
 
-      if (app.appUsage != "urn:hbbtv:opapp:privileged:2017" && app.appUsage != "urn:hbbtv:opapp:specific:2017") {
-        LOG(WARNING) << "AIT table has application descriptor with unexpected application usage: "
-          << app.appUsage
-          << " expected 'urn:hbbtv:opapp:privileged:2017' or 'urn:hbbtv:opapp:opspecific:2017'. Ignoring AIT application descriptor.";
-        continue;
-      }
-      else {
-        LOG(INFO) << "AIT table has application descriptor with expected application usage: " << app.appUsage;
-        // TODO Check against the bilateral agreement on this device.
-        // This will require a some callback to the moderator to check the bilateral agreement.
-        // If it fails then set an error, e.g. "Application not supported by this device."
-      }
-
-      if (app.transportArray[0].protocolId != Ait::PROTOCOL_HTTP) {
-        LOG(WARNING) << "AIT table has application descriptor with unexpected or unsupported transport protocol: "
-          << app.transportArray[0].protocolId
-          << " expected 'HTTPTransportType' (0x3). Ignoring AIT application descriptor.";
-        continue;
-      }
-
-      if (app.controlCode != Ait::APP_CTL_AUTOSTART) {
-        // Warning only - process anyway.
-        LOG(WARNING) << "AIT table has application descriptor with unexpected control code: "
-          << app.controlCode << " expected AUTOSTART (0x1). Ignoring AIT application descriptor.";
-      }
-
-      if (app.appDesc.visibility != Ait::VISIBLE_ALL) {
-        // Warning only - process anyway.
-        LOG(WARNING) << "AIT table has application descriptor with unexpected visibility: "
-          << app.appDesc.visibility << " expected VISIBLE_ALL (0x3). Ignoring AIT application descriptor.";
-      }
-
-      if (app.appDesc.serviceBound) {
-        // Warning only - process anyway.
-        LOG(WARNING) << "AIT table has application descriptor with unexpected service bound: "
-          << app.appDesc.serviceBound << " expected false. Ignoring AIT application descriptor.";
-      }
-
-      // FREE-313: Go through this and figure out what is needed for validation.
-      // And also for the URL of the OpApp!
+      // Extract descriptor fields
       AitAppDescriptor desc;
       desc.orgId = app.orgId;
       desc.appId = app.appId;
@@ -645,7 +666,6 @@ bool OpAppPackageManager::parseAitFiles(
       desc.baseUrl = app.transportArray[0].url.baseUrl;
       desc.xmlVersion = app.xmlVersion;
 
-      // Get the first name if available
       if (app.appName.numLangs > 0) {
         desc.name = app.appName.names[0].name;
       }
@@ -660,7 +680,16 @@ bool OpAppPackageManager::parseAitFiles(
     }
   }
 
-  return !aitAppDescriptors.empty();
+  if (aitAppDescriptors.empty()) {
+    std::string errorMsg = errors.empty() ? "No valid OpApp descriptors found" :
+                           "No valid OpApp descriptors found. Errors: " + errors[0];
+    for (size_t i = 1; i < errors.size() && i < 3; ++i) {
+      errorMsg += "; " + errors[i];
+    }
+    return PackageOperationResult(false, errorMsg);
+  }
+
+  return PackageOperationResult(true, "");
 }
 
 } // namespace orb
