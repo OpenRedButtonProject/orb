@@ -23,7 +23,6 @@
 #include "xml_parser.h"
 #include "log.h"
 
-#define LINKED_APP_SCHEME_1_1 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.1"
 
 using namespace std;
 

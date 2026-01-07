@@ -41,17 +41,12 @@
     #error Unsupported ORB_HBBTV_VERSION
 #endif
 
-#define LINKED_APP_SCHEME_1_1 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.1"
-#define LINKED_APP_SCHEME_1_2 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.2"
-#define LINKED_APP_SCHEME_2 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:2"
 
 namespace orb
 {
-
 class Ait
 {
 public:
-
     static constexpr uint8_t AIT_USAGE_TELETEXT = 0x01;
 
     static constexpr uint8_t AIT_MAX_NUM_PROTOCOLS = 2;
