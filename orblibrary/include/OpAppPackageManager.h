@@ -34,17 +34,53 @@ class IAitFetcher;
 class IXmlParser;
 
 /**
- * @brief Simplified application descriptor for OpApp selection.
- * Contains the fields needed from Ait::S_AIT_APP_DESC for package management.
+ * @brief Package information - represents both discovered and installed packages.
+ *
+ * Used for:
+ * - Packages discovered from AIT (remote)
+ * - Currently installed package (local)
  */
-struct AitAppDescriptor {
+struct PackageInfo {
+    // Identity (from AIT applicationIdentifier)
     uint32_t orgId = 0;
     uint16_t appId = 0;
+
+    // Version info
     uint32_t xmlVersion = 0;
-    std::string location;
-    std::string baseUrl;
-    std::string name;
+
+    // Location info (from AIT)
+    std::string baseUrl;      // Transport URL base
+    std::string location;     // Application location (e.g., "index.html")
+    std::string name;         // Application name
+
+    // Installation state (only set for installed packages)
+    bool isInstalled = false;
+    std::string installPath;  // Local path where package is installed
+    std::string packageHash;  // SHA256 hash of the installed package
+    std::string installedAt;  // ISO timestamp of installation
+
+    // Comparison helpers
+    bool isSameApp(const PackageInfo& other) const {
+        return orgId == other.orgId && appId == other.appId;
+    }
+
+    bool isNewerThan(const PackageInfo& other) const {
+        return xmlVersion > other.xmlVersion;
+    }
+
+    // Construct full app URL
+    std::string getAppUrl() const {
+        if (baseUrl.empty()) return "";
+        std::string url = baseUrl;
+        if (!url.empty() && url.back() != '/' && !location.empty() && location.front() != '/') {
+            url += '/';
+        }
+        return url + location;
+    }
 };
+
+// Type alias for backwards compatibility during transition
+using AitAppDescriptor = PackageInfo;
 
 // Error handling structure for package operations
 struct PackageOperationResult {
@@ -107,14 +143,6 @@ public:
   // Callback function types for update completion
   using UpdateSuccessCallback = std::function<void(const std::string& packagePath)>;
   using UpdateFailureCallback = std::function<void(PackageStatus status, const std::string& errorMessage)>;
-
-  struct PackageInfo {
-    std::string m_PackageName;
-    std::string m_PackageVersion;
-    std::string m_PackageDescription;
-    std::string m_PackageAuthor;
-    std::string m_PackageLicense;
-  };
 
   struct Configuration {
 
@@ -197,17 +225,17 @@ public:
   bool isRunning() const;
   bool isUpdating() const;
 
-
   /**
-   * isPackageInstalled(const std::vector<std::string>& aitFiles)
+   * getInstalledPackage()
    *
-   * Checks if the package is installed by checking the vector of AIT XML files.
+   * Retrieves the installed package info for a given org/app ID.
    *
-   * Returns:
-   *  true if the package is installed.
-   *  false if the package is not installed.
+   * @param orgId Organization ID
+   * @param appId Application ID
+   * @param outPackage Output PackageInfo with installation details if found
+   * @return true if an installed package was found, false otherwise
    */
-  //bool isPackageInstalled(const std::vector<std::string>& aitFiles);
+  bool getInstalledPackage(uint32_t orgId, uint16_t appId, PackageInfo& outPackage) const;
 
 
   /**
@@ -327,13 +355,13 @@ private:
   /**
    * parseAitFiles()
    *
-   * Parses AIT XML files and extracts application descriptors into aitAppDescriptors.
+   * Parses AIT XML files and extracts package information.
    *
    * @param aitFiles Vector of paths to AIT XML files
-   * @param aitAppDescriptors Vector of AIT application descriptors (output)
+   * @param packages Vector of PackageInfo (output) - discovered packages with isInstalled=false
    * @return PackageOperationResult with success status and any error messages.
    */
-  PackageOperationResult parseAitFiles(const std::vector<std::string>& aitFiles, std::vector<AitAppDescriptor>& aitAppDescriptors);
+  PackageOperationResult parseAitFiles(const std::vector<std::string>& aitFiles, std::vector<PackageInfo>& packages);
 
 private:
   /**
@@ -351,7 +379,6 @@ private:
 
   // void uninstallPackage(const std::string& packagePath);
   // void updatePackage(const std::string& packagePath);
-  // PackageInfo getPackageInfo();
 
   std::atomic<bool> m_IsRunning{false};
   std::atomic<bool> m_IsUpdating{false}; // TODO replace with OpAppUpdateStatus

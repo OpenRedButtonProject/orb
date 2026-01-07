@@ -5,6 +5,8 @@
 #include <cctype>
 #include <map>
 #include <sstream>
+#include <thread>
+#include <chrono>
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/orb/orblibrary/include/OpAppPackageManager.h"
@@ -641,25 +643,7 @@ TEST_F(OpAppPackageManagerTest, TestListInstalledPackages)
   (void)testInterface;
 }
 
-TEST_F(OpAppPackageManagerTest, TestGetPackageInfo)
-{
-  // GIVEN: an OpAppPackageManager instance and a package ID
-  OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = PACKAGE_PATH;
-  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
-  std::string packageId = "com.example.app";
 
-  // WHEN: requesting package information
-  // PackageInfo info = packageManager.getPackageInfo(packageId);
-
-  // THEN: package information should be returned
-  // TODO: Implement when getPackageInfo method is added
-  // EXPECT_EQ(info.id, packageId);
-
-  // Mark variables as intentionally unused for now
-  (void)testInterface;
-  (void)packageId;
-}
 
 TEST_F(OpAppPackageManagerTest, TestUpdatePackage)
 {
@@ -760,26 +744,6 @@ TEST_F(OpAppPackageManagerTest, TestInstallInvalidPackage)
   // Mark variables as intentionally unused for now
   (void)testInterface;
   (void)invalidPath;
-}
-
-TEST_F(OpAppPackageManagerTest, TestGetInfoForNonexistentPackage)
-{
-  // GIVEN: an OpAppPackageManager instance and a nonexistent package ID
-  OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = PACKAGE_PATH;
-  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
-  std::string nonexistentId = "com.nonexistent.app";
-
-  // WHEN: requesting information for a nonexistent package
-  // PackageInfo info = packageManager.getPackageInfo(nonexistentId);
-
-  // THEN: appropriate error handling should occur
-  // TODO: Implement when getPackageInfo method is added
-  // EXPECT_TRUE(info.id.empty());
-
-  // Mark variables as intentionally unused for now
-  (void)testInterface;
-  (void)nonexistentId;
 }
 
 // Performance and stress tests
@@ -1285,13 +1249,13 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_EmptyFileList_ReturnsFalse)
       configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
 
   // WHEN: parseAitFiles is called with empty list
-  std::vector<AitAppDescriptor> aitAppDescriptors;
-  auto result = testInterface->parseAitFiles(std::vector<std::string>{}, aitAppDescriptors);
+  std::vector<PackageInfo> packages;
+  auto result = testInterface->parseAitFiles(std::vector<std::string>{}, packages);
 
   // THEN: should return failure and have no descriptors
   EXPECT_FALSE(result.success);
   EXPECT_FALSE(result.errorMessage.empty());
-  EXPECT_TRUE(aitAppDescriptors.empty());
+  EXPECT_TRUE(packages.empty());
 }
 
 TEST_F(OpAppPackageManagerTest, TestParseAitFiles_NonexistentFile_ReturnsFalse)
@@ -1304,13 +1268,13 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_NonexistentFile_ReturnsFalse)
       configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
 
   // WHEN: parseAitFiles is called with nonexistent file
-  std::vector<AitAppDescriptor> aitAppDescriptors;
-  auto result = testInterface->parseAitFiles({"/nonexistent/ait.xml"}, aitAppDescriptors);
+  std::vector<PackageInfo> packages;
+  auto result = testInterface->parseAitFiles({"/nonexistent/ait.xml"}, packages);
 
   // THEN: should return failure and have no descriptors
   EXPECT_FALSE(result.success);
   EXPECT_FALSE(result.errorMessage.empty());
-  EXPECT_TRUE(aitAppDescriptors.empty());
+  EXPECT_TRUE(packages.empty());
 }
 
 TEST_F(OpAppPackageManagerTest, TestParseAitFiles_InvalidXml_ReturnsFalse)
@@ -1328,13 +1292,13 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_InvalidXml_ReturnsFalse)
       configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
 
   // WHEN: parseAitFiles is called with invalid XML
-  std::vector<AitAppDescriptor> aitAppDescriptors;
-  auto result = testInterface->parseAitFiles({invalidXmlPath}, aitAppDescriptors);
+  std::vector<PackageInfo> packages;
+  auto result = testInterface->parseAitFiles({invalidXmlPath}, packages);
 
   // THEN: should return failure and have no descriptors
   EXPECT_FALSE(result.success);
   EXPECT_FALSE(result.errorMessage.empty());
-  EXPECT_TRUE(aitAppDescriptors.empty());
+  EXPECT_TRUE(packages.empty());
 
   // Clean up
   std::remove(invalidXmlPath.c_str());
@@ -1355,17 +1319,17 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_ValidAitXml_ExtractsDescriptor
       configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
 
   // WHEN: parseAitFiles is called with valid AIT XML
-  std::vector<AitAppDescriptor> aitAppDescriptors;
-  auto result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
+  std::vector<PackageInfo> packages;
+  auto result = testInterface->parseAitFiles({aitXmlPath}, packages);
 
   // THEN: should return success and have extracted descriptors
   EXPECT_TRUE(result.success);
-  ASSERT_EQ(aitAppDescriptors.size(), size_t(1));
-  EXPECT_EQ(aitAppDescriptors[0].orgId, uint32_t(12345));
-  EXPECT_EQ(aitAppDescriptors[0].appId, uint16_t(1));
-  EXPECT_EQ(aitAppDescriptors[0].baseUrl, "https://test.example.com/app/");
-  EXPECT_EQ(aitAppDescriptors[0].location, "index.html");
-  EXPECT_EQ(aitAppDescriptors[0].name, "Test OpApp");
+  ASSERT_EQ(packages.size(), size_t(1));
+  EXPECT_EQ(packages[0].orgId, uint32_t(12345));
+  EXPECT_EQ(packages[0].appId, uint16_t(1));
+  EXPECT_EQ(packages[0].baseUrl, "https://test.example.com/app/");
+  EXPECT_EQ(packages[0].location, "index.html");
+  EXPECT_EQ(packages[0].name, "Test OpApp");
 
   // Clean up
   std::remove(aitXmlPath.c_str());
@@ -1393,17 +1357,17 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_MultipleAits_CombinesApps)
       configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
 
   // WHEN: parseAitFiles is called with multiple AIT files
-  std::vector<AitAppDescriptor> aitAppDescriptors;
-  auto result = testInterface->parseAitFiles({ait1Path, ait2Path}, aitAppDescriptors);
+  std::vector<PackageInfo> packages;
+  auto result = testInterface->parseAitFiles({ait1Path, ait2Path}, packages);
 
   // THEN: should return success and combine apps from both files
   EXPECT_TRUE(result.success);
-  EXPECT_EQ(aitAppDescriptors.size(), size_t(2));
+  EXPECT_EQ(packages.size(), size_t(2));
 
   // Verify both apps are present
   bool foundApp1 = false;
   bool foundApp2 = false;
-  for (const auto& desc : aitAppDescriptors) {
+  for (const auto& desc : packages) {
     if (desc.orgId == 11111 && desc.appId == 1) {
       foundApp1 = true;
     }
@@ -1434,33 +1398,102 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_ClearsOldDescriptors)
       configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
 
   // First parse
-  std::vector<AitAppDescriptor> aitAppDescriptors;
-  testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
-  size_t firstCount = aitAppDescriptors.size();
+  std::vector<PackageInfo> packages;
+  testInterface->parseAitFiles({aitXmlPath}, packages);
+  size_t firstCount = packages.size();
 
   // WHEN: parseAitFiles is called again with the same file
-  aitAppDescriptors.clear();
-  testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
+  packages.clear();
+  testInterface->parseAitFiles({aitXmlPath}, packages);
 
   // THEN: should have same count (cleared and repopulated, not appended)
-  EXPECT_EQ(aitAppDescriptors.size(), firstCount);
+  EXPECT_EQ(packages.size(), firstCount);
 
   // Clean up
   std::remove(aitXmlPath.c_str());
 }
 
-TEST_F(OpAppPackageManagerTest, TestAitAppDescriptor_DefaultValues)
+TEST_F(OpAppPackageManagerTest, TestPackageInfo_DefaultValues)
 {
-  // GIVEN: a default-constructed AitAppDescriptor
-  AitAppDescriptor desc;
+  // GIVEN: a default-constructed PackageInfo
+  PackageInfo pkg;
 
   // THEN: all values should be default initialized
-  EXPECT_EQ(desc.orgId, uint32_t(0));
-  EXPECT_EQ(desc.appId, uint16_t(0));
-  EXPECT_EQ(desc.xmlVersion, uint32_t(0));
-  EXPECT_TRUE(desc.location.empty());
-  EXPECT_TRUE(desc.baseUrl.empty());
-  EXPECT_TRUE(desc.name.empty());
+  EXPECT_EQ(pkg.orgId, uint32_t(0));
+  EXPECT_EQ(pkg.appId, uint16_t(0));
+  EXPECT_EQ(pkg.xmlVersion, uint32_t(0));
+  EXPECT_TRUE(pkg.baseUrl.empty());
+  EXPECT_TRUE(pkg.location.empty());
+  EXPECT_TRUE(pkg.name.empty());
+  EXPECT_FALSE(pkg.isInstalled);
+  EXPECT_TRUE(pkg.installPath.empty());
+  EXPECT_TRUE(pkg.packageHash.empty());
+  EXPECT_TRUE(pkg.installedAt.empty());
+}
+
+TEST_F(OpAppPackageManagerTest, TestPackageInfo_IsSameApp)
+{
+  // GIVEN: two packages with same org/app ID
+  PackageInfo pkg1;
+  pkg1.orgId = 12345;
+  pkg1.appId = 100;
+  pkg1.xmlVersion = 1;
+
+  PackageInfo pkg2;
+  pkg2.orgId = 12345;
+  pkg2.appId = 100;
+  pkg2.xmlVersion = 2;
+
+  // THEN: isSameApp should return true
+  EXPECT_TRUE(pkg1.isSameApp(pkg2));
+
+  // WHEN: appId differs
+  pkg2.appId = 101;
+
+  // THEN: isSameApp should return false
+  EXPECT_FALSE(pkg1.isSameApp(pkg2));
+}
+
+TEST_F(OpAppPackageManagerTest, TestPackageInfo_IsNewerThan)
+{
+  // GIVEN: two packages with same identity, different versions
+  PackageInfo pkg1;
+  pkg1.orgId = 12345;
+  pkg1.appId = 100;
+  pkg1.xmlVersion = 1;
+
+  PackageInfo pkg2;
+  pkg2.orgId = 12345;
+  pkg2.appId = 100;
+  pkg2.xmlVersion = 2;
+
+  // THEN: pkg2 is newer than pkg1
+  EXPECT_TRUE(pkg2.isNewerThan(pkg1));
+  EXPECT_FALSE(pkg1.isNewerThan(pkg2));
+}
+
+TEST_F(OpAppPackageManagerTest, TestPackageInfo_GetAppUrl)
+{
+  // GIVEN: a package with baseUrl and location
+  PackageInfo pkg;
+  pkg.baseUrl = "https://example.com/apps";
+  pkg.location = "index.html";
+
+  // THEN: getAppUrl should combine them correctly
+  EXPECT_EQ(pkg.getAppUrl(), "https://example.com/apps/index.html");
+
+  // WHEN: baseUrl ends with slash
+  pkg.baseUrl = "https://example.com/apps/";
+
+  // THEN: should not add extra slash
+  EXPECT_EQ(pkg.getAppUrl(), "https://example.com/apps/index.html");
+
+  // WHEN: location starts with slash
+  pkg.baseUrl = "https://example.com/apps";
+  pkg.location = "/index.html";
+
+  // THEN: should not add extra slash
+  EXPECT_EQ(pkg.getAppUrl(), "https://example.com/apps/index.html");
 }
 
 TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_ValidAit_ReturnsUpdateAvailable)
@@ -1570,12 +1603,12 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_NonOpAppType_Rejected)
       configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
 
   // WHEN: parseAitFiles is called
-  std::vector<AitAppDescriptor> aitAppDescriptors;
-  auto result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
+  std::vector<PackageInfo> packages;
+  auto result = testInterface->parseAitFiles({aitXmlPath}, packages);
 
   // THEN: should return failure (no valid OpApp descriptors)
   EXPECT_FALSE(result.success);
-  EXPECT_TRUE(aitAppDescriptors.empty());
+  EXPECT_TRUE(packages.empty());
 
   // Clean up
   std::remove(aitXmlPath.c_str());
@@ -1627,12 +1660,12 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_InvalidAppUsage_Rejected)
       configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
 
   // WHEN: parseAitFiles is called
-  std::vector<AitAppDescriptor> aitAppDescriptors;
-  auto result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
+  std::vector<PackageInfo> packages;
+  auto result = testInterface->parseAitFiles({aitXmlPath}, packages);
 
   // THEN: should return failure (invalid app usage rejected)
   EXPECT_FALSE(result.success);
-  EXPECT_TRUE(aitAppDescriptors.empty());
+  EXPECT_TRUE(packages.empty());
 
   // Clean up
   std::remove(aitXmlPath.c_str());
@@ -1655,13 +1688,13 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_PrivilegedOpApp_Accepted)
       configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
 
   // WHEN: parseAitFiles is called
-  std::vector<AitAppDescriptor> aitAppDescriptors;
-  auto result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
+  std::vector<PackageInfo> packages;
+  auto result = testInterface->parseAitFiles({aitXmlPath}, packages);
 
   // THEN: should return success (privileged usage accepted)
   EXPECT_TRUE(result.success);
-  ASSERT_EQ(aitAppDescriptors.size(), size_t(1));
-  EXPECT_EQ(aitAppDescriptors[0].orgId, uint32_t(12345));
+  ASSERT_EQ(packages.size(), size_t(1));
+  EXPECT_EQ(packages[0].orgId, uint32_t(12345));
 
   // Clean up
   std::remove(aitXmlPath.c_str());
@@ -1684,13 +1717,13 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_SpecificOpApp_Accepted)
       configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
 
   // WHEN: parseAitFiles is called
-  std::vector<AitAppDescriptor> aitAppDescriptors;
-  auto result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
+  std::vector<PackageInfo> packages;
+  auto result = testInterface->parseAitFiles({aitXmlPath}, packages);
 
   // THEN: should return success (specific usage accepted)
   EXPECT_TRUE(result.success);
-  ASSERT_EQ(aitAppDescriptors.size(), size_t(1));
-  EXPECT_EQ(aitAppDescriptors[0].orgId, uint32_t(12345));
+  ASSERT_EQ(packages.size(), size_t(1));
+  EXPECT_EQ(packages[0].orgId, uint32_t(12345));
 
   // Clean up
   std::remove(aitXmlPath.c_str());
@@ -1762,16 +1795,94 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_MixedValidAndInvalid_OnlyValid
       configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
 
   // WHEN: parseAitFiles is called
-  std::vector<AitAppDescriptor> aitAppDescriptors;
-  auto result = testInterface->parseAitFiles({aitXmlPath}, aitAppDescriptors);
+  std::vector<PackageInfo> packages;
+  auto result = testInterface->parseAitFiles({aitXmlPath}, packages);
 
   // THEN: should return success with only the valid OpApp extracted
   EXPECT_TRUE(result.success);
-  ASSERT_EQ(aitAppDescriptors.size(), size_t(1));
-  EXPECT_EQ(aitAppDescriptors[0].orgId, uint32_t(22222));
-  EXPECT_EQ(aitAppDescriptors[0].appId, uint16_t(2));
-  EXPECT_EQ(aitAppDescriptors[0].baseUrl, "https://opapp.example.com/");
+  ASSERT_EQ(packages.size(), size_t(1));
+  EXPECT_EQ(packages[0].orgId, uint32_t(22222));
+  EXPECT_EQ(packages[0].appId, uint16_t(2));
+  EXPECT_EQ(packages[0].baseUrl, "https://opapp.example.com/");
 
   // Clean up
   std::remove(aitXmlPath.c_str());
+}
+
+// =============================================================================
+// Integration Tests (require network access)
+// =============================================================================
+
+// Integration test - requires network access and a real OpApp FQDN
+// Prefix with DISABLED_ so it doesn't run in CI; remove prefix to run manually
+TEST_F(OpAppPackageManagerTest, DISABLED_IntegrationTest_RealRemoteFetch)
+{
+  // GIVEN: Real OpAppPackageManager with all real implementations
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_DestinationDirectory = PACKAGE_PATH + "/dest";
+
+  // TODO: Replace with a real OpApp FQDN for testing
+  configuration.m_OpAppFqdn = "test.freeviewplay.tv";
+  configuration.m_UserAgent = "HbbTV/1.6.1 (+DRM;+PVR;+RTSP;+OMID) orb/1.0";
+
+  // Create directories
+  std::filesystem::create_directories(configuration.m_DestinationDirectory);
+
+  // All nullptrs = use real implementations (HashCalculator, Decryptor, AitFetcher, XmlParser)
+  OpAppPackageManager packageManager(configuration);
+
+  // Track status via callback
+  std::atomic<bool> callbackCalled{false};
+  std::string lastError;
+  OpAppPackageManager::PackageStatus finalStatus = OpAppPackageManager::PackageStatus::None;
+
+  configuration.m_OnUpdateFailure = [&](OpAppPackageManager::PackageStatus status, const std::string& error) {
+    finalStatus = status;
+    lastError = error;
+    callbackCalled = true;
+    std::cout << "Update failure callback: status=" << static_cast<int>(status) << ", error=" << error << std::endl;
+  };
+
+  configuration.m_OnUpdateSuccess = [&](const std::string& packagePath) {
+    finalStatus = OpAppPackageManager::PackageStatus::Installed;
+    callbackCalled = true;
+    std::cout << "Update success callback: packagePath=" << packagePath << std::endl;
+  };
+
+  // Re-create with callbacks
+  OpAppPackageManager packageManagerWithCallbacks(configuration);
+
+  // WHEN: Remote package check is performed
+  std::cout << "Starting remote package check for FQDN: " << configuration.m_OpAppFqdn << std::endl;
+  packageManagerWithCallbacks.start();
+
+  // Wait for completion (with timeout)
+  auto startTime = std::chrono::steady_clock::now();
+  constexpr auto TIMEOUT = std::chrono::seconds(30);
+
+  while (packageManagerWithCallbacks.isRunning()) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    if (std::chrono::steady_clock::now() - startTime > TIMEOUT) {
+      std::cerr << "Integration test timed out after 30 seconds" << std::endl;
+      packageManagerWithCallbacks.stop();
+      break;
+    }
+  }
+
+  // THEN: Log the results (actual expectations depend on the real server)
+  std::cout << "Package manager finished running" << std::endl;
+  std::cout << "isUpdating: " << packageManagerWithCallbacks.isUpdating() << std::endl;
+
+  if (!lastError.empty()) {
+    std::cout << "Last error: " << lastError << std::endl;
+  }
+
+  // For a real integration test, you would assert based on expected server state
+  // For now, just verify it completed without crashing
+  EXPECT_FALSE(packageManagerWithCallbacks.isRunning());
+
+  // Clean up
+  std::filesystem::remove_all(PACKAGE_PATH + "/dest");
 }

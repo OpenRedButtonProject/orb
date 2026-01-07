@@ -323,35 +323,56 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::doRemotePackageCheck()
   }
 
   // Parse the AIT files
-  std::vector<AitAppDescriptor> aitAppDescriptors;
-  auto parseResult = parseAitFiles(result.aitFiles, aitAppDescriptors);
+  std::vector<PackageInfo> discoveredPackages;
+  auto parseResult = parseAitFiles(result.aitFiles, discoveredPackages);
 
   if (!parseResult.success) {
     LOG(INFO) << "No applications found in any AIT: " << parseResult.errorMessage;
     return PackageStatus::NoUpdateAvailable;
   }
 
-  // Validate the AIT app descriptors against the spec
+  for (auto& pkg : discoveredPackages) {
+    // Check if this package is already installed
+    PackageInfo installedPkg;
+    if (getInstalledPackage(pkg.orgId, pkg.appId, installedPkg)) {
+      // Existing installation found - check if update available
+      if (pkg.isNewerThan(installedPkg)) {
+        LOG(INFO) << "Update available for " << pkg.name
+                  << " (installed v" << installedPkg.xmlVersion
+                  << " -> v" << pkg.xmlVersion << ")";
+        return PackageStatus::UpdateAvailable;
+      }
+      LOG(INFO) << "Package " << pkg.name << " is up to date (v" << installedPkg.xmlVersion << ")";
+      return PackageStatus::Installed;
+    }
+    // No existing installation - this is a first-time install candidate
+  }
 
-  // TODO: Select the best application based on priority, control code, etc.
   // TODO: Download and install the selected OpApp package
-  // For now, just indicate an update is available
-  LOG(INFO) << "Found " << aitAppDescriptors.size() << " application(s) across all AITs";
+  // For now, just indicate an update is available (which covers new installs too)
+  LOG(INFO) << "Found " << discoveredPackages.size() << " new package(s) across all AITs";
 
   return PackageStatus::UpdateAvailable;
 }
 
-// bool OpAppPackageManager::isPackageInstalled()
-// {
-//   // TODO: Implement this.
-//   /* parse the AIT XML and check if the package is installed. */
+bool OpAppPackageManager::getInstalledPackage(uint32_t orgId, uint16_t appId, PackageInfo& outPackage) const
+{
+  // TODO: Implement persistent storage lookup
+  // For now, check in-memory cache or return false
 
+  // The implementation should:
+  // 1. Look up the package by orgId/appId in a persistent store (e.g., SQLite, JSON file)
+  // 2. If found, populate outPackage with:
+  //    - orgId, appId, xmlVersion
+  //    - installPath, packageHash, installedAt
+  //    - isInstalled = true
+  // 3. Return true if found, false otherwise
 
-//   // For each AIT descriptor, validate
-
-//   m_AitAppDescriptors
-//   return false;
-// }
+  (void)orgId;
+  (void)appId;
+  (void)outPackage;
+  return false;
+}
 
 bool OpAppPackageManager::isPackageInstalled(const std::string& packagePath)
 {
@@ -609,9 +630,9 @@ PackageOperationResult OpAppPackageManager::validateOpAppDescriptor(const Ait::S
 }
 
 PackageOperationResult OpAppPackageManager::parseAitFiles(
-    const std::vector<std::string>& aitFiles, std::vector<AitAppDescriptor>& aitAppDescriptors)
+    const std::vector<std::string>& aitFiles, std::vector<PackageInfo>& packages)
 {
-  aitAppDescriptors.clear();
+  packages.clear();
 
   if (aitFiles.empty()) {
     return PackageOperationResult(false, "No AIT files provided");
@@ -658,29 +679,30 @@ PackageOperationResult OpAppPackageManager::parseAitFiles(
         continue;
       }
 
-      // Extract descriptor fields
-      AitAppDescriptor desc;
-      desc.orgId = app.orgId;
-      desc.appId = app.appId;
-      desc.location = app.location;
-      desc.baseUrl = app.transportArray[0].url.baseUrl;
-      desc.xmlVersion = app.xmlVersion;
+      // Extract package info from AIT descriptor
+      PackageInfo pkgInfo;
+      pkgInfo.orgId = app.orgId;
+      pkgInfo.appId = app.appId;
+      pkgInfo.xmlVersion = app.xmlVersion;
+      pkgInfo.baseUrl = app.transportArray[0].url.baseUrl;
+      pkgInfo.location = app.location;
+      pkgInfo.isInstalled = false;  // This is a discovered package, not installed yet
 
       if (app.appName.numLangs > 0) {
-        desc.name = app.appName.names[0].name;
+        pkgInfo.name = app.appName.names[0].name;
       }
 
-      LOG(INFO) << "  App: orgId=" << desc.orgId << ", appId=" << desc.appId
-                << ", baseUrl=" << desc.baseUrl
-                << ", xmlVersion=" << desc.xmlVersion
-                << ", location=" << desc.location
-                << ", name=" << desc.name;
+      LOG(INFO) << "  App: orgId=" << pkgInfo.orgId << ", appId=" << pkgInfo.appId
+                << ", baseUrl=" << pkgInfo.baseUrl
+                << ", xmlVersion=" << pkgInfo.xmlVersion
+                << ", location=" << pkgInfo.location
+                << ", name=" << pkgInfo.name;
 
-      aitAppDescriptors.push_back(desc);
+      packages.push_back(pkgInfo);
     }
   }
 
-  if (aitAppDescriptors.empty()) {
+  if (packages.empty()) {
     std::string errorMsg = errors.empty() ? "No valid OpApp descriptors found" :
                            "No valid OpApp descriptors found. Errors: " + errors[0];
     for (size_t i = 1; i < errors.size() && i < 3; ++i) {

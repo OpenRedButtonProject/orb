@@ -141,10 +141,16 @@ OpAppPackageManager::PackageStatus OpAppPackageManagerTestInterface::doRemotePac
     return m_PackageManager->doRemotePackageCheck();
 }
 
-PackageOperationResult OpAppPackageManagerTestInterface::parseAitFiles(const std::vector<std::string>& aitFiles, std::vector<AitAppDescriptor>& aitAppDescriptors)
+PackageOperationResult OpAppPackageManagerTestInterface::parseAitFiles(const std::vector<std::string>& aitFiles, std::vector<PackageInfo>& packages)
 {
     // Access private method directly since we're a friend class
-    return m_PackageManager->parseAitFiles(aitFiles, aitAppDescriptors);
+    return m_PackageManager->parseAitFiles(aitFiles, packages);
+}
+
+bool OpAppPackageManagerTestInterface::getInstalledPackage(uint32_t orgId, uint16_t appId, PackageInfo& outPackage) const
+{
+    // Access private method directly since we're a friend class
+    return m_PackageManager->getInstalledPackage(orgId, appId, outPackage);
 }
 
 } // namespace orb

@@ -144,10 +144,19 @@ public:
     /**
      * @brief Parses AIT files (internal method exposed for testing)
      * @param aitFiles Vector of paths to AIT XML files
-     * @param aitAppDescriptors Vector of AIT application descriptors
+     * @param packages Vector of discovered PackageInfo
      * @return PackageOperationResult with success status and any error messages.
      */
-    PackageOperationResult parseAitFiles(const std::vector<std::string>& aitFiles, std::vector<AitAppDescriptor>& aitAppDescriptors);
+    PackageOperationResult parseAitFiles(const std::vector<std::string>& aitFiles, std::vector<PackageInfo>& packages);
+
+    /**
+     * @brief Gets installed package info (internal method exposed for testing)
+     * @param orgId Organization ID
+     * @param appId Application ID
+     * @param outPackage Output PackageInfo with installation details if found
+     * @return true if an installed package was found, false otherwise
+     */
+    bool getInstalledPackage(uint32_t orgId, uint16_t appId, PackageInfo& outPackage) const;
 
     /**
      * @brief Gets the underlying package manager instance
