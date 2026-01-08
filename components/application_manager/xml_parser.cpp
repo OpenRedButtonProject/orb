@@ -397,7 +397,7 @@ static void XmlParseAppDescType(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
                 if (dptr)
                 {
                     /* Only recognise mime type for hbbtv ... */
-                    if (xmlStrEqual(cptr, (const xmlChar *)"application/vnd.hbbtv.xhtml+xml"))
+                    if (xmlStrEqual(dptr, (const xmlChar *)"application/vnd.hbbtv.xhtml+xml"))
                     {
                         app_ptr->xmlType = Ait::XML_TYP_OTHER;
                     }
@@ -409,11 +409,11 @@ static void XmlParseAppDescType(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
                 NODE_CONTENT_GET(node, dptr);
                 if (dptr)
                 {
-                    if (xmlStrEqual(cptr, (const xmlChar *)"DVB-J"))
+                    if (xmlStrEqual(dptr, (const xmlChar *)"DVB-J"))
                     {
                         app_ptr->xmlType = Ait::XML_TYP_DVB_J;
                     }
-                    else if (xmlStrEqual(cptr, (const xmlChar *)"DVB-HTML"))
+                    else if (xmlStrEqual(dptr, (const xmlChar *)"DVB-HTML"))
                     {
                         app_ptr->xmlType = Ait::XML_TYP_DVB_HTML;
                     }
@@ -636,7 +636,6 @@ static uint32_t XmlParseAppBoundary(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_pt
  */
 static void XmlParseDvbTriplet(xmlNodePtr node, Utils::S_DVB_TRIPLET *dvb)
 {
-    const xmlChar *cptr;
     xmlChar *dptr;
     dptr = NODE_PROPERTY(node, (const xmlChar *)"OrigNetId");
     if (dptr)
