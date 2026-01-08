@@ -8,8 +8,9 @@
 namespace orb
 {
 
-// Forward declaration
-class IOpAppAcquisition;
+// Forward declarations
+class IAitFetcher;
+class IXmlParser;
 
 /**
  * @brief Test interface for OpAppPackageManager that provides controlled access
@@ -47,14 +48,30 @@ public:
      * @param configuration The configuration for the package manager
      * @param hashCalculator Custom hash calculator for testing
      * @param decryptor Custom decryptor for testing
-     * @param acquisition Custom acquisition interface for testing
+     * @param aitFetcher Custom AIT fetcher for testing
      * @return A test interface instance
      */
     static std::unique_ptr<OpAppPackageManagerTestInterface> create(
         const OpAppPackageManager::Configuration& configuration,
         std::unique_ptr<IHashCalculator> hashCalculator,
         std::unique_ptr<IDecryptor> decryptor,
-        std::unique_ptr<IOpAppAcquisition> acquisition);
+        std::unique_ptr<IAitFetcher> aitFetcher);
+
+    /**
+     * @brief Creates a test interface with all custom dependencies including XML parser
+     * @param configuration The configuration for the package manager
+     * @param hashCalculator Custom hash calculator for testing
+     * @param decryptor Custom decryptor for testing
+     * @param aitFetcher Custom AIT fetcher for testing
+     * @param xmlParser Custom XML parser for testing
+     * @return A test interface instance
+     */
+    static std::unique_ptr<OpAppPackageManagerTestInterface> create(
+        const OpAppPackageManager::Configuration& configuration,
+        std::unique_ptr<IHashCalculator> hashCalculator,
+        std::unique_ptr<IDecryptor> decryptor,
+        std::unique_ptr<IAitFetcher> aitFetcher,
+        std::unique_ptr<IXmlParser> xmlParser);
 
     /**
      * @brief Destructor
@@ -117,6 +134,29 @@ public:
      * @return Success status
      */
     bool unzipPackageFile(const std::string& filePath) const;
+
+    /**
+     * @brief Performs remote package check (internal method exposed for testing)
+     * @return Package status
+     */
+    OpAppPackageManager::PackageStatus doRemotePackageCheck();
+
+    /**
+     * @brief Parses AIT files (internal method exposed for testing)
+     * @param aitFiles Vector of paths to AIT XML files
+     * @param packages Vector of discovered PackageInfo
+     * @return PackageOperationResult with success status and any error messages.
+     */
+    PackageOperationResult parseAitFiles(const std::vector<std::string>& aitFiles, std::vector<PackageInfo>& packages);
+
+    /**
+     * @brief Gets installed package info (internal method exposed for testing)
+     * @param orgId Organization ID
+     * @param appId Application ID
+     * @param outPackage Output PackageInfo with installation details if found
+     * @return true if an installed package was found, false otherwise
+     */
+    bool getInstalledPackage(uint32_t orgId, uint16_t appId, PackageInfo& outPackage) const;
 
     /**
      * @brief Gets the underlying package manager instance

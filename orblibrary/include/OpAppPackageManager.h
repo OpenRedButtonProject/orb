@@ -24,11 +24,63 @@
 #include <mutex>
 #include <functional>
 
+#include "ait.h"
+
 namespace orb
 {
 
-// Forward declaration
-class IOpAppAcquisition;
+// Forward declarations
+class IAitFetcher;
+class IXmlParser;
+
+/**
+ * @brief Package information - represents both discovered and installed packages.
+ *
+ * Used for:
+ * - Packages discovered from AIT (remote)
+ * - Currently installed package (local)
+ */
+struct PackageInfo {
+    // Identity (from AIT applicationIdentifier)
+    uint32_t orgId = 0;
+    uint16_t appId = 0;
+
+    // Version info
+    uint32_t xmlVersion = 0;
+
+    // Location info (from AIT)
+    std::string baseUrl;      // Transport URL base
+    std::string location;     // Application location (e.g., "index.html")
+    std::string name;         // Application name
+
+    // Installation state (only set for installed packages)
+    bool isInstalled = false;
+    std::string installPath;  // Local path where package is installed
+    std::string packageHash;  // SHA256 hash of the installed package
+    std::string installedAt;  // ISO timestamp of installation
+
+    // Comparison helpers
+    bool isSameApp(const PackageInfo& other) const {
+        return orgId == other.orgId && appId == other.appId;
+    }
+
+    bool isNewerThan(const PackageInfo& other) const {
+        return xmlVersion > other.xmlVersion;
+    }
+
+    // Construct full app URL
+    std::string getAppUrl() const {
+        if (baseUrl.empty()) return "";
+        std::string url = baseUrl;
+        if (!url.empty() && url.back() != '/' && !location.empty() && location.front() != '/') {
+            url += '/';
+        }
+        return url + location;
+    }
+};
+
+// Type alias for backwards compatibility during transition
+using AitAppDescriptor = PackageInfo;
 
 // Error handling structure for package operations
 struct PackageOperationResult {
@@ -92,22 +144,30 @@ public:
   using UpdateSuccessCallback = std::function<void(const std::string& packagePath)>;
   using UpdateFailureCallback = std::function<void(PackageStatus status, const std::string& errorMessage)>;
 
-  struct PackageInfo {
-    std::string m_PackageName;
-    std::string m_PackageVersion;
-    std::string m_PackageDescription;
-    std::string m_PackageAuthor;
-    std::string m_PackageLicense;
-  };
-
   struct Configuration {
-      std::string m_OpAppFqdn; /* Fully Qualified Domain Name (Section 6.1.4 of TS 103 606 V1.2.1) */
+
+      /* Fully Qualified Domain Name (Section 6.1.4 of TS 103 606 V1.2.1) */
+      std::string m_OpAppFqdn;
+
+      // For local package checking, the following three fields must be set:
+
+      /* Location of installable package files (e.g. /mnt/sdcard/orb/packages).
+       * If empty, does a remote check for updates. */
       std::string m_PackageLocation;
+
+      /* Suffix of local, installable package files (e.g. .zip or .cms)
+       * If empty, does not check for package files. */
       std::string m_PackageSuffix;
+
+      /* File path to the hash of the installed OpApp package.
+       * If empty, does not check for package hash.
+       * FREE-315 Used for local package checking, may be useful for remote package checking.*/
+      std::string m_PackageHashFilePath;
+
       std::string m_PrivateKeyFilePath;
       std::string m_PublicKeyFilePath;
       std::string m_CertificateFilePath;
-      std::string m_PackageHashFilePath;
+
       std::string m_DestinationDirectory; /* Directory where the package is decrypted, unzipped and verified */
       std::string m_OpAppInstallDirectory; /* Directory where the OpApp is installed */
       UpdateSuccessCallback m_OnUpdateSuccess; /* Callback called when update completes successfully */
@@ -142,7 +202,15 @@ public:
     const Configuration& configuration,
     std::unique_ptr<IHashCalculator> hashCalculator,
     std::unique_ptr<IDecryptor> decryptor,
-    std::unique_ptr<IOpAppAcquisition> acquisition);
+    std::unique_ptr<IAitFetcher> aitFetcher);
+
+  // Constructor with all dependencies including XML parser (for testing)
+  OpAppPackageManager(
+    const Configuration& configuration,
+    std::unique_ptr<IHashCalculator> hashCalculator,
+    std::unique_ptr<IDecryptor> decryptor,
+    std::unique_ptr<IAitFetcher> aitFetcher,
+    std::unique_ptr<IXmlParser> xmlParser);
 
   ~OpAppPackageManager();
 
@@ -156,6 +224,29 @@ public:
   void stop();
   bool isRunning() const;
   bool isUpdating() const;
+
+  /**
+   * getInstalledPackage()
+   *
+   * Retrieves the installed package info for a given org/app ID.
+   *
+   * @param orgId Organization ID
+   * @param appId Application ID
+   * @param outPackage Output PackageInfo with installation details if found
+   * @return true if an installed package was found, false otherwise
+   */
+  bool getInstalledPackage(uint32_t orgId, uint16_t appId, PackageInfo& outPackage) const;
+
+
+  /**
+   * isPackageInstalled(const std::string& packagePath)
+   *
+   * Checks if the package at the given path is installed by comparing hashes.
+   *
+   * Returns:
+   *  true if the package is installed.
+   *  false if the package is not installed.
+   */
   bool isPackageInstalled(const std::string& packagePath);
   void checkForUpdates();
 
@@ -261,11 +352,33 @@ private:
    */
   bool unzipPackageFile(const std::string& filePath) const;
 
+  /**
+   * parseAitFiles()
+   *
+   * Parses AIT XML files and extracts package information.
+   *
+   * @param aitFiles Vector of paths to AIT XML files
+   * @param packages Vector of PackageInfo (output) - discovered packages with isInstalled=false
+   * @return PackageOperationResult with success status and any error messages.
+   */
+  PackageOperationResult parseAitFiles(const std::vector<std::string>& aitFiles, std::vector<PackageInfo>& packages);
+
+private:
+  /**
+   * validateOpAppDescriptor()
+   *
+   * Validates an AIT application descriptor for OpApp requirements.
+   * See TS 102796 Table 7 and TS 103606 Table 7.
+   *
+   * @param app The AIT application descriptor to validate
+   * @return PackageOperationResult with success=true if valid, or success=false with error details if invalid.
+   */
+  PackageOperationResult validateOpAppDescriptor(const Ait::S_AIT_APP_DESC& app) const;
+
   PackageStatus m_PackageStatus = PackageStatus::None;
 
   // void uninstallPackage(const std::string& packagePath);
   // void updatePackage(const std::string& packagePath);
-  // PackageInfo getPackageInfo();
 
   std::atomic<bool> m_IsRunning{false};
   std::atomic<bool> m_IsUpdating{false}; // TODO replace with OpAppUpdateStatus
@@ -278,10 +391,14 @@ private:
   std::string m_LastErrorMessage;
   std::unique_ptr<IHashCalculator> m_HashCalculator;
   std::unique_ptr<IDecryptor> m_Decryptor;
-  std::unique_ptr<IOpAppAcquisition> m_Acquisition;
+  std::unique_ptr<IAitFetcher> m_AitFetcher;
+  std::unique_ptr<IXmlParser> m_XmlParser;
 
   std::string m_CandidatePackageFile;
   std::string m_CandidatePackageHash;
+
+  // The package (from AIT) that is a candidate for installation/update
+  PackageInfo m_CandidatePackage;
 };
 
 } // namespace orb

@@ -100,8 +100,9 @@ static_library("opapp_package_manager") {
     "//third_party/boringssl:boringssl",
   ]
 
-  # OpAppAcquisition provides IOpAppAcquisition interface via public_configs
-  public_deps = [ ":opapp_acquisition" ]
+  # AitFetcher provides IAitFetcher interface via public_deps
+  # ait_common provides XmlParser for AIT parsing
+  public_deps = [ ":ait_fetcher", ":ait_common" ]
 
   public_configs = [ ":external_lib_config" ]
 }
@@ -129,10 +130,10 @@ static_library("orb_network") {
   ]
 }
 
-static_library("opapp_acquisition") {
+static_library("ait_fetcher") {
   sources = [
-    "package_manager/OpAppAcquisition.cpp",
-    "package_manager/OpAppAcquisition.h",
+    "package_manager/AitFetcher.cpp",
+    "package_manager/AitFetcher.h",
   ]
 
   deps = [
@@ -143,15 +144,15 @@ static_library("opapp_acquisition") {
   # Depend on orb_network for HttpDownloader, DnsSrvResolver
   public_deps = [ ":orb_network" ]
 
-  # Export package_manager include path for consumers to access IOpAppAcquisition
+  # Export package_manager include path for consumers to access IAitFetcher
   public_configs = [
     ":external_lib_config",
-    ":opapp_acquisition_config",
+    ":ait_fetcher_config",
   ]
 }
 
-# Config to expose OpAppAcquisition.h to dependents
-config("opapp_acquisition_config") {
+# Config to expose AitFetcher.h to dependents
+config("ait_fetcher_config") {
   include_dirs = [ "package_manager" ]
 }
 
@@ -276,17 +277,17 @@ source_set("test_opapp_package_manager_sources")
   testonly = true
 }
 
-source_set("test_opapp_acquisition_sources")
+source_set("test_ait_fetcher_sources")
 {
   sources = [
-    "test/opapp_acquisition_unittest.cpp",
-    "test/OpAppAcquisitionTestInterface.cpp",
-    "test/OpAppAcquisitionTestInterface.h"
+    "test/ait_fetcher_unittest.cpp",
+    "test/AitFetcherTestInterface.cpp",
+    "test/AitFetcherTestInterface.h"
   ]
 
   deps = [
     "//testing/gtest",
-    ":opapp_acquisition"  # Includes orb_network via public_deps
+    ":ait_fetcher"  # Includes orb_network via public_deps
   ]
 
   testonly = true
@@ -405,19 +406,34 @@ source_set("test_orb_application_manager_sources")
   testonly = true
 }
 
+source_set("test_xml_parser_sources")
+{
+  sources = [
+    "test/xml_parser_unittest.cpp",
+  ]
+
+  deps = [
+    "//testing/gtest",
+    ":ait_common",  # Provides XmlParser and Ait classes
+  ]
+
+  testonly = true
+}
+
 # Single executable that combines all test sources
 executable("test_orb_all") {
   deps = [
     "//testing/gtest:gtest_main",
     ":test_orb_moderator_sources",
     ":test_opapp_package_manager_sources",
-    ":test_opapp_acquisition_sources",
+    ":test_ait_fetcher_sources",
     ":test_http_downloader_sources",
     ":test_dns_srv_resolver_sources",
     ":test_orb_video_window_sources",
     ":test_orb_util_sources",
     ":test_orb_jsonrpcservice_sources",
-    ":test_orb_application_manager_sources"
+    ":test_orb_application_manager_sources",
+    ":test_xml_parser_sources"
   ]
 
   testonly = true

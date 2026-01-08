@@ -406,22 +406,22 @@ static Ait::E_AIT_APP_CONTROL XmlGetContentEnumControl(xmlNodePtr node)
 static uint8_t XmlGetContentVisibility(xmlNodePtr node)
 {
     xmlChar *dptr;
-    uint8_t visibility = AIT_NOT_VISIBLE_ALL;
+    uint8_t visibility = Ait::NOT_VISIBLE_ALL;
 
     NODE_CONTENT_GET(node, dptr);
     if (dptr)
     {
         if (xmlStrEqual(dptr, (const xmlChar *)"VISIBLE_ALL"))
         {
-            visibility = AIT_VISIBLE_ALL;
+            visibility = Ait::VISIBLE_ALL;
         }
         else if (xmlStrEqual(dptr, (const xmlChar *)"NOT_VISIBLE_ALL"))
         {
-            visibility = AIT_NOT_VISIBLE_ALL;
+            visibility = Ait::NOT_VISIBLE_ALL;
         }
         else if (xmlStrEqual(dptr, (const xmlChar *)"NOT_VISIBLE_USERS"))
         {
-            visibility = AIT_NOT_VISIBLE_USERS;
+            visibility = Ait::NOT_VISIBLE_USERS;
         }
         NODE_CONTENT_RELEASE();
     }
@@ -450,10 +450,15 @@ static void XmlParseAppDescType(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
                 NODE_CONTENT_GET(node, dptr);
                 if (dptr)
                 {
-                    /* Only recognise mime type for hbbtv ... */
-                    if (xmlStrEqual(cptr, (const xmlChar *)"application/vnd.hbbtv.xhtml+xml"))
+                    /* Recognise mime type for hbbtv and opapp */
+                    if (xmlStrEqual(dptr, (const xmlChar *)"application/vnd.hbbtv.xhtml+xml"))
                     {
                         app_ptr->xmlType = Ait::XML_TYP_OTHER;
+                    }
+                    else if (xmlStrEqual(dptr, (const xmlChar *)"application/vnd.hbbtv.opapp.pkg"))
+                    {
+                        // Once complete, there is a further check for the Specific or Privileged type
+                        app_ptr->xmlType = Ait::XML_TYP_OPAPP;
                     }
                     NODE_CONTENT_RELEASE();
                 }
@@ -463,11 +468,11 @@ static void XmlParseAppDescType(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
                 NODE_CONTENT_GET(node, dptr);
                 if (dptr)
                 {
-                    if (xmlStrEqual(cptr, (const xmlChar *)"DVB-J"))
+                    if (xmlStrEqual(dptr, (const xmlChar *)"DVB-J"))
                     {
                         app_ptr->xmlType = Ait::XML_TYP_DVB_J;
                     }
-                    else if (xmlStrEqual(cptr, (const xmlChar *)"DVB-HTML"))
+                    else if (xmlStrEqual(dptr, (const xmlChar *)"DVB-HTML"))
                     {
                         app_ptr->xmlType = Ait::XML_TYP_DVB_HTML;
                     }
@@ -606,7 +611,8 @@ static void XmlParseAppDesc(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
             }
             else if (xmlStrEqual(cptr, (const xmlChar *)"version"))
             {
-                app_ptr->xmlVersion = (uint8_t)XmlGetContentInt(node);
+                // OpApp specific version is stored as uint32_t
+                app_ptr->xmlVersion = XmlGetContentInt(node);
             }
             else if (xmlStrEqual(cptr, (const xmlChar *)"mhpVersion"))
             {
@@ -730,35 +736,35 @@ static void XmlParseAppTransport(xmlNodePtr node, Ait::S_TRANSPORT_PROTOCOL_DESC
     {
         if (xmlStrEqual(dptr, (const xmlChar *)"mhp:HTTPTransportType"))
         {
-            protocolId = AIT_PROTOCOL_HTTP;
+            protocolId = Ait::PROTOCOL_HTTP;
         }
         else if (xmlStrEqual(dptr, (const xmlChar *)"mhp:OCTransportType"))
         {
-            protocolId = AIT_PROTOCOL_OBJECT_CAROUSEL;
+            protocolId = Ait::PROTOCOL_OBJECT_CAROUSEL;
         }
         NODE_PROP_FREE(dptr)
     }
 
-    freeIndex = AIT_MAX_NUM_PROTOCOLS;
-    for (i = 0; i < AIT_MAX_NUM_PROTOCOLS; i++)
+    freeIndex = Ait::MAX_NUM_PROTOCOLS;
+    for (i = 0; i < Ait::MAX_NUM_PROTOCOLS; i++)
     {
         if (protocolId == trns[i].protocolId)
         {
             break;
         }
-        if ((trns[i].protocolId == 0) && (freeIndex == AIT_MAX_NUM_PROTOCOLS))
+        if ((trns[i].protocolId == 0) && (freeIndex == Ait::MAX_NUM_PROTOCOLS))
         {
             /* Save the first free index to be used for the new protocol */
             freeIndex = i;
         }
     }
-    if (freeIndex == AIT_MAX_NUM_PROTOCOLS)
+    if (freeIndex == Ait::MAX_NUM_PROTOCOLS)
     {
         LOG(ERROR) << "No free slots for this protocol: " << protocolId;
-        i = AIT_MAX_NUM_PROTOCOLS;
+        i = Ait::MAX_NUM_PROTOCOLS;
     }
 
-    if (i >= AIT_MAX_NUM_PROTOCOLS)
+    if (i >= Ait::MAX_NUM_PROTOCOLS)
     {
         trns_ptr = &(trns[freeIndex]);
         trns_ptr->protocolId = protocolId;
@@ -766,7 +772,7 @@ static void XmlParseAppTransport(xmlNodePtr node, Ait::S_TRANSPORT_PROTOCOL_DESC
         node = node->xmlChildrenNode;
         switch (protocolId)
         {
-            case AIT_PROTOCOL_HTTP:
+            case Ait::PROTOCOL_HTTP:
                 // See TS 102 809, section 5.4.4.20
                 /* Length the URL extensions */
                 while (node != nullptr)
@@ -800,7 +806,7 @@ static void XmlParseAppTransport(xmlNodePtr node, Ait::S_TRANSPORT_PROTOCOL_DESC
                 }
                 break;
 
-            case AIT_PROTOCOL_OBJECT_CAROUSEL:
+            case Ait::PROTOCOL_OBJECT_CAROUSEL:
                 // See TS 102 809, section 5.4.4.21
                 while (node != nullptr)
                 {
@@ -886,7 +892,7 @@ static void XmlParseApplication(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
             }
             else if (!xmlStrncmp(cptr, (const xmlChar *)"application", 11))
             {
-                cptr += 11;
+                cptr += 11; // Skip "application" prefix
                 if (xmlStrEqual(cptr, (const xmlChar *)"Identifier"))
                 {
                     XmlParseAppId(node, app_ptr);
@@ -917,6 +923,20 @@ static void XmlParseApplication(xmlNodePtr node, Ait::S_AIT_APP_DESC *app_ptr)
             }
         }
         node = node->next;
+    }
+
+    // For OpApp, check the ApplicationUsage against the OtherApp type
+    if (app_ptr->xmlType == Ait::XML_TYP_OPAPP)
+    {
+        if (app_ptr->appUsage == "urn:hbbtv:opapp:specific:2017")
+        {
+            app_ptr->xmlType = 0x81; // See TS 103606 Table 8
+        }
+        else if (app_ptr->appUsage != "urn:hbbtv:opapp:privileged:2017")
+        {
+            // Sanity check that it was set. Just report and move on.
+            LOG(ERROR) << "OpApp ApplicationUsage does not match the OpApp type: " << app_ptr->appUsage;
+        }
     }
 }
 

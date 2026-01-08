@@ -26,18 +26,6 @@
 #include <vector>
 #include <string>
 
-#define AIT_USAGE_TELETEXT 0x01
-
-#define AIT_MAX_NUM_PROTOCOLS 2
-#define AIT_PROTOCOL_OBJECT_CAROUSEL 0x0001
-#define AIT_PROTOCOL_HTTP 0x0003
-
-#define AIT_NOT_VISIBLE_ALL 0x00
-#define AIT_NOT_VISIBLE_USERS 0x01
-#define AIT_VISIBLE_ALL 0x03
-
-#define AIT_NUM_RECEIVED_SECTION_MASK_BYTES (256 / 8)
-
 
 #if ORB_HBBTV_VERSION == 204
     #define HBBTV_VERSION_MAJOR 1
@@ -51,16 +39,28 @@
     #error Unsupported ORB_HBBTV_VERSION
 #endif
 
-#define LINKED_APP_SCHEME_1_1 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.1"
-#define LINKED_APP_SCHEME_1_2 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.2"
-#define LINKED_APP_SCHEME_2 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:2"
 
 namespace orb
 {
-
 class Ait
 {
 public:
+    static constexpr uint8_t AIT_NUM_RECEIVED_SECTION_MASK_BYTES = 256 / 8;
+
+    // TS102796 Table 7 applicationUsageDescriptor
+    static constexpr uint8_t USAGE_TELETEXT = 0x01;
+
+    // TS102796 Table 7 applicationTransport
+    static constexpr uint8_t MAX_NUM_PROTOCOLS = 2;
+    static constexpr uint16_t PROTOCOL_OBJECT_CAROUSEL = 0x0001;
+    static constexpr uint16_t PROTOCOL_HTTP = 0x0003;
+
+    // TS102796 Table 7 applicationDescriptor/visibility
+    // See ETSI TS 102 809 v1.1.1 Table 5
+    static constexpr uint8_t NOT_VISIBLE_ALL = 0x00;
+    static constexpr uint8_t NOT_VISIBLE_USERS = 0x01;
+    static constexpr uint8_t VISIBLE_ALL = 0x03;
+
     typedef enum
     {
         APP_TYP_MHEG5 = 0x0008,
@@ -74,6 +74,7 @@ public:
         XML_TYP_OTHER    = 0x01,
         XML_TYP_DVB_HTML = 0x10,
         XML_TYP_DVB_J    = 0x11,
+        XML_TYP_OPAPP    = 0x80,
     } E_AIT_XML_TYPE;
 
     typedef enum
@@ -154,12 +155,12 @@ public:
         uint16_t appId;
         uint8_t controlCode;
         uint8_t numTransports;
-        S_TRANSPORT_PROTOCOL_DESC transportArray[AIT_MAX_NUM_PROTOCOLS];
+        S_TRANSPORT_PROTOCOL_DESC transportArray[MAX_NUM_PROTOCOLS];
         std::string location;
         S_APP_NAME_DESC appName;
         S_APP_DESC appDesc;
         uint8_t xmlType;
-        uint8_t xmlVersion;
+        uint32_t xmlVersion;  // unsignedInt31Bit per XSD definition for OpApp.
         uint8_t usageType;
         std::vector<std::string> boundaries;
         std::vector<S_APP_PARENTAL_RATING> parentalRatings;

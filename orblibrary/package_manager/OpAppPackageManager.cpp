@@ -1,5 +1,6 @@
 #include "OpAppPackageManager.h"
-#include "OpAppAcquisition.h"
+#include "AitFetcher.h"
+#include "xml_parser.h"
 
 #include <mutex>
 #include <filesystem>
@@ -92,11 +93,23 @@ OpAppPackageManager::OpAppPackageManager(
   const Configuration& configuration,
   std::unique_ptr<IHashCalculator> hashCalculator,
   std::unique_ptr<IDecryptor> decryptor,
-  std::unique_ptr<IOpAppAcquisition> acquisition)
+  std::unique_ptr<IAitFetcher> aitFetcher)
+  : OpAppPackageManager(configuration, std::move(hashCalculator), std::move(decryptor),
+                        std::move(aitFetcher), nullptr)
+{
+}
+
+OpAppPackageManager::OpAppPackageManager(
+  const Configuration& configuration,
+  std::unique_ptr<IHashCalculator> hashCalculator,
+  std::unique_ptr<IDecryptor> decryptor,
+  std::unique_ptr<IAitFetcher> aitFetcher,
+  std::unique_ptr<IXmlParser> xmlParser)
   : m_Configuration(configuration)
   , m_HashCalculator(std::move(hashCalculator))
   , m_Decryptor(std::move(decryptor))
-  , m_Acquisition(std::move(acquisition))
+  , m_AitFetcher(std::move(aitFetcher))
+  , m_XmlParser(std::move(xmlParser))
 {
   // Create default implementations if not provided
   if (!m_HashCalculator) {
@@ -105,9 +118,12 @@ OpAppPackageManager::OpAppPackageManager(
   if (!m_Decryptor) {
     m_Decryptor = std::make_unique<Decryptor>();
   }
-  if (!m_Acquisition) {
+  if (!m_AitFetcher) {
     // Pass User-Agent from configuration (TS 103 606 Section 6.1.5.1)
-    m_Acquisition = std::make_unique<OpAppAcquisition>(m_Configuration.m_UserAgent);
+    m_AitFetcher = std::make_unique<AitFetcher>(m_Configuration.m_UserAgent);
+  }
+  if (!m_XmlParser) {
+    m_XmlParser = IXmlParser::create();
   }
 }
 
@@ -155,8 +171,11 @@ bool OpAppPackageManager::isUpdating() const
 
 void OpAppPackageManager::checkForUpdates()
 {
-  if (!m_Configuration.m_PackageLocation.empty()) {
+  if (!m_Configuration.m_PackageLocation.empty() && !m_Configuration.m_PackageHashFilePath.empty()) {
     // Checks for local package file and compares hash to installed package hash?
+    LOG(INFO) << "Local package check enabled. Checking package file in "
+      << m_Configuration.m_PackageLocation << " and comparing hash to installed package hash in "
+      << m_Configuration.m_PackageHashFilePath;
     m_PackageStatus = doPackageFileCheck();
   }
 
@@ -184,6 +203,7 @@ void OpAppPackageManager::checkForUpdates()
 
   // We have an update available. Install it.
   m_IsUpdating = true;
+  // TODO: What about downloading the package?
   m_PackageStatus = tryPackageInstall();
   m_IsUpdating = false;
 
@@ -283,8 +303,8 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::doRemotePackageCheck()
     }
   }
 
-  // Use the injected acquisition interface to fetch ALL AIT XMLs
-  AcquisitionResult result = m_Acquisition->FetchAitXmls(
+  // Use the injected AIT fetcher to fetch ALL AIT XMLs
+  AitFetchResult result = m_AitFetcher->FetchAitXmls(
       m_Configuration.m_OpAppFqdn, true /* network available */, aitDir);
 
   if (!result.success || result.aitFiles.empty()) {
@@ -303,12 +323,59 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::doRemotePackageCheck()
     LOG(WARNING) << "AIT acquisition warning: " << error;
   }
 
-  // TODO: Process each AIT file to parse and extract package information
-  // for (const auto& aitFile : result.aitFiles) {
-  //   parseAitXml(aitFile);
-  // }
+  // Parse the AIT files
+  std::vector<PackageInfo> discoveredPackages;
+  auto parseResult = parseAitFiles(result.aitFiles, discoveredPackages);
 
+  if (!parseResult.success) {
+    LOG(INFO) << "No applications found in any AIT: " << parseResult.errorMessage;
+    return PackageStatus::NoUpdateAvailable;
+  }
+
+  // TS103606 Section 4.1.2 Only one privileged OpApp per device - use first valid package
+  // While it's possible there may be more than one, we only support one.
+  const PackageInfo& pkg = discoveredPackages.front();
+
+  // Check if this package is already installed
+  PackageInfo installedPkg;
+  if (getInstalledPackage(pkg.orgId, pkg.appId, installedPkg)) {
+    // Existing installation found - check if update available
+    if (pkg.isNewerThan(installedPkg)) {
+      LOG(INFO) << "Update available for " << pkg.name
+                << " (installed v" << installedPkg.xmlVersion
+                << " -> v" << pkg.xmlVersion << ")";
+      m_CandidatePackage = pkg;
+      return PackageStatus::UpdateAvailable;
+    }
+    LOG(INFO) << "Package " << pkg.name << " is up to date (v" << installedPkg.xmlVersion << ")";
+    return PackageStatus::Installed;
+  }
+
+  // No existing installation - this is a first-time install
+  LOG(INFO) << "New package available for installation: " << pkg.name
+            << " (orgId=" << pkg.orgId << ", appId=" << pkg.appId
+            << ", v" << pkg.xmlVersion << ")";
+  m_CandidatePackage = pkg;
   return PackageStatus::UpdateAvailable;
+}
+
+bool OpAppPackageManager::getInstalledPackage(uint32_t orgId, uint16_t appId, PackageInfo& outPackage) const
+{
+  // TODO: Implement persistent storage lookup
+  // For now, check in-memory cache or return false
+
+  // The implementation should:
+  // 1. Look up the package by orgId/appId in a persistent store (e.g., SQLite, JSON file)
+  // 2. If found, populate outPackage with:
+  //    - orgId, appId, xmlVersion
+  //    - installPath, packageHash, installedAt
+  //    - isInstalled = true
+  // 3. Return true if found, false otherwise
+
+  (void)orgId;
+  (void)appId;
+  (void)outPackage;
+  return false;
 }
 
 bool OpAppPackageManager::isPackageInstalled(const std::string& packagePath)
@@ -511,6 +578,144 @@ PackageOperationResult OpAppPackageManager::verifyPackageFile(const std::string&
 bool OpAppPackageManager::unzipPackageFile(const std::string& filePath) const
 {
   return false;
+}
+
+PackageOperationResult OpAppPackageManager::validateOpAppDescriptor(const Ait::S_AIT_APP_DESC& app) const
+{
+  // Basic validation. See TS 102796 Table 7 and TS 103606 Table 7.
+  if ((app.xmlType & Ait::XML_TYP_OPAPP) != Ait::XML_TYP_OPAPP) {
+    std::string msg = "Unexpected application type: " + std::to_string(app.xmlType) +
+                      " expected OPAPP TYPE (0x80 or 0x81)";
+    LOG(WARNING) << "AIT validation failed: " << msg;
+    return PackageOperationResult(false, msg);
+  }
+
+  if (app.appUsage != "urn:hbbtv:opapp:privileged:2017" && app.appUsage != "urn:hbbtv:opapp:specific:2017") {
+    std::string msg = "Unexpected application usage: " + app.appUsage +
+                      " expected 'urn:hbbtv:opapp:privileged:2017' or 'urn:hbbtv:opapp:specific:2017'";
+    LOG(WARNING) << "AIT validation failed: " << msg;
+    return PackageOperationResult(false, msg);
+  }
+
+  LOG(INFO) << "AIT application descriptor has expected application usage: " << app.appUsage;
+  // TODO Check against the bilateral agreement on this device.
+  // This will require a callback to the moderator to check the bilateral agreement.
+  // If it fails then set an error, e.g. "Application not supported by this device."
+
+  if (app.numTransports == 0) {
+    std::string msg = "No transport defined for application";
+    LOG(WARNING) << "AIT validation failed: " << msg;
+    return PackageOperationResult(false, msg);
+  }
+
+  if (app.transportArray[0].protocolId != Ait::PROTOCOL_HTTP) {
+    std::string msg = "Unexpected transport protocol: " + std::to_string(app.transportArray[0].protocolId) +
+                      " expected HTTPTransportType (0x3)";
+    LOG(WARNING) << "AIT validation failed: " << msg;
+    return PackageOperationResult(false, msg);
+  }
+
+  // The following are warnings only - we still process the descriptor
+  if (app.controlCode != Ait::APP_CTL_AUTOSTART) {
+    LOG(WARNING) << "AIT application descriptor has unexpected control code: "
+                 << static_cast<int>(app.controlCode) << " expected AUTOSTART (0x1)";
+  }
+
+  if (app.appDesc.visibility != Ait::VISIBLE_ALL) {
+    LOG(WARNING) << "AIT application descriptor has unexpected visibility: "
+                 << static_cast<int>(app.appDesc.visibility) << " expected VISIBLE_ALL (0x3)";
+  }
+
+  if (app.appDesc.serviceBound) {
+    LOG(WARNING) << "AIT application descriptor has unexpected serviceBound=true, expected false";
+  }
+
+  return PackageOperationResult(true, "");
+}
+
+PackageOperationResult OpAppPackageManager::parseAitFiles(
+    const std::vector<std::string>& aitFiles, std::vector<PackageInfo>& packages)
+{
+  packages.clear();
+
+  if (aitFiles.empty()) {
+    return PackageOperationResult(false, "No AIT files provided");
+  }
+
+  std::vector<std::string> errors;
+
+  for (const auto& aitFile : aitFiles) {
+    // Read file content
+    std::ifstream file(aitFile, std::ios::binary);
+    if (!file) {
+      std::string msg = "Failed to open AIT file: " + aitFile;
+      LOG(WARNING) << msg;
+      errors.push_back(msg);
+      continue;
+    }
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    std::string content = buffer.str();
+
+    // Parse the AIT XML
+    auto aitTable = m_XmlParser->ParseAit(content.c_str(), content.size());
+    if (!aitTable) {
+      std::string msg = "Failed to parse AIT file: " + aitFile;
+      LOG(WARNING) << msg;
+      errors.push_back(msg);
+      continue;
+    }
+
+    LOG(INFO) << "Parsed AIT from " << aitFile << ": "
+              << static_cast<int>(aitTable->numApps) << " app(s)";
+
+    if (aitTable->numApps != 1) {
+      LOG(WARNING) << "AIT table has " << static_cast<int>(aitTable->numApps)
+                   << " application descriptors, expected 1";
+    }
+
+    // Process each application descriptor in the AIT table
+    for (const auto& app : aitTable->appArray) {
+      PackageOperationResult validationResult = validateOpAppDescriptor(app);
+      if (!validationResult.success) {
+        errors.push_back(validationResult.errorMessage);
+        continue;
+      }
+
+      // Extract package info from AIT descriptor
+      PackageInfo pkgInfo;
+      pkgInfo.orgId = app.orgId;
+      pkgInfo.appId = app.appId;
+      pkgInfo.xmlVersion = app.xmlVersion;
+      pkgInfo.baseUrl = app.transportArray[0].url.baseUrl;
+      pkgInfo.location = app.location;
+      pkgInfo.isInstalled = false;  // This is a discovered package, not installed yet
+
+      if (app.appName.numLangs > 0) {
+        pkgInfo.name = app.appName.names[0].name;
+      }
+
+      LOG(INFO) << "  App: orgId=" << pkgInfo.orgId << ", appId=" << pkgInfo.appId
+                << ", baseUrl=" << pkgInfo.baseUrl
+                << ", xmlVersion=" << pkgInfo.xmlVersion
+                << ", location=" << pkgInfo.location
+                << ", name=" << pkgInfo.name;
+
+      packages.push_back(pkgInfo);
+    }
+  }
+
+  if (packages.empty()) {
+    std::string errorMsg = errors.empty() ? "No valid OpApp descriptors found" :
+                           "No valid OpApp descriptors found. Errors: " + errors[0];
+    for (size_t i = 1; i < errors.size() && i < 3; ++i) {
+      errorMsg += "; " + errors[i];
+    }
+    return PackageOperationResult(false, errorMsg);
+  }
+
+  return PackageOperationResult(true, "");
 }
 
 } // namespace orb

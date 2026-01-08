@@ -30,10 +30,12 @@
 #include "application_session_callback.h"
 #include "base_app.h"
 
+static constexpr const char* LINKED_APP_SCHEME_1_1 = "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.1";
+static constexpr const char* LINKED_APP_SCHEME_1_2 = "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.2";
+static constexpr const char* LINKED_APP_SCHEME_2 = "urn:dvb:metadata:cs:LinkedApplicationCS:2019:2";
 
 namespace orb
 {
-
 class HbbTVApp : public BaseApp
 {
 public:

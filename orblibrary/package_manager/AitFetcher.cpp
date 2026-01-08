@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "OpAppAcquisition.h"
+#include "AitFetcher.h"
 #include "DnsSrvResolver.h"
 #include "HttpDownloader.h"
 #include "SrvRecord.h"
@@ -30,26 +30,26 @@ namespace orb
 {
 const unsigned int DEFAULT_TIMEOUT_MS = 10000;
 
-OpAppAcquisition::OpAppAcquisition(const std::string& userAgent)
+AitFetcher::AitFetcher(const std::string& userAgent)
     : m_downloader(std::make_unique<HttpDownloader>(DEFAULT_TIMEOUT_MS, userAgent))
 {
     // Set appropriate Accept header for AIT
     m_downloader->SetAcceptHeader("application/vnd.dvb.ait+xml, application/xml, text/xml");
 }
 
-OpAppAcquisition::~OpAppAcquisition() = default;
+AitFetcher::~AitFetcher() = default;
 
-AcquisitionResult OpAppAcquisition::Fetch(const std::string& fqdn, bool networkAvailable,
-                                          const std::string& outputDirectory,
-                                          const std::string& userAgent)
+AitFetchResult AitFetcher::Fetch(const std::string& fqdn, bool networkAvailable,
+                                 const std::string& outputDirectory,
+                                 const std::string& userAgent)
 {
-    OpAppAcquisition acquisition(userAgent);
-    return acquisition.FetchAitXmls(fqdn, networkAvailable, outputDirectory);
+    AitFetcher fetcher(userAgent);
+    return fetcher.FetchAitXmls(fqdn, networkAvailable, outputDirectory);
 }
 
-AcquisitionResult OpAppAcquisition::FetchAitXmls(const std::string& fqdn,
-                                                           bool networkAvailable,
-                                                           const std::string& outputDirectory)
+AitFetchResult AitFetcher::FetchAitXmls(const std::string& fqdn,
+                                        bool networkAvailable,
+                                        const std::string& outputDirectory)
 {
     /* TS 103 606 V1.2.1 (2024-03) Section 6.1.5.1 XML AIT Acquisition
      * "The result of the process is a number of (XML) AITs..."
@@ -57,17 +57,17 @@ AcquisitionResult OpAppAcquisition::FetchAitXmls(const std::string& fqdn,
      */
     if (!networkAvailable) {
         LOG(ERROR) << "Network is not available";
-        return AcquisitionResult("Network is not available");
+        return AitFetchResult("Network is not available");
     }
 
     if (!validateFqdn(fqdn)) {
         LOG(ERROR) << "Invalid FQDN: " << fqdn;
-        return AcquisitionResult("Invalid FQDN: " + fqdn);
+        return AitFetchResult("Invalid FQDN: " + fqdn);
     }
 
     if (outputDirectory.empty()) {
         LOG(ERROR) << "Output directory not specified";
-        return AcquisitionResult("Output directory not specified");
+        return AitFetchResult("Output directory not specified");
     }
 
     // Ensure output directory exists
@@ -76,14 +76,14 @@ AcquisitionResult OpAppAcquisition::FetchAitXmls(const std::string& fqdn,
         if (!std::filesystem::create_directories(outputDirectory, ec)) {
             LOG(ERROR) << "Failed to create output directory: " << outputDirectory
                        << ", error: " << ec.message();
-            return AcquisitionResult(
+            return AitFetchResult(
                 "Failed to create output directory: " + outputDirectory);
         }
     }
 
     auto records = doDnsSrvLookup(fqdn);
     if (records.empty()) {
-        return AcquisitionResult("No SRV records found for FQDN: " + fqdn);
+        return AitFetchResult("No SRV records found for FQDN: " + fqdn);
     }
 
     std::vector<std::string> acquiredFiles;
@@ -141,14 +141,14 @@ AcquisitionResult OpAppAcquisition::FetchAitXmls(const std::string& fqdn,
 
     if (acquiredFiles.empty()) {
         LOG(ERROR) << "Failed to retrieve AIT from any SRV record";
-        return AcquisitionResult("Failed to retrieve AIT from any SRV record");
+        return AitFetchResult("Failed to retrieve AIT from any SRV record");
     }
 
     LOG(INFO) << "Successfully acquired " << acquiredFiles.size() << " AIT file(s)";
-    return AcquisitionResult(acquiredFiles, errors);
+    return AitFetchResult(acquiredFiles, errors);
 }
 
-bool OpAppAcquisition::validateFqdn(const std::string& fqdn)
+bool AitFetcher::validateFqdn(const std::string& fqdn)
 {
     if (fqdn.empty()) {
         return false;
@@ -159,7 +159,7 @@ bool OpAppAcquisition::validateFqdn(const std::string& fqdn)
     return true;
 }
 
-std::vector<SrvRecord> OpAppAcquisition::doDnsSrvLookup(const std::string& fqdn)
+std::vector<SrvRecord> AitFetcher::doDnsSrvLookup(const std::string& fqdn)
 {
     // Section 6.1.4 of TS 103 606 V1.2.1 (2024-03)
     const std::string serviceName = "_hbbtv-ait._tcp." + fqdn;
@@ -176,7 +176,7 @@ std::vector<SrvRecord> OpAppAcquisition::doDnsSrvLookup(const std::string& fqdn)
     return records;
 }
 
-SrvRecord OpAppAcquisition::popNextSrvRecord(std::vector<SrvRecord>& records)
+SrvRecord AitFetcher::popNextSrvRecord(std::vector<SrvRecord>& records)
 {
     if (records.empty()) {
         return SrvRecord();
@@ -190,7 +190,7 @@ SrvRecord OpAppAcquisition::popNextSrvRecord(std::vector<SrvRecord>& records)
     return record;
 }
 
-SrvRecord OpAppAcquisition::selectBestSrvRecord(const std::vector<SrvRecord>& records)
+SrvRecord AitFetcher::selectBestSrvRecord(const std::vector<SrvRecord>& records)
 {
     if (records.empty()) {
         return SrvRecord();
@@ -246,7 +246,7 @@ SrvRecord OpAppAcquisition::selectBestSrvRecord(const std::vector<SrvRecord>& re
     return candidates[0];
 }
 
-std::string OpAppAcquisition::generateAitFilename(int index, const std::string& target)
+std::string AitFetcher::generateAitFilename(int index, const std::string& target)
 {
     // Sanitize target hostname for use in filename
     // Replace characters that are invalid in filenames with underscores
@@ -258,7 +258,7 @@ std::string OpAppAcquisition::generateAitFilename(int index, const std::string& 
     return "ait_" + std::to_string(index) + "_" + sanitized + ".xml";
 }
 
-bool OpAppAcquisition::writeAitToFile(const std::string& content, const std::string& filePath)
+bool AitFetcher::writeAitToFile(const std::string& content, const std::string& filePath)
 {
     // Write to a temporary file first, then rename for atomic operation
     std::string tempPath = filePath + ".tmp";
@@ -292,3 +292,4 @@ bool OpAppAcquisition::writeAitToFile(const std::string& content, const std::str
 }
 
 } // namespace orb
+

@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * OpAppAcquisition - Internal implementation for AIT XML acquisition
+ * AitFetcher - Fetches AIT XML files via DNS SRV lookup and HTTPS
  * This is an implementation detail of OpAppPackageManager and should not
  * be used directly by external code.
  */
 
-#ifndef OP_APP_ACQUISITION_H
-#define OP_APP_ACQUISITION_H
+#ifndef AIT_FETCHER_H
+#define AIT_FETCHER_H
 
 #include <memory>
 #include <string>
@@ -34,37 +34,37 @@ class HttpDownloader;
 class DownloadedObject;
 
 /**
- * @brief Result of an AIT acquisition attempt.
+ * @brief Result of an AIT fetch attempt.
  *
  * AITs are written to files to avoid heap pressure with large/many files.
  * Per TS 103 606: "The result of the process is a number of (XML) AITs..."
  */
-struct AcquisitionResult {
+struct AitFetchResult {
     bool success;                        // True if at least one AIT was acquired
     std::vector<std::string> aitFiles;   // Paths to acquired AIT XML files
     std::vector<std::string> errors;     // Non-fatal errors encountered
     std::string fatalError;              // Fatal error (empty if success)
 
     // Default constructor - failure state
-    AcquisitionResult()
+    AitFetchResult()
         : success(false) {}
 
     // Failure constructor - with fatal error message
-    explicit AcquisitionResult(const std::string& fatalError)
+    explicit AitFetchResult(const std::string& fatalError)
         : success(false), fatalError(fatalError) {}
 
     // Success constructor - with acquired files and any non-fatal errors
-    AcquisitionResult(const std::vector<std::string>& aitFiles,
-                      const std::vector<std::string>& errors)
+    AitFetchResult(const std::vector<std::string>& aitFiles,
+                   const std::vector<std::string>& errors)
         : success(!aitFiles.empty()), aitFiles(aitFiles), errors(errors) {}
 };
 
 /**
- * @brief Interface for AIT acquisition - allows mocking in tests.
+ * @brief Interface for AIT fetching - allows mocking in tests.
  */
-class IOpAppAcquisition {
+class IAitFetcher {
 public:
-    virtual ~IOpAppAcquisition() = default;
+    virtual ~IAitFetcher() = default;
 
     /**
      * @brief Fetch ALL AIT XMLs for a given FQDN, writing each to a file.
@@ -75,33 +75,33 @@ public:
      * @param fqdn The fully qualified domain name of the OpApp
      * @param networkAvailable Whether network is currently available
      * @param outputDirectory Directory where AIT files will be written
-     * @return AcquisitionResult containing file paths and status
+     * @return AitFetchResult containing file paths and status
      */
-    virtual AcquisitionResult FetchAitXmls(
+    virtual AitFetchResult FetchAitXmls(
         const std::string& fqdn,
         bool networkAvailable,
         const std::string& outputDirectory) = 0;
 };
 
 /**
- * @brief Default implementation of AIT acquisition using DNS SRV lookup and HTTPS.
+ * @brief Default implementation of AIT fetching using DNS SRV lookup and HTTPS.
  *
  * Implements the OpApp discovery process defined in TS 103 606 V1.2.1 (2024-03):
  * - Section 6.1.4: DNS SRV lookup for _hbbtv-ait._tcp.<fqdn>
  * - Section 6.1.5.1: XML AIT Acquisition via HTTPS
  */
-class OpAppAcquisition : public IOpAppAcquisition {
+class AitFetcher : public IAitFetcher {
 public:
     /**
      * @brief Constructor.
      * @param userAgent HTTP User-Agent header value (TS 103 606 Section 6.1.5.1)
      */
-    explicit OpAppAcquisition(const std::string& userAgent = "");
-    ~OpAppAcquisition() override;
+    explicit AitFetcher(const std::string& userAgent = "");
+    ~AitFetcher() override;
 
     // Prevent copying
-    OpAppAcquisition(const OpAppAcquisition&) = delete;
-    OpAppAcquisition& operator=(const OpAppAcquisition&) = delete;
+    AitFetcher(const AitFetcher&) = delete;
+    AitFetcher& operator=(const AitFetcher&) = delete;
 
     /**
      * @brief Fetch ALL AIT XMLs for a given FQDN, writing each to a file.
@@ -113,9 +113,9 @@ public:
      * @param fqdn The fully qualified domain name of the OpApp
      * @param networkAvailable Whether network is currently available
      * @param outputDirectory Directory where AIT files will be written
-     * @return AcquisitionResult containing file paths and status
+     * @return AitFetchResult containing file paths and status
      */
-    AcquisitionResult FetchAitXmls(
+    AitFetchResult FetchAitXmls(
         const std::string& fqdn,
         bool networkAvailable,
         const std::string& outputDirectory) override;
@@ -123,20 +123,20 @@ public:
     /**
      * @brief Static convenience method for fetching AITs.
      *
-     * Creates a temporary OpAppAcquisition instance and fetches all AIT XMLs.
+     * Creates a temporary AitFetcher instance and fetches all AIT XMLs.
      *
      * @param fqdn The fully qualified domain name of the OpApp
      * @param networkAvailable Whether network is currently available
      * @param outputDirectory Directory where AIT files will be written
      * @param userAgent HTTP User-Agent header value
-     * @return AcquisitionResult containing file paths and status
+     * @return AitFetchResult containing file paths and status
      */
-    static AcquisitionResult Fetch(const std::string& fqdn, bool networkAvailable,
-                                   const std::string& outputDirectory,
-                                   const std::string& userAgent = "");
+    static AitFetchResult Fetch(const std::string& fqdn, bool networkAvailable,
+                                const std::string& outputDirectory,
+                                const std::string& userAgent = "");
 
     // Friend class for testing private methods
-    friend class OpAppAcquisitionTestInterface;
+    friend class AitFetcherTestInterface;
 
 private:
     /**
@@ -188,5 +188,5 @@ private:
 
 } // namespace orb
 
-#endif // OP_APP_ACQUISITION_H
+#endif // AIT_FETCHER_H
 
