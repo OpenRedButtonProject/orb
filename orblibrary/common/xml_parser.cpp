@@ -406,7 +406,7 @@ static Ait::E_AIT_APP_CONTROL XmlGetContentEnumControl(xmlNodePtr node)
 static uint8_t XmlGetContentVisibility(xmlNodePtr node)
 {
     xmlChar *dptr;
-    uint8_t visibility = Ait::USAGE_TELETEXT;
+    uint8_t visibility = Ait::NOT_VISIBLE_ALL;
 
     NODE_CONTENT_GET(node, dptr);
     if (dptr)
@@ -417,7 +417,7 @@ static uint8_t XmlGetContentVisibility(xmlNodePtr node)
         }
         else if (xmlStrEqual(dptr, (const xmlChar *)"NOT_VISIBLE_ALL"))
         {
-            visibility = Ait::USAGE_TELETEXT;
+            visibility = Ait::NOT_VISIBLE_ALL;
         }
         else if (xmlStrEqual(dptr, (const xmlChar *)"NOT_VISIBLE_USERS"))
         {

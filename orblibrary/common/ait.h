@@ -56,6 +56,8 @@ public:
     static constexpr uint16_t PROTOCOL_HTTP = 0x0003;
 
     // TS102796 Table 7 applicationDescriptor/visibility
+    // See ETSI TS 102 809 v1.1.1 Table 5
+    static constexpr uint8_t NOT_VISIBLE_ALL = 0x00;
     static constexpr uint8_t NOT_VISIBLE_USERS = 0x01;
     static constexpr uint8_t VISIBLE_ALL = 0x03;
 

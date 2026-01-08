@@ -203,6 +203,7 @@ void OpAppPackageManager::checkForUpdates()
 
   // We have an update available. Install it.
   m_IsUpdating = true;
+  // TODO: What about downloading the package?
   m_PackageStatus = tryPackageInstall();
   m_IsUpdating = false;
 
@@ -331,27 +332,30 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::doRemotePackageCheck()
     return PackageStatus::NoUpdateAvailable;
   }
 
-  for (auto& pkg : discoveredPackages) {
-    // Check if this package is already installed
-    PackageInfo installedPkg;
-    if (getInstalledPackage(pkg.orgId, pkg.appId, installedPkg)) {
-      // Existing installation found - check if update available
-      if (pkg.isNewerThan(installedPkg)) {
-        LOG(INFO) << "Update available for " << pkg.name
-                  << " (installed v" << installedPkg.xmlVersion
-                  << " -> v" << pkg.xmlVersion << ")";
-        return PackageStatus::UpdateAvailable;
-      }
-      LOG(INFO) << "Package " << pkg.name << " is up to date (v" << installedPkg.xmlVersion << ")";
-      return PackageStatus::Installed;
+  // TS103606 Section 4.1.2 Only one privileged OpApp per device - use first valid package
+  // While it's possible there may be more than one, we only support one.
+  const PackageInfo& pkg = discoveredPackages.front();
+
+  // Check if this package is already installed
+  PackageInfo installedPkg;
+  if (getInstalledPackage(pkg.orgId, pkg.appId, installedPkg)) {
+    // Existing installation found - check if update available
+    if (pkg.isNewerThan(installedPkg)) {
+      LOG(INFO) << "Update available for " << pkg.name
+                << " (installed v" << installedPkg.xmlVersion
+                << " -> v" << pkg.xmlVersion << ")";
+      m_CandidatePackage = pkg;
+      return PackageStatus::UpdateAvailable;
     }
-    // No existing installation - this is a first-time install candidate
+    LOG(INFO) << "Package " << pkg.name << " is up to date (v" << installedPkg.xmlVersion << ")";
+    return PackageStatus::Installed;
   }
 
-  // TODO: Download and install the selected OpApp package
-  // For now, just indicate an update is available (which covers new installs too)
-  LOG(INFO) << "Found " << discoveredPackages.size() << " new package(s) across all AITs";
-
+  // No existing installation - this is a first-time install
+  LOG(INFO) << "New package available for installation: " << pkg.name
+            << " (orgId=" << pkg.orgId << ", appId=" << pkg.appId
+            << ", v" << pkg.xmlVersion << ")";
+  m_CandidatePackage = pkg;
   return PackageStatus::UpdateAvailable;
 }
 

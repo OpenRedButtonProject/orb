@@ -396,6 +396,9 @@ private:
 
   std::string m_CandidatePackageFile;
   std::string m_CandidatePackageHash;
+
+  // The package (from AIT) that is a candidate for installation/update
+  PackageInfo m_CandidatePackage;
 };
 
 } // namespace orb
