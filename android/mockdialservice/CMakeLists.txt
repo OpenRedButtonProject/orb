@@ -12,7 +12,7 @@ if (CMAKE_CURRENT_BINARY_DIR MATCHES "debug")
 endif()
 
 include_directories(
-   src/main/symlink.mock_dial_service/
+   ../../components/mock_dial_service/
 )
 
 find_library(log-lib log)
@@ -20,11 +20,11 @@ find_library(android-lib android)
 
 add_library(
    org.orbtv.mockdialservice.mockdialservice STATIC
-   src/main/symlink.mock_dial_service/url_lib.c
-   src/main/symlink.mock_dial_service/dial_data.c
-   src/main/symlink.mock_dial_service/dial_server.c
-   src/main/symlink.mock_dial_service/quick_ssdp.c
-   src/main/symlink.mock_dial_service/mongoose.c
+   ../../components/mock_dial_service/url_lib.c
+   ../../components/mock_dial_service/dial_data.c
+   ../../components/mock_dial_service/dial_server.c
+   ../../components/mock_dial_service/quick_ssdp.c
+   ../../components/mock_dial_service/mongoose.c
 )
 
 add_library(

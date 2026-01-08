@@ -4,12 +4,6 @@ include $(CLEAR_VARS)
 # Use jsoncpp_ORB or otherwise use default jsoncpp from source tree
 USE_JSONCPP_ORB ?= 1
 
-# Current jsoncpp version is 1.9.4 or above
-JSONCPP_VERSION_1_9_4 ?= 1
-
-# Support libwebsockets version 4.0 and above
-LWS_VERSION_4 ?= 1
-
 LOCAL_MODULE := liborg.orbtv.orblibrary.networkservices
 
 ifeq ($(ORB_HBBTV_VERSION),)
@@ -28,14 +22,14 @@ else
     LOCAL_SHARED_LIBRARIES := \
         libcap \
         libssl
-        
+
     LOCAL_STATIC_LIBRARIES := \
         libwebsockets
 endif
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/media_synchroniser \
                     $(LOCAL_PATH)/app2app
-                    
+
 ifeq ($(ORB_HBBTV_VERSION),204)
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/json_rpc_server
 endif
@@ -78,12 +72,6 @@ ifeq ($(USE_JSONCPP_ORB), 1)
 else
     LOCAL_STATIC_LIBRARIES += libjsoncpp
 endif
-
-LOCAL_CFLAGS +=  \
-   -DJSONCPP_VERSION_1_9_4=$(JSONCPP_VERSION_1_9_4)
-
-LOCAL_CFLAGS += \
-   -DLWS_VERSION_4=$(LWS_VERSION_4)
 
 LOCAL_CPPFLAGS += -fexceptions \
                   -frtti

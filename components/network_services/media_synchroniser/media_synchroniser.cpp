@@ -371,7 +371,7 @@ int MediaSynchroniser::nrOfSlaves()
         ServiceManager::GetInstance().FindService<ContentIdentificationService>(m_ciiService);
     if (cii != nullptr)
     {
-        ret = cii->nrOfClients();
+        ret = cii->TotalClients();
     }
     return ret;
 }
@@ -383,7 +383,7 @@ void MediaSynchroniser::updateAllCIIClients()
         ServiceManager::GetInstance().FindService<ContentIdentificationService>(m_ciiService);
     if (cii != nullptr)
     {
-        cii->updateClients(true);
+        cii->UpdateClients();
     }
 }
 
@@ -394,7 +394,7 @@ void MediaSynchroniser::updateAllTSClients()
     LOG(LOG_DEBUG, "MediaSynchroniser::updateAllTSClients(). tsService: %p\n", ts);
     if (ts != nullptr)
     {
-        ts->updateAllClients();
+        ts->UpdateClients();
     }
 }
 
@@ -791,7 +791,7 @@ void MediaSynchroniser::removeTimeline(const std::string &timelineSelector)
     if (tls != nullptr)
     {
         Json::Value temp = m_ciiProps.getProperty("timelines");
-#if JSONCPP_VERSION_1_9_4 == 1
+#if JSONCPP_VERSION_HEXA > 0x01080200
 #else
         Json::Value newTimeline;
         int count = 0;
@@ -799,7 +799,7 @@ void MediaSynchroniser::removeTimeline(const std::string &timelineSelector)
         for (Json::Value::ArrayIndex i = 0; i != temp.size(); i++)
         {
             const Json::Value &jobj = temp[i];
-#if JSONCPP_VERSION_1_9_4 == 1
+#if JSONCPP_VERSION_HEXA > 0x01080200
             if (jobj["timelineSelector"] == timelineSelector)
             {
                 Json::Value removed;
@@ -816,7 +816,7 @@ void MediaSynchroniser::removeTimeline(const std::string &timelineSelector)
             }
 #endif
         }
-#if JSONCPP_VERSION_1_9_4 == 1
+#if JSONCPP_VERSION_HEXA > 0x01080200
 #else
         if (newTimeline.size() > 0)
         {

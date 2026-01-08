@@ -45,10 +45,9 @@ bool App2AppLocalService::OnConnection(WebSocketConnection *connection)
         return false;
     }
     // Maybe pair local connection with waiting remote connection
-    mutex_.lock();
+    std::lock_guard<std::recursive_mutex> lockGuard(mMutex);
     if (service_stopped_ || remote_service_stopped_)
     {
-        mutex_.unlock();
         return false;
     }
     WebSocketConnection *remote_connection = GetNextWaitingConnection(REMOTE_TYPE, app_endpoint);
@@ -56,8 +55,8 @@ bool App2AppLocalService::OnConnection(WebSocketConnection *connection)
     {
         LOG(LOG_INFO, "Pair local (%p) to waiting remote (%p)",
             connection, remote_connection);
-        remote_connection->paired_connection_ = connection;
-        connection->paired_connection_ = remote_connection;
+        remote_connection->SetPaired(connection);
+        connection->SetPaired(remote_connection);
         connection->SendMessage(PAIRING_COMPLETED_MESSAGE);
         remote_connection->SendMessage(PAIRING_COMPLETED_MESSAGE);
     }
@@ -66,7 +65,6 @@ bool App2AppLocalService::OnConnection(WebSocketConnection *connection)
         LOG(LOG_INFO, "Add local waiting connection (%p)", connection);
         AddWaitingConnection(LOCAL_TYPE, app_endpoint, connection);
     }
-    mutex_.unlock();
 
     return true;
 }
@@ -74,18 +72,16 @@ bool App2AppLocalService::OnConnection(WebSocketConnection *connection)
 void App2AppLocalService::OnFragmentReceived(WebSocketConnection *connection,
     std::vector<uint8_t> &&data, bool is_first, bool is_final, bool is_binary)
 {
-    mutex_.lock();
+    std::lock_guard<std::recursive_mutex> lockGuard(mMutex);
     if (service_stopped_ || remote_service_stopped_)
     {
-        mutex_.unlock();
         return;
     }
-    if (connection->paired_connection_ != nullptr)
+    WebSocketConnection *paired = connection->GetPaired();
+    if (paired != nullptr)
     {
-        connection->paired_connection_->SendFragment(std::move(data), is_first, is_final,
-            is_binary);
+        paired->SendFragment(std::move(data), is_first, is_final, is_binary);
     }
-    mutex_.unlock();
 }
 
 void App2AppLocalService::OnDisconnected(WebSocketConnection *connection)
@@ -96,23 +92,15 @@ void App2AppLocalService::OnDisconnected(WebSocketConnection *connection)
     {
         return;
     }
-    mutex_.lock();
+    std::lock_guard<std::recursive_mutex> lockGuard(mMutex);
     if (service_stopped_ || remote_service_stopped_)
     {
-        mutex_.unlock();
         return;
     }
-    if (connection->paired_connection_ != nullptr)
-    {
-        connection->paired_connection_->paired_connection_ = nullptr;
-        connection->paired_connection_->Close();
-        connection->paired_connection_ = nullptr;
-    }
-    else
+    if (!connection->ClosePaired())
     {
         RemoveWaitingConnection(LOCAL_TYPE, app_endpoint, connection);
     }
-    mutex_.unlock();
 }
 
 bool App2AppLocalService::OnRemoteConnection(WebSocketConnection *connection)
@@ -124,10 +112,9 @@ bool App2AppLocalService::OnRemoteConnection(WebSocketConnection *connection)
         return false;
     }
     // Maybe pair remote connection with waiting local connection
-    mutex_.lock();
+    std::lock_guard<std::recursive_mutex> lockGuard(mMutex);
     if (service_stopped_ || remote_service_stopped_)
     {
-        mutex_.unlock();
         return false;
     }
     WebSocketConnection *local_connection = GetNextWaitingConnection(LOCAL_TYPE, app_endpoint);
@@ -135,8 +122,8 @@ bool App2AppLocalService::OnRemoteConnection(WebSocketConnection *connection)
     {
         LOG(LOG_INFO, "Pair remote (%p) to waiting local (%p)",
             connection, local_connection);
-        local_connection->paired_connection_ = connection;
-        connection->paired_connection_ = local_connection;
+        local_connection->SetPaired(connection);
+        connection->SetPaired(local_connection);
         connection->SendMessage(PAIRING_COMPLETED_MESSAGE);
         local_connection->SendMessage(PAIRING_COMPLETED_MESSAGE);
     }
@@ -145,25 +132,22 @@ bool App2AppLocalService::OnRemoteConnection(WebSocketConnection *connection)
         LOG(LOG_INFO, "Add remote waiting connection (%p)", connection);
         AddWaitingConnection(REMOTE_TYPE, app_endpoint, connection);
     }
-    mutex_.unlock();
     return true;
 }
 
 void App2AppLocalService::OnRemoteFragmentReceived(WebSocketConnection *connection,
     std::vector<uint8_t> &&data, bool is_first, bool is_final, bool is_binary)
 {
-    mutex_.lock();
+    std::lock_guard<std::recursive_mutex> lockGuard(mMutex);
     if (service_stopped_ || remote_service_stopped_)
     {
-        mutex_.unlock();
         return;
     }
-    if (connection->paired_connection_ != nullptr)
+    WebSocketConnection *paired = connection->GetPaired();
+    if (paired != nullptr)
     {
-        connection->paired_connection_->SendFragment(std::move(data), is_first, is_final,
-            is_binary);
+        paired->SendFragment(std::move(data), is_first, is_final, is_binary);
     }
-    mutex_.unlock();
 }
 
 void App2AppLocalService::OnRemoteDisconnected(WebSocketConnection *connection)
@@ -174,31 +158,22 @@ void App2AppLocalService::OnRemoteDisconnected(WebSocketConnection *connection)
     {
         return;
     }
-    mutex_.lock();
+    std::lock_guard<std::recursive_mutex> lockGuard(mMutex);
     if (service_stopped_ || remote_service_stopped_)
     {
-        mutex_.unlock();
         return;
     }
-    if (connection->paired_connection_ != nullptr)
-    {
-        connection->paired_connection_->paired_connection_ = nullptr;
-        connection->paired_connection_->Close();
-        connection->paired_connection_ = nullptr;
-    }
-    else
+    if (!connection->ClosePaired())
     {
         RemoveWaitingConnection(REMOTE_TYPE, app_endpoint, connection);
     }
-    mutex_.unlock();
 }
 
 void App2AppLocalService::Stop()
 {
-    mutex_.lock();
+    std::lock_guard<std::recursive_mutex> lockGuard(mMutex);
     if (service_stopped_ || remote_service_stopped_)
     {
-        mutex_.unlock();
         return;
     }
     if (!remote_service_stopped_)
@@ -210,12 +185,11 @@ void App2AppLocalService::Stop()
     {
         WebSocketService::Stop();
     }
-    mutex_.unlock();
 }
 
 void App2AppLocalService::OnServiceStopped()
 {
-    mutex_.lock();
+    std::lock_guard<std::recursive_mutex> lockGuard(mMutex);
     service_stopped_ = true;
     if (!remote_service_stopped_)
     {
@@ -226,12 +200,11 @@ void App2AppLocalService::OnServiceStopped()
     {
         WebSocketService::OnServiceStopped();
     }
-    mutex_.unlock();
 }
 
 void App2AppLocalService::OnRemoteServiceStopped()
 {
-    mutex_.lock();
+    std::lock_guard<std::recursive_mutex> lockGuard(mMutex);
     remote_service_stopped_ = true;
     if (!service_stopped_)
     {
@@ -242,7 +215,6 @@ void App2AppLocalService::OnRemoteServiceStopped()
     {
         manager_->OnServiceStopped(this);
     }
-    mutex_.unlock();
 }
 
 std::string App2AppLocalService::GetAppEndPoint(const std::string &uri)
