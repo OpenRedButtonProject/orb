@@ -8,7 +8,10 @@ namespace orb
 
 class Decryptor : public IDecryptor {
 public:
-  PackageOperationResult decrypt(const std::string& filePath) const override;
+  bool decrypt(
+    const std::filesystem::path& filePath,
+    std::filesystem::path& outFile,
+    std::string& outError) const override;
 };
 
 } // namespace orb

@@ -8,7 +8,7 @@ namespace orb
 
 class HashCalculator : public IHashCalculator {
 public:
-  std::string calculateSHA256Hash(const std::string& filePath) const override;
+  std::string calculateSHA256Hash(const std::filesystem::path& filePath) const override;
 };
 
 } // namespace orb

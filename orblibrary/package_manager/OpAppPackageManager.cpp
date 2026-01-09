@@ -2,6 +2,7 @@
 #include "AitFetcher.h"
 #include "xml_parser.h"
 
+#include <cassert>
 #include <mutex>
 #include <filesystem>
 #include <fstream>
@@ -18,33 +19,8 @@
 
 namespace orb
 {
-
-static std::string statusCodeToString(OpAppPackageManager::PackageStatus status)
-{
-  switch (status) {
-    case OpAppPackageManager::PackageStatus::None:
-      return "None";
-    case OpAppPackageManager::PackageStatus::NoUpdateAvailable:
-      return "NoUpdateAvailable";
-    case OpAppPackageManager::PackageStatus::NotInstalled:
-      return "NotInstalled";
-    case OpAppPackageManager::PackageStatus::Installed:
-      return "Installed";
-    case OpAppPackageManager::PackageStatus::UpdateAvailable:
-      return "UpdateAvailable";
-    case OpAppPackageManager::PackageStatus::UpdateFailed:
-      return "UpdateFailed";
-    case OpAppPackageManager::PackageStatus::DecryptionFailed:
-      return "DecryptionFailed";
-    case OpAppPackageManager::PackageStatus::VerificationFailed:
-      return "VerificationFailed";
-    case OpAppPackageManager::PackageStatus::ConfigurationError:
-      return "ConfigurationError";
-  }
-}
-
 static int readJsonField(
-  const std::string& jsonFilePath,
+  const std::filesystem::path& jsonFilePath,
   const std::string& fieldName,
   std::string& fieldValue,
   const std::string& defaultValue = ""
@@ -164,62 +140,150 @@ bool OpAppPackageManager::isRunning() const
   return m_IsRunning;
 }
 
-bool OpAppPackageManager::isUpdating() const
+bool OpAppPackageManager::tryLocalUpdate()
 {
-    return m_IsUpdating;
+  setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_DISCOVERING);
+  if (m_Configuration.m_PackageLocation.empty() || m_Configuration.m_PackageHashFilePath.empty()) {
+    setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_DISCOVERY_FAILED);
+    LOG(ERROR) << "Local update failed: Package location or hash file path not set";
+    return false;
+  }
+
+  LOG(INFO) << "Local package check enabled. Checking package file in "
+    << m_Configuration.m_PackageLocation << " and comparing hash to installed package hash in "
+    << m_Configuration.m_PackageHashFilePath;
+  m_PackageStatus = doLocalPackageCheck();
+
+  if (m_PackageStatus != PackageStatus::UpdateAvailable) {
+    if (m_PackageStatus == PackageStatus::ConfigurationError) {
+      setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_DISCOVERY_FAILED);
+      LOG(ERROR) << "Local Update failed: Configuration error";
+    }
+    else if (m_PackageStatus == PackageStatus::NoUpdateAvailable
+      || m_PackageStatus == PackageStatus::Installed) {
+      setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_CURRENT);
+      LOG(INFO) << "No new update available or no local package file found";
+    }
+    return false;
+  }
+
+  setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_DOWNLOADING);
+  // This is the local equivalent to a download operation.
+  // Copy file to working directory and update m_CandidatePackageFile to the new location
+  if (!movePackageFileToInstallationDirectory(m_CandidatePackageFile)) {
+    setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_DOWNLOAD_FAILED);
+    LOG(ERROR) << "Error moving package file to installation directory";
+    return false;
+  }
+
+  setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_DOWNLOADED);
+
+  m_PackageStatus = installFromPackageFile();
+  if (m_PackageStatus != PackageStatus::Installed) {
+    setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_INSTALLATION_FAILED);
+    return false;
+  }
+  return true;
+}
+
+bool OpAppPackageManager::tryRemoteUpdate()
+{
+  setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_DISCOVERING);
+  m_PackageStatus = doRemotePackageCheck();
+
+  if (m_PackageStatus != PackageStatus::UpdateAvailable) {
+    if (m_PackageStatus == PackageStatus::ConfigurationError
+      || m_PackageStatus == PackageStatus::DiscoveryFailed) {
+      setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_DISCOVERY_FAILED);
+      LOG(ERROR) << "Remote update failed: ["
+        << static_cast<int>(m_PackageStatus) << "]";
+    }
+    else if (m_PackageStatus == PackageStatus::Installed
+      || m_PackageStatus == PackageStatus::NoUpdateAvailable) {
+      setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_CURRENT);
+      LOG(INFO) << "No new update available";
+    }
+    return false;
+  }
+
+  setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_DOWNLOADING);
+
+  if (!downloadPackageFile(m_CandidatePackage)) {
+    setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_DOWNLOAD_FAILED);
+    LOG(ERROR) << "Download failed: " << m_LastErrorMessage;
+    return false;
+  }
+
+  setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_DOWNLOADED);
+
+  m_PackageStatus = installFromPackageFile();
+  if (m_PackageStatus != PackageStatus::Installed) {
+    setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_INSTALLATION_FAILED);
+    return false;
+  }
+  return true;
+}
+
+OpAppPackageManager::PackageStatus OpAppPackageManager::installFromPackageFile()
+{
+  std::filesystem::path decryptedFile;
+  if (!decryptPackageFile(m_CandidatePackageFile, decryptedFile)) {
+    LOG(ERROR) << "Decryption failed: " << m_LastErrorMessage;
+    return PackageStatus::DecryptionFailed;
+  }
+
+  if (!verifyZipPackage(decryptedFile)) {
+    LOG(ERROR) << "Package file verification failed: " << m_LastErrorMessage;
+    return PackageStatus::VerificationFailed;
+  }
+
+  setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_UNPACKING);
+
+  if (!unzipPackageFile(decryptedFile, m_Configuration.m_DestinationDirectory)) {
+    LOG(ERROR) << "Unzip failed: " << m_LastErrorMessage;
+    return PackageStatus::UnzipFailed;
+  }
+
+  if (!verifyUnzippedPackage(m_Configuration.m_DestinationDirectory)) {
+    LOG(ERROR) << "Unzipped package verification failed: " << m_LastErrorMessage;
+    return PackageStatus::VerificationFailed;
+  }
+
+  if (!installToPersistentStorage(m_Configuration.m_DestinationDirectory)) {
+    LOG(ERROR) << "Installation to persistent storage failed: " << m_LastErrorMessage;
+    return PackageStatus::UpdateFailed;
+  }
+
+  return PackageStatus::Installed;
 }
 
 void OpAppPackageManager::checkForUpdates()
 {
-  if (!m_Configuration.m_PackageLocation.empty() && !m_Configuration.m_PackageHashFilePath.empty()) {
-    // Checks for local package file and compares hash to installed package hash?
-    LOG(INFO) << "Local package check enabled. Checking package file in "
-      << m_Configuration.m_PackageLocation << " and comparing hash to installed package hash in "
-      << m_Configuration.m_PackageHashFilePath;
-    m_PackageStatus = doPackageFileCheck();
+  // Update and first install is the same operation.
+  bool wasInstalled = tryLocalUpdate();
+  if (!wasInstalled) {
+    // No local file or no update available. Do a full remote check.
+    wasInstalled = tryRemoteUpdate();
   }
 
-  if (m_PackageStatus == PackageStatus::None || m_PackageStatus == PackageStatus::NoUpdateAvailable) {
-    // No local file or no update available.
-    // Do a full remote check.
-    m_PackageStatus = doRemotePackageCheck();
-  }
+  if (wasInstalled) {
+    LOG(INFO) << "OpApp was successfully installed";
+    // Call success callback
+    if (m_Configuration.m_OnUpdateSuccess) {
+      // Not sure if this is the correct argument to pass to the callback.
+      m_Configuration.m_OnUpdateSuccess(m_CandidatePackageFile);
+    }
 
-  if (m_PackageStatus != PackageStatus::UpdateAvailable) {
-    if (m_PackageStatus == PackageStatus::ConfigurationError)
-    {
-      LOG(ERROR) << "Configuration error: [" << statusCodeToString(m_PackageStatus) << "]";
-      // Call failure callback for configuration errors
-      if (m_Configuration.m_OnUpdateFailure) {
-        m_Configuration.m_OnUpdateFailure(m_PackageStatus, m_LastErrorMessage);
-      }
-    }
-    else
-    {
-      LOG(INFO) << "No new update available: [" << statusCodeToString(m_PackageStatus) << "]";
-    }
     return;
   }
 
-  // We have an update available. Install it.
-  m_IsUpdating = true;
-  // TODO: What about downloading the package?
-  m_PackageStatus = tryPackageInstall();
-  m_IsUpdating = false;
-
-  if (m_PackageStatus != PackageStatus::Installed) {
-    LOG(ERROR) << "Update failed: [" << statusCodeToString(m_PackageStatus) << "]";
-    // Call failure callback for install errors
+  if (!m_LastErrorMessage.empty()) {
+    LOG(ERROR) << "OpApp installation failed: [" << m_LastErrorMessage << "]";
+    // Call failure callback for installation errors
     if (m_Configuration.m_OnUpdateFailure) {
       m_Configuration.m_OnUpdateFailure(m_PackageStatus, m_LastErrorMessage);
     }
     return;
-  }
-
-  LOG(INFO) << "Update installed: [" << statusCodeToString(m_PackageStatus) << "]";
-  // Call success callback
-  if (m_Configuration.m_OnUpdateSuccess) {
-    m_Configuration.m_OnUpdateSuccess(m_CandidatePackageFile);
   }
 
   // Keep the worker thread running by adding a small delay
@@ -227,8 +291,13 @@ void OpAppPackageManager::checkForUpdates()
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
+void OpAppPackageManager::setOpAppUpdateStatus(OpAppUpdateStatus status)
+{
+  // FREE-317 TODO Send event as per TS 103 606 Section A.2.2.1
+  m_UpdateStatus.store(status);
+}
+
 OpAppPackageManager::OpAppUpdateStatus OpAppPackageManager::getOpAppUpdateStatus() const {
-  // TODO Implement this. Hardcoded to allow opapp to start:
   return m_UpdateStatus.load();
 }
 
@@ -242,28 +311,23 @@ std::string OpAppPackageManager::getOpAppUrl() const
   return "https://taco.freeviewplay.tv/";//"http://10.0.2.2:8080/index.html";
 }
 
-OpAppPackageManager::PackageStatus OpAppPackageManager::doPackageFileCheck()
+OpAppPackageManager::PackageStatus OpAppPackageManager::doLocalPackageCheck()
 {
   // Check the m_PackageLocation for any new packages
-  // Get the list of files in m_PackageLocation with file ending with m_PackageSuffix
-  PackageOperationResult packageFilesResult = getPackageFiles();
+  std::vector<std::filesystem::path> packageFiles;
+  int numFiles = searchLocalPackageFiles(packageFiles);
 
-  // Check if there was an error getting package files
-  if (!packageFilesResult.success) {
-    m_LastErrorMessage = packageFilesResult.errorMessage;
+  if (numFiles < 0) {
+    // Error occurred (e.g., multiple files found) - m_LastErrorMessage already set
     return PackageStatus::ConfigurationError;
   }
 
-  // Get the actual package files
-  std::vector<std::string> packageFiles = packageFilesResult.packageFiles;
-
-  // Process found no package files, no change
-  if (packageFiles.empty()) {
+  if (numFiles == 0) {
     return PackageStatus::NoUpdateAvailable;
   }
 
-  // We have exactly one package file (getPackageFiles would have returned error if more than one)
-  std::string packageFile = packageFiles[0];
+  // We have exactly one package file
+  std::filesystem::path packageFile = packageFiles[0];
 
   // Check if the package is installed by comparing hashes
   if (isPackageInstalled(packageFile)) {
@@ -281,16 +345,14 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::doRemotePackageCheck()
   // Check for a remote package file via AIT acquisition.
   // Needs the FQDN passed in. Use the FQDN from the Configuration::m_OpAppFqdn.
   if (m_Configuration.m_OpAppFqdn.empty()) {
-    // No FQDN configured means remote check is not enabled - not an error condition
-    // FREE-312: Will leave this in for testing purposes...
     LOG(INFO) << "No OpApp FQDN configured, skipping remote package check";
-    return PackageStatus::NoUpdateAvailable;
+    return PackageStatus::ConfigurationError;
   }
 
   // Determine AIT output directory
-  std::string aitDir = m_Configuration.m_AitOutputDirectory;
+  std::filesystem::path aitDir = m_Configuration.m_AitOutputDirectory;
   if (aitDir.empty()) {
-    aitDir = m_Configuration.m_DestinationDirectory + "/ait_cache";
+    aitDir = m_Configuration.m_DestinationDirectory / "ait_cache";
   }
 
   // Clear the AIT directory before acquisition to remove stale files
@@ -305,7 +367,7 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::doRemotePackageCheck()
 
   // Use the injected AIT fetcher to fetch ALL AIT XMLs
   AitFetchResult result = m_AitFetcher->FetchAitXmls(
-      m_Configuration.m_OpAppFqdn, true /* network available */, aitDir);
+      m_Configuration.m_OpAppFqdn, true /* network available */, aitDir.string());
 
   if (!result.success || result.aitFiles.empty()) {
     std::string error = result.fatalError.empty()
@@ -323,13 +385,12 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::doRemotePackageCheck()
     LOG(WARNING) << "AIT acquisition warning: " << error;
   }
 
-  // Parse the AIT files
+  // Parse the AIT files (convert string paths to filesystem::path)
+  std::vector<std::filesystem::path> aitFilePaths(result.aitFiles.begin(), result.aitFiles.end());
   std::vector<PackageInfo> discoveredPackages;
-  auto parseResult = parseAitFiles(result.aitFiles, discoveredPackages);
-
-  if (!parseResult.success) {
-    LOG(INFO) << "No applications found in any AIT: " << parseResult.errorMessage;
-    return PackageStatus::NoUpdateAvailable;
+  if (!parseAitFiles(aitFilePaths, discoveredPackages)) {
+    LOG(WARNING) << "No applications found in any AIT: " << m_LastErrorMessage;
+    return PackageStatus::DiscoveryFailed;
   }
 
   // TS103606 Section 4.1.2 Only one privileged OpApp per device - use first valid package
@@ -338,7 +399,7 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::doRemotePackageCheck()
 
   // Check if this package is already installed
   PackageInfo installedPkg;
-  if (getInstalledPackage(pkg.orgId, pkg.appId, installedPkg)) {
+  if (isPackageInstalled(pkg.orgId, pkg.appId, installedPkg)) {
     // Existing installation found - check if update available
     if (pkg.isNewerThan(installedPkg)) {
       LOG(INFO) << "Update available for " << pkg.name
@@ -359,9 +420,9 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::doRemotePackageCheck()
   return PackageStatus::UpdateAvailable;
 }
 
-bool OpAppPackageManager::getInstalledPackage(uint32_t orgId, uint16_t appId, PackageInfo& outPackage) const
+bool OpAppPackageManager::isPackageInstalled(uint32_t orgId, uint16_t appId, PackageInfo& outPackage) const
 {
-  // TODO: Implement persistent storage lookup
+  // FREE-316 TODO: Implement persistent storage lookup
   // For now, check in-memory cache or return false
 
   // The implementation should:
@@ -378,7 +439,7 @@ bool OpAppPackageManager::getInstalledPackage(uint32_t orgId, uint16_t appId, Pa
   return false;
 }
 
-bool OpAppPackageManager::isPackageInstalled(const std::string& packagePath)
+bool OpAppPackageManager::isPackageInstalled(const std::filesystem::path& packagePath)
 {
   // Calculate the given files SHA-256 hash and compare it to the hash of the installed package
   // If the hashes are the same, the package is installed
@@ -407,57 +468,53 @@ bool OpAppPackageManager::isPackageInstalled(const std::string& packagePath)
   return false;
 }
 
-PackageOperationResult OpAppPackageManager::getPackageFiles()
+int OpAppPackageManager::searchLocalPackageFiles(std::vector<std::filesystem::path>& outPackageFiles)
 {
-  std::vector<std::string> packageFiles;
+  outPackageFiles.clear();
 
   // Check if the package location directory exists
-  if (!std::filesystem::exists(m_Configuration.m_PackageLocation)) {
-    return PackageOperationResult(true, "", packageFiles); // No error, just no files, or no SD card.
+  if (m_Configuration.m_PackageLocation.empty() ||
+      !std::filesystem::exists(m_Configuration.m_PackageLocation)) {
+    return 0; // No error, just no files (directory doesn't exist, e.g., no SD card)
   }
+
+  // Package file suffixes to search for
+  const std::vector<std::string> packageSuffixes = {".cms", ".zip"};
 
   // Iterate through files in the package location directory
   for (const auto& entry : std::filesystem::directory_iterator(m_Configuration.m_PackageLocation)) {
     if (entry.is_regular_file()) {
       std::string filename = entry.path().filename().string();
-      if (filename.length() >= m_Configuration.m_PackageSuffix.length() &&
-          filename.substr(filename.length() - m_Configuration.m_PackageSuffix.length()) == m_Configuration.m_PackageSuffix) {
-        packageFiles.push_back(entry.path().string());
+      for (const auto& suffix : packageSuffixes) {
+        if (filename.length() >= suffix.length() &&
+            filename.substr(filename.length() - suffix.length()) == suffix) {
+          outPackageFiles.push_back(entry.path());
+          break;
+        }
       }
     }
   }
 
-  // Check for multiple package files
-  if (packageFiles.size() > 1) {
-    std::string errorMessage = "Multiple package files found in directory '" +
-                              m_Configuration.m_PackageLocation + "'. Expected only one package file. Found: ";
-    for (size_t i = 0; i < packageFiles.size(); ++i) {
-      if (i > 0) errorMessage += ", ";
-      errorMessage += std::filesystem::path(packageFiles[i]).filename().string();
+  // Check for multiple package files - this is an error condition
+  if (outPackageFiles.size() > 1) {
+    m_LastErrorMessage = "Multiple package files found in directory '" +
+                         m_Configuration.m_PackageLocation.string() + "'. Expected only one package file. Found: ";
+    for (size_t i = 0; i < outPackageFiles.size(); ++i) {
+      if (i > 0) m_LastErrorMessage += ", ";
+      m_LastErrorMessage += outPackageFiles[i].filename().string();
     }
-    return PackageOperationResult(false, errorMessage, packageFiles);
+    return -1;
   }
 
-  return PackageOperationResult(true, "", packageFiles);
+  return static_cast<int>(outPackageFiles.size());
 }
 
-std::string OpAppPackageManager::calculateFileSHA256Hash(const std::string& filePath) const
+std::string OpAppPackageManager::calculateFileSHA256Hash(const std::filesystem::path& filePath) const
 {
   return m_HashCalculator->calculateSHA256Hash(filePath);
 }
 
-OpAppPackageManager::PackageStatus OpAppPackageManager::tryPackageInstall()
-{
-  // Check if the package file is set
-  if (m_CandidatePackageFile.empty()) {
-    return PackageStatus::ConfigurationError;
-  }
-
-  // Check if the package file exists
-  if (!std::filesystem::exists(m_CandidatePackageFile)) {
-    return PackageStatus::ConfigurationError;
-  }
-
+bool OpAppPackageManager::movePackageFileToInstallationDirectory(const std::filesystem::path& packageFilePath) {
   // Steps to install the package:
   // 1. Ensure the destination directory exists
   if (!std::filesystem::exists(m_Configuration.m_DestinationDirectory)) {
@@ -465,57 +522,35 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::tryPackageInstall()
   }
 
   // 2. Copy the package file to the installation directory
-  std::string packageFileName = std::filesystem::path(m_CandidatePackageFile).filename().string();
-  std::string workingFilePath = m_Configuration.m_DestinationDirectory + "/" + packageFileName;
+  std::filesystem::path workingFilePath = m_Configuration.m_DestinationDirectory / packageFilePath.filename();
   std::error_code errorCode;
-  std::filesystem::copy(m_CandidatePackageFile, workingFilePath, errorCode);
+  std::filesystem::copy(packageFilePath, workingFilePath, errorCode);
   if (errorCode) {
     LOG(ERROR) << "Error copying package file to working directory: " << errorCode.message();
-    return PackageStatus::ConfigurationError;
-  }
-  else {
-    LOG(INFO) << "Package file copied to working directory: " << workingFilePath;
+    return false;
   }
 
-  // Decrypt the package file
-  PackageOperationResult decryptResult = decryptPackageFile(workingFilePath);
+  // 3. Update m_CandidatePackageFile to point to the new location
+  m_CandidatePackageFile = workingFilePath;
 
-  // Verify the package file
-  if (!decryptResult.success) {
-    LOG(ERROR) << "Decryption failed: " << decryptResult.errorMessage;
-    return PackageStatus::DecryptionFailed;
-  }
-
-  LOG(INFO) << "Decryption successful";
-
-  // Verify the package file
-  PackageOperationResult verifyResult = verifyPackageFile(decryptResult.packageFiles[0]);
-  if (!verifyResult.success) {
-    LOG(INFO) << "Package file verification failed: " << verifyResult.errorMessage;
-    return PackageStatus::VerificationFailed;
-  }
-
-  LOG(INFO) << "Package file verification successful";
-
-  // // 3. Update the package receipt file with the candidate hash
-  // // Create the JSON hash file
-  // std::ofstream hashFile(m_Configuration.m_PackageHashFilePath);
-  // hashFile << "{\"hash\": \"" << m_CandidatePackageHash << "\"}";
-  // hashFile.close();
-
-  // 4. Return the status of the installation
-  return PackageStatus::Installed;
+  LOG(INFO) << "Package file copied to working directory: " << workingFilePath;
+  return true;
 }
 
-PackageOperationResult OpAppPackageManager::decryptPackageFile(const std::string& filePath) const
+bool OpAppPackageManager::decryptPackageFile(const std::filesystem::path& filePath, std::filesystem::path& outFile)
 {
   /* From the OpApp HbbTV spec:
   11.3.4.4 Process for decrypting an application package
   */
-  return m_Decryptor->decrypt(filePath);
+  std::string decryptError;
+  bool result = m_Decryptor->decrypt(filePath, outFile, decryptError);
+  if (!result) {
+    m_LastErrorMessage = decryptError;
+  }
+  return result;
 }
 
-PackageOperationResult OpAppPackageManager::verifyPackageFile(const std::string& filePath) const
+bool OpAppPackageManager::verifyZipPackage(const std::filesystem::path& filePath)
 {
   /* From the OpApp HbbTV spec:
   6.1.8 Decrypt, verify, unpack and installation of the application package
@@ -571,30 +606,49 @@ PackageOperationResult OpAppPackageManager::verifyPackageFile(const std::string&
     application ZIP file. It does not include checking certificates for revocation using CRLs.
 
   */
-
-  return PackageOperationResult(false, "Verification failed", std::vector<std::string>());
-}
-
-bool OpAppPackageManager::unzipPackageFile(const std::string& filePath) const
-{
+  (void)filePath;  // Suppress unused warning until implementation
+  m_LastErrorMessage = "Verification not yet implemented";
   return false;
 }
 
-PackageOperationResult OpAppPackageManager::validateOpAppDescriptor(const Ait::S_AIT_APP_DESC& app) const
+bool OpAppPackageManager::unzipPackageFile(const std::filesystem::path& inFile, const std::filesystem::path& outPath)
+{
+  (void)inFile;  // Suppress unused warning until implementation
+  (void)outPath;  // Suppress unused warning until implementation
+  m_LastErrorMessage = "Unzip not yet implemented";
+  return false;
+}
+
+bool OpAppPackageManager::verifyUnzippedPackage(const std::filesystem::path& filePath)
+{
+  (void)filePath;  // Suppress unused warning until implementation
+  m_LastErrorMessage = "Unzipped package verification not yet implemented";
+  return false;
+}
+
+bool OpAppPackageManager::installToPersistentStorage(const std::filesystem::path& filePath)
+{
+  // TODO: If this an update, save persistent storage data
+  (void)filePath;  // Suppress unused warning until implementation
+  m_LastErrorMessage = "Copy to persistent storage not yet implemented";
+  return false;
+}
+
+bool OpAppPackageManager::validateOpAppDescriptor(const Ait::S_AIT_APP_DESC& app, std::string& outError) const
 {
   // Basic validation. See TS 102796 Table 7 and TS 103606 Table 7.
   if ((app.xmlType & Ait::XML_TYP_OPAPP) != Ait::XML_TYP_OPAPP) {
-    std::string msg = "Unexpected application type: " + std::to_string(app.xmlType) +
-                      " expected OPAPP TYPE (0x80 or 0x81)";
-    LOG(WARNING) << "AIT validation failed: " << msg;
-    return PackageOperationResult(false, msg);
+    outError = "Unexpected application type: " + std::to_string(app.xmlType) +
+               " expected OPAPP TYPE (0x80 or 0x81)";
+    LOG(WARNING) << "AIT validation failed: " << outError;
+    return false;
   }
 
   if (app.appUsage != "urn:hbbtv:opapp:privileged:2017" && app.appUsage != "urn:hbbtv:opapp:specific:2017") {
-    std::string msg = "Unexpected application usage: " + app.appUsage +
-                      " expected 'urn:hbbtv:opapp:privileged:2017' or 'urn:hbbtv:opapp:specific:2017'";
-    LOG(WARNING) << "AIT validation failed: " << msg;
-    return PackageOperationResult(false, msg);
+    outError = "Unexpected application usage: " + app.appUsage +
+               " expected 'urn:hbbtv:opapp:privileged:2017' or 'urn:hbbtv:opapp:specific:2017'";
+    LOG(WARNING) << "AIT validation failed: " << outError;
+    return false;
   }
 
   LOG(INFO) << "AIT application descriptor has expected application usage: " << app.appUsage;
@@ -603,16 +657,16 @@ PackageOperationResult OpAppPackageManager::validateOpAppDescriptor(const Ait::S
   // If it fails then set an error, e.g. "Application not supported by this device."
 
   if (app.numTransports == 0) {
-    std::string msg = "No transport defined for application";
-    LOG(WARNING) << "AIT validation failed: " << msg;
-    return PackageOperationResult(false, msg);
+    outError = "No transport defined for application";
+    LOG(WARNING) << "AIT validation failed: " << outError;
+    return false;
   }
 
   if (app.transportArray[0].protocolId != Ait::PROTOCOL_HTTP) {
-    std::string msg = "Unexpected transport protocol: " + std::to_string(app.transportArray[0].protocolId) +
-                      " expected HTTPTransportType (0x3)";
-    LOG(WARNING) << "AIT validation failed: " << msg;
-    return PackageOperationResult(false, msg);
+    outError = "Unexpected transport protocol: " + std::to_string(app.transportArray[0].protocolId) +
+               " expected HTTPTransportType (0x3)";
+    LOG(WARNING) << "AIT validation failed: " << outError;
+    return false;
   }
 
   // The following are warnings only - we still process the descriptor
@@ -630,16 +684,18 @@ PackageOperationResult OpAppPackageManager::validateOpAppDescriptor(const Ait::S
     LOG(WARNING) << "AIT application descriptor has unexpected serviceBound=true, expected false";
   }
 
-  return PackageOperationResult(true, "");
+  outError.clear();
+  return true;
 }
 
-PackageOperationResult OpAppPackageManager::parseAitFiles(
-    const std::vector<std::string>& aitFiles, std::vector<PackageInfo>& packages)
+bool OpAppPackageManager::parseAitFiles(
+    const std::vector<std::filesystem::path>& aitFiles, std::vector<PackageInfo>& packages)
 {
   packages.clear();
 
   if (aitFiles.empty()) {
-    return PackageOperationResult(false, "No AIT files provided");
+    m_LastErrorMessage = "No AIT files provided";
+    return false;
   }
 
   std::vector<std::string> errors;
@@ -648,7 +704,7 @@ PackageOperationResult OpAppPackageManager::parseAitFiles(
     // Read file content
     std::ifstream file(aitFile, std::ios::binary);
     if (!file) {
-      std::string msg = "Failed to open AIT file: " + aitFile;
+      std::string msg = "Failed to open AIT file: " + aitFile.string();
       LOG(WARNING) << msg;
       errors.push_back(msg);
       continue;
@@ -661,7 +717,7 @@ PackageOperationResult OpAppPackageManager::parseAitFiles(
     // Parse the AIT XML
     auto aitTable = m_XmlParser->ParseAit(content.c_str(), content.size());
     if (!aitTable) {
-      std::string msg = "Failed to parse AIT file: " + aitFile;
+      std::string msg = "Failed to parse AIT file: " + aitFile.string();
       LOG(WARNING) << msg;
       errors.push_back(msg);
       continue;
@@ -677,9 +733,9 @@ PackageOperationResult OpAppPackageManager::parseAitFiles(
 
     // Process each application descriptor in the AIT table
     for (const auto& app : aitTable->appArray) {
-      PackageOperationResult validationResult = validateOpAppDescriptor(app);
-      if (!validationResult.success) {
-        errors.push_back(validationResult.errorMessage);
+      std::string validationError;
+      if (!validateOpAppDescriptor(app, validationError)) {
+        errors.push_back(validationError);
         continue;
       }
 
@@ -707,15 +763,26 @@ PackageOperationResult OpAppPackageManager::parseAitFiles(
   }
 
   if (packages.empty()) {
-    std::string errorMsg = errors.empty() ? "No valid OpApp descriptors found" :
-                           "No valid OpApp descriptors found. Errors: " + errors[0];
+    m_LastErrorMessage = errors.empty() ? "No valid OpApp descriptors found" :
+                         "No valid OpApp descriptors found. Errors: " + errors[0];
     for (size_t i = 1; i < errors.size() && i < 3; ++i) {
-      errorMsg += "; " + errors[i];
+      m_LastErrorMessage += "; " + errors[i];
     }
-    return PackageOperationResult(false, errorMsg);
+    return false;
   }
 
-  return PackageOperationResult(true, "");
+  return true;
+}
+
+bool OpAppPackageManager::downloadPackageFile(const PackageInfo& packageInfo)
+{
+  // TODO: Implement actual download from packageInfo.getAppUrl()
+  // On success, set m_CandidatePackageFile to the downloaded file path:
+  // m_CandidatePackageFile = m_Configuration.m_DestinationDirectory / "downloaded_package.cms";
+
+  (void)packageInfo;
+  m_LastErrorMessage = "Download not yet implemented";
+  return false;
 }
 
 } // namespace orb

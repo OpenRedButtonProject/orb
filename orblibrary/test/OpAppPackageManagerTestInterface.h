@@ -4,6 +4,8 @@
 #include "OpAppPackageManager.h"
 #include <memory>
 #include <string>
+#include <filesystem>
+#include <vector>
 
 namespace orb
 {
@@ -87,11 +89,10 @@ public:
     // Public API methods (same as OpAppPackageManager)
     void start();
     bool isRunning() const;
-    bool isUpdating() const;
-    bool isPackageInstalled(const std::string& packagePath);
+    bool isPackageInstalled(const std::filesystem::path& packagePath);
     void checkForUpdates();
-    std::string calculateFileSHA256Hash(const std::string& filePath) const;
-    PackageOperationResult getPackageFiles();
+    std::string calculateFileSHA256Hash(const std::filesystem::path& filePath) const;
+    int searchLocalPackageFiles(std::vector<std::filesystem::path>& outPackageFiles);
     std::string getLastErrorMessage() const;
     void clearLastError();
 
@@ -100,40 +101,42 @@ public:
      * @brief Sets a candidate package file for testing
      * @param packageFile Path to the package file
      */
-    void setCandidatePackageFile(const std::string& packageFile);
+    void setCandidatePackageFile(const std::filesystem::path& packageFile);
 
     /**
      * @brief Performs package file check (internal method exposed for testing)
      * @return Package status
      */
-    OpAppPackageManager::PackageStatus doPackageFileCheck();
+    OpAppPackageManager::PackageStatus doLocalPackageCheck();
 
     /**
-     * @brief Attempts to install the package (internal method exposed for testing)
-     * @return Package status
+     * @brief Performs installation from package file (internal method exposed for testing)
+     * @return PackageStatus::Installed on success, or specific failure status
      */
-    OpAppPackageManager::PackageStatus tryPackageInstall();
+    OpAppPackageManager::PackageStatus installFromPackageFile();
 
     /**
      * @brief Decrypts a package file (internal method exposed for testing)
      * @param filePath Path to the file to decrypt
-     * @return Operation result
+     * @param outFiles Output vector of decrypted file paths
+     * @return true if decryption succeeded, false otherwise
      */
-    PackageOperationResult decryptPackageFile(const std::string& filePath) const;
+    bool decryptPackageFile(const std::filesystem::path& filePath, std::filesystem::path& outFile);
 
     /**
      * @brief Verifies a package file (internal method exposed for testing)
      * @param filePath Path to the file to verify
-     * @return Operation result
+     * @return true if verification succeeded, false otherwise
      */
-    PackageOperationResult verifyPackageFile(const std::string& filePath) const;
+    bool verifyZipPackage(const std::filesystem::path& filePath);
 
     /**
      * @brief Unzips a package file (internal method exposed for testing)
-     * @param filePath Path to the file to unzip
+     * @param inFile Path to the file to unzip
+     * @param outPath Path to the unzipped file
      * @return Success status
      */
-    bool unzipPackageFile(const std::string& filePath) const;
+    bool unzipPackageFile(const std::filesystem::path& inFile, std::filesystem::path& outPath);
 
     /**
      * @brief Performs remote package check (internal method exposed for testing)
@@ -145,9 +148,9 @@ public:
      * @brief Parses AIT files (internal method exposed for testing)
      * @param aitFiles Vector of paths to AIT XML files
      * @param packages Vector of discovered PackageInfo
-     * @return PackageOperationResult with success status and any error messages.
+     * @return true if at least one valid OpApp descriptor was found, false otherwise.
      */
-    PackageOperationResult parseAitFiles(const std::vector<std::string>& aitFiles, std::vector<PackageInfo>& packages);
+    bool parseAitFiles(const std::vector<std::filesystem::path>& aitFiles, std::vector<PackageInfo>& packages);
 
     /**
      * @brief Gets installed package info (internal method exposed for testing)
@@ -156,7 +159,34 @@ public:
      * @param outPackage Output PackageInfo with installation details if found
      * @return true if an installed package was found, false otherwise
      */
-    bool getInstalledPackage(uint32_t orgId, uint16_t appId, PackageInfo& outPackage) const;
+    bool isPackageInstalled(uint32_t orgId, uint16_t appId, PackageInfo& outPackage) const;
+
+    /**
+     * @brief Moves package file to installation directory (internal method exposed for testing)
+     * @param packageFilePath Path to the package file to move
+     * @return true if successful, false otherwise
+     */
+    bool movePackageFileToInstallationDirectory(const std::filesystem::path& packageFilePath);
+
+    /**
+     * @brief Verifies unzipped package (internal method exposed for testing)
+     * @param filePath Path to the unzipped package
+     * @return true if verification succeeded, false otherwise
+     */
+    bool verifyUnzippedPackage(const std::filesystem::path& filePath);
+
+    /**
+     * @brief Copies package to persistent storage (internal method exposed for testing)
+     * @param filePath Path to the package file
+     * @return true if copy succeeded, false otherwise
+     */
+    bool installToPersistentStorage(const std::filesystem::path& filePath);
+
+    /**
+     * @brief Gets the current candidate package file path
+     * @return The candidate package file path
+     */
+    std::filesystem::path getCandidatePackageFile() const;
 
     /**
      * @brief Gets the underlying package manager instance
