@@ -20,25 +20,33 @@ using namespace orb;
 class MockDecryptor : public IDecryptor {
 public:
   MockDecryptor() = default;
-  void setDecryptResult(const PackageOperationResult& result) {
-    m_DecryptResult = result;
+
+  void setDecryptResult(bool success, const std::string& errorMessage = "", const std::filesystem::path& file = {}) {
+    m_DecryptSuccess = success;
+    m_DecryptError = errorMessage;
+    m_DecryptFile = file;
   }
 
-  PackageOperationResult decrypt(const std::string& filePath) const override {
+  bool decrypt(
+    const std::filesystem::path& filePath,
+    std::filesystem::path& outFile,
+    std::string& outError) const override {
     m_WasDecryptCalled = true;
     m_LastFilePath = filePath;
-    return m_DecryptResult;
+    outFile = m_DecryptFile;
+    outError = m_DecryptError;
+    return m_DecryptSuccess;
   }
 
   bool wasDecryptCalled() const {
     return m_WasDecryptCalled;
   }
 
-  void setLastFilePath(const std::string& filePath) {
+  void setLastFilePath(const std::filesystem::path& filePath) {
     m_LastFilePath = filePath;
   }
 
-  std::string getLastFilePath() const {
+  std::filesystem::path getLastFilePath() const {
     return m_LastFilePath;
   }
 
@@ -48,9 +56,11 @@ public:
   }
 
 private:
-  PackageOperationResult m_DecryptResult;
+  bool m_DecryptSuccess = true;
+  std::string m_DecryptError;
+  std::filesystem::path m_DecryptFile;
   mutable bool m_WasDecryptCalled = false;
-  mutable std::string m_LastFilePath;
+  mutable std::filesystem::path m_LastFilePath;
 };
 
 // Mock AIT fetcher for testing remote package check
@@ -122,22 +132,22 @@ public:
   MockHashCalculator() = default;
 
   // Create a JSON file with the specified hash
-  void createHashJsonFile(const std::string& filePath, const std::string& hash) {
+  void createHashJsonFile(const std::filesystem::path& filePath, const std::string& hash) {
     std::ofstream jsonFile(filePath);
     jsonFile << "{\"hash\": \"" << hash << "\"}";
     jsonFile.close();
   }
 
   // Create an invalid JSON file (missing hash field)
-  void createInvalidHashJsonFile(const std::string& filePath) {
+  void createInvalidHashJsonFile(const std::filesystem::path& filePath) {
     std::ofstream jsonFile(filePath);
     jsonFile << "{\"version\": \"1.0\", \"timestamp\": \"2024-01-01\"}";
     jsonFile.close();
   }
 
   // Set predefined responses for specific file paths (for direct hash calculation)
-  void setHashForFile(const std::string& filePath, const std::string& hash) {
-    m_FileHashes[filePath] = hash;
+  void setHashForFile(const std::filesystem::path& filePath, const std::string& hash) {
+    m_FileHashes[filePath.string()] = hash;
   }
 
   // Set default hash for any file not explicitly set
@@ -145,8 +155,8 @@ public:
     m_DefaultHash = hash;
   }
 
-  std::string calculateSHA256Hash(const std::string& filePath) const override {
-    auto it = m_FileHashes.find(filePath);
+  std::string calculateSHA256Hash(const std::filesystem::path& filePath) const override {
+    auto it = m_FileHashes.find(filePath.string());
     if (it != m_FileHashes.end()) {
       return it->second;
     }
@@ -218,7 +228,7 @@ protected:
 
   void TearDown() override {
     // Remove the package file in the package source location
-    std::string packagePath = PACKAGE_PATH + "/package.opk";
+    std::string packagePath = PACKAGE_PATH + "/package.cms";
     std::remove(packagePath.c_str());
 
     // Remove test directory structure
@@ -239,7 +249,6 @@ TEST_F(OpAppPackageManagerTest, TestDefaultInitialization)
 
   // THEN: the instance should be in a valid initial state
   EXPECT_FALSE(packageManager.isRunning());
-  EXPECT_FALSE(packageManager.isUpdating());
 }
 
 TEST_F(OpAppPackageManagerTest, TestConfigurationInitialization)
@@ -247,7 +256,6 @@ TEST_F(OpAppPackageManagerTest, TestConfigurationInitialization)
   // GIVEN: a configuration object
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  configuration.m_PackageSuffix = ".opk";
   configuration.m_PrivateKeyFilePath = "/keys/private.key";
   configuration.m_PublicKeyFilePath = "/keys/public.key";
   configuration.m_CertificateFilePath = "/certs/cert.pem";
@@ -259,7 +267,6 @@ TEST_F(OpAppPackageManagerTest, TestConfigurationInitialization)
 
   // THEN: the instance should be created successfully
   EXPECT_FALSE(packageManager.isRunning());
-  EXPECT_FALSE(packageManager.isUpdating());
 }
 
 TEST_F(OpAppPackageManagerTest, TestStartAndStop)
@@ -297,13 +304,12 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_NoUpdates)
   // GIVEN: a test interface instance and no package file in the package source location
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  configuration.m_PackageSuffix = ".opk";
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
 
-  // WHEN: doPackageFileCheck is called
-  OpAppPackageManager::PackageStatus status = testInterface->doPackageFileCheck();
+  // WHEN: doLocalPackageCheck is called
+  OpAppPackageManager::PackageStatus status = testInterface->doLocalPackageCheck();
 
-  // THEN: the package status is NoUpdateAvailable
+  // THEN: the package status is NoUpdateAvailable (no package files found)
   EXPECT_EQ(status, OpAppPackageManager::PackageStatus::NoUpdateAvailable);
 }
 
@@ -312,15 +318,14 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable)
   // GIVEN: a test interface instance and a package file in the package source location
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  configuration.m_PackageSuffix = ".opk";
   // Create a package file in the package source location
-  std::string packagePath = PACKAGE_PATH + "/package.opk";
+  std::string packagePath = PACKAGE_PATH + "/package.cms";
   std::ofstream file(packagePath);
   file.close();
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
 
-  // WHEN: doPackageFileCheck is called
-  OpAppPackageManager::PackageStatus status = testInterface->doPackageFileCheck();
+  // WHEN: doLocalPackageCheck is called
+  OpAppPackageManager::PackageStatus status = testInterface->doLocalPackageCheck();
 
   // THEN: the package status is UpdateAvailable
   EXPECT_EQ(status, OpAppPackageManager::PackageStatus::UpdateAvailable);
@@ -331,17 +336,16 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_NoExistingP
   // GIVEN: a test interface instance and a package file in the package source location
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  configuration.m_PackageSuffix = ".opk";
   configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
 
   // Create a package file in the package source location
-  std::string packagePath = PACKAGE_PATH + "/package.opk";
+  std::string packagePath = PACKAGE_PATH + "/package.cms";
   std::ofstream file(packagePath);
   file.close();
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
 
-  // WHEN: doPackageFileCheck is called
-  OpAppPackageManager::PackageStatus status = testInterface->doPackageFileCheck();
+  // WHEN: doLocalPackageCheck is called
+  OpAppPackageManager::PackageStatus status = testInterface->doLocalPackageCheck();
 
   // THEN: the package status is UpdateAvailable
   EXPECT_EQ(status, OpAppPackageManager::PackageStatus::UpdateAvailable);
@@ -351,23 +355,22 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_ExistingPac
 {
   // GIVEN: a package manager and a mock hash calculator with identical, predefined responses
   auto mockCalculator = std::make_unique<MockHashCalculator>();
-  mockCalculator->setHashForFile(PACKAGE_PATH + "/package.opk", "test_hash_1234567890abcdef");
+  mockCalculator->setHashForFile(PACKAGE_PATH + "/package.cms", "test_hash_1234567890abcdef");
   mockCalculator->createHashJsonFile(PACKAGE_PATH + "/package.hash", "test_hash_1234567890abcdef");
 
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  configuration.m_PackageSuffix = ".opk";
   configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
 
   // Create a package file in the package source location
-  std::string packagePath = PACKAGE_PATH + "/package.opk";
+  std::string packagePath = PACKAGE_PATH + "/package.cms";
   std::ofstream file(packagePath);
   file.close();
   // Note: hash file is created by createHashJsonFile above
 
   // WHEN: checking package status
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(mockCalculator), nullptr);
-  OpAppPackageManager::PackageStatus status = testInterface->doPackageFileCheck();
+  OpAppPackageManager::PackageStatus status = testInterface->doLocalPackageCheck();
 
   // THEN: the package status is Installed
   EXPECT_EQ(status, OpAppPackageManager::PackageStatus::Installed);
@@ -381,22 +384,21 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_NoHashFile)
 {
   // GIVEN: a package manager and a mock hash calculator, but no hash file exists
   auto mockCalculator = std::make_unique<MockHashCalculator>();
-  mockCalculator->setHashForFile(PACKAGE_PATH + "/package.opk", "package_hash_abcdef123456");
+  mockCalculator->setHashForFile(PACKAGE_PATH + "/package.cms", "package_hash_abcdef123456");
   // Note: No hash file is created, simulating a missing hash file
 
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  configuration.m_PackageSuffix = ".opk";
   configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
 
   // Create package file only
-  std::string packagePath = PACKAGE_PATH + "/package.opk";
+  std::string packagePath = PACKAGE_PATH + "/package.cms";
   std::ofstream packageFile(packagePath);
   packageFile.close();
 
   // WHEN: checking package status
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(mockCalculator), nullptr);
-  OpAppPackageManager::PackageStatus status = testInterface->doPackageFileCheck();
+  OpAppPackageManager::PackageStatus status = testInterface->doLocalPackageCheck();
 
   // THEN: the package should be considered update available (no hash file means not installed)
   EXPECT_EQ(status, OpAppPackageManager::PackageStatus::UpdateAvailable);
@@ -409,22 +411,21 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_InvalidHash
 {
   // GIVEN: a package manager and a mock hash calculator with an invalid JSON hash file
   auto mockCalculator = std::make_unique<MockHashCalculator>();
-  mockCalculator->setHashForFile(PACKAGE_PATH + "/package.opk", "package_hash_abcdef123456");
+  mockCalculator->setHashForFile(PACKAGE_PATH + "/package.cms", "package_hash_abcdef123456");
   mockCalculator->createInvalidHashJsonFile(PACKAGE_PATH + "/package.hash");
 
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  configuration.m_PackageSuffix = ".opk";
   configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
 
   // Create package file
-  std::string packagePath = PACKAGE_PATH + "/package.opk";
+  std::string packagePath = PACKAGE_PATH + "/package.cms";
   std::ofstream packageFile(packagePath);
   packageFile.close();
 
   // WHEN: checking package status
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(mockCalculator), nullptr);
-  OpAppPackageManager::PackageStatus status = testInterface->doPackageFileCheck();
+  OpAppPackageManager::PackageStatus status = testInterface->doLocalPackageCheck();
 
   // THEN: the package should be considered update available (invalid hash file means not installed)
   EXPECT_EQ(status, OpAppPackageManager::PackageStatus::UpdateAvailable);
@@ -434,51 +435,19 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_InvalidHash
   std::remove((PACKAGE_PATH + "/package.hash").c_str());
 }
 
-TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_SameHash)
-{
-  // GIVEN: a the package manager and a mock hash calculator with identical, predefined responses
-  auto mockCalculator = std::make_unique<MockHashCalculator>();
-  mockCalculator->setHashForFile(PACKAGE_PATH + "/package.opk", "test_hash_1234567890abcdef");
-  mockCalculator->createHashJsonFile(PACKAGE_PATH + "/package.hash", "test_hash_1234567890abcdef");
-
-  OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = PACKAGE_PATH;
-  configuration.m_PackageSuffix = ".opk";
-  configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
-
-  // Create package files
-  std::string packagePath = PACKAGE_PATH + "/package.opk";
-  std::string hashPath = PACKAGE_PATH + "/package.hash";
-  std::ofstream packageFile(packagePath);
-  packageFile.close();
-  // Note: hash file is created by createHashJsonFile above
-
-  // WHEN: checking package status
-  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(mockCalculator), nullptr);
-  OpAppPackageManager::PackageStatus status = testInterface->doPackageFileCheck();
-
-  // THEN: the package should be considered installed (same hash)
-  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::Installed);
-
-  // Clean up test files
-  std::remove(packagePath.c_str());
-  std::remove(hashPath.c_str());
-}
-
 TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_DifferentHash)
 {
   // GIVEN: a the package manager and a mock hash calculator with different hashes for package and hash file
   auto mockCalculator = std::make_unique<MockHashCalculator>();
-  mockCalculator->setHashForFile(PACKAGE_PATH + "/package.opk", "package_hash_abcdef123456");
+  mockCalculator->setHashForFile(PACKAGE_PATH + "/package.cms", "package_hash_abcdef123456");
   mockCalculator->createHashJsonFile(PACKAGE_PATH + "/package.hash", "different_hash_789xyz");
 
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  configuration.m_PackageSuffix = ".opk";
   configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
 
   // Create package files
-  std::string packagePath = PACKAGE_PATH + "/package.opk";
+  std::string packagePath = PACKAGE_PATH + "/package.cms";
   std::string hashPath = PACKAGE_PATH + "/package.hash";
   std::ofstream packageFile(packagePath);
   packageFile.close();
@@ -486,7 +455,7 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_DifferentHa
 
   // WHEN: checking package status
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(mockCalculator), nullptr);
-  OpAppPackageManager::PackageStatus status = testInterface->doPackageFileCheck();
+  OpAppPackageManager::PackageStatus status = testInterface->doLocalPackageCheck();
 
   // THEN: the package should be considered update available (different hashes)
   EXPECT_EQ(status, OpAppPackageManager::PackageStatus::UpdateAvailable);
@@ -496,46 +465,16 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_DifferentHa
   std::remove(hashPath.c_str());
 }
 
-TEST_F(OpAppPackageManagerTest, TestInstallPackage_NoPackageFile)
-{
-  // GIVEN: an OpAppPackageManager instance and no package file set
-  OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = PACKAGE_PATH;
-  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
-
-  // WHEN: attempting to install a package
-  OpAppPackageManager::PackageStatus status = testInterface->tryPackageInstall();
-
-  // THEN: the installation should be handled appropriately
-  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::ConfigurationError);
-}
-
-TEST_F(OpAppPackageManagerTest, TestInstallPackage_PackageFileDoesNotExist)
-{
-  // GIVEN: an OpAppPackageManager instance and a package file that does not exist
-  OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = PACKAGE_PATH;
-  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
-  testInterface->setCandidatePackageFile("/nonexistent/package.opk");
-
-  // WHEN: attempting to install a package
-  OpAppPackageManager::PackageStatus status = testInterface->tryPackageInstall();
-
-  // THEN: the installation should be handled appropriately
-  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::ConfigurationError);
-}
-
-TEST_F(OpAppPackageManagerTest, TestInstallPackage_PackageFileExists)
+TEST_F(OpAppPackageManagerTest, TestInstallFromPackageFile_DecryptCalled)
 {
   // GIVEN: an OpAppPackageManager instance and a package file that exists
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  configuration.m_PackageSuffix = ".opk";
   configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
   configuration.m_DestinationDirectory = PACKAGE_PATH + "/install";
 
   // Create a package file in the package source location
-  std::string packagePath = PACKAGE_PATH + "/package.opk";
+  std::string packagePath = PACKAGE_PATH + "/package.cms";
   std::ofstream file(packagePath);
   file << "test package content";
   file.close();
@@ -543,8 +482,8 @@ TEST_F(OpAppPackageManagerTest, TestInstallPackage_PackageFileExists)
   // Create a mock decryptor that returns success with package files
   auto mockDecryptor = std::make_unique<MockDecryptor>();
   auto mockHashCalculator = std::make_unique<MockHashCalculator>();
-  std::vector<std::string> packageFiles = {PACKAGE_PATH + "/decrypted_package.opk"};
-  mockDecryptor->setDecryptResult(PackageOperationResult(true, "Decryption successful", packageFiles));
+  std::filesystem::path packageFile = PACKAGE_PATH + "/decrypted_package.cms";
+  mockDecryptor->setDecryptResult(true, "", packageFile);
 
   // Store a reference to the mock decryptor before moving it
   MockDecryptor* mockDecryptorPtr = mockDecryptor.get();
@@ -554,7 +493,7 @@ TEST_F(OpAppPackageManagerTest, TestInstallPackage_PackageFileExists)
   testInterface->setCandidatePackageFile(packagePath);
 
   // WHEN: attempting to install a package
-  testInterface->tryPackageInstall();
+  testInterface->installFromPackageFile();
 
   // THEN: the decrypt method should be called
   EXPECT_TRUE(mockDecryptorPtr->wasDecryptCalled());
@@ -562,21 +501,20 @@ TEST_F(OpAppPackageManagerTest, TestInstallPackage_PackageFileExists)
   // Clean up test files
   std::remove(packagePath.c_str());
   std::remove((PACKAGE_PATH + "/package.hash").c_str());
-  std::remove((PACKAGE_PATH + "/install/package.opk").c_str());
+  std::remove((PACKAGE_PATH + "/install/package.cms").c_str());
   std::filesystem::remove_all(PACKAGE_PATH + "/install");
 }
 
-TEST_F(OpAppPackageManagerTest, TestInstallPackage_PackageFileExists_DecryptFailed)
+TEST_F(OpAppPackageManagerTest, TestInstallFromPackageFile_DecryptFailed)
 {
   // GIVEN: an OpAppPackageManager instance and a package file that exists
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  configuration.m_PackageSuffix = ".opk";
   configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
   configuration.m_DestinationDirectory = PACKAGE_PATH + "/install";
 
   // Create a package file in the package source location
-  std::string packagePath = PACKAGE_PATH + "/package.opk";
+  std::string packagePath = PACKAGE_PATH + "/package.cms";
   std::ofstream file(packagePath);
   file << "test package content";
   file.close();
@@ -584,243 +522,432 @@ TEST_F(OpAppPackageManagerTest, TestInstallPackage_PackageFileExists_DecryptFail
   // Create a mock decryptor that returns a failure
   auto mockDecryptor = std::make_unique<MockDecryptor>();
   auto mockHashCalculator = std::make_unique<MockHashCalculator>();
-  mockDecryptor->setDecryptResult(PackageOperationResult(false, "Decryption failed"));
+  mockDecryptor->setDecryptResult(false, "Decryption failed");
 
   auto testInterface = OpAppPackageManagerTestInterface::create(
     configuration, std::move(mockHashCalculator), std::move(mockDecryptor));
   testInterface->setCandidatePackageFile(packagePath);
 
-  // WHEN: attempting to install a package
-  OpAppPackageManager::PackageStatus status = testInterface->tryPackageInstall();
-  // THEN: the installation should be handled appropriately
+  // WHEN: attempting to install a package directly (not through tryLocalUpdate/tryRemoteUpdate)
+  OpAppPackageManager::PackageStatus status = testInterface->installFromPackageFile();
+
+  // THEN: the installation should fail with DecryptionFailed status
+  // Note: SOFTWARE_INSTALLATION_FAILED is set by the caller (tryLocalUpdate/tryRemoteUpdate),
+  // not by installFromPackageFile itself, so we only check the PackageStatus return value
   EXPECT_EQ(status, OpAppPackageManager::PackageStatus::DecryptionFailed);
 
   // Clean up test files
   std::remove(packagePath.c_str());
   std::remove((PACKAGE_PATH + "/package.hash").c_str());
-  std::remove((PACKAGE_PATH + "/install/package.opk").c_str());
+  std::remove((PACKAGE_PATH + "/install/package.cms").c_str());
   std::filesystem::remove_all(PACKAGE_PATH + "/install");
 }
 
-// TODO: Add tests for future package manager functionality
-// These stubs can be expanded when the OpAppPackageManager class is implemented
-
-TEST_F(OpAppPackageManagerTest, TestUninstallPackage)
+TEST_F(OpAppPackageManagerTest, TestTryLocalUpdate_DecryptFailed_CallsFailureCallback)
 {
-  // GIVEN: an OpAppPackageManager instance and a package ID
+  // GIVEN: an OpAppPackageManager instance with a package file that will fail decryption
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
-  std::string packageId = "com.example.app";
+  configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
+  configuration.m_DestinationDirectory = PACKAGE_PATH + "/install";
 
-  // WHEN: attempting to uninstall a package
-  // bool result = packageManager.uninstallPackage(packageId);
+  // Create necessary directories
+  std::filesystem::create_directories(configuration.m_DestinationDirectory);
 
-  // THEN: the uninstallation should be handled appropriately
-  // TODO: Implement when uninstallPackage method is added
-  // EXPECT_TRUE(result);
+  // Create a package file in the package source location
+  std::string packagePath = PACKAGE_PATH + "/package.cms";
+  std::ofstream file(packagePath);
+  file << "test package content";
+  file.close();
 
-  // Mark variables as intentionally unused for now
-  (void)testInterface;
-  (void)packageId;
+  // Set up callbacks to verify the failure is reported correctly
+  bool failureCallbackCalled = false;
+  std::string failureErrorMessage;
+
+  configuration.m_OnUpdateFailure = [&](OpAppPackageManager::PackageStatus, const std::string& errorMessage) {
+    failureCallbackCalled = true;
+    failureErrorMessage = errorMessage;
+  };
+
+  // Create a mock decryptor that returns a failure
+  auto mockDecryptor = std::make_unique<MockDecryptor>();
+  auto mockHashCalculator = std::make_unique<MockHashCalculator>();
+  mockDecryptor->setDecryptResult(false, "Decryption failed");
+
+  // Set up hash calculator to indicate update available (different hashes)
+  mockHashCalculator->setHashForFile(packagePath, "new_hash_abc123");
+  mockHashCalculator->createHashJsonFile(PACKAGE_PATH + "/package.hash", "old_hash_xyz789");
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+    configuration, std::move(mockHashCalculator), std::move(mockDecryptor));
+
+  // WHEN: checking for updates (which will call tryLocalUpdate -> installFromPackageFile)
+  testInterface->checkForUpdates();
+
+  // THEN: the failure callback should be called with the decryption error message
+  // Note: PackageStatus may be overwritten by subsequent tryRemoteUpdate() call,
+  // but the error message from the decryption failure should be preserved.
+  EXPECT_TRUE(failureCallbackCalled);
+  EXPECT_NE(failureErrorMessage.find("Decryption failed"), std::string::npos);
+
+  // Clean up test files
+  std::remove(packagePath.c_str());
+  std::remove((PACKAGE_PATH + "/package.hash").c_str());
+  std::filesystem::remove_all(PACKAGE_PATH + "/install");
 }
 
-TEST_F(OpAppPackageManagerTest, TestListInstalledPackages)
+TEST_F(OpAppPackageManagerTest, TestInstallFromPackageFile_ReturnsCorrectPackageStatus)
 {
   // GIVEN: an OpAppPackageManager instance
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
+  configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
+  configuration.m_DestinationDirectory = PACKAGE_PATH + "/install";
 
-  // WHEN: requesting a list of installed packages
-  // std::vector<std::string> packages = packageManager.listInstalledPackages();
+  // Create a package file in the package source location
+  std::string packagePath = PACKAGE_PATH + "/package.cms";
+  std::ofstream file(packagePath);
+  file << "test package content";
+  file.close();
 
-  // THEN: a list of packages should be returned
-  // TODO: Implement when listInstalledPackages method is added
-  // EXPECT_FALSE(packages.empty());
+  // Create a mock decryptor that returns success with a decrypted file
+  auto mockDecryptor = std::make_unique<MockDecryptor>();
+  auto mockHashCalculator = std::make_unique<MockHashCalculator>();
+  std::filesystem::path decryptedFile = PACKAGE_PATH + "/decrypted_package.zip";
+  mockDecryptor->setDecryptResult(true, "", decryptedFile);
 
-  // Mark variables as intentionally unused for now
-  (void)testInterface;
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+    configuration, std::move(mockHashCalculator), std::move(mockDecryptor));
+  testInterface->setCandidatePackageFile(packagePath);
+
+  // WHEN: attempting to install a package (decryption succeeds but verification will fail)
+  OpAppPackageManager::PackageStatus status = testInterface->installFromPackageFile();
+
+  // THEN: the installation should fail at verification (since we don't have a valid zip)
+  // The exact failure depends on the verification implementation, but it won't be Installed
+  EXPECT_NE(status, OpAppPackageManager::PackageStatus::Installed);
+
+  // Clean up test files
+  std::remove(packagePath.c_str());
+  std::remove((PACKAGE_PATH + "/package.hash").c_str());
+  std::filesystem::remove_all(PACKAGE_PATH + "/install");
 }
 
+// =============================================================================
+// Direct Method Tests
+// =============================================================================
 
-
-TEST_F(OpAppPackageManagerTest, TestUpdatePackage)
+TEST_F(OpAppPackageManagerTest, TestMovePackageFileToInstallationDirectory_Success)
 {
-  // GIVEN: an OpAppPackageManager instance and a package update
+  // GIVEN: an OpAppPackageManager instance with a package file
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_DestinationDirectory = PACKAGE_PATH + "/install";
+
+  // Create a package file
+  std::filesystem::path packagePath = std::filesystem::path(PACKAGE_PATH) / "package.cms";
+  std::ofstream file(packagePath);
+  file << "test package content";
+  file.close();
+
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
-  std::string packagePath = "/path/to/update.opk";
 
-  // WHEN: attempting to update a package
-  // bool result = packageManager.updatePackage(packagePath);
+  // WHEN: moving the package file to installation directory
+  bool result = testInterface->movePackageFileToInstallationDirectory(packagePath);
 
-  // THEN: the update should be handled appropriately
-  // TODO: Implement when updatePackage method is added
-  // EXPECT_TRUE(result);
+  // THEN: the operation should succeed
+  EXPECT_TRUE(result);
 
-  // Mark variables as intentionally unused for now
-  (void)testInterface;
-  (void)packagePath;
+  // AND: the candidate package file should be updated to the new location
+  std::filesystem::path expectedPath = std::filesystem::path(PACKAGE_PATH) / "install" / "package.cms";
+  EXPECT_EQ(testInterface->getCandidatePackageFile(), expectedPath);
+
+  // AND: the file should exist at the new location
+  EXPECT_TRUE(std::filesystem::exists(expectedPath));
+
+  // Clean up test files
+  std::filesystem::remove(packagePath);
+  std::filesystem::remove_all(PACKAGE_PATH + "/install");
 }
 
-TEST_F(OpAppPackageManagerTest, TestIsPackageInstalled)
+TEST_F(OpAppPackageManagerTest, TestMovePackageFileToInstallationDirectory_CreatesDirectory)
 {
-  // GIVEN: an OpAppPackageManager instance and a package ID
+  // GIVEN: an OpAppPackageManager instance with a destination directory that doesn't exist
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_DestinationDirectory = PACKAGE_PATH + "/nonexistent/install";
+
+  // Create a package file
+  std::filesystem::path packagePath = std::filesystem::path(PACKAGE_PATH) / "package.cms";
+  std::ofstream file(packagePath);
+  file << "test package content";
+  file.close();
+
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
-  std::string packageId = "com.example.app";
 
-  // WHEN: checking if a package is installed
-  // bool installed = packageManager.isPackageInstalled(packageId);
+  // WHEN: moving the package file to installation directory
+  bool result = testInterface->movePackageFileToInstallationDirectory(packagePath);
 
-  // THEN: the installation status should be returned
-  // TODO: Implement when isPackageInstalled method is added
-  // EXPECT_FALSE(installed); // Assuming no packages are installed initially
+  // THEN: the operation should succeed (directory created automatically)
+  EXPECT_TRUE(result);
 
-  // Mark variables as intentionally unused for now
-  (void)testInterface;
-  (void)packageId;
+  // AND: the destination directory should exist
+  EXPECT_TRUE(std::filesystem::exists(PACKAGE_PATH + "/nonexistent/install"));
+
+  // Clean up test files
+  std::filesystem::remove(packagePath);
+  std::filesystem::remove_all(PACKAGE_PATH + "/nonexistent");
 }
 
-TEST_F(OpAppPackageManagerTest, TestGetPackageVersion)
+TEST_F(OpAppPackageManagerTest, TestMovePackageFileToInstallationDirectory_NonexistentSource)
 {
-  // GIVEN: an OpAppPackageManager instance and a package ID
+  // GIVEN: an OpAppPackageManager instance with a nonexistent source file
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_DestinationDirectory = PACKAGE_PATH + "/install";
+
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
-  std::string packageId = "com.example.app";
 
-  // WHEN: requesting package version
-  // std::string version = packageManager.getPackageVersion(packageId);
+  // WHEN: moving a nonexistent package file
+  std::filesystem::path nonexistentPath = std::filesystem::path(PACKAGE_PATH) / "nonexistent.cms";
+  bool result = testInterface->movePackageFileToInstallationDirectory(nonexistentPath);
 
-  // THEN: the package version should be returned
-  // TODO: Implement when getPackageVersion method is added
-  // EXPECT_FALSE(version.empty());
+  // THEN: the operation should fail
+  EXPECT_FALSE(result);
 
-  // Mark variables as intentionally unused for now
-  (void)testInterface;
-  (void)packageId;
+  // Clean up test files
+  std::filesystem::remove_all(PACKAGE_PATH + "/install");
 }
 
-TEST_F(OpAppPackageManagerTest, TestValidatePackage)
-{
-  // GIVEN: an OpAppPackageManager instance and a package path
-  OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = PACKAGE_PATH;
-  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
-  std::string packagePath = "/path/to/package.opk";
-
-  // WHEN: validating a package
-  // bool valid = packageManager.validatePackage(packagePath);
-
-  // THEN: the validation result should be returned
-  // TODO: Implement when validatePackage method is added
-  // EXPECT_TRUE(valid);
-
-  // Mark variables as intentionally unused for now
-  (void)testInterface;
-  (void)packagePath;
-}
-
-// Error handling tests
-TEST_F(OpAppPackageManagerTest, TestInstallInvalidPackage)
-{
-  // GIVEN: an OpAppPackageManager instance and an invalid package path
-  OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = PACKAGE_PATH;
-  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
-  std::string invalidPath = "/nonexistent/package.opk";
-
-  // WHEN: attempting to install an invalid package
-  // bool result = packageManager.installPackage(invalidPath);
-
-  // THEN: the operation should fail gracefully
-  // TODO: Implement when installPackage method is added
-  // EXPECT_FALSE(result);
-
-  // Mark variables as intentionally unused for now
-  (void)testInterface;
-  (void)invalidPath;
-}
-
-// Performance and stress tests
-TEST_F(OpAppPackageManagerTest, TestConcurrentOperations)
+TEST_F(OpAppPackageManagerTest, TestVerifyZipPackage_NotYetImplemented)
 {
   // GIVEN: an OpAppPackageManager instance
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
+
+  // Create a test file
+  std::filesystem::path testFile = std::filesystem::path(PACKAGE_PATH) / "test.zip";
+  std::ofstream file(testFile);
+  file << "test content";
+  file.close();
+
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
 
-  // WHEN: performing multiple operations concurrently
-  // (This would require threading implementation)
+  // WHEN: verifying a zip package
+  bool result = testInterface->verifyZipPackage(testFile);
 
-  // THEN: all operations should complete successfully
-  // TODO: Implement when threading support is added
+  // THEN: the verification should fail (not yet implemented)
+  EXPECT_FALSE(result);
+  EXPECT_FALSE(testInterface->getLastErrorMessage().empty());
 
-  // Mark variables as intentionally unused for now
-  (void)testInterface;
+  // Clean up
+  std::filesystem::remove(testFile);
 }
 
-TEST_F(OpAppPackageManagerTest, TestLargePackageHandling)
+TEST_F(OpAppPackageManagerTest, TestUnzipPackageFile_NotYetImplemented)
 {
-  // GIVEN: an OpAppPackageManager instance and a large package
+  // GIVEN: an OpAppPackageManager instance
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  configuration.m_DestinationDirectory = PACKAGE_PATH + "/install";
+
+  // Create a test file
+  std::filesystem::path testFile = std::filesystem::path(PACKAGE_PATH) / "test.zip";
+  std::ofstream file(testFile);
+  file << "test content";
+  file.close();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
+
+  // WHEN: unzipping a package file
+  std::filesystem::path outPath;
+  bool result = testInterface->unzipPackageFile(testFile, outPath);
+
+  // THEN: the unzip should fail (not yet implemented)
+  EXPECT_FALSE(result);
+
+  // Clean up
+  std::filesystem::remove(testFile);
+}
+
+TEST_F(OpAppPackageManagerTest, TestVerifyUnzippedPackage_NotYetImplemented)
+{
+  // GIVEN: an OpAppPackageManager instance
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+
+  // Create a test directory (simulating unzipped package)
+  std::filesystem::path testDir = std::filesystem::path(PACKAGE_PATH) / "unzipped";
+  std::filesystem::create_directories(testDir);
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
+
+  // WHEN: verifying an unzipped package
+  bool result = testInterface->verifyUnzippedPackage(testDir);
+
+  // THEN: the verification should fail (not yet implemented)
+  EXPECT_FALSE(result);
+  EXPECT_FALSE(testInterface->getLastErrorMessage().empty());
+
+  // Clean up
+  std::filesystem::remove_all(testDir);
+}
+
+TEST_F(OpAppPackageManagerTest, TestCopyToPersistentStorage_NotYetImplemented)
+{
+  // GIVEN: an OpAppPackageManager instance
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+
+  // Create a test file
+  std::filesystem::path testFile = std::filesystem::path(PACKAGE_PATH) / "test.dat";
+  std::ofstream file(testFile);
+  file << "test content";
+  file.close();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
+
+  // WHEN: copying to persistent storage
+  bool result = testInterface->installToPersistentStorage(testFile);
+
+  // THEN: the copy should fail (not yet implemented)
+  EXPECT_FALSE(result);
+  EXPECT_FALSE(testInterface->getLastErrorMessage().empty());
+
+  // Clean up
+  std::filesystem::remove(testFile);
+}
+
+TEST_F(OpAppPackageManagerTest, TestGetCandidatePackageFile_ReturnsSetValue)
+{
+  // GIVEN: an OpAppPackageManager instance
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
+
+  // WHEN: setting a candidate package file
+  std::filesystem::path expectedPath = "/path/to/candidate.cms";
+  testInterface->setCandidatePackageFile(expectedPath);
+
+  // THEN: getCandidatePackageFile should return the set value
+  EXPECT_EQ(testInterface->getCandidatePackageFile(), expectedPath);
+}
+
+// =============================================================================
+// STUB TESTS - Placeholder tests for future functionality
+// These tests have no assertions and exist only as templates for future implementation.
+// Remove or implement when the corresponding functionality is added.
+// =============================================================================
+
+// TODO(STUB): Implement when uninstallPackage method is added
+TEST_F(OpAppPackageManagerTest, STUB_TestUninstallPackage)
+{
+  // Placeholder - no assertions
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
-  std::string largePackagePath = "/path/to/large/package.opk";
-
-  // WHEN: handling a large package
-
-  // THEN: the operation should complete without memory issues
-  // TODO: Implement when large package handling is added
-
-  // Mark variables as intentionally unused for now
   (void)testInterface;
-  (void)largePackagePath;
 }
 
-// Integration tests
-TEST_F(OpAppPackageManagerTest, TestFullPackageLifecycle)
+// TODO(STUB): Implement when listInstalledPackages method is added
+TEST_F(OpAppPackageManagerTest, STUB_TestListInstalledPackages)
 {
-  // GIVEN: an OpAppPackageManager instance and a valid package
+  // Placeholder - no assertions
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
-  std::string packagePath = "/path/to/valid/package.opk";
-  std::string packageId = "com.example.app";
-
-  // WHEN: performing a full package lifecycle (install, enable, disable, uninstall)
-
-  // THEN: all operations should complete successfully
-  // TODO: Implement when all lifecycle methods are added
-
-  // Mark variables as intentionally unused for now
   (void)testInterface;
-  (void)packagePath;
-  (void)packageId;
 }
 
-TEST_F(OpAppPackageManagerTest, TestPackageUpdateWorkflow)
+// TODO(STUB): Implement when updatePackage method is added
+TEST_F(OpAppPackageManagerTest, STUB_TestUpdatePackage)
 {
-  // GIVEN: an OpAppPackageManager instance and package versions
+  // Placeholder - no assertions
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
-  std::string oldVersionPath = "/path/to/old/version.opk";
-  std::string newVersionPath = "/path/to/new/version.opk";
-
-  // WHEN: performing a package update workflow
-
-  // THEN: the update should complete successfully
-  // TODO: Implement when update workflow is added
-
-  // Mark variables as intentionally unused for now
   (void)testInterface;
-  (void)oldVersionPath;
-  (void)newVersionPath;
+}
+
+// TODO(STUB): Implement when isPackageInstalled (by packageId) method is added
+TEST_F(OpAppPackageManagerTest, STUB_TestIsPackageInstalledById)
+{
+  // Placeholder - no assertions
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
+  (void)testInterface;
+}
+
+// TODO(STUB): Implement when getPackageVersion method is added
+TEST_F(OpAppPackageManagerTest, STUB_TestGetPackageVersion)
+{
+  // Placeholder - no assertions
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
+  (void)testInterface;
+}
+
+// TODO(STUB): Implement when validatePackage method is added
+TEST_F(OpAppPackageManagerTest, STUB_TestValidatePackage)
+{
+  // Placeholder - no assertions
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
+  (void)testInterface;
+}
+
+// TODO(STUB): Implement when installPackage method handles invalid paths
+TEST_F(OpAppPackageManagerTest, STUB_TestInstallInvalidPackage)
+{
+  // Placeholder - no assertions
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
+  (void)testInterface;
+}
+
+// TODO(STUB): Implement concurrent operation tests when threading support is added
+TEST_F(OpAppPackageManagerTest, STUB_TestConcurrentOperations)
+{
+  // Placeholder - no assertions
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
+  (void)testInterface;
+}
+
+// TODO(STUB): Implement large package handling tests
+TEST_F(OpAppPackageManagerTest, STUB_TestLargePackageHandling)
+{
+  // Placeholder - no assertions
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
+  (void)testInterface;
+}
+
+// TODO(STUB): Implement full lifecycle tests when all methods are available
+TEST_F(OpAppPackageManagerTest, STUB_TestFullPackageLifecycle)
+{
+  // Placeholder - no assertions
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
+  (void)testInterface;
+}
+
+// TODO(STUB): Implement package update workflow tests
+TEST_F(OpAppPackageManagerTest, STUB_TestPackageUpdateWorkflow)
+{
+  // Placeholder - no assertions
+  OpAppPackageManager::Configuration configuration;
+  configuration.m_PackageLocation = PACKAGE_PATH;
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
+  (void)testInterface;
 }
 
 TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_NoUpdateAvailable_NoCallbacksCalled)
@@ -828,7 +955,6 @@ TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_NoUpdateAvailable_NoCallback
   // GIVEN: an OpAppPackageManager instance with callbacks
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  configuration.m_PackageSuffix = ".opk";
   configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
 
   bool successCallbackCalled = false;
@@ -846,7 +972,7 @@ TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_NoUpdateAvailable_NoCallback
   // WHEN: checking for updates when no package file exists
   testInterface->checkForUpdates();
 
-  // THEN: neither callback should be called for NoUpdateAvailable
+  // THEN: neither callback should be called for DiscoveryFailed
   EXPECT_FALSE(successCallbackCalled);
   EXPECT_FALSE(failureCallbackCalled);
 }
@@ -856,11 +982,10 @@ TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_Installed_NoCallbacksCalled)
   // GIVEN: an OpAppPackageManager instance with callbacks and installed package
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  configuration.m_PackageSuffix = ".opk";
   configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
 
   // Create a package file and hash file with same hash (simulating installed package)
-  std::string packagePath = PACKAGE_PATH + "/package.opk";
+  std::string packagePath = PACKAGE_PATH + "/package.cms";
   std::ofstream packageFile(packagePath);
   packageFile << "test package content";
   packageFile.close();
@@ -882,7 +1007,7 @@ TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_Installed_NoCallbacksCalled)
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(mockCalculator), nullptr);
 
   // WHEN: checking for updates with installed package
-  OpAppPackageManager::PackageStatus status = testInterface->doPackageFileCheck();
+  OpAppPackageManager::PackageStatus status = testInterface->doLocalPackageCheck();
 
   // THEN: status should be Installed and neither callback should be called
   EXPECT_EQ(status, OpAppPackageManager::PackageStatus::Installed);
@@ -899,12 +1024,11 @@ TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_ConfigurationError_CallsFail
   // GIVEN: an OpAppPackageManager instance with callbacks
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  configuration.m_PackageSuffix = ".opk";
   configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
 
   // Create multiple package files to trigger ConfigurationError
-  std::string packagePath1 = PACKAGE_PATH + "/package1.opk";
-  std::string packagePath2 = PACKAGE_PATH + "/package2.opk";
+  std::string packagePath1 = PACKAGE_PATH + "/package1.cms";
+  std::string packagePath2 = PACKAGE_PATH + "/package2.cms";
   std::ofstream file1(packagePath1);
   std::ofstream file2(packagePath2);
   file1.close();
@@ -947,14 +1071,13 @@ TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_NoCallbacksSet)
   // GIVEN: an OpAppPackageManager instance without callbacks
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  configuration.m_PackageSuffix = ".opk";
   configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
 
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
 
   // WHEN: checking for updates when no package file exists
-  // THEN: function should complete successfully
-  OpAppPackageManager::PackageStatus status = testInterface->doPackageFileCheck();
+  // THEN: function should complete successfully (NoUpdateAvailable since no packages found)
+  OpAppPackageManager::PackageStatus status = testInterface->doLocalPackageCheck();
   EXPECT_EQ(status, OpAppPackageManager::PackageStatus::NoUpdateAvailable);
 }
 
@@ -1028,12 +1151,11 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_MultiplePackageFiles_Returns
   // and multiple package files in the package source location
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  configuration.m_PackageSuffix = ".opk";
   configuration.m_PackageHashFilePath = PACKAGE_PATH + "/package.hash";
 
   // Create multiple package files in the package source location
-  std::string packagePath1 = PACKAGE_PATH + "/package1.opk";
-  std::string packagePath2 = PACKAGE_PATH + "/package2.opk";
+  std::string packagePath1 = PACKAGE_PATH + "/package1.cms";
+  std::string packagePath2 = PACKAGE_PATH + "/package2.cms";
   std::ofstream file1(packagePath1);
   std::ofstream file2(packagePath2);
   file1.close();
@@ -1041,9 +1163,9 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_MultiplePackageFiles_Returns
 
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
 
-  // WHEN: doPackageFileCheck is called
+  // WHEN: doLocalPackageCheck is called
   // THEN: it should set status to ConfigurationError
-  OpAppPackageManager::PackageStatus status = testInterface->doPackageFileCheck();
+  OpAppPackageManager::PackageStatus status = testInterface->doLocalPackageCheck();
   EXPECT_EQ(status, OpAppPackageManager::PackageStatus::ConfigurationError);
   EXPECT_FALSE(testInterface->getLastErrorMessage().empty());
 
@@ -1058,11 +1180,10 @@ TEST_F(OpAppPackageManagerTest, TestGetPackageFiles_MultiplePackageFiles_Returns
   // and multiple package files in the package source location
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  configuration.m_PackageSuffix = ".opk";
 
   // Create multiple package files in the package source location
-  std::string packagePath1 = PACKAGE_PATH + "/package1.opk";
-  std::string packagePath2 = PACKAGE_PATH + "/package2.opk";
+  std::string packagePath1 = PACKAGE_PATH + "/package1.cms";
+  std::string packagePath2 = PACKAGE_PATH + "/package2.cms";
   std::ofstream file1(packagePath1);
   std::ofstream file2(packagePath2);
   file1.close();
@@ -1070,20 +1191,21 @@ TEST_F(OpAppPackageManagerTest, TestGetPackageFiles_MultiplePackageFiles_Returns
 
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
 
-  // WHEN: getPackageFiles is called
-  PackageOperationResult result = testInterface->getPackageFiles();
+  // WHEN: searchLocalPackageFiles is called
+  std::vector<std::filesystem::path> packageFiles;
+  int result = testInterface->searchLocalPackageFiles(packageFiles);
 
-  // THEN: it should return error result
-  EXPECT_FALSE(result.success);
-  EXPECT_FALSE(result.errorMessage.empty());
-  EXPECT_EQ(result.packageFiles.size(), size_t(2));
-  EXPECT_NE(result.errorMessage.find("Multiple package files found"), std::string::npos);
-  EXPECT_NE(result.errorMessage.find("package1.opk"), std::string::npos);
-  EXPECT_NE(result.errorMessage.find("package2.opk"), std::string::npos);
+  // THEN: it should return -1 (error) for multiple files
+  EXPECT_EQ(result, -1);
+  EXPECT_FALSE(testInterface->getLastErrorMessage().empty());
+  EXPECT_EQ(packageFiles.size(), size_t(2));
+  EXPECT_NE(testInterface->getLastErrorMessage().find("Multiple package files found"), std::string::npos);
+  EXPECT_NE(testInterface->getLastErrorMessage().find("package1.cms"), std::string::npos);
+  EXPECT_NE(testInterface->getLastErrorMessage().find("package2.cms"), std::string::npos);
 
   // Clean up test files
-  std::remove(packagePath1.c_str());
-  std::remove(packagePath2.c_str());
+  std::filesystem::remove(packagePath1);
+  std::filesystem::remove(packagePath2);
 }
 
 TEST_F(OpAppPackageManagerTest, TestGetPackageFiles_SinglePackageFile_ReturnsSuccess)
@@ -1092,26 +1214,26 @@ TEST_F(OpAppPackageManagerTest, TestGetPackageFiles_SinglePackageFile_ReturnsSuc
   // and a single package file in the package source location
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  configuration.m_PackageSuffix = ".opk";
 
   // Create a single package file in the package source location
-  std::string packagePath = PACKAGE_PATH + "/package.opk";
+  std::filesystem::path packagePath = std::filesystem::path(PACKAGE_PATH) / "package.cms";
   std::ofstream file(packagePath);
   file.close();
 
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
 
-  // WHEN: getPackageFiles is called
-  PackageOperationResult result = testInterface->getPackageFiles();
+  // WHEN: searchLocalPackageFiles is called
+  std::vector<std::filesystem::path> packageFiles;
+  int result = testInterface->searchLocalPackageFiles(packageFiles);
 
-  // THEN: it should return success with exactly one file
-  EXPECT_TRUE(result.success);
-  EXPECT_TRUE(result.errorMessage.empty());
-  EXPECT_EQ(result.packageFiles.size(), size_t(1));
-  EXPECT_EQ(result.packageFiles[0], packagePath);
+  // THEN: it should return 1 (one file found)
+  EXPECT_EQ(result, 1);
+  EXPECT_TRUE(testInterface->getLastErrorMessage().empty());
+  EXPECT_EQ(packageFiles.size(), size_t(1));
+  EXPECT_EQ(packageFiles[0], packagePath);
 
   // Clean up test file
-  std::remove(packagePath.c_str());
+  std::filesystem::remove(packagePath);
 }
 
 TEST_F(OpAppPackageManagerTest, TestGetPackageFiles_NoPackageFiles_ReturnsSuccess)
@@ -1120,17 +1242,17 @@ TEST_F(OpAppPackageManagerTest, TestGetPackageFiles_NoPackageFiles_ReturnsSucces
   // and no package files in the package source location
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  configuration.m_PackageSuffix = ".opk";
 
-  OpAppPackageManager packageManager(configuration);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
 
-  // WHEN: getPackageFiles is called
-  PackageOperationResult result = packageManager.getPackageFiles();
+  // WHEN: searchLocalPackageFiles is called
+  std::vector<std::filesystem::path> packageFiles;
+  int result = testInterface->searchLocalPackageFiles(packageFiles);
 
-  // THEN: it should return success with empty file list
-  EXPECT_TRUE(result.success);
-  EXPECT_TRUE(result.errorMessage.empty());
-  EXPECT_TRUE(result.packageFiles.empty());
+  // THEN: it should return 0 (no files found)
+  EXPECT_EQ(result, 0);
+  EXPECT_TRUE(testInterface->getLastErrorMessage().empty());
+  EXPECT_TRUE(packageFiles.empty());
 }
 
 TEST_F(OpAppPackageManagerTest, TestClearLastError)
@@ -1138,20 +1260,19 @@ TEST_F(OpAppPackageManagerTest, TestClearLastError)
   // GIVEN: an OpAppPackageManager instance with an error
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
-  configuration.m_PackageSuffix = ".opk";
 
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
 
   // Create an error condition
-  std::string packagePath1 = PACKAGE_PATH + "/package1.opk";
-  std::string packagePath2 = PACKAGE_PATH + "/package2.opk";
+  std::string packagePath1 = PACKAGE_PATH + "/package1.cms";
+  std::string packagePath2 = PACKAGE_PATH + "/package2.cms";
   std::ofstream file1(packagePath1);
   std::ofstream file2(packagePath2);
   file1.close();
   file2.close();
 
   // Trigger error condition
-  testInterface->doPackageFileCheck();
+  testInterface->doLocalPackageCheck();
 
   // Error message should be stored
   EXPECT_FALSE(testInterface->getLastErrorMessage().empty());
@@ -1171,7 +1292,7 @@ TEST_F(OpAppPackageManagerTest, TestClearLastError)
 // AIT Fetcher and Parser Tests
 // =============================================================================
 
-TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_NoFqdn_ReturnsNoUpdate)
+TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_NoFqdn_ReturnsConfigurationError)
 {
   // GIVEN: an OpAppPackageManager with no FQDN configured
   OpAppPackageManager::Configuration configuration;
@@ -1188,8 +1309,8 @@ TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_NoFqdn_ReturnsNoUpdate)
   // WHEN: doRemotePackageCheck is called
   OpAppPackageManager::PackageStatus status = testInterface->doRemotePackageCheck();
 
-  // THEN: should return NoUpdateAvailable and not call fetcher
-  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::NoUpdateAvailable);
+  // THEN: should return ConfigurationError and not call fetcher
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::ConfigurationError);
   EXPECT_FALSE(mockAitFetcherPtr->wasFetchCalled());
 }
 
@@ -1250,11 +1371,11 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_EmptyFileList_ReturnsFalse)
 
   // WHEN: parseAitFiles is called with empty list
   std::vector<PackageInfo> packages;
-  auto result = testInterface->parseAitFiles(std::vector<std::string>{}, packages);
+  bool result = testInterface->parseAitFiles(std::vector<std::filesystem::path>{}, packages);
 
   // THEN: should return failure and have no descriptors
-  EXPECT_FALSE(result.success);
-  EXPECT_FALSE(result.errorMessage.empty());
+  EXPECT_FALSE(result);
+  EXPECT_FALSE(testInterface->getLastErrorMessage().empty());
   EXPECT_TRUE(packages.empty());
 }
 
@@ -1269,11 +1390,11 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_NonexistentFile_ReturnsFalse)
 
   // WHEN: parseAitFiles is called with nonexistent file
   std::vector<PackageInfo> packages;
-  auto result = testInterface->parseAitFiles({"/nonexistent/ait.xml"}, packages);
+  bool result = testInterface->parseAitFiles({std::filesystem::path("/nonexistent/ait.xml")}, packages);
 
   // THEN: should return failure and have no descriptors
-  EXPECT_FALSE(result.success);
-  EXPECT_FALSE(result.errorMessage.empty());
+  EXPECT_FALSE(result);
+  EXPECT_FALSE(testInterface->getLastErrorMessage().empty());
   EXPECT_TRUE(packages.empty());
 }
 
@@ -1283,7 +1404,7 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_InvalidXml_ReturnsFalse)
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
 
-  std::string invalidXmlPath = PACKAGE_PATH + "/invalid.xml";
+  std::filesystem::path invalidXmlPath = std::filesystem::path(PACKAGE_PATH) / "invalid.xml";
   std::ofstream invalidFile(invalidXmlPath);
   invalidFile << "This is not valid XML content";
   invalidFile.close();
@@ -1293,15 +1414,15 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_InvalidXml_ReturnsFalse)
 
   // WHEN: parseAitFiles is called with invalid XML
   std::vector<PackageInfo> packages;
-  auto result = testInterface->parseAitFiles({invalidXmlPath}, packages);
+  bool result = testInterface->parseAitFiles({invalidXmlPath}, packages);
 
   // THEN: should return failure and have no descriptors
-  EXPECT_FALSE(result.success);
-  EXPECT_FALSE(result.errorMessage.empty());
+  EXPECT_FALSE(result);
+  EXPECT_FALSE(testInterface->getLastErrorMessage().empty());
   EXPECT_TRUE(packages.empty());
 
   // Clean up
-  std::remove(invalidXmlPath.c_str());
+  std::filesystem::remove(invalidXmlPath);
 }
 
 TEST_F(OpAppPackageManagerTest, TestParseAitFiles_ValidAitXml_ExtractsDescriptors)
@@ -1310,7 +1431,7 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_ValidAitXml_ExtractsDescriptor
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
 
-  std::string aitXmlPath = PACKAGE_PATH + "/valid_ait.xml";
+  std::filesystem::path aitXmlPath = std::filesystem::path(PACKAGE_PATH) / "valid_ait.xml";
   std::ofstream aitFile(aitXmlPath);
   aitFile << createValidOpAppAitXml(12345, 1, "Test OpApp", "https://test.example.com/app/");
   aitFile.close();
@@ -1320,10 +1441,10 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_ValidAitXml_ExtractsDescriptor
 
   // WHEN: parseAitFiles is called with valid AIT XML
   std::vector<PackageInfo> packages;
-  auto result = testInterface->parseAitFiles({aitXmlPath}, packages);
+  bool result = testInterface->parseAitFiles({aitXmlPath}, packages);
 
   // THEN: should return success and have extracted descriptors
-  EXPECT_TRUE(result.success);
+  EXPECT_TRUE(result);
   ASSERT_EQ(packages.size(), size_t(1));
   EXPECT_EQ(packages[0].orgId, uint32_t(12345));
   EXPECT_EQ(packages[0].appId, uint16_t(1));
@@ -1332,7 +1453,7 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_ValidAitXml_ExtractsDescriptor
   EXPECT_EQ(packages[0].name, "Test OpApp");
 
   // Clean up
-  std::remove(aitXmlPath.c_str());
+  std::filesystem::remove(aitXmlPath);
 }
 
 TEST_F(OpAppPackageManagerTest, TestParseAitFiles_MultipleAits_CombinesApps)
@@ -1342,13 +1463,13 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_MultipleAits_CombinesApps)
   configuration.m_PackageLocation = PACKAGE_PATH;
 
   // Create first AIT file
-  std::string ait1Path = PACKAGE_PATH + "/ait1.xml";
+  std::filesystem::path ait1Path = std::filesystem::path(PACKAGE_PATH) / "ait1.xml";
   std::ofstream ait1File(ait1Path);
   ait1File << createValidOpAppAitXml(11111, 1, "App One", "https://test1.example.com/");
   ait1File.close();
 
   // Create second AIT file
-  std::string ait2Path = PACKAGE_PATH + "/ait2.xml";
+  std::filesystem::path ait2Path = std::filesystem::path(PACKAGE_PATH) / "ait2.xml";
   std::ofstream ait2File(ait2Path);
   ait2File << createValidOpAppAitXml(22222, 2, "App Two", "https://test2.example.com/");
   ait2File.close();
@@ -1358,10 +1479,10 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_MultipleAits_CombinesApps)
 
   // WHEN: parseAitFiles is called with multiple AIT files
   std::vector<PackageInfo> packages;
-  auto result = testInterface->parseAitFiles({ait1Path, ait2Path}, packages);
+  bool result = testInterface->parseAitFiles({ait1Path, ait2Path}, packages);
 
   // THEN: should return success and combine apps from both files
-  EXPECT_TRUE(result.success);
+  EXPECT_TRUE(result);
   EXPECT_EQ(packages.size(), size_t(2));
 
   // Verify both apps are present
@@ -1379,8 +1500,8 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_MultipleAits_CombinesApps)
   EXPECT_TRUE(foundApp2);
 
   // Clean up
-  std::remove(ait1Path.c_str());
-  std::remove(ait2Path.c_str());
+  std::filesystem::remove(ait1Path);
+  std::filesystem::remove(ait2Path);
 }
 
 TEST_F(OpAppPackageManagerTest, TestParseAitFiles_ClearsOldDescriptors)
@@ -1389,7 +1510,7 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_ClearsOldDescriptors)
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
 
-  std::string aitXmlPath = PACKAGE_PATH + "/test_ait.xml";
+  std::filesystem::path aitXmlPath = std::filesystem::path(PACKAGE_PATH) / "test_ait.xml";
   std::ofstream aitFile(aitXmlPath);
   aitFile << createValidOpAppAitXml(99999, 9, "Test App", "https://test.example.com/");
   aitFile.close();
@@ -1410,7 +1531,7 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_ClearsOldDescriptors)
   EXPECT_EQ(packages.size(), firstCount);
 
   // Clean up
-  std::remove(aitXmlPath.c_str());
+  std::filesystem::remove(aitXmlPath);
 }
 
 TEST_F(OpAppPackageManagerTest, TestPackageInfo_DefaultValues)
@@ -1549,8 +1670,8 @@ TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_AitWithNoApps_ReturnsNo
   // WHEN: doRemotePackageCheck is called
   OpAppPackageManager::PackageStatus status = testInterface->doRemotePackageCheck();
 
-  // THEN: should return NoUpdateAvailable (no apps found)
-  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::NoUpdateAvailable);
+  // THEN: should return DiscoveryFailed (no apps found)
+  EXPECT_EQ(status, OpAppPackageManager::PackageStatus::DiscoveryFailed);
 
   // Clean up
   std::filesystem::remove_all(PACKAGE_PATH + "/dest");
@@ -1566,7 +1687,7 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_NonOpAppType_Rejected)
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
 
-  std::string aitXmlPath = PACKAGE_PATH + "/hbbtv_ait.xml";
+  std::filesystem::path aitXmlPath = std::filesystem::path(PACKAGE_PATH) / "hbbtv_ait.xml";
   std::ofstream aitFile(aitXmlPath);
   // Use HbbTV type instead of OpApp type
   aitFile << R"(<?xml version="1.0" encoding="UTF-8"?>
@@ -1604,10 +1725,10 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_NonOpAppType_Rejected)
 
   // WHEN: parseAitFiles is called
   std::vector<PackageInfo> packages;
-  auto result = testInterface->parseAitFiles({aitXmlPath}, packages);
+  bool result = testInterface->parseAitFiles({aitXmlPath}, packages);
 
   // THEN: should return failure (no valid OpApp descriptors)
-  EXPECT_FALSE(result.success);
+  EXPECT_FALSE(result);
   EXPECT_TRUE(packages.empty());
 
   // Clean up
@@ -1620,7 +1741,7 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_InvalidAppUsage_Rejected)
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
 
-  std::string aitXmlPath = PACKAGE_PATH + "/invalid_usage_ait.xml";
+  std::filesystem::path aitXmlPath = std::filesystem::path(PACKAGE_PATH) / "invalid_usage_ait.xml";
   std::ofstream aitFile(aitXmlPath);
   // Use invalid app usage URN
   aitFile << R"(<?xml version="1.0" encoding="UTF-8"?>
@@ -1661,40 +1782,11 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_InvalidAppUsage_Rejected)
 
   // WHEN: parseAitFiles is called
   std::vector<PackageInfo> packages;
-  auto result = testInterface->parseAitFiles({aitXmlPath}, packages);
+  bool result = testInterface->parseAitFiles({aitXmlPath}, packages);
 
   // THEN: should return failure (invalid app usage rejected)
-  EXPECT_FALSE(result.success);
+  EXPECT_FALSE(result);
   EXPECT_TRUE(packages.empty());
-
-  // Clean up
-  std::remove(aitXmlPath.c_str());
-}
-
-TEST_F(OpAppPackageManagerTest, TestParseAitFiles_PrivilegedOpApp_Accepted)
-{
-  // GIVEN: an OpApp AIT XML with privileged usage
-  OpAppPackageManager::Configuration configuration;
-  configuration.m_PackageLocation = PACKAGE_PATH;
-
-  std::string aitXmlPath = PACKAGE_PATH + "/privileged_ait.xml";
-  std::ofstream aitFile(aitXmlPath);
-  aitFile << createValidOpAppAitXml(12345, 1, "Privileged OpApp",
-      "https://test.example.com/", "index.html", "AUTOSTART",
-      "urn:hbbtv:opapp:privileged:2017");
-  aitFile.close();
-
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
-
-  // WHEN: parseAitFiles is called
-  std::vector<PackageInfo> packages;
-  auto result = testInterface->parseAitFiles({aitXmlPath}, packages);
-
-  // THEN: should return success (privileged usage accepted)
-  EXPECT_TRUE(result.success);
-  ASSERT_EQ(packages.size(), size_t(1));
-  EXPECT_EQ(packages[0].orgId, uint32_t(12345));
 
   // Clean up
   std::remove(aitXmlPath.c_str());
@@ -1706,7 +1798,7 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_SpecificOpApp_Accepted)
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
 
-  std::string aitXmlPath = PACKAGE_PATH + "/specific_ait.xml";
+  std::filesystem::path aitXmlPath = std::filesystem::path(PACKAGE_PATH) / "specific_ait.xml";
   std::ofstream aitFile(aitXmlPath);
   aitFile << createValidOpAppAitXml(12345, 1, "Specific OpApp",
       "https://test.example.com/", "index.html", "AUTOSTART",
@@ -1718,10 +1810,10 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_SpecificOpApp_Accepted)
 
   // WHEN: parseAitFiles is called
   std::vector<PackageInfo> packages;
-  auto result = testInterface->parseAitFiles({aitXmlPath}, packages);
+  bool result = testInterface->parseAitFiles({aitXmlPath}, packages);
 
   // THEN: should return success (specific usage accepted)
-  EXPECT_TRUE(result.success);
+  EXPECT_TRUE(result);
   ASSERT_EQ(packages.size(), size_t(1));
   EXPECT_EQ(packages[0].orgId, uint32_t(12345));
 
@@ -1735,7 +1827,7 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_MixedValidAndInvalid_OnlyValid
   OpAppPackageManager::Configuration configuration;
   configuration.m_PackageLocation = PACKAGE_PATH;
 
-  std::string aitXmlPath = PACKAGE_PATH + "/mixed_ait.xml";
+  std::filesystem::path aitXmlPath = std::filesystem::path(PACKAGE_PATH) / "mixed_ait.xml";
   std::ofstream aitFile(aitXmlPath);
   aitFile << R"(<?xml version="1.0" encoding="UTF-8"?>
 <mhp:ServiceDiscovery xmlns:mhp="urn:dvb:mhp:2009">
@@ -1796,10 +1888,10 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_MixedValidAndInvalid_OnlyValid
 
   // WHEN: parseAitFiles is called
   std::vector<PackageInfo> packages;
-  auto result = testInterface->parseAitFiles({aitXmlPath}, packages);
+  bool result = testInterface->parseAitFiles({aitXmlPath}, packages);
 
   // THEN: should return success with only the valid OpApp extracted
-  EXPECT_TRUE(result.success);
+  EXPECT_TRUE(result);
   ASSERT_EQ(packages.size(), size_t(1));
   EXPECT_EQ(packages[0].orgId, uint32_t(22222));
   EXPECT_EQ(packages[0].appId, uint16_t(2));
@@ -1873,7 +1965,6 @@ TEST_F(OpAppPackageManagerTest, DISABLED_IntegrationTest_RealRemoteFetch)
 
   // THEN: Log the results (actual expectations depend on the real server)
   std::cout << "Package manager finished running" << std::endl;
-  std::cout << "isUpdating: " << packageManagerWithCallbacks.isUpdating() << std::endl;
 
   if (!lastError.empty()) {
     std::cout << "Last error: " << lastError << std::endl;

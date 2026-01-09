@@ -13,9 +13,15 @@
 namespace orb
 {
 
-PackageOperationResult Decryptor::decrypt(const std::string& filePath) const
+bool Decryptor::decrypt(
+  const std::filesystem::path& filePath,
+  std::filesystem::path& outFile,
+  std::string& outError) const
 {
-  return PackageOperationResult(true, "", {filePath});
+  // Default implementation: pass-through (no actual decryption)
+  outFile = filePath;
+  outError.clear();
+  return true;
 }
 
 } // namespace orb
