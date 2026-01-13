@@ -89,7 +89,6 @@ public:
     // Public API methods (same as OpAppPackageManager)
     void start();
     bool isRunning() const;
-    bool isPackageInstalled(const std::filesystem::path& packagePath);
     void checkForUpdates();
     std::string calculateFileSHA256Hash(const std::filesystem::path& filePath) const;
     int searchLocalPackageFiles(std::vector<std::filesystem::path>& outPackageFiles);
@@ -153,15 +152,6 @@ public:
     bool parseAitFiles(const std::vector<std::filesystem::path>& aitFiles, std::vector<PackageInfo>& packages);
 
     /**
-     * @brief Gets installed package info (internal method exposed for testing)
-     * @param orgId Organization ID
-     * @param appId Application ID
-     * @param outPackage Output PackageInfo with installation details if found
-     * @return true if an installed package was found, false otherwise
-     */
-    bool isPackageInstalled(uint32_t orgId, uint16_t appId, PackageInfo& outPackage) const;
-
-    /**
      * @brief Moves package file to installation directory (internal method exposed for testing)
      * @param packageFilePath Path to the package file to move
      * @return true if successful, false otherwise
@@ -181,6 +171,32 @@ public:
      * @return true if copy succeeded, false otherwise
      */
     bool installToPersistentStorage(const std::filesystem::path& filePath);
+
+    /**
+     * @brief Saves installation receipt (internal method exposed for testing)
+     * @param pkg The package information to save
+     * @return true if save succeeded, false otherwise
+     */
+    bool saveInstallReceipt(const PackageInfo& pkg);
+
+    /**
+     * @brief Loads installation receipt (internal method exposed for testing)
+     * @param outPackage Output PackageInfo populated with installed package details
+     * @return true if load succeeded, false otherwise
+     */
+    bool loadInstallReceipt(PackageInfo& outPackage) const;
+
+    /**
+     * @brief Sets the candidate package info for testing
+     * @param pkg The package information to set as candidate
+     */
+    void setCandidatePackage(const PackageInfo& pkg);
+
+    /**
+     * @brief Sets the candidate package hash for testing
+     * @param hash The hash to set
+     */
+    void setCandidatePackageHash(const std::string& hash);
 
     /**
      * @brief Gets the current candidate package file path
