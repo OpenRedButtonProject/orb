@@ -119,7 +119,11 @@ void OpAppPackageManager::start()
   m_IsRunning = true;
   m_WorkerThread = std::thread(
     [this]() {
-      checkForUpdates();
+      // Check if an installation already exists.
+      // If so, return.
+      if (!isOpAppInstalled()) {
+        doFirstTimeInstallation();
+      }
       m_IsRunning = false;
     });
 }
@@ -140,18 +144,35 @@ bool OpAppPackageManager::isRunning() const
   return m_IsRunning;
 }
 
+bool OpAppPackageManager::isOpAppInstalled()
+{
+  PackageInfo installedPkg;
+  if (loadInstallReceipt(installedPkg)) {
+    LOG(INFO) << "OpApp "  << installedPkg.name << " is installed at " << installedPkg.installPath;
+    return true;
+  }
+
+  return false;
+}
+
+void OpAppPackageManager::doFirstTimeInstallation()
+{
+  // At the moment the same process is used for both first time installation and update.
+  checkForUpdates();
+}
+
 bool OpAppPackageManager::tryLocalUpdate()
 {
   setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_DISCOVERING);
-  if (m_Configuration.m_PackageLocation.empty() || m_Configuration.m_PackageHashFilePath.empty()) {
+  if (m_Configuration.m_PackageLocation.empty() || m_Configuration.m_InstallReceiptFilePath.empty()) {
     setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_DISCOVERY_FAILED);
-    LOG(ERROR) << "Local update failed: Package location or hash file path not set";
+    LOG(ERROR) << "Local update failed: Package location or install receipt file path not set";
     return false;
   }
 
   LOG(INFO) << "Local package check enabled. Checking package file in "
-    << m_Configuration.m_PackageLocation << " and comparing hash to installed package hash in "
-    << m_Configuration.m_PackageHashFilePath;
+    << m_Configuration.m_PackageLocation << " and comparing hash to installed package receipt in "
+    << m_Configuration.m_InstallReceiptFilePath;
   m_PackageStatus = doLocalPackageCheck();
 
   if (m_PackageStatus != PackageStatus::UpdateAvailable) {
@@ -326,16 +347,29 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::doLocalPackageCheck()
     return PackageStatus::NoUpdateAvailable;
   }
 
+  // Get the hash of the installed package from the install receipt
+  std::string installedPackageHash;
+  int result = readJsonField(
+    m_Configuration.m_InstallReceiptFilePath, "packageHash", installedPackageHash);
+
   // We have exactly one package file
   std::filesystem::path packageFile = packageFiles[0];
-
-  // Check if the package is installed by comparing hashes
-  if (isPackageInstalled(packageFile)) {
-    return PackageStatus::Installed;
-  }
-
-  // Save the package file name to the m_CandidatePackageFile variable
   m_CandidatePackageFile = packageFile;
+  m_CandidatePackageHash = calculateFileSHA256Hash(packageFile);
+
+  if (result == 0) /* Successfully read the install receipt */ {
+    if (m_CandidatePackageHash == installedPackageHash) {
+      return PackageStatus::Installed;
+    }
+    // Hashes differ - update available
+    return PackageStatus::UpdateAvailable;
+  }
+  else if (result == -1) {
+    LOG(INFO) << "Install receipt file does not exist: " << m_Configuration.m_InstallReceiptFilePath;
+  }
+  else {
+    LOG(ERROR) << "Error reading install receipt file: " << m_Configuration.m_InstallReceiptFilePath;
+  }
 
   return PackageStatus::UpdateAvailable;
 }
@@ -399,73 +433,33 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::doRemotePackageCheck()
 
   // Check if this package is already installed
   PackageInfo installedPkg;
-  if (isPackageInstalled(pkg.orgId, pkg.appId, installedPkg)) {
-    // Existing installation found - check if update available
-    if (pkg.isNewerThan(installedPkg)) {
-      LOG(INFO) << "Update available for " << pkg.name
-                << " (installed v" << installedPkg.xmlVersion
-                << " -> v" << pkg.xmlVersion << ")";
-      m_CandidatePackage = pkg;
-      return PackageStatus::UpdateAvailable;
-    }
-    LOG(INFO) << "Package " << pkg.name << " is up to date (v" << installedPkg.xmlVersion << ")";
+  if (!loadInstallReceipt(installedPkg)) {
+    // No existing installation - this is a first-time install
+    LOG(INFO) << "New package available for installation: " << pkg.name
+              << " (orgId=" << pkg.orgId << ", appId=" << pkg.appId
+              << ", v" << pkg.xmlVersion << ")";
+    m_CandidatePackage = pkg;
+    return PackageStatus::UpdateAvailable;
+  }
+
+  // Existing installation found - check if update available
+  // Check if the installed package matches the discovered package
+  if (pkg.orgId != installedPkg.orgId || pkg.appId != installedPkg.appId) {
+    LOG(INFO) << "Package differs from installed package. Uninstall the existing package.";
     return PackageStatus::Installed;
   }
 
-  // No existing installation - this is a first-time install
-  LOG(INFO) << "New package available for installation: " << pkg.name
-            << " (orgId=" << pkg.orgId << ", appId=" << pkg.appId
-            << ", v" << pkg.xmlVersion << ")";
-  m_CandidatePackage = pkg;
-  return PackageStatus::UpdateAvailable;
-}
-
-bool OpAppPackageManager::isPackageInstalled(uint32_t orgId, uint16_t appId, PackageInfo& outPackage) const
-{
-  // FREE-316 TODO: Implement persistent storage lookup
-  // For now, check in-memory cache or return false
-
-  // The implementation should:
-  // 1. Look up the package by orgId/appId in a persistent store (e.g., SQLite, JSON file)
-  // 2. If found, populate outPackage with:
-  //    - orgId, appId, xmlVersion
-  //    - installPath, packageHash, installedAt
-  //    - isInstalled = true
-  // 3. Return true if found, false otherwise
-
-  (void)orgId;
-  (void)appId;
-  (void)outPackage;
-  return false;
-}
-
-bool OpAppPackageManager::isPackageInstalled(const std::filesystem::path& packagePath)
-{
-  // Calculate the given files SHA-256 hash and compare it to the hash of the installed package
-  // If the hashes are the same, the package is installed
-  // If the hashes are different, the package is not installed
-  // If the package is not installed, return false
-  // If the package is installed, return true
-
-  // Get the hash of the package file
-  m_CandidatePackageHash = calculateFileSHA256Hash(packagePath);
-
-  // Get the hash of the installed package
-  std::string installedPackageHash;
-  int result = readJsonField(m_Configuration.m_PackageHashFilePath, "hash", installedPackageHash);
-  if (result == 0) {
-    // Compare the hashes and return the result
-    return m_CandidatePackageHash == installedPackageHash;
-  }
-  else if (result == -1) {
-    // File does not exist, so the package is not installed
-    LOG(INFO) << "Package receipt file does not exist: " << m_Configuration.m_PackageHashFilePath;
-    return false;
+  // orgId and appId match - check if the package is newer
+  if (pkg.isNewerThan(installedPkg)) {
+    LOG(INFO) << "Update available for " << pkg.name
+              << " (installed v" << installedPkg.xmlVersion
+              << " -> v" << pkg.xmlVersion << ")";
+    m_CandidatePackage = pkg;
+    return PackageStatus::UpdateAvailable;
   }
 
-  // else:Error reading the file
-  LOG(ERROR) << "Error reading package receipt file: " << m_Configuration.m_PackageHashFilePath;
-  return false;
+  LOG(INFO) << "Package " << pkg.name << " is up to date (v" << installedPkg.xmlVersion << ")";
+  return PackageStatus::Installed;
 }
 
 int OpAppPackageManager::searchLocalPackageFiles(std::vector<std::filesystem::path>& outPackageFiles)
@@ -628,10 +622,130 @@ bool OpAppPackageManager::verifyUnzippedPackage(const std::filesystem::path& fil
 
 bool OpAppPackageManager::installToPersistentStorage(const std::filesystem::path& filePath)
 {
-  // TODO: If this an update, save persistent storage data
-  (void)filePath;  // Suppress unused warning until implementation
-  m_LastErrorMessage = "Copy to persistent storage not yet implemented";
-  return false;
+  // TODO: Copy files from filePath to m_Configuration.m_OpAppInstallDirectory/orgId/appId
+
+  m_CandidatePackage.installPath = m_Configuration.m_OpAppInstallDirectory /
+      std::to_string(m_CandidatePackage.orgId) / std::to_string(m_CandidatePackage.appId);
+  m_CandidatePackage.packageHash = m_CandidatePackageHash;
+
+  // Generate ISO timestamp for installedAt
+  auto now = std::chrono::system_clock::now();
+  auto time_t_now = std::chrono::system_clock::to_time_t(now);
+  std::tm tm_now;
+  gmtime_r(&time_t_now, &tm_now);
+  std::ostringstream oss;
+  oss << std::put_time(&tm_now, "%Y-%m-%dT%H:%M:%SZ");
+  m_CandidatePackage.installedAt = oss.str();
+
+  // Save the installation receipt
+  if (!saveInstallReceipt(m_CandidatePackage)) {
+    return false;
+  }
+
+  (void)filePath;  // Suppress unused warning until full implementation
+  LOG(INFO) << "Installation receipt saved for package orgId=" << m_CandidatePackage.orgId
+            << ", appId=" << m_CandidatePackage.appId;
+  return true;
+}
+
+bool OpAppPackageManager::saveInstallReceipt(const PackageInfo& pkg)
+{
+  if (m_Configuration.m_InstallReceiptFilePath.empty()) {
+    m_LastErrorMessage = "Install receipt file path not configured";
+    return false;
+  }
+
+  // Ensure parent directory exists
+  std::filesystem::path parentDir = m_Configuration.m_InstallReceiptFilePath.parent_path();
+  if (!parentDir.empty() && !std::filesystem::exists(parentDir)) {
+    std::error_code ec;
+    std::filesystem::create_directories(parentDir, ec);
+    if (ec) {
+      m_LastErrorMessage = "Failed to create directory for install receipt: " + ec.message();
+      return false;
+    }
+  }
+
+  // Build JSON object with all package info
+  Json::Value root;
+  root["orgId"] = pkg.orgId;
+  root["appId"] = pkg.appId;
+  root["xmlVersion"] = pkg.xmlVersion;
+  root["name"] = pkg.name;
+  root["baseUrl"] = pkg.baseUrl;
+  root["location"] = pkg.location;
+  root["installPath"] = pkg.installPath.string();
+  root["packageHash"] = pkg.packageHash;
+  root["installedAt"] = pkg.installedAt;
+
+  // Write to a temporary file first, then rename for atomic write
+  std::filesystem::path tempFile = m_Configuration.m_InstallReceiptFilePath;
+  tempFile += ".tmp";
+
+  std::ofstream outFile(tempFile);
+  if (!outFile) {
+    m_LastErrorMessage = "Failed to open install receipt file for writing: " + tempFile.string();
+    return false;
+  }
+
+  Json::StreamWriterBuilder builder;
+  builder["indentation"] = "  ";
+  std::unique_ptr<Json::StreamWriter> writer(builder.newStreamWriter());
+  writer->write(root, &outFile);
+  outFile.close();
+
+  if (outFile.fail()) {
+    m_LastErrorMessage = "Failed to write install receipt file: " + tempFile.string();
+    return false;
+  }
+
+  // Atomic rename
+  std::error_code ec;
+  std::filesystem::rename(tempFile, m_Configuration.m_InstallReceiptFilePath, ec);
+  if (ec) {
+    m_LastErrorMessage = "Failed to rename install receipt file: " + ec.message();
+    std::filesystem::remove(tempFile, ec);  // Clean up temp file
+    return false;
+  }
+
+  return true;
+}
+
+bool OpAppPackageManager::loadInstallReceipt(PackageInfo& outPackage) const
+{
+  if (m_Configuration.m_InstallReceiptFilePath.empty()) {
+    return false;
+  }
+
+  if (!std::filesystem::exists(m_Configuration.m_InstallReceiptFilePath)) {
+    return false;
+  }
+
+  std::ifstream jsonFile(m_Configuration.m_InstallReceiptFilePath);
+  if (!jsonFile) {
+    LOG(ERROR) << "Failed to open install receipt file: " << m_Configuration.m_InstallReceiptFilePath;
+    return false;
+  }
+
+  Json::Value root;
+  Json::CharReaderBuilder builder;
+  std::string errors;
+  if (!Json::parseFromStream(builder, jsonFile, &root, &errors)) {
+    LOG(ERROR) << "Failed to parse install receipt JSON: " << errors;
+    return false;
+  }
+
+  // Read fields - support both old format (hash only) and new format (full receipt)
+  outPackage.orgId = root.get("orgId", 0).asUInt();
+  outPackage.appId = static_cast<uint16_t>(root.get("appId", 0).asUInt());
+  outPackage.xmlVersion = root.get("xmlVersion", 0).asUInt();
+  outPackage.name = root.get("name", "").asString();
+  outPackage.baseUrl = root.get("baseUrl", "").asString();
+  outPackage.location = root.get("location", "").asString();
+  outPackage.installPath = root.get("installPath", "").asString();
+  outPackage.installedAt = root.get("installedAt", "").asString();
+  outPackage.packageHash = root["packageHash"].asString();
+  return true;
 }
 
 bool OpAppPackageManager::validateOpAppDescriptor(const Ait::S_AIT_APP_DESC& app, std::string& outError) const
@@ -746,7 +860,6 @@ bool OpAppPackageManager::parseAitFiles(
       pkgInfo.xmlVersion = app.xmlVersion;
       pkgInfo.baseUrl = app.transportArray[0].url.baseUrl;
       pkgInfo.location = app.location;
-      pkgInfo.isInstalled = false;  // This is a discovered package, not installed yet
 
       if (app.appName.numLangs > 0) {
         pkgInfo.name = app.appName.names[0].name;

@@ -54,8 +54,6 @@ struct PackageInfo {
     std::string location;     // Application location (e.g., "index.html")
     std::string name;         // Application name
 
-    // Installation state (only set for installed packages)
-    bool isInstalled = false;
     std::filesystem::path installPath;  // Local path where package is installed
     std::string packageHash;  // SHA256 hash of the installed package
     std::string installedAt;  // ISO timestamp of installation
@@ -153,10 +151,11 @@ public:
        * If empty, does a remote check for updates. */
       std::filesystem::path m_PackageLocation;
 
-      /* File path to the hash of the installed OpApp package.
-       * If empty, does not check for package hash.
-       * FREE-315 Used for local package checking, may be useful for remote package checking.*/
-      std::filesystem::path m_PackageHashFilePath;
+      /* File path to the installation receipt JSON file for the installed OpApp.
+       * Contains package metadata including hash, version, install timestamp, etc.
+       * If empty, persistent installation state is not tracked.
+       * FREE-315, FREE-316 Used for local package checking and installation state. */
+      std::filesystem::path m_InstallReceiptFilePath;
 
       std::filesystem::path m_PrivateKeyFilePath;
       std::filesystem::path m_PublicKeyFilePath;
@@ -219,28 +218,20 @@ public:
   bool isRunning() const;
 
   /**
-   * isPackageInstalled()
+   * isOpAppInstalled()
    *
-   * Checks if a package for a given org/app ID is installed.
-   * If installed, returns true and populates outPackage with the package details.
+   * Checks if any OpApp is installed.
    *
-   * @param orgId Organization ID
-   * @param appId Application ID
-   * @param outPackage Output PackageInfo with installation details if found
-   * @return true if an installed package was found, false otherwise
+   * @return true if an OpApp is installed, false otherwise.
    */
-  bool isPackageInstalled(uint32_t orgId, uint16_t appId, PackageInfo& outPackage) const;
+  bool isOpAppInstalled();
 
   /**
-   * isPackageInstalled(const std::filesystem::path& packagePath)
+   * doFirstTimeInstall()
    *
-   * Checks if the package at the given path is installed by comparing hashes.
-   *
-   * Returns:
-   *  true if the package is installed.
-   *  false if the package is not installed.
+   * Attempts a full installation of an OpApp.
    */
-  bool isPackageInstalled(const std::filesystem::path& packagePath);
+  void doFirstTimeInstallation();
 
   /**
    * checkForUpdates()
@@ -328,7 +319,7 @@ private:
    *
    * Checks for the existence of a *single* OpApp package file, ending with the package suffix
    * in the directory set by m_PackageLocation, and checks its SHA256 hash against any existing
-   * hash found at m_PackageHashFilePath.
+   * hash found in the install receipt at m_InstallReceiptFilePath.
    *
    * If the package file is found, it is saved to m_CandidatePackageFile.
    *
@@ -429,13 +420,37 @@ private:
    *
    * Installs the package file to persistent storage.
    * Creates the directory structure m_Configuration.m_OpAppInstallDirectory/appId/orgId
+   * (note: this matches the URL format used by the OpApp HbbTV spec)
    * if it does not exist or deletes the directory structure if the package is being updated.
    *
-   * @param filePath Path to the package file
+   * @param filePath Path to the decrypted, verified and unzipped package file
    * @return true if the package is installed successfully, false otherwise.
    *         On error, sets m_LastErrorMessage.
    */
   bool installToPersistentStorage(const std::filesystem::path& filePath);
+
+  /**
+   * saveInstallReceipt()
+   *
+   * Saves the installation receipt JSON file to m_Configuration.m_InstallReceiptFilePath.
+   * The receipt contains the full PackageInfo metadata for the installed package.
+   *
+   * @param pkg The package information to save
+   * @return true if the receipt was saved successfully, false otherwise.
+   *         On error, sets m_LastErrorMessage.
+   */
+  bool saveInstallReceipt(const PackageInfo& pkg);
+
+  /**
+   * loadInstallReceipt()
+   *
+   * Loads the installation receipt JSON file from m_Configuration.m_InstallReceiptFilePath.
+   * Supports backwards compatibility with old format containing only "hash" field.
+   *
+   * @param outPackage Output PackageInfo populated with installed package details if found
+   * @return true if a valid receipt was loaded, false otherwise (file missing or invalid).
+   */
+  bool loadInstallReceipt(PackageInfo& outPackage) const;
 
   /**
    * parseAitFiles()
@@ -443,7 +458,7 @@ private:
    * Parses AIT XML files and extracts package information.
    *
    * @param aitFiles Vector of paths to AIT XML files
-   * @param packages Vector of PackageInfo (output) - discovered packages with isInstalled=false
+   * @param packages Vector of PackageInfo (output)
    * @return true if at least one valid OpApp descriptor was found, false otherwise.
    *         On error, sets m_LastErrorMessage.
    */

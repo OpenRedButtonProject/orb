@@ -64,11 +64,6 @@ bool OpAppPackageManagerTestInterface::isRunning() const
     return m_PackageManager->isRunning();
 }
 
-bool OpAppPackageManagerTestInterface::isPackageInstalled(const std::filesystem::path& packagePath)
-{
-    return m_PackageManager->isPackageInstalled(packagePath);
-}
-
 void OpAppPackageManagerTestInterface::checkForUpdates()
 {
     m_PackageManager->checkForUpdates();
@@ -142,12 +137,6 @@ bool OpAppPackageManagerTestInterface::parseAitFiles(const std::vector<std::file
     return m_PackageManager->parseAitFiles(aitFiles, packages);
 }
 
-bool OpAppPackageManagerTestInterface::isPackageInstalled(uint32_t orgId, uint16_t appId, PackageInfo& outPackage) const
-{
-    // Access private method directly since we're a friend class
-    return m_PackageManager->isPackageInstalled(orgId, appId, outPackage);
-}
-
 bool OpAppPackageManagerTestInterface::movePackageFileToInstallationDirectory(const std::filesystem::path& packageFilePath)
 {
     // Access private method directly since we're a friend class
@@ -164,6 +153,30 @@ bool OpAppPackageManagerTestInterface::installToPersistentStorage(const std::fil
 {
     // Access private method directly since we're a friend class
     return m_PackageManager->installToPersistentStorage(filePath);
+}
+
+bool OpAppPackageManagerTestInterface::saveInstallReceipt(const PackageInfo& pkg)
+{
+    // Access private method directly since we're a friend class
+    return m_PackageManager->saveInstallReceipt(pkg);
+}
+
+bool OpAppPackageManagerTestInterface::loadInstallReceipt(PackageInfo& outPackage) const
+{
+    // Access private method directly since we're a friend class
+    return m_PackageManager->loadInstallReceipt(outPackage);
+}
+
+void OpAppPackageManagerTestInterface::setCandidatePackage(const PackageInfo& pkg)
+{
+    // Access private member directly since we're a friend class
+    m_PackageManager->m_CandidatePackage = pkg;
+}
+
+void OpAppPackageManagerTestInterface::setCandidatePackageHash(const std::string& hash)
+{
+    // Access private member directly since we're a friend class
+    m_PackageManager->m_CandidatePackageHash = hash;
 }
 
 std::filesystem::path OpAppPackageManagerTestInterface::getCandidatePackageFile() const
