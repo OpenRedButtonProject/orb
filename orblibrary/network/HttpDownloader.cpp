@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <sstream>
+#include <fstream>
 
 // BoringSSL headers for HTTPS support
 #include <openssl/ssl.h>
@@ -476,6 +477,51 @@ std::shared_ptr<DownloadedObject> HttpDownloader::DownloadHttps(
     SSL_shutdown(ssl);
 
     return ParseAndCreateResponse(response);
+}
+
+std::shared_ptr<DownloadedObject> HttpDownloader::DownloadToFile(
+    const std::string& url, const std::filesystem::path& outputPath)
+{
+    // Download the content
+    auto result = Download(url);
+    if (!result) {
+        LOG(ERROR) << "Failed to download from " << url;
+        return nullptr;
+    }
+
+    if (!result->IsSuccess()) {
+        LOG(ERROR) << "Download failed with status " << result->GetStatusCode();
+        return result;
+    }
+
+    // Ensure parent directory exists
+    std::filesystem::path parentDir = outputPath.parent_path();
+    if (!parentDir.empty() && !std::filesystem::exists(parentDir)) {
+        std::error_code ec;
+        std::filesystem::create_directories(parentDir, ec);
+        if (ec) {
+            LOG(ERROR) << "Failed to create directory for download: " << ec.message();
+            return nullptr;
+        }
+    }
+
+    // Write content to file
+    std::ofstream outFile(outputPath, std::ios::binary);
+    if (!outFile) {
+        LOG(ERROR) << "Failed to open output file: " << outputPath;
+        return nullptr;
+    }
+
+    outFile.write(result->GetContent().c_str(), result->GetContent().size());
+    outFile.close();
+
+    if (outFile.fail()) {
+        LOG(ERROR) << "Failed to write to output file: " << outputPath;
+        return nullptr;
+    }
+
+    LOG(INFO) << "Downloaded " << result->GetContent().size() << " bytes to " << outputPath;
+    return result;
 }
 
 } // namespace orb
