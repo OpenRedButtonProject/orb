@@ -724,4 +724,84 @@ TEST_F(DecryptorTest, RejectsUnsupportedContentEncryptionAlgorithm)
 }
 #endif // IS_CHROMIUM
 
+//------------------------------------------------------------------------------
+// Manual Integration Test with Real Files
+//------------------------------------------------------------------------------
+
+/**
+ * Integration test using real certificate, key, and CMS files.
+ *
+ * To run this test, set the following environment variables:
+ *   DECRYPTOR_TEST_KEY  - Path to PEM private key file
+ *   DECRYPTOR_TEST_CERT - Path to PEM certificate file
+ *   DECRYPTOR_TEST_CMS  - Path to DER-encoded CMS EnvelopedData file
+ *
+ * Example:
+ *   export DECRYPTOR_TEST_KEY=/path/to/terminal-packaging.key
+ *   export DECRYPTOR_TEST_CERT=/path/to/terminal-packaging.crt
+ *   export DECRYPTOR_TEST_CMS=/path/to/encrypted-package.cms
+ *
+ * If any environment variable is not set, the test is skipped.
+ * The decrypted output is written to the same directory as the CMS file
+ * with "_decrypted.cms" suffix.
+ */
+TEST_F(DecryptorTest, RealFileDecryption)
+{
+    // Read paths from environment variables
+    const char* keyPath = std::getenv("DECRYPTOR_TEST_KEY");
+    const char* certPath = std::getenv("DECRYPTOR_TEST_CERT");
+    const char* cmsPath = std::getenv("DECRYPTOR_TEST_CMS");
+
+    // Skip test if environment variables are not set
+    if (!keyPath || !certPath || !cmsPath) {
+        GTEST_SKIP() << "Skipping real file test: Set DECRYPTOR_TEST_KEY, "
+                     << "DECRYPTOR_TEST_CERT, and DECRYPTOR_TEST_CMS environment "
+                     << "variables to run this test.";
+    }
+
+    std::filesystem::path privateKeyPath(keyPath);
+    std::filesystem::path certificatePath(certPath);
+    std::filesystem::path cmsFilePath(cmsPath);
+
+    // Verify files exist
+    ASSERT_TRUE(std::filesystem::exists(privateKeyPath))
+        << "Private key file not found: " << privateKeyPath;
+    ASSERT_TRUE(std::filesystem::exists(certificatePath))
+        << "Certificate file not found: " << certificatePath;
+    ASSERT_TRUE(std::filesystem::exists(cmsFilePath))
+        << "CMS file not found: " << cmsFilePath;
+
+    // Configure decryptor
+    DecryptorConfig config;
+    config.privateKeyPath = privateKeyPath;
+    config.certificatePath = certificatePath;
+    // Output to same directory as input CMS file
+    config.workingDirectory = cmsFilePath.parent_path();
+
+    Decryptor decryptor(config);
+
+    std::filesystem::path outFile;
+    std::string outError;
+
+    std::cout << "Decrypting: " << cmsFilePath << std::endl;
+    std::cout << "Using key:  " << privateKeyPath << std::endl;
+    std::cout << "Using cert: " << certificatePath << std::endl;
+
+    bool result = decryptor.decrypt(cmsFilePath, outFile, outError);
+
+    if (result) {
+        std::cout << "SUCCESS: Decrypted to " << outFile << std::endl;
+        EXPECT_TRUE(std::filesystem::exists(outFile))
+            << "Decrypted file should exist at: " << outFile;
+
+        // Print file size for verification
+        auto fileSize = std::filesystem::file_size(outFile);
+        std::cout << "Decrypted file size: " << fileSize << " bytes" << std::endl;
+    } else {
+        std::cout << "FAILED: " << outError << std::endl;
+    }
+
+    EXPECT_TRUE(result) << "Decryption failed: " << outError;
+}
+
 

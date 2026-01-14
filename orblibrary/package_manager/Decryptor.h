@@ -123,7 +123,7 @@ private:
     bool parseEnvelopedData(
         const uint8_t* data,
         size_t len,
-        std::vector<uint8_t>& outEncryptedKey,
+        std::vector<std::vector<uint8_t>>& outEncryptedKeys,
         std::vector<uint8_t>& outEncryptedContent,
         std::vector<uint8_t>& outIV,
         int& outKeySize,

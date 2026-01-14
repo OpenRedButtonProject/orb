@@ -185,20 +185,36 @@ bool Decryptor::decryptWithBoringSSL(
     std::vector<uint8_t>& outDecrypted,
     std::string& outError) const
 {
-    std::vector<uint8_t> encryptedKey;
+    std::vector<std::vector<uint8_t>> allEncryptedKeys;
     std::vector<uint8_t> encryptedContent;
     std::vector<uint8_t> iv;
     int keySize = 0;
 
-    // Parse the CMS EnvelopedData structure
+    // Parse the CMS EnvelopedData structure - returns ALL encrypted keys
     if (!parseEnvelopedData(cmsData.data(), cmsData.size(),
-                           encryptedKey, encryptedContent, iv, keySize, outError)) {
+                           allEncryptedKeys, encryptedContent, iv, keySize, outError)) {
         return false;
     }
 
-    // Decrypt the symmetric key using RSA
+    // Try to decrypt each encrypted key until one succeeds
+    // (the CMS may have multiple recipients, we need to find ours)
     std::vector<uint8_t> decryptedKey;
-    if (!decryptKey(encryptedKey, decryptedKey, outError)) {
+    std::string lastKeyError;
+    bool keyDecrypted = false;
+
+    for (size_t i = 0; i < allEncryptedKeys.size(); ++i) {
+        std::string keyError;
+        if (decryptKey(allEncryptedKeys[i], decryptedKey, keyError)) {
+            keyDecrypted = true;
+            break;
+        }
+        lastKeyError = keyError;
+    }
+
+    if (!keyDecrypted) {
+        outError = "Failed to decrypt key with any of " +
+                   std::to_string(allEncryptedKeys.size()) +
+                   " recipients. Last error: " + lastKeyError;
         return false;
     }
 
@@ -220,7 +236,7 @@ bool Decryptor::decryptWithBoringSSL(
 bool Decryptor::parseEnvelopedData(
     const uint8_t* data,
     size_t len,
-    std::vector<uint8_t>& outEncryptedKey,
+    std::vector<std::vector<uint8_t>>& outEncryptedKeys,
     std::vector<uint8_t>& outEncryptedContent,
     std::vector<uint8_t>& outIV,
     int& outKeySize,
@@ -271,9 +287,16 @@ bool Decryptor::parseEnvelopedData(
         return false;
     }
 
-    // Skip optional originatorInfo [0] if present
-    CBS originatorInfo;
-    CBS_get_asn1(&envelopedData, &originatorInfo, CBS_ASN1_CONTEXT_SPECIFIC | CBS_ASN1_CONSTRUCTED | 0);
+    // Skip optional originatorInfo [0] IMPLICIT if present
+    // Use CBS_peek_asn1_tag to check without consuming
+    if (CBS_peek_asn1_tag(&envelopedData, CBS_ASN1_CONTEXT_SPECIFIC | CBS_ASN1_CONSTRUCTED | 0)) {
+        CBS originatorInfo;
+        if (!CBS_get_asn1(&envelopedData, &originatorInfo,
+                        CBS_ASN1_CONTEXT_SPECIFIC | CBS_ASN1_CONSTRUCTED | 0)) {
+            outError = "Failed to parse originatorInfo";
+            return false;
+        }
+    }
 
     // Parse recipientInfos SET
     CBS recipientInfos;
@@ -282,74 +305,86 @@ bool Decryptor::parseEnvelopedData(
         return false;
     }
 
-    // Parse first RecipientInfo (KeyTransRecipientInfo)
-    // For now we just take the first one - in production should match against certificate
-    CBS recipientInfo;
-    if (!CBS_get_asn1(&recipientInfos, &recipientInfo, CBS_ASN1_SEQUENCE)) {
-        outError = "Failed to parse RecipientInfo";
-        return false;
-    }
+    // Parse ALL RecipientInfos and collect encrypted keys
+    // We'll try each one when decrypting to find the one matching our private key
+    std::vector<std::vector<uint8_t>> allEncryptedKeys;
 
-    // Parse KeyTransRecipientInfo version
-    uint64_t ktriVersion;
-    if (!CBS_get_asn1_uint64(&recipientInfo, &ktriVersion)) {
-        outError = "Failed to parse KeyTransRecipientInfo version";
-        return false;
-    }
-
-    // Parse RecipientIdentifier (issuerAndSerialNumber or subjectKeyIdentifier)
-    // We skip this for now - just advance past it
-    CBS rid;
-    if (ktriVersion == 0) {
-        // issuerAndSerialNumber SEQUENCE
-        if (!CBS_get_asn1(&recipientInfo, &rid, CBS_ASN1_SEQUENCE)) {
-            outError = "Failed to parse RecipientIdentifier (issuerAndSerialNumber)";
+    while (CBS_len(&recipientInfos) > 0) {
+        CBS recipientInfo;
+        if (!CBS_get_asn1(&recipientInfos, &recipientInfo, CBS_ASN1_SEQUENCE)) {
+            outError = "Failed to parse RecipientInfo SEQUENCE";
             return false;
         }
-    } else if (ktriVersion == 2) {
-        // subjectKeyIdentifier [0] IMPLICIT
-        if (!CBS_get_asn1(&recipientInfo, &rid, CBS_ASN1_CONTEXT_SPECIFIC | 0)) {
-            outError = "Failed to parse RecipientIdentifier (subjectKeyIdentifier)";
+
+        // Parse KeyTransRecipientInfo version
+        uint64_t ktriVersion;
+        if (!CBS_get_asn1_uint64(&recipientInfo, &ktriVersion)) {
+            outError = "Failed to parse KeyTransRecipientInfo version";
             return false;
         }
-    } else {
-        outError = "Unsupported KeyTransRecipientInfo version: " + std::to_string(ktriVersion);
+
+        // Parse RecipientIdentifier (issuerAndSerialNumber or subjectKeyIdentifier)
+        CBS rid;
+        if (ktriVersion == 0) {
+            // issuerAndSerialNumber SEQUENCE
+            if (!CBS_get_asn1(&recipientInfo, &rid, CBS_ASN1_SEQUENCE)) {
+                outError = "Failed to parse RecipientIdentifier (issuerAndSerialNumber)";
+                return false;
+            }
+        } else if (ktriVersion == 2) {
+            // subjectKeyIdentifier [0] IMPLICIT
+            if (!CBS_get_asn1(&recipientInfo, &rid, CBS_ASN1_CONTEXT_SPECIFIC | 0)) {
+                outError = "Failed to parse RecipientIdentifier (subjectKeyIdentifier)";
+                return false;
+            }
+        } else {
+            outError = "Unsupported KeyTransRecipientInfo version: " + std::to_string(ktriVersion);
+            return false;
+        }
+
+        // Parse keyEncryptionAlgorithm AlgorithmIdentifier
+        CBS keyEncAlg;
+        if (!CBS_get_asn1(&recipientInfo, &keyEncAlg, CBS_ASN1_SEQUENCE)) {
+            outError = "Failed to parse keyEncryptionAlgorithm";
+            return false;
+        }
+
+        // Parse algorithm OID (we verify it's RSA but accept any for collection)
+        CBS keyEncAlgOID;
+        if (!CBS_get_asn1(&keyEncAlg, &keyEncAlgOID, CBS_ASN1_OBJECT)) {
+            outError = "Failed to parse keyEncryptionAlgorithm OID";
+            return false;
+        }
+
+        // Verify RSA encryption algorithm
+        bool isRSA = compareOID(CBS_data(&keyEncAlgOID), CBS_len(&keyEncAlgOID),
+                               OID_RSA_ENCRYPTION, sizeof(OID_RSA_ENCRYPTION));
+        bool isOAEP = compareOID(CBS_data(&keyEncAlgOID), CBS_len(&keyEncAlgOID),
+                                OID_RSAES_OAEP, sizeof(OID_RSAES_OAEP));
+        if (!isRSA && !isOAEP) {
+            // Skip non-RSA recipients
+            continue;
+        }
+
+        // Parse encryptedKey OCTET STRING
+        CBS encryptedKeyOctet;
+        if (!CBS_get_asn1(&recipientInfo, &encryptedKeyOctet, CBS_ASN1_OCTETSTRING)) {
+            outError = "Failed to parse encryptedKey";
+            return false;
+        }
+
+        allEncryptedKeys.emplace_back(
+            CBS_data(&encryptedKeyOctet),
+            CBS_data(&encryptedKeyOctet) + CBS_len(&encryptedKeyOctet));
+    }
+
+    if (allEncryptedKeys.empty()) {
+        outError = "No RSA-encrypted keys found in RecipientInfos";
         return false;
     }
 
-    // Parse keyEncryptionAlgorithm AlgorithmIdentifier
-    CBS keyEncAlg;
-    if (!CBS_get_asn1(&recipientInfo, &keyEncAlg, CBS_ASN1_SEQUENCE)) {
-        outError = "Failed to parse keyEncryptionAlgorithm";
-        return false;
-    }
-
-    // Parse algorithm OID
-    CBS keyEncAlgOID;
-    if (!CBS_get_asn1(&keyEncAlg, &keyEncAlgOID, CBS_ASN1_OBJECT)) {
-        outError = "Failed to parse keyEncryptionAlgorithm OID";
-        return false;
-    }
-
-    // Verify RSA encryption algorithm
-    bool isRSA = compareOID(CBS_data(&keyEncAlgOID), CBS_len(&keyEncAlgOID),
-                           OID_RSA_ENCRYPTION, sizeof(OID_RSA_ENCRYPTION));
-    bool isOAEP = compareOID(CBS_data(&keyEncAlgOID), CBS_len(&keyEncAlgOID),
-                            OID_RSAES_OAEP, sizeof(OID_RSAES_OAEP));
-    if (!isRSA && !isOAEP) {
-        outError = "Unsupported key encryption algorithm (not RSA or RSAES-OAEP)";
-        return false;
-    }
-
-    // Parse encryptedKey OCTET STRING
-    CBS encryptedKeyOctet;
-    if (!CBS_get_asn1(&recipientInfo, &encryptedKeyOctet, CBS_ASN1_OCTETSTRING)) {
-        outError = "Failed to parse encryptedKey";
-        return false;
-    }
-
-    outEncryptedKey.assign(CBS_data(&encryptedKeyOctet),
-                          CBS_data(&encryptedKeyOctet) + CBS_len(&encryptedKeyOctet));
+    // Return all encrypted keys - caller will try each one
+    outEncryptedKeys = std::move(allEncryptedKeys);
 
     // Parse encryptedContentInfo SEQUENCE
     CBS encryptedContentInfo;
