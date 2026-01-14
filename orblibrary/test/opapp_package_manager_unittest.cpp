@@ -7,11 +7,14 @@
 #include <sstream>
 #include <thread>
 #include <chrono>
+#include <vector>
+#include <iomanip>
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/orb/orblibrary/include/OpAppPackageManager.h"
 #include "third_party/orb/orblibrary/package_manager/AitFetcher.h"
 #include "third_party/orb/orblibrary/common/xml_parser.h"
+#include "third_party/orb/orblibrary/network/HttpDownloader.h"
 #include "OpAppPackageManagerTestInterface.h"
 #include <fstream>
 
@@ -168,6 +171,107 @@ private:
   std::string m_DefaultHash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"; // Empty file hash
 };
 
+// Mock HTTP downloader for testing package download
+class MockHttpDownloader : public IHttpDownloader {
+public:
+  MockHttpDownloader() = default;
+
+  // Configure the mock to return a successful download
+  void setDownloadSuccess(const std::string& content, const std::string& contentType) {
+    m_DownloadSuccess = true;
+    m_DownloadContent = content;
+    m_DownloadContentType = contentType;
+    m_DownloadStatusCode = 200;
+  }
+
+  // Configure the mock to return an HTTP error
+  void setDownloadHttpError(int statusCode) {
+    m_DownloadSuccess = true;
+    m_DownloadStatusCode = statusCode;
+    m_DownloadContent = "";
+    m_DownloadContentType = "";
+  }
+
+  // Configure the mock to return a network failure (nullptr)
+  void setDownloadNetworkFailure() {
+    m_DownloadSuccess = false;
+  }
+
+  // Configure how many times the mock should fail before succeeding
+  void setFailuresBeforeSuccess(int failures, const std::string& content, const std::string& contentType) {
+    m_FailuresBeforeSuccess = failures;
+    m_DownloadContent = content;
+    m_DownloadContentType = contentType;
+    m_DownloadStatusCode = 200;
+    m_DownloadSuccess = true;
+  }
+
+  std::shared_ptr<DownloadedObject> Download(const std::string& url) override {
+    m_DownloadCallCount++;
+    m_LastDownloadUrl = url;
+
+    // Check if we should fail this attempt
+    if (m_FailuresBeforeSuccess > 0 && m_DownloadCallCount <= m_FailuresBeforeSuccess) {
+      return nullptr;
+    }
+
+    if (!m_DownloadSuccess) {
+      return nullptr;
+    }
+
+    return std::make_shared<DownloadedObject>(m_DownloadContent, m_DownloadContentType, m_DownloadStatusCode);
+  }
+
+  std::shared_ptr<DownloadedObject> DownloadToFile(
+      const std::string& url, const std::filesystem::path& outputPath) override {
+    m_DownloadCallCount++;
+    m_LastDownloadUrl = url;
+    m_LastOutputPath = outputPath;
+
+    // Check if we should fail this attempt
+    if (m_FailuresBeforeSuccess > 0 && m_DownloadCallCount <= m_FailuresBeforeSuccess) {
+      return nullptr;
+    }
+
+    if (!m_DownloadSuccess) {
+      return nullptr;
+    }
+
+    // Write content to the output file if download succeeds
+    if (m_DownloadStatusCode >= 200 && m_DownloadStatusCode < 300) {
+      std::filesystem::create_directories(outputPath.parent_path());
+      std::ofstream outFile(outputPath, std::ios::binary);
+      outFile.write(m_DownloadContent.c_str(), m_DownloadContent.size());
+      outFile.close();
+    }
+
+    return std::make_shared<DownloadedObject>(m_DownloadContent, m_DownloadContentType, m_DownloadStatusCode);
+  }
+
+  // Getters for verification
+  int getDownloadCallCount() const { return m_DownloadCallCount; }
+  std::string getLastDownloadUrl() const { return m_LastDownloadUrl; }
+  std::filesystem::path getLastOutputPath() const { return m_LastOutputPath; }
+
+  void reset() {
+    m_DownloadCallCount = 0;
+    m_LastDownloadUrl.clear();
+    m_LastOutputPath.clear();
+    m_FailuresBeforeSuccess = 0;
+  }
+
+private:
+  bool m_DownloadSuccess = true;
+  std::string m_DownloadContent;
+  std::string m_DownloadContentType;
+  int m_DownloadStatusCode = 200;
+  int m_FailuresBeforeSuccess = 0;
+
+  mutable int m_DownloadCallCount = 0;
+  mutable std::string m_LastDownloadUrl;
+  mutable std::filesystem::path m_LastOutputPath;
+};
+
 // Helper function to generate valid OpApp AIT XML for testing
 static std::string createValidOpAppAitXml(
     uint32_t orgId,
@@ -253,6 +357,16 @@ protected:
   static OpAppPackageManager::Configuration createConfigurationWithReceiptAndDest() {
     auto config = createConfigurationWithReceipt();
     config.m_DestinationDirectory = PACKAGE_PATH + "/install";
+    return config;
+  }
+
+  // Create a configuration for download tests with zero retry delays
+  static OpAppPackageManager::Configuration createConfigurationForDownloadTests() {
+    auto config = createBasicConfiguration();
+    config.m_DestinationDirectory = PACKAGE_PATH + "/dest";
+    // Set zero delays for fast test execution
+    config.m_DownloadRetryDelayMinSeconds = 0;
+    config.m_DownloadRetryDelayMaxSeconds = 0;
     return config;
   }
 
@@ -1824,6 +1938,282 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_MixedValidAndInvalid_OnlyValid
 }
 
 // =============================================================================
+// downloadPackageFile Tests (TS 103 606 Section 6.1.7)
+// =============================================================================
+
+TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_EmptyUrl_ReturnsFailure)
+{
+  // GIVEN: a package info with empty URL
+  auto configuration = createConfigurationForDownloadTests();
+
+  auto mockDownloader = std::make_unique<MockHttpDownloader>();
+  mockDownloader->setDownloadSuccess("test content", "application/vnd.hbbtv.opapp.pkg");
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+
+  PackageInfo pkgInfo;
+  pkgInfo.baseUrl = "";  // Empty URL
+  pkgInfo.location = "";
+
+  // WHEN: downloadPackageFile is called
+  bool result = testInterface->downloadPackageFile(pkgInfo);
+
+  // THEN: should return failure with error message
+  EXPECT_FALSE(result);
+  EXPECT_NE(testInterface->getLastErrorMessage().find("URL is empty"), std::string::npos);
+}
+
+TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_ValidContentType_ReturnsSuccess)
+{
+  // GIVEN: a valid package URL with correct content type
+  auto configuration = createConfigurationForDownloadTests();
+
+  auto mockDownloader = std::make_unique<MockHttpDownloader>();
+  mockDownloader->setDownloadSuccess("encrypted package content", "application/vnd.hbbtv.opapp.pkg");
+  MockHttpDownloader* mockDownloaderPtr = mockDownloader.get();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+
+  PackageInfo pkgInfo;
+  pkgInfo.baseUrl = "https://test.example.com/packages";
+  pkgInfo.location = "app.cms";
+
+  // WHEN: downloadPackageFile is called
+  bool result = testInterface->downloadPackageFile(pkgInfo);
+
+  // THEN: should return success
+  EXPECT_TRUE(result);
+  EXPECT_EQ(mockDownloaderPtr->getDownloadCallCount(), 1);
+  EXPECT_EQ(mockDownloaderPtr->getLastDownloadUrl(), "https://test.example.com/packages/app.cms");
+  EXPECT_EQ(testInterface->getCandidatePackageFile(),
+            std::filesystem::path(PACKAGE_PATH) / "dest" / "downloaded_package.cms");
+  EXPECT_TRUE(testInterface->getLastErrorMessage().empty());
+}
+
+TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_InvalidContentType_ReturnsFailure)
+{
+  // GIVEN: a package URL returning wrong content type
+  auto configuration = createConfigurationForDownloadTests();
+
+  auto mockDownloader = std::make_unique<MockHttpDownloader>();
+  // Wrong content type per TS 103 606 Section 6.1.7
+  mockDownloader->setDownloadSuccess("some content", "application/octet-stream");
+  MockHttpDownloader* mockDownloaderPtr = mockDownloader.get();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+
+  PackageInfo pkgInfo;
+  pkgInfo.baseUrl = "https://test.example.com/packages/";
+  pkgInfo.location = "app.cms";
+
+  // WHEN: downloadPackageFile is called
+  bool result = testInterface->downloadPackageFile(pkgInfo);
+
+  // THEN: should return failure after 3 attempts (retry logic)
+  EXPECT_FALSE(result);
+  EXPECT_EQ(mockDownloaderPtr->getDownloadCallCount(), 3);  // Max retry attempts
+  EXPECT_NE(testInterface->getLastErrorMessage().find("Content-Type"), std::string::npos);
+}
+
+TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_HttpError_ReturnsFail)
+{
+  // GIVEN: a package URL returning HTTP 404
+  auto configuration = createConfigurationForDownloadTests();
+
+  auto mockDownloader = std::make_unique<MockHttpDownloader>();
+  mockDownloader->setDownloadHttpError(404);
+  MockHttpDownloader* mockDownloaderPtr = mockDownloader.get();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+
+  PackageInfo pkgInfo;
+  pkgInfo.baseUrl = "https://test.example.com/packages/";
+  pkgInfo.location = "app.cms";
+
+  // WHEN: downloadPackageFile is called
+  bool result = testInterface->downloadPackageFile(pkgInfo);
+
+  // THEN: should return failure after 3 attempts
+  EXPECT_FALSE(result);
+  EXPECT_EQ(mockDownloaderPtr->getDownloadCallCount(), 3);  // Max retry attempts
+  EXPECT_NE(testInterface->getLastErrorMessage().find("status code"), std::string::npos);
+}
+
+TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_NetworkFailure_ReturnsFail)
+{
+  // GIVEN: a network failure scenario
+  auto configuration = createConfigurationForDownloadTests();
+
+  auto mockDownloader = std::make_unique<MockHttpDownloader>();
+  mockDownloader->setDownloadNetworkFailure();
+  MockHttpDownloader* mockDownloaderPtr = mockDownloader.get();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+
+  PackageInfo pkgInfo;
+  pkgInfo.baseUrl = "https://test.example.com/packages/";
+  pkgInfo.location = "app.cms";
+
+  // WHEN: downloadPackageFile is called
+  bool result = testInterface->downloadPackageFile(pkgInfo);
+
+  // THEN: should return failure after 3 attempts
+  EXPECT_FALSE(result);
+  EXPECT_EQ(mockDownloaderPtr->getDownloadCallCount(), 3);  // Max retry attempts
+  EXPECT_NE(testInterface->getLastErrorMessage().find("3 attempts"), std::string::npos);
+}
+
+TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_CreatesDestinationDirectory)
+{
+  // GIVEN: a destination directory that doesn't exist
+  auto configuration = createConfigurationForDownloadTests();
+  configuration.m_DestinationDirectory = PACKAGE_PATH + "/new/nested/dest";
+
+  auto mockDownloader = std::make_unique<MockHttpDownloader>();
+  mockDownloader->setDownloadSuccess("content", "application/vnd.hbbtv.opapp.pkg");
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+
+  PackageInfo pkgInfo;
+  pkgInfo.baseUrl = "https://test.example.com/";
+  pkgInfo.location = "app.cms";
+
+  // WHEN: downloadPackageFile is called
+  bool result = testInterface->downloadPackageFile(pkgInfo);
+
+  // THEN: should create directory and succeed
+  EXPECT_TRUE(result);
+  EXPECT_TRUE(std::filesystem::exists(PACKAGE_PATH + "/new/nested/dest"));
+}
+
+TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_SetsCandidatePackageFile)
+{
+  // GIVEN: a successful download scenario
+  auto configuration = createConfigurationForDownloadTests();
+
+  auto mockDownloader = std::make_unique<MockHttpDownloader>();
+  mockDownloader->setDownloadSuccess("package content", "application/vnd.hbbtv.opapp.pkg");
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+
+  PackageInfo pkgInfo;
+  pkgInfo.baseUrl = "https://test.example.com/";
+  pkgInfo.location = "app.cms";
+
+  // WHEN: downloadPackageFile is called
+  bool result = testInterface->downloadPackageFile(pkgInfo);
+
+  // THEN: should set candidate package file
+  EXPECT_TRUE(result);
+  std::filesystem::path expectedPath = std::filesystem::path(PACKAGE_PATH) / "dest" / "downloaded_package.cms";
+  EXPECT_EQ(testInterface->getCandidatePackageFile(), expectedPath);
+}
+
+TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_MaxRetryAttempts)
+{
+  // GIVEN: a scenario that always fails
+  auto configuration = createConfigurationForDownloadTests();
+
+  auto mockDownloader = std::make_unique<MockHttpDownloader>();
+  mockDownloader->setDownloadNetworkFailure();
+  MockHttpDownloader* mockDownloaderPtr = mockDownloader.get();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+
+  PackageInfo pkgInfo;
+  pkgInfo.baseUrl = "https://test.example.com/";
+  pkgInfo.location = "app.cms";
+
+  // WHEN: downloadPackageFile is called
+  bool result = testInterface->downloadPackageFile(pkgInfo);
+
+  // THEN: should attempt exactly 3 times (per TS 103 606 Section 6.1.7)
+  EXPECT_FALSE(result);
+  EXPECT_EQ(mockDownloaderPtr->getDownloadCallCount(), 3);
+}
+
+TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_HttpServerError_RetriesAndFails)
+{
+  // GIVEN: a server returning 500 errors
+  auto configuration = createConfigurationForDownloadTests();
+
+  auto mockDownloader = std::make_unique<MockHttpDownloader>();
+  mockDownloader->setDownloadHttpError(500);
+  MockHttpDownloader* mockDownloaderPtr = mockDownloader.get();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+
+  PackageInfo pkgInfo;
+  pkgInfo.baseUrl = "https://test.example.com/";
+  pkgInfo.location = "app.cms";
+
+  // WHEN: downloadPackageFile is called
+  bool result = testInterface->downloadPackageFile(pkgInfo);
+
+  // THEN: should retry 3 times and fail
+  EXPECT_FALSE(result);
+  EXPECT_EQ(mockDownloaderPtr->getDownloadCallCount(), 3);
+  EXPECT_NE(testInterface->getLastErrorMessage().find("500"), std::string::npos);
+}
+
+TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_CorrectUrlConstruction)
+{
+  // GIVEN: baseUrl without trailing slash and location without leading slash
+  auto configuration = createConfigurationForDownloadTests();
+
+  auto mockDownloader = std::make_unique<MockHttpDownloader>();
+  mockDownloader->setDownloadSuccess("content", "application/vnd.hbbtv.opapp.pkg");
+  MockHttpDownloader* mockDownloaderPtr = mockDownloader.get();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+
+  PackageInfo pkgInfo;
+  pkgInfo.baseUrl = "https://test.example.com/packages";
+  pkgInfo.location = "v1/app.cms";
+
+  // WHEN: downloadPackageFile is called
+  testInterface->downloadPackageFile(pkgInfo);
+
+  // THEN: URL should be correctly constructed with separator
+  EXPECT_EQ(mockDownloaderPtr->getLastDownloadUrl(), "https://test.example.com/packages/v1/app.cms");
+}
+
+TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_ConfigurableRetryAttempts)
+{
+  // GIVEN: a configuration with custom retry attempts
+  auto configuration = createConfigurationForDownloadTests();
+  configuration.m_DownloadMaxAttempts = 5;  // Custom max attempts
+
+  auto mockDownloader = std::make_unique<MockHttpDownloader>();
+  mockDownloader->setDownloadNetworkFailure();
+  MockHttpDownloader* mockDownloaderPtr = mockDownloader.get();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(
+      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+
+  PackageInfo pkgInfo;
+  pkgInfo.baseUrl = "https://test.example.com/";
+  pkgInfo.location = "app.cms";
+
+  // WHEN: downloadPackageFile is called
+  bool result = testInterface->downloadPackageFile(pkgInfo);
+
+  // THEN: should attempt the configured number of times
+  EXPECT_FALSE(result);
+  EXPECT_EQ(mockDownloaderPtr->getDownloadCallCount(), 5);
+}
+
+// =============================================================================
 // Integration Tests (require network access)
 // =============================================================================
 
@@ -1880,6 +2270,58 @@ TEST_F(OpAppPackageManagerTest, DISABLED_IntegrationTest_RealRemoteFetch)
   std::cout << "Package manager finished running" << std::endl;
   if (!lastError.empty()) {
     std::cout << "Last error: " << lastError << std::endl;
+  }
+
+  // Diagnostic: Check the downloaded file
+  std::filesystem::path downloadedFile = configuration.m_DestinationDirectory / "downloaded_package.cms";
+  if (std::filesystem::exists(downloadedFile)) {
+    // Print file size
+    auto fileSize = std::filesystem::file_size(downloadedFile);
+    std::cout << "Downloaded file: " << downloadedFile << std::endl;
+    std::cout << "File size: " << fileSize << " bytes" << std::endl;
+
+    // Read first 256 bytes to determine if binary or text
+    std::ifstream file(downloadedFile, std::ios::binary);
+    std::vector<char> buffer(std::min(static_cast<uintmax_t>(256), fileSize));
+    file.read(buffer.data(), buffer.size());
+    size_t bytesRead = file.gcount();
+
+    // Check for binary content (null bytes or high proportion of non-printable chars)
+    int nonPrintableCount = 0;
+    bool hasNullByte = false;
+    for (size_t i = 0; i < bytesRead; ++i) {
+      unsigned char c = static_cast<unsigned char>(buffer[i]);
+      if (c == 0) {
+        hasNullByte = true;
+        break;
+      }
+      if (c < 32 && c != '\n' && c != '\r' && c != '\t') {
+        nonPrintableCount++;
+      }
+    }
+
+    bool isBinary = hasNullByte || (bytesRead > 0 && static_cast<size_t>(nonPrintableCount) > bytesRead / 4);
+    std::cout << "File type: " << (isBinary ? "BINARY" : "TEXT") << std::endl;
+
+    if (!isBinary) {
+      // Print first 100 characters
+      size_t printLen = std::min(static_cast<size_t>(100), bytesRead);
+      std::string preview(buffer.data(), printLen);
+      std::cout << "First " << printLen << " characters: " << std::endl;
+      std::cout << "---" << std::endl;
+      std::cout << preview << std::endl;
+      std::cout << "---" << std::endl;
+    } else {
+      // Print hex dump of first 32 bytes
+      std::cout << "First 32 bytes (hex): ";
+      for (size_t i = 0; i < std::min(static_cast<size_t>(32), bytesRead); ++i) {
+        std::cout << std::hex << std::setfill('0') << std::setw(2)
+                  << static_cast<int>(static_cast<unsigned char>(buffer[i])) << " ";
+      }
+      std::cout << std::dec << std::endl;
+    }
+  } else {
+    std::cout << "Downloaded file not found at: " << downloadedFile << std::endl;
   }
 
   // For a real integration test, you would assert based on expected server state

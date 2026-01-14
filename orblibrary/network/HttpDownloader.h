@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <string>
+#include <filesystem>
 
 namespace orb {
 
@@ -26,11 +27,37 @@ private:
 };
 
 /**
+ * @brief Interface for HTTP downloading, enabling dependency injection and testing.
+ */
+class IHttpDownloader {
+public:
+    virtual ~IHttpDownloader() = default;
+
+    /**
+     * @brief Download content from a URL.
+     *
+     * @param url The URL to download (supports http:// and https://)
+     * @return The downloaded object, or nullptr on failure
+     */
+    virtual std::shared_ptr<DownloadedObject> Download(const std::string& url) = 0;
+
+    /**
+     * @brief Download content from a URL to a file.
+     *
+     * @param url The URL to download
+     * @param outputPath The path to save the downloaded content
+     * @return The downloaded object (with metadata), or nullptr on failure
+     */
+    virtual std::shared_ptr<DownloadedObject> DownloadToFile(
+        const std::string& url, const std::filesystem::path& outputPath) = 0;
+};
+
+/**
  * @brief Simple HTTP/HTTPS downloader using raw sockets and BoringSSL.
  *
  * Provides basic HTTP GET functionality. Supports both HTTP and HTTPS.
  */
-class HttpDownloader {
+class HttpDownloader : public IHttpDownloader {
 public:
     /**
      * @brief Constructor.
@@ -50,7 +77,17 @@ public:
      * @param url The URL to download (supports http:// and https://)
      * @return The downloaded object, or nullptr on failure
      */
-    std::shared_ptr<DownloadedObject> Download(const std::string& url);
+    std::shared_ptr<DownloadedObject> Download(const std::string& url) override;
+
+    /**
+     * @brief Download content from a URL to a file.
+     *
+     * @param url The URL to download
+     * @param outputPath The path to save the downloaded content
+     * @return The downloaded object (with metadata), or nullptr on failure
+     */
+    std::shared_ptr<DownloadedObject> DownloadToFile(
+        const std::string& url, const std::filesystem::path& outputPath) override;
 
     /**
      * @brief Download content from a host, port, and path.

@@ -2,6 +2,7 @@
 #include "OpAppPackageManager.h"
 #include "AitFetcher.h"  // For IAitFetcher
 #include "xml_parser.h"  // For IXmlParser
+#include "HttpDownloader.h"  // For IHttpDownloader
 
 namespace orb
 {
@@ -44,6 +45,20 @@ std::unique_ptr<OpAppPackageManagerTestInterface> OpAppPackageManagerTestInterfa
     auto packageManager = std::make_unique<OpAppPackageManager>(
         configuration, std::move(hashCalculator), std::move(decryptor),
         std::move(aitFetcher), std::move(xmlParser));
+    return std::unique_ptr<OpAppPackageManagerTestInterface>(new OpAppPackageManagerTestInterface(std::move(packageManager)));
+}
+
+std::unique_ptr<OpAppPackageManagerTestInterface> OpAppPackageManagerTestInterface::create(
+    const OpAppPackageManager::Configuration& configuration,
+    std::unique_ptr<IHashCalculator> hashCalculator,
+    std::unique_ptr<IDecryptor> decryptor,
+    std::unique_ptr<IAitFetcher> aitFetcher,
+    std::unique_ptr<IXmlParser> xmlParser,
+    std::unique_ptr<IHttpDownloader> httpDownloader)
+{
+    auto packageManager = std::make_unique<OpAppPackageManager>(
+        configuration, std::move(hashCalculator), std::move(decryptor),
+        std::move(aitFetcher), std::move(xmlParser), std::move(httpDownloader));
     return std::unique_ptr<OpAppPackageManagerTestInterface>(new OpAppPackageManagerTestInterface(std::move(packageManager)));
 }
 
@@ -183,6 +198,12 @@ std::filesystem::path OpAppPackageManagerTestInterface::getCandidatePackageFile(
 {
     // Access private member directly since we're a friend class
     return m_PackageManager->m_CandidatePackageFile;
+}
+
+bool OpAppPackageManagerTestInterface::downloadPackageFile(const PackageInfo& packageInfo)
+{
+    // Access private method directly since we're a friend class
+    return m_PackageManager->downloadPackageFile(packageInfo);
 }
 
 } // namespace orb

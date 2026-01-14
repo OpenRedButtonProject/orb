@@ -33,6 +33,7 @@ namespace orb
 // Forward declarations
 class IAitFetcher;
 class IXmlParser;
+class IHttpDownloader;
 
 /**
  * @brief Package information - represents both discovered and installed packages.
@@ -174,6 +175,13 @@ public:
       /* Directory where acquired AIT XML files are stored.
        * If empty, uses a subdirectory "ait_cache" of m_DestinationDirectory. */
       std::filesystem::path m_AitOutputDirectory;
+
+      /* Package download retry configuration (TS 103 606 Section 6.1.7)
+       * Default values: 3 attempts, 60-600 second random delay between retries.
+       * For testing, set delays to 0 to avoid long waits. */
+      int m_DownloadMaxAttempts = 3;
+      int m_DownloadRetryDelayMinSeconds = 60;
+      int m_DownloadRetryDelayMaxSeconds = 600;
   };
 
   // Constructors
@@ -204,6 +212,15 @@ public:
     std::unique_ptr<IDecryptor> decryptor,
     std::unique_ptr<IAitFetcher> aitFetcher,
     std::unique_ptr<IXmlParser> xmlParser);
+
+  // Constructor with all dependencies including HTTP downloader (for testing)
+  OpAppPackageManager(
+    const Configuration& configuration,
+    std::unique_ptr<IHashCalculator> hashCalculator,
+    std::unique_ptr<IDecryptor> decryptor,
+    std::unique_ptr<IAitFetcher> aitFetcher,
+    std::unique_ptr<IXmlParser> xmlParser,
+    std::unique_ptr<IHttpDownloader> httpDownloader);
 
   ~OpAppPackageManager();
 
@@ -505,6 +522,7 @@ private:
   std::unique_ptr<IDecryptor> m_Decryptor;
   std::unique_ptr<IAitFetcher> m_AitFetcher;
   std::unique_ptr<IXmlParser> m_XmlParser;
+  std::unique_ptr<IHttpDownloader> m_HttpDownloader;
 
   std::filesystem::path m_CandidatePackageFile;
   std::string m_CandidatePackageHash;

@@ -1,6 +1,7 @@
 #include "OpAppPackageManager.h"
 #include "AitFetcher.h"
 #include "xml_parser.h"
+#include "HttpDownloader.h"
 
 #include <cassert>
 #include <mutex>
@@ -10,6 +11,7 @@
 #include <iomanip>
 #include <vector>
 #include <iostream>
+#include <random>
 #include <base/logging.h> // TODO: use local logging instead
 #include "json/json.h" // TODO: We should be using external/jsoncpp library instead
 
@@ -81,11 +83,24 @@ OpAppPackageManager::OpAppPackageManager(
   std::unique_ptr<IDecryptor> decryptor,
   std::unique_ptr<IAitFetcher> aitFetcher,
   std::unique_ptr<IXmlParser> xmlParser)
+  : OpAppPackageManager(configuration, std::move(hashCalculator), std::move(decryptor),
+                        std::move(aitFetcher), std::move(xmlParser), nullptr)
+{
+}
+
+OpAppPackageManager::OpAppPackageManager(
+  const Configuration& configuration,
+  std::unique_ptr<IHashCalculator> hashCalculator,
+  std::unique_ptr<IDecryptor> decryptor,
+  std::unique_ptr<IAitFetcher> aitFetcher,
+  std::unique_ptr<IXmlParser> xmlParser,
+  std::unique_ptr<IHttpDownloader> httpDownloader)
   : m_Configuration(configuration)
   , m_HashCalculator(std::move(hashCalculator))
   , m_Decryptor(std::move(decryptor))
   , m_AitFetcher(std::move(aitFetcher))
   , m_XmlParser(std::move(xmlParser))
+  , m_HttpDownloader(std::move(httpDownloader))
 {
   // Create default implementations if not provided
   if (!m_HashCalculator) {
@@ -100,6 +115,10 @@ OpAppPackageManager::OpAppPackageManager(
   }
   if (!m_XmlParser) {
     m_XmlParser = IXmlParser::create();
+  }
+  if (!m_HttpDownloader) {
+    // Pass User-Agent from configuration (TS 103 606 Section 6.1.7)
+    m_HttpDownloader = std::make_unique<HttpDownloader>(30000, m_Configuration.m_UserAgent);
   }
 }
 
@@ -166,7 +185,7 @@ bool OpAppPackageManager::tryLocalUpdate()
   setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_DISCOVERING);
   if (m_Configuration.m_PackageLocation.empty() || m_Configuration.m_InstallReceiptFilePath.empty()) {
     setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_DISCOVERY_FAILED);
-    LOG(ERROR) << "Local update failed: Package location or install receipt file path not set";
+    LOG(WARNING) << "Local update failed: Package location or install receipt file path not set";
     return false;
   }
 
@@ -411,8 +430,6 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::doRemotePackageCheck()
     m_LastErrorMessage = error;
     return PackageStatus::ConfigurationError;
   }
-
-  LOG(INFO) << "Successfully acquired " << result.aitFiles.size() << " AIT file(s)";
 
   // Log any non-fatal errors encountered during acquisition
   for (const auto& error : result.errors) {
@@ -889,12 +906,93 @@ bool OpAppPackageManager::parseAitFiles(
 
 bool OpAppPackageManager::downloadPackageFile(const PackageInfo& packageInfo)
 {
-  // TODO: Implement actual download from packageInfo.getAppUrl()
-  // On success, set m_CandidatePackageFile to the downloaded file path:
-  // m_CandidatePackageFile = m_Configuration.m_DestinationDirectory / "downloaded_package.cms";
+  // TS 103 606 V1.2.1 Section 6.1.7 - Package Download
+  // - HTTP GET request to download the encrypted application package
+  // - User-Agent header per ETSI TS 102 796 Section 7.3.2.4 (set in HttpDownloader constructor)
+  // - Reject if Content-Type is not application/vnd.hbbtv.opapp.pkg
+  // - Retry: max 3 attempts with random delay between 60-600 seconds between requests
+  //   (configurable via Configuration for testing)
 
-  (void)packageInfo;
-  m_LastErrorMessage = "Download not yet implemented";
+  const int maxAttempts = m_Configuration.m_DownloadMaxAttempts;
+  const int retryDelayMin = m_Configuration.m_DownloadRetryDelayMinSeconds;
+  const int retryDelayMax = m_Configuration.m_DownloadRetryDelayMaxSeconds;
+  static constexpr const char* EXPECTED_CONTENT_TYPE = "application/vnd.hbbtv.opapp.pkg";
+
+  std::string downloadUrl = packageInfo.getAppUrl();
+  if (downloadUrl.empty()) {
+    m_LastErrorMessage = "Package URL is empty";
+    LOG(ERROR) << "Package download failed: " << m_LastErrorMessage;
+    return false;
+  }
+
+  LOG(INFO) << "Starting package download from: " << downloadUrl;
+
+  // Ensure destination directory exists
+  if (!std::filesystem::exists(m_Configuration.m_DestinationDirectory)) {
+    std::error_code ec;
+    std::filesystem::create_directories(m_Configuration.m_DestinationDirectory, ec);
+    if (ec) {
+      m_LastErrorMessage = "Failed to create destination directory: " + ec.message();
+      LOG(ERROR) << "Package download failed: " << m_LastErrorMessage;
+      return false;
+    }
+  }
+
+  // Destination file path for the downloaded package
+  std::filesystem::path downloadedFilePath =
+      m_Configuration.m_DestinationDirectory / "downloaded_package.cms";
+
+  // Random number generator for retry delay
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<> delayDist(retryDelayMin, retryDelayMax);
+
+  std::string lastError;
+  for (int attempt = 1; attempt <= maxAttempts; ++attempt) {
+    LOG(INFO) << "Download attempt " << attempt << " of " << maxAttempts;
+
+    auto result = m_HttpDownloader->DownloadToFile(downloadUrl, downloadedFilePath);
+
+    if (!result) {
+      lastError = "HTTP request failed (network error or timeout)";
+      LOG(WARNING) << "Download attempt " << attempt << " failed: " << lastError;
+    }
+    else if (!result->IsSuccess()) {
+      lastError = "HTTP request failed with status code: " + std::to_string(result->GetStatusCode());
+      LOG(WARNING) << "Download attempt " << attempt << " failed: " << lastError;
+    }
+    else {
+      // Check Content-Type header (TS 103 606 Section 6.1.7)
+      std::string contentType = result->GetContentType();
+      if (contentType != EXPECTED_CONTENT_TYPE) {
+        lastError = "Invalid Content-Type: '" + contentType +
+                    "', expected '" + std::string(EXPECTED_CONTENT_TYPE) + "'";
+        LOG(WARNING) << "Download attempt " << attempt << " failed: " << lastError;
+        // Remove the downloaded file as it's not valid
+        std::error_code ec;
+        std::filesystem::remove(downloadedFilePath, ec);
+      }
+      else {
+        // Success!
+        LOG(INFO) << "Package downloaded successfully to: " << downloadedFilePath;
+        m_CandidatePackageFile = downloadedFilePath;
+        m_CandidatePackageHash = calculateFileSHA256Hash(downloadedFilePath);
+        return true;
+      }
+    }
+
+    // If not the last attempt, wait before retrying (skip if delay is 0 for testing)
+    if (attempt < maxAttempts && retryDelayMax > 0) {
+      int delaySeconds = delayDist(gen);
+      LOG(INFO) << "Waiting " << delaySeconds << " seconds before retry...";
+      std::this_thread::sleep_for(std::chrono::seconds(delaySeconds));
+    }
+  }
+
+  // All attempts failed
+  m_LastErrorMessage = "Package download failed after " + std::to_string(maxAttempts) +
+                       " attempts. Last error: " + lastError;
+  LOG(ERROR) << m_LastErrorMessage;
   return false;
 }
 
