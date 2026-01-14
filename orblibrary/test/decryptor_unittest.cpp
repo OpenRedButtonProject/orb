@@ -620,7 +620,7 @@ TEST_F(DecryptorTest, DecryptCMSWithLargeContent)
 // Output Path Tests
 //------------------------------------------------------------------------------
 
-TEST_F(DecryptorTest, OutputFileInWorkingDirectory)
+TEST_F(DecryptorTest, DecryptWithWorkingDirectoryFailsWithInvalidCMS)
 {
     DecryptorConfig config;
     config.privateKeyPath = m_KeyPath;
@@ -631,28 +631,28 @@ TEST_F(DecryptorTest, OutputFileInWorkingDirectory)
 
     Decryptor decryptor(config);
 
-    // Note: This test will fail at the CMS parsing stage, but we can still check
-    // the path logic by examining the error message
-
+    // Create an invalid CMS file (valid DER SEQUENCE but not CMS EnvelopedData)
     std::filesystem::path inputFile = m_TestDir / "mypackage.cms";
     createTestFile(inputFile, std::vector<uint8_t>{0x30, 0x03, 0x02, 0x01, 0x00});
 
     std::filesystem::path outFile;
     std::string outError;
 
-    // This will fail during parsing, but working directory should be created
-    decryptor.decrypt(inputFile, outFile, outError);
+    // Should fail during CMS parsing
+    bool result = decryptor.decrypt(inputFile, outFile, outError);
 
-    // The working directory may or may not exist depending on when error occurs
-    // Just verify the decryptor doesn't crash
+    EXPECT_FALSE(result);
+    EXPECT_FALSE(outError.empty());
+    // outFile should not be set on failure
+    EXPECT_TRUE(outFile.empty());
 }
 
-TEST_F(DecryptorTest, OutputFileInParentDirectoryWhenNoWorkingDir)
+TEST_F(DecryptorTest, DecryptWithoutWorkingDirectoryFailsWithInvalidCMS)
 {
     DecryptorConfig config;
     config.privateKeyPath = m_KeyPath;
     config.certificatePath = m_CertPath;
-    // workingDirectory left empty
+    // workingDirectory left empty - output should go to input file's parent directory
 
     ASSERT_TRUE(generateTestKeyPair(m_KeyPath, m_CertPath));
 
@@ -664,8 +664,13 @@ TEST_F(DecryptorTest, OutputFileInParentDirectoryWhenNoWorkingDir)
     std::filesystem::path outFile;
     std::string outError;
 
-    // Will fail at parsing, but tests the path construction doesn't crash
-    decryptor.decrypt(inputFile, outFile, outError);
+    // Should fail during CMS parsing
+    bool result = decryptor.decrypt(inputFile, outFile, outError);
+
+    EXPECT_FALSE(result);
+    EXPECT_FALSE(outError.empty());
+    // outFile should not be set on failure
+    EXPECT_TRUE(outFile.empty());
 }
 
 //------------------------------------------------------------------------------
