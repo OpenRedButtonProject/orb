@@ -107,7 +107,12 @@ OpAppPackageManager::OpAppPackageManager(
     m_HashCalculator = std::make_unique<HashCalculator>();
   }
   if (!m_Decryptor) {
-    m_Decryptor = std::make_unique<Decryptor>();
+    // Configure decryptor with Terminal Packaging Certificate paths
+    DecryptorConfig decryptorConfig;
+    decryptorConfig.privateKeyPath = m_Configuration.m_PrivateKeyFilePath;
+    decryptorConfig.certificatePath = m_Configuration.m_CertificateFilePath;
+    decryptorConfig.workingDirectory = m_Configuration.m_DestinationDirectory;
+    m_Decryptor = std::make_unique<Decryptor>(decryptorConfig);
   }
   if (!m_AitFetcher) {
     // Pass User-Agent from configuration (TS 103 606 Section 6.1.5.1)
@@ -185,7 +190,7 @@ bool OpAppPackageManager::tryLocalUpdate()
   setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_DISCOVERING);
   if (m_Configuration.m_PackageLocation.empty() || m_Configuration.m_InstallReceiptFilePath.empty()) {
     setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_DISCOVERY_FAILED);
-    LOG(WARNING) << "Local update failed: Package location or install receipt file path not set";
+    LOG(WARNING) << "Local update disabled: Package location or install receipt file path not set.";
     return false;
   }
 

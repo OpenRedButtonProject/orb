@@ -420,6 +420,21 @@ source_set("test_xml_parser_sources")
   testonly = true
 }
 
+source_set("test_decryptor_sources")
+{
+  sources = [
+    "test/decryptor_unittest.cpp",
+  ]
+
+  deps = [
+    "//testing/gtest",
+    "//third_party/boringssl:boringssl",
+    ":opapp_package_manager",  # Provides Decryptor class
+  ]
+
+  testonly = true
+}
+
 # Single executable that combines all test sources
 executable("test_orb_all") {
   deps = [
@@ -433,7 +448,8 @@ executable("test_orb_all") {
     ":test_orb_util_sources",
     ":test_orb_jsonrpcservice_sources",
     ":test_orb_application_manager_sources",
-    ":test_xml_parser_sources"
+    ":test_xml_parser_sources",
+    ":test_decryptor_sources"
   ]
 
   testonly = true
