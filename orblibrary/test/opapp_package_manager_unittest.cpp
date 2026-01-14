@@ -1988,7 +1988,7 @@ TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_ValidContentType_Returns
   EXPECT_EQ(mockDownloaderPtr->getDownloadCallCount(), 1);
   EXPECT_EQ(mockDownloaderPtr->getLastDownloadUrl(), "https://test.example.com/packages/app.cms");
   EXPECT_EQ(testInterface->getCandidatePackageFile(),
-            std::filesystem::path(PACKAGE_PATH) / "dest" / "downloaded_package.cms");
+            std::filesystem::path(PACKAGE_PATH) / "dest" / "app.cms");  // Preserves original filename
   EXPECT_TRUE(testInterface->getLastErrorMessage().empty());
 }
 
@@ -2110,9 +2110,9 @@ TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_SetsCandidatePackageFile
   // WHEN: downloadPackageFile is called
   bool result = testInterface->downloadPackageFile(pkgInfo);
 
-  // THEN: should set candidate package file
+  // THEN: should set candidate package file (preserves original filename from URL)
   EXPECT_TRUE(result);
-  std::filesystem::path expectedPath = std::filesystem::path(PACKAGE_PATH) / "dest" / "downloaded_package.cms";
+  std::filesystem::path expectedPath = std::filesystem::path(PACKAGE_PATH) / "dest" / "app.cms";
   EXPECT_EQ(testInterface->getCandidatePackageFile(), expectedPath);
 }
 
@@ -2272,8 +2272,8 @@ TEST_F(OpAppPackageManagerTest, DISABLED_IntegrationTest_RealRemoteFetch)
     std::cout << "Last error: " << lastError << std::endl;
   }
 
-  // Diagnostic: Check the downloaded file
-  std::filesystem::path downloadedFile = configuration.m_DestinationDirectory / "downloaded_package.cms";
+  // Diagnostic: Check the downloaded file (filename is preserved from URL, e.g., opapp.cms)
+  std::filesystem::path downloadedFile = configuration.m_DestinationDirectory / "opapp.cms";
   if (std::filesystem::exists(downloadedFile)) {
     // Print file size
     auto fileSize = std::filesystem::file_size(downloadedFile);

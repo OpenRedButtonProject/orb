@@ -938,9 +938,14 @@ bool OpAppPackageManager::downloadPackageFile(const PackageInfo& packageInfo)
     }
   }
 
-  // Destination file path for the downloaded package
+  // Destination file path for the downloaded package - preserve original filename
+  std::filesystem::path urlPath(downloadUrl);
+  std::string filename = urlPath.filename().string();
+  if (filename.empty()) {
+    filename = "downloaded_package.cms";
+  }
   std::filesystem::path downloadedFilePath =
-      m_Configuration.m_DestinationDirectory / "downloaded_package.cms";
+      m_Configuration.m_DestinationDirectory / filename;
 
   // Random number generator for retry delay
   std::random_device rd;
