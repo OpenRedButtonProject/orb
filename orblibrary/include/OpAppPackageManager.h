@@ -167,6 +167,11 @@ public:
        * If empty, uses a subdirectory "ait_cache" of m_DestinationDirectory. */
       std::filesystem::path m_AitOutputDirectory;
 
+      /* Maximum permitted size (in bytes) for unzipped package contents.
+       * If the unzipped package exceeds this size, the unzip operation fails.
+       * Default: 100 MB */
+      size_t m_MaxUnzippedPackageSize = 100 * 1024 * 1024;
+
       /* Package download retry configuration (TS 103 606 Section 6.1.7)
        * Default values: 3 attempts, 60-600 second random delay between retries.
        * For testing, set delays to 0 to avoid long waits. */
@@ -394,23 +399,16 @@ private:
    * unzipPackageFile()
    *
    * Unzips the package file found in inFile. See TS 103 606 Section 6.1.8.
+   * Also validates that the unzipped package size does not exceed
+   * m_Configuration.m_MaxUnzippedPackageSize.
    *
-   * Returns:
-   *  true if the package is unzipped successfully.
-   *  false if the package cannot be unzipped.
-   */
-  bool unzipPackageFile(const std::filesystem::path& inFile, const std::filesystem::path& outPath);
-
-  /**
-   * verifyUnzippedPackage()
-   *
-   * Verifies the unzipped package file as per TS 103 606 Section 11.3.4.5.
-   *
-   * @param filePath Path to the unzipped package file
-   * @return true if the package is verified successfully, false otherwise.
+   * @param inFile Path to the ZIP package file
+   * @param outPath Destination directory for extracted contents
+   * @return true if the package is unzipped successfully.
+   *         false if the package cannot be unzipped or exceeds max size.
    *         On error, sets m_LastErrorMessage.
    */
-  bool verifyUnzippedPackage(const std::filesystem::path& filePath);
+  bool unzipPackageFile(const std::filesystem::path& inFile, const std::filesystem::path& outPath);
 
   /**
    * verifySignedPackage()

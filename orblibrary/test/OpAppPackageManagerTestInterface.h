@@ -87,11 +87,14 @@ public:
 
     /**
      * @brief Unzips a package file (internal method exposed for testing)
-     * @param inFile Path to the file to unzip
-     * @param outPath Path to the unzipped file
+     *
+     * Also validates unzipped size against m_MaxUnzippedPackageSize.
+     *
+     * @param inFile Path to the ZIP package file to unzip
+     * @param outPath Destination directory for extracted contents
      * @return Success status
      */
-    bool unzipPackageFile(const std::filesystem::path& inFile, std::filesystem::path& outPath);
+    bool unzipPackageFile(const std::filesystem::path& inFile, const std::filesystem::path& outPath);
 
     /**
      * @brief Performs remote package check (internal method exposed for testing)
@@ -122,13 +125,6 @@ public:
     bool downloadPackageFile(const PackageInfo& packageInfo);
 
     /**
-     * @brief Verifies unzipped package (internal method exposed for testing)
-     * @param filePath Path to the unzipped package
-     * @return true if verification succeeded, false otherwise
-     */
-    bool verifyUnzippedPackage(const std::filesystem::path& filePath);
-
-    /**
      * @brief Copies package to persistent storage (internal method exposed for testing)
      * @param filePath Path to the package file
      * @return true if copy succeeded, false otherwise
@@ -154,6 +150,14 @@ public:
      * @param pkg The package information to set as candidate
      */
     void setCandidatePackage(const PackageInfo& pkg);
+
+    /**
+     * @brief Sets the candidate package info for testing (convenience overload)
+     * @param orgId Organization ID
+     * @param appId Application ID
+     * @param name Application name
+     */
+    void setCandidatePackage(uint32_t orgId, uint16_t appId, const std::string& name);
 
     /**
      * @brief Sets the candidate package hash for testing
