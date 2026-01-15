@@ -50,73 +50,16 @@ static int readJsonField(
   return -2;
 }
 
-OpAppPackageManager::OpAppPackageManager(const Configuration& configuration)
-  : OpAppPackageManager(configuration, nullptr, nullptr, nullptr)
-{
-}
-
-OpAppPackageManager::OpAppPackageManager(const Configuration& configuration, std::unique_ptr<IHashCalculator> hashCalculator)
-  : OpAppPackageManager(configuration, std::move(hashCalculator), nullptr, nullptr)
-{
-}
-
 OpAppPackageManager::OpAppPackageManager(
-  const Configuration& configuration,
-  std::unique_ptr<IHashCalculator> hashCalculator,
-  std::unique_ptr<IDecryptor> decryptor)
-  : OpAppPackageManager(configuration, std::move(hashCalculator), std::move(decryptor), nullptr)
-{
-}
-
-OpAppPackageManager::OpAppPackageManager(
-  const Configuration& configuration,
-  std::unique_ptr<IHashCalculator> hashCalculator,
-  std::unique_ptr<IDecryptor> decryptor,
-  std::unique_ptr<IAitFetcher> aitFetcher)
-  : OpAppPackageManager(configuration, std::move(hashCalculator), std::move(decryptor),
-                        std::move(aitFetcher), nullptr)
-{
-}
-
-OpAppPackageManager::OpAppPackageManager(
-  const Configuration& configuration,
-  std::unique_ptr<IHashCalculator> hashCalculator,
-  std::unique_ptr<IDecryptor> decryptor,
-  std::unique_ptr<IAitFetcher> aitFetcher,
-  std::unique_ptr<IXmlParser> xmlParser)
-  : OpAppPackageManager(configuration, std::move(hashCalculator), std::move(decryptor),
-                        std::move(aitFetcher), std::move(xmlParser), nullptr)
-{
-}
-
-OpAppPackageManager::OpAppPackageManager(
-  const Configuration& configuration,
-  std::unique_ptr<IHashCalculator> hashCalculator,
-  std::unique_ptr<IDecryptor> decryptor,
-  std::unique_ptr<IAitFetcher> aitFetcher,
-  std::unique_ptr<IXmlParser> xmlParser,
-  std::unique_ptr<IHttpDownloader> httpDownloader)
-  : OpAppPackageManager(configuration, std::move(hashCalculator), std::move(decryptor),
-                        nullptr, std::move(aitFetcher), std::move(xmlParser),
-                        std::move(httpDownloader))
-{
-}
-
-OpAppPackageManager::OpAppPackageManager(
-  const Configuration& configuration,
-  std::unique_ptr<IHashCalculator> hashCalculator,
-  std::unique_ptr<IDecryptor> decryptor,
-  std::unique_ptr<IVerifier> verifier,
-  std::unique_ptr<IAitFetcher> aitFetcher,
-  std::unique_ptr<IXmlParser> xmlParser,
-  std::unique_ptr<IHttpDownloader> httpDownloader)
+    const Configuration& configuration,
+    Dependencies deps)
   : m_Configuration(configuration)
-  , m_HashCalculator(std::move(hashCalculator))
-  , m_Decryptor(std::move(decryptor))
-  , m_Verifier(std::move(verifier))
-  , m_AitFetcher(std::move(aitFetcher))
-  , m_XmlParser(std::move(xmlParser))
-  , m_HttpDownloader(std::move(httpDownloader))
+  , m_HashCalculator(std::move(deps.hashCalculator))
+  , m_Decryptor(std::move(deps.decryptor))
+  , m_Verifier(std::move(deps.verifier))
+  , m_AitFetcher(std::move(deps.aitFetcher))
+  , m_XmlParser(std::move(deps.xmlParser))
+  , m_HttpDownloader(std::move(deps.httpDownloader))
 {
   // Create default implementations if not provided
   if (!m_HashCalculator) {
