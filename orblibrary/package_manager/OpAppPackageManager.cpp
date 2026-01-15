@@ -266,18 +266,21 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::installFromPackageFile()
 
   setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_UNPACKING);
 
-  // Step 4: Unzip the package
-  if (!unzipPackageFile(zipFile, m_Configuration.m_DestinationDirectory)) {
+  // Step 4: Unzip the package to destinationDirectory/appId/orgId
+  // Path follows HbbTV origin format: hbbtv-package://appid.orgid (TS 103 606 Section 9.4.1)
+  // This prevents pollution of the destination directory and simplifies
+  // the subsequent installation stage (which becomes a straightforward move)
+  std::filesystem::path unzippedDir = m_Configuration.m_DestinationDirectory /
+      std::to_string(m_CandidatePackage.appId) /
+      std::to_string(m_CandidatePackage.orgId);
+
+  if (!unzipPackageFile(zipFile, unzippedDir)) {
     LOG(ERROR) << "Unzip failed: " << m_LastErrorMessage;
     return PackageStatus::UnzipFailed;
   }
 
-  if (!verifyUnzippedPackage(m_Configuration.m_DestinationDirectory)) {
-    LOG(ERROR) << "Unzipped package verification failed: " << m_LastErrorMessage;
-    return PackageStatus::VerificationFailed;
-  }
-
-  if (!installToPersistentStorage(m_Configuration.m_DestinationDirectory)) {
+  // Step 5: Install to persistent storage (straightforward move from unzip directory)
+  if (!installToPersistentStorage(unzippedDir)) {
     LOG(ERROR) << "Installation to persistent storage failed: " << m_LastErrorMessage;
     return PackageStatus::UpdateFailed;
   }
@@ -641,26 +644,41 @@ bool OpAppPackageManager::verifyZipPackage(const std::filesystem::path& filePath
 bool OpAppPackageManager::unzipPackageFile(const std::filesystem::path& inFile, const std::filesystem::path& outPath)
 {
   std::string unzipError;
-  bool result = m_Unzipper->unzip(inFile, outPath, unzipError);
-  if (!result) {
+  if (!m_Unzipper->unzip(inFile, outPath, unzipError)) {
     m_LastErrorMessage = unzipError;
+    return false;
   }
-  return result;
-}
 
-bool OpAppPackageManager::verifyUnzippedPackage(const std::filesystem::path& filePath)
-{
-  (void)filePath;  // Suppress unused warning until implementation
-  m_LastErrorMessage = "Unzipped package verification not yet implemented";
-  return false;
+  // Check total unzipped size against maximum if configured
+  if (m_Configuration.m_MaxUnzippedPackageSize > 0) {
+    size_t totalSize = 0;
+    std::error_code ec;
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(outPath, ec)) {
+      if (entry.is_regular_file(ec)) {
+        totalSize += entry.file_size(ec);
+      }
+    }
+
+    if (totalSize > m_Configuration.m_MaxUnzippedPackageSize) {
+      // Clean up the extracted files
+      std::filesystem::remove_all(outPath, ec);
+      m_LastErrorMessage = "Unzipped package size (" + std::to_string(totalSize) +
+                           " bytes) exceeds maximum permitted size (" +
+                           std::to_string(m_Configuration.m_MaxUnzippedPackageSize) + " bytes)";
+      return false;
+    }
+  }
+
+  return true;
 }
 
 bool OpAppPackageManager::installToPersistentStorage(const std::filesystem::path& filePath)
 {
-  // TODO: Copy files from filePath to m_Configuration.m_OpAppInstallDirectory/orgId/appId
+  // TODO: Copy files from filePath to m_Configuration.m_OpAppInstallDirectory/appId/orgId
+  // Path follows HbbTV origin format: hbbtv-package://appid.orgid (TS 103 606 Section 9.4.1)
 
   m_CandidatePackage.installPath = m_Configuration.m_OpAppInstallDirectory /
-      std::to_string(m_CandidatePackage.orgId) / std::to_string(m_CandidatePackage.appId);
+      std::to_string(m_CandidatePackage.appId) / std::to_string(m_CandidatePackage.orgId);
   m_CandidatePackage.packageHash = m_CandidatePackageHash;
 
   // Generate ISO timestamp for installedAt

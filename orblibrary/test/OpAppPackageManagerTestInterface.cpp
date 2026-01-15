@@ -87,7 +87,7 @@ bool OpAppPackageManagerTestInterface::verifyZipPackage(const std::filesystem::p
     return m_PackageManager->verifyZipPackage(filePath);
 }
 
-bool OpAppPackageManagerTestInterface::unzipPackageFile(const std::filesystem::path& inFile, std::filesystem::path& outPath)
+bool OpAppPackageManagerTestInterface::unzipPackageFile(const std::filesystem::path& inFile, const std::filesystem::path& outPath)
 {
     // Access private method directly since we're a friend class
     return m_PackageManager->unzipPackageFile(inFile, outPath);
@@ -111,12 +111,6 @@ bool OpAppPackageManagerTestInterface::movePackageFileToInstallationDirectory(co
     return m_PackageManager->movePackageFileToInstallationDirectory(packageFilePath);
 }
 
-bool OpAppPackageManagerTestInterface::verifyUnzippedPackage(const std::filesystem::path& filePath)
-{
-    // Access private method directly since we're a friend class
-    return m_PackageManager->verifyUnzippedPackage(filePath);
-}
-
 bool OpAppPackageManagerTestInterface::installToPersistentStorage(const std::filesystem::path& filePath)
 {
     // Access private method directly since we're a friend class
@@ -138,6 +132,15 @@ bool OpAppPackageManagerTestInterface::loadInstallReceipt(PackageInfo& outPackag
 void OpAppPackageManagerTestInterface::setCandidatePackage(const PackageInfo& pkg)
 {
     // Access private member directly since we're a friend class
+    m_PackageManager->m_CandidatePackage = pkg;
+}
+
+void OpAppPackageManagerTestInterface::setCandidatePackage(uint32_t orgId, uint16_t appId, const std::string& name)
+{
+    PackageInfo pkg;
+    pkg.orgId = orgId;
+    pkg.appId = appId;
+    pkg.name = name;
     m_PackageManager->m_CandidatePackage = pkg;
 }
 
