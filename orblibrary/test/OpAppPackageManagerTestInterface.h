@@ -10,11 +10,6 @@
 namespace orb
 {
 
-// Forward declarations
-class IAitFetcher;
-class IXmlParser;
-class IHttpDownloader;
-
 /**
  * @brief Test interface for OpAppPackageManager that provides controlled access
  * to internal functionality for testing purposes while maintaining encapsulation.
@@ -29,70 +24,12 @@ public:
     /**
      * @brief Creates a test interface for the package manager
      * @param configuration The configuration for the package manager
-     * @return A test interface instance
-     */
-    static std::unique_ptr<OpAppPackageManagerTestInterface> create(
-        const OpAppPackageManager::Configuration& configuration);
-
-    /**
-     * @brief Creates a test interface with custom dependencies for testing
-     * @param configuration The configuration for the package manager
-     * @param hashCalculator Custom hash calculator for testing
-     * @param decryptor Custom decryptor for testing
+     * @param deps Optional dependencies for testing (default creates production implementations)
      * @return A test interface instance
      */
     static std::unique_ptr<OpAppPackageManagerTestInterface> create(
         const OpAppPackageManager::Configuration& configuration,
-        std::unique_ptr<IHashCalculator> hashCalculator,
-        std::unique_ptr<IDecryptor> decryptor);
-
-    /**
-     * @brief Creates a test interface with all custom dependencies for testing
-     * @param configuration The configuration for the package manager
-     * @param hashCalculator Custom hash calculator for testing
-     * @param decryptor Custom decryptor for testing
-     * @param aitFetcher Custom AIT fetcher for testing
-     * @return A test interface instance
-     */
-    static std::unique_ptr<OpAppPackageManagerTestInterface> create(
-        const OpAppPackageManager::Configuration& configuration,
-        std::unique_ptr<IHashCalculator> hashCalculator,
-        std::unique_ptr<IDecryptor> decryptor,
-        std::unique_ptr<IAitFetcher> aitFetcher);
-
-    /**
-     * @brief Creates a test interface with all custom dependencies including XML parser
-     * @param configuration The configuration for the package manager
-     * @param hashCalculator Custom hash calculator for testing
-     * @param decryptor Custom decryptor for testing
-     * @param aitFetcher Custom AIT fetcher for testing
-     * @param xmlParser Custom XML parser for testing
-     * @return A test interface instance
-     */
-    static std::unique_ptr<OpAppPackageManagerTestInterface> create(
-        const OpAppPackageManager::Configuration& configuration,
-        std::unique_ptr<IHashCalculator> hashCalculator,
-        std::unique_ptr<IDecryptor> decryptor,
-        std::unique_ptr<IAitFetcher> aitFetcher,
-        std::unique_ptr<IXmlParser> xmlParser);
-
-    /**
-     * @brief Creates a test interface with all custom dependencies including HTTP downloader
-     * @param configuration The configuration for the package manager
-     * @param hashCalculator Custom hash calculator for testing
-     * @param decryptor Custom decryptor for testing
-     * @param aitFetcher Custom AIT fetcher for testing
-     * @param xmlParser Custom XML parser for testing
-     * @param httpDownloader Custom HTTP downloader for testing
-     * @return A test interface instance
-     */
-    static std::unique_ptr<OpAppPackageManagerTestInterface> create(
-        const OpAppPackageManager::Configuration& configuration,
-        std::unique_ptr<IHashCalculator> hashCalculator,
-        std::unique_ptr<IDecryptor> decryptor,
-        std::unique_ptr<IAitFetcher> aitFetcher,
-        std::unique_ptr<IXmlParser> xmlParser,
-        std::unique_ptr<IHttpDownloader> httpDownloader);
+        OpAppPackageManager::Dependencies deps = {});
 
     /**
      * @brief Destructor

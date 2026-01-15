@@ -26,7 +26,7 @@
 #ifndef DECRYPTOR_H
 #define DECRYPTOR_H
 
-#include "OpAppPackageManager.h"
+#include "IDecryptor.h"
 #include <filesystem>
 #include <string>
 #include <vector>

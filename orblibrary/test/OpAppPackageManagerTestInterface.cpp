@@ -8,57 +8,10 @@ namespace orb
 {
 
 std::unique_ptr<OpAppPackageManagerTestInterface> OpAppPackageManagerTestInterface::create(
-    const OpAppPackageManager::Configuration& configuration)
-{
-    auto packageManager = std::make_unique<OpAppPackageManager>(configuration);
-    return std::unique_ptr<OpAppPackageManagerTestInterface>(new OpAppPackageManagerTestInterface(std::move(packageManager)));
-}
-
-std::unique_ptr<OpAppPackageManagerTestInterface> OpAppPackageManagerTestInterface::create(
     const OpAppPackageManager::Configuration& configuration,
-    std::unique_ptr<IHashCalculator> hashCalculator,
-    std::unique_ptr<IDecryptor> decryptor)
+    OpAppPackageManager::Dependencies deps)
 {
-    auto packageManager = std::make_unique<OpAppPackageManager>(
-        configuration, std::move(hashCalculator), std::move(decryptor));
-    return std::unique_ptr<OpAppPackageManagerTestInterface>(new OpAppPackageManagerTestInterface(std::move(packageManager)));
-}
-
-std::unique_ptr<OpAppPackageManagerTestInterface> OpAppPackageManagerTestInterface::create(
-    const OpAppPackageManager::Configuration& configuration,
-    std::unique_ptr<IHashCalculator> hashCalculator,
-    std::unique_ptr<IDecryptor> decryptor,
-    std::unique_ptr<IAitFetcher> aitFetcher)
-{
-    auto packageManager = std::make_unique<OpAppPackageManager>(
-        configuration, std::move(hashCalculator), std::move(decryptor), std::move(aitFetcher));
-    return std::unique_ptr<OpAppPackageManagerTestInterface>(new OpAppPackageManagerTestInterface(std::move(packageManager)));
-}
-
-std::unique_ptr<OpAppPackageManagerTestInterface> OpAppPackageManagerTestInterface::create(
-    const OpAppPackageManager::Configuration& configuration,
-    std::unique_ptr<IHashCalculator> hashCalculator,
-    std::unique_ptr<IDecryptor> decryptor,
-    std::unique_ptr<IAitFetcher> aitFetcher,
-    std::unique_ptr<IXmlParser> xmlParser)
-{
-    auto packageManager = std::make_unique<OpAppPackageManager>(
-        configuration, std::move(hashCalculator), std::move(decryptor),
-        std::move(aitFetcher), std::move(xmlParser));
-    return std::unique_ptr<OpAppPackageManagerTestInterface>(new OpAppPackageManagerTestInterface(std::move(packageManager)));
-}
-
-std::unique_ptr<OpAppPackageManagerTestInterface> OpAppPackageManagerTestInterface::create(
-    const OpAppPackageManager::Configuration& configuration,
-    std::unique_ptr<IHashCalculator> hashCalculator,
-    std::unique_ptr<IDecryptor> decryptor,
-    std::unique_ptr<IAitFetcher> aitFetcher,
-    std::unique_ptr<IXmlParser> xmlParser,
-    std::unique_ptr<IHttpDownloader> httpDownloader)
-{
-    auto packageManager = std::make_unique<OpAppPackageManager>(
-        configuration, std::move(hashCalculator), std::move(decryptor),
-        std::move(aitFetcher), std::move(xmlParser), std::move(httpDownloader));
+    auto packageManager = std::make_unique<OpAppPackageManager>(configuration, std::move(deps));
     return std::unique_ptr<OpAppPackageManagerTestInterface>(new OpAppPackageManagerTestInterface(std::move(packageManager)));
 }
 

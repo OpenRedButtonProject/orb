@@ -26,6 +26,9 @@
 #include <filesystem>
 
 #include "ait.h"
+#include "IHashCalculator.h"
+#include "IDecryptor.h"
+#include "IVerifier.h"
 
 namespace orb
 {
@@ -81,59 +84,6 @@ struct PackageInfo {
 
 // Type alias for backwards compatibility during transition
 using AitAppDescriptor = PackageInfo;
-
-// Hash calculation interface for testing
-class IHashCalculator {
-public:
-  virtual ~IHashCalculator() = default;
-  virtual std::string calculateSHA256Hash(const std::filesystem::path& filePath) const = 0;
-};
-
-class IDecryptor {
-public:
-  virtual ~IDecryptor() = default;
-  /**
-   * Decrypts a package file and returns the output files.
-   * @param filePath Path to the encrypted package file
-   * @param outFile Output decrypted file path
-   * @param outError Output error message if decryption fails
-   * @return true if decryption succeeded, false otherwise
-   */
-  virtual bool decrypt(
-    const std::filesystem::path& filePath,
-    std::filesystem::path& outFile,
-    std::string& outError) const = 0;
-};
-
-class IVerifier {
-public:
-  virtual ~IVerifier() = default;
-  /**
-   * Verifies a CMS SignedData file and extracts the ZIP content.
-   * Implements TS 103 606 Section 11.3.4.5:
-   * - Verifies certificate chain against Operator Signing Root CA
-   * - Validates O= and CN= attributes match expected values
-   * - Verifies message-digest matches content hash
-   * - Extracts ZIP from encapContentInfo
-   *
-   * @param signedDataPath Path to the CMS SignedData file (DER encoded)
-   * @param outZipPath Output path where the extracted ZIP is written
-   * @param outError Output error message if verification fails
-   * @return true if verification succeeded, false otherwise
-   */
-  virtual bool verify(
-    const std::filesystem::path& signedDataPath,
-    std::filesystem::path& outZipPath,
-    std::string& outError) const = 0;
-
-  /**
-   * Check if the verifier is properly configured.
-   *
-   * @param outError Optional pointer to receive error message describing missing fields
-   * @return true if all required fields are set
-   */
-  virtual bool isConfigured(std::string* outError = nullptr) const = 0;
-};
 
 class OpAppPackageManager
 {
@@ -226,53 +176,31 @@ public:
       int m_DownloadRetryDelayMaxSeconds = 600;
   };
 
-  // Constructors
-  explicit OpAppPackageManager(const Configuration& configuration);
+  /**
+   * @brief Dependencies for OpAppPackageManager.
+   *
+   * All members are optional - if nullptr, default implementations are created.
+   * Use this struct to inject mock/test implementations.
+   */
+  struct Dependencies {
+      std::unique_ptr<IHashCalculator> hashCalculator;
+      std::unique_ptr<IDecryptor> decryptor;
+      std::unique_ptr<IVerifier> verifier;
+      std::unique_ptr<IAitFetcher> aitFetcher;
+      std::unique_ptr<IXmlParser> xmlParser;
+      std::unique_ptr<IHttpDownloader> httpDownloader;
+  };
 
-  // Constructor with custom hash calculator (for testing)
-  OpAppPackageManager(
-    const Configuration& configuration,
-    std::unique_ptr<IHashCalculator> hashCalculator);
-
-  // Constructor with custom hash calculator and decryptor (for testing)
-  OpAppPackageManager(
-    const Configuration& configuration,
-    std::unique_ptr<IHashCalculator> hashCalculator,
-    std::unique_ptr<IDecryptor> decryptor);
-
-  // Constructor with all dependencies (for testing)
-  OpAppPackageManager(
-    const Configuration& configuration,
-    std::unique_ptr<IHashCalculator> hashCalculator,
-    std::unique_ptr<IDecryptor> decryptor,
-    std::unique_ptr<IAitFetcher> aitFetcher);
-
-  // Constructor with all dependencies including XML parser (for testing)
-  OpAppPackageManager(
-    const Configuration& configuration,
-    std::unique_ptr<IHashCalculator> hashCalculator,
-    std::unique_ptr<IDecryptor> decryptor,
-    std::unique_ptr<IAitFetcher> aitFetcher,
-    std::unique_ptr<IXmlParser> xmlParser);
-
-  // Constructor with all dependencies including HTTP downloader (for testing)
-  OpAppPackageManager(
-    const Configuration& configuration,
-    std::unique_ptr<IHashCalculator> hashCalculator,
-    std::unique_ptr<IDecryptor> decryptor,
-    std::unique_ptr<IAitFetcher> aitFetcher,
-    std::unique_ptr<IXmlParser> xmlParser,
-    std::unique_ptr<IHttpDownloader> httpDownloader);
-
-  // Constructor with all dependencies including Verifier (for testing)
-  OpAppPackageManager(
-    const Configuration& configuration,
-    std::unique_ptr<IHashCalculator> hashCalculator,
-    std::unique_ptr<IDecryptor> decryptor,
-    std::unique_ptr<IVerifier> verifier,
-    std::unique_ptr<IAitFetcher> aitFetcher,
-    std::unique_ptr<IXmlParser> xmlParser,
-    std::unique_ptr<IHttpDownloader> httpDownloader);
+  /**
+   * @brief Construct OpAppPackageManager.
+   *
+   * @param configuration Runtime configuration
+   * @param deps Optional dependencies for testing. If any dependency is nullptr,
+   *             a default production implementation is created.
+   */
+  explicit OpAppPackageManager(
+      const Configuration& configuration,
+      Dependencies deps = {});
 
   ~OpAppPackageManager();
 

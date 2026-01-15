@@ -34,12 +34,10 @@
 #include <filesystem>
 #include <string>
 #include <vector>
-#include "OpAppPackageManager.h"
+#include "IVerifier.h"
 
 namespace orb
 {
-
-// IVerifier interface is defined in OpAppPackageManager.h
 
 /**
  * @brief Configuration for the CMS SignedData Verifier.

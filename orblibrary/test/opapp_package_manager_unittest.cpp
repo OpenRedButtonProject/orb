@@ -570,7 +570,9 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_ExistingPac
   createPackageFile();
 
   // WHEN: checking package status
-  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(mockCalculator), nullptr);
+  OpAppPackageManager::Dependencies deps;
+  deps.hashCalculator = std::move(mockCalculator);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
   OpAppPackageManager::PackageStatus status = testInterface->doLocalPackageCheck();
 
   // THEN: the package status is Installed
@@ -587,7 +589,9 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_NoReceiptFi
   createPackageFile();
 
   // WHEN: checking package status
-  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(mockCalculator), nullptr);
+  OpAppPackageManager::Dependencies deps;
+  deps.hashCalculator = std::move(mockCalculator);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
   OpAppPackageManager::PackageStatus status = testInterface->doLocalPackageCheck();
 
   // THEN: the package should be considered update available (no receipt means not installed)
@@ -605,7 +609,9 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_InvalidRece
   createPackageFile();
 
   // WHEN: checking package status
-  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(mockCalculator), nullptr);
+  OpAppPackageManager::Dependencies deps;
+  deps.hashCalculator = std::move(mockCalculator);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
   OpAppPackageManager::PackageStatus status = testInterface->doLocalPackageCheck();
 
   // THEN: the package should be considered update available (invalid receipt means not installed)
@@ -623,7 +629,9 @@ TEST_F(OpAppPackageManagerTest, TestCheckForUpdates_UpdatesAvailable_DifferentHa
   createPackageFile();
 
   // WHEN: checking package status
-  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(mockCalculator), nullptr);
+  OpAppPackageManager::Dependencies deps;
+  deps.hashCalculator = std::move(mockCalculator);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
   OpAppPackageManager::PackageStatus status = testInterface->doLocalPackageCheck();
 
   // THEN: the package should be considered update available (different hashes)
@@ -645,8 +653,10 @@ TEST_F(OpAppPackageManagerTest, TestInstallFromPackageFile_DecryptCalled)
   // Store a reference to the mock decryptor before moving it
   MockDecryptor* mockDecryptorPtr = mockDecryptor.get();
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-    configuration, std::move(mockHashCalculator), std::move(mockDecryptor));
+  OpAppPackageManager::Dependencies deps;
+  deps.hashCalculator = std::move(mockHashCalculator);
+  deps.decryptor = std::move(mockDecryptor);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
   testInterface->setCandidatePackageFile(packagePath);
 
   // WHEN: attempting to install a package
@@ -667,8 +677,10 @@ TEST_F(OpAppPackageManagerTest, TestInstallFromPackageFile_DecryptFailed)
   auto mockHashCalculator = std::make_unique<MockHashCalculator>();
   mockDecryptor->setDecryptResult(false, "Decryption failed");
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-    configuration, std::move(mockHashCalculator), std::move(mockDecryptor));
+  OpAppPackageManager::Dependencies deps;
+  deps.hashCalculator = std::move(mockHashCalculator);
+  deps.decryptor = std::move(mockDecryptor);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
   testInterface->setCandidatePackageFile(packagePath);
 
   // WHEN: attempting to install a package directly
@@ -702,8 +714,10 @@ TEST_F(OpAppPackageManagerTest, TestTryLocalUpdate_DecryptFailed_CallsFailureCal
   mockHashCalculator->setHashForFile(packagePath.string(), "new_hash_abc123");
   mockHashCalculator->createInstallReceiptFile(PACKAGE_PATH + "/install_receipt.json", "old_hash_xyz789");
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-    configuration, std::move(mockHashCalculator), std::move(mockDecryptor));
+  OpAppPackageManager::Dependencies deps;
+  deps.hashCalculator = std::move(mockHashCalculator);
+  deps.decryptor = std::move(mockDecryptor);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   // WHEN: checking for updates (which runs asynchronously)
   testInterface->checkForUpdates();
@@ -728,8 +742,10 @@ TEST_F(OpAppPackageManagerTest, TestInstallFromPackageFile_ReturnsCorrectPackage
   std::filesystem::path decryptedFile = PACKAGE_PATH + "/decrypted_package.zip";
   mockDecryptor->setDecryptResult(true, "", decryptedFile);
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-    configuration, std::move(mockHashCalculator), std::move(mockDecryptor));
+  OpAppPackageManager::Dependencies deps;
+  deps.hashCalculator = std::move(mockHashCalculator);
+  deps.decryptor = std::move(mockDecryptor);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
   testInterface->setCandidatePackageFile(packagePath);
 
   // WHEN: attempting to install a package (decryption succeeds but verification will fail)
@@ -1208,7 +1224,9 @@ TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_Installed_NoCallbacksCalled)
   configuration.m_OnUpdateSuccess = [&](const std::string&) { successCallbackCalled = true; };
   configuration.m_OnUpdateFailure = [&](OpAppPackageManager::PackageStatus, const std::string&) { failureCallbackCalled = true; };
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(mockCalculator), nullptr);
+  OpAppPackageManager::Dependencies deps;
+  deps.hashCalculator = std::move(mockCalculator);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   // WHEN: checking for updates with installed package
   OpAppPackageManager::PackageStatus status = testInterface->doLocalPackageCheck();
@@ -1414,8 +1432,9 @@ TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_NoFqdn_ReturnsConfigura
   auto mockAitFetcher = std::make_unique<MockAitFetcher>();
   MockAitFetcher* mockAitFetcherPtr = mockAitFetcher.get();
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, std::move(mockAitFetcher));
+  OpAppPackageManager::Dependencies deps;
+  deps.aitFetcher = std::move(mockAitFetcher);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   // WHEN: doRemotePackageCheck is called
   OpAppPackageManager::PackageStatus status = testInterface->doRemotePackageCheck();
@@ -1436,8 +1455,9 @@ TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_FetchFails_ReturnsConfi
   mockAitFetcher->setFetchResult(AitFetchResult("DNS lookup failed"));
   MockAitFetcher* mockAitFetcherPtr = mockAitFetcher.get();
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, std::move(mockAitFetcher));
+  OpAppPackageManager::Dependencies deps;
+  deps.aitFetcher = std::move(mockAitFetcher);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   // WHEN: doRemotePackageCheck is called
   OpAppPackageManager::PackageStatus status = testInterface->doRemotePackageCheck();
@@ -1458,8 +1478,9 @@ TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_NoAitFiles_ReturnsConfi
   auto mockAitFetcher = std::make_unique<MockAitFetcher>();
   mockAitFetcher->setFetchResult(AitFetchResult(std::vector<std::string>{}, std::vector<std::string>{}));
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, std::move(mockAitFetcher));
+  OpAppPackageManager::Dependencies deps;
+  deps.aitFetcher = std::move(mockAitFetcher);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   // WHEN: doRemotePackageCheck is called
   OpAppPackageManager::PackageStatus status = testInterface->doRemotePackageCheck();
@@ -1472,8 +1493,9 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_EmptyFileList_ReturnsFalse)
 {
   // GIVEN: a test interface with real XML parser
   auto configuration = createBasicConfiguration();
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
+  OpAppPackageManager::Dependencies deps;
+  deps.xmlParser = std::make_unique<XmlParser>();
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   // WHEN: parseAitFiles is called with empty list
   std::vector<PackageInfo> packages;
@@ -1489,8 +1511,9 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_NonexistentFile_ReturnsFalse)
 {
   // GIVEN: a test interface with real XML parser
   auto configuration = createBasicConfiguration();
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
+  OpAppPackageManager::Dependencies deps;
+  deps.xmlParser = std::make_unique<XmlParser>();
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   // WHEN: parseAitFiles is called with nonexistent file
   std::vector<PackageInfo> packages;
@@ -1508,8 +1531,9 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_InvalidXml_ReturnsFalse)
   auto configuration = createBasicConfiguration();
   auto invalidXmlPath = createTestFile("invalid.xml", "This is not valid XML content");
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
+  OpAppPackageManager::Dependencies deps;
+  deps.xmlParser = std::make_unique<XmlParser>();
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   // WHEN: parseAitFiles is called with invalid XML
   std::vector<PackageInfo> packages;
@@ -1527,8 +1551,9 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_ValidAitXml_ExtractsDescriptor
   auto configuration = createBasicConfiguration();
   auto aitXmlPath = createAitXmlFile("valid_ait.xml", 12345, 1, "Test OpApp", "https://test.example.com/app/");
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
+  OpAppPackageManager::Dependencies deps;
+  deps.xmlParser = std::make_unique<XmlParser>();
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   // WHEN: parseAitFiles is called with valid AIT XML
   std::vector<PackageInfo> packages;
@@ -1551,8 +1576,9 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_MultipleAits_CombinesApps)
   auto ait1Path = createAitXmlFile("ait1.xml", 11111, 1, "App One", "https://test1.example.com/");
   auto ait2Path = createAitXmlFile("ait2.xml", 22222, 2, "App Two", "https://test2.example.com/");
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
+  OpAppPackageManager::Dependencies deps;
+  deps.xmlParser = std::make_unique<XmlParser>();
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   // WHEN: parseAitFiles is called with multiple AIT files
   std::vector<PackageInfo> packages;
@@ -1579,8 +1605,9 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_ClearsOldDescriptors)
   auto configuration = createBasicConfiguration();
   auto aitXmlPath = createAitXmlFile("test_ait.xml", 99999, 9, "Test App", "https://test.example.com/");
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
+  OpAppPackageManager::Dependencies deps;
+  deps.xmlParser = std::make_unique<XmlParser>();
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   // First parse
   std::vector<PackageInfo> packages;
@@ -1688,8 +1715,10 @@ TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_ValidAit_ReturnsUpdateA
   mockAitFetcher->setFileContent("ait_0.xml",
       createValidOpAppAitXml(12345, 1, "Test OpApp", "https://test.example.com/app/"));
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, std::move(mockAitFetcher), std::make_unique<XmlParser>());
+  OpAppPackageManager::Dependencies deps;
+  deps.aitFetcher = std::move(mockAitFetcher);
+  deps.xmlParser = std::make_unique<XmlParser>();
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   // WHEN: doRemotePackageCheck is called
   OpAppPackageManager::PackageStatus status = testInterface->doRemotePackageCheck();
@@ -1717,8 +1746,10 @@ TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_AitWithNoApps_ReturnsNo
   auto mockAitFetcher = std::make_unique<MockAitFetcher>();
   mockAitFetcher->setFileContent("ait_0.xml", aitContent);
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, std::move(mockAitFetcher), std::make_unique<XmlParser>());
+  OpAppPackageManager::Dependencies deps;
+  deps.aitFetcher = std::move(mockAitFetcher);
+  deps.xmlParser = std::make_unique<XmlParser>();
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   // WHEN: doRemotePackageCheck is called
   OpAppPackageManager::PackageStatus status = testInterface->doRemotePackageCheck();
@@ -1810,8 +1841,9 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_NonOpAppType_Rejected)
   auto configuration = createBasicConfiguration();
   auto aitXmlPath = createTestFile("hbbtv_ait.xml", createHbbTvAitXml(12345, 1, "HbbTV App", "https://test.example.com/"));
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
+  OpAppPackageManager::Dependencies deps;
+  deps.xmlParser = std::make_unique<XmlParser>();
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   // WHEN: parseAitFiles is called
   std::vector<PackageInfo> packages;
@@ -1829,8 +1861,9 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_InvalidAppUsage_Rejected)
   auto aitXmlPath = createTestFile("invalid_usage_ait.xml",
       createOpAppAitXmlWithInvalidUsage(12345, 1, "Invalid Usage App", "https://test.example.com/"));
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
+  OpAppPackageManager::Dependencies deps;
+  deps.xmlParser = std::make_unique<XmlParser>();
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   // WHEN: parseAitFiles is called
   std::vector<PackageInfo> packages;
@@ -1849,8 +1882,9 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_SpecificOpApp_Accepted)
       createValidOpAppAitXml(12345, 1, "Specific OpApp", "https://test.example.com/",
           "index.html", "AUTOSTART", "urn:hbbtv:opapp:specific:2017"));
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
+  OpAppPackageManager::Dependencies deps;
+  deps.xmlParser = std::make_unique<XmlParser>();
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   // WHEN: parseAitFiles is called
   std::vector<PackageInfo> packages;
@@ -1922,8 +1956,9 @@ TEST_F(OpAppPackageManagerTest, TestParseAitFiles_MixedValidAndInvalid_OnlyValid
 
   auto aitXmlPath = createTestFile("mixed_ait.xml", mixedAitContent);
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, std::make_unique<XmlParser>());
+  OpAppPackageManager::Dependencies deps;
+  deps.xmlParser = std::make_unique<XmlParser>();
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   // WHEN: parseAitFiles is called
   std::vector<PackageInfo> packages;
@@ -1949,8 +1984,9 @@ TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_EmptyUrl_ReturnsFailure)
   auto mockDownloader = std::make_unique<MockHttpDownloader>();
   mockDownloader->setDownloadSuccess("test content", "application/vnd.hbbtv.opapp.pkg");
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+  OpAppPackageManager::Dependencies deps;
+  deps.httpDownloader = std::move(mockDownloader);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   PackageInfo pkgInfo;
   pkgInfo.baseUrl = "";  // Empty URL
@@ -1973,8 +2009,9 @@ TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_ValidContentType_Returns
   mockDownloader->setDownloadSuccess("encrypted package content", "application/vnd.hbbtv.opapp.pkg");
   MockHttpDownloader* mockDownloaderPtr = mockDownloader.get();
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+  OpAppPackageManager::Dependencies deps;
+  deps.httpDownloader = std::move(mockDownloader);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   PackageInfo pkgInfo;
   pkgInfo.baseUrl = "https://test.example.com/packages";
@@ -2002,8 +2039,9 @@ TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_InvalidContentType_Retur
   mockDownloader->setDownloadSuccess("some content", "application/octet-stream");
   MockHttpDownloader* mockDownloaderPtr = mockDownloader.get();
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+  OpAppPackageManager::Dependencies deps;
+  deps.httpDownloader = std::move(mockDownloader);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   PackageInfo pkgInfo;
   pkgInfo.baseUrl = "https://test.example.com/packages/";
@@ -2027,8 +2065,9 @@ TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_HttpError_ReturnsFail)
   mockDownloader->setDownloadHttpError(404);
   MockHttpDownloader* mockDownloaderPtr = mockDownloader.get();
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+  OpAppPackageManager::Dependencies deps;
+  deps.httpDownloader = std::move(mockDownloader);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   PackageInfo pkgInfo;
   pkgInfo.baseUrl = "https://test.example.com/packages/";
@@ -2052,8 +2091,9 @@ TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_NetworkFailure_ReturnsFa
   mockDownloader->setDownloadNetworkFailure();
   MockHttpDownloader* mockDownloaderPtr = mockDownloader.get();
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+  OpAppPackageManager::Dependencies deps;
+  deps.httpDownloader = std::move(mockDownloader);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   PackageInfo pkgInfo;
   pkgInfo.baseUrl = "https://test.example.com/packages/";
@@ -2077,8 +2117,9 @@ TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_CreatesDestinationDirect
   auto mockDownloader = std::make_unique<MockHttpDownloader>();
   mockDownloader->setDownloadSuccess("content", "application/vnd.hbbtv.opapp.pkg");
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+  OpAppPackageManager::Dependencies deps;
+  deps.httpDownloader = std::move(mockDownloader);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   PackageInfo pkgInfo;
   pkgInfo.baseUrl = "https://test.example.com/";
@@ -2100,8 +2141,9 @@ TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_SetsCandidatePackageFile
   auto mockDownloader = std::make_unique<MockHttpDownloader>();
   mockDownloader->setDownloadSuccess("package content", "application/vnd.hbbtv.opapp.pkg");
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+  OpAppPackageManager::Dependencies deps;
+  deps.httpDownloader = std::move(mockDownloader);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   PackageInfo pkgInfo;
   pkgInfo.baseUrl = "https://test.example.com/";
@@ -2125,8 +2167,9 @@ TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_MaxRetryAttempts)
   mockDownloader->setDownloadNetworkFailure();
   MockHttpDownloader* mockDownloaderPtr = mockDownloader.get();
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+  OpAppPackageManager::Dependencies deps;
+  deps.httpDownloader = std::move(mockDownloader);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   PackageInfo pkgInfo;
   pkgInfo.baseUrl = "https://test.example.com/";
@@ -2149,8 +2192,9 @@ TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_HttpServerError_RetriesA
   mockDownloader->setDownloadHttpError(500);
   MockHttpDownloader* mockDownloaderPtr = mockDownloader.get();
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+  OpAppPackageManager::Dependencies deps;
+  deps.httpDownloader = std::move(mockDownloader);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   PackageInfo pkgInfo;
   pkgInfo.baseUrl = "https://test.example.com/";
@@ -2174,8 +2218,9 @@ TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_CorrectUrlConstruction)
   mockDownloader->setDownloadSuccess("content", "application/vnd.hbbtv.opapp.pkg");
   MockHttpDownloader* mockDownloaderPtr = mockDownloader.get();
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+  OpAppPackageManager::Dependencies deps;
+  deps.httpDownloader = std::move(mockDownloader);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   PackageInfo pkgInfo;
   pkgInfo.baseUrl = "https://test.example.com/packages";
@@ -2198,8 +2243,9 @@ TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_ConfigurableRetryAttempt
   mockDownloader->setDownloadNetworkFailure();
   MockHttpDownloader* mockDownloaderPtr = mockDownloader.get();
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(
-      configuration, nullptr, nullptr, nullptr, nullptr, std::move(mockDownloader));
+  OpAppPackageManager::Dependencies deps;
+  deps.httpDownloader = std::move(mockDownloader);
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   PackageInfo pkgInfo;
   pkgInfo.baseUrl = "https://test.example.com/";
