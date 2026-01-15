@@ -24,6 +24,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "IAitFetcher.h"
 
 namespace orb
 {
@@ -32,56 +33,6 @@ namespace orb
 struct SrvRecord;
 class HttpDownloader;
 class DownloadedObject;
-
-/**
- * @brief Result of an AIT fetch attempt.
- *
- * AITs are written to files to avoid heap pressure with large/many files.
- * Per TS 103 606: "The result of the process is a number of (XML) AITs..."
- */
-struct AitFetchResult {
-    bool success;                        // True if at least one AIT was acquired
-    std::vector<std::string> aitFiles;   // Paths to acquired AIT XML files
-    std::vector<std::string> errors;     // Non-fatal errors encountered
-    std::string fatalError;              // Fatal error (empty if success)
-
-    // Default constructor - failure state
-    AitFetchResult()
-        : success(false) {}
-
-    // Failure constructor - with fatal error message
-    explicit AitFetchResult(const std::string& fatalError)
-        : success(false), fatalError(fatalError) {}
-
-    // Success constructor - with acquired files and any non-fatal errors
-    AitFetchResult(const std::vector<std::string>& aitFiles,
-                   const std::vector<std::string>& errors)
-        : success(!aitFiles.empty()), aitFiles(aitFiles), errors(errors) {}
-};
-
-/**
- * @brief Interface for AIT fetching - allows mocking in tests.
- */
-class IAitFetcher {
-public:
-    virtual ~IAitFetcher() = default;
-
-    /**
-     * @brief Fetch ALL AIT XMLs for a given FQDN, writing each to a file.
-     *
-     * Iterates through all SRV records and downloads AIT from each reachable target.
-     * AITs are written to individual files in the specified output directory.
-     *
-     * @param fqdn The fully qualified domain name of the OpApp
-     * @param networkAvailable Whether network is currently available
-     * @param outputDirectory Directory where AIT files will be written
-     * @return AitFetchResult containing file paths and status
-     */
-    virtual AitFetchResult FetchAitXmls(
-        const std::string& fqdn,
-        bool networkAvailable,
-        const std::string& outputDirectory) = 0;
-};
 
 /**
  * @brief Default implementation of AIT fetching using DNS SRV lookup and HTTPS.

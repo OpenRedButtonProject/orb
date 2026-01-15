@@ -29,14 +29,12 @@
 #include "IHashCalculator.h"
 #include "IDecryptor.h"
 #include "IVerifier.h"
+#include "IAitFetcher.h"
+#include "IXmlParser.h"
+#include "IHttpDownloader.h"
 
 namespace orb
 {
-
-// Forward declarations
-class IAitFetcher;
-class IXmlParser;
-class IHttpDownloader;
 
 /**
  * @brief Package information - represents both discovered and installed packages.

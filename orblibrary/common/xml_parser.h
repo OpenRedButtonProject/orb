@@ -21,30 +21,10 @@
 #ifndef XML_PARSE_H
 #define XML_PARSE_H
 
-#include "ait.h"
+#include "IXmlParser.h"
 
 namespace orb
 {
-
-class IXmlParser
-{
-public:
-    /**
-     * Create a Xml Parser object.
-     * @return A unique pointer to the created instance
-     */
-    static std::unique_ptr<IXmlParser> create();
-
-    virtual ~IXmlParser() = default;
-
-    /**
-     * Parse Xml data as specified in TS 102 809 section 5.4
-     * @param content pointer to Xml data
-     * @param length length of Xml data
-     * @return AIT table data in same format as generated from DVB broadcast data
-     */
-    virtual std::unique_ptr<Ait::S_AIT_TABLE> ParseAit(const char *content, uint32_t length) = 0;
-};
 
 class XmlParser : public IXmlParser {
 public:
