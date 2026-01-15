@@ -92,6 +92,8 @@ static_library("opapp_package_manager") {
     "package_manager/HashCalculator.h",
     "package_manager/Decryptor.cpp",
     "package_manager/Decryptor.h",
+    "package_manager/Verifier.cpp",
+    "package_manager/Verifier.h",
   ]
 
   deps = [
@@ -435,6 +437,21 @@ source_set("test_decryptor_sources")
   testonly = true
 }
 
+source_set("test_verifier_sources")
+{
+  sources = [
+    "test/verifier_unittest.cpp",
+  ]
+
+  deps = [
+    "//testing/gtest",
+    "//third_party/boringssl:boringssl",
+    ":opapp_package_manager",  # Provides Verifier class
+  ]
+
+  testonly = true
+}
+
 # Single executable that combines all test sources
 executable("test_orb_all") {
   deps = [
@@ -449,7 +466,8 @@ executable("test_orb_all") {
     ":test_orb_jsonrpcservice_sources",
     ":test_orb_application_manager_sources",
     ":test_xml_parser_sources",
-    ":test_decryptor_sources"
+    ":test_decryptor_sources",
+    ":test_verifier_sources"
   ]
 
   testonly = true

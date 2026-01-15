@@ -18,6 +18,7 @@
 // TODO: Rename these to OpAppHashCalculator.h and OpAppDecryptor.h
 #include "HashCalculator.h"
 #include "Decryptor.h"
+#include "Verifier.h"
 
 namespace orb
 {
@@ -95,9 +96,24 @@ OpAppPackageManager::OpAppPackageManager(
   std::unique_ptr<IAitFetcher> aitFetcher,
   std::unique_ptr<IXmlParser> xmlParser,
   std::unique_ptr<IHttpDownloader> httpDownloader)
+  : OpAppPackageManager(configuration, std::move(hashCalculator), std::move(decryptor),
+                        nullptr, std::move(aitFetcher), std::move(xmlParser),
+                        std::move(httpDownloader))
+{
+}
+
+OpAppPackageManager::OpAppPackageManager(
+  const Configuration& configuration,
+  std::unique_ptr<IHashCalculator> hashCalculator,
+  std::unique_ptr<IDecryptor> decryptor,
+  std::unique_ptr<IVerifier> verifier,
+  std::unique_ptr<IAitFetcher> aitFetcher,
+  std::unique_ptr<IXmlParser> xmlParser,
+  std::unique_ptr<IHttpDownloader> httpDownloader)
   : m_Configuration(configuration)
   , m_HashCalculator(std::move(hashCalculator))
   , m_Decryptor(std::move(decryptor))
+  , m_Verifier(std::move(verifier))
   , m_AitFetcher(std::move(aitFetcher))
   , m_XmlParser(std::move(xmlParser))
   , m_HttpDownloader(std::move(httpDownloader))
@@ -113,6 +129,15 @@ OpAppPackageManager::OpAppPackageManager(
     decryptorConfig.certificatePath = m_Configuration.m_CertificateFilePath;
     decryptorConfig.workingDirectory = m_Configuration.m_DestinationDirectory;
     m_Decryptor = std::make_unique<Decryptor>(decryptorConfig);
+  }
+  if (!m_Verifier) {
+    // Configure verifier with Operator Signing Root CA (TS 103 606 Section 11.3.4.5)
+    VerifierConfig verifierConfig;
+    verifierConfig.operatorRootCAPath = m_Configuration.m_OperatorRootCAFilePath;
+    verifierConfig.expectedOperatorName = m_Configuration.m_ExpectedOperatorName;
+    verifierConfig.expectedOrganisationId = m_Configuration.m_ExpectedOrganisationId;
+    verifierConfig.workingDirectory = m_Configuration.m_DestinationDirectory;
+    m_Verifier = std::make_unique<Verifier>(verifierConfig);
   }
   if (!m_AitFetcher) {
     // Pass User-Agent from configuration (TS 103 606 Section 6.1.5.1)
@@ -271,20 +296,30 @@ bool OpAppPackageManager::tryRemoteUpdate()
 
 OpAppPackageManager::PackageStatus OpAppPackageManager::installFromPackageFile()
 {
+  // Step 1: Decrypt the CMS EnvelopedData to get CMS SignedData
   std::filesystem::path decryptedFile;
   if (!decryptPackageFile(m_CandidatePackageFile, decryptedFile)) {
     LOG(ERROR) << "Decryption failed: " << m_LastErrorMessage;
     return PackageStatus::DecryptionFailed;
   }
 
-  if (!verifyZipPackage(decryptedFile)) {
+  // Step 2: Verify signature on CMS SignedData and extract ZIP (TS 103 606 Section 11.3.4.5)
+  std::filesystem::path zipFile;
+  if (!verifySignedPackage(decryptedFile, zipFile)) {
+    LOG(ERROR) << "Signature verification failed: " << m_LastErrorMessage;
+    return PackageStatus::VerificationFailed;
+  }
+
+  // Step 3: Verify the extracted ZIP package
+  if (!verifyZipPackage(zipFile)) {
     LOG(ERROR) << "Package file verification failed: " << m_LastErrorMessage;
     return PackageStatus::VerificationFailed;
   }
 
   setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_UNPACKING);
 
-  if (!unzipPackageFile(decryptedFile, m_Configuration.m_DestinationDirectory)) {
+  // Step 4: Unzip the package
+  if (!unzipPackageFile(zipFile, m_Configuration.m_DestinationDirectory)) {
     LOG(ERROR) << "Unzip failed: " << m_LastErrorMessage;
     return PackageStatus::UnzipFailed;
   }
@@ -562,6 +597,34 @@ bool OpAppPackageManager::decryptPackageFile(const std::filesystem::path& filePa
   bool result = m_Decryptor->decrypt(filePath, outFile, decryptError);
   if (!result) {
     m_LastErrorMessage = decryptError;
+  }
+  return result;
+}
+
+bool OpAppPackageManager::verifySignedPackage(
+    const std::filesystem::path& signedDataPath,
+    std::filesystem::path& outZipPath)
+{
+  /* From the OpApp HbbTV spec:
+  11.3.4.5 Process for verifying a signed application package
+
+  The terminal shall verify the signature of the decrypted application ZIP package.
+  This involves:
+  1. Verifying the certificate chain against the Operator Signing Root CA
+  2. Validating the Operator Name (O=) and organisation_id (CN=) against bilateral agreement
+  3. Verifying the message-digest matches the hash of the extracted content
+  4. Verifying the signature over signed attributes
+  5. Extracting the application ZIP from encapContentInfo
+  */
+  if (!m_Verifier) {
+    m_LastErrorMessage = "Verifier not initialized";
+    return false;
+  }
+
+  std::string verifyError;
+  bool result = m_Verifier->verify(signedDataPath, outZipPath, verifyError);
+  if (!result) {
+    m_LastErrorMessage = verifyError;
   }
   return result;
 }
