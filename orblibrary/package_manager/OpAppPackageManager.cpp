@@ -19,6 +19,7 @@
 #include "HashCalculator.h"
 #include "Decryptor.h"
 #include "Verifier.h"
+#include "Unzipper.h"
 
 namespace orb
 {
@@ -60,6 +61,7 @@ OpAppPackageManager::OpAppPackageManager(
   , m_AitFetcher(std::move(deps.aitFetcher))
   , m_XmlParser(std::move(deps.xmlParser))
   , m_HttpDownloader(std::move(deps.httpDownloader))
+  , m_Unzipper(std::move(deps.unzipper))
 {
   // Create default implementations if not provided
   if (!m_HashCalculator) {
@@ -92,6 +94,9 @@ OpAppPackageManager::OpAppPackageManager(
   if (!m_HttpDownloader) {
     // Pass User-Agent from configuration (TS 103 606 Section 6.1.7)
     m_HttpDownloader = std::make_unique<HttpDownloader>(30000, m_Configuration.m_UserAgent);
+  }
+  if (!m_Unzipper) {
+    m_Unzipper = std::make_unique<Unzipper>();
   }
 }
 
@@ -635,10 +640,12 @@ bool OpAppPackageManager::verifyZipPackage(const std::filesystem::path& filePath
 
 bool OpAppPackageManager::unzipPackageFile(const std::filesystem::path& inFile, const std::filesystem::path& outPath)
 {
-  (void)inFile;  // Suppress unused warning until implementation
-  (void)outPath;  // Suppress unused warning until implementation
-  m_LastErrorMessage = "Unzip not yet implemented";
-  return false;
+  std::string unzipError;
+  bool result = m_Unzipper->unzip(inFile, outPath, unzipError);
+  if (!result) {
+    m_LastErrorMessage = unzipError;
+  }
+  return result;
 }
 
 bool OpAppPackageManager::verifyUnzippedPackage(const std::filesystem::path& filePath)
