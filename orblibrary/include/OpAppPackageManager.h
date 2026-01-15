@@ -32,6 +32,7 @@
 #include "IAitFetcher.h"
 #include "IXmlParser.h"
 #include "IHttpDownloader.h"
+#include "IUnzipper.h"
 
 namespace orb
 {
@@ -187,6 +188,7 @@ public:
       std::unique_ptr<IAitFetcher> aitFetcher;
       std::unique_ptr<IXmlParser> xmlParser;
       std::unique_ptr<IHttpDownloader> httpDownloader;
+      std::unique_ptr<IUnzipper> unzipper;
   };
 
   /**
@@ -516,6 +518,7 @@ private:
   std::unique_ptr<IAitFetcher> m_AitFetcher;
   std::unique_ptr<IXmlParser> m_XmlParser;
   std::unique_ptr<IHttpDownloader> m_HttpDownloader;
+  std::unique_ptr<IUnzipper> m_Unzipper;
 
   std::filesystem::path m_CandidatePackageFile;
   std::string m_CandidatePackageHash;

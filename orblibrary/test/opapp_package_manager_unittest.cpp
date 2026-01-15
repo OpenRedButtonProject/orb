@@ -13,6 +13,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/orb/orblibrary/include/OpAppPackageManager.h"
 #include "third_party/orb/orblibrary/package_manager/AitFetcher.h"
+#include "third_party/orb/orblibrary/package_manager/IUnzipper.h"
 #include "third_party/orb/orblibrary/common/xml_parser.h"
 #include "third_party/orb/orblibrary/network/HttpDownloader.h"
 #include "OpAppPackageManagerTestInterface.h"
@@ -270,6 +271,54 @@ private:
   mutable int m_DownloadCallCount = 0;
   mutable std::string m_LastDownloadUrl;
   mutable std::filesystem::path m_LastOutputPath;
+};
+
+// Mock unzipper for testing
+class MockUnzipper : public IUnzipper {
+public:
+  MockUnzipper() = default;
+
+  void setUnzipResult(bool success, const std::string& errorMessage = "") {
+    m_UnzipSuccess = success;
+    m_UnzipError = errorMessage;
+  }
+
+  bool unzip(
+      const std::filesystem::path& zipFile,
+      const std::filesystem::path& destDir,
+      std::string& outError) const override {
+    m_WasUnzipCalled = true;
+    m_LastZipFile = zipFile;
+    m_LastDestDir = destDir;
+
+    if (!m_UnzipSuccess) {
+      outError = m_UnzipError;
+      return false;
+    }
+
+    // Create destination directory to simulate successful unzip
+    std::filesystem::create_directories(destDir);
+    return true;
+  }
+
+  // Getters for verification
+  bool wasUnzipCalled() const { return m_WasUnzipCalled; }
+  std::filesystem::path getLastZipFile() const { return m_LastZipFile; }
+  std::filesystem::path getLastDestDir() const { return m_LastDestDir; }
+
+  void reset() {
+    m_WasUnzipCalled = false;
+    m_LastZipFile.clear();
+    m_LastDestDir.clear();
+  }
+
+private:
+  bool m_UnzipSuccess = true;
+  std::string m_UnzipError;
+
+  mutable bool m_WasUnzipCalled = false;
+  mutable std::filesystem::path m_LastZipFile;
+  mutable std::filesystem::path m_LastDestDir;
 };
 
 // Helper function to generate valid OpApp AIT XML for testing

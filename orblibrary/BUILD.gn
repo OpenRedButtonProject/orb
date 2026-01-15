@@ -94,12 +94,15 @@ static_library("opapp_package_manager") {
     "package_manager/Decryptor.h",
     "package_manager/Verifier.cpp",
     "package_manager/Verifier.h",
+    "package_manager/Unzipper.cpp",
+    "package_manager/Unzipper.h",
   ]
 
   deps = [
     "//base", # For logging dependency
     "//third_party/jsoncpp",
     "//third_party/boringssl:boringssl",
+    "//third_party/zlib/google:zip",  # For Unzipper
   ]
 
   # AitFetcher provides IAitFetcher interface via public_deps
