@@ -105,6 +105,36 @@ public:
     std::string& outError) const = 0;
 };
 
+class IVerifier {
+public:
+  virtual ~IVerifier() = default;
+  /**
+   * Verifies a CMS SignedData file and extracts the ZIP content.
+   * Implements TS 103 606 Section 11.3.4.5:
+   * - Verifies certificate chain against Operator Signing Root CA
+   * - Validates O= and CN= attributes match expected values
+   * - Verifies message-digest matches content hash
+   * - Extracts ZIP from encapContentInfo
+   *
+   * @param signedDataPath Path to the CMS SignedData file (DER encoded)
+   * @param outZipPath Output path where the extracted ZIP is written
+   * @param outError Output error message if verification fails
+   * @return true if verification succeeded, false otherwise
+   */
+  virtual bool verify(
+    const std::filesystem::path& signedDataPath,
+    std::filesystem::path& outZipPath,
+    std::string& outError) const = 0;
+
+  /**
+   * Check if the verifier is properly configured.
+   *
+   * @param outError Optional pointer to receive error message describing missing fields
+   * @return true if all required fields are set
+   */
+  virtual bool isConfigured(std::string* outError = nullptr) const = 0;
+};
+
 class OpAppPackageManager
 {
 public:
@@ -162,6 +192,18 @@ public:
       std::filesystem::path m_PublicKeyFilePath;
       std::filesystem::path m_CertificateFilePath;
 
+      /* Operator Signing Root CA certificate (PEM format) for signature verification
+       * Used to verify the certificate chain in CMS SignedData (TS 103 606 Section 11.3.4.5) */
+      std::filesystem::path m_OperatorRootCAFilePath;
+
+      /* Expected Operator Name from bilateral agreement
+       * Matched against the Organization (O=) attribute of the signer certificate subject */
+      std::string m_ExpectedOperatorName;
+
+      /* Expected organisation_id from bilateral agreement
+       * Matched against the CommonName (CN=) attribute of the signer certificate subject */
+      std::string m_ExpectedOrganisationId;
+
       std::filesystem::path m_DestinationDirectory; /* Directory where the package is decrypted, unzipped and verified */
       std::filesystem::path m_OpAppInstallDirectory; /* Directory where the OpApp is installed */
       UpdateSuccessCallback m_OnUpdateSuccess; /* Callback called when update completes successfully */
@@ -218,6 +260,16 @@ public:
     const Configuration& configuration,
     std::unique_ptr<IHashCalculator> hashCalculator,
     std::unique_ptr<IDecryptor> decryptor,
+    std::unique_ptr<IAitFetcher> aitFetcher,
+    std::unique_ptr<IXmlParser> xmlParser,
+    std::unique_ptr<IHttpDownloader> httpDownloader);
+
+  // Constructor with all dependencies including Verifier (for testing)
+  OpAppPackageManager(
+    const Configuration& configuration,
+    std::unique_ptr<IHashCalculator> hashCalculator,
+    std::unique_ptr<IDecryptor> decryptor,
+    std::unique_ptr<IVerifier> verifier,
     std::unique_ptr<IAitFetcher> aitFetcher,
     std::unique_ptr<IXmlParser> xmlParser,
     std::unique_ptr<IHttpDownloader> httpDownloader);
@@ -433,6 +485,20 @@ private:
   bool verifyUnzippedPackage(const std::filesystem::path& filePath);
 
   /**
+   * verifySignedPackage()
+   *
+   * Verifies the CMS SignedData signature of a decrypted package file
+   * as per TS 103 606 Section 11.3.4.5.
+   *
+   * @param signedDataPath Path to the CMS SignedData file (output from decryption)
+   * @param outZipPath Output path where the extracted ZIP is written
+   * @return true if the signature is verified successfully, false otherwise.
+   *         On error, sets m_LastErrorMessage.
+   */
+  bool verifySignedPackage(const std::filesystem::path& signedDataPath,
+                           std::filesystem::path& outZipPath);
+
+  /**
    * installToPersistentStorage()
    *
    * Installs the package file to persistent storage.
@@ -520,6 +586,7 @@ private:
   std::string m_LastErrorMessage;
   std::unique_ptr<IHashCalculator> m_HashCalculator;
   std::unique_ptr<IDecryptor> m_Decryptor;
+  std::unique_ptr<IVerifier> m_Verifier;
   std::unique_ptr<IAitFetcher> m_AitFetcher;
   std::unique_ptr<IXmlParser> m_XmlParser;
   std::unique_ptr<IHttpDownloader> m_HttpDownloader;
