@@ -24,18 +24,22 @@
 #include "IUnzipper.h"
 #include <filesystem>
 #include <string>
+#include <vector>
+#include <cstdint>
 
 namespace orb
 {
 
 /**
- * @brief ZIP Archive Extractor
+ * @brief ZIP Archive Extractor and Inspector
  *
- * Extracts ZIP archives containing operator application packages.
+ * Extracts and inspects ZIP archives containing operator application packages.
+ * Supports reading ZIP metadata and individual files without full extraction,
+ * enabling pre-extraction validation per TS 103 606 Section 6.1.8.
  *
  * Implementation notes:
  * - For Chromium builds (IS_CHROMIUM defined): Uses Chromium's zip library
- *   from third_party/zlib/google/zip.h
+ *   from third_party/zlib/google/zip.h and zip_reader.h
  * - For non-Chromium builds: Not yet implemented (placeholder)
  */
 class Unzipper : public IUnzipper {
@@ -56,6 +60,34 @@ public:
     bool unzip(
         const std::filesystem::path& zipFile,
         const std::filesystem::path& destDir,
+        std::string& outError) const override;
+
+    /**
+     * @brief Get the total uncompressed size of all files in a ZIP archive.
+     *
+     * @param zipFile Path to the ZIP archive file
+     * @param outSize Output total uncompressed size in bytes
+     * @param outError Error message if operation fails
+     * @return true on success, false on failure
+     */
+    bool getTotalUncompressedSize(
+        const std::filesystem::path& zipFile,
+        size_t& outSize,
+        std::string& outError) const override;
+
+    /**
+     * @brief Read a single file from a ZIP archive without full extraction.
+     *
+     * @param zipFile Path to the ZIP archive file
+     * @param filePathInZip Path of the file within the ZIP
+     * @param outContent Output buffer for the file contents
+     * @param outError Error message if operation fails
+     * @return true on success, false on failure
+     */
+    bool readFileFromZip(
+        const std::filesystem::path& zipFile,
+        const std::string& filePathInZip,
+        std::vector<uint8_t>& outContent,
         std::string& outError) const override;
 };
 

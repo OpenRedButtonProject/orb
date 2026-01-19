@@ -586,88 +586,101 @@ bool OpAppPackageManager::verifyZipPackage(const std::filesystem::path& filePath
   /* From the OpApp HbbTV spec:
   6.1.8 Decrypt, verify, unpack and installation of the application package
 
-    The terminal shall decrypt the encrypted application package as defined in clause 11.3.4.4 using the Terminal
-    Packaging Certificate and corresponding private key. The terminal shall verify the signature of the decrypted
-    application ZIP package as specified in clause 11.3.4.5.
-
     The terminal shall consider the application package as valid and verified if all of the following are true:
-      •The application zip package passed the verification process defined in clause 11.3.4.5.
-      •For application packages signalled by a broadcast AIT, the application loop entry from the initially trusted
-      broadcast AIT matches the opapp.ait file contained inside the package.
-      •For application packages signalled by an XML AIT, the initially trusted XML AIT file matches the
-      opapp.aitx from inside the package.
-      •When an already installed operator application is being updated, if a minimum application version number was
-      provided when the package was last updated (or installed if this is the first update) then:
-      -
-      the version number in the application package to be installed is greater than or equal that minimum
-      version number;
-      otherwise if no minimum application version number was provided at that time;
-      -
-      •
-      the version number in the application package to be installed is higher than the version number of the
-      currently installed operator application.
-      The combined uncompressed and extracted size of the operator application files is smaller than the maximum
-      permitted, subject to the bilateral agreement.
+      • The application zip package passed the verification process defined in clause 11.3.4.5.
+        (Already done by verifySignedPackage() before this method is called)
+      • For application packages signalled by an XML AIT, the initially trusted XML AIT file matches the
+        opapp.aitx from inside the package.
+      • The combined uncompressed and extracted size of the operator application files is smaller than the maximum
+        permitted, subject to the bilateral agreement.
 
-  See 11.3.4.5 Application ZIP package signature verification process
-
-    After decrypting the encrypted application package as defined in clause 11.3.4.4, terminals shall verify the resulting
-    CMS SignedData according to the following process.
-
-    Terminals shall use the Operator Signing Root CA to verify the certificates included in the certificates block of
-    the CMS SignedData structure as detailed in section 5.1 of IETF RFC 5652 [12].
-
-    Terminals shall extract the application ZIP file from the encapContentInfo block of the CMS SignedData.
-    Terminals shall fail and reject the verification if any of the following conditions occur:
-    •The certificate chain fails certificate path validation as defined in clause 6 of RFC 5280 [11] (this includes a
-    check that none of the certificates have expired). The required check that certificates have not been revoked
-    shall be performed by obtaining the appropriate CRLs using the cRLDistributionPoints extension (see table
-    23).
-    •The Operator Name, as signalled via the Organization ('O=') attribute of the subject field, or the
-    organisation_id, as signalled via the CommonName ('CN=') attribute of the subject field do not match those
-    defined in the bilateral agreement for the operator whose organisation_id is found during the discovery process
-    in clause 6.1.5.
-    •The value of the message-digest field contained in the CMS SignedData structure does not match with
-    the terminal generating a message-digest of the extracted application ZIP file when applying the hashing
-    function communicated via the SignatureAlgorithm field.
-
-    If verification fails, the terminal shall follow the process outlined in clause 6.1.9.
-    The following provides an informative example where the decrypted application ZIP file is verified with the Operator
-    Signing Root CA. The example only covers validating the operator's certificate chain and the message-digest of the
-    application ZIP file. It does not include checking certificates for revocation using CRLs.
-
+    Note: Version checking is handled in doRemotePackageCheck() before download.
   */
-  (void)filePath;  // Suppress unused warning until implementation
-  m_LastErrorMessage = "Verification not yet implemented";
-  return false;
-}
 
-bool OpAppPackageManager::unzipPackageFile(const std::filesystem::path& inFile, const std::filesystem::path& outPath)
-{
-  std::string unzipError;
-  if (!m_Unzipper->unzip(inFile, outPath, unzipError)) {
-    m_LastErrorMessage = unzipError;
-    return false;
-  }
-
-  // Check total unzipped size against maximum if configured
+  // Step 1: Verify uncompressed size using ZIP metadata (pre-extraction check)
   if (m_Configuration.m_MaxUnzippedPackageSize > 0) {
-    size_t totalSize = 0;
-    std::error_code ec;
-    for (const auto& entry : std::filesystem::recursive_directory_iterator(outPath, ec)) {
-      if (entry.is_regular_file(ec)) {
-        totalSize += entry.file_size(ec);
-      }
+    size_t totalUncompressedSize = 0;
+    std::string sizeError;
+    if (!m_Unzipper->getTotalUncompressedSize(filePath, totalUncompressedSize, sizeError)) {
+      m_LastErrorMessage = "Failed to read ZIP metadata: " + sizeError;
+      return false;
     }
 
-    if (totalSize > m_Configuration.m_MaxUnzippedPackageSize) {
-      // Clean up the extracted files
-      std::filesystem::remove_all(outPath, ec);
-      m_LastErrorMessage = "Unzipped package size (" + std::to_string(totalSize) +
+    if (totalUncompressedSize > m_Configuration.m_MaxUnzippedPackageSize) {
+      m_LastErrorMessage = "Package uncompressed size (" + std::to_string(totalUncompressedSize) +
                            " bytes) exceeds maximum permitted size (" +
                            std::to_string(m_Configuration.m_MaxUnzippedPackageSize) + " bytes)";
       return false;
     }
+
+    LOG(INFO) << "ZIP package size check passed: " << totalUncompressedSize
+              << " bytes (limit: " << m_Configuration.m_MaxUnzippedPackageSize << " bytes)";
+  }
+
+  // Step 2: For remote installations, verify opapp.aitx matches the original trusted AIT
+  // Determine if this is a remote installation by checking if aitFilePath was set during AIT parsing
+  bool isRemoteInstallation = !m_CandidatePackage.aitFilePath.empty();
+
+  if (isRemoteInstallation) {
+    // Remote installation: AIT verification is mandatory
+    const std::filesystem::path& trustedAitPath = m_CandidatePackage.aitFilePath;
+
+    // The trusted AIT file MUST exist - it was fetched during doRemotePackageCheck()
+    if (!std::filesystem::exists(trustedAitPath)) {
+      m_LastErrorMessage = "Internal error: trusted AIT file missing: " + trustedAitPath.string();
+      LOG(ERROR) << m_LastErrorMessage;
+      return false;
+    }
+
+    // Read opapp.aitx from inside the ZIP package
+    std::vector<uint8_t> packageAitContent;
+    std::string readError;
+    if (!m_Unzipper->readFileFromZip(filePath, "opapp.aitx", packageAitContent, readError)) {
+      m_LastErrorMessage = "opapp.aitx not found in package: " + readError;
+      LOG(ERROR) << m_LastErrorMessage;
+      return false;
+    }
+
+    // Read the trusted AIT file
+    std::ifstream trustedAitFile(trustedAitPath, std::ios::binary);
+    if (!trustedAitFile) {
+      m_LastErrorMessage = "Failed to read trusted AIT file: " + trustedAitPath.string();
+      LOG(ERROR) << m_LastErrorMessage;
+      return false;
+    }
+
+    std::string trustedContent(
+        (std::istreambuf_iterator<char>(trustedAitFile)),
+        std::istreambuf_iterator<char>());
+    trustedAitFile.close();
+
+    // Compare contents
+    std::string packageContent(packageAitContent.begin(), packageAitContent.end());
+    if (trustedContent != packageContent) {
+      m_LastErrorMessage = "opapp.aitx in package does not match trusted AIT: " +
+                           trustedAitPath.filename().string();
+      LOG(ERROR) << m_LastErrorMessage;
+      return false;
+    }
+
+    LOG(INFO) << "opapp.aitx matches trusted AIT: " << trustedAitPath.filename();
+  } else {
+    // Local installation: no AIT was fetched, so AIT verification is skipped
+    LOG(INFO) << "Local installation - skipping opapp.aitx verification";
+  }
+
+  LOG(INFO) << "ZIP package verification passed: " << filePath.filename();
+  return true;
+}
+
+bool OpAppPackageManager::unzipPackageFile(const std::filesystem::path& inFile, const std::filesystem::path& outPath)
+{
+  // Note: Size validation is performed in verifyZipPackage() using ZIP metadata
+  // before extraction, as per TS 103 606 Section 6.1.8.
+  std::string unzipError;
+  if (!m_Unzipper->unzip(inFile, outPath, unzipError)) {
+    m_LastErrorMessage = unzipError;
+    return false;
   }
 
   return true;
@@ -914,6 +927,7 @@ bool OpAppPackageManager::parseAitFiles(
       pkgInfo.xmlVersion = app.xmlVersion;
       pkgInfo.baseUrl = app.transportArray[0].url.baseUrl;
       pkgInfo.location = app.location;
+      pkgInfo.aitFilePath = aitFile;  // Track source AIT for verification
 
       if (app.appName.numLangs > 0) {
         pkgInfo.name = app.appName.names[0].name;
@@ -923,7 +937,8 @@ bool OpAppPackageManager::parseAitFiles(
                 << ", baseUrl=" << pkgInfo.baseUrl
                 << ", xmlVersion=" << pkgInfo.xmlVersion
                 << ", location=" << pkgInfo.location
-                << ", name=" << pkgInfo.name;
+                << ", name=" << pkgInfo.name
+                << ", aitFile=" << pkgInfo.aitFilePath.filename();
 
       packages.push_back(pkgInfo);
     }

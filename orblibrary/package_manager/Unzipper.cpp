@@ -22,6 +22,7 @@
 #ifdef IS_CHROMIUM
 // Chromium's zip library
 #include "third_party/zlib/google/zip.h"
+#include "third_party/zlib/google/zip_reader.h"
 #include "base/files/file_path.h"
 #endif
 
@@ -60,6 +61,79 @@ bool Unzipper::unzip(
     (void)zipFile;
     (void)destDir;
     outError = "Unzip not implemented for non-Chromium builds";
+    return false;
+#endif
+}
+
+bool Unzipper::getTotalUncompressedSize(
+    const std::filesystem::path& zipFile,
+    size_t& outSize,
+    std::string& outError) const
+{
+#ifdef IS_CHROMIUM
+    base::FilePath zip_file_path(zipFile.string());
+
+    zip::ZipReader reader;
+    if (!reader.Open(zip_file_path)) {
+        outError = "Failed to open ZIP file: " + zipFile.string();
+        return false;
+    }
+
+    size_t totalSize = 0;
+    while (const zip::ZipReader::Entry* entry = reader.Next()) {
+        // original_size is 0 for directories, so we can sum all entries
+        totalSize += entry->original_size;
+    }
+
+    outSize = totalSize;
+    return true;
+#else
+    // Non-Chromium implementation placeholder
+    (void)zipFile;
+    (void)outSize;
+    outError = "getTotalUncompressedSize not implemented for non-Chromium builds";
+    return false;
+#endif
+}
+
+bool Unzipper::readFileFromZip(
+    const std::filesystem::path& zipFile,
+    const std::string& filePathInZip,
+    std::vector<uint8_t>& outContent,
+    std::string& outError) const
+{
+#ifdef IS_CHROMIUM
+    base::FilePath zip_file_path(zipFile.string());
+
+    zip::ZipReader reader;
+    if (!reader.Open(zip_file_path)) {
+        outError = "Failed to open ZIP file: " + zipFile.string();
+        return false;
+    }
+
+    // Search for the requested file
+    while (const zip::ZipReader::Entry* entry = reader.Next()) {
+        if (entry->path.AsUTF8Unsafe() == filePathInZip) {
+            // Found the file - extract its contents
+            std::string content;
+            if (!reader.ExtractCurrentEntryToString(&content)) {
+                outError = "Failed to extract file from ZIP: " + filePathInZip;
+                return false;
+            }
+
+            outContent.assign(content.begin(), content.end());
+            return true;
+        }
+    }
+
+    outError = "File not found in ZIP: " + filePathInZip;
+    return false;
+#else
+    // Non-Chromium implementation placeholder
+    (void)zipFile;
+    (void)filePathInZip;
+    (void)outContent;
+    outError = "readFileFromZip not implemented for non-Chromium builds";
     return false;
 #endif
 }
