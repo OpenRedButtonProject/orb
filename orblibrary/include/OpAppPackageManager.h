@@ -241,6 +241,8 @@ public:
    * Main entry point for checking for updates and installing the package if an update is available.
    * Calls tryLocalUpdate() or tryRemoteUpdate() as appropriate.
    *
+   * @return true if an installation completed, otherwise false.
+   *
    * Flow:
    * checkForUpdates()
     │
@@ -260,7 +262,7 @@ public:
             ├─► downloadPackageFile()    ─ Download the package
             └─► installFromPackageFile() ─ Decrypt, verify, unzip, install
    */
-  void checkForUpdates();
+  bool checkForUpdates();
 
   /**
    * setOpAppUpdateStatus(OpAppUpdateStatus status)

@@ -121,6 +121,9 @@ void OpAppPackageManager::start()
       if (!isOpAppInstalled()) {
         doFirstTimeInstallation();
       }
+      // Keep the worker thread running by adding a small delay
+      // This prevents the thread from exiting immediately
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
       m_IsRunning = false;
     });
 }
@@ -155,7 +158,9 @@ bool OpAppPackageManager::isOpAppInstalled()
 void OpAppPackageManager::doFirstTimeInstallation()
 {
   // At the moment the same process is used for both first time installation and update.
-  checkForUpdates();
+  if (checkForUpdates()) {
+    // Update the OpApp URL
+  }
 }
 
 bool OpAppPackageManager::tryLocalUpdate()
@@ -288,7 +293,7 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::installFromPackageFile()
   return PackageStatus::Installed;
 }
 
-void OpAppPackageManager::checkForUpdates()
+bool OpAppPackageManager::checkForUpdates()
 {
   // Update and first install is the same operation.
   bool wasInstalled = tryLocalUpdate();
@@ -304,8 +309,7 @@ void OpAppPackageManager::checkForUpdates()
       // Not sure if this is the correct argument to pass to the callback.
       m_Configuration.m_OnUpdateSuccess(m_CandidatePackageFile);
     }
-
-    return;
+    return true;
   }
 
   if (!m_LastErrorMessage.empty()) {
@@ -314,12 +318,9 @@ void OpAppPackageManager::checkForUpdates()
     if (m_Configuration.m_OnUpdateFailure) {
       m_Configuration.m_OnUpdateFailure(m_PackageStatus, m_LastErrorMessage);
     }
-    return;
   }
 
-  // Keep the worker thread running by adding a small delay
-  // This prevents the thread from exiting immediately
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  return false;
 }
 
 void OpAppPackageManager::setOpAppUpdateStatus(OpAppUpdateStatus status)
