@@ -57,6 +57,10 @@ struct PackageInfo {
     std::string location;     // Application location (e.g., "index.html")
     std::string name;         // Application name
 
+    // Source AIT file path (for remote installations)
+    // Used to verify opapp.aitx matches the trusted AIT per TS 103 606 Section 6.1.8
+    std::filesystem::path aitFilePath;
+
     std::filesystem::path installPath;  // Local path where package is installed
     std::string packageHash;  // SHA256 hash of the installed package
     std::string installedAt;  // ISO timestamp of installation
@@ -241,6 +245,8 @@ public:
    * Main entry point for checking for updates and installing the package if an update is available.
    * Calls tryLocalUpdate() or tryRemoteUpdate() as appropriate.
    *
+   * @return true if an installation completed, otherwise false.
+   *
    * Flow:
    * checkForUpdates()
     │
@@ -260,7 +266,7 @@ public:
             ├─► downloadPackageFile()    ─ Download the package
             └─► installFromPackageFile() ─ Decrypt, verify, unzip, install
    */
-  void checkForUpdates();
+  bool checkForUpdates();
 
   /**
    * setOpAppUpdateStatus(OpAppUpdateStatus status)
@@ -387,10 +393,19 @@ private:
   /**
    * verifyZipPackage()
    *
-   * Verifies the package file. See TS 103 606 Section 6.1.8.
+   * Verifies the extracted ZIP package. See TS 103 606 Section 6.1.8.
    *
-   * @param filePath Path to the package file to verify
-   * @return true if the package is compatible and a new version of OpApp, false otherwise.
+   * Performs the following checks:
+   * - Validates that the uncompressed package size does not exceed
+   *   m_Configuration.m_MaxUnzippedPackageSize (using ZIP metadata, pre-extraction)
+   * - For remote installations, verifies that opapp.aitx in the package matches
+   *   the originally trusted AIT from discovery
+   *
+   * Note: CMS signature verification (clause 11.3.4.5) is handled separately
+   * by verifySignedPackage() before this method is called.
+   *
+   * @param filePath Path to the ZIP package file to verify
+   * @return true if the package passes all verification checks, false otherwise.
    *         On error, sets m_LastErrorMessage.
    */
   bool verifyZipPackage(const std::filesystem::path& filePath);
@@ -399,13 +414,15 @@ private:
    * unzipPackageFile()
    *
    * Unzips the package file found in inFile. See TS 103 606 Section 6.1.8.
-   * Also validates that the unzipped package size does not exceed
-   * m_Configuration.m_MaxUnzippedPackageSize.
+   *
+   * Note: Size validation is performed in verifyZipPackage() using ZIP metadata
+   * before extraction, as per the spec requirement that oversized packages should
+   * be rejected before unpacking.
    *
    * @param inFile Path to the ZIP package file
    * @param outPath Destination directory for extracted contents
    * @return true if the package is unzipped successfully.
-   *         false if the package cannot be unzipped or exceeds max size.
+   *         false if the package cannot be unzipped.
    *         On error, sets m_LastErrorMessage.
    */
   bool unzipPackageFile(const std::filesystem::path& inFile, const std::filesystem::path& outPath);

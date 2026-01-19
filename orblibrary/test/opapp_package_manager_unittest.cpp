@@ -283,9 +283,18 @@ public:
     m_UnzipError = errorMessage;
   }
 
-  // Configure the simulated size of files to create (for size limit testing)
-  void setSimulatedUnzipSize(size_t size) {
-    m_SimulatedUnzipSize = size;
+  // Configure the reported uncompressed size (for size limit testing via metadata)
+  void setReportedUncompressedSize(size_t size) {
+    m_ReportedUncompressedSize = size;
+  }
+
+  // Configure a file to be "inside" the mock ZIP
+  void setFileInZip(const std::string& path, const std::vector<uint8_t>& content) {
+    m_FilesInZip[path] = content;
+  }
+
+  void setFileInZip(const std::string& path, const std::string& content) {
+    m_FilesInZip[path] = std::vector<uint8_t>(content.begin(), content.end());
   }
 
   bool unzip(
@@ -301,37 +310,76 @@ public:
       return false;
     }
 
-    // Create destination directory and optionally a file to simulate unzip size
+    // Create destination directory
     std::filesystem::create_directories(destDir);
-    if (m_SimulatedUnzipSize > 0) {
-      // Create a dummy file with the specified size
-      std::filesystem::path dummyFile = destDir / "dummy_content.bin";
-      std::ofstream ofs(dummyFile, std::ios::binary);
-      std::vector<char> data(m_SimulatedUnzipSize, 'x');
-      ofs.write(data.data(), data.size());
+    return true;
+  }
+
+  bool getTotalUncompressedSize(
+      const std::filesystem::path& zipFile,
+      size_t& outSize,
+      std::string& outError) const override {
+    m_WasGetSizeCalled = true;
+    m_LastZipFile = zipFile;
+
+    if (m_ReportedUncompressedSize == SIZE_MAX) {
+      outError = "Failed to read ZIP metadata";
+      return false;
     }
+
+    outSize = m_ReportedUncompressedSize;
+    return true;
+  }
+
+  bool readFileFromZip(
+      const std::filesystem::path& zipFile,
+      const std::string& filePathInZip,
+      std::vector<uint8_t>& outContent,
+      std::string& outError) const override {
+    m_WasReadFileCalled = true;
+    m_LastZipFile = zipFile;
+    m_LastFilePathInZip = filePathInZip;
+
+    auto it = m_FilesInZip.find(filePathInZip);
+    if (it == m_FilesInZip.end()) {
+      outError = "File not found in ZIP: " + filePathInZip;
+      return false;
+    }
+
+    outContent = it->second;
     return true;
   }
 
   // Getters for verification
   bool wasUnzipCalled() const { return m_WasUnzipCalled; }
+  bool wasGetSizeCalled() const { return m_WasGetSizeCalled; }
+  bool wasReadFileCalled() const { return m_WasReadFileCalled; }
   std::filesystem::path getLastZipFile() const { return m_LastZipFile; }
   std::filesystem::path getLastDestDir() const { return m_LastDestDir; }
+  std::string getLastFilePathInZip() const { return m_LastFilePathInZip; }
 
   void reset() {
     m_WasUnzipCalled = false;
+    m_WasGetSizeCalled = false;
+    m_WasReadFileCalled = false;
     m_LastZipFile.clear();
     m_LastDestDir.clear();
+    m_LastFilePathInZip.clear();
+    m_FilesInZip.clear();
   }
 
 private:
   bool m_UnzipSuccess = true;
   std::string m_UnzipError;
-  size_t m_SimulatedUnzipSize = 0;
+  size_t m_ReportedUncompressedSize = 0;
+  std::map<std::string, std::vector<uint8_t>> m_FilesInZip;
 
   mutable bool m_WasUnzipCalled = false;
+  mutable bool m_WasGetSizeCalled = false;
+  mutable bool m_WasReadFileCalled = false;
   mutable std::filesystem::path m_LastZipFile;
   mutable std::filesystem::path m_LastDestDir;
+  mutable std::string m_LastFilePathInZip;
 };
 
 // Helper function to generate valid OpApp AIT XML for testing
@@ -879,28 +927,84 @@ TEST_F(OpAppPackageManagerTest, TestMovePackageFileToInstallationDirectory_Nonex
   EXPECT_FALSE(result);
 }
 
-TEST_F(OpAppPackageManagerTest, TestVerifyZipPackage_NotYetImplemented)
+TEST_F(OpAppPackageManagerTest, TestVerifyZipPackage_Success)
 {
-  // GIVEN: an OpAppPackageManager instance
+  // GIVEN: an OpAppPackageManager instance with max size limit and mock unzipper
   auto configuration = createBasicConfiguration();
+  configuration.m_MaxUnzippedPackageSize = 50 * 1024 * 1024; // 50 MB
   auto testFile = createTestFile("test.zip", "test content");
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
+  auto mockUnzipper = std::make_unique<MockUnzipper>();
+  mockUnzipper->setReportedUncompressedSize(1024 * 1024); // 1 MB - under limit
+  MockUnzipper* mockUnzipperPtr = mockUnzipper.get();
+
+  OpAppPackageManager::Dependencies deps;
+  deps.unzipper = std::move(mockUnzipper);
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   // WHEN: verifying a zip package
   bool result = testInterface->verifyZipPackage(testFile);
 
-  // THEN: the verification should fail (not yet implemented)
+  // THEN: the verification should succeed
+  EXPECT_TRUE(result);
+  EXPECT_TRUE(mockUnzipperPtr->wasGetSizeCalled());
+}
+
+TEST_F(OpAppPackageManagerTest, TestVerifyZipPackage_ExceedsMaxSize)
+{
+  // GIVEN: an OpAppPackageManager instance with max size limit
+  auto configuration = createBasicConfiguration();
+  configuration.m_MaxUnzippedPackageSize = 1024; // 1 KB limit
+  auto testFile = createTestFile("test.zip", "test content");
+
+  auto mockUnzipper = std::make_unique<MockUnzipper>();
+  mockUnzipper->setReportedUncompressedSize(2048); // 2 KB - exceeds limit
+  MockUnzipper* mockUnzipperPtr = mockUnzipper.get();
+
+  OpAppPackageManager::Dependencies deps;
+  deps.unzipper = std::move(mockUnzipper);
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
+
+  // WHEN: verifying a zip package that exceeds max size
+  bool result = testInterface->verifyZipPackage(testFile);
+
+  // THEN: the verification should fail due to size limit
   EXPECT_FALSE(result);
-  EXPECT_FALSE(testInterface->getLastErrorMessage().empty());
+  EXPECT_TRUE(mockUnzipperPtr->wasGetSizeCalled());
+  EXPECT_TRUE(testInterface->getLastErrorMessage().find("exceeds maximum") != std::string::npos);
+}
+
+TEST_F(OpAppPackageManagerTest, TestVerifyZipPackage_NoSizeLimit)
+{
+  // GIVEN: an OpAppPackageManager instance with no size limit configured
+  auto configuration = createBasicConfiguration();
+  configuration.m_MaxUnzippedPackageSize = 0; // No limit
+  auto testFile = createTestFile("test.zip", "test content");
+
+  auto mockUnzipper = std::make_unique<MockUnzipper>();
+  MockUnzipper* mockUnzipperPtr = mockUnzipper.get();
+
+  OpAppPackageManager::Dependencies deps;
+  deps.unzipper = std::move(mockUnzipper);
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
+
+  // WHEN: verifying a zip package
+  bool result = testInterface->verifyZipPackage(testFile);
+
+  // THEN: the verification should succeed without checking size
+  EXPECT_TRUE(result);
+  EXPECT_FALSE(mockUnzipperPtr->wasGetSizeCalled()); // Size check skipped when limit is 0
 }
 
 TEST_F(OpAppPackageManagerTest, TestUnzipPackageFile_Success)
 {
   // GIVEN: an OpAppPackageManager instance with a mock unzipper
+  // Note: Size validation is now done in verifyZipPackage() before unzip
   auto configuration = createBasicConfiguration();
   configuration.m_DestinationDirectory = PACKAGE_PATH + "/work";
-  configuration.m_MaxUnzippedPackageSize = 50 * 1024 * 1024; // 50 MB
   auto testFile = createTestFile("test.zip", "test content");
   std::filesystem::path outPath = PACKAGE_PATH + "/work/100/12345";
 
@@ -923,32 +1027,32 @@ TEST_F(OpAppPackageManagerTest, TestUnzipPackageFile_Success)
   EXPECT_EQ(mockUnzipperPtr->getLastDestDir(), outPath);
 }
 
-TEST_F(OpAppPackageManagerTest, TestUnzipPackageFile_ExceedsMaxSize)
+TEST_F(OpAppPackageManagerTest, TestUnzipPackageFile_Failure)
 {
-  // GIVEN: an OpAppPackageManager instance with max size limit
+  // GIVEN: an OpAppPackageManager instance with a mock unzipper that fails
   auto configuration = createBasicConfiguration();
   configuration.m_DestinationDirectory = PACKAGE_PATH + "/work";
-  configuration.m_MaxUnzippedPackageSize = 1024; // 1 KB limit
   auto testFile = createTestFile("test.zip", "test content");
   std::filesystem::path outPath = PACKAGE_PATH + "/work/unzipped";
 
   auto mockUnzipper = std::make_unique<MockUnzipper>();
-  mockUnzipper->setSimulatedUnzipSize(2048); // 2 KB - exceeds limit
+  mockUnzipper->setUnzipResult(false, "Mock unzip error");
 
   OpAppPackageManager::Dependencies deps;
   deps.unzipper = std::move(mockUnzipper);
 
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
-  // WHEN: unzipping a package file that exceeds max size
+  // WHEN: unzipping a package file that fails
   bool result = testInterface->unzipPackageFile(testFile, outPath);
 
-  // THEN: the unzip should fail due to size limit
+  // THEN: the unzip should fail
   EXPECT_FALSE(result);
-  EXPECT_TRUE(testInterface->getLastErrorMessage().find("exceeds maximum") != std::string::npos);
-  // Verify the extracted files were cleaned up
-  EXPECT_FALSE(std::filesystem::exists(outPath));
+  EXPECT_EQ(testInterface->getLastErrorMessage(), "Mock unzip error");
 }
+
+// Note: Size limit checking is now done in verifyZipPackage() using ZIP metadata,
+// before extraction. See TestVerifyZipPackage_ExceedsMaxSize test above.
 
 TEST_F(OpAppPackageManagerTest, TestInstallToPersistentStorage_SavesReceipt)
 {
