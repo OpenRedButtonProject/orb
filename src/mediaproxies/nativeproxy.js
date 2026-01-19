@@ -102,9 +102,7 @@ hbbtv.objects.NativeProxy = (function() {
             },
         };
         const textTracks = orb_dashjs.TextTracks(window).create(config);
-        if (p.textTracks) {
-            p.textTracks.deleteAllTextTracks();
-        }
+        p.textTracks?.deleteAllTextTracks();
         p.textTracks = textTracks;
         textTracks.initialize();
         for (let i = 0; i < trackElements.length; ++i) {
@@ -151,6 +149,12 @@ hbbtv.objects.NativeProxy = (function() {
                     })
                 );
             }
+        }
+        // Remove native <track> elements after extracting their info.
+        // This removes the native browser tracks from video.textTracks,
+        // so dash.js track indices will match video.textTracks indices.
+        while (trackElements.length > 0) {
+            trackElements[0].remove();
         }
         Promise.all(promises)
             .then(() => {
@@ -283,11 +287,23 @@ hbbtv.objects.NativeProxy = (function() {
         const p = privates.get(this);
         let index = -1;
         for (let i = 0; i < this.textTracks.length; ++i) {
-            if (this.textTracks[i].mode === 'showing') {
+            let track = this.textTracks[i];
+            let state = privates.get(track) ?? track.mode;
+            if (track.mode === 'showing' && (index === -1 || state !== 'showing')) {
+                if (index >= 0) {
+                    this.textTracks[index].mode = 'disabled';
+                }
                 index = i;
-                break;
             }
+            else {
+                track.mode = 'disabled';
+            }
+            // store the track mode in the private object to be used later
+            // to toggle track visibility in case there are multiple tracks
+            // with mode === 'showing' (only one track can be showing at a time)
+            privates.set(track, track.mode);
         }
+        
         if (index !== -1) {
             if (this.parentNode && !p.subs.parentNode) {
                 if (this.nextSibling) {
@@ -299,9 +315,8 @@ hbbtv.objects.NativeProxy = (function() {
         } else if (p.subs.parentNode) {
             p.subs.parentNode.removeChild(p.subs);
         }
-        if (p.textTracks) {
-            p.textTracks.setCurrentTrackIdx(index);
-        }
+
+        p.textTracks?.setCurrentTrackIdx(index);
     }
 
     function onAudioTrackChange() {
@@ -309,9 +324,12 @@ hbbtv.objects.NativeProxy = (function() {
             HTMLMediaElement.prototype,
             'audioTracks'
         );
-        const tracks = audioOwnProperty.get.call(this);
-        for (let i = 0; i < this.audioTracks.length; ++i) {
-            tracks[i].enabled = this.audioTracks[i].enabled;
+        if (audioOwnProperty) // most browsers don't support audio tracks
+        {
+            const tracks = audioOwnProperty.get.call(this);
+            for (let i = 0; i < this.audioTracks.length; ++i) {
+                tracks[i].enabled = this.audioTracks[i].enabled;
+            }
         }
     }
 
@@ -320,9 +338,12 @@ hbbtv.objects.NativeProxy = (function() {
             HTMLMediaElement.prototype,
             'videoTracks'
         );
-        const tracks = videoOwnProperty.get.call(this);
-        for (let i = 0; i < this.videoTracks.length; ++i) {
-            tracks[i].selected = this.videoTracks[i].selected;
+        if (videoOwnProperty) // most browsers don't support video tracks
+        {
+            const tracks = videoOwnProperty.get.call(this);
+            for (let i = 0; i < this.videoTracks.length; ++i) {
+                tracks[i].selected = this.videoTracks[i].selected;
+            }
         }
     }
 

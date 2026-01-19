@@ -85,7 +85,7 @@ hbbtv.objects.AudioTrackList = (function() {
             const p = privates.get(this);
             if (value !== p.properties.enabled) {
                 if (value) {
-                    for (let track of this) {
+                    for (let track of p.trackList) {
                         if (track.enabled && track !== this) {
                             track.enabled = false;
                             break;
@@ -93,7 +93,7 @@ hbbtv.objects.AudioTrackList = (function() {
                     }
                 }
                 p.properties.enabled = !!value;
-                this.dispatchEvent(new Event('change'));
+                privates.get(p.trackList)?.eventTarget.dispatchEvent(new Event('change'));
             }
         },
     });
@@ -176,7 +176,7 @@ hbbtv.objects.AudioTrackList = (function() {
         return track;
     }
 
-    function initialise(proxy) {
+    function initialise() {
         privates.set(this, {
             length: 0,
             eventTarget: document.createDocumentFragment()
@@ -190,7 +190,7 @@ hbbtv.objects.AudioTrackList = (function() {
     };
 })();
 
-hbbtv.objects.createAudioTrackList = function(proxy) {
+hbbtv.objects.createAudioTrackList = function() {
     const trackList = Object.create(hbbtv.objects.AudioTrackList.prototype);
-    return hbbtv.objects.AudioTrackList.initialise.call(trackList, proxy);
+    return hbbtv.objects.AudioTrackList.initialise.call(trackList);
 };

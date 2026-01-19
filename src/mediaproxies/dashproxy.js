@@ -322,11 +322,23 @@ hbbtv.objects.DashProxy = (function() {
         if (p) {
             let index = -1;
             for (let i = 0; i < this.textTracks.length; ++i) {
-                if (this.textTracks[i].mode === 'showing') {
+                let track = this.textTracks[i];
+                let state = privates.get(track) ?? track.mode;
+                if (track.mode === 'showing' && (index === -1 || state !== 'showing')) {
+                    if (index >= 0) {
+                        this.textTracks[index].mode = 'disabled';
+                    }
                     index = i;
-                    break;
                 }
+                else {
+                    track.mode = 'disabled';
+                }
+                // store the track mode in the private object to be used later
+                // to toggle track visibility in case there are multiple tracks
+                // with mode === 'showing' (only one track can be showing at a time)
+                privates.set(track, track.mode);
             }
+
             if (index !== -1) {
                 if (this.parentNode && !p.subs.parentNode) {
                     if (this.nextSibling) {

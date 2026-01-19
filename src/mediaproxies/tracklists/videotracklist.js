@@ -87,7 +87,7 @@ hbbtv.objects.VideoTrackList = (function() {
             const p = privates.get(this);
             if (value !== p.properties.selected) {
                 if (value) {
-                    for (let track of this) {
+                    for (let track of p.trackList) {
                         if (track.selected && track !== this) {
                             track.selected = false;
                             break;
@@ -95,7 +95,7 @@ hbbtv.objects.VideoTrackList = (function() {
                     }
                 }
                 p.properties.selected = !!value;
-                this.dispatchEvent(new Event('change'));
+                privates.get(p.trackList)?.eventTarget.dispatchEvent(new Event('change'));
             }
         },
     });
@@ -152,7 +152,7 @@ hbbtv.objects.VideoTrackList = (function() {
         return track;
     }
 
-    function initialise(proxy) {
+    function initialise() {
         privates.set(this, {
             length: 0,
             eventTarget: document.createDocumentFragment()
@@ -166,7 +166,7 @@ hbbtv.objects.VideoTrackList = (function() {
     };
 })();
 
-hbbtv.objects.createVideoTrackList = function(proxy) {
+hbbtv.objects.createVideoTrackList = function() {
     const trackList = Object.create(hbbtv.objects.VideoTrackList.prototype);
-    return hbbtv.objects.VideoTrackList.initialise.call(trackList, proxy);
+    return hbbtv.objects.VideoTrackList.initialise.call(trackList);
 };
