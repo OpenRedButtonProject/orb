@@ -453,6 +453,9 @@ protected:
   static OpAppPackageManager::Configuration createBasicConfiguration() {
     OpAppPackageManager::Configuration config;
     config.m_PackageLocation = PACKAGE_PATH;
+    config.m_WorkingDirectory = PACKAGE_PATH + "/working";
+    config.m_OpAppInstallDirectory = PACKAGE_PATH + "/install";
+    config.m_InstallReceiptFilePath = config.m_WorkingDirectory / "install_receipt.json";
     return config;
   }
 
@@ -2564,17 +2567,78 @@ TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_ConfigurableRetryAttempt
 // Integration Tests (require network access)
 // =============================================================================
 
-// Integration test - requires network access and a real OpApp FQDN
-// Prefix with DISABLED_ so it doesn't run in CI; remove prefix to run manually
-TEST_F(OpAppPackageManagerTest, DISABLED_IntegrationTest_RealRemoteFetch)
+/**
+ * Integration test for real remote fetch with environment variable configuration.
+ *
+ * Set the following environment variables to run:
+ *   OPAPP_TEST_FQDN - The OpApp FQDN to fetch from (required)
+ *   OPAPP_TEST_CERTIFICATE - Path to certificate for decryption (required)
+ *   OPAPP_TEST_PRIVATE_KEY - Path to private key for decryption (required)
+ *   OPAPP_TEST_ROOT_CA - Path to Operator Root CA for verification (required)
+ *   OPAPP_TEST_OPERATOR_NAME - Expected operator name for verification (required)
+ *   OPAPP_TEST_ORGANISATION_ID - Expected organisation ID for verification (required)
+ *   OPAPP_TEST_USER_AGENT - HTTP User-Agent header (required)
+ *   OPAPP_TEST_WORKING_DIR - Working directory for downloads (optional, defaults to temp)
+ *   OPAPP_TEST_INSTALL_DIR - Installation directory (optional, defaults to temp)
+ */
+TEST_F(OpAppPackageManagerTest, IntegrationTest_RealRemoteFetch)
 {
+  // Get environment variables - required
+  const char* fqdnEnv = std::getenv("OPAPP_TEST_FQDN");
+  const char* privateKeyEnv = std::getenv("OPAPP_TEST_PRIVATE_KEY");
+  const char* certificateEnv = std::getenv("OPAPP_TEST_CERTIFICATE");
+  const char* rootCAEnv = std::getenv("OPAPP_TEST_ROOT_CA");
+  const char* operatorNameEnv = std::getenv("OPAPP_TEST_OPERATOR_NAME");
+  const char* organisationIdEnv = std::getenv("OPAPP_TEST_ORGANISATION_ID");
+  const char* userAgentEnv = std::getenv("OPAPP_TEST_USER_AGENT");
+
+  // Get environment variables - optional
+  const char* workingDirEnv = std::getenv("OPAPP_TEST_WORKING_DIR");
+  const char* installDirEnv = std::getenv("OPAPP_TEST_INSTALL_DIR");
+
+  // Skip if required environment variables are not set
+  if (!fqdnEnv || !privateKeyEnv || !certificateEnv ||
+      !rootCAEnv || !operatorNameEnv || !organisationIdEnv || !userAgentEnv) {
+    GTEST_SKIP() << "Skipping IntegrationTest_RealRemoteFetch. "
+                 << "Set required environment variables: OPAPP_TEST_FQDN, "
+                 << "OPAPP_TEST_PRIVATE_KEY, OPAPP_TEST_CERTIFICATE, "
+                 << "OPAPP_TEST_ROOT_CA, OPAPP_TEST_OPERATOR_NAME, "
+                 << "OPAPP_TEST_ORGANISATION_ID, OPAPP_TEST_USER_AGENT";
+  }
+
   // GIVEN: Real OpAppPackageManager with all real implementations
   auto configuration = createBasicConfiguration();
-  configuration.m_WorkingDirectory = PACKAGE_PATH + "/dest";
-  configuration.m_OpAppFqdn = "test.freeviewplay.tv";  // TODO: Replace with a real OpApp FQDN
-  configuration.m_UserAgent = "HbbTV/1.6.1 (+DRM;+PVR;+RTSP;+OMID) orb/1.0";
+
+  // Required configuration (from environment)
+  configuration.m_OpAppFqdn = fqdnEnv;
+  configuration.m_PrivateKeyFilePath = privateKeyEnv;
+  configuration.m_CertificateFilePath = certificateEnv;
+  configuration.m_OperatorRootCAFilePath = rootCAEnv;
+  configuration.m_ExpectedOperatorName = operatorNameEnv;
+  configuration.m_ExpectedOrganisationId = organisationIdEnv;
+  configuration.m_UserAgent = userAgentEnv;
+
+  // Optional overrides from environment
+  if (workingDirEnv) {
+    configuration.m_WorkingDirectory = workingDirEnv;
+    configuration.m_InstallReceiptFilePath = configuration.m_WorkingDirectory / "install_receipt.json";
+  }
+  if (installDirEnv) {
+    configuration.m_OpAppInstallDirectory = installDirEnv;
+  }
 
   std::filesystem::create_directories(configuration.m_WorkingDirectory);
+  std::filesystem::create_directories(configuration.m_OpAppInstallDirectory);
+
+  std::cout << "Configuration:" << std::endl;
+  std::cout << "  FQDN: " << configuration.m_OpAppFqdn << std::endl;
+  std::cout << "  Private key: " << configuration.m_PrivateKeyFilePath << std::endl;
+  std::cout << "  Certificate: " << configuration.m_CertificateFilePath << std::endl;
+  std::cout << "  Root CA: " << configuration.m_OperatorRootCAFilePath << std::endl;
+  std::cout << "  Operator name: " << configuration.m_ExpectedOperatorName << std::endl;
+  std::cout << "  Organisation ID: " << configuration.m_ExpectedOrganisationId << std::endl;
+  std::cout << "  Working directory: " << configuration.m_WorkingDirectory << std::endl;
+  std::cout << "  Install directory: " << configuration.m_OpAppInstallDirectory << std::endl;
 
   // Track status via callback
   std::atomic<bool> callbackCalled{false};
@@ -2614,64 +2678,10 @@ TEST_F(OpAppPackageManagerTest, DISABLED_IntegrationTest_RealRemoteFetch)
     }
   }
 
-  // THEN: Log the results (actual expectations depend on the real server)
-  std::cout << "Package manager finished running" << std::endl;
-  if (!lastError.empty()) {
-    std::cout << "Last error: " << lastError << std::endl;
-  }
-
-  // Diagnostic: Check the downloaded file (filename is preserved from URL, e.g., opapp.cms)
-  std::filesystem::path downloadedFile = configuration.m_WorkingDirectory / "opapp.cms";
-  if (std::filesystem::exists(downloadedFile)) {
-    // Print file size
-    auto fileSize = std::filesystem::file_size(downloadedFile);
-    std::cout << "Downloaded file: " << downloadedFile << std::endl;
-    std::cout << "File size: " << fileSize << " bytes" << std::endl;
-
-    // Read first 256 bytes to determine if binary or text
-    std::ifstream file(downloadedFile, std::ios::binary);
-    std::vector<char> buffer(std::min(static_cast<uintmax_t>(256), fileSize));
-    file.read(buffer.data(), buffer.size());
-    size_t bytesRead = file.gcount();
-
-    // Check for binary content (null bytes or high proportion of non-printable chars)
-    int nonPrintableCount = 0;
-    bool hasNullByte = false;
-    for (size_t i = 0; i < bytesRead; ++i) {
-      unsigned char c = static_cast<unsigned char>(buffer[i]);
-      if (c == 0) {
-        hasNullByte = true;
-        break;
-      }
-      if (c < 32 && c != '\n' && c != '\r' && c != '\t') {
-        nonPrintableCount++;
-      }
-    }
-
-    bool isBinary = hasNullByte || (bytesRead > 0 && static_cast<size_t>(nonPrintableCount) > bytesRead / 4);
-    std::cout << "File type: " << (isBinary ? "BINARY" : "TEXT") << std::endl;
-
-    if (!isBinary) {
-      // Print first 100 characters
-      size_t printLen = std::min(static_cast<size_t>(100), bytesRead);
-      std::string preview(buffer.data(), printLen);
-      std::cout << "First " << printLen << " characters: " << std::endl;
-      std::cout << "---" << std::endl;
-      std::cout << preview << std::endl;
-      std::cout << "---" << std::endl;
-    } else {
-      // Print hex dump of first 32 bytes
-      std::cout << "First 32 bytes (hex): ";
-      for (size_t i = 0; i < std::min(static_cast<size_t>(32), bytesRead); ++i) {
-        std::cout << std::hex << std::setfill('0') << std::setw(2)
-                  << static_cast<int>(static_cast<unsigned char>(buffer[i])) << " ";
-      }
-      std::cout << std::dec << std::endl;
-    }
-  } else {
-    std::cout << "Downloaded file not found at: " << downloadedFile << std::endl;
-  }
-
   // For a real integration test, you would assert based on expected server state
   EXPECT_FALSE(packageManager.isRunning());
+
+  // THEN: Log the results (actual expectations depend on the real server)
+  std::cout << "Package manager finished running" << std::endl;
+  EXPECT_TRUE(lastError.empty()) << "Failed to install package: " << lastError;
 }

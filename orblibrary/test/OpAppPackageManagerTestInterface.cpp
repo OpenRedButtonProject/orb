@@ -32,7 +32,7 @@ bool OpAppPackageManagerTestInterface::isRunning() const
     return m_PackageManager->isRunning();
 }
 
-void OpAppPackageManagerTestInterface::checkForUpdates(bool isFirstInstall) // TODO(FREE-318): Remove default value
+void OpAppPackageManagerTestInterface::checkForUpdates(bool isFirstInstall)
 {
     m_PackageManager->checkForUpdates(isFirstInstall);
 }
