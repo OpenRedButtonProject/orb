@@ -1109,6 +1109,8 @@ TEST_F(OpAppPackageManagerTest, TestInstallToPersistentStorage_SavesReceipt)
   EXPECT_EQ(loadedPkg.packageHash, "abc123def456");
   EXPECT_EQ(loadedPkg.installPath, destDir);
   EXPECT_FALSE(loadedPkg.installedAt.empty());
+  // installedUrl: appId=100 (0x64), orgId=12345 (0x3039)
+  EXPECT_EQ(loadedPkg.installedUrl, "hbbtv-package://64.3039");
 }
 
 TEST_F(OpAppPackageManagerTest, TestInstallToPersistentStorage_FailsWhenSourceMissing)
@@ -1241,6 +1243,46 @@ TEST_F(OpAppPackageManagerTest, TestLoadInstallReceipt_CanCheckOrgAppId)
   // And can check for non-matching IDs
   bool matchesDifferent = (outPkg.orgId == 99999 && outPkg.appId == 1);
   EXPECT_FALSE(matchesDifferent);
+}
+
+TEST_F(OpAppPackageManagerTest, TestGetOpAppUrl_ReturnsInstalledUrl)
+{
+  // GIVEN: an existing install receipt with installedUrl
+  auto configuration = createConfigurationWithReceipt();
+
+  // Create a receipt file with installedUrl
+  std::ofstream receiptFile(configuration.m_InstallReceiptFilePath);
+  receiptFile << R"({
+    "orgId": 12345,
+    "appId": 100,
+    "xmlVersion": 1,
+    "name": "Test App",
+    "installedUrl": "hbbtv-package://64.3039"
+  })";
+  receiptFile.close();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
+
+  // WHEN: calling getOpAppUrl
+  std::string url = testInterface->getPackageManager().getOpAppUrl();
+
+  // THEN: should return the installed URL from the receipt
+  EXPECT_EQ(url, "hbbtv-package://64.3039");
+}
+
+TEST_F(OpAppPackageManagerTest, TestGetOpAppUrl_ReturnsEmptyWhenNoReceipt)
+{
+  // GIVEN: a configuration with no receipt file
+  auto configuration = createBasicConfiguration();
+  configuration.m_InstallReceiptFilePath = PACKAGE_PATH + "/nonexistent_receipt.json";
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
+
+  // WHEN: calling getOpAppUrl with no receipt
+  std::string url = testInterface->getPackageManager().getOpAppUrl();
+
+  // THEN: should return empty string
+  EXPECT_TRUE(url.empty());
 }
 
 TEST_F(OpAppPackageManagerTest, TestGetCandidatePackageFile_ReturnsSetValue)
@@ -1918,21 +1960,49 @@ TEST_F(OpAppPackageManagerTest, TestPackageInfo_GetAppUrl)
   pkg.baseUrl = "https://example.com/apps";
   pkg.location = "index.html";
 
-  // THEN: getAppUrl should combine them correctly
-  EXPECT_EQ(pkg.getAppUrl(), "https://example.com/apps/index.html");
+  // THEN: getPackageUrl should combine them correctly
+  EXPECT_EQ(pkg.getPackageUrl(), "https://example.com/apps/index.html");
 
   // WHEN: baseUrl ends with slash
   pkg.baseUrl = "https://example.com/apps/";
 
   // THEN: should not add extra slash
-  EXPECT_EQ(pkg.getAppUrl(), "https://example.com/apps/index.html");
+  EXPECT_EQ(pkg.getPackageUrl(), "https://example.com/apps/index.html");
 
   // WHEN: location starts with slash
   pkg.baseUrl = "https://example.com/apps";
   pkg.location = "/index.html";
 
   // THEN: should not add extra slash
-  EXPECT_EQ(pkg.getAppUrl(), "https://example.com/apps/index.html");
+  EXPECT_EQ(pkg.getPackageUrl(), "https://example.com/apps/index.html");
+}
+
+TEST_F(OpAppPackageManagerTest, TestPackageInfo_GenerateInstalledUrl)
+{
+  // GIVEN: a package with appId and orgId
+  // TS 103 606 Section 9.4.1: Format is hbbtv-package://appid.orgid
+  // - encoded as lowercase hexadecimal with no leading zeros
+  PackageInfo pkg;
+
+  // WHEN: appId=100 (0x64), orgId=12345 (0x3039)
+  pkg.appId = 100;
+  pkg.orgId = 12345;
+  EXPECT_EQ(pkg.generateInstalledUrl(), "hbbtv-package://64.3039");
+
+  // WHEN: small values (no leading zeros in hex)
+  pkg.appId = 1;
+  pkg.orgId = 16;  // 0x10
+  EXPECT_EQ(pkg.generateInstalledUrl(), "hbbtv-package://1.10");
+
+  // WHEN: values that would have uppercase in hex
+  pkg.appId = 171;   // 0xab
+  pkg.orgId = 43981; // 0xabcd
+  EXPECT_EQ(pkg.generateInstalledUrl(), "hbbtv-package://ab.abcd");
+
+  // WHEN: max uint16_t appId
+  pkg.appId = 65535; // 0xffff
+  pkg.orgId = 255;   // 0xff
+  EXPECT_EQ(pkg.generateInstalledUrl(), "hbbtv-package://ffff.ff");
 }
 
 TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_ValidAit_ReturnsUpdateAvailable)

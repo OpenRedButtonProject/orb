@@ -335,12 +335,13 @@ OpAppPackageManager::OpAppUpdateStatus OpAppPackageManager::getOpAppUpdateStatus
 
 std::string OpAppPackageManager::getOpAppUrl() const
 {
-  // TODO: Construct the URL of the opapp. See Section 9.4.1
-
-  // This should return the URL of the currently installed OpApp, otherwise empty string
-  // This is used to update the OpApp URL in the OpApp manager.
-  // Set to localhost for testing.
-  return "https://taco.freeviewplay.tv/";//"http://10.0.2.2:8080/index.html";
+  // Return the origin URL of the installed OpApp (TS 103 606 Section 9.4.1)
+  // Format: hbbtv-package://appid.orgid
+  PackageInfo installedPkg;
+  if (!loadInstallReceipt(installedPkg)) {
+    return "";  // No package installed
+  }
+  return installedPkg.installedUrl;
 }
 
 OpAppPackageManager::PackageStatus OpAppPackageManager::doLocalPackageCheck()
@@ -767,6 +768,7 @@ bool OpAppPackageManager::installToPersistentStorage(const std::filesystem::path
   // Update candidate package metadata
   m_CandidatePackage.installPath = destDir;
   m_CandidatePackage.packageHash = m_CandidatePackageHash;
+  m_CandidatePackage.installedUrl = m_CandidatePackage.generateInstalledUrl();
 
   // Generate ISO timestamp for installedAt
   auto now = std::chrono::system_clock::now();
@@ -817,6 +819,7 @@ bool OpAppPackageManager::saveInstallReceipt(const PackageInfo& pkg)
   root["installPath"] = pkg.installPath.string();
   root["packageHash"] = pkg.packageHash;
   root["installedAt"] = pkg.installedAt;
+  root["installedUrl"] = pkg.installedUrl;
 
   // Write to a temporary file first, then rename for atomic write
   std::filesystem::path tempFile = m_Configuration.m_InstallReceiptFilePath;
@@ -885,6 +888,7 @@ bool OpAppPackageManager::loadInstallReceipt(PackageInfo& outPackage) const
   outPackage.installPath = root.get("installPath", "").asString();
   outPackage.installedAt = root.get("installedAt", "").asString();
   outPackage.packageHash = root["packageHash"].asString();
+  outPackage.installedUrl = root.get("installedUrl", "").asString();
   return true;
 }
 
@@ -1043,7 +1047,7 @@ bool OpAppPackageManager::downloadPackageFile(const PackageInfo& packageInfo)
   const int retryDelayMax = m_Configuration.m_DownloadRetryDelayMaxSeconds;
   static constexpr const char* EXPECTED_CONTENT_TYPE = "application/vnd.hbbtv.opapp.pkg";
 
-  std::string downloadUrl = packageInfo.getAppUrl();
+  std::string downloadUrl = packageInfo.getPackageUrl();
   if (downloadUrl.empty()) {
     m_LastErrorMessage = "Package URL is empty";
     LOG(ERROR) << "Package download failed: " << m_LastErrorMessage;

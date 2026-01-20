@@ -16,6 +16,7 @@
 #ifndef OP_APP_PACKAGE_MANAGER_H
 #define OP_APP_PACKAGE_MANAGER_H
 
+#include <cstdio>
 #include <string>
 #include <thread>
 #include <atomic>
@@ -65,6 +66,12 @@ struct PackageInfo {
     std::string packageHash;  // SHA256 hash of the installed package
     std::string installedAt;  // ISO timestamp of installation
 
+    // Origin URL for the installed package (TS 103 606 Section 9.4.1)
+    // Format: hbbtv-package://appid.orgid
+    // - appid and orgid encoded as lowercase hexadecimal with no leading zeros
+    // - Used for Cross-Origin Resource Sharing, Web Storage, etc.
+    std::string installedUrl;
+
     // Comparison helpers
     bool isSameApp(const PackageInfo& other) const {
         return orgId == other.orgId && appId == other.appId;
@@ -74,14 +81,22 @@ struct PackageInfo {
         return xmlVersion > other.xmlVersion;
     }
 
-    // Construct full app URL
-    std::string getAppUrl() const {
+    // Construct full package download URL (from AIT transport info)
+    std::string getPackageUrl() const {
         if (baseUrl.empty()) return "";
         std::string url = baseUrl;
         if (!url.empty() && url.back() != '/' && !location.empty() && location.front() != '/') {
             url += '/';
         }
         return url + location;
+    }
+
+    // Generate the installed package origin URL (TS 103 606 Section 9.4.1)
+    // Format: hbbtv-package://appid.orgid (hex, lowercase, no leading zeros)
+    std::string generateInstalledUrl() const {
+        char buffer[64];
+        snprintf(buffer, sizeof(buffer), "hbbtv-package://%x.%x", appId, orgId);
+        return std::string(buffer);
     }
 };
 
