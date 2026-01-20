@@ -157,18 +157,17 @@ public:
        * Matched against the CommonName (CN=) attribute of the signer certificate subject */
       std::string m_ExpectedOrganisationId;
 
-      std::filesystem::path m_DestinationDirectory; /* Directory where the package is decrypted, unzipped and verified */
+      std::filesystem::path m_WorkingDirectory; /* Directory where the package is decrypted, unzipped and verified */
       std::filesystem::path m_OpAppInstallDirectory; /* Directory where the OpApp is installed */
       UpdateSuccessCallback m_OnUpdateSuccess; /* Callback called when update completes successfully */
       UpdateFailureCallback m_OnUpdateFailure; /* Callback called when update fails */
 
       /* HTTP User-Agent header for AIT requests (TS 103 606 V1.2.1 Section 6.1.5.1)
-       * Format per ETSI TS 102 796 Section 7.3.2.4 (HbbTV User-Agent string)
-       * Example: "HbbTV/1.6.1 (+DRM;+PVR;+RTSP;+OMID) vendor/1.0" */
-      std::string m_UserAgent = "HbbTV/1.6.1 (+DRM;+PVR;+RTSP;+OMID) orb/1.0";
+       * Format per ETSI TS 102 796 Section 7.3.2.4 (HbbTV User-Agent string)  */
+      std::string m_UserAgent;
 
       /* Directory where acquired AIT XML files are stored.
-       * If empty, uses a subdirectory "ait_cache" of m_DestinationDirectory. */
+       * If empty, uses a subdirectory "ait_cache" of m_WorkingDirectory. */
       std::filesystem::path m_AitOutputDirectory;
 
       /* Maximum permitted size (in bytes) for unzipped package contents.
@@ -494,7 +493,7 @@ private:
    * movePackageFileToInstallationDirectory()
    *
    * For local installations, moves a package file to the
-   * m_Configuration.m_DestinationDirectory directory.
+   * m_Configuration.m_WorkingDirectory directory.
    *
    * @param packageFilePath Path to the package file
    * @return true if the package file is moved successfully, false otherwise.
