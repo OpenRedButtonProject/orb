@@ -453,6 +453,9 @@ protected:
   static OpAppPackageManager::Configuration createBasicConfiguration() {
     OpAppPackageManager::Configuration config;
     config.m_PackageLocation = PACKAGE_PATH;
+    config.m_WorkingDirectory = PACKAGE_PATH + "/working";
+    config.m_OpAppInstallDirectory = PACKAGE_PATH + "/install";
+    config.m_InstallReceiptFilePath = config.m_WorkingDirectory / "install_receipt.json";
     return config;
   }
 
@@ -466,14 +469,14 @@ protected:
   // Create a configuration with receipt and destination directory
   static OpAppPackageManager::Configuration createConfigurationWithReceiptAndDest() {
     auto config = createConfigurationWithReceipt();
-    config.m_DestinationDirectory = PACKAGE_PATH + "/install";
+    config.m_WorkingDirectory = PACKAGE_PATH + "/install";
     return config;
   }
 
   // Create a configuration for download tests with zero retry delays
   static OpAppPackageManager::Configuration createConfigurationForDownloadTests() {
     auto config = createBasicConfiguration();
-    config.m_DestinationDirectory = PACKAGE_PATH + "/dest";
+    config.m_WorkingDirectory = PACKAGE_PATH + "/dest";
     // Set zero delays for fast test execution
     config.m_DownloadRetryDelayMinSeconds = 0;
     config.m_DownloadRetryDelayMaxSeconds = 0;
@@ -590,7 +593,7 @@ TEST_F(OpAppPackageManagerTest, TestConfigurationInitialization)
   configuration.m_PrivateKeyFilePath = "/keys/private.key";
   configuration.m_PublicKeyFilePath = "/keys/public.key";
   configuration.m_CertificateFilePath = "/certs/cert.pem";
-  configuration.m_DestinationDirectory = "/dest";
+  configuration.m_WorkingDirectory = "/dest";
   configuration.m_OpAppInstallDirectory = "/install";
 
   // WHEN: creating instance with custom configuration
@@ -804,7 +807,7 @@ TEST_F(OpAppPackageManagerTest, TestTryLocalUpdate_DecryptFailed_CallsFailureCal
 {
   // GIVEN: an OpAppPackageManager instance with a package file that will fail decryption
   auto configuration = createConfigurationWithReceiptAndDest();
-  std::filesystem::create_directories(configuration.m_DestinationDirectory);
+  std::filesystem::create_directories(configuration.m_WorkingDirectory);
   auto packagePath = createPackageFile("test package content");
 
   // Set up callbacks to verify the failure is reported correctly
@@ -830,7 +833,7 @@ TEST_F(OpAppPackageManagerTest, TestTryLocalUpdate_DecryptFailed_CallsFailureCal
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   // WHEN: checking for updates (which runs asynchronously)
-  testInterface->checkForUpdates();
+  testInterface->checkForUpdates(false);  // Not first install - has existing receipt
 
   // Wait for async operation to complete
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -873,7 +876,7 @@ TEST_F(OpAppPackageManagerTest, TestMovePackageFileToInstallationDirectory_Succe
 {
   // GIVEN: an OpAppPackageManager instance with a package file
   auto configuration = createBasicConfiguration();
-  configuration.m_DestinationDirectory = PACKAGE_PATH + "/install";
+  configuration.m_WorkingDirectory = PACKAGE_PATH + "/install";
   auto packagePath = createPackageFile("test package content");
 
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
@@ -896,7 +899,7 @@ TEST_F(OpAppPackageManagerTest, TestMovePackageFileToInstallationDirectory_Creat
 {
   // GIVEN: an OpAppPackageManager instance with a destination directory that doesn't exist
   auto configuration = createBasicConfiguration();
-  configuration.m_DestinationDirectory = PACKAGE_PATH + "/nonexistent/install";
+  configuration.m_WorkingDirectory = PACKAGE_PATH + "/nonexistent/install";
   auto packagePath = createPackageFile("test package content");
 
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
@@ -915,7 +918,7 @@ TEST_F(OpAppPackageManagerTest, TestMovePackageFileToInstallationDirectory_Nonex
 {
   // GIVEN: an OpAppPackageManager instance with a nonexistent source file
   auto configuration = createBasicConfiguration();
-  configuration.m_DestinationDirectory = PACKAGE_PATH + "/install";
+  configuration.m_WorkingDirectory = PACKAGE_PATH + "/install";
 
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
 
@@ -1004,7 +1007,7 @@ TEST_F(OpAppPackageManagerTest, TestUnzipPackageFile_Success)
   // GIVEN: an OpAppPackageManager instance with a mock unzipper
   // Note: Size validation is now done in verifyZipPackage() before unzip
   auto configuration = createBasicConfiguration();
-  configuration.m_DestinationDirectory = PACKAGE_PATH + "/work";
+  configuration.m_WorkingDirectory = PACKAGE_PATH + "/work";
   auto testFile = createTestFile("test.zip", "test content");
   std::filesystem::path outPath = PACKAGE_PATH + "/work/100/12345";
 
@@ -1031,7 +1034,7 @@ TEST_F(OpAppPackageManagerTest, TestUnzipPackageFile_Failure)
 {
   // GIVEN: an OpAppPackageManager instance with a mock unzipper that fails
   auto configuration = createBasicConfiguration();
-  configuration.m_DestinationDirectory = PACKAGE_PATH + "/work";
+  configuration.m_WorkingDirectory = PACKAGE_PATH + "/work";
   auto testFile = createTestFile("test.zip", "test content");
   std::filesystem::path outPath = PACKAGE_PATH + "/work/unzipped";
 
@@ -1058,12 +1061,10 @@ TEST_F(OpAppPackageManagerTest, TestInstallToPersistentStorage_SavesReceipt)
 {
   // GIVEN: an OpAppPackageManager instance with a candidate package set
   auto configuration = createConfigurationWithReceipt();
+  configuration.m_WorkingDirectory = PACKAGE_PATH + "/working";
   configuration.m_OpAppInstallDirectory = PACKAGE_PATH + "/opapps";
-  auto testFile = createTestFile("test.dat", "test content");
 
-  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
-
-  // Set up candidate package info
+  // Set up candidate package info (needed to determine source/dest paths)
   PackageInfo candidatePkg;
   candidatePkg.orgId = 12345;
   candidatePkg.appId = 100;
@@ -1071,15 +1072,35 @@ TEST_F(OpAppPackageManagerTest, TestInstallToPersistentStorage_SavesReceipt)
   candidatePkg.name = "Test OpApp";
   candidatePkg.baseUrl = "https://test.example.com/";
   candidatePkg.location = "index.html";
+
+  // Create the source directory structure: <working>/<appId>/<orgId>/
+  std::filesystem::path srcDir = configuration.m_WorkingDirectory /
+      std::to_string(candidatePkg.appId) / std::to_string(candidatePkg.orgId);
+  std::filesystem::create_directories(srcDir);
+
+  // Create some test files in the source directory
+  std::ofstream(srcDir / "index.html") << "<html><body>Test App</body></html>";
+  std::ofstream(srcDir / "app.js") << "console.log('hello');";
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
   testInterface->setCandidatePackage(candidatePkg);
   testInterface->setCandidatePackageHash("abc123def456");
 
-  // WHEN: installing to persistent storage
-  bool result = testInterface->installToPersistentStorage(testFile);
+  // WHEN: installing to persistent storage (pass working directory root)
+  bool result = testInterface->installToPersistentStorage(configuration.m_WorkingDirectory);
 
   // THEN: the install should succeed and receipt should be saved
   EXPECT_TRUE(result);
   EXPECT_TRUE(std::filesystem::exists(configuration.m_InstallReceiptFilePath));
+
+  // AND: files should be copied to the install directory
+  std::filesystem::path destDir = configuration.m_OpAppInstallDirectory /
+      std::to_string(candidatePkg.appId) / std::to_string(candidatePkg.orgId);
+  EXPECT_TRUE(std::filesystem::exists(destDir / "index.html"));
+  EXPECT_TRUE(std::filesystem::exists(destDir / "app.js"));
+
+  // AND: source directory should be removed (moved, not copied)
+  EXPECT_FALSE(std::filesystem::exists(srcDir));
 
   // AND: the receipt should contain the correct data
   PackageInfo loadedPkg;
@@ -1089,7 +1110,34 @@ TEST_F(OpAppPackageManagerTest, TestInstallToPersistentStorage_SavesReceipt)
   EXPECT_EQ(loadedPkg.xmlVersion, uint32_t(2));
   EXPECT_EQ(loadedPkg.name, "Test OpApp");
   EXPECT_EQ(loadedPkg.packageHash, "abc123def456");
+  EXPECT_EQ(loadedPkg.installPath, destDir);
   EXPECT_FALSE(loadedPkg.installedAt.empty());
+  // installedUrl: appId=100 (0x64), orgId=12345 (0x3039)
+  EXPECT_EQ(loadedPkg.installedUrl, "hbbtv-package://64.3039");
+}
+
+TEST_F(OpAppPackageManagerTest, TestInstallToPersistentStorage_FailsWhenSourceMissing)
+{
+  // GIVEN: an OpAppPackageManager with candidate package but no source directory
+  auto configuration = createConfigurationWithReceipt();
+  configuration.m_WorkingDirectory = PACKAGE_PATH + "/working";
+  configuration.m_OpAppInstallDirectory = PACKAGE_PATH + "/opapps";
+
+  PackageInfo candidatePkg;
+  candidatePkg.orgId = 12345;
+  candidatePkg.appId = 100;
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
+  testInterface->setCandidatePackage(candidatePkg);
+
+  // Note: source directory <working>/100/12345 is NOT created
+
+  // WHEN: installing to persistent storage
+  bool result = testInterface->installToPersistentStorage(configuration.m_WorkingDirectory);
+
+  // THEN: the install should fail with appropriate error
+  EXPECT_FALSE(result);
+  EXPECT_TRUE(testInterface->getLastErrorMessage().find("Source directory does not exist") != std::string::npos);
 }
 
 TEST_F(OpAppPackageManagerTest, TestSaveInstallReceipt_CreatesDirectory)
@@ -1198,6 +1246,46 @@ TEST_F(OpAppPackageManagerTest, TestLoadInstallReceipt_CanCheckOrgAppId)
   // And can check for non-matching IDs
   bool matchesDifferent = (outPkg.orgId == 99999 && outPkg.appId == 1);
   EXPECT_FALSE(matchesDifferent);
+}
+
+TEST_F(OpAppPackageManagerTest, TestGetOpAppUrl_ReturnsInstalledUrl)
+{
+  // GIVEN: an existing install receipt with installedUrl
+  auto configuration = createConfigurationWithReceipt();
+
+  // Create a receipt file with installedUrl
+  std::ofstream receiptFile(configuration.m_InstallReceiptFilePath);
+  receiptFile << R"({
+    "orgId": 12345,
+    "appId": 100,
+    "xmlVersion": 1,
+    "name": "Test App",
+    "installedUrl": "hbbtv-package://64.3039"
+  })";
+  receiptFile.close();
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
+
+  // WHEN: calling getOpAppUrl
+  std::string url = testInterface->getPackageManager().getOpAppUrl();
+
+  // THEN: should return the installed URL from the receipt
+  EXPECT_EQ(url, "hbbtv-package://64.3039");
+}
+
+TEST_F(OpAppPackageManagerTest, TestGetOpAppUrl_ReturnsEmptyWhenNoReceipt)
+{
+  // GIVEN: a configuration with no receipt file
+  auto configuration = createBasicConfiguration();
+  configuration.m_InstallReceiptFilePath = PACKAGE_PATH + "/nonexistent_receipt.json";
+
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
+
+  // WHEN: calling getOpAppUrl with no receipt
+  std::string url = testInterface->getPackageManager().getOpAppUrl();
+
+  // THEN: should return empty string
+  EXPECT_TRUE(url.empty());
 }
 
 TEST_F(OpAppPackageManagerTest, TestGetCandidatePackageFile_ReturnsSetValue)
@@ -1383,13 +1471,13 @@ TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_NoUpdateAvailable_NoCallback
 
   bool successCallbackCalled = false;
   bool failureCallbackCalled = false;
-  configuration.m_OnUpdateSuccess = [&](const std::string&) { successCallbackCalled = true; };
+  configuration.m_OnUpdateSuccess = [&](const PackageInfo&, bool) { successCallbackCalled = true; };
   configuration.m_OnUpdateFailure = [&](OpAppPackageManager::PackageStatus, const std::string&) { failureCallbackCalled = true; };
 
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
 
   // WHEN: checking for updates when no package file exists
-  testInterface->checkForUpdates();
+  testInterface->checkForUpdates(true);
 
   // THEN: neither callback should be called for DiscoveryFailed
   EXPECT_FALSE(successCallbackCalled);
@@ -1409,7 +1497,7 @@ TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_Installed_NoCallbacksCalled)
 
   bool successCallbackCalled = false;
   bool failureCallbackCalled = false;
-  configuration.m_OnUpdateSuccess = [&](const std::string&) { successCallbackCalled = true; };
+  configuration.m_OnUpdateSuccess = [&](const PackageInfo&, bool) { successCallbackCalled = true; };
   configuration.m_OnUpdateFailure = [&](OpAppPackageManager::PackageStatus, const std::string&) { failureCallbackCalled = true; };
 
   OpAppPackageManager::Dependencies deps;
@@ -1439,7 +1527,7 @@ TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_ConfigurationError_CallsFail
   OpAppPackageManager::PackageStatus failureStatus;
   std::string failureErrorMessage;
 
-  configuration.m_OnUpdateSuccess = [&](const std::string&) { successCallbackCalled = true; };
+  configuration.m_OnUpdateSuccess = [&](const PackageInfo&, bool) { successCallbackCalled = true; };
   configuration.m_OnUpdateFailure = [&](OpAppPackageManager::PackageStatus status, const std::string& errorMessage) {
     failureCallbackCalled = true;
     failureStatus = status;
@@ -1449,7 +1537,7 @@ TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_ConfigurationError_CallsFail
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
 
   // WHEN: checking for updates with multiple package files (ConfigurationError)
-  testInterface->checkForUpdates();
+  testInterface->checkForUpdates(true);
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
   // THEN: status should be ConfigurationError and failure callback should be called
@@ -1615,7 +1703,7 @@ TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_NoFqdn_ReturnsConfigura
 {
   // GIVEN: an OpAppPackageManager with no FQDN configured
   auto configuration = createBasicConfiguration();
-  configuration.m_DestinationDirectory = PACKAGE_PATH + "/dest";
+  configuration.m_WorkingDirectory = PACKAGE_PATH + "/dest";
 
   auto mockAitFetcher = std::make_unique<MockAitFetcher>();
   MockAitFetcher* mockAitFetcherPtr = mockAitFetcher.get();
@@ -1636,7 +1724,7 @@ TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_FetchFails_ReturnsConfi
 {
   // GIVEN: an OpAppPackageManager with FQDN configured and mock fetcher that fails
   auto configuration = createBasicConfiguration();
-  configuration.m_DestinationDirectory = PACKAGE_PATH + "/dest";
+  configuration.m_WorkingDirectory = PACKAGE_PATH + "/dest";
   configuration.m_OpAppFqdn = "test.example.com";
 
   auto mockAitFetcher = std::make_unique<MockAitFetcher>();
@@ -1660,7 +1748,7 @@ TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_NoAitFiles_ReturnsConfi
 {
   // GIVEN: an OpAppPackageManager with FQDN and mock fetcher returning empty result
   auto configuration = createBasicConfiguration();
-  configuration.m_DestinationDirectory = PACKAGE_PATH + "/dest";
+  configuration.m_WorkingDirectory = PACKAGE_PATH + "/dest";
   configuration.m_OpAppFqdn = "test.example.com";
 
   auto mockAitFetcher = std::make_unique<MockAitFetcher>();
@@ -1875,28 +1963,56 @@ TEST_F(OpAppPackageManagerTest, TestPackageInfo_GetAppUrl)
   pkg.baseUrl = "https://example.com/apps";
   pkg.location = "index.html";
 
-  // THEN: getAppUrl should combine them correctly
-  EXPECT_EQ(pkg.getAppUrl(), "https://example.com/apps/index.html");
+  // THEN: getPackageUrl should combine them correctly
+  EXPECT_EQ(pkg.getPackageUrl(), "https://example.com/apps/index.html");
 
   // WHEN: baseUrl ends with slash
   pkg.baseUrl = "https://example.com/apps/";
 
   // THEN: should not add extra slash
-  EXPECT_EQ(pkg.getAppUrl(), "https://example.com/apps/index.html");
+  EXPECT_EQ(pkg.getPackageUrl(), "https://example.com/apps/index.html");
 
   // WHEN: location starts with slash
   pkg.baseUrl = "https://example.com/apps";
   pkg.location = "/index.html";
 
   // THEN: should not add extra slash
-  EXPECT_EQ(pkg.getAppUrl(), "https://example.com/apps/index.html");
+  EXPECT_EQ(pkg.getPackageUrl(), "https://example.com/apps/index.html");
+}
+
+TEST_F(OpAppPackageManagerTest, TestPackageInfo_GenerateInstalledUrl)
+{
+  // GIVEN: a package with appId and orgId
+  // TS 103 606 Section 9.4.1: Format is hbbtv-package://appid.orgid
+  // - encoded as lowercase hexadecimal with no leading zeros
+  PackageInfo pkg;
+
+  // WHEN: appId=100 (0x64), orgId=12345 (0x3039)
+  pkg.appId = 100;
+  pkg.orgId = 12345;
+  EXPECT_EQ(pkg.generateInstalledUrl(), "hbbtv-package://64.3039");
+
+  // WHEN: small values (no leading zeros in hex)
+  pkg.appId = 1;
+  pkg.orgId = 16;  // 0x10
+  EXPECT_EQ(pkg.generateInstalledUrl(), "hbbtv-package://1.10");
+
+  // WHEN: values that would have uppercase in hex
+  pkg.appId = 171;   // 0xab
+  pkg.orgId = 43981; // 0xabcd
+  EXPECT_EQ(pkg.generateInstalledUrl(), "hbbtv-package://ab.abcd");
+
+  // WHEN: max uint16_t appId
+  pkg.appId = 65535; // 0xffff
+  pkg.orgId = 255;   // 0xff
+  EXPECT_EQ(pkg.generateInstalledUrl(), "hbbtv-package://ffff.ff");
 }
 
 TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_ValidAit_ReturnsUpdateAvailable)
 {
   // GIVEN: an OpAppPackageManager with FQDN and mock fetcher that writes valid OpApp AIT file
   auto configuration = createBasicConfiguration();
-  configuration.m_DestinationDirectory = PACKAGE_PATH + "/dest";
+  configuration.m_WorkingDirectory = PACKAGE_PATH + "/dest";
   configuration.m_OpAppFqdn = "test.example.com";
 
   auto mockAitFetcher = std::make_unique<MockAitFetcher>();
@@ -1919,7 +2035,7 @@ TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_AitWithNoApps_ReturnsNo
 {
   // GIVEN: an OpAppPackageManager with FQDN and AIT file with no applications
   auto configuration = createBasicConfiguration();
-  configuration.m_DestinationDirectory = PACKAGE_PATH + "/dest";
+  configuration.m_WorkingDirectory = PACKAGE_PATH + "/dest";
   configuration.m_OpAppFqdn = "test.example.com";
 
   // AIT with empty application list
@@ -2300,7 +2416,7 @@ TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_CreatesDestinationDirect
 {
   // GIVEN: a destination directory that doesn't exist
   auto configuration = createConfigurationForDownloadTests();
-  configuration.m_DestinationDirectory = PACKAGE_PATH + "/new/nested/dest";
+  configuration.m_WorkingDirectory = PACKAGE_PATH + "/new/nested/dest";
 
   auto mockDownloader = std::make_unique<MockHttpDownloader>();
   mockDownloader->setDownloadSuccess("content", "application/vnd.hbbtv.opapp.pkg");
@@ -2451,17 +2567,78 @@ TEST_F(OpAppPackageManagerTest, TestDownloadPackageFile_ConfigurableRetryAttempt
 // Integration Tests (require network access)
 // =============================================================================
 
-// Integration test - requires network access and a real OpApp FQDN
-// Prefix with DISABLED_ so it doesn't run in CI; remove prefix to run manually
-TEST_F(OpAppPackageManagerTest, DISABLED_IntegrationTest_RealRemoteFetch)
+/**
+ * Integration test for real remote fetch with environment variable configuration.
+ *
+ * Set the following environment variables to run:
+ *   OPAPP_TEST_FQDN - The OpApp FQDN to fetch from (required)
+ *   OPAPP_TEST_CERTIFICATE - Path to certificate for decryption (required)
+ *   OPAPP_TEST_PRIVATE_KEY - Path to private key for decryption (required)
+ *   OPAPP_TEST_ROOT_CA - Path to Operator Root CA for verification (required)
+ *   OPAPP_TEST_OPERATOR_NAME - Expected operator name for verification (required)
+ *   OPAPP_TEST_ORGANISATION_ID - Expected organisation ID for verification (required)
+ *   OPAPP_TEST_USER_AGENT - HTTP User-Agent header (required)
+ *   OPAPP_TEST_WORKING_DIR - Working directory for downloads (optional, defaults to temp)
+ *   OPAPP_TEST_INSTALL_DIR - Installation directory (optional, defaults to temp)
+ */
+TEST_F(OpAppPackageManagerTest, IntegrationTest_RealRemoteFetch)
 {
+  // Get environment variables - required
+  const char* fqdnEnv = std::getenv("OPAPP_TEST_FQDN");
+  const char* privateKeyEnv = std::getenv("OPAPP_TEST_PRIVATE_KEY");
+  const char* certificateEnv = std::getenv("OPAPP_TEST_CERTIFICATE");
+  const char* rootCAEnv = std::getenv("OPAPP_TEST_ROOT_CA");
+  const char* operatorNameEnv = std::getenv("OPAPP_TEST_OPERATOR_NAME");
+  const char* organisationIdEnv = std::getenv("OPAPP_TEST_ORGANISATION_ID");
+  const char* userAgentEnv = std::getenv("OPAPP_TEST_USER_AGENT");
+
+  // Get environment variables - optional
+  const char* workingDirEnv = std::getenv("OPAPP_TEST_WORKING_DIR");
+  const char* installDirEnv = std::getenv("OPAPP_TEST_INSTALL_DIR");
+
+  // Skip if required environment variables are not set
+  if (!fqdnEnv || !privateKeyEnv || !certificateEnv ||
+      !rootCAEnv || !operatorNameEnv || !organisationIdEnv || !userAgentEnv) {
+    GTEST_SKIP() << "Skipping IntegrationTest_RealRemoteFetch. "
+                 << "Set required environment variables: OPAPP_TEST_FQDN, "
+                 << "OPAPP_TEST_PRIVATE_KEY, OPAPP_TEST_CERTIFICATE, "
+                 << "OPAPP_TEST_ROOT_CA, OPAPP_TEST_OPERATOR_NAME, "
+                 << "OPAPP_TEST_ORGANISATION_ID, OPAPP_TEST_USER_AGENT";
+  }
+
   // GIVEN: Real OpAppPackageManager with all real implementations
   auto configuration = createBasicConfiguration();
-  configuration.m_DestinationDirectory = PACKAGE_PATH + "/dest";
-  configuration.m_OpAppFqdn = "test.freeviewplay.tv";  // TODO: Replace with a real OpApp FQDN
-  configuration.m_UserAgent = "HbbTV/1.6.1 (+DRM;+PVR;+RTSP;+OMID) orb/1.0";
 
-  std::filesystem::create_directories(configuration.m_DestinationDirectory);
+  // Required configuration (from environment)
+  configuration.m_OpAppFqdn = fqdnEnv;
+  configuration.m_PrivateKeyFilePath = privateKeyEnv;
+  configuration.m_CertificateFilePath = certificateEnv;
+  configuration.m_OperatorRootCAFilePath = rootCAEnv;
+  configuration.m_ExpectedOperatorName = operatorNameEnv;
+  configuration.m_ExpectedOrganisationId = organisationIdEnv;
+  configuration.m_UserAgent = userAgentEnv;
+
+  // Optional overrides from environment
+  if (workingDirEnv) {
+    configuration.m_WorkingDirectory = workingDirEnv;
+    configuration.m_InstallReceiptFilePath = configuration.m_WorkingDirectory / "install_receipt.json";
+  }
+  if (installDirEnv) {
+    configuration.m_OpAppInstallDirectory = installDirEnv;
+  }
+
+  std::filesystem::create_directories(configuration.m_WorkingDirectory);
+  std::filesystem::create_directories(configuration.m_OpAppInstallDirectory);
+
+  std::cout << "Configuration:" << std::endl;
+  std::cout << "  FQDN: " << configuration.m_OpAppFqdn << std::endl;
+  std::cout << "  Private key: " << configuration.m_PrivateKeyFilePath << std::endl;
+  std::cout << "  Certificate: " << configuration.m_CertificateFilePath << std::endl;
+  std::cout << "  Root CA: " << configuration.m_OperatorRootCAFilePath << std::endl;
+  std::cout << "  Operator name: " << configuration.m_ExpectedOperatorName << std::endl;
+  std::cout << "  Organisation ID: " << configuration.m_ExpectedOrganisationId << std::endl;
+  std::cout << "  Working directory: " << configuration.m_WorkingDirectory << std::endl;
+  std::cout << "  Install directory: " << configuration.m_OpAppInstallDirectory << std::endl;
 
   // Track status via callback
   std::atomic<bool> callbackCalled{false};
@@ -2475,10 +2652,11 @@ TEST_F(OpAppPackageManagerTest, DISABLED_IntegrationTest_RealRemoteFetch)
     std::cout << "Update failure callback: status=" << static_cast<int>(status) << ", error=" << error << std::endl;
   };
 
-  configuration.m_OnUpdateSuccess = [&](const std::string& packagePath) {
+  configuration.m_OnUpdateSuccess = [&](const PackageInfo& packageInfo, bool isFirstInstall) {
     finalStatus = OpAppPackageManager::PackageStatus::Installed;
     callbackCalled = true;
-    std::cout << "Update success callback: packagePath=" << packagePath << std::endl;
+    std::cout << "Update success callback: package=" << packageInfo.name
+              << ", isFirstInstall=" << isFirstInstall << std::endl;
   };
 
   OpAppPackageManager packageManager(configuration);
@@ -2500,64 +2678,10 @@ TEST_F(OpAppPackageManagerTest, DISABLED_IntegrationTest_RealRemoteFetch)
     }
   }
 
-  // THEN: Log the results (actual expectations depend on the real server)
-  std::cout << "Package manager finished running" << std::endl;
-  if (!lastError.empty()) {
-    std::cout << "Last error: " << lastError << std::endl;
-  }
-
-  // Diagnostic: Check the downloaded file (filename is preserved from URL, e.g., opapp.cms)
-  std::filesystem::path downloadedFile = configuration.m_DestinationDirectory / "opapp.cms";
-  if (std::filesystem::exists(downloadedFile)) {
-    // Print file size
-    auto fileSize = std::filesystem::file_size(downloadedFile);
-    std::cout << "Downloaded file: " << downloadedFile << std::endl;
-    std::cout << "File size: " << fileSize << " bytes" << std::endl;
-
-    // Read first 256 bytes to determine if binary or text
-    std::ifstream file(downloadedFile, std::ios::binary);
-    std::vector<char> buffer(std::min(static_cast<uintmax_t>(256), fileSize));
-    file.read(buffer.data(), buffer.size());
-    size_t bytesRead = file.gcount();
-
-    // Check for binary content (null bytes or high proportion of non-printable chars)
-    int nonPrintableCount = 0;
-    bool hasNullByte = false;
-    for (size_t i = 0; i < bytesRead; ++i) {
-      unsigned char c = static_cast<unsigned char>(buffer[i]);
-      if (c == 0) {
-        hasNullByte = true;
-        break;
-      }
-      if (c < 32 && c != '\n' && c != '\r' && c != '\t') {
-        nonPrintableCount++;
-      }
-    }
-
-    bool isBinary = hasNullByte || (bytesRead > 0 && static_cast<size_t>(nonPrintableCount) > bytesRead / 4);
-    std::cout << "File type: " << (isBinary ? "BINARY" : "TEXT") << std::endl;
-
-    if (!isBinary) {
-      // Print first 100 characters
-      size_t printLen = std::min(static_cast<size_t>(100), bytesRead);
-      std::string preview(buffer.data(), printLen);
-      std::cout << "First " << printLen << " characters: " << std::endl;
-      std::cout << "---" << std::endl;
-      std::cout << preview << std::endl;
-      std::cout << "---" << std::endl;
-    } else {
-      // Print hex dump of first 32 bytes
-      std::cout << "First 32 bytes (hex): ";
-      for (size_t i = 0; i < std::min(static_cast<size_t>(32), bytesRead); ++i) {
-        std::cout << std::hex << std::setfill('0') << std::setw(2)
-                  << static_cast<int>(static_cast<unsigned char>(buffer[i])) << " ";
-      }
-      std::cout << std::dec << std::endl;
-    }
-  } else {
-    std::cout << "Downloaded file not found at: " << downloadedFile << std::endl;
-  }
-
   // For a real integration test, you would assert based on expected server state
   EXPECT_FALSE(packageManager.isRunning());
+
+  // THEN: Log the results (actual expectations depend on the real server)
+  std::cout << "Package manager finished running" << std::endl;
+  EXPECT_TRUE(lastError.empty()) << "Failed to install package: " << lastError;
 }

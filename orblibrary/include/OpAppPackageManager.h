@@ -16,6 +16,7 @@
 #ifndef OP_APP_PACKAGE_MANAGER_H
 #define OP_APP_PACKAGE_MANAGER_H
 
+#include <cstdio>
 #include <string>
 #include <thread>
 #include <atomic>
@@ -65,6 +66,12 @@ struct PackageInfo {
     std::string packageHash;  // SHA256 hash of the installed package
     std::string installedAt;  // ISO timestamp of installation
 
+    // Origin URL for the installed package (TS 103 606 Section 9.4.1)
+    // Format: hbbtv-package://appid.orgid
+    // - appid and orgid encoded as lowercase hexadecimal with no leading zeros
+    // - Used for Cross-Origin Resource Sharing, Web Storage, etc.
+    std::string installedUrl;
+
     // Comparison helpers
     bool isSameApp(const PackageInfo& other) const {
         return orgId == other.orgId && appId == other.appId;
@@ -74,14 +81,22 @@ struct PackageInfo {
         return xmlVersion > other.xmlVersion;
     }
 
-    // Construct full app URL
-    std::string getAppUrl() const {
+    // Construct full package download URL (from AIT transport info)
+    std::string getPackageUrl() const {
         if (baseUrl.empty()) return "";
         std::string url = baseUrl;
         if (!url.empty() && url.back() != '/' && !location.empty() && location.front() != '/') {
             url += '/';
         }
         return url + location;
+    }
+
+    // Generate the installed package origin URL (TS 103 606 Section 9.4.1)
+    // Format: hbbtv-package://appid.orgid (hex, lowercase, no leading zeros)
+    std::string generateInstalledUrl() const {
+        char buffer[64];
+        snprintf(buffer, sizeof(buffer), "hbbtv-package://%x.%x", appId, orgId);
+        return std::string(buffer);
     }
 };
 
@@ -121,7 +136,12 @@ public:
   };
 
   // Callback function types for update completion
-  using UpdateSuccessCallback = std::function<void(const std::filesystem::path& packagePath)>;
+  // isFirstInstall: true if this is a first-time install (OpApp not previously installed)
+  //                 false if this is an update (OpApp was already running)
+  // Client should:
+  //   - If isFirstInstall: load the OpApp (call TryLoadOpApp or equivalent)
+  //   - If update: signal to running OpApp that restart is needed (JavaScript API)
+  using UpdateSuccessCallback = std::function<void(const PackageInfo& packageInfo, bool isFirstInstall)>;
   using UpdateFailureCallback = std::function<void(PackageStatus status, const std::string& errorMessage)>;
 
   struct Configuration {
@@ -157,18 +177,17 @@ public:
        * Matched against the CommonName (CN=) attribute of the signer certificate subject */
       std::string m_ExpectedOrganisationId;
 
-      std::filesystem::path m_DestinationDirectory; /* Directory where the package is decrypted, unzipped and verified */
+      std::filesystem::path m_WorkingDirectory; /* Directory where the package is decrypted, unzipped and verified */
       std::filesystem::path m_OpAppInstallDirectory; /* Directory where the OpApp is installed */
       UpdateSuccessCallback m_OnUpdateSuccess; /* Callback called when update completes successfully */
       UpdateFailureCallback m_OnUpdateFailure; /* Callback called when update fails */
 
       /* HTTP User-Agent header for AIT requests (TS 103 606 V1.2.1 Section 6.1.5.1)
-       * Format per ETSI TS 102 796 Section 7.3.2.4 (HbbTV User-Agent string)
-       * Example: "HbbTV/1.6.1 (+DRM;+PVR;+RTSP;+OMID) vendor/1.0" */
-      std::string m_UserAgent = "HbbTV/1.6.1 (+DRM;+PVR;+RTSP;+OMID) orb/1.0";
+       * Format per ETSI TS 102 796 Section 7.3.2.4 (HbbTV User-Agent string)  */
+      std::string m_UserAgent;
 
       /* Directory where acquired AIT XML files are stored.
-       * If empty, uses a subdirectory "ait_cache" of m_DestinationDirectory. */
+       * If empty, uses a subdirectory "ait_cache" of m_WorkingDirectory. */
       std::filesystem::path m_AitOutputDirectory;
 
       /* Maximum permitted size (in bytes) for unzipped package contents.
@@ -233,22 +252,17 @@ public:
   bool isOpAppInstalled();
 
   /**
-   * doFirstTimeInstall()
-   *
-   * Attempts a full installation of an OpApp.
-   */
-  void doFirstTimeInstallation();
-
-  /**
-   * checkForUpdates()
+   * checkForUpdates(bool isFirstInstall)
    *
    * Main entry point for checking for updates and installing the package if an update is available.
    * Calls tryLocalUpdate() or tryRemoteUpdate() as appropriate.
    *
+   * @param isFirstInstall true if this is a first-time install (OpApp not previously installed)
+   *                       false if this is an update (OpApp was already running)
    * @return true if an installation completed, otherwise false.
    *
    * Flow:
-   * checkForUpdates()
+   * checkForUpdates(isFirstInstall)
     │
     ├─► tryLocalUpdate()     ─── Check for local package file
     │       │                    (in m_PackageLocation directory)
@@ -266,7 +280,7 @@ public:
             ├─► downloadPackageFile()    ─ Download the package
             └─► installFromPackageFile() ─ Decrypt, verify, unzip, install
    */
-  bool checkForUpdates();
+  bool checkForUpdates(bool isFirstInstall);
 
   /**
    * setOpAppUpdateStatus(OpAppUpdateStatus status)
@@ -494,7 +508,7 @@ private:
    * movePackageFileToInstallationDirectory()
    *
    * For local installations, moves a package file to the
-   * m_Configuration.m_DestinationDirectory directory.
+   * m_Configuration.m_WorkingDirectory directory.
    *
    * @param packageFilePath Path to the package file
    * @return true if the package file is moved successfully, false otherwise.

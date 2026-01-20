@@ -1,6 +1,7 @@
 #ifndef ORB_HTTP_DOWNLOADER_H
 #define ORB_HTTP_DOWNLOADER_H
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <filesystem>
@@ -96,6 +97,19 @@ private:
                               std::string& contentType, size_t& bodyStart);
 
     /**
+     * @brief Parse HTTP response headers and extract metadata including Content-Length.
+     * @param response The raw HTTP response
+     * @param statusCode Output: HTTP status code
+     * @param contentType Output: Content-Type header value
+     * @param contentLength Output: Content-Length header value (0 if not present)
+     * @param bodyStart Output: offset where body begins
+     * @return true if parsing succeeded
+     */
+    bool ParseResponseHeaders(const std::string& response, int& statusCode,
+                              std::string& contentType, size_t& contentLength,
+                              size_t& bodyStart);
+
+    /**
      * @brief Perform HTTP download (no TLS).
      */
     std::shared_ptr<DownloadedObject> DownloadHttp(const std::string& host, uint16_t port,
@@ -131,6 +145,30 @@ private:
      * @return The downloaded object, or nullptr on failure
      */
     std::shared_ptr<DownloadedObject> ParseAndCreateResponse(const std::string& response);
+
+    /**
+     * @brief Stream HTTP download directly to file (for large files).
+     */
+    std::shared_ptr<DownloadedObject> DownloadHttpToFile(
+        const std::string& host, uint16_t port, const std::string& path,
+        const std::string& ipAddress, const std::filesystem::path& outputPath);
+
+    /**
+     * @brief Stream HTTPS download directly to file (for large files).
+     */
+    std::shared_ptr<DownloadedObject> DownloadHttpsToFile(
+        const std::string& host, uint16_t port, const std::string& path,
+        const std::string& ipAddress, const std::filesystem::path& outputPath);
+
+    /**
+     * @brief Common streaming logic for downloading to file.
+     * @param readFunc Function that reads data: (buffer, size) -> bytes read, 0 = EOF, <0 = error
+     * @param outputPath The path to save the downloaded content
+     * @return The downloaded object (with metadata), or nullptr on failure
+     */
+    std::shared_ptr<DownloadedObject> StreamToFile(
+        std::function<ssize_t(char*, size_t)> readFunc,
+        const std::filesystem::path& outputPath);
 
     int m_timeoutMs;
     std::string m_acceptHeader;

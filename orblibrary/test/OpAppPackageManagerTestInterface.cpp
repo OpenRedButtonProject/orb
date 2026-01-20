@@ -32,9 +32,9 @@ bool OpAppPackageManagerTestInterface::isRunning() const
     return m_PackageManager->isRunning();
 }
 
-void OpAppPackageManagerTestInterface::checkForUpdates()
+void OpAppPackageManagerTestInterface::checkForUpdates(bool isFirstInstall)
 {
-    m_PackageManager->checkForUpdates();
+    m_PackageManager->checkForUpdates(isFirstInstall);
 }
 
 std::string OpAppPackageManagerTestInterface::calculateFileSHA256Hash(const std::filesystem::path& filePath) const

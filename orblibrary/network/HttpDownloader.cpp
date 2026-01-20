@@ -22,6 +22,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <cstdlib>
 #include <cstring>
 #include <sstream>
 #include <fstream>
@@ -34,7 +35,9 @@ namespace orb {
 
 namespace {
     constexpr size_t RECEIVE_BUFFER_SIZE = 8192;
-    constexpr size_t MAX_RESPONSE_SIZE = 1024 * 1024; // 1MB
+    // Max size for in-memory downloads (AIT files, small resources)
+    // Large files should use DownloadToFile() which streams to disk
+    constexpr size_t MAX_RESPONSE_SIZE = 10 * 1024 * 1024; // 10MB
     constexpr uint16_t DEFAULT_HTTP_PORT = 80;
     constexpr uint16_t DEFAULT_HTTPS_PORT = 443;
 
@@ -170,6 +173,14 @@ bool HttpDownloader::ParseUrl(const std::string& url, std::string& host,
 bool HttpDownloader::ParseResponseHeaders(const std::string& response, int& statusCode,
                                            std::string& contentType, size_t& bodyStart)
 {
+    size_t contentLength = 0;
+    return ParseResponseHeaders(response, statusCode, contentType, contentLength, bodyStart);
+}
+
+bool HttpDownloader::ParseResponseHeaders(const std::string& response, int& statusCode,
+                                           std::string& contentType, size_t& contentLength,
+                                           size_t& bodyStart)
+{
     // Find header/body separator
     bodyStart = response.find("\r\n\r\n");
     if (bodyStart != std::string::npos) {
@@ -229,6 +240,36 @@ bool HttpDownloader::ParseResponseHeaders(const std::string& response, int& stat
             size_t semicolon = contentType.find(';');
             if (semicolon != std::string::npos) {
                 contentType = contentType.substr(0, semicolon);
+            }
+        }
+    }
+
+    // Parse Content-Length header
+    contentLength = 0;
+    std::string contentLengthHeader = "Content-Length:";
+    size_t clPos = headers.find(contentLengthHeader);
+    if (clPos == std::string::npos) {
+        // Try lowercase
+        contentLengthHeader = "content-length:";
+        clPos = headers.find(contentLengthHeader);
+    }
+
+    if (clPos != std::string::npos) {
+        size_t valueStart = clPos + contentLengthHeader.length();
+        // Skip leading whitespace
+        while (valueStart < headers.length() &&
+               (headers[valueStart] == ' ' || headers[valueStart] == '\t')) {
+            valueStart++;
+        }
+        size_t valueEnd = headers.find_first_of("\r\n", valueStart);
+        if (valueEnd != std::string::npos) {
+            std::string lengthStr = headers.substr(valueStart, valueEnd - valueStart);
+            char* endPtr = nullptr;
+            unsigned long long parsed = strtoull(lengthStr.c_str(), &endPtr, 10);
+            if (endPtr != lengthStr.c_str() && *endPtr == '\0') {
+                contentLength = static_cast<size_t>(parsed);
+            } else {
+                LOG(WARNING) << "Failed to parse Content-Length: " << lengthStr;
             }
         }
     }
@@ -482,16 +523,19 @@ std::shared_ptr<DownloadedObject> HttpDownloader::DownloadHttps(
 std::shared_ptr<DownloadedObject> HttpDownloader::DownloadToFile(
     const std::string& url, const std::filesystem::path& outputPath)
 {
-    // Download the content
-    auto result = Download(url);
-    if (!result) {
-        LOG(ERROR) << "Failed to download from " << url;
+    std::string host;
+    uint16_t port;
+    std::string path;
+    bool useHttps;
+
+    if (!ParseUrl(url, host, port, path, useHttps)) {
         return nullptr;
     }
 
-    if (!result->IsSuccess()) {
-        LOG(ERROR) << "Download failed with status " << result->GetStatusCode();
-        return result;
+    // Resolve hostname
+    std::string ipAddress = ResolveHostname(host);
+    if (ipAddress.empty()) {
+        return nullptr;
     }
 
     // Ensure parent directory exists
@@ -505,23 +549,215 @@ std::shared_ptr<DownloadedObject> HttpDownloader::DownloadToFile(
         }
     }
 
-    // Write content to file
+    if (useHttps) {
+        return DownloadHttpsToFile(host, port, path, ipAddress, outputPath);
+    } else {
+        return DownloadHttpToFile(host, port, path, ipAddress, outputPath);
+    }
+}
+
+std::shared_ptr<DownloadedObject> HttpDownloader::DownloadHttpToFile(
+    const std::string& host, uint16_t port, const std::string& path,
+    const std::string& ipAddress, const std::filesystem::path& outputPath)
+{
+    LOG(INFO) << "HttpDownloader: HTTP GET (streaming) " << host << ":" << port << path;
+
+    int sock = CreateAndConnectSocket(ipAddress, port, host);
+    if (sock < 0) {
+        return nullptr;
+    }
+    SocketGuard sockGuard(sock);
+
+    // Send request
+    std::string requestStr = BuildHttpRequest(host, path);
+    if (send(sock, requestStr.c_str(), requestStr.length(), 0) < 0) {
+        LOG(ERROR) << "Failed to send request: " << strerror(errno);
+        return nullptr;
+    }
+
+    // Stream response to file using socket recv
+    return StreamToFile(
+        [sock](char* buffer, size_t size) -> ssize_t {
+            return recv(sock, buffer, size, 0);
+        },
+        outputPath);
+}
+
+std::shared_ptr<DownloadedObject> HttpDownloader::DownloadHttpsToFile(
+    const std::string& host, uint16_t port, const std::string& path,
+    const std::string& ipAddress, const std::filesystem::path& outputPath)
+{
+    LOG(INFO) << "HttpDownloader: HTTPS GET (streaming) " << host << ":" << port << path;
+
+    // Initialize SSL context
+    SSL_CTX* ctx = SSL_CTX_new(TLS_client_method());
+    if (!ctx) {
+        LOG(ERROR) << "Failed to create SSL context";
+        return nullptr;
+    }
+    SslCtxGuard ctxGuard(ctx);
+
+    // Set reasonable security options
+    SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+    SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
+
+    // Create and connect socket
+    int sock = CreateAndConnectSocket(ipAddress, port, host);
+    if (sock < 0) {
+        return nullptr;
+    }
+    SocketGuard sockGuard(sock);
+
+    // Create SSL object
+    SSL* ssl = SSL_new(ctx);
+    if (!ssl) {
+        LOG(ERROR) << "Failed to create SSL object";
+        return nullptr;
+    }
+    SslGuard sslGuard(ssl);
+
+    // Set SNI hostname (required for many servers)
+    if (SSL_set_tlsext_host_name(ssl, host.c_str()) != 1) {
+        LOG(ERROR) << "Failed to set SNI hostname";
+        return nullptr;
+    }
+
+    // Attach socket to SSL
+    if (SSL_set_fd(ssl, sock) != 1) {
+        LOG(ERROR) << "Failed to attach socket to SSL";
+        return nullptr;
+    }
+
+    // Perform TLS handshake
+    int ret = SSL_connect(ssl);
+    if (ret != 1) {
+        int sslError = SSL_get_error(ssl, ret);
+        LOG(ERROR) << "SSL handshake failed, error: " << sslError;
+        return nullptr;
+    }
+
+    LOG(INFO) << "SSL connection established, protocol: " << SSL_get_version(ssl);
+
+    // Send request
+    std::string requestStr = BuildHttpRequest(host, path);
+    ret = SSL_write(ssl, requestStr.c_str(), requestStr.length());
+    if (ret <= 0) {
+        int sslError = SSL_get_error(ssl, ret);
+        LOG(ERROR) << "Failed to send request over SSL, error: " << sslError;
+        return nullptr;
+    }
+
+    // Stream response to file using SSL_read
+    auto result = StreamToFile(
+        [ssl](char* buffer, size_t size) -> ssize_t {
+            return SSL_read(ssl, buffer, size);
+        },
+        outputPath);
+
+    // Gracefully shutdown SSL
+    SSL_shutdown(ssl);
+
+    return result;
+}
+
+std::shared_ptr<DownloadedObject> HttpDownloader::StreamToFile(
+    std::function<ssize_t(char*, size_t)> readFunc,
+    const std::filesystem::path& outputPath)
+{
+    // Read headers first (accumulate until we find \r\n\r\n)
+    std::string headerBuffer;
+    char buffer[RECEIVE_BUFFER_SIZE];
+    size_t headerEnd = std::string::npos;
+
+    while (headerEnd == std::string::npos) {
+        ssize_t received = readFunc(buffer, sizeof(buffer) - 1);
+
+        if (received < 0) {
+            LOG(ERROR) << "Failed to receive headers";
+            return nullptr;
+        }
+
+        if (received == 0) {
+            LOG(ERROR) << "Connection closed before headers received";
+            return nullptr;
+        }
+
+        headerBuffer.append(buffer, received);
+        headerEnd = headerBuffer.find("\r\n\r\n");
+    }
+
+    // Parse headers
+    int statusCode;
+    std::string contentType;
+    size_t contentLength;
+    size_t bodyStart;
+
+    if (!ParseResponseHeaders(headerBuffer, statusCode, contentType, contentLength, bodyStart)) {
+        return nullptr;
+    }
+
+    LOG(INFO) << "HttpDownloader: status=" << statusCode
+              << " contentType=" << contentType
+              << " contentLength=" << contentLength;
+
+    // Check for HTTP errors before writing file
+    if (statusCode < 200 || statusCode >= 300) {
+        return std::make_shared<DownloadedObject>("", contentType, statusCode);
+    }
+
+    // Open output file
     std::ofstream outFile(outputPath, std::ios::binary);
     if (!outFile) {
         LOG(ERROR) << "Failed to open output file: " << outputPath;
         return nullptr;
     }
 
-    outFile.write(result->GetContent().c_str(), result->GetContent().size());
+    // Write any body data that was already read with headers
+    size_t bytesWritten = 0;
+    if (bodyStart < headerBuffer.size()) {
+        size_t initialBodySize = headerBuffer.size() - bodyStart;
+        outFile.write(headerBuffer.c_str() + bodyStart, initialBodySize);
+        bytesWritten = initialBodySize;
+    }
+
+    // Stream remaining body data directly to file
+    while (contentLength == 0 || bytesWritten < contentLength) {
+        ssize_t received = readFunc(buffer, sizeof(buffer));
+
+        if (received < 0) {
+            LOG(ERROR) << "Failed to receive body data";
+            outFile.close();
+            std::filesystem::remove(outputPath);
+            return nullptr;
+        }
+
+        if (received == 0) {
+            break; // Connection closed
+        }
+
+        outFile.write(buffer, received);
+        bytesWritten += received;
+    }
+
     outFile.close();
 
     if (outFile.fail()) {
         LOG(ERROR) << "Failed to write to output file: " << outputPath;
+        std::filesystem::remove(outputPath);
         return nullptr;
     }
 
-    LOG(INFO) << "Downloaded " << result->GetContent().size() << " bytes to " << outputPath;
-    return result;
+    // Verify we got the expected amount of data
+    if (contentLength > 0 && bytesWritten != contentLength) {
+        LOG(ERROR) << "Download incomplete: expected " << contentLength
+                   << " bytes, got " << bytesWritten;
+        std::filesystem::remove(outputPath);
+        return nullptr;
+    }
+
+    LOG(INFO) << "Downloaded " << bytesWritten << " bytes to " << outputPath;
+
+    return std::make_shared<DownloadedObject>("", contentType, statusCode);
 }
 
 } // namespace orb

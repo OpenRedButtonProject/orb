@@ -72,7 +72,7 @@ OpAppPackageManager::OpAppPackageManager(
     DecryptorConfig decryptorConfig;
     decryptorConfig.privateKeyPath = m_Configuration.m_PrivateKeyFilePath;
     decryptorConfig.certificatePath = m_Configuration.m_CertificateFilePath;
-    decryptorConfig.workingDirectory = m_Configuration.m_DestinationDirectory;
+    decryptorConfig.workingDirectory = m_Configuration.m_WorkingDirectory;
     m_Decryptor = std::make_unique<Decryptor>(decryptorConfig);
   }
   if (!m_Verifier) {
@@ -81,7 +81,7 @@ OpAppPackageManager::OpAppPackageManager(
     verifierConfig.operatorRootCAPath = m_Configuration.m_OperatorRootCAFilePath;
     verifierConfig.expectedOperatorName = m_Configuration.m_ExpectedOperatorName;
     verifierConfig.expectedOrganisationId = m_Configuration.m_ExpectedOrganisationId;
-    verifierConfig.workingDirectory = m_Configuration.m_DestinationDirectory;
+    verifierConfig.workingDirectory = m_Configuration.m_WorkingDirectory;
     m_Verifier = std::make_unique<Verifier>(verifierConfig);
   }
   if (!m_AitFetcher) {
@@ -119,7 +119,7 @@ void OpAppPackageManager::start()
       // Check if an installation already exists.
       // If so, return.
       if (!isOpAppInstalled()) {
-        doFirstTimeInstallation();
+        checkForUpdates(true /* isFirstInstall */);
       }
       // Keep the worker thread running by adding a small delay
       // This prevents the thread from exiting immediately
@@ -153,14 +153,6 @@ bool OpAppPackageManager::isOpAppInstalled()
   }
 
   return false;
-}
-
-void OpAppPackageManager::doFirstTimeInstallation()
-{
-  // At the moment the same process is used for both first time installation and update.
-  if (checkForUpdates()) {
-    // Update the OpApp URL
-  }
 }
 
 bool OpAppPackageManager::tryLocalUpdate()
@@ -275,7 +267,7 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::installFromPackageFile()
   // Path follows HbbTV origin format: hbbtv-package://appid.orgid (TS 103 606 Section 9.4.1)
   // This prevents pollution of the destination directory and simplifies
   // the subsequent installation stage (which becomes a straightforward move)
-  std::filesystem::path unzippedDir = m_Configuration.m_DestinationDirectory /
+  std::filesystem::path unzippedDir = m_Configuration.m_WorkingDirectory /
       std::to_string(m_CandidatePackage.appId) /
       std::to_string(m_CandidatePackage.orgId);
 
@@ -285,7 +277,7 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::installFromPackageFile()
   }
 
   // Step 5: Install to persistent storage (straightforward move from unzip directory)
-  if (!installToPersistentStorage(unzippedDir)) {
+  if (!installToPersistentStorage(m_Configuration.m_WorkingDirectory)) {
     LOG(ERROR) << "Installation to persistent storage failed: " << m_LastErrorMessage;
     return PackageStatus::UpdateFailed;
   }
@@ -293,7 +285,7 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::installFromPackageFile()
   return PackageStatus::Installed;
 }
 
-bool OpAppPackageManager::checkForUpdates()
+bool OpAppPackageManager::checkForUpdates(bool isFirstInstall)
 {
   // Update and first install is the same operation.
   bool wasInstalled = tryLocalUpdate();
@@ -303,11 +295,10 @@ bool OpAppPackageManager::checkForUpdates()
   }
 
   if (wasInstalled) {
-    LOG(INFO) << "OpApp was successfully installed";
-    // Call success callback
+    LOG(INFO) << "OpApp was successfully installed (isFirstInstall=" << isFirstInstall << ")";
+    // Call success callback with isFirstInstall flag
     if (m_Configuration.m_OnUpdateSuccess) {
-      // Not sure if this is the correct argument to pass to the callback.
-      m_Configuration.m_OnUpdateSuccess(m_CandidatePackageFile);
+      m_Configuration.m_OnUpdateSuccess(m_CandidatePackage, isFirstInstall);
     }
     return true;
   }
@@ -335,12 +326,13 @@ OpAppPackageManager::OpAppUpdateStatus OpAppPackageManager::getOpAppUpdateStatus
 
 std::string OpAppPackageManager::getOpAppUrl() const
 {
-  // TODO: Construct the URL of the opapp. See Section 9.4.1
-
-  // This should return the URL of the currently installed OpApp, otherwise empty string
-  // This is used to update the OpApp URL in the OpApp manager.
-  // Set to localhost for testing.
-  return "https://taco.freeviewplay.tv/";//"http://10.0.2.2:8080/index.html";
+  // Return the origin URL of the installed OpApp (TS 103 606 Section 9.4.1)
+  // Format: hbbtv-package://appid.orgid
+  PackageInfo installedPkg;
+  if (!loadInstallReceipt(installedPkg)) {
+    return "";  // No package installed
+  }
+  return installedPkg.installedUrl;
 }
 
 OpAppPackageManager::PackageStatus OpAppPackageManager::doLocalPackageCheck()
@@ -397,7 +389,7 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::doRemotePackageCheck()
   // Determine AIT output directory
   std::filesystem::path aitDir = m_Configuration.m_AitOutputDirectory;
   if (aitDir.empty()) {
-    aitDir = m_Configuration.m_DestinationDirectory / "ait_cache";
+    aitDir = m_Configuration.m_WorkingDirectory / "ait_cache";
   }
 
   // Clear the AIT directory before acquisition to remove stale files
@@ -520,12 +512,12 @@ std::string OpAppPackageManager::calculateFileSHA256Hash(const std::filesystem::
 bool OpAppPackageManager::movePackageFileToInstallationDirectory(const std::filesystem::path& packageFilePath) {
   // Steps to install the package:
   // 1. Ensure the destination directory exists
-  if (!std::filesystem::exists(m_Configuration.m_DestinationDirectory)) {
-    std::filesystem::create_directories(m_Configuration.m_DestinationDirectory);
+  if (!std::filesystem::exists(m_Configuration.m_WorkingDirectory)) {
+    std::filesystem::create_directories(m_Configuration.m_WorkingDirectory);
   }
 
   // 2. Copy the package file to the installation directory
-  std::filesystem::path workingFilePath = m_Configuration.m_DestinationDirectory / packageFilePath.filename();
+  std::filesystem::path workingFilePath = m_Configuration.m_WorkingDirectory / packageFilePath.filename();
   std::error_code errorCode;
   std::filesystem::copy(packageFilePath, workingFilePath, errorCode);
   if (errorCode) {
@@ -686,14 +678,88 @@ bool OpAppPackageManager::unzipPackageFile(const std::filesystem::path& inFile, 
   return true;
 }
 
-bool OpAppPackageManager::installToPersistentStorage(const std::filesystem::path& filePath)
+bool OpAppPackageManager::installToPersistentStorage(const std::filesystem::path& workingDir)
 {
-  // TODO: Copy files from filePath to m_Configuration.m_OpAppInstallDirectory/appId/orgId
+  // Build source and destination paths using appId/orgId structure
   // Path follows HbbTV origin format: hbbtv-package://appid.orgid (TS 103 606 Section 9.4.1)
+  std::filesystem::path srcDir = workingDir /
+      std::to_string(m_CandidatePackage.appId) /
+      std::to_string(m_CandidatePackage.orgId);
 
-  m_CandidatePackage.installPath = m_Configuration.m_OpAppInstallDirectory /
-      std::to_string(m_CandidatePackage.appId) / std::to_string(m_CandidatePackage.orgId);
+  std::filesystem::path destDir = m_Configuration.m_OpAppInstallDirectory /
+      std::to_string(m_CandidatePackage.appId) /
+      std::to_string(m_CandidatePackage.orgId);
+
+  // Verify source directory exists
+  if (!std::filesystem::exists(srcDir)) {
+    m_LastErrorMessage = "Source directory does not exist: " + srcDir.string();
+    return false;
+  }
+
+  /*
+   * UPDATE PATTERN (TS 103 606 Section 6.1.8, Freely Spec 7.4):
+   * For updates, the OpApp must not see any files from the update until restarted,
+   * and deletion of old files happens only after restart.
+   *
+   * Future implementation should:
+   * 1. Check if destDir already exists (indicates update scenario)
+   * 2. If update: copy to destDir.pending/ instead of destDir
+   * 3. Save receipt with "pendingInstall" flag
+   * 4. On OpApp restart (separate finalizePendingInstall() method):
+   *    a. Delete existing destDir
+   *    b. Rename destDir.pending → destDir
+   *    c. Update receipt to clear pending flag
+   *
+   * For now, implement first-time install only (direct copy to destDir).
+   */
+
+  std::error_code ec;
+
+  // Ensure parent directories exist
+  std::filesystem::create_directories(destDir.parent_path(), ec);
+  if (ec) {
+    m_LastErrorMessage = "Failed to create install directory: " + ec.message();
+    return false;
+  }
+
+  // Remove destination if it exists (first-time install shouldn't have this,
+  // but handle edge case of failed previous install)
+  if (std::filesystem::exists(destDir)) {
+    std::filesystem::remove_all(destDir, ec);
+    if (ec) {
+      m_LastErrorMessage = "Failed to remove existing install directory: " + ec.message();
+      return false;
+    }
+  }
+
+  // Move the directory (rename is atomic on same filesystem, falls back to copy+delete)
+  std::filesystem::rename(srcDir, destDir, ec);
+  if (ec) {
+    // rename failed (likely cross-device), fall back to copy + remove
+    LOG(INFO) << "Rename failed (" << ec.message() << "), falling back to copy";
+    ec.clear();
+
+    std::filesystem::copy(srcDir, destDir,
+        std::filesystem::copy_options::recursive |
+        std::filesystem::copy_options::overwrite_existing,
+        ec);
+    if (ec) {
+      m_LastErrorMessage = "Failed to copy package to install directory: " + ec.message();
+      return false;
+    }
+
+    // Clean up source after successful copy
+    std::filesystem::remove_all(srcDir, ec);
+    if (ec) {
+      LOG(WARNING) << "Failed to clean up working directory: " << ec.message();
+      // Non-fatal - installation succeeded
+    }
+  }
+
+  // Update candidate package metadata
+  m_CandidatePackage.installPath = destDir;
   m_CandidatePackage.packageHash = m_CandidatePackageHash;
+  m_CandidatePackage.installedUrl = m_CandidatePackage.generateInstalledUrl();
 
   // Generate ISO timestamp for installedAt
   auto now = std::chrono::system_clock::now();
@@ -709,9 +775,9 @@ bool OpAppPackageManager::installToPersistentStorage(const std::filesystem::path
     return false;
   }
 
-  (void)filePath;  // Suppress unused warning until full implementation
-  LOG(INFO) << "Installation receipt saved for package orgId=" << m_CandidatePackage.orgId
-            << ", appId=" << m_CandidatePackage.appId;
+  LOG(INFO) << "Package installed to " << destDir.string()
+            << " (orgId=" << m_CandidatePackage.orgId
+            << ", appId=" << m_CandidatePackage.appId << ")";
   return true;
 }
 
@@ -744,6 +810,7 @@ bool OpAppPackageManager::saveInstallReceipt(const PackageInfo& pkg)
   root["installPath"] = pkg.installPath.string();
   root["packageHash"] = pkg.packageHash;
   root["installedAt"] = pkg.installedAt;
+  root["installedUrl"] = pkg.installedUrl;
 
   // Write to a temporary file first, then rename for atomic write
   std::filesystem::path tempFile = m_Configuration.m_InstallReceiptFilePath;
@@ -812,6 +879,7 @@ bool OpAppPackageManager::loadInstallReceipt(PackageInfo& outPackage) const
   outPackage.installPath = root.get("installPath", "").asString();
   outPackage.installedAt = root.get("installedAt", "").asString();
   outPackage.packageHash = root["packageHash"].asString();
+  outPackage.installedUrl = root.get("installedUrl", "").asString();
   return true;
 }
 
@@ -970,7 +1038,7 @@ bool OpAppPackageManager::downloadPackageFile(const PackageInfo& packageInfo)
   const int retryDelayMax = m_Configuration.m_DownloadRetryDelayMaxSeconds;
   static constexpr const char* EXPECTED_CONTENT_TYPE = "application/vnd.hbbtv.opapp.pkg";
 
-  std::string downloadUrl = packageInfo.getAppUrl();
+  std::string downloadUrl = packageInfo.getPackageUrl();
   if (downloadUrl.empty()) {
     m_LastErrorMessage = "Package URL is empty";
     LOG(ERROR) << "Package download failed: " << m_LastErrorMessage;
@@ -980,9 +1048,9 @@ bool OpAppPackageManager::downloadPackageFile(const PackageInfo& packageInfo)
   LOG(INFO) << "Starting package download from: " << downloadUrl;
 
   // Ensure destination directory exists
-  if (!std::filesystem::exists(m_Configuration.m_DestinationDirectory)) {
+  if (!std::filesystem::exists(m_Configuration.m_WorkingDirectory)) {
     std::error_code ec;
-    std::filesystem::create_directories(m_Configuration.m_DestinationDirectory, ec);
+    std::filesystem::create_directories(m_Configuration.m_WorkingDirectory, ec);
     if (ec) {
       m_LastErrorMessage = "Failed to create destination directory: " + ec.message();
       LOG(ERROR) << "Package download failed: " << m_LastErrorMessage;
@@ -997,7 +1065,7 @@ bool OpAppPackageManager::downloadPackageFile(const PackageInfo& packageInfo)
     filename = "downloaded_package.cms";
   }
   std::filesystem::path downloadedFilePath =
-      m_Configuration.m_DestinationDirectory / filename;
+      m_Configuration.m_WorkingDirectory / filename;
 
   // Random number generator for retry delay
   std::random_device rd;
