@@ -45,7 +45,7 @@ public:
     // Public API methods (same as OpAppPackageManager)
     void start();
     bool isRunning() const;
-    void checkForUpdates();
+    void checkForUpdates(bool isFirstInstall);
     std::string calculateFileSHA256Hash(const std::filesystem::path& filePath) const;
     int searchLocalPackageFiles(std::vector<std::filesystem::path>& outPackageFiles);
     std::string getLastErrorMessage() const;

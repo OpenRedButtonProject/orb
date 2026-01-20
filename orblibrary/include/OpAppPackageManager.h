@@ -136,7 +136,12 @@ public:
   };
 
   // Callback function types for update completion
-  using UpdateSuccessCallback = std::function<void(const std::filesystem::path& packagePath)>;
+  // isFirstInstall: true if this is a first-time install (OpApp not previously installed)
+  //                 false if this is an update (OpApp was already running)
+  // Client should:
+  //   - If isFirstInstall: load the OpApp (call TryLoadOpApp or equivalent)
+  //   - If update: signal to running OpApp that restart is needed (JavaScript API)
+  using UpdateSuccessCallback = std::function<void(const PackageInfo& packageInfo, bool isFirstInstall)>;
   using UpdateFailureCallback = std::function<void(PackageStatus status, const std::string& errorMessage)>;
 
   struct Configuration {
@@ -247,22 +252,17 @@ public:
   bool isOpAppInstalled();
 
   /**
-   * doFirstTimeInstall()
-   *
-   * Attempts a full installation of an OpApp.
-   */
-  void doFirstTimeInstallation();
-
-  /**
-   * checkForUpdates()
+   * checkForUpdates(bool isFirstInstall)
    *
    * Main entry point for checking for updates and installing the package if an update is available.
    * Calls tryLocalUpdate() or tryRemoteUpdate() as appropriate.
    *
+   * @param isFirstInstall true if this is a first-time install (OpApp not previously installed)
+   *                       false if this is an update (OpApp was already running)
    * @return true if an installation completed, otherwise false.
    *
    * Flow:
-   * checkForUpdates()
+   * checkForUpdates(isFirstInstall)
     │
     ├─► tryLocalUpdate()     ─── Check for local package file
     │       │                    (in m_PackageLocation directory)
@@ -280,7 +280,7 @@ public:
             ├─► downloadPackageFile()    ─ Download the package
             └─► installFromPackageFile() ─ Decrypt, verify, unzip, install
    */
-  bool checkForUpdates();
+  bool checkForUpdates(bool isFirstInstall);
 
   /**
    * setOpAppUpdateStatus(OpAppUpdateStatus status)

@@ -830,7 +830,7 @@ TEST_F(OpAppPackageManagerTest, TestTryLocalUpdate_DecryptFailed_CallsFailureCal
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
 
   // WHEN: checking for updates (which runs asynchronously)
-  testInterface->checkForUpdates();
+  testInterface->checkForUpdates(false);  // Not first install - has existing receipt
 
   // Wait for async operation to complete
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -1468,13 +1468,13 @@ TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_NoUpdateAvailable_NoCallback
 
   bool successCallbackCalled = false;
   bool failureCallbackCalled = false;
-  configuration.m_OnUpdateSuccess = [&](const std::string&) { successCallbackCalled = true; };
+  configuration.m_OnUpdateSuccess = [&](const PackageInfo&, bool) { successCallbackCalled = true; };
   configuration.m_OnUpdateFailure = [&](OpAppPackageManager::PackageStatus, const std::string&) { failureCallbackCalled = true; };
 
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
 
   // WHEN: checking for updates when no package file exists
-  testInterface->checkForUpdates();
+  testInterface->checkForUpdates(true);
 
   // THEN: neither callback should be called for DiscoveryFailed
   EXPECT_FALSE(successCallbackCalled);
@@ -1494,7 +1494,7 @@ TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_Installed_NoCallbacksCalled)
 
   bool successCallbackCalled = false;
   bool failureCallbackCalled = false;
-  configuration.m_OnUpdateSuccess = [&](const std::string&) { successCallbackCalled = true; };
+  configuration.m_OnUpdateSuccess = [&](const PackageInfo&, bool) { successCallbackCalled = true; };
   configuration.m_OnUpdateFailure = [&](OpAppPackageManager::PackageStatus, const std::string&) { failureCallbackCalled = true; };
 
   OpAppPackageManager::Dependencies deps;
@@ -1524,7 +1524,7 @@ TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_ConfigurationError_CallsFail
   OpAppPackageManager::PackageStatus failureStatus;
   std::string failureErrorMessage;
 
-  configuration.m_OnUpdateSuccess = [&](const std::string&) { successCallbackCalled = true; };
+  configuration.m_OnUpdateSuccess = [&](const PackageInfo&, bool) { successCallbackCalled = true; };
   configuration.m_OnUpdateFailure = [&](OpAppPackageManager::PackageStatus status, const std::string& errorMessage) {
     failureCallbackCalled = true;
     failureStatus = status;
@@ -1534,7 +1534,7 @@ TEST_F(OpAppPackageManagerTest, TestUpdateCallbacks_ConfigurationError_CallsFail
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
 
   // WHEN: checking for updates with multiple package files (ConfigurationError)
-  testInterface->checkForUpdates();
+  testInterface->checkForUpdates(true);
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
   // THEN: status should be ConfigurationError and failure callback should be called
@@ -2588,10 +2588,11 @@ TEST_F(OpAppPackageManagerTest, DISABLED_IntegrationTest_RealRemoteFetch)
     std::cout << "Update failure callback: status=" << static_cast<int>(status) << ", error=" << error << std::endl;
   };
 
-  configuration.m_OnUpdateSuccess = [&](const std::string& packagePath) {
+  configuration.m_OnUpdateSuccess = [&](const PackageInfo& packageInfo, bool isFirstInstall) {
     finalStatus = OpAppPackageManager::PackageStatus::Installed;
     callbackCalled = true;
-    std::cout << "Update success callback: packagePath=" << packagePath << std::endl;
+    std::cout << "Update success callback: package=" << packageInfo.name
+              << ", isFirstInstall=" << isFirstInstall << std::endl;
   };
 
   OpAppPackageManager packageManager(configuration);

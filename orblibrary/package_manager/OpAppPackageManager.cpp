@@ -119,7 +119,7 @@ void OpAppPackageManager::start()
       // Check if an installation already exists.
       // If so, return.
       if (!isOpAppInstalled()) {
-        doFirstTimeInstallation();
+        checkForUpdates(true /* isFirstInstall */);
       }
       // Keep the worker thread running by adding a small delay
       // This prevents the thread from exiting immediately
@@ -153,14 +153,6 @@ bool OpAppPackageManager::isOpAppInstalled()
   }
 
   return false;
-}
-
-void OpAppPackageManager::doFirstTimeInstallation()
-{
-  // At the moment the same process is used for both first time installation and update.
-  if (checkForUpdates()) {
-    // Update the OpApp URL
-  }
 }
 
 bool OpAppPackageManager::tryLocalUpdate()
@@ -293,7 +285,7 @@ OpAppPackageManager::PackageStatus OpAppPackageManager::installFromPackageFile()
   return PackageStatus::Installed;
 }
 
-bool OpAppPackageManager::checkForUpdates()
+bool OpAppPackageManager::checkForUpdates(bool isFirstInstall)
 {
   // Update and first install is the same operation.
   bool wasInstalled = tryLocalUpdate();
@@ -303,11 +295,10 @@ bool OpAppPackageManager::checkForUpdates()
   }
 
   if (wasInstalled) {
-    LOG(INFO) << "OpApp was successfully installed";
-    // Call success callback
+    LOG(INFO) << "OpApp was successfully installed (isFirstInstall=" << isFirstInstall << ")";
+    // Call success callback with isFirstInstall flag
     if (m_Configuration.m_OnUpdateSuccess) {
-      // Not sure if this is the correct argument to pass to the callback.
-      m_Configuration.m_OnUpdateSuccess(m_CandidatePackageFile);
+      m_Configuration.m_OnUpdateSuccess(m_CandidatePackage, isFirstInstall);
     }
     return true;
   }
