@@ -199,6 +199,64 @@ Utils::CreateLocatorInfo Utils::ParseCreateLocatorInfo(const std::string &url, c
     {
         urlInfo.type = CreateLocatorType::ENTRY_PAGE_OR_XML_AIT_LOCATOR;
     }
+    else if (url.substr(0, 16) == "hbbtv-package://")
+    {
+        // OpApp Package Locator (TS 103 606 Section 9.4.1): hbbtv-package://appid.orgid[/path]
+        // Supports: hbbtv-package://appid.orgid
+        //           hbbtv-package://appid.orgid/index.html
+        //           hbbtv-package://appid.orgid/applications/my-other-application.html
+        // Note: order is appid.orgid (opposite to DVB AIT locator which uses orgid.appid)
+        std::string remainder = url.substr(16);
+
+        // Extract host part (appid.orgid) before any path
+        std::string hostPart = remainder;
+        std::string pathPart = "";
+        size_t slashPos = remainder.find('/');
+        if (slashPos != std::string::npos)
+        {
+            hostPart = remainder.substr(0, slashPos);
+            pathPart = remainder.substr(slashPos);  // Includes leading '/'
+        }
+
+        // Parse appid.orgid from host
+        size_t dotPos = hostPart.find('.');
+        if (dotPos != std::string::npos && dotPos > 0 && dotPos < hostPart.length() - 1)
+        {
+            std::string url_app_id = hostPart.substr(0, dotPos);
+            std::string url_org_id = hostPart.substr(dotPos + 1);
+
+            char *end;
+            errno = 0;
+            urlInfo.appId = std::strtoul(url_app_id.c_str(), &end, 16);
+            if (errno == ERANGE || *end != '\0' || end == url_app_id.c_str())
+            {
+                LOG(ERROR) << "hbbtv-package: failed to convert app_id";
+                urlInfo.type = CreateLocatorType::UNKNOWN_LOCATOR;
+                urlInfo.appId = 0;
+            }
+            else
+            {
+                errno = 0;
+                urlInfo.orgId = std::strtoul(url_org_id.c_str(), &end, 16);
+                if (errno == ERANGE || *end != '\0' || end == url_org_id.c_str())
+                {
+                    LOG(ERROR) << "hbbtv-package: failed to convert org_id";
+                    urlInfo.type = CreateLocatorType::UNKNOWN_LOCATOR;
+                    urlInfo.orgId = 0;
+                }
+                else
+                {
+                    urlInfo.type = CreateLocatorType::OPAPP_PACKAGE_LOCATOR;
+                    urlInfo.parameters = pathPart;  // Path portion (e.g., "/index.html")
+                }
+            }
+        }
+        else
+        {
+            LOG(ERROR) << "hbbtv-package: invalid format, expected appid.orgid";
+            urlInfo.type = CreateLocatorType::UNKNOWN_LOCATOR;
+        }
+    }
     else
     {
         urlInfo.type = CreateLocatorType::UNKNOWN_LOCATOR;
