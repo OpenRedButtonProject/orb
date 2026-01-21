@@ -16,7 +16,6 @@
 #ifndef OP_APP_PACKAGE_MANAGER_H
 #define OP_APP_PACKAGE_MANAGER_H
 
-#include <cstdio>
 #include <string>
 #include <thread>
 #include <atomic>
@@ -82,22 +81,11 @@ struct PackageInfo {
     }
 
     // Construct full package download URL (from AIT transport info)
-    std::string getPackageUrl() const {
-        if (baseUrl.empty()) return "";
-        std::string url = baseUrl;
-        if (!url.empty() && url.back() != '/' && !location.empty() && location.front() != '/') {
-            url += '/';
-        }
-        return url + location;
-    }
+    std::string getPackageUrl() const;
 
     // Generate the installed package origin URL (TS 103 606 Section 9.4.1)
     // Format: hbbtv-package://appid.orgid (hex, lowercase, no leading zeros)
-    std::string generateInstalledUrl() const {
-        char buffer[64];
-        snprintf(buffer, sizeof(buffer), "hbbtv-package://%x.%x", appId, orgId);
-        return std::string(buffer);
-    }
+    std::string generateInstalledUrl() const;
 };
 
 // Type alias for backwards compatibility during transition
@@ -161,8 +149,16 @@ public:
        * FREE-315, FREE-316 Used for local package checking and installation state. */
       std::filesystem::path m_InstallReceiptFilePath;
 
+      /* Path to the mTLS certificate key file (PEM format) - TODO see FREE-320 */
+      std::filesystem::path m_mTlsCertificateKeyFilePath;
+
+      /* Path to the mTLS certificate file (PEM format) - TODO see FREE-320 */
+      std::filesystem::path m_mTlsCertificateFilePath;
+
+      /* Path to the Terminal Packaging Certificate private key (PEM format) */
       std::filesystem::path m_PrivateKeyFilePath;
-      std::filesystem::path m_PublicKeyFilePath;
+
+      /* Path to the Terminal Packaging Certificate (PEM or DER format) */
       std::filesystem::path m_CertificateFilePath;
 
       /* Operator Signing Root CA certificate (PEM format) for signature verification
@@ -468,6 +464,26 @@ private:
    *         On error, sets m_LastErrorMessage.
    */
   bool installToPersistentStorage(const std::filesystem::path& filePath);
+
+  /**
+   * cleanupIntermediateFiles()
+   *
+   * Removes intermediate files from the working directory after installation
+   * (called on both success and failure).
+   *
+   * Files cleaned up:
+   *   - Downloaded package file (opapp.cms)
+   *   - Decrypted file (opapp_decrypted.cms)
+   *   - Extracted ZIP file (opapp_decrypted.zip)
+   *   - Unzipped directory (if still present after failed install)
+   *   - AIT cache directory
+   *
+   * Only install_receipt.json is preserved.
+   */
+  void cleanupIntermediateFiles(
+      const std::filesystem::path& decryptedFile,
+      const std::filesystem::path& zipFile,
+      const std::filesystem::path& unzippedDir);
 
   /**
    * saveInstallReceipt()
