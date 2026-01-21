@@ -591,7 +591,6 @@ TEST_F(OpAppPackageManagerTest, TestConfigurationInitialization)
   // GIVEN: a configuration object with custom values
   auto configuration = createBasicConfiguration();
   configuration.m_PrivateKeyFilePath = "/keys/private.key";
-  configuration.m_PublicKeyFilePath = "/keys/public.key";
   configuration.m_CertificateFilePath = "/certs/cert.pem";
   configuration.m_WorkingDirectory = "/dest";
   configuration.m_OpAppInstallDirectory = "/install";
@@ -1009,7 +1008,8 @@ TEST_F(OpAppPackageManagerTest, TestUnzipPackageFile_Success)
   auto configuration = createBasicConfiguration();
   configuration.m_WorkingDirectory = PACKAGE_PATH + "/work";
   auto testFile = createTestFile("test.zip", "test content");
-  std::filesystem::path outPath = PACKAGE_PATH + "/work/100/12345";
+  // Path uses hex encoding per TS 103 606 Section 9.4.1: appId=100 (0x64), orgId=12345 (0x3039)
+  std::filesystem::path outPath = PACKAGE_PATH + "/work/64/3039";
 
   auto mockUnzipper = std::make_unique<MockUnzipper>();
   mockUnzipper->setUnzipResult(true);
@@ -1074,8 +1074,8 @@ TEST_F(OpAppPackageManagerTest, TestInstallToPersistentStorage_SavesReceipt)
   candidatePkg.location = "index.html";
 
   // Create the source directory structure: <working>/<appId>/<orgId>/
-  std::filesystem::path srcDir = configuration.m_WorkingDirectory /
-      std::to_string(candidatePkg.appId) / std::to_string(candidatePkg.orgId);
+  // Path uses hex encoding per TS 103 606 Section 9.4.1: appId=100 (0x64), orgId=12345 (0x3039)
+  std::filesystem::path srcDir = configuration.m_WorkingDirectory / "64" / "3039";
   std::filesystem::create_directories(srcDir);
 
   // Create some test files in the source directory
@@ -1093,14 +1093,17 @@ TEST_F(OpAppPackageManagerTest, TestInstallToPersistentStorage_SavesReceipt)
   EXPECT_TRUE(result);
   EXPECT_TRUE(std::filesystem::exists(configuration.m_InstallReceiptFilePath));
 
-  // AND: files should be copied to the install directory
-  std::filesystem::path destDir = configuration.m_OpAppInstallDirectory /
-      std::to_string(candidatePkg.appId) / std::to_string(candidatePkg.orgId);
+  // AND: files should be copied to the install directory (hex paths)
+  std::filesystem::path destDir = configuration.m_OpAppInstallDirectory / "64" / "3039";
   EXPECT_TRUE(std::filesystem::exists(destDir / "index.html"));
   EXPECT_TRUE(std::filesystem::exists(destDir / "app.js"));
 
   // AND: source directory should be removed (moved, not copied)
   EXPECT_FALSE(std::filesystem::exists(srcDir));
+
+  // AND: empty parent directory (<working>/64/) should also be removed
+  std::filesystem::path srcParentDir = srcDir.parent_path();
+  EXPECT_FALSE(std::filesystem::exists(srcParentDir));
 
   // AND: the receipt should contain the correct data
   PackageInfo loadedPkg;
@@ -1130,7 +1133,7 @@ TEST_F(OpAppPackageManagerTest, TestInstallToPersistentStorage_FailsWhenSourceMi
   auto testInterface = OpAppPackageManagerTestInterface::create(configuration);
   testInterface->setCandidatePackage(candidatePkg);
 
-  // Note: source directory <working>/100/12345 is NOT created
+  // Note: source directory <working>/64/3039 (hex for 100/12345) is NOT created
 
   // WHEN: installing to persistent storage
   bool result = testInterface->installToPersistentStorage(configuration.m_WorkingDirectory);

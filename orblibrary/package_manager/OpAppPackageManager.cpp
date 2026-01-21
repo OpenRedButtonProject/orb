@@ -23,6 +23,27 @@
 
 namespace orb
 {
+
+// Convert integer to lowercase hex string (no leading zeros, matching TS 103 606 Section 9.4.1)
+static std::string toHexString(uint32_t value) {
+  std::ostringstream oss;
+  oss << std::hex << value;
+  return oss.str();
+}
+
+std::string PackageInfo::getPackageUrl() const {
+  if (baseUrl.empty()) return "";
+  std::string url = baseUrl;
+  if (!url.empty() && url.back() != '/' && !location.empty() && location.front() != '/') {
+    url += '/';
+  }
+  return url + location;
+}
+
+std::string PackageInfo::generateInstalledUrl() const {
+  return "hbbtv-package://" + toHexString(appId) + "." + toHexString(orgId);
+}
+
 static int readJsonField(
   const std::filesystem::path& jsonFilePath,
   const std::string& fieldName,
@@ -241,48 +262,92 @@ bool OpAppPackageManager::tryRemoteUpdate()
 
 OpAppPackageManager::PackageStatus OpAppPackageManager::installFromPackageFile()
 {
-  // Step 1: Decrypt the CMS EnvelopedData to get CMS SignedData
+  // Track intermediate files for cleanup (on both success and failure)
   std::filesystem::path decryptedFile;
+  std::filesystem::path zipFile;
+  std::filesystem::path unzippedDir;
+  PackageStatus result = PackageStatus::Installed;
+
+  // Step 1: Decrypt the CMS EnvelopedData to get CMS SignedData
   if (!decryptPackageFile(m_CandidatePackageFile, decryptedFile)) {
     LOG(ERROR) << "Decryption failed: " << m_LastErrorMessage;
-    return PackageStatus::DecryptionFailed;
+    result = PackageStatus::DecryptionFailed;
   }
-
   // Step 2: Verify signature on CMS SignedData and extract ZIP (TS 103 606 Section 11.3.4.5)
-  std::filesystem::path zipFile;
-  if (!verifySignedPackage(decryptedFile, zipFile)) {
+  else if (!verifySignedPackage(decryptedFile, zipFile)) {
     LOG(ERROR) << "Signature verification failed: " << m_LastErrorMessage;
-    return PackageStatus::VerificationFailed;
+    result = PackageStatus::VerificationFailed;
   }
-
   // Step 3: Verify the extracted ZIP package
-  if (!verifyZipPackage(zipFile)) {
+  else if (!verifyZipPackage(zipFile)) {
     LOG(ERROR) << "Package file verification failed: " << m_LastErrorMessage;
-    return PackageStatus::VerificationFailed;
+    result = PackageStatus::VerificationFailed;
+  }
+  else {
+    setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_UNPACKING);
+
+    // Step 4: Unzip the package to destinationDirectory/appId/orgId
+    // Path follows HbbTV origin format: hbbtv-package://appid.orgid (TS 103 606 Section 9.4.1)
+    // Uses lowercase hex encoding with no leading zeros per spec
+    unzippedDir = m_Configuration.m_WorkingDirectory /
+        toHexString(m_CandidatePackage.appId) /
+        toHexString(m_CandidatePackage.orgId);
+
+    if (!unzipPackageFile(zipFile, unzippedDir)) {
+      LOG(ERROR) << "Unzip failed: " << m_LastErrorMessage;
+      result = PackageStatus::UnzipFailed;
+    }
+    // Step 5: Install to persistent storage (straightforward move from unzip directory)
+    else if (!installToPersistentStorage(m_Configuration.m_WorkingDirectory)) {
+      LOG(ERROR) << "Installation to persistent storage failed: " << m_LastErrorMessage;
+      result = PackageStatus::UpdateFailed;
+    }
   }
 
-  setOpAppUpdateStatus(OpAppUpdateStatus::SOFTWARE_UNPACKING);
+  // Always clean up intermediate files before returning
+  cleanupIntermediateFiles(decryptedFile, zipFile, unzippedDir);
+  return result;
+}
 
-  // Step 4: Unzip the package to destinationDirectory/appId/orgId
-  // Path follows HbbTV origin format: hbbtv-package://appid.orgid (TS 103 606 Section 9.4.1)
-  // This prevents pollution of the destination directory and simplifies
-  // the subsequent installation stage (which becomes a straightforward move)
-  std::filesystem::path unzippedDir = m_Configuration.m_WorkingDirectory /
-      std::to_string(m_CandidatePackage.appId) /
-      std::to_string(m_CandidatePackage.orgId);
+void OpAppPackageManager::cleanupIntermediateFiles(
+    const std::filesystem::path& decryptedFile,
+    const std::filesystem::path& zipFile,
+    const std::filesystem::path& unzippedDir)
+{
+  std::error_code ec;
 
-  if (!unzipPackageFile(zipFile, unzippedDir)) {
-    LOG(ERROR) << "Unzip failed: " << m_LastErrorMessage;
-    return PackageStatus::UnzipFailed;
+  // Helper to remove a file or directory with logging
+  auto tryRemove = [&ec](const std::filesystem::path& path, bool recursive = false) {
+    if (path.empty() || !std::filesystem::exists(path)) {
+      return;
+    }
+    if (recursive) {
+      std::filesystem::remove_all(path, ec);
+    } else {
+      std::filesystem::remove(path, ec);
+    }
+    if (ec) {
+      LOG(WARNING) << "Failed to clean up: " << path << ", error: " << ec.message();
+      ec.clear();
+    }
+  };
+
+  tryRemove(m_CandidatePackageFile);           // Downloaded package (opapp.cms)
+  tryRemove(decryptedFile);                    // Decrypted file (opapp_decrypted.cms)
+  tryRemove(zipFile);                          // Extracted ZIP (opapp_decrypted.zip)
+  tryRemove(unzippedDir, true);                // Unzipped directory (failure case)
+  if (!unzippedDir.empty()) {
+    tryRemove(unzippedDir.parent_path());      // Empty parent directory
   }
 
-  // Step 5: Install to persistent storage (straightforward move from unzip directory)
-  if (!installToPersistentStorage(m_Configuration.m_WorkingDirectory)) {
-    LOG(ERROR) << "Installation to persistent storage failed: " << m_LastErrorMessage;
-    return PackageStatus::UpdateFailed;
+  // Remove AIT cache directory
+  std::filesystem::path aitDir = m_Configuration.m_AitOutputDirectory;
+  if (aitDir.empty()) {
+    aitDir = m_Configuration.m_WorkingDirectory / "ait_cache";
   }
+  tryRemove(aitDir, true);
 
-  return PackageStatus::Installed;
+  LOG(INFO) << "Working directory cleanup completed";
 }
 
 bool OpAppPackageManager::checkForUpdates(bool isFirstInstall)
@@ -682,13 +747,14 @@ bool OpAppPackageManager::installToPersistentStorage(const std::filesystem::path
 {
   // Build source and destination paths using appId/orgId structure
   // Path follows HbbTV origin format: hbbtv-package://appid.orgid (TS 103 606 Section 9.4.1)
+  // Uses lowercase hex encoding with no leading zeros per spec
   std::filesystem::path srcDir = workingDir /
-      std::to_string(m_CandidatePackage.appId) /
-      std::to_string(m_CandidatePackage.orgId);
+      toHexString(m_CandidatePackage.appId) /
+      toHexString(m_CandidatePackage.orgId);
 
   std::filesystem::path destDir = m_Configuration.m_OpAppInstallDirectory /
-      std::to_string(m_CandidatePackage.appId) /
-      std::to_string(m_CandidatePackage.orgId);
+      toHexString(m_CandidatePackage.appId) /
+      toHexString(m_CandidatePackage.orgId);
 
   // Verify source directory exists
   if (!std::filesystem::exists(srcDir)) {
@@ -751,8 +817,18 @@ bool OpAppPackageManager::installToPersistentStorage(const std::filesystem::path
     // Clean up source after successful copy
     std::filesystem::remove_all(srcDir, ec);
     if (ec) {
-      LOG(WARNING) << "Failed to clean up working directory: " << ec.message();
+      LOG(WARNING) << "Failed to clean up source directory: " << ec.message();
       // Non-fatal - installation succeeded
+    }
+  }
+
+  // Clean up empty parent directory (<working>/<appId>/) left after move
+  std::filesystem::path srcParentDir = srcDir.parent_path();
+  if (std::filesystem::exists(srcParentDir) && std::filesystem::is_empty(srcParentDir)) {
+    std::filesystem::remove(srcParentDir, ec);
+    if (ec) {
+      LOG(WARNING) << "Failed to clean up empty parent directory: " << ec.message();
+      // Non-fatal
     }
   }
 
