@@ -84,36 +84,16 @@ public:
     static std::string StrGetUrlOrigin(const std::string &url);
 
     /**
-     * Reverses GURL's IPv4 canonicalization of hbbtv-package:// URLs.
-     *
-     * When hbbtv-package is registered as a standard scheme in Chromium, GURL
-     * interprets "appid.orgid" as an IPv4 address in "a.b" format and canonicalizes
-     * it to "a.x.y.z" where x*65536 + y*256 + z = orgid (as a 24-bit value).
-     *
-     * Example: "hbbtv-package://190.370/" becomes "hbbtv-package://190.0.1.114/"
-     *          because 370 = 0*65536 + 1*256 + 114
-     *
-     * This function reverses that canonicalization to restore the original URL format
-     * required by the OpApp spec (TS 103 606 Section 9.4.1).
-     *
-     * @param url The potentially canonicalized hbbtv-package URL
-     * @return The de-canonicalized URL, or the original URL if not an hbbtv-package URL
-     */
-    static std::string DecanonicalizeHbbtvPackageUrl(const std::string &url);
-
-    /**
-     * Parses an hbbtv-package:// URL into its components, handling GURL's IPv4 canonicalization.
+     * Parses an hbbtv-package:// URL into its components.
      *
      * URL format: hbbtv-package://appid.orgid[/path]
      *
-     * Because hbbtv-package is registered as a standard scheme in Chromium (required for
-     * relative URL resolution), GURL canonicalizes the host as an IPv4 address.
-     * For example, "190.370" becomes "190.0.1.114". This function reverses that
-     * canonicalization and extracts the original app_id and org_id values.
+     * With hbbtv-package registered as SCHEME_WITH_OPAQUE_HOST, GURL preserves
+     * the host verbatim (no IPv4 canonicalization), so parsing is straightforward.
      *
-     * @param url The hbbtv-package URL (may be canonicalized)
-     * @param app_id Output: the application ID (decimal string, e.g., "190")
-     * @param org_id Output: the organization ID (decimal string, e.g., "370")
+     * @param url The hbbtv-package URL
+     * @param app_id Output: the application ID (hex string, e.g., "190")
+     * @param org_id Output: the organization ID (hex string, e.g., "370")
      * @param path Output: the resource path (without leading slash), empty if none
      * @return true if parsing succeeded, false otherwise
      */

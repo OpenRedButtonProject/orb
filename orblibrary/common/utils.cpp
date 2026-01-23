@@ -567,64 +567,6 @@ bool Utils::Timeout::isStopped() const
     return m_stopped;
 }
 
-/**
- * Reverses GURL's IPv4 canonicalization of hbbtv-package:// URLs.
- */
-std::string Utils::DecanonicalizeHbbtvPackageUrl(const std::string &url)
-{
-    const std::string prefix = "hbbtv-package://";
-    if (url.substr(0, prefix.length()) != prefix)
-    {
-        return url;  // Not an hbbtv-package URL
-    }
-
-    // Extract host (everything between :// and the next /)
-    size_t hostStart = prefix.length();
-    size_t hostEnd = url.find('/', hostStart);
-    std::string host = (hostEnd == std::string::npos)
-        ? url.substr(hostStart)
-        : url.substr(hostStart, hostEnd - hostStart);
-    std::string pathAndRest = (hostEnd == std::string::npos) ? "" : url.substr(hostEnd);
-
-    // Count dots to determine if canonicalized (4 parts) or original (2 parts)
-    int dotCount = 0;
-    for (char c : host)
-    {
-        if (c == '.') dotCount++;
-    }
-
-    if (dotCount != 3)
-    {
-        // Not a canonicalized IPv4 format (a.b.c.d), but still ensure trailing slash
-        if (pathAndRest.empty()) {
-            return url + "/";
-        }
-        return url;
-    }
-
-    // Parse as IPv4: a.b.c.d
-    unsigned int a, b, c, d;
-    if (sscanf(host.c_str(), "%u.%u.%u.%u", &a, &b, &c, &d) != 4)
-    {
-        return url;  // Failed to parse as IPv4
-    }
-
-    // Reconstruct the original org_id from the 24-bit value (b*65536 + c*256 + d)
-    unsigned int originalOrgId = b * 65536 + c * 256 + d;
-
-    // Build de-canonicalized URL: hbbtv-package://appid.orgid[/path]
-    std::string result = prefix + std::to_string(a) + "." + std::to_string(originalOrgId) + pathAndRest;
-
-    // Ensure trailing slash for root URLs (when path is empty)
-    // This matches how Chromium normalizes standard scheme URLs
-    if (pathAndRest.empty()) {
-        result += "/";
-    }
-
-    LOG(INFO) << "DecanonicalizeHbbtvPackageUrl: " << url << " -> " << result;
-    return result;
-}
-
 bool Utils::ParseHbbtvPackageUrl(const std::string &url,
                                  std::string *app_id,
                                  std::string *org_id,
@@ -640,6 +582,7 @@ bool Utils::ParseHbbtvPackageUrl(const std::string &url,
     }
 
     // Extract host and path from URL
+    // Format: hbbtv-package://appid.orgid[/path]
     size_t hostStart = prefix.length();
     size_t hostEnd = url.find('/', hostStart);
     std::string host = (hostEnd == std::string::npos)
@@ -664,45 +607,16 @@ bool Utils::ParseHbbtvPackageUrl(const std::string &url,
         return false;
     }
 
-    // Count dots to determine if this is a canonicalized IPv4 (4 parts) or original (2 parts)
-    int dotCount = 0;
-    for (char c : host)
+    // Parse appid.orgid format (with SCHEME_WITH_OPAQUE_HOST, host is preserved verbatim)
+    size_t dotPos = host.find('.');
+    if (dotPos == std::string::npos || dotPos == 0 || dotPos == host.length() - 1)
     {
-        if (c == '.') dotCount++;
-    }
-
-    if (dotCount == 1)
-    {
-        // Original format: appid.orgid (not canonicalized)
-        size_t dotPos = host.find('.');
-        if (app_id != nullptr) *app_id = host.substr(0, dotPos);
-        if (org_id != nullptr) *org_id = host.substr(dotPos + 1);
-    }
-    else if (dotCount == 3)
-    {
-        // Canonicalized IPv4 format: a.b.c.d
-        // Reverse the canonicalization: a -> app_id, (b*65536 + c*256 + d) -> org_id
-        unsigned int a, b, c, d;
-        if (sscanf(host.c_str(), "%u.%u.%u.%u", &a, &b, &c, &d) != 4)
-        {
-            LOG(ERROR) << "ParseHbbtvPackageUrl: failed to parse IPv4 host: " << host;
-            return false;
-        }
-
-        unsigned int originalOrgId = b * 65536 + c * 256 + d;
-
-        if (app_id != nullptr) *app_id = std::to_string(a);
-        if (org_id != nullptr) *org_id = std::to_string(originalOrgId);
-
-        LOG(INFO) << "ParseHbbtvPackageUrl: de-canonicalized " << host
-                  << " -> app_id=" << (app_id ? *app_id : "null")
-                  << ", org_id=" << (org_id ? *org_id : "null");
-    }
-    else
-    {
-        LOG(ERROR) << "ParseHbbtvPackageUrl: invalid host format (expected 1 or 3 dots): " << host;
+        LOG(ERROR) << "ParseHbbtvPackageUrl: invalid host format (expected appid.orgid): " << host;
         return false;
     }
+
+    if (app_id != nullptr) *app_id = host.substr(0, dotPos);
+    if (org_id != nullptr) *org_id = host.substr(dotPos + 1);
 
     return true;
 }

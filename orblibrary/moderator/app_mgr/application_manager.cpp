@@ -399,9 +399,13 @@ std::string ApplicationManager::GetApplicationUrl(int appId)
     BaseApp* app = getAppById(appId);
     if (app)
     {
-        // De-canonicalize hbbtv-package URLs to reverse GURL's IPv4 canonicalization.
-        // This ensures JavaScript sees the original URL format (e.g., 190.370 not 190.0.1.114)
-        std::string url = Utils::DecanonicalizeHbbtvPackageUrl(app->GetLoadedUrl());
+        std::string url = app->GetLoadedUrl();
+        // GURL normalizes standard scheme URLs to have a trailing slash for root paths.
+        // Ensure stored URLs match this format for proper comparison with document.documentURI.
+        if (!url.empty() && url.back() != '/' && url.find('/', url.find("://") + 3) == std::string::npos)
+        {
+            url += '/';
+        }
         LOG(INFO) << "GetApplicationUrl(" << appId << "): " << url;
         return url;
     }
