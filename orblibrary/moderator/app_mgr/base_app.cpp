@@ -39,14 +39,14 @@ BaseApp::BaseApp(const ApplicationType type, const std::string &url, Application
     : m_sessionCallback(sessionCallback)
     , m_type(type)
     , m_id(++g_id)
-    , m_loadedUrl(url)
-{}
+{
+    SetLoadedUrl(url);
+}
 
 BaseApp::BaseApp(ApplicationType type, ApplicationSessionCallback *sessionCallback)
     : m_sessionCallback(sessionCallback)
     , m_type(type)
     , m_id(++g_id)
-    , m_loadedUrl("")
 {}
 
 ApplicationType BaseApp::GetType() const

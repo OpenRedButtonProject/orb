@@ -41,7 +41,8 @@ std::string PackageInfo::getPackageUrl() const {
 }
 
 std::string PackageInfo::generateInstalledUrl() const {
-  return "hbbtv-package://" + toHexString(appId) + "." + toHexString(orgId);
+  // Include trailing slash to match browser-normalized root URLs
+  return "hbbtv-package://" + toHexString(appId) + "." + toHexString(orgId) + "/";
 }
 
 static int readJsonField(
@@ -389,8 +390,15 @@ OpAppPackageManager::OpAppUpdateStatus OpAppPackageManager::getOpAppUpdateStatus
   return m_UpdateStatus.load();
 }
 
+// #define TEST_OPAPP_URL "http://10.0.2.2:8080/index.html"
+// #define TEST_OPAPP_URL "hbbtv-package://123.456/index.html"
+// #define TEST_OPAPP_URL "https://taco.freeviewplay.tv/"
+
 std::string OpAppPackageManager::getOpAppUrl() const
 {
+#ifdef TEST_OPAPP_URL
+  return TEST_OPAPP_URL;
+#else
   // Return the origin URL of the installed OpApp (TS 103 606 Section 9.4.1)
   // Format: hbbtv-package://appid.orgid
   PackageInfo installedPkg;
@@ -398,6 +406,7 @@ std::string OpAppPackageManager::getOpAppUrl() const
     return "";  // No package installed
   }
   return installedPkg.installedUrl;
+#endif
 }
 
 OpAppPackageManager::PackageStatus OpAppPackageManager::doLocalPackageCheck()
