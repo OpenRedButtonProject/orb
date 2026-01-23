@@ -39,14 +39,14 @@ BaseApp::BaseApp(const ApplicationType type, const std::string &url, Application
     : m_sessionCallback(sessionCallback)
     , m_type(type)
     , m_id(++g_id)
-    , m_loadedUrl(url)
-{}
+{
+    SetLoadedUrl(url);
+}
 
 BaseApp::BaseApp(ApplicationType type, ApplicationSessionCallback *sessionCallback)
     : m_sessionCallback(sessionCallback)
     , m_type(type)
     , m_id(++g_id)
-    , m_loadedUrl("")
 {}
 
 ApplicationType BaseApp::GetType() const
@@ -77,6 +77,14 @@ std::string BaseApp::GetLoadedUrl() const
 void BaseApp::SetLoadedUrl(const std::string& url)
 {
     m_loadedUrl = url;
+    // Browsers normalize root URLs to include a trailing slash (e.g., "https://example.com" becomes
+    // "https://example.com/"). Ensure stored URLs match this format for proper comparison with
+    // document.documentURI.
+    if (!m_loadedUrl.empty() && m_loadedUrl.back() != '/' &&
+        m_loadedUrl.find('/', m_loadedUrl.find("://") + 3) == std::string::npos)
+    {
+        m_loadedUrl += '/';
+    }
 }
 
 // Needs testing!

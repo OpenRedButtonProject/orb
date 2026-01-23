@@ -1116,7 +1116,7 @@ TEST_F(OpAppPackageManagerTest, TestInstallToPersistentStorage_SavesReceipt)
   EXPECT_EQ(loadedPkg.installPath, destDir);
   EXPECT_FALSE(loadedPkg.installedAt.empty());
   // installedUrl: appId=100 (0x64), orgId=12345 (0x3039)
-  EXPECT_EQ(loadedPkg.installedUrl, "hbbtv-package://64.3039");
+  EXPECT_EQ(loadedPkg.installedUrl, "hbbtv-package://64.3039/");
 }
 
 TEST_F(OpAppPackageManagerTest, TestInstallToPersistentStorage_FailsWhenSourceMissing)
@@ -1263,7 +1263,7 @@ TEST_F(OpAppPackageManagerTest, TestGetOpAppUrl_ReturnsInstalledUrl)
     "appId": 100,
     "xmlVersion": 1,
     "name": "Test App",
-    "installedUrl": "hbbtv-package://64.3039"
+    "installedUrl": "hbbtv-package://64.3039/"
   })";
   receiptFile.close();
 
@@ -1273,7 +1273,7 @@ TEST_F(OpAppPackageManagerTest, TestGetOpAppUrl_ReturnsInstalledUrl)
   std::string url = testInterface->getPackageManager().getOpAppUrl();
 
   // THEN: should return the installed URL from the receipt
-  EXPECT_EQ(url, "hbbtv-package://64.3039");
+  EXPECT_EQ(url, "hbbtv-package://64.3039/");
 }
 
 TEST_F(OpAppPackageManagerTest, TestGetOpAppUrl_ReturnsEmptyWhenNoReceipt)
@@ -1993,22 +1993,22 @@ TEST_F(OpAppPackageManagerTest, TestPackageInfo_GenerateInstalledUrl)
   // WHEN: appId=100 (0x64), orgId=12345 (0x3039)
   pkg.appId = 100;
   pkg.orgId = 12345;
-  EXPECT_EQ(pkg.generateInstalledUrl(), "hbbtv-package://64.3039");
+  EXPECT_EQ(pkg.generateInstalledUrl(), "hbbtv-package://64.3039/");
 
   // WHEN: small values (no leading zeros in hex)
   pkg.appId = 1;
   pkg.orgId = 16;  // 0x10
-  EXPECT_EQ(pkg.generateInstalledUrl(), "hbbtv-package://1.10");
+  EXPECT_EQ(pkg.generateInstalledUrl(), "hbbtv-package://1.10/");
 
   // WHEN: values that would have uppercase in hex
   pkg.appId = 171;   // 0xab
   pkg.orgId = 43981; // 0xabcd
-  EXPECT_EQ(pkg.generateInstalledUrl(), "hbbtv-package://ab.abcd");
+  EXPECT_EQ(pkg.generateInstalledUrl(), "hbbtv-package://ab.abcd/");
 
   // WHEN: max uint16_t appId
   pkg.appId = 65535; // 0xffff
   pkg.orgId = 255;   // 0xff
-  EXPECT_EQ(pkg.generateInstalledUrl(), "hbbtv-package://ffff.ff");
+  EXPECT_EQ(pkg.generateInstalledUrl(), "hbbtv-package://ffff.ff/");
 }
 
 TEST_F(OpAppPackageManagerTest, TestDoRemotePackageCheck_ValidAit_ReturnsUpdateAvailable)

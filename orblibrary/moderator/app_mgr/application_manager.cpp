@@ -157,6 +157,13 @@ int ApplicationManager::CreateApplication(int callingAppId, const std::string &u
             break;
         }
 
+        case Utils::CreateLocatorType::OPAPP_PACKAGE_LOCATOR:
+        {
+            LOG(INFO) << "Create for OPAPP_PACKAGE_LOCATOR (url=" << url << ")";
+            result = CreateAndRunApp(url, true);
+            break;
+        }
+
         case Utils::CreateLocatorType::UNKNOWN_LOCATOR:
         {
             LOG(INFO) << "Do not create for UNKNOWN_LOCATOR (url=" << url << ")";
@@ -392,8 +399,9 @@ std::string ApplicationManager::GetApplicationUrl(int appId)
     BaseApp* app = getAppById(appId);
     if (app)
     {
-        LOG(INFO) << "GetApplicationUrl(" << appId << "): " << app->GetLoadedUrl();
-        return app->GetLoadedUrl();
+        std::string url = app->GetLoadedUrl();
+        LOG(INFO) << "GetApplicationUrl(" << appId << "): " << url;
+        return url;
     }
     return std::string();
 }

@@ -41,7 +41,8 @@ public:
     {
         UNKNOWN_LOCATOR,
         AIT_APPLICATION_LOCATOR,
-        ENTRY_PAGE_OR_XML_AIT_LOCATOR
+        ENTRY_PAGE_OR_XML_AIT_LOCATOR,
+        OPAPP_PACKAGE_LOCATOR  // hbbtv-package://appid.orgid (TS 103 606 Section 9.4.1)
     };
 
     typedef struct
@@ -83,10 +84,39 @@ public:
     static std::string StrGetUrlOrigin(const std::string &url);
 
     /**
+     * Parses an hbbtv-package:// URL into its components.
      *
-     * @param url
-     * @param currentService
-     * @return
+     * URL format: hbbtv-package://appid.orgid[/path]
+     *
+     * With hbbtv-package registered as SCHEME_WITH_OPAQUE_HOST, GURL preserves
+     * the host verbatim (no IPv4 canonicalization), so parsing is straightforward.
+     *
+     * @param url The hbbtv-package URL
+     * @param app_id Output: the application ID (hex string, e.g., "190")
+     * @param org_id Output: the organization ID (hex string, e.g., "370")
+     * @param path Output: the resource path (without leading slash), empty if none
+     * @return true if parsing succeeded, false otherwise
+     */
+    static bool ParseHbbtvPackageUrl(const std::string &url,
+                                     std::string *app_id,
+                                     std::string *org_id,
+                                     std::string *path);
+
+    /**
+     * Parses HbbTV/DVB application locator URLs and extracts application metadata.
+     *
+     * Handles four URL formats:
+     * - DVB AIT Application Locator (TS 102 851): dvb://[onid.tsid.]sid.ait/orgId.appId[?params][#fragment]
+     *   or dvb://current.ait/orgId.appId - validates the AIT filter matches currentService
+     * - OpApp Package Locator (TS 103 606 Section 9.4.1): hbbtv-package://appid.orgid[/path]
+     *   where appid and orgid are lowercase hex with no leading zeros; path stored in parameters
+     * - HTTP/HTTPS URLs: marked as ENTRY_PAGE_OR_XML_AIT_LOCATOR
+     * - Other schemes: marked as UNKNOWN_LOCATOR
+     *
+     * @param url The URL to parse
+     * @param currentService The DVB triplet of the currently tuned service, used to validate
+     *                       that DVB AIT locators reference the current broadcast context
+     * @return CreateLocatorInfo containing the locator type, orgId, appId, and any URL parameters
      */
     static Utils::CreateLocatorInfo ParseCreateLocatorInfo(const std::string &url, const
         Utils::S_DVB_TRIPLET &currentService);

@@ -199,6 +199,43 @@ Utils::CreateLocatorInfo Utils::ParseCreateLocatorInfo(const std::string &url, c
     {
         urlInfo.type = CreateLocatorType::ENTRY_PAGE_OR_XML_AIT_LOCATOR;
     }
+    else if (url.substr(0, 16) == "hbbtv-package://")
+    {
+        // OpApp Package Locator (TS 103 606 Section 9.4.1): hbbtv-package://appid.orgid[/path]
+        // Note: order is appid.orgid (opposite to DVB AIT locator which uses orgid.appid)
+        std::string app_id_str, org_id_str, path;
+        if (ParseHbbtvPackageUrl(url, &app_id_str, &org_id_str, &path))
+        {
+            char *end;
+            errno = 0;
+            urlInfo.appId = std::strtoul(app_id_str.c_str(), &end, 16);
+            if (errno == ERANGE || *end != '\0' || end == app_id_str.c_str())
+            {
+                LOG(ERROR) << "hbbtv-package: failed to convert app_id";
+                urlInfo.type = CreateLocatorType::UNKNOWN_LOCATOR;
+            }
+            else
+            {
+                errno = 0;
+                urlInfo.orgId = std::strtoul(org_id_str.c_str(), &end, 16);
+                if (errno == ERANGE || *end != '\0' || end == org_id_str.c_str())
+                {
+                    LOG(ERROR) << "hbbtv-package: failed to convert org_id";
+                    urlInfo.type = CreateLocatorType::UNKNOWN_LOCATOR;
+                }
+                else
+                {
+                    urlInfo.type = CreateLocatorType::OPAPP_PACKAGE_LOCATOR;
+                    // ParseHbbtvPackageUrl strips leading '/', add it back for consistency
+                    urlInfo.parameters = path.empty() ? "" : "/" + path;
+                }
+            }
+        }
+        else
+        {
+            urlInfo.type = CreateLocatorType::UNKNOWN_LOCATOR;
+        }
+    }
     else
     {
         urlInfo.type = CreateLocatorType::UNKNOWN_LOCATOR;
@@ -507,6 +544,60 @@ bool Utils::Timeout::isStopped() const
 {
     std::lock_guard<std::mutex> lock(m_cvm);
     return m_stopped;
+}
+
+bool Utils::ParseHbbtvPackageUrl(const std::string &url,
+                                 std::string *app_id,
+                                 std::string *org_id,
+                                 std::string *path)
+{
+    const std::string prefix = "hbbtv-package://";
+
+    // Validate scheme
+    if (url.find(prefix) != 0)
+    {
+        LOG(ERROR) << "ParseHbbtvPackageUrl: not an hbbtv-package URL: " << url;
+        return false;
+    }
+
+    // Extract host and path from URL
+    // Format: hbbtv-package://appid.orgid[/path]
+    size_t hostStart = prefix.length();
+    size_t hostEnd = url.find('/', hostStart);
+    std::string host = (hostEnd == std::string::npos)
+        ? url.substr(hostStart)
+        : url.substr(hostStart, hostEnd - hostStart);
+
+    if (path != nullptr)
+    {
+        if (hostEnd == std::string::npos || hostEnd + 1 >= url.length())
+        {
+            *path = "";
+        }
+        else
+        {
+            *path = url.substr(hostEnd + 1);  // Skip leading '/'
+        }
+    }
+
+    if (host.empty())
+    {
+        LOG(ERROR) << "ParseHbbtvPackageUrl: host is empty";
+        return false;
+    }
+
+    // Parse appid.orgid format (with SCHEME_WITH_OPAQUE_HOST, host is preserved verbatim)
+    size_t dotPos = host.find('.');
+    if (dotPos == std::string::npos || dotPos == 0 || dotPos == host.length() - 1)
+    {
+        LOG(ERROR) << "ParseHbbtvPackageUrl: invalid host format (expected appid.orgid): " << host;
+        return false;
+    }
+
+    if (app_id != nullptr) *app_id = host.substr(0, dotPos);
+    if (org_id != nullptr) *org_id = host.substr(dotPos + 1);
+
+    return true;
 }
 
 } // namespace orb
