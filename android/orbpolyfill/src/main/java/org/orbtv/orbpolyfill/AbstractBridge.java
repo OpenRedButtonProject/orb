@@ -1041,6 +1041,26 @@ public abstract class AbstractBridge {
     protected abstract int Configuration_getExtraUHDVideoDecodes(BridgeToken token);
 
     /**
+     * Get the maximum (static) broadband media decoding capabilities for the indicated decoder.
+     * This method is defined in HBBTV-TA-1 v1.1.1 A.2.2.
+     * <p>
+     * Media decoders are numbered from 1 increasing in steps of 1 up to the total number of
+     * media decoders in the terminal. Decoders are ordered in decreasing capabilities (UHD before
+     * HD, HD before SD). If decoderIndex is greater than the number of media decoders then null
+     * shall be returned.
+     * <p>
+     * Each String returned shall be one of the video_profile elements returned by xmlCapabilities.
+     *
+     * @param token The token associated with this request.
+     * @param decoderIndex The decoder index (1-based, starting from 1).
+     *
+     * @return A list of video profile names (strings) for the decoder, or null if decoderIndex
+     *         is greater than the number of decoders. Each string shall be one of the video_profile
+     *         elements returned by xmlCapabilities.
+     */
+    protected abstract List<String> Configuration_getBroadbandCapabilities(BridgeToken token, int decoderIndex);
+
+    /**
      * Get certain immutable information about the system.
      *
      * @param token The token associated with this request.
@@ -1912,6 +1932,19 @@ public abstract class AbstractBridge {
                         token
                 );
                 response.put("result", result);
+                break;
+            }
+
+            case "Configuration.getBroadbandCapabilities": {
+                List<String> result = Configuration_getBroadbandCapabilities(
+                        token,
+                        params.getInt("decoderIndex")
+                );
+                if (result == null) {
+                    response.put("result", JSONObject.NULL);
+                } else {
+                    response.put("result", new JSONArray(result));
+                }
                 break;
             }
 

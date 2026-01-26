@@ -145,6 +145,48 @@ hbbtv.objects.OipfCapabilities = (function() {
         return gSharedProfileNames.includes(profileName);
     };
 
+    /**
+     * Specifications:
+     * HBBTV-TA-1 v1.1.1 A.2.2 (StringCollection broadbandCapabilities( Number decoderIndex )).
+     * <p>
+     * Returns the maximum (static) broadband media decoding capabilities for the indicated decoder.
+     * These may not be available at a particular moment in time. A dynamic indication of what is
+     * available is provided by the properties extraSDVideoDecodes, extraHDVideoDecodes and
+     * extraUHDVideoDecodes. This method shall only return stream decoding capabilities and shall
+     * ignore a terminal's capabilities to output streams simultaneously.
+     * <p>
+     * Media decoders shall be numbered from 1 increasing in steps of 1 up to the total number of
+     * media decoders in the terminal. If decoderIndex is greater than the number of media decoders
+     * then null shall be returned. Decoders shall be ordered in decreasing capabilities, i.e. decoders
+     * supporting UHD shall be listed before those not supporting UHD and decoders supporting HD
+     * shall be listed before those not supporting HD.
+     * <p>
+     * Each String returned shall be one of the &lt;video_profile&gt; elements returned by the
+     * xmlCapabilities property.
+     * <p>
+     * Security: none.
+     *
+     * @param {number} decoderIndex - The decoder index (1-based, starting from 1)
+     * @returns {Object|null} A StringCollection of XML strings representing video_profile elements
+     *                        for the decoder, or null if decoderIndex is greater than the number of decoders
+     *
+     * @method
+     * @memberof OipfCapabilities#
+     */
+    prototype.broadbandCapabilities = function(decoderIndex) {
+        if (typeof decoderIndex !== 'number' || decoderIndex < 1 || !Number.isInteger(decoderIndex)) {
+            return null;
+        }
+
+        const profileXmlStrings = hbbtv.bridge.configuration.getBroadbandCapabilities(decoderIndex);
+        if (profileXmlStrings === null || profileXmlStrings === undefined) {
+            return null;
+        }
+
+        // Convert array of XML strings to StringCollection
+        return hbbtv.objects.createCollection(profileXmlStrings);
+    };
+
     function createXmlCapabilities() {
         const capabilities = hbbtv.bridge.configuration.getCapabilities();
         const audioProfiles = hbbtv.bridge.configuration.getAudioProfiles();
@@ -191,6 +233,22 @@ hbbtv.objects.OipfCapabilities = (function() {
         // temporalClipping
         const temporalClippingElement = doc.createElementNS(ns, 'temporalClipping');
         extElement.appendChild(temporalClippingElement);
+
+        // ta (Test Application profiles for HbbTV-TA)
+        const taElement = doc.createElementNS(ns, 'ta');
+        taElement.setAttribute('version', '1.1.1');
+        
+        // Add profile 2019:1 (basic profile)
+        const profile1Element = doc.createElementNS(ns, 'profile');
+        profile1Element.appendChild(doc.createTextNode('urn:hbbtv:ta:profile:2019:1'));
+        taElement.appendChild(profile1Element);
+        
+        // Add profile 2019:2 (enhanced profile)
+        const profile2Element = doc.createElementNS(ns, 'profile');
+        profile2Element.appendChild(doc.createTextNode('urn:hbbtv:ta:profile:2019:2'));
+        taElement.appendChild(profile2Element);
+        
+        extElement.appendChild(taElement);
 
         // graphicsPerformance
         if (typeof capabilities.graphicsLevels === 'object') {
