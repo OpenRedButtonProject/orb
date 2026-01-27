@@ -996,9 +996,36 @@ bool OpAppPackageManager::validateOpAppDescriptor(const Ait::S_AIT_APP_DESC& app
     return false;
   }
 
-  if (app.transportArray[0].protocolId != Ait::PROTOCOL_HTTP) {
-    outError = "Unexpected transport protocol: " + std::to_string(app.transportArray[0].protocolId) +
+  const Ait::S_TRANSPORT_PROTOCOL_DESC &transportDesc = app.transportArray[0];
+  if (transportDesc.protocolId != Ait::PROTOCOL_HTTP) {
+    outError = "Unexpected transport protocol: " + std::to_string(transportDesc.protocolId) +
                " expected HTTPTransportType (0x3)";
+    LOG(WARNING) << "AIT validation failed: " << outError;
+    return false;
+  }
+
+  /* Freely Spec 6.8.6 validate against the maximum length (2048 bytes)
+   * of the URLBase and applicationLocation fields.
+   * This is a security requirement to prevent DOS attacks. */
+  const size_t urlBaseLength = transportDesc.url.baseUrl.length();
+  if (urlBaseLength > 2048) {
+    outError = "URLBase exceeds maximum length (2048): "
+      + std::to_string(urlBaseLength);
+    LOG(WARNING) << "AIT validation failed: " << outError;
+    return false;
+  }
+
+  const size_t locationLength = app.location.length();
+  if (locationLength > 2048) {
+    outError = "applicationLocation exceeds maximum length (2048): "
+      + std::to_string(locationLength);
+    LOG(WARNING) << "AIT validation failed: " << outError;
+    return false;
+  }
+
+  if (urlBaseLength + locationLength > 2048) {
+    outError = "URLBase + applicationLocation exceeds maximum length (2048): "
+      + std::to_string(urlBaseLength + locationLength);
     LOG(WARNING) << "AIT validation failed: " << outError;
     return false;
   }
