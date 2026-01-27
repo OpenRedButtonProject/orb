@@ -2688,3 +2688,89 @@ TEST_F(OpAppPackageManagerTest, IntegrationTest_RealRemoteFetch)
   std::cout << "Package manager finished running" << std::endl;
   EXPECT_TRUE(lastError.empty()) << "Failed to install package: " << lastError;
 }
+
+// Freely Spec 6.8.6 – URLBase and applicationLocation length limits (2048 bytes)
+TEST_F(OpAppPackageManagerTest, TestParseAitFiles_URLBaseExceeds2048_Rejected)
+{
+  auto configuration = createBasicConfiguration();
+  std::string longUrlBase(2049, 'a');
+  auto aitXmlPath = createTestFile("long_urlbase_ait.xml",
+      createValidOpAppAitXml(12345, 1, "Test OpApp", longUrlBase, "index.html"));
+
+  OpAppPackageManager::Dependencies deps;
+  deps.xmlParser = std::make_unique<XmlParser>();
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
+
+  std::vector<PackageInfo> packages;
+  bool result = testInterface->parseAitFiles({aitXmlPath}, packages);
+
+  EXPECT_FALSE(result);
+  EXPECT_TRUE(packages.empty());
+  EXPECT_NE(testInterface->getLastErrorMessage().find("URLBase exceeds maximum length (2048)"),
+            std::string::npos);
+}
+
+TEST_F(OpAppPackageManagerTest, TestParseAitFiles_ApplicationLocationExceeds2048_Rejected)
+{
+  auto configuration = createBasicConfiguration();
+  std::string longLocation(2049, 'b');
+  auto aitXmlPath = createTestFile("long_location_ait.xml",
+      createValidOpAppAitXml(12345, 1, "Test OpApp", "https://test.example.com/", longLocation));
+
+  OpAppPackageManager::Dependencies deps;
+  deps.xmlParser = std::make_unique<XmlParser>();
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
+
+  std::vector<PackageInfo> packages;
+  bool result = testInterface->parseAitFiles({aitXmlPath}, packages);
+
+  EXPECT_FALSE(result);
+  EXPECT_TRUE(packages.empty());
+  EXPECT_NE(testInterface->getLastErrorMessage().find(
+                "applicationLocation exceeds maximum length (2048)"),
+            std::string::npos);
+}
+
+TEST_F(OpAppPackageManagerTest, TestParseAitFiles_URLBasePlusLocationExceeds2048_Rejected)
+{
+  auto configuration = createBasicConfiguration();
+  std::string urlBase(1500, 'a');
+  std::string location(600, 'b');  // 1500 + 600 = 2100 > 2048
+  auto aitXmlPath = createTestFile("sum_exceeds_ait.xml",
+      createValidOpAppAitXml(12345, 1, "Test OpApp", urlBase, location));
+
+  OpAppPackageManager::Dependencies deps;
+  deps.xmlParser = std::make_unique<XmlParser>();
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
+
+  std::vector<PackageInfo> packages;
+  bool result = testInterface->parseAitFiles({aitXmlPath}, packages);
+
+  EXPECT_FALSE(result);
+  EXPECT_TRUE(packages.empty());
+  EXPECT_NE(testInterface->getLastErrorMessage().find(
+                "URLBase + applicationLocation exceeds maximum length (2048)"),
+            std::string::npos);
+}
+
+TEST_F(OpAppPackageManagerTest, TestParseAitFiles_URLBaseAndLocationWithin2048_Accepted)
+{
+  auto configuration = createBasicConfiguration();
+  std::string urlBase(2048, 'a');  // exactly 2048 bytes
+  std::string location("");
+  auto aitXmlPath = createTestFile("boundary_2048_ait.xml",
+      createValidOpAppAitXml(12345, 1, "Test OpApp", urlBase, location));
+
+  OpAppPackageManager::Dependencies deps;
+  deps.xmlParser = std::make_unique<XmlParser>();
+  auto testInterface = OpAppPackageManagerTestInterface::create(configuration, std::move(deps));
+
+  std::vector<PackageInfo> packages;
+  bool result = testInterface->parseAitFiles({aitXmlPath}, packages);
+
+  EXPECT_TRUE(result) << "Freely 6.8.6: descriptor with URLBase length 2048 should be accepted";
+  ASSERT_EQ(packages.size(), size_t(1));
+  EXPECT_EQ(packages[0].orgId, uint32_t(12345));
+  EXPECT_EQ(packages[0].baseUrl.size(), size_t(2048));
+  EXPECT_EQ(packages[0].location, "");
+}
