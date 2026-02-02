@@ -21,6 +21,7 @@ class OrbSession implements IOrbSession {
     private ApplicationManager mApplicationManager;
     private OrbSessionFactory.Configuration mConfiguration;
     private MediaSynchroniserManager mMediaSynchroniserManager;
+    private MediaSwitcherManager mMediaSwitcherManager;
     private JsonRpc mJsonRpc;
     private Bridge mBridge;
     private BrowserView mBrowserView;
@@ -43,6 +44,7 @@ class OrbSession implements IOrbSession {
         Log.d(TAG, "ORB HbbTV Version: " + mOrbHbbTVVersion);
 
         mMediaSynchroniserManager = new MediaSynchroniserManager(configuration);
+        mMediaSwitcherManager = new MediaSwitcherManager(configuration, mMediaSynchroniserManager);
 
         if (mOrbHbbTVVersion >= 204) {
             mJsonRpc = new JsonRpc(configuration.jsonRpcPort, mOrbSessionCallback);
@@ -51,7 +53,7 @@ class OrbSession implements IOrbSession {
         }
 
         mBridge = new Bridge(this, callback, configuration, mApplicationManager,
-                mMediaSynchroniserManager, mJsonRpc);
+                mMediaSynchroniserManager, mMediaSwitcherManager, mJsonRpc);
         mDsmccClient = new DsmccClient(callback);
         mBrowserView = new BrowserView(context, mBridge, configuration, mDsmccClient);
 

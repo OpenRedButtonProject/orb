@@ -58,6 +58,7 @@ LOCAL_C_INCLUDES := \
    $(LOCAL_PATH)/../../../../../components/application_manager/ \
    $(LOCAL_PATH)/../../../../../components/network_services/ \
    $(LOCAL_PATH)/../../../../../components/network_services/media_synchroniser/ \
+   $(LOCAL_PATH)/../../../../../components/network_services/media_switcher/ \
    $(LOCAL_PATH)/../../../../../components/network_services/app2app/
 
 ifeq ($(ORB_HBBTV_VERSION),204)

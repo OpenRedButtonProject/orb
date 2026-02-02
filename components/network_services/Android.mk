@@ -39,6 +39,7 @@ else
 endif
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/media_synchroniser \
+                    $(LOCAL_PATH)/media_switcher \
                     $(LOCAL_PATH)/app2app
 
 ifeq ($(ORB_HBBTV_VERSION),204)
@@ -60,7 +61,8 @@ LOCAL_SRC_FILES := \
    media_synchroniser/WallClockService.cpp \
    media_synchroniser/ContentIdentificationService.cpp \
    media_synchroniser/CSSUtilities.cpp \
-   media_synchroniser/TimelineSyncService.cpp
+   media_synchroniser/TimelineSyncService.cpp \
+   media_switcher/media_switcher.cpp
 
 ifeq ($(ORB_HBBTV_VERSION),204)
 LOCAL_SRC_FILES += \

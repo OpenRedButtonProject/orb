@@ -38,17 +38,19 @@ class Bridge extends AbstractBridge {
     private final OrbSessionFactory.Configuration mConfiguration;
     private final App2AppService mApp2AppService;
     private final MediaSynchroniserManager mMediaSyncManager;
+    private final MediaSwitcherManager mMediaSwitcherManager;
     private final JsonRpc mJsonRpc;
     private int mNextListenerId = 1;
 
     Bridge(OrbSession tvBrowser, IOrbSessionCallback orbLibraryCallback,
            OrbSessionFactory.Configuration configuration, ApplicationManager applicationManager,
-           MediaSynchroniserManager mediaSyncManager, JsonRpc jsonRpc) {
+           MediaSynchroniserManager mediaSyncManager, MediaSwitcherManager mediaSwitcherManager, JsonRpc jsonRpc) {
         mTvBrowserSession = tvBrowser;
         mOrbLibraryCallback = orbLibraryCallback;
         mConfiguration = configuration;
         mApplicationManager = applicationManager;
         mMediaSyncManager = mediaSyncManager;
+        mMediaSwitcherManager = mediaSwitcherManager;
         mJsonRpc = jsonRpc;
         mApp2AppService = App2AppService.GetInstance();
         if (!mApp2AppService.Start(mConfiguration.app2appLocalPort, mConfiguration.app2appRemotePort)) {
@@ -59,6 +61,7 @@ class Bridge extends AbstractBridge {
     public void releaseResources() {
         mApp2AppService.Stop();
         mMediaSyncManager.releaseResources();
+        mMediaSwitcherManager.releaseResources();
     }
 
     /**
@@ -1230,6 +1233,73 @@ class Bridge extends AbstractBridge {
     @Override
     protected boolean MediaSynchroniser_setTimelineAvailability(BridgeToken token, int id, String timelineSelector, boolean isAvailable, long ticks, double speed) {
         return mMediaSyncManager.setTimelineAvailability(id, timelineSelector, isAvailable, ticks, speed);
+    }
+
+    /**
+     * @param token The token associated with this request.
+     *
+     * @return
+     */
+    @Override
+    protected int MediaSwitcher_instantiate(BridgeToken token) {
+        int id = mMediaSwitcherManager.createMediaSwitcher();
+        Log.d(TAG, "Instantiated MediaSwitcher with id " + id);
+        return id;
+    }
+
+    /**
+     * @param token The token associated with this request.
+     * @param id
+     */
+    @Override
+    protected void MediaSwitcher_destroy(BridgeToken token, int id) {
+        mMediaSwitcherManager.destroyMediaSwitcher(id);
+    }
+
+    /**
+     * @param token The token associated with this request.
+     * @param id
+     * @param params
+     *
+     * @return
+     */
+    @Override
+    protected boolean MediaSwitcher_switchMediaPresentation(BridgeToken token, int id, org.json.JSONObject params) {
+        return mMediaSwitcherManager.switchMediaPresentation(id, params);
+    }
+
+    /**
+     * @param token The token associated with this request.
+     * @param id
+     * @param timelineSelector
+     * @param timelineSource
+     *
+     * @return
+     */
+    @Override
+    protected boolean MediaSwitcher_startTimelineMonitoring(BridgeToken token, int id, String timelineSelector, boolean timelineSource) {
+        return mMediaSwitcherManager.startTimelineMonitoring(id, timelineSelector, timelineSource);
+    }
+
+    /**
+     * @param token The token associated with this request.
+     * @param id
+     * @param timelineSelector
+     */
+    @Override
+    protected void MediaSwitcher_stopTimelineMonitoring(BridgeToken token, int id, String timelineSelector) {
+        mMediaSwitcherManager.stopTimelineMonitoring(id, timelineSelector);
+    }
+
+    /**
+     * @param token The token associated with this request.
+     * @param timelineSelector
+     *
+     * @return
+     */
+    @Override
+    protected long MediaSwitcher_getTimelineCurrentTime(BridgeToken token, String timelineSelector) {
+        return mMediaSwitcherManager.getTimelineCurrentTime(timelineSelector);
     }
 
     /**

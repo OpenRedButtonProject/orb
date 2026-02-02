@@ -1558,6 +1558,115 @@ hbbtv.bridge.mediaSync = (function() {
     return exported;
 })();
 
+/**
+ * ORB internal interface: system-agnostic bridge to native media switcher.
+ *
+ * @name bridge.mediaSwitcher
+ * @class
+ * @constructor
+ */
+hbbtv.bridge.mediaSwitcher = (function() {
+    const exported = {};
+
+    /**
+     * Instantiate a new MediaSwitcher instance.
+     *
+     * @return {number} The ID of the new MediaSwitcher instance.
+     *
+     * @method
+     * @memberof bridge.mediaSwitcher#
+     */
+    exported.instantiate = function() {
+        return hbbtv.native.request('MediaSwitcher.instantiate').result;
+    };
+
+    /**
+     * Destroy a MediaSwitcher instance.
+     *
+     * @param {number} id The ID of the MediaSwitcher instance.
+     *
+     * @method
+     * @memberof bridge.mediaSwitcher#
+     */
+    exported.destroy = function(id) {
+        hbbtv.native.request('MediaSwitcher.destroy', {
+            id: id,
+        });
+    };
+
+    /**
+     * Request a media switch.
+     *
+     * @param {number} id The ID of the MediaSwitcher instance.
+     * @param {Object} params The switch parameters.
+     *
+     * @return {boolean} True if the switch request was accepted.
+     *
+     * @method
+     * @memberof bridge.mediaSwitcher#
+     */
+    exported.switchMediaPresentation = function(id, params) {
+        return hbbtv.native.request('MediaSwitcher.switchMediaPresentation', {
+            id: id,
+            params: params,
+        }).result;
+    };
+
+    /**
+     * Start monitoring a timeline for a switch.
+     *
+     * @param {number} id The ID of the MediaSwitcher instance.
+     * @param {string} timelineSelector The timeline selector.
+     * @param {boolean} timelineSource True if timeline is from originalMediaObject.
+     *
+     * @return {boolean} True if monitoring started successfully.
+     *
+     * @method
+     * @memberof bridge.mediaSwitcher#
+     */
+    exported.startTimelineMonitoring = function(id, timelineSelector, timelineSource) {
+        return hbbtv.native.request('MediaSwitcher.startTimelineMonitoring', {
+            id: id,
+            timelineSelector: timelineSelector,
+            timelineSource: timelineSource,
+        }).result;
+    };
+
+    /**
+     * Stop monitoring a timeline.
+     *
+     * @param {number} id The ID of the MediaSwitcher instance.
+     * @param {string} timelineSelector The timeline selector.
+     *
+     * @method
+     * @memberof bridge.mediaSwitcher#
+     */
+    exported.stopTimelineMonitoring = function(id, timelineSelector) {
+        hbbtv.native.request('MediaSwitcher.stopTimelineMonitoring', {
+            id: id,
+            timelineSelector: timelineSelector,
+        });
+    };
+
+    /**
+     * Get the current time on a timeline.
+     *
+     * @param {string} timelineSelector The timeline selector.
+     *
+     * @return {number} The current time in seconds, or NaN if unavailable.
+     *
+     * @method
+     * @memberof bridge.mediaSwitcher#
+     */
+    exported.getTimelineCurrentTime = function(timelineSelector) {
+        return hbbtv.native.request('MediaSwitcher.getTimelineCurrentTime', {
+            timelineSelector: timelineSelector,
+        }).result;
+    };
+
+    return exported;
+})();
+
 hbbtv.bridge.csManager = (function() {
     const exported = {};
 

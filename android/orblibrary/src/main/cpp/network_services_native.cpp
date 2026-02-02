@@ -20,6 +20,7 @@
 #include <android/log.h>
 
 #include "media_synchroniser.h"
+#include "media_switcher.h"
 #include "CSSUtilities.h"
 #include "log.h"
 
@@ -38,12 +39,17 @@
 static const char *TAG = "network_services_native";
 static jmethodID g_cb[CB_NUMBER_OF_ITEMS];
 static jfieldID g_java_manager_field_id;
+static jfieldID g_java_switcher_manager_field_id;
 static int g_app2app_service_id = -1;
 
 static NetworkServices::MediaSynchroniserManager* GetMediaSyncManagerHandle(JNIEnv *env, jobject
     object);
 static NetworkServices::MediaSynchroniser* GetActiveMediaSyncHandle(JNIEnv *env, jobject object);
 static NetworkServices::MediaSynchroniser* GetMediaSyncHandleById(JNIEnv *env, jobject object, jint
+    id);
+static NetworkServices::MediaSwitcherManager* GetMediaSwitcherManagerHandle(JNIEnv *env, jobject
+    object);
+static NetworkServices::MediaSwitcher* GetMediaSwitcherHandleById(JNIEnv *env, jobject object, jint
     id);
 
 class App2AppServiceCallback : public NetworkServices::ServiceManager::ServiceCallback {
@@ -153,6 +159,10 @@ void InitialiseNetworkServicesNative()
         "jniCbDispatchInterDeviceSyncEnabled", "(I)V");
     g_cb[CB_DISPATCH_INTER_DEVICE_SYNC_DISABLED] = env->GetMethodID(managerClass,
         "jniCbDispatchInterDeviceSyncDisabled", "(I)V");
+
+    // Initialize MediaSwitcherManager field ID
+    jclass switcherManagerClass = env->FindClass("org/orbtv/orblibrary/MediaSwitcherManager");
+    g_java_switcher_manager_field_id = env->GetFieldID(switcherManagerClass, "mNativeManagerPointerField", "J");
 }
 
 extern "C"
@@ -558,4 +568,95 @@ static NetworkServices::MediaSynchroniser* GetMediaSyncHandleById(JNIEnv *env, j
         return ms->getMediaSynchroniser(id);
     }
     return nullptr;
+}
+
+static NetworkServices::MediaSwitcherManager* GetMediaSwitcherManagerHandle(JNIEnv *env, jobject
+    object)
+{
+    return reinterpret_cast<NetworkServices::MediaSwitcherManager *>(env->GetLongField(object,
+        g_java_switcher_manager_field_id));
+}
+
+static NetworkServices::MediaSwitcher* GetMediaSwitcherHandleById(JNIEnv *env, jobject object, jint
+    id)
+{
+    NetworkServices::MediaSwitcherManager *ms = GetMediaSwitcherManagerHandle(env, object);
+    if (ms != nullptr)
+    {
+        return ms->getMediaSwitcher(id);
+    }
+    return nullptr;
+}
+
+extern "C"
+JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_MediaSwitcherManager_jniInitialise(JNIEnv *env,
+    jobject thiz)
+{
+    auto *ms = new NetworkServices::MediaSwitcherManager();
+    env->SetLongField(thiz, g_java_switcher_manager_field_id, jlong(ms));
+}
+
+extern "C"
+JNIEXPORT jint
+JNICALL Java_org_orbtv_orblibrary_MediaSwitcherManager_jniCreateMediaSwitcher(JNIEnv *env,
+    jobject thiz)
+{
+    NetworkServices::MediaSwitcherManager *ms = GetMediaSwitcherManagerHandle(env, thiz);
+    if (ms != nullptr)
+    {
+        return ms->createMediaSwitcher();
+    }
+    return -1;
+}
+
+extern "C"
+JNIEXPORT void
+JNICALL Java_org_orbtv_orblibrary_MediaSwitcherManager_jniDestroyMediaSwitcher(JNIEnv *env,
+    jobject thiz,
+    jint id)
+{
+    NetworkServices::MediaSwitcherManager *ms = GetMediaSwitcherManagerHandle(env, thiz);
+    if (ms != nullptr)
+    {
+        ms->destroyMediaSwitcher(id);
+    }
+}
+
+extern "C"
+JNIEXPORT jboolean
+JNICALL Java_org_orbtv_orblibrary_MediaSwitcherManager_jniSwitchMediaPresentation(JNIEnv *env,
+    jobject thiz,
+    jint id,
+    jstring paramsJson)
+{
+    jboolean result = false;
+    NetworkServices::MediaSwitcher *switcher = GetMediaSwitcherHandleById(env, thiz, id);
+    if (switcher != nullptr)
+    {
+        jboolean isCopy;
+        const char *nativeString = env->GetStringUTFChars(paramsJson, &isCopy);
+        result = switcher->switchMediaPresentation(nativeString);
+        if (isCopy == JNI_TRUE)
+        {
+            env->ReleaseStringUTFChars(paramsJson, nativeString);
+        }
+    }
+    return result;
+}
+
+// Timeline monitoring is now handled by MediaSynchroniserManager to avoid duplication
+// No JNI methods needed for timeline monitoring in MediaSwitcherManager
+
+extern "C"
+JNIEXPORT void
+JNICALL Java_org_orbtv_orblibrary_MediaSwitcherManager_jniReleaseResources(JNIEnv *env,
+    jobject thiz)
+{
+    NetworkServices::MediaSwitcherManager *ms = GetMediaSwitcherManagerHandle(env, thiz);
+    if (ms != nullptr)
+    {
+        ms->releaseResources();
+        delete ms;
+        env->SetLongField(thiz, g_java_switcher_manager_field_id, 0);
+    }
 }

@@ -1197,6 +1197,53 @@ public abstract class AbstractBridge {
 
     /**
      * @param token The token associated with this request.
+     *
+     * @return
+     */
+    protected abstract int MediaSwitcher_instantiate(BridgeToken token);
+
+    /**
+     * @param token The token associated with this request.
+     * @param id
+     */
+    protected abstract void MediaSwitcher_destroy(BridgeToken token, int id);
+
+    /**
+     * @param token The token associated with this request.
+     * @param id
+     * @param params
+     *
+     * @return
+     */
+    protected abstract boolean MediaSwitcher_switchMediaPresentation(BridgeToken token, int id, org.json.JSONObject params);
+
+    /**
+     * @param token The token associated with this request.
+     * @param id
+     * @param timelineSelector
+     * @param timelineSource
+     *
+     * @return
+     */
+    protected abstract boolean MediaSwitcher_startTimelineMonitoring(BridgeToken token, int id, String timelineSelector, boolean timelineSource);
+
+    /**
+     * @param token The token associated with this request.
+     * @param id
+     * @param timelineSelector
+     */
+    protected abstract void MediaSwitcher_stopTimelineMonitoring(BridgeToken token, int id, String timelineSelector);
+
+    /**
+     * @param token The token associated with this request.
+     * @param timelineSelector
+     *
+     * @return
+     */
+    protected abstract long MediaSwitcher_getTimelineCurrentTime(BridgeToken token, String timelineSelector);
+
+    /**
+     * @param token The token associated with this request.
      * @param id
      * @param isMasterBroadcast
      *
@@ -2195,6 +2242,63 @@ public abstract class AbstractBridge {
                         params.getBoolean("isAvailable"),
                         params.getLong("ticks"),
                         params.getDouble("speed")
+                );
+                response.put("result", result);
+                break;
+            }
+
+            case "MediaSwitcher.instantiate": {
+                int result = MediaSwitcher_instantiate(
+                        token
+                );
+                response.put("result", result);
+                break;
+            }
+
+            case "MediaSwitcher.destroy": {
+                MediaSwitcher_destroy(
+                        token,
+                        params.getInt("id")
+                );
+                break;
+            }
+
+            case "MediaSwitcher.switchMediaPresentation": {
+                // Extract the nested params object
+                org.json.JSONObject switchParams = params.getJSONObject("params");
+                boolean result = MediaSwitcher_switchMediaPresentation(
+                        token,
+                        params.getInt("id"),
+                        switchParams
+                );
+                response.put("result", result);
+                break;
+            }
+
+            case "MediaSwitcher.startTimelineMonitoring": {
+                boolean result = MediaSwitcher_startTimelineMonitoring(
+                        token,
+                        params.getInt("id"),
+                        params.getString("timelineSelector"),
+                        params.getBoolean("timelineSource")
+                );
+                response.put("result", result);
+                break;
+            }
+
+            case "MediaSwitcher.stopTimelineMonitoring": {
+                MediaSwitcher_stopTimelineMonitoring(
+                        token,
+                        params.getInt("id"),
+                        params.getString("timelineSelector")
+                );
+                break;
+            }
+
+            case "MediaSwitcher.getTimelineCurrentTime": {
+                long result = MediaSwitcher_getTimelineCurrentTime(
+                        token,
+                        params.getString("timelineSelector")
                 );
                 response.put("result", result);
                 break;
