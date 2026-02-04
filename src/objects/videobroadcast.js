@@ -980,6 +980,7 @@ hbbtv.objects.VideoBroadcast = (function() {
         }
 
         /* DAE vol5 Table 8 state transition #1 */
+        console.log('DEBUG_CHANNEL_STATUS: setChannel called - transitioning to CONNECTING state');
         unregisterAllStreamEventListeners(p);
         p.playState = PLAY_STATE_CONNECTING;
         p.waitingPlayStateConnectingConfirm = appScheme === LINKED_APP_SCHEME_1_1;
@@ -1538,28 +1539,35 @@ hbbtv.objects.VideoBroadcast = (function() {
             p.onChannelStatusChanged = (event) => {
                 const p = privates.get(this);
                 console.log(
-                    'Received ChannelStatusChanged (' +
+                    'DEBUG_CHANNEL_STATUS: Received ChannelStatusChanged (' +
                     event.onetId +
                     ',' +
                     event.transId +
                     ',' +
                     event.servId +
-                    '), status: ' +
+                    '), statusCode: ' +
                     event.statusCode +
-                    ' playState: ' +
-                    p.playState
+                    ' (CHANNEL_STATUS_PRESENTING=-3, CHANNEL_STATUS_CONNECTING=-2, CHANNEL_STATUS_PARENTAL_LOCKED=3)' +
+                    ', current playState: ' +
+                    p.playState +
+                    ' (CONNECTING=1, PRESENTING=2)' +
+                    ', permanentError: ' +
+                    event.permanentError
                 );
                 if (p.playState == PLAY_STATE_CONNECTING) {
                     switch (event.statusCode) {
                         case CHANNEL_STATUS_PRESENTING:
                             /* DAE vol5 Table 8 state transition #9 */
+                            console.log('DEBUG_CHANNEL_STATUS: CHANNEL_STATUS_PRESENTING received while in CONNECTING state - transitioning to PRESENTING');
                             hbbtv.holePuncher.setBroadcastVideoObject(this);
                             p.playState = PLAY_STATE_PRESENTING;
+                            console.log('DEBUG_CHANNEL_STATUS: playState set to PRESENTING (2), dispatching ChannelChangeSucceeded and PlayStateChange events');
                             dispatchChannelChangeSucceededEvent.call(this, p.currentChannelData);
                             dispatchPlayStateChangeEvent.call(this, p.playState);
                             break;
 
                         case CHANNEL_STATUS_CONNECTING:
+                            console.log('DEBUG_CHANNEL_STATUS: CHANNEL_STATUS_CONNECTING received while in CONNECTING state');
                             if (
                                 p.currentChannelData == null ||
                                 event.servId != p.currentChannelData.sid ||
@@ -1585,10 +1593,11 @@ hbbtv.objects.VideoBroadcast = (function() {
                                 }
                             }
                             if (p.waitingPlayStateConnectingConfirm) {
-                                console.log('waitingPlayStateConnectingConfirm TRUE. Ignore event');
+                                console.log('DEBUG_CHANNEL_STATUS: waitingPlayStateConnectingConfirm TRUE. Ignore event');
                             } else {
                                 /* DAE vol5 Table 8 state transition #10, or possibly, a user initiated channel change */
                                 /* Terminal connected to the broadcast or IP multicast stream but presentation blocked */
+                                console.log('DEBUG_CHANNEL_STATUS: Staying in CONNECTING state, dispatching ChannelChangeSucceeded');
                                 p.playState = PLAY_STATE_CONNECTING;
                                 dispatchChannelChangeSucceededEvent.call(
                                     this,
@@ -1720,9 +1729,11 @@ hbbtv.objects.VideoBroadcast = (function() {
 
         if (!p.onParentalRatingChange) {
             p.onParentalRatingChange = (event) => {
-                console.log('Received ParentalRatingChange');
+                console.log('DEBUG_CHANNEL_STATUS: Received ParentalRatingChange - blocked=' + event.blocked + 
+                    ', current playState=' + p.playState + ', waitingPlayStateConnectingConfirm=' + p.waitingPlayStateConnectingConfirm);
                 console.log(event);
                 if (event.blocked && p.waitingPlayStateConnectingConfirm) {
+                    console.log('DEBUG_CHANNEL_STATUS: ParentalRatingChange blocked=true and waitingPlayStateConnectingConfirm=true - setting playState to CONNECTING');
                     p.playState = PLAY_STATE_CONNECTING;
                     dispatchChannelChangeSucceededEvent.call(
                         this,
@@ -2092,6 +2103,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     }
 
     function dispatchChannelChangeSucceededEvent(channel) {
+        const p = privates.get(this);
+        console.log('DEBUG_CHANNEL_STATUS: dispatchChannelChangeSucceededEvent called - current playState=' + p.playState + 
+            ' (CONNECTING=1, PRESENTING=2), channel=' + (channel ? (channel.onid + ',' + channel.tsid + ',' + channel.sid) : 'null'));
         const event = new Event('ChannelChangeSucceeded');
         Object.assign(event, {
             channel: channel,
@@ -2100,6 +2114,13 @@ hbbtv.objects.VideoBroadcast = (function() {
     }
 
     function dispatchPlayStateChangeEvent(state, error) {
+        const stateNames = {
+            0: 'UNREALIZED',
+            1: 'CONNECTING',
+            2: 'PRESENTING',
+            3: 'STOPPED'
+        };
+        console.log('DEBUG_CHANNEL_STATUS: dispatchPlayStateChangeEvent called - playState=' + state + ' (' + (stateNames[state] || 'UNKNOWN') + '), error=' + error);
         const event = new Event('PlayStateChange');
         Object.assign(event, {
             state: state,
