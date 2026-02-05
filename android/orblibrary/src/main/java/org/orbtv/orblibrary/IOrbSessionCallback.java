@@ -175,6 +175,26 @@ public interface IOrbSessionCallback {
     List<String> getBroadbandCapabilities(int decoderIndex);
 
     /**
+     * Get the maximum (static) broadcast media decoding capabilities for the indicated decoder.
+     * This method is defined in HBBTV-TA-1 v1.1.1 A.2.2.
+     * <p>
+     * Media decoders are numbered from 1 increasing in steps of 1 up to the total number of
+     * media decoders in the terminal. Decoders are ordered in decreasing capabilities (UHD before
+     * HD, HD before SD). If decoderIndex is greater than the number of media decoders then null
+     * shall be returned.
+     * <p>
+     * Each String returned shall be one of the URNs returned as the value of a <broadcast> element
+     * returned by xmlCapabilities.
+     *
+     * @param decoderIndex The decoder index (1-based, starting from 1).
+     *
+     * @return A list of URN strings for the decoder, or null if decoderIndex is greater than
+     *         the number of decoders. Each string shall be one of the URNs returned as the value
+     *         of a <broadcast> element returned by xmlCapabilities.
+     */
+    List<String> getBroadcastCapabilities(int decoderIndex);
+
+    /**
      * Get immutable system information.
      *
      * @return Valid SystemInformation on success, otherwise invalid SystemInformation

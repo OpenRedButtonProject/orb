@@ -1129,6 +1129,30 @@ hbbtv.bridge.configuration = (function() {
     };
 
     /**
+     * Get the maximum (static) broadcast media decoding capabilities for the indicated decoder.
+     * This method is defined in HBBTV-TA-1 v1.1.1 A.2.2.
+     *
+     * Media decoders are numbered from 1 increasing in steps of 1 up to the total number of
+     * media decoders in the terminal. Decoders are ordered in decreasing capabilities (UHD before
+     * HD, HD before SD). If decoderIndex is greater than the number of media decoders then null
+     * shall be returned.
+     *
+     * @param {number} decoderIndex - The decoder index (1-based, starting from 1)
+     * @return {Array.<string>|null} An array of URN strings for the decoder, or null if
+     *                               decoderIndex is greater than the number of decoders.
+     *                               Each string shall be one of the URNs returned as the value
+     *                               of a <broadcast> element returned by xmlCapabilities.
+     *
+     * @method
+     * @memberof bridge.configuration#
+     */
+    exported.getBroadcastCapabilities = function(decoderIndex) {
+        return hbbtv.native.request('Configuration.getBroadcastCapabilities', {
+            decoderIndex: decoderIndex,
+        }).result;
+    };
+
+    /**
      * Get certain immutable information about the system.
      *
      * @return {SystemInformation} A SystemInformation object.
