@@ -2,6 +2,15 @@ hbbtv.objects.DASHEvent = (function() {
     const prototype = { };
     const privates = new WeakMap();
 
+    function utf8StringToUpperHex(str) {
+        const u8 = new TextEncoder().encode(str);
+        let hex = "";
+        for (let i = 0; i < u8.length; i += 1) {
+            hex += ("0" + u8[i].toString(16)).slice(-2);
+        }
+        return hex.toUpperCase();
+    }
+
     hbbtv.utils.defineGetterProperties(prototype, {
         pauseOnExit() {
             return false;
@@ -29,12 +38,17 @@ hbbtv.objects.DASHEvent = (function() {
         if (typeof(data) === "string") {
             if (streamEvent.DASHEvent.contentEncoding === "binary") {
                 const textEncoder = new TextEncoder();
-                streamEvent.DASHEvent.data = streamEvent.data = textEncoder.encode(data);
+                const u8 = textEncoder.encode(data);
+                streamEvent.DASHEvent.data = u8.buffer.slice(
+                    u8.byteOffset,
+                    u8.byteOffset + u8.byteLength);
+                streamEvent.data = utf8StringToUpperHex(data);
             }
             else {
                 try {
                     const parser = new DOMParser();
-                    streamEvent.DASHEvent.data = streamEvent.data = parser.parseFromString(data, 'text/xml');
+                    streamEvent.DASHEvent.data = parser.parseFromString(data, "text/xml");
+                    streamEvent.data = utf8StringToUpperHex(data);
                 }
                 catch(e) {
                     console.warn(e.message);
