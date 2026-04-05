@@ -453,10 +453,9 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
 
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
-    LOG(LOG_INFO, "ProcessXmlAit");
-
     if (xmlAit.empty())
     {
+        ERRLOG("XML AIT is empty, returning false");
         return false;
     }
 
@@ -464,16 +463,22 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
         xmlAit.length());
     if (nullptr == aitTable || aitTable->numApps == 0)
     {
-        // No AIT or apps parsed, early out
+        ERRLOG("No AIT or apps parsed, early out");
         return false;
     }
+    DBGLOG("isDvbi=%d, scheme=%s, xmlAit length=%zu, app isRunning?=%d, orgId=%u, appId=%u, isBroadcast=%d, AIT-apps=%d",
+        isDvbi, scheme.c_str(), xmlAit.length(), m_app.isRunning, m_app.orgId, m_app.appId, m_app.isBroadcast, aitTable->numApps);
+
     for (int index = 0; index != aitTable->numApps; index++)
     {
         aitTable->appArray[index].scheme = scheme;
     }
     Ait::PrintInfo(aitTable.get());
+
     if (isDvbi)
     {
+        DBGLOG("DVB-I service RcvdFirstAit?=%d", m_currentServiceReceivedFirstAit);
+
         m_ait.Clear();
         m_currentServiceAitPid = UINT16_MAX;
         m_ait.ApplyAitTable(aitTable);
@@ -669,7 +674,7 @@ void ApplicationManager::OnBroadcastStopped()
 void ApplicationManager::OnChannelChanged(uint16_t originalNetworkId,
     uint16_t transportStreamId, uint16_t serviceId)
 {
-    LOG(LOG_DEBUG, "OnChannelChanged (current serviceId: %u, new serviceId %u)", m_currentService.serviceId, serviceId);
+    DBGLOG("(current serviceId: %u, new serviceId %u)", m_currentService.serviceId, serviceId);
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     m_currentServiceReceivedFirstAit = false;
     m_currentServiceAitPid = 0;
@@ -865,7 +870,8 @@ void ApplicationManager::OnSelectedServiceAitUpdated()
         auto signalled = Ait::FindApp(ait, m_app.orgId, m_app.appId);
         if (signalled == nullptr)
         {
-            LOG(LOG_INFO, "Kill running app (is not signalled in the updated AIT)");
+            LOG(LOG_INFO, "OnSelectedServiceAitUpdated: App (orgId=%u, appId=%u) not found in updated AIT - "
+                "KILLING running app", m_app.orgId, m_app.appId);
             KillRunningApp();
         }
         else if (!Ait::AppHasTransport(signalled, m_app.protocolId))
@@ -881,12 +887,15 @@ void ApplicationManager::OnSelectedServiceAitUpdated()
         }
         else
         {
+            DBGLOG("Applic still signalled in updated AIT (ctrl code=%d, old scheme=%s, new scheme=%s) - CONTINUING to run without restart",
+                    signalled->controlCode, m_app.getScheme().c_str(), signalled->scheme.c_str());
             m_app.setScheme(signalled->scheme);
         }
     }
 
     if (!m_app.isRunning)
     {
+        DBGLOG(" App not running - calling OnPerformBroadcastAutostart");
         OnPerformBroadcastAutostart();
     }
     else
@@ -901,7 +910,8 @@ void ApplicationManager::OnSelectedServiceAitUpdated()
 void ApplicationManager::OnRunningAppExited()
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    LOG(LOG_ERROR, "OnRunningAppExited");
+    DBGLOG(" App exited - orgId=%u, appId=%u, id=%u, isBroadcast=%d, entryUrl=%s, isRunning=%d",
+        m_app.orgId, m_app.appId, m_app.id, m_app.isBroadcast, m_app.entryUrl.c_str(), m_app.isRunning);
     if (!Utils::IsInvalidDvbTriplet(m_currentService))
     {
         OnPerformBroadcastAutostart();
@@ -956,6 +966,9 @@ void ApplicationManager::OnPerformBroadcastAutostart()
 bool ApplicationManager::RunApp(const App &app)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
+    DBGLOG(" orgId=%u, appId=%u, isBroadcast=%d, entryUrl=%s, scheme=%s, isHidden=%d",
+        app.orgId, app.appId, app.isBroadcast, app.entryUrl.c_str(), app.getScheme().c_str(), app.isHidden);
+    
     if (!app.entryUrl.empty())
     {
         /* Note: XML AIt uses the alpha-2 region codes as defined in ISO 3166-1.
@@ -968,7 +981,7 @@ bool ApplicationManager::RunApp(const App &app)
         if (Ait::IsAgeRestricted(app.parentalRatings, parental_control_age,
             parental_control_region, parental_control_region3))
         {
-            LOG(LOG_ERROR, "%s, Parental Control Age RESTRICTED for %s: only %d content accepted",
+            ERRLOG("%s, Parental Control Age RESTRICTED for %s: only %d content accepted",
                 app.loadedUrl.c_str(), parental_control_region.c_str(), parental_control_age);
             return false;
         }
@@ -984,6 +997,7 @@ bool ApplicationManager::RunApp(const App &app)
 
         if (m_app.isHidden)
         {
+            LOG(LOG_INFO, "RunApp: App is hidden, hiding application");
             m_sessionCallback->HideApplication();
         }
 
@@ -993,21 +1007,28 @@ bool ApplicationManager::RunApp(const App &app)
             // is a current service.
             if (!Utils::IsInvalidDvbTriplet(m_currentService))
             {
+                LOG(LOG_INFO, "RunApp: Broadcast-independent app - stopping broadcast");
                 m_sessionCallback->StopBroadcast();
                 m_previousService = m_currentService = Utils::MakeInvalidDvbTriplet();
             }
         }
 
+        LOG(LOG_INFO, "RunApp: Loading application - id=%u, entryUrl=%s, graphicsConstraints=%zu",
+            m_app.id, m_app.entryUrl.c_str(), m_app.graphicsConstraints.size());
         m_sessionCallback->LoadApplication(m_app.id, m_app.entryUrl.c_str(),
             m_app.graphicsConstraints.size(), m_app.graphicsConstraints);
 
         if (!m_app.isHidden)
         {
+            LOG(LOG_INFO, "RunApp: Showing application");
             m_sessionCallback->ShowApplication();
         }
 
+        LOG(LOG_INFO, "RunApp: App started successfully - id=%u, orgId=%u, appId=%u, isRunning=%d",
+            m_app.id, m_app.orgId, m_app.appId, m_app.isRunning);
         return true;
     }
+    LOG(LOG_INFO, "RunApp: App entryUrl is empty - FAILING to start");
     return false;
 }
 
@@ -1017,6 +1038,10 @@ bool ApplicationManager::RunApp(const App &app)
 void ApplicationManager::KillRunningApp()
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
+    LOG(LOG_INFO, "KillRunningApp: Killing app - orgId=%u, appId=%u, id=%u, isBroadcast=%d, "
+        "entryUrl=%s, loadedUrl=%s",
+        m_app.orgId, m_app.appId, m_app.id, m_app.isBroadcast,
+        m_app.entryUrl.c_str(), m_app.loadedUrl.c_str());
     m_sessionCallback->HideApplication();
     if (++m_nextAppId == 0)
     {
