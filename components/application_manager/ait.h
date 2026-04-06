@@ -242,21 +242,21 @@ public:
         const Utils::S_DVB_TRIPLET currentService,
         uint16_t *protocolIdSelected);
 
-	/**
-	 * Determine whether the application has a transport with a certain protocol.
-	 * @param appDescription The application description.
-	 * @param protocolId The protocol to check for.
-	 * @return True if the application has a transport with the protocol, false otherwise.
-	 */
+    /**
+     * Determine whether the application has a transport with a certain protocol.
+     * @param appDescription The application description.
+     * @param protocolId The protocol to check for.
+     * @return True if the application has a transport with the protocol, false otherwise.
+     */
     static bool AppHasTransport(const Ait::S_AIT_APP_DESC *appDescription, uint16_t protocolId);
 
-	/**
-	 * Check whether App description contains a viable transport protocol
+    /**
+     * Check whether App description contains a viable transport protocol
      * @param appDesc
-	 * @param isNetworkAvailable
-	 * @return true if there is a viable transport
-	 */
- 	static bool HasViableTransport(const S_AIT_APP_DESC *appDesc, const bool isNetworkAvailable);
+     * @param isNetworkAvailable
+     * @return true if there is a viable transport
+     */
+    static bool HasViableTransport(const S_AIT_APP_DESC *appDesc, const bool isNetworkAvailable);
 
     /**
      * Set that the protocol for this app failed to load.
