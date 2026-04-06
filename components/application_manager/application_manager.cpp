@@ -478,6 +478,12 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
     if (isDvbi)
     {
         DBGLOG("DVB-I service RcvdFirstAit?=%d", m_currentServiceReceivedFirstAit);
+        if (m_app.getScheme() == DASH_APP_SIGNALLING_SCHEME && scheme == LINKED_APP_SCHEME_1_1)
+        {
+            // app from MDP AIT supercedes a service-linked AIT app - see TS-103-770 sec 5.2.3.3
+            DBGLOG("Ignore service linked AIT, when running in-band MPD application");
+            return true;
+        }
 
         m_ait.Clear();
         m_currentServiceAitPid = UINT16_MAX;
@@ -968,7 +974,7 @@ bool ApplicationManager::RunApp(const App &app)
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     DBGLOG(" orgId=%u, appId=%u, isBroadcast=%d, entryUrl=%s, scheme=%s, isHidden=%d",
         app.orgId, app.appId, app.isBroadcast, app.entryUrl.c_str(), app.getScheme().c_str(), app.isHidden);
-    
+
     if (!app.entryUrl.empty())
     {
         /* Note: XML AIt uses the alpha-2 region codes as defined in ISO 3166-1.
