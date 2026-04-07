@@ -321,8 +321,11 @@ class BrowserView extends WebView {
 
     private void dispatchJavaScriptBridgeEvent(String type, JSONObject properties) {
         Log.i(TAG, "Bridge event: " + type + "(" + properties.toString() + ")");
-        evaluateJavascript("document.dispatchBridgeEvent(\"" + type + "\", " +
-                properties.toString() + ")", null);
+        /* android.js defines document.dispatchBridgeEvent; it may not exist yet right after loadUrl. */
+        evaluateJavascript(
+                "typeof document.dispatchBridgeEvent==='function'&&document.dispatchBridgeEvent("
+                        + JSONObject.quote(type) + "," + properties.toString() + ")",
+                null);
     }
 
     private void dispatchJavaScriptKeyEvent(String type, int keyCode) {
