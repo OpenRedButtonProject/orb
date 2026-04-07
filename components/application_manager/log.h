@@ -26,12 +26,12 @@
 #include <android/log.h>
 #include <assert.h>
 #ifndef LOG_TAG
-#define LOG_TAG "ORBNATIVE"
+#define LOG_TAG "ORB/AppMgr"
 #endif
 #define LOG_ERROR ANDROID_LOG_ERROR
 #define LOG_INFO ANDROID_LOG_INFO
 #define LOG_DEBUG ANDROID_LOG_DEBUG
-#define LOG(level, args ...) __android_log_print(level, "Orb/ApplicationManager", args)
+#define LOG(level, args ...) __android_log_print(level, LOG_TAG, args)
 #define DBGLOG(x, ...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "%s:%u " x "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__);
 #define ERRLOG(x, ...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, "%s:%u " x "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__);
 #define ASSERT(condition) assert(condition)
