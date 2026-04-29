@@ -85,14 +85,29 @@ abstract class WebResourceClient {
         //Log.d(TAG, "Should intercept?: " + request.getUrl());
         Uri url = request.getUrl();
         String scheme = url.getScheme();
-        if (request.getMethod().equalsIgnoreCase("GET")) {
-            if (url.toString().startsWith(ORB_PLAYER_URI)) {
-                return createPlayerPageResponse(request, appId);
-            } else if (scheme.equals("http") || scheme.equals("https")) {
-                return shouldInterceptHttpRequest(request, appId);
-            } else if (scheme.equals("dvb")) {
-                return shouldInterceptDsmccRequest(request, appId);
+        String method = request.getMethod();
+        boolean isGet = method.equalsIgnoreCase("GET");
+        boolean isOptions = method.equalsIgnoreCase("OPTIONS");
+        if (!isGet && !isOptions) {
+            return null;
+        }
+        if (url.toString().startsWith(ORB_PLAYER_URI)) {
+            if (!isGet) {
+                return null;
             }
+            return createPlayerPageResponse(request, appId);
+        }
+        if (scheme.equals("http") || scheme.equals("https")) {
+            if (isGet) {
+                return shouldInterceptHttpRequest(request, appId);
+            }
+            return shouldInterceptHttpOptionsRequest(request, appId);
+        }
+        if (scheme.equals("dvb")) {
+            if (!isGet) {
+                return null;
+            }
+            return shouldInterceptDsmccRequest(request, appId);
         }
         return null;
     }
@@ -121,11 +136,131 @@ abstract class WebResourceClient {
         return response;
     }
 
+    /**
+     * CORS preflight and other non-GET HTTP(s) requests must be intercepted when the document uses a
+     * non-http(s) scheme (e.g. dvb://): returning null defers to the default loader which often
+     * cannot complete cross-scheme fetches, surfacing as XHR status 0 in the page.
+     */
+    private WebResourceResponse shouldInterceptHttpOptionsRequest(WebResourceRequest request, int appId) {
+        WebResourceResponse response = null;
+        try {
+            response = handleHttpOptionsRequest(request, appId);
+        } catch (IOException e) {
+            Log.e(TAG, "IOException handling HTTP OPTIONS: " + request.getUrl(), e);
+            e.printStackTrace();
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected exception handling HTTP OPTIONS: " + request.getUrl(), e);
+            e.printStackTrace();
+        }
+        if (response == null) {
+            Log.w(TAG, "Calling onRequestFailed for OPTIONS: " + request.getUrl());
+            onRequestFailed(request, appId);
+        } else {
+            onRequestSucceeded(request, appId);
+        }
+        return response;
+    }
+
+    private static Map<String, String> mutableRequestHeaders(WebResourceRequest request) {
+        Map<String, String> out = new HashMap<>();
+        Map<String, String> in = request.getRequestHeaders();
+        if (in != null) {
+            out.putAll(in);
+        }
+        return out;
+    }
+
+    private static String getHeaderIgnoreCase(Map<String, String> headers, String name) {
+        for (Map.Entry<String, String> e : headers.entrySet()) {
+            if (e.getKey() != null && e.getKey().equalsIgnoreCase(name)) {
+                return e.getValue();
+            }
+        }
+        return null;
+    }
+
+    private static void removeHeaderIgnoreCase(Map<String, String> headers, String headerName) {
+        if (headers == null || headerName == null) {
+            return;
+        }
+        headers.entrySet().removeIf(entry ->
+                entry.getKey() != null && entry.getKey().equalsIgnoreCase(headerName));
+    }
+
+    /**
+     * Echo {@code Origin} on the response like {@link #handleDsmccRequest} does, so fetches from
+     * dvb:// (or other non-http) documents to http(s) APIs satisfy the embedder CORS check.
+     */
+    private static void applyOriginReflectionCors(Map<String, String> responseHeaders,
+            Map<String, String> requestHeaders) {
+        String origin = getHeaderIgnoreCase(requestHeaders, "Origin");
+        if (origin == null || origin.isEmpty()) {
+            return;
+        }
+        /*
+         * Upstream often sends Access-Control-Allow-Origin: * (sometimes duplicated → "*,*").
+         * If we only put() our reflected origin, some stacks still surface multiple values
+         * ("dvb://, *,*") and Chromium rejects CORS. Drop any existing ACAO first.
+         */
+        removeHeaderIgnoreCase(responseHeaders, "Access-Control-Allow-Origin");
+        responseHeaders.put("Access-Control-Allow-Origin", origin);
+        String vary = getHeaderIgnoreCase(responseHeaders, "Vary");
+        if (vary == null || vary.isEmpty()) {
+            responseHeaders.put("Vary", "Origin");
+        } else if (!vary.toLowerCase().contains("origin")) {
+            responseHeaders.put("Vary", vary + ", Origin");
+        }
+    }
+
+    private WebResourceResponse handleHttpOptionsRequest(WebResourceRequest request, int appId)
+            throws IOException {
+        String url = request.getUrl().toString();
+        Map<String, String> requestHeaders = mutableRequestHeaders(request);
+
+        CookieManager cookieManager;
+        if (HTTP_COOKIES_ENABLED) {
+            cookieManager = CookieManager.getInstance();
+            String cookie = cookieManager.getCookie(url);
+            if (cookie != null) {
+                requestHeaders.put("Cookie", cookie);
+            }
+        }
+
+        Response httpResponse = mHttpClient.newCall(new Request.Builder()
+                .url(url)
+                .method("OPTIONS", null)
+                .headers(Headers.of(requestHeaders))
+                .build()).execute();
+
+        Log.d(TAG, "HTTP OPTIONS response code: " + httpResponse.code() + ", for URL: " + url);
+
+        Charset charset = StandardCharsets.UTF_8;
+        Map<String, String> responseHeaders = new HashMap<>();
+        String optionsRequestOrigin = getHeaderIgnoreCase(requestHeaders, "Origin");
+        for (String name : httpResponse.headers().names()) {
+            if (name != null && optionsRequestOrigin != null && !optionsRequestOrigin.isEmpty()
+                    && name.equalsIgnoreCase("Access-Control-Allow-Origin")) {
+                continue;
+            }
+            responseHeaders.put(name, String.join(",", httpResponse.headers(name)));
+        }
+        applyOriginReflectionCors(responseHeaders, requestHeaders);
+
+        ResponseBody body = httpResponse.body();
+        InputStream stream = (body != null) ? body.byteStream() : new ByteArrayInputStream(new byte[0]);
+        String reasonPhrase = httpResponse.message();
+        if (reasonPhrase == null || reasonPhrase.trim().isEmpty()) {
+            reasonPhrase = httpResponse.isSuccessful() ? "OK" : "Error";
+        }
+        return new WebResourceResponse(
+                "text/plain", charset.name(), httpResponse.code(), reasonPhrase, responseHeaders, stream);
+    }
+
     private WebResourceResponse handleHttpRequest(WebResourceRequest request, int appId)
             throws IOException {
         // Request
         String url = request.getUrl().toString();
-        Map<String, String> requestHeaders = request.getRequestHeaders();
+        Map<String, String> requestHeaders = mutableRequestHeaders(request);
 
         CookieManager cookieManager;
         if (HTTP_COOKIES_ENABLED) {
@@ -148,11 +283,22 @@ abstract class WebResourceClient {
 
         Log.d(TAG, "HTTP response code: " + httpResponse.code() + ", for URL: " + url);
         boolean isRedirect = (httpResponse.code() >= 301 && httpResponse.code() <= 308);
+        boolean isError = !httpResponse.isSuccessful() && !isRedirect;
 
-        // Response
-        if (!httpResponse.isSuccessful() && !isRedirect) {
+        /*
+         * Returning null hands the request back to WebView's default loader. That works for
+         * http(s) top-level documents, but subresource loads from non-http(s) documents (e.g.
+         * dvb://) then fail with XHR status 0 and no response headers. Forward OkHttp's status and
+         * body for subresource errors instead of null.
+         */
+        if (isError && request.isForMainFrame()) {
+            Log.w(TAG, "HTTP main-frame error " + httpResponse.code() + ", deferring to default loader: " + url);
             return null;
         }
+        if (isError) {
+            Log.w(TAG, "HTTP subresource error " + httpResponse.code() + ", forwarding response to WebView: " + url);
+        }
+
         Charset charset = StandardCharsets.UTF_8;
         String mimeType = getMimeType(httpResponse.header("Content-Type", "text/plain"));
 
@@ -182,24 +328,34 @@ abstract class WebResourceClient {
         }
 
         ResponseBody body = httpResponse.body();
+        InputStream responseStream;
         if (body == null) {
             Log.w(TAG, "HTTP response body is null for: " + url);
-            return null;
-        }
-        long contentLength = body.contentLength();
-        Log.d(TAG, "Response body size for " + url + ": " + contentLength + " bytes, MIME type: " + mimeType);
-        InputStream responseStream;
-        if (HBBTV_MIME_TYPES.contains(mimeType.toLowerCase())) {
-            //Log.d(TAG, "Creating injection response stream for HBBTV MIME type: " + url);
-            responseStream = createInjectionResponseStream(body.byteStream(), body, charset, request.getUrl(), appId);
+            responseStream = new ByteArrayInputStream(new byte[0]);
         } else {
-            responseStream = createResponseStream(body.byteStream(), body);
+            long contentLength = body.contentLength();
+            Log.d(TAG, "Response body size for " + url + ": " + contentLength + " bytes, MIME type: " + mimeType);
+            boolean injectHbbtv = httpResponse.isSuccessful()
+                    && HBBTV_MIME_TYPES.contains(mimeType.toLowerCase());
+            if (injectHbbtv) {
+                //Log.d(TAG, "Creating injection response stream for HBBTV MIME type: " + url);
+                responseStream = createInjectionResponseStream(body.byteStream(), body, charset, request.getUrl(), appId);
+            } else {
+                responseStream = createResponseStream(body.byteStream(), body);
+            }
         }
 
-        WebResourceResponse response = new WebResourceResponse(mimeType, charset.name(), responseStream);
         Map<String, String> responseHeaders = new HashMap<>();
+        String requestOriginForCors = getHeaderIgnoreCase(requestHeaders, "Origin");
 
         httpResponseHeaders.forEach((k, v) -> {
+            if (k == null) {
+                return;
+            }
+            if (requestOriginForCors != null && !requestOriginForCors.isEmpty()
+                    && k.equalsIgnoreCase("Access-Control-Allow-Origin")) {
+                return;
+            }
             String header = String.join(",", v);
             if (k.equalsIgnoreCase("Content-Security-Policy")) {
                 header = updateCspHeader(header);
@@ -207,8 +363,14 @@ abstract class WebResourceClient {
             responseHeaders.put(k, header);
         });
 
-        response.setResponseHeaders(responseHeaders);
-        return response;
+        applyOriginReflectionCors(responseHeaders, requestHeaders);
+
+        String reasonPhrase = httpResponse.message();
+        if (reasonPhrase == null || reasonPhrase.trim().isEmpty()) {
+            reasonPhrase = httpResponse.isSuccessful() ? "OK" : "Error";
+        }
+        return new WebResourceResponse(mimeType, charset.name(), httpResponse.code(), reasonPhrase,
+                responseHeaders, responseStream);
     }
 
     private WebResourceResponse shouldInterceptDsmccRequest(WebResourceRequest request, int appId) {
