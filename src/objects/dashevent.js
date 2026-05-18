@@ -31,12 +31,20 @@ hbbtv.objects.DASHEvent = (function() {
 
     // Initialise an instance of prototype
     function initialise(streamEvent) {
+        const raw = streamEvent.DASHEvent;
+        console.log(
+            '[ORB-DASHEvent] initialise: raw id=' + (raw && raw.id) +
+                ' startTime=' + (raw && raw.startTime) +
+                ' duration=' + (raw && raw.duration) +
+                ' textType=' + typeof streamEvent.text
+        );
         privates.set(this, {
             eventData: streamEvent.DASHEvent,
         });
         const data = streamEvent.text;
         if (typeof(data) === "string") {
-            if (streamEvent.DASHEvent.contentEncoding === "binary") {
+            /* TS 102 796 §9.3.2.2: DataCue.data is UTF-8 bytes in ArrayBuffer, not XMLDocument. */
+            try {
                 const textEncoder = new TextEncoder();
                 const u8 = textEncoder.encode(data);
                 streamEvent.DASHEvent.data = u8.buffer.slice(
@@ -44,18 +52,16 @@ hbbtv.objects.DASHEvent = (function() {
                     u8.byteOffset + u8.byteLength);
                 streamEvent.data = utf8StringToUpperHex(data);
             }
-            else {
-                try {
-                    const parser = new DOMParser();
-                    streamEvent.DASHEvent.data = parser.parseFromString(data, "text/xml");
-                    streamEvent.data = utf8StringToUpperHex(data);
-                }
-                catch(e) {
-                    console.warn(e.message);
-                }
+            catch(e) {
+                console.warn(e.message);
             }
         }
         streamEvent.DASHEvent = this;
+        console.log(
+            '[ORB-DASHEvent] initialise: after wrap id=' + streamEvent.DASHEvent.id +
+                ' startTime=' + streamEvent.DASHEvent.startTime +
+                ' endTime=' + streamEvent.DASHEvent.endTime
+        );
     }
 
     return {
