@@ -299,6 +299,17 @@ public interface IOrbSession {
     void onServiceInstanceChange(int index);
 
     /**
+     * Test hook used by emulator builds to simulate selecting an external source.
+     */
+    void simulateExternalSourceSelected();
+
+    /**
+     * Test hook used by emulator builds to restore the ORB application after a simulated source
+     * selection.
+     */
+    void simulateExternalSourceRestored();
+
+    /**
      * This method should be called after the View (i.e., from IOrbSesssion.getView()) has been
      * removed from the view system.
      */

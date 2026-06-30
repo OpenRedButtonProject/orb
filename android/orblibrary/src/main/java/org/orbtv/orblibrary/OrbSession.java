@@ -418,6 +418,28 @@ class OrbSession implements IOrbSession {
     }
 
     /**
+     * Test hook used by emulator builds to simulate selecting an external source. This uses the
+     * same browser visibility path as application hiding so pages receive visibilitychange.
+     */
+    @Override
+    public void simulateExternalSourceSelected() {
+        Log.d(TAG, "Simulating external source selection");
+        mBrowserView.hideApplication();
+        mOrbSessionCallback.onApplicationStatusChanged(IOrbSessionCallback.ApplicationStatus.INVISIBLE);
+    }
+
+    /**
+     * Test hook used by emulator builds to restore the ORB application after a simulated source
+     * selection.
+     */
+    @Override
+    public void simulateExternalSourceRestored() {
+        Log.d(TAG, "Restoring application after simulated external source selection");
+        mBrowserView.showApplication();
+        mOrbSessionCallback.onApplicationStatusChanged(IOrbSessionCallback.ApplicationStatus.VISIBLE);
+    }
+
+    /**
      * Requests the HbbTV engine to process the specified AIT. The HbbTV engine expects the
      * relevant AITs only (the first one after HBBTV_Start and when the version/PID changes).
      * If more than one stream is signalled in the PMT for a service with an
