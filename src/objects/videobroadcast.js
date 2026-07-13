@@ -744,8 +744,19 @@ hbbtv.objects.VideoBroadcast = (function() {
                     const applicationScheme = hbbtv.bridge.manager.getApplicationScheme();
                     let wasPlayStateStopped = false;
                     if (p.playState === PLAY_STATE_UNREALIZED && applicationScheme === LINKED_APP_SCHEME_1_1) {
-                        /* DAE vol5 Table 8 state transition #7 */
-                        p.playState = PLAY_STATE_PRESENTING;
+                        /* DAE vol5 Table 8 state transition #7 — PRESENTING when media is available.
+                         * For DVB-I DASH, AV components are only known after dash.js reports tracks.
+                         * If components are not ready yet, stay in CONNECTING until they arrive so
+                         * getCurrentActiveComponents() is not queried against an empty list. */
+                        const components = hbbtv.bridge.broadcast.getComponents(
+                            channelData.ccid,
+                            -1
+                        );
+                        if (components && components.length > 0) {
+                            p.playState = PLAY_STATE_PRESENTING;
+                        } else {
+                            p.playState = PLAY_STATE_CONNECTING;
+                        }
                     } else {
                         /* PLAY_STATE_STOPPED */
                         /* DAE vol5 Table 8 state transition #17 with HbbTV 2.0.3 modification */
@@ -1558,6 +1569,30 @@ hbbtv.objects.VideoBroadcast = (function() {
                     switch (event.statusCode) {
                         case CHANNEL_STATUS_PRESENTING:
                             /* DAE vol5 Table 8 state transition #9 */
+                            // For media-in-parallel linked apps on DVB-I, components may lag PLAYING.
+                            // Stay CONNECTING until getComponents is non-empty (see maybePresentWhenComponentsReady).
+                            if (
+                                hbbtv.bridge.manager.getApplicationScheme() === LINKED_APP_SCHEME_1_1
+                            ) {
+                                try {
+                                    const ccid =
+                                        p.currentChannelData && p.currentChannelData.ccid;
+                                    const components = ccid
+                                        ? hbbtv.bridge.broadcast.getComponents(ccid, -1)
+                                        : [];
+                                    if (!components || components.length === 0) {
+                                        console.log(
+                                            'DEBUG_CHANNEL_STATUS: CHANNEL_STATUS_PRESENTING deferred until components ready'
+                                        );
+                                        break;
+                                    }
+                                } catch (e) {
+                                    console.log(
+                                        'DEBUG_CHANNEL_STATUS: CHANNEL_STATUS_PRESENTING deferred (component query failed)'
+                                    );
+                                    break;
+                                }
+                            }
                             console.log('DEBUG_CHANNEL_STATUS: CHANNEL_STATUS_PRESENTING received while in CONNECTING state - transitioning to PRESENTING');
                             hbbtv.holePuncher.setBroadcastVideoObject(this);
                             p.playState = PLAY_STATE_PRESENTING;
@@ -1774,6 +1809,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                 const p = privates.get(this);
                 try {
                     p.currentChannelComponents = null;
+                    maybePresentWhenComponentsReady.call(this);
                     dispatchSelectedComponentChanged.call(this, event.componentType);
                 } catch (e) {
                     if (e.name === 'SecurityError') {
@@ -1797,6 +1833,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                 /* Update internal state */
                 try {
                     p.currentChannelComponents = null;
+                    maybePresentWhenComponentsReady.call(this);
                     // For COMPONENT_TYPE_ANY (more than 1 component changed) use undefined.
                     let componentType = undefined;
                     if (event.componentType != COMPONENT_TYPE_ANY) {
@@ -2111,6 +2148,32 @@ hbbtv.objects.VideoBroadcast = (function() {
             channel: channel,
         });
         privates.get(this).eventDispatcher.dispatchEvent(event);
+    }
+
+    /**
+     * Linked-application "media in parallel" may bind while DVB-I DASH tracks are still loading.
+     * Complete the CONNECTING → PRESENTING transition once components are available.
+     */
+    function maybePresentWhenComponentsReady() {
+        const p = privates.get(this);
+        if (p.playState !== PLAY_STATE_CONNECTING || !p.currentChannelData) {
+            return;
+        }
+        if (hbbtv.bridge.manager.getApplicationScheme() !== LINKED_APP_SCHEME_1_1) {
+            return;
+        }
+        try {
+            const components = hbbtv.bridge.broadcast.getComponents(
+                p.currentChannelData.ccid,
+                -1
+            );
+            if (components && components.length > 0) {
+                p.playState = PLAY_STATE_PRESENTING;
+                dispatchPlayStateChangeEvent.call(this, p.playState);
+            }
+        } catch (e) {
+            // Ignore; remain CONNECTING until a later component update or channel status.
+        }
     }
 
     function dispatchPlayStateChangeEvent(state, error) {
