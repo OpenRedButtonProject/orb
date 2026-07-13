@@ -89,24 +89,37 @@ hbbtv.objects.ChannelList = (function() {
                 return true;
             }
             const p = privates.get(this);
-            let channelData = undefined;
+            // HbbTV TS 102 796 clause O.5.2: getChannelByTriplet shall prefer DVB-I
+            // Channel objects over classic RF when both are present in the ChannelList:
+            //  1) DVB-I service (IdentifierTriplet) -> return that service
+            //  2) DVB-I service instance (RF triplet) -> return that instance
+            //  3) If both 1 and 2 apply -> return the service
+            // Classic RF / other Channel objects are used only when neither applies.
+            let serviceMatch = undefined;
+            let instanceMatch = undefined;
+            let otherMatch = undefined;
             for (let channel of p.channelDataList) {
-                if (isMatch(channel)) {
-                    channelData = channel;
-                    break;
-                } else if (channel.serviceInstances) {
-                    for (let instance of channel.serviceInstances) {
-                        if (isMatch(instance)) {
-                            instance.parentService = channel;
-                            channelData = instance;
-                            break;
+                if (channel.serviceInstances) {
+                    if (!serviceMatch && isMatch(channel)) {
+                        serviceMatch = channel;
+                    }
+                    if (!instanceMatch) {
+                        for (let instance of channel.serviceInstances) {
+                            if (isMatch(instance)) {
+                                instance.parentService = channel;
+                                instanceMatch = instance;
+                                break;
+                            }
                         }
                     }
-                    if (channelData) {
+                    if (serviceMatch && instanceMatch) {
                         break;
                     }
+                } else if (!otherMatch && isMatch(channel)) {
+                    otherMatch = channel;
                 }
-            };
+            }
+            const channelData = serviceMatch || instanceMatch || otherMatch;
             if (channelData) {
                 return hbbtv.objects.createChannel(channelData);
             }
