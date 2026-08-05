@@ -336,7 +336,7 @@ hbbtv.objects.OipfCapabilities = (function() {
             doc.documentElement.appendChild(element);
         });
 
-        //drm
+        // drm (CI+ - uses the live status kept by drmManager for the SAS handshake)
         const status = hbbtv.drmManager.getCSPGCIPlusStatus();
         if (status) {
             status.DRMSystemIDs.forEach((value) => {
@@ -351,6 +351,25 @@ hbbtv.objects.OipfCapabilities = (function() {
                 extElement.appendChild(drm);
             });
         }
+
+        // drm (other DRM systems reported by the terminal, e.g. PlayReady, Widevine).
+        // CI+ is already emitted above, so skip it here to avoid duplicate <drm> elements.
+        hbbtv.drmManager.getSupportedDRMSystems().forEach((system) => {
+            if (system.DRMSystem === 'CIPLUS' || !system.DRMSystemIDs) {
+                return;
+            }
+            system.DRMSystemIDs.forEach((value) => {
+                const drm = doc.createElementNS(ns, 'drm');
+                drm.setAttribute('DRMSystemID', value);
+                if (system.protectionGateways) {
+                    drm.setAttribute('protectionGateways', system.protectionGateways);
+                }
+                if (system.supportedFormats) {
+                    drm.append(system.supportedFormats);
+                }
+                extElement.appendChild(drm);
+            });
+        });
 
         // html5_media
         const html5MediaElement = doc.createElementNS(ns, 'html5_media');

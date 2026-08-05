@@ -283,10 +283,20 @@ hbbtv.objects.DashProxy = (function() {
         if (p) {
             let index = -1;
             for (let i = 0; i < this.textTracks.length; ++i) {
-                if (this.textTracks[i].mode === 'showing') {
+                let track = this.textTracks[i];
+                // The previously stored mode lets us tell which track has just been
+                // switched to 'showing' when more than one is 'showing' at once, so
+                // we can honour the newest selection (only one may be shown at a time).
+                let state = privates.get(track) ?? track.mode;
+                if (track.mode === 'showing' && (index === -1 || state !== 'showing')) {
+                    if (index >= 0) {
+                        this.textTracks[index].mode = 'hidden';
+                    }
                     index = i;
-                    break;
+                } else {
+                    track.mode = 'hidden';
                 }
+                privates.set(track, track.mode);
             }
             p.player.setTextTrack(index);
         }
@@ -675,6 +685,25 @@ hbbtv.objects.DashProxy = (function() {
                     },
                     capabilities: {
                         filterUnsupportedEssentialProperties: true,
+                    },
+                    protection: {
+                        // Let the application own EME. Without this, dash.js's own
+                        // ProtectionController also reacts to the 'encrypted' event and drives
+                        // setMediaKeys()/generateRequest() on the same media element, colliding
+                        // with an app that manages EME itself (e.g. the DRM0010 test).
+                        ignoreEmeEncryptedEvent: true,
+                    },
+                    gaps: {
+                        // dash.js jumps gaps by default; enableStallFix (off by default)
+                        // additionally nudges playback past gaps/overlaps that only surface
+                        // as a stall - e.g. at non-continuous Period boundaries.
+                        jumpGaps: true,
+                        jumpLargeGaps: true,
+                        smallGapLimit: 1.5,
+                        threshold: 0.3,
+                        enableSeekFix: true,
+                        enableStallFix: true,
+                        stallSeek: 0.1,
                     },
                     retryAttempts: {
                         MPD: 0,
