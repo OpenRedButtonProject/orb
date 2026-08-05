@@ -196,7 +196,19 @@ hbbtv.drmManager = (function() {
                             console.error(DRM_SYSTEM_CIPLUS + ' unhandled onDRMMessageResult');
                         }
                     } else {
-                        console.error('DRMSystemID ' + msg.DRMSystemID + ' unhandled');
+                        /* Non-CI+ DRM system (e.g. PlayReady, Widevine): deliver the
+                           terminal's response (the licence, or an error code) to the
+                           application against the msgId returned by sendDRMMessage. */
+                        if (p.oipfDrmAgent) {
+                            p.oipfDrmAgent.dispatchDRMMessageResult.call(
+                                p.oipfDrmAgent.obj,
+                                msg.msgId2 || msg.msgId,
+                                event.resultMsg,
+                                event.resultCode !== undefined ?
+                                event.resultCode :
+                                Result.MSG_SUCCESSFUL
+                            );
+                        }
                     }
                 } else {
                     console.error('DRMSystemID ' + msg.DRMSystemID + ' not found');
@@ -225,10 +237,15 @@ hbbtv.drmManager = (function() {
             console.log('Received onDRMSystemMessage ' + JSON.stringify(event));
 
             const p = privates.get(this);
-            if (p.oipfDrmAgent) {
-                if (p.drmSystemIdStatusMap.has(event.DRMSystemID)) {
-                    console.warn('Unhandled DRMSystemID ' + event.DRMSystemID);
-                }
+            if (p.oipfDrmAgent && p.drmSystemIdStatusMap.has(event.DRMSystemID)) {
+                /* Forward an unsolicited DRM system message (e.g. a PlayReady
+                   individualisation/renewal request from the terminal) to the
+                   application listening on the oipfDrmAgent object. */
+                p.oipfDrmAgent.dispatchDRMSystemMessage.call(
+                    p.oipfDrmAgent.obj,
+                    event.msg,
+                    event.DRMSystemID
+                );
             }
         };
         hbbtv.bridge.addWeakEventListener('DRMSystemMessage', p.onDRMSystemMessage);
@@ -283,7 +300,15 @@ hbbtv.drmManager = (function() {
                         tryNextAppId(p, null, status);
                     }
                 } else {
-                    console.warn('Unhandled DRMSystem ' + status.DRMSystem);
+                    /* Non-CI+ DRM system (e.g. PlayReady, Widevine): track it so that
+                       oipfDrmAgent messaging (sendDRMMessage) and status queries
+                       (DRMSystemStatus) work for it. Unlike CI+ these systems need no
+                       SAS handshake, so we just record their status here. */
+                    p.drmSystemMap.set(status.DRMSystem, status);
+                    for (const DRMSystemID of status.DRMSystemIDs) {
+                        console.log('Associating ' + DRMSystemID + ' to ' + status.DRMSystem);
+                        p.drmSystemIdStatusMap.set(DRMSystemID, status);
+                    }
                 }
             }
         }
@@ -337,15 +362,31 @@ hbbtv.drmManager = (function() {
         return null;
     }
 
+    /**
+     * Returns every DRM system reported by the terminal (e.g. PlayReady, Widevine, CI+), not just
+     * CI+. Used for capability advertising (oipfCapabilities <drm> elements). The internal
+     * drmSystemMap only tracks CI+ (it drives the CI+ SAS handshake), so query the bridge directly.
+     *
+     * @returns {Array} Array of DRM system status objects, or an empty array.
+     */
+    function getSupportedDRMSystems() {
+        try {
+            return hbbtv.bridge.drm.getSupportedDRMSystemIDs() || [];
+        } catch (e) {
+            console.warn('drmManager.getSupportedDRMSystems failed: ' + e);
+            return [];
+        }
+    }
+
     function sendDRMMessage(msgType, msg, DRMSystemID) {
         const p = privates.get(this);
         gMsgIdCounter++;
         const msgId = gMsgIdCounter.toString();
         console.log('sendDRMMessage msgId=' + msgId + ' type=' + msgType);
         let result = null;
-        if (!DrmMimeTypes.includes(msgType)) {
-            result = Result.MSG_UNKNOWN_MIME_TYPE;
-        } else if (p.drmSystemIdStatusMap.has(DRMSystemID)) {
+        if (!p.drmSystemIdStatusMap.has(DRMSystemID)) {
+            result = Result.MSG_UNKNOWN_DRM_SYSTEM;
+        } else {
             const status = p.drmSystemIdStatusMap.get(DRMSystemID);
             if (status.DRMSystem === DRM_SYSTEM_CIPLUS) {
                 if (msgType === CIPLUS_MIME_TYPE) {
@@ -362,10 +403,24 @@ hbbtv.drmManager = (function() {
                     result = Result.MSG_UNKNOWN_MIME_TYPE;
                 }
             } else {
-                console.warn('Unhandled DRMSystemID ' + DRMSystemID);
+                /* Non-CI+ DRM system (e.g. PlayReady, Widevine): per DAE 7.6.1 the
+                   message type is "defined by the DRM system", so forward the message -
+                   typically a licence challenge - to the terminal DRM stack unchanged
+                   (rather than restricting it to the CI+/Marlin MIME types) and route the
+                   terminal's asynchronous response back to the application via the
+                   DRMMessageResult event (handled in onDRMMessageResult). */
+                if (!DrmMimeTypes.includes(msgType)) {
+                    console.log('sendDRMMessage: forwarding DRM-system-defined msgType ' + msgType);
+                }
+                p.drmMessages.set(msgId, {
+                    msgId: msgId,
+                    msgId2: msgId,
+                    msgType: msgType,
+                    msg: msg,
+                    DRMSystemID: DRMSystemID,
+                });
+                hbbtv.bridge.drm.sendDRMMessage(msgId, msgType, msg, DRMSystemID, false);
             }
-        } else {
-            result = Result.MSG_UNKNOWN_DRM_SYSTEM;
         }
         if (result) {
             Promise.resolve().then(() =>
@@ -404,7 +459,9 @@ hbbtv.drmManager = (function() {
                     return handleCiPlusMessage(response);
                 }
             } else {
-                console.warn('Unhandled DRMSystemID ' + DRMSystemID);
+                /* Non-CI+ DRM system (e.g. PlayReady, Widevine): let the terminal
+                   decide whether the protected content can be played. */
+                return hbbtv.bridge.drm.canPlayContent(DRMPrivateData, DRMSystemID);
             }
         }
         return false;
@@ -809,6 +866,7 @@ hbbtv.drmManager = (function() {
         isCSPGCIPlusDiscovered: isCSPGCIPlusDiscovered,
         /* oipfCapabilities and oipfGatewayInfo */
         getCSPGCIPlusStatus: getCSPGCIPlusStatus,
+        getSupportedDRMSystems: getSupportedDRMSystems,
         /* oipfDrmAgent */
         registerOipfDrmAgent: registerOipfDrmAgent,
         sendDRMMessage: sendDRMMessage,
