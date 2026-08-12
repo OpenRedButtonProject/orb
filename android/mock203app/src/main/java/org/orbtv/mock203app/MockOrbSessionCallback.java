@@ -953,6 +953,18 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         return 15;
     }
 
+    @Override
+    public int getParentalPinLength() {
+        return 4;
+    }
+
+    @Override
+    public void requestParentalControlApproval(java.util.Map<String, String> context) {
+        if (mSession != null) {
+            mSession.onParentalControlApprovalDecided(true);
+        }
+    }
+
     /**
      * Returns the region set for parental control.
      * @return country using the 3-character code as specified in ISO 3166

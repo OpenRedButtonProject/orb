@@ -519,6 +519,24 @@ public interface IOrbSessionCallback {
     int getParentalControlAge();
 
     /**
+     * Number of digits in the terminal parental PIN, 0 if parental control / PIN is disabled,
+     * or -1 if a non-PIN approval method is used (HbbTV A.2.31 parentalPINLength).
+     */
+    default int getParentalPinLength() {
+        return 0;
+    }
+
+    /**
+     * Run the terminal parental approval UI. When finished, call
+     * {@link IOrbSession#onParentalControlApprovalDecided(boolean)}.
+     *
+     * @param context optional BCP-47 language → content name map, or null
+     */
+    default void requestParentalControlApproval(java.util.Map<String, String> context) {
+        // Unimplemented: treat as notApproved once a session exists to notify.
+    }
+
+    /**
      * Returns the region set for parental control.
      *
      * @return country using the 3-character code as specified in ISO 3166

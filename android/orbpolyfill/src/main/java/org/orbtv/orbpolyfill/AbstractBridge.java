@@ -283,6 +283,20 @@ public abstract class AbstractBridge {
     }
 
     /**
+     * Called when the user has finished parental control approval (A.2.31).
+     *
+     * @param approved True if access was approved.
+     */
+    public void dispatchParentalControlApprovalEvent(boolean approved) {
+        JSONObject properties = new JSONObject();
+        try {
+            properties.put("approved", approved);
+        } catch (JSONException ignored) {
+        }
+        mSessionCallback.dispatchEvent("parentalcontrolapproval", properties);
+    }
+
+    /**
      * Called when the user changes the audio language
      *
      * @param language      The new preferred audio language
@@ -959,6 +973,16 @@ public abstract class AbstractBridge {
      * @return True if the rating is blocked; or false otherwise.
      */
     protected abstract boolean ParentalControl_isRatingBlocked(BridgeToken token, String scheme, String region, int value);
+
+    /**
+     * Get the number of digits in the terminal parental PIN (A.2.31 parentalPINLength).
+     */
+    protected abstract int ParentalControl_getPINLength(BridgeToken token);
+
+    /**
+     * Request terminal parental approval UI; result arrives via parentalcontrolapproval event.
+     */
+    protected abstract void ParentalControl_requestApproval(BridgeToken token, org.json.JSONObject context);
 
     /**
      * Get the current capabilities of the terminal.
@@ -1944,6 +1968,18 @@ public abstract class AbstractBridge {
                         params.getInt("value")
                 );
                 response.put("result", result);
+                break;
+            }
+
+            case "ParentalControl.getPINLength": {
+                int result = ParentalControl_getPINLength(token);
+                response.put("result", result);
+                break;
+            }
+
+            case "ParentalControl.requestApproval": {
+                org.json.JSONObject context = params.optJSONObject("context");
+                ParentalControl_requestApproval(token, context);
                 break;
             }
 

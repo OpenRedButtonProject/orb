@@ -757,6 +757,9 @@ class Bridge extends AbstractBridge {
                                                       int value) {
         // TODO Add 1:1 method to callback
         int age = mOrbLibraryCallback.getParentalControlAge();
+        if (age <= 0) {
+            return false;
+        }
         if (scheme.toLowerCase().equals("dvb-si")) {
             // The value property of the parental rating is equal to
             // the value in DVB-SI rating field + 3 (table A.6 of A.2.28)
@@ -764,6 +767,25 @@ class Bridge extends AbstractBridge {
             return !parentalRegion.equals(region.toLowerCase()) || age <= value + 3;
         }
         return age < value;
+    }
+
+    @Override
+    protected int ParentalControl_getPINLength(BridgeToken token) {
+        return mOrbLibraryCallback.getParentalPinLength();
+    }
+
+    @Override
+    protected void ParentalControl_requestApproval(BridgeToken token, org.json.JSONObject context) {
+        java.util.Map<String, String> map = null;
+        if (context != null) {
+            map = new java.util.HashMap<>();
+            java.util.Iterator<String> keys = context.keys();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                map.put(key, context.optString(key, ""));
+            }
+        }
+        mOrbLibraryCallback.requestParentalControlApproval(map);
     }
 
     /**

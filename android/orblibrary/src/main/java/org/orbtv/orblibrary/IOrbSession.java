@@ -206,6 +206,13 @@ public interface IOrbSession {
     void onAccessToDistinctiveIdentifierDecided(String origin, boolean accessAllowed);
 
     /**
+     * Called when the user has finished the parental control approval UI (A.2.31).
+     *
+     * @param approved true if access was approved
+     */
+    void onParentalControlApprovalDecided(boolean approved);
+
+    /**
      * TODO(comment)
      *
      * @param search
