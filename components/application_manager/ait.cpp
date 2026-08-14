@@ -169,6 +169,10 @@ const Ait::S_AIT_APP_DESC * Ait::AutoStartApp(const S_AIT_TABLE *aitTable, int
                 }
                 if (!supported)
                 {
+                    LOG(LOG_ERROR,
+                        "Ait::AutoStartApp orgId=%u appId=%u skipped: no supported HbbTV profile (count=%zu)",
+                        candidate->orgId, candidate->appId,
+                        candidate->appDesc.appProfiles.size());
                     continue;
                 }
 
@@ -188,6 +192,13 @@ const Ait::S_AIT_APP_DESC * Ait::AutoStartApp(const S_AIT_TABLE *aitTable, int
                     {
                         app = candidate;
                     }
+                }
+                else
+                {
+                    LOG(LOG_ERROR,
+                        "Ait::AutoStartApp orgId=%u appId=%u skipped: no viable transport (network=%d, numTransports=%d)",
+                        candidate->orgId, candidate->appId, isNetworkAvailable,
+                        candidate->numTransports);
                 }
             }
         }

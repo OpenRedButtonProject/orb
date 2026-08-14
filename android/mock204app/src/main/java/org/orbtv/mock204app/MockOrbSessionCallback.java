@@ -1073,11 +1073,12 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     @Override
-    public void requestParentalControlApproval(java.util.Map<String, String> context) {
+    public boolean requestParentalControlApproval(java.util.Map<String, String> context) {
         // Auto-approve in mock for API smoke tests; zoo uses the real terminal UI.
         if (mSession != null) {
             mSession.onParentalControlApprovalDecided(true);
         }
+        return true;
     }
 
     /**

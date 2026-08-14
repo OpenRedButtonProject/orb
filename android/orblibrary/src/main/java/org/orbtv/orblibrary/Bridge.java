@@ -785,7 +785,9 @@ class Bridge extends AbstractBridge {
                 map.put(key, context.optString(key, ""));
             }
         }
-        mOrbLibraryCallback.requestParentalControlApproval(map);
+        if (!mOrbLibraryCallback.requestParentalControlApproval(map)) {
+            mTvBrowserSession.onParentalControlApprovalDecided(false);
+        }
     }
 
     /**

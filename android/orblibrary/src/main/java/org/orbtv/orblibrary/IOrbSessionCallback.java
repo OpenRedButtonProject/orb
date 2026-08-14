@@ -531,9 +531,12 @@ public interface IOrbSessionCallback {
      * {@link IOrbSession#onParentalControlApprovalDecided(boolean)}.
      *
      * @param context optional BCP-47 language → content name map, or null
+     * @return true if this implementation will call
+     *         {@link IOrbSession#onParentalControlApprovalDecided(boolean)};
+     *         false if the caller should treat the request as notApproved
      */
-    default void requestParentalControlApproval(java.util.Map<String, String> context) {
-        // Unimplemented: treat as notApproved once a session exists to notify.
+    default boolean requestParentalControlApproval(java.util.Map<String, String> context) {
+        return false;
     }
 
     /**

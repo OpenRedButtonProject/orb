@@ -19,6 +19,7 @@
 hbbtv.objects.OipfParentalControlManager = (function() {
     const prototype = Object.create(HTMLObjectElement.prototype);
     const privates = new WeakMap();
+    let gIsPendingApproval = false;
 
     Object.defineProperty(prototype, 'parentalRatingSchemes', {
         get() {
@@ -43,8 +44,14 @@ hbbtv.objects.OipfParentalControlManager = (function() {
      */
     prototype.requestParentalControlApproval = function(context) {
         return new Promise((resolve) => {
+            if (gIsPendingApproval) {
+                resolve('notApproved');
+                return;
+            }
+            gIsPendingApproval = true;
             const wrapper = (event) => {
                 hbbtv.bridge.removeStrongEventListener('parentalcontrolapproval', wrapper);
+                gIsPendingApproval = false;
                 resolve(event.approved ? 'approved' : 'notApproved');
             };
             hbbtv.bridge.addStrongEventListener('parentalcontrolapproval', wrapper);

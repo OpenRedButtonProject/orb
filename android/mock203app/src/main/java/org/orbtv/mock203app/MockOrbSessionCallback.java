@@ -959,10 +959,11 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     }
 
     @Override
-    public void requestParentalControlApproval(java.util.Map<String, String> context) {
+    public boolean requestParentalControlApproval(java.util.Map<String, String> context) {
         if (mSession != null) {
             mSession.onParentalControlApprovalDecided(true);
         }
+        return true;
     }
 
     /**
