@@ -886,6 +886,26 @@ hbbtv.bridge.parentalControl = (function() {
         return hbbtv.native.request('ParentalControl.isRatingBlocked', rating).result;
     };
 
+    /**
+     * Get the parental PIN length (HbbTV A.2.31 parentalPINLength).
+     *
+     * @return {number} digit count, 0 if disabled / no PIN, or -1 for non-PIN auth
+     */
+    exported.getPINLength = function() {
+        return hbbtv.native.request('ParentalControl.getPINLength').result;
+    };
+
+    /**
+     * Request terminal parental approval UI. Result arrives as parentalcontrolapproval event.
+     *
+     * @param {Object|null} context optional language→name map
+     */
+    exported.requestApproval = function(context) {
+        hbbtv.native.request('ParentalControl.requestApproval', {
+            context: context || null,
+        });
+    };
+
     return exported;
 })();
 

@@ -691,6 +691,11 @@ class OrbSession implements IOrbSession {
         mBridge.dispatchAccessToDistinctiveIdentifierEvent(origin, accessAllowed);
     }
 
+    @Override
+    public void onParentalControlApprovalDecided(boolean approved) {
+        mBridge.dispatchParentalControlApprovalEvent(approved);
+    }
+
     /**
      * TODO(comment)
      *

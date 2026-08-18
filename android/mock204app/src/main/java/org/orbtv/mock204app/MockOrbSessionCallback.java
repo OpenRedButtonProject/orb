@@ -1067,6 +1067,20 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         return 15;
     }
 
+    @Override
+    public int getParentalPinLength() {
+        return 4;
+    }
+
+    @Override
+    public boolean requestParentalControlApproval(java.util.Map<String, String> context) {
+        // Auto-approve in mock for API smoke tests; zoo uses the real terminal UI.
+        if (mSession != null) {
+            mSession.onParentalControlApprovalDecided(true);
+        }
+        return true;
+    }
+
     /**
      * Returns the region set for parental control.
      *
