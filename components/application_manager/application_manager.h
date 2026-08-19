@@ -290,9 +290,14 @@ public:
      *
      * If a broadcast-independent application is running, it will transition to broadcast-related or
      * be killed depending on the signalling.
+     *
+     * For DVB-I (isDvbi=true) the linked XML AIT is one-shot HTTP, not a repeating broadcast AIT.
+     * CONNECTING must not start the broadcast AIT watchdog.
+     *
+     * @param isDvbi true when the newly selected service is DVB-I (including native DASH).
      */
     void OnChannelChanged(uint16_t originalNetworkId, uint16_t transportStreamId, uint16_t
-        serviceId);
+        serviceId, bool isDvbi = false);
 
     /**
      * Called when the network availability has changed.

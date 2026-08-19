@@ -409,9 +409,9 @@ JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniOnApplica
 extern "C"
 JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniOnChannelChange(JNIEnv *env,
     jobject object,
-    jint onet_id, jint trans_id, jint serv_id)
+    jint onet_id, jint trans_id, jint serv_id, jboolean is_dvbi)
 {
-    GetManager(env, object)->OnChannelChanged(onet_id, trans_id, serv_id);
+    GetManager(env, object)->OnChannelChanged(onet_id, trans_id, serv_id, is_dvbi == JNI_TRUE);
 }
 
 extern "C"

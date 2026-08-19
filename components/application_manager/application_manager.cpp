@@ -676,22 +676,49 @@ void ApplicationManager::OnBroadcastStopped()
  *
  * If a broadcast-independent application is running, it will transition to broadcast-related or
  * be killed depending on the signalling.
+ *
+ * DVB-I linked XML AIT is one-shot HTTP. CONNECTING must not start the broadcast AIT watchdog.
  */
 void ApplicationManager::OnChannelChanged(uint16_t originalNetworkId,
-    uint16_t transportStreamId, uint16_t serviceId)
+    uint16_t transportStreamId, uint16_t serviceId, bool isDvbi)
 {
-    DBGLOG("(current serviceId: %u, new serviceId %u)", m_currentService.serviceId, serviceId);
+    DBGLOG("(current serviceId: %u, new serviceId %u, isDvbi=%d)",
+        m_currentService.serviceId, serviceId, isDvbi);
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    m_currentServiceReceivedFirstAit = false;
-    m_currentServiceAitPid = 0;
-    m_ait.Clear();
-    m_aitTimeout.start();
+    if (m_currentService.originalNetworkId == originalNetworkId &&
+        m_currentService.transportStreamId == transportStreamId &&
+        m_currentService.serviceId == serviceId)
+    {
+        DBGLOG("Ignoring duplicate CONNECTING for the same service");
+        return;
+    }
     m_previousService = m_currentService;
     m_currentService = {
         .originalNetworkId = originalNetworkId,
         .transportStreamId = transportStreamId,
         .serviceId = serviceId,
     };
+    m_currentServiceReceivedFirstAit = false;
+    m_currentServiceAitPid = 0;
+    if (isDvbi)
+    {
+        // Linked XML AIT is delivered once via Related Material, not on an RF AIT PID.
+        // Keep the current AIT so a running 1.1 app survives DASH CONNECTING and setChannel
+        // onto a native DASH service that does not re-signal the app (ERRATA0300–0320).
+        m_aitTimeout.stop();
+        if (m_app.isRunning && m_app.isBroadcast && m_app.isServiceBound)
+        {
+            LOG(LOG_INFO, "Kill running app (DVB-I service bound, left the service)");
+            KillRunningApp();
+        }
+        else
+        {
+            LOG(LOG_INFO, "DVB-I channel change: skip AIT timeout (linked XML AIT is one-shot)");
+        }
+        return;
+    }
+    m_ait.Clear();
+    m_aitTimeout.start();
 }
 
 /**

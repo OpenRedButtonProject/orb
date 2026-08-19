@@ -248,8 +248,8 @@ class ApplicationManager {
         jniOnBroadcastStopped();
     }
 
-    public void onChannelChanged(int onetId, int transId, int servId) {
-        jniOnChannelChange(onetId, transId, servId);
+    public void onChannelChanged(int onetId, int transId, int servId, boolean isDvbi) {
+        jniOnChannelChange(onetId, transId, servId, isDvbi);
     }
 
     public void close() {
@@ -299,7 +299,7 @@ class ApplicationManager {
 
     private native void jniOnBroadcastStopped();
 
-    private native void jniOnChannelChange(int onetId, int transId, int servId);
+    private native void jniOnChannelChange(int onetId, int transId, int servId, boolean isDvbi);
 
     private native boolean jniIsRequestAllowed(int callingAppId, String callingPageUrl, int methodRequirement);
 

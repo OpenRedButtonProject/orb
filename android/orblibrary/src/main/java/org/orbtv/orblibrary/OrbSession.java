@@ -588,13 +588,17 @@ class OrbSession implements IOrbSession {
     public void onChannelStatusChanged(int onetId, int transId, int servId, int statusCode,
                                        boolean permanentError) {
         mBridge.dispatchChannelStatusChangedEvent(onetId, transId, servId, statusCode, permanentError);
-        if (statusCode == BridgeTypes.CHANNEL_STATUS_CONNECTING) {
-            mApplicationManager.onChannelChanged(onetId, transId, servId);
-        }
 
         String ccid = mOrbSessionCallback.getCurrentCcid();
-        if (!ccid.isEmpty()) {
-            BridgeTypes.Channel channel = mOrbSessionCallback.getChannel(ccid);
+        BridgeTypes.Channel channel = ccid.isEmpty() ? null : mOrbSessionCallback.getChannel(ccid);
+        if (statusCode == BridgeTypes.CHANNEL_STATUS_CONNECTING) {
+            boolean isDvbi = channel != null && channel.valid
+                    && (channel.idType == BridgeTypes.Channel.ID_DVB_I
+                    || channel.idType == BridgeTypes.Channel.ID_DVB_DASH);
+            mApplicationManager.onChannelChanged(onetId, transId, servId, isDvbi);
+        }
+
+        if (channel != null) {
             List<BridgeTypes.Programme> programmes = mOrbSessionCallback.getProgrammeList(ccid);
             mMediaSynchroniserManager.updateBroadcastContentStatus(onetId, transId, servId, statusCode, permanentError, programmes);
         }
