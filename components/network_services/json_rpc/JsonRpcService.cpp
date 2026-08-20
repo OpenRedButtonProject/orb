@@ -62,6 +62,9 @@
 #define MD_INTENT_DISPLAY "org.hbbtv.app.intent.display"
 #define MD_INTENT_PLAYBACK "org.hbbtv.app.intent.playback"
 
+#define MD_IPPLAYBACK_SET_COMPONENTS "org.hbbtv.ipplayback.setComponents"
+#define MD_IPPLAYER_SELECT_COMPONENTS "org.hbbtv.ipplayer.selectComponents"
+
 namespace NetworkServices {
 const int sizeOfAccessibilityFeature = 8;
 const static std::map<std::string, int> ACCESSIBILITY_FEATURE_IDS = {
@@ -142,13 +145,19 @@ static std::time_t ConvertISO8601ToSecond(const std::string& input);
 
 static std::string ConvertSecondToISO8601(const int sec);
 
+static std::string WriteJsonToString(const Json::Value &value);
+
+static bool IsIntegralJson(const Json::Value &value);
+
 JsonRpcService::JsonRpcService(
     int port,
     const std::string &endpoint,
     std::unique_ptr<SessionCallback> sessionCallback) :
     WebSocketService("JsonRpcService", port, false, "lo"),
     m_endpoint(endpoint),
-    m_sessionCallback(std::move(sessionCallback))
+    m_sessionCallback(std::move(sessionCallback)),
+    m_ipPlaybackComponentsSet(false),
+    m_ipPlaybackConnectionId(-1)
 {
     RegisterMethod(MD_NEGOTIATE_METHODS, &JsonRpcService::RequestNegotiateMethods);
     RegisterMethod(MD_SUBSCRIBE, &JsonRpcService::RequestSubscribe);
@@ -177,6 +186,8 @@ JsonRpcService::JsonRpcService(
     RegisterMethod(MD_INTENT_SEARCH, &JsonRpcService::ReceiveIntentConfirm);
     RegisterMethod(MD_INTENT_DISPLAY, &JsonRpcService::ReceiveIntentConfirm);
     RegisterMethod(MD_INTENT_PLAYBACK, &JsonRpcService::ReceiveIntentConfirm);
+    RegisterMethod(MD_IPPLAYBACK_SET_COMPONENTS, &JsonRpcService::RequestSetComponents);
+    RegisterMethod(MD_IPPLAYER_SELECT_COMPONENTS, &JsonRpcService::ReceiveIntentConfirm);
 
     RegisterSupportedMethods();
     DBGLOG("created JsonRpcService: endpoint: %s", endpoint.c_str())
@@ -255,6 +266,11 @@ void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const st
             //case with method in result
             method = obj["result"]["method"].asString();
         }
+        else if (obj.isMember("result") || obj.isMember("error"))
+        {
+            // JSON-RPC response to a terminal-originated request; nothing to dispatch.
+            status = JsonRpcStatus::SUCCESS;
+        }
         else
         {
             //cannot find parameter of "method"
@@ -303,6 +319,10 @@ void JsonRpcService::OnDisconnected(WebSocketConnection *connection)
 {
     std::lock_guard<std::recursive_mutex> lockGuard(mConnectionsMutex);
     m_connectionData.erase(connection->Id());
+    if (m_ipPlaybackConnectionId == connection->Id())
+    {
+        m_ipPlaybackConnectionId = -1;
+    }
 }
 
 void JsonRpcService::OnServiceStopped()
@@ -321,6 +341,7 @@ void JsonRpcService::RegisterSupportedMethods()
     m_supported_methods_app_to_terminal.insert(MD_AF_TRIGGER_RESPONSE_TO_USER_ACTION);
     m_supported_methods_app_to_terminal.insert(MD_VOICE_READY);
     m_supported_methods_app_to_terminal.insert(MD_STATE_MEDIA);
+    m_supported_methods_app_to_terminal.insert(MD_IPPLAYBACK_SET_COMPONENTS);
 
     m_supported_methods_terminal_to_app.insert(MD_NOTIFY);
     m_supported_methods_terminal_to_app.insert(MD_INTENT_MEDIA_PAUSE);
@@ -335,6 +356,7 @@ void JsonRpcService::RegisterSupportedMethods()
     m_supported_methods_terminal_to_app.insert(MD_INTENT_SEARCH);
     m_supported_methods_terminal_to_app.insert(MD_INTENT_DISPLAY);
     m_supported_methods_terminal_to_app.insert(MD_INTENT_PLAYBACK);
+    m_supported_methods_terminal_to_app.insert(MD_IPPLAYER_SELECT_COMPONENTS);
 }
 
 JsonRpcService::JsonRpcStatus JsonRpcService::RequestNegotiateMethods(int connectionId, const
@@ -906,6 +928,177 @@ JsonRpcService::JsonRpcStatus JsonRpcService::ReceiveIntentConfirm(int connectio
 
     m_sessionCallback->ReceiveIntentConfirm(connectionId, id, method);
     return JsonRpcStatus::SUCCESS;
+}
+
+JsonRpcService::JsonRpcStatus JsonRpcService::RequestSetComponents(int connectionId, const
+    Json::Value &obj)
+{
+    if (!HasParam(obj, "id", Json::stringValue) &&
+        !HasParam(obj, "id", Json::intValue) &&
+        !HasParam(obj, "id", Json::uintValue))
+    {
+        return JsonRpcStatus::INVALID_PARAMS;
+    }
+    std::string id = EncodeJsonId(obj["id"]);
+
+    if (!HasJsonParam(obj, "params"))
+    {
+        return JsonRpcStatus::INVALID_PARAMS;
+    }
+    const Json::Value &params = obj["params"];
+    if (!params.isMember("sessionID") || !IsIntegralJson(params["sessionID"]))
+    {
+        return JsonRpcStatus::INVALID_PARAMS;
+    }
+    if (params["sessionID"].asInt() != 0)
+    {
+        return JsonRpcStatus::NOT_FOUND;
+    }
+    if (!HasParam(params, "componentList", Json::arrayValue))
+    {
+        return JsonRpcStatus::INVALID_PARAMS;
+    }
+
+    Json::Value simplified = ParseSetComponentsList(params["componentList"]);
+    {
+        std::lock_guard<std::recursive_mutex> lockGuard(mConnectionsMutex);
+        m_ipPlaybackComponents = simplified;
+        m_ipPlaybackComponentsSet = true;
+        m_ipPlaybackConnectionId = connectionId;
+    }
+
+    std::string componentListJson = WriteJsonToString(simplified);
+    LOG(LOG_INFO, "setComponents stored %u entries for session 0",
+        (unsigned) simplified.size());
+    m_sessionCallback->RequestSetComponents(componentListJson);
+
+    Json::Value result(Json::objectValue);
+    result["method"] = MD_IPPLAYBACK_SET_COMPONENTS;
+    Json::Value response = CreateJsonResponse(id, result);
+    SendJsonMessageToClient(connectionId, response);
+    return JsonRpcStatus::SUCCESS;
+}
+
+void JsonRpcService::SendSelectComponents(const std::vector<int> &videoComponents,
+    const std::vector<int> &audioComponents,
+    const std::vector<int> &subtitleComponents)
+{
+    Json::Value params;
+    params["sessionID"] = 0;
+    params["videoComponents"] = Json::Value(Json::arrayValue);
+    params["audioComponents"] = Json::Value(Json::arrayValue);
+    params["subtitleComponents"] = Json::Value(Json::arrayValue);
+    for (int tag : videoComponents)
+    {
+        params["videoComponents"].append(tag);
+    }
+    for (int tag : audioComponents)
+    {
+        params["audioComponents"].append(tag);
+    }
+    for (int tag : subtitleComponents)
+    {
+        params["subtitleComponents"].append(tag);
+    }
+
+    std::unordered_set<int> sent;
+    auto sendTo = [&](int connectionId)
+    {
+        if (!sent.insert(connectionId).second)
+        {
+            return;
+        }
+        std::string requestId = GenerateId(connectionId);
+        Json::Value request = CreateIntentResponse(requestId, MD_IPPLAYER_SELECT_COMPONENTS, params);
+        SendJsonMessageToClient(connectionId, request);
+    };
+
+    int sourceConnectionId = -1;
+    unsigned storedCount = 0;
+    {
+        std::lock_guard<std::recursive_mutex> lockGuard(mConnectionsMutex);
+        sourceConnectionId = m_ipPlaybackConnectionId;
+        if (m_ipPlaybackComponentsSet)
+        {
+            storedCount = m_ipPlaybackComponents.size();
+        }
+    }
+    LOG(LOG_INFO, "selectComponents using tags from last setComponents (%u entries)",
+        storedCount);
+    if (sourceConnectionId >= 0)
+    {
+        sendTo(sourceConnectionId);
+    }
+
+    std::vector<int> connectionIds = GetAllConnectionIds();
+    for (int connectionId : connectionIds)
+    {
+        Json::Value negotiateMethods = GetConnectionData(connectionId,
+            ConnectionDataType::NegotiateMethodsTerminalToApp);
+        if (IsMethodInJsonArray(negotiateMethods, MD_IPPLAYER_SELECT_COMPONENTS))
+        {
+            sendTo(connectionId);
+        }
+    }
+}
+
+Json::Value JsonRpcService::ParseSetComponentsList(const Json::Value &componentList)
+{
+    Json::Value simplified(Json::arrayValue);
+    std::unordered_set<int> seenTags;
+    for (const auto &item : componentList)
+    {
+        if (!item.isObject())
+        {
+            continue;
+        }
+        if (!item.isMember("type") || !IsIntegralJson(item["type"]) ||
+            !item.isMember("componentTag") || !IsIntegralJson(item["componentTag"]))
+        {
+            continue;
+        }
+        int type = item["type"].asInt();
+        int componentTag = item["componentTag"].asInt();
+        if (type < 0 || type > 2 || seenTags.count(componentTag) != 0)
+        {
+            continue;
+        }
+        seenTags.insert(componentTag);
+
+        Json::Value out;
+        out["type"] = type;
+        out["componentTag"] = componentTag;
+        if (HasParam(item, "language", Json::stringValue))
+        {
+            out["language"] = item["language"];
+        }
+        if (HasParam(item, "encoding", Json::stringValue))
+        {
+            out["encoding"] = item["encoding"];
+        }
+        if (HasParam(item, "encrypted", Json::booleanValue))
+        {
+            out["encrypted"] = item["encrypted"];
+        }
+        if (HasParam(item, "audioDescription", Json::booleanValue))
+        {
+            out["audioDescription"] = item["audioDescription"];
+        }
+        if (item.isMember("audioChannels") && IsIntegralJson(item["audioChannels"]))
+        {
+            out["audioChannels"] = item["audioChannels"].asInt();
+        }
+        if (HasParam(item, "hearingImpaired", Json::booleanValue))
+        {
+            out["hearingImpaired"] = item["hearingImpaired"];
+        }
+        if (item.isMember("aspect") && item["aspect"].isNumeric())
+        {
+            out["aspect"] = item["aspect"].asDouble();
+        }
+        simplified.append(out);
+    }
+    return simplified;
 }
 
 JsonRpcService::JsonRpcStatus JsonRpcService::ReceiveError(int connectionId,
@@ -2391,6 +2584,9 @@ std::string GetErrorMessage(JsonRpcService::JsonRpcStatus status)
         case JsonRpcService::JsonRpcStatus::METHOD_NOT_FOUND:
             message = "Method not found";
             break;
+        case JsonRpcService::JsonRpcStatus::NOT_FOUND:
+            message = "Not found";
+            break;
         case JsonRpcService::JsonRpcStatus::PARSE_ERROR:
             message = "Parse Error";
             break;
@@ -2494,5 +2690,22 @@ std::string ConvertSecondToISO8601(const int sec)
     strftime(time, sizeof(time), "%FT%TZ", convertTm);
     std::string result = time;
     return result;
+}
+
+std::string WriteJsonToString(const Json::Value &value)
+{
+#if JSONCPP_VERSION_HEXA > 0x01080200
+    Json::StreamWriterBuilder builder;
+    builder["indentation"] = OPTIONAL_STR_NOT_SET;
+    return Json::writeString(builder, value);
+#else
+    Json::FastWriter writer;
+    return writer.write(value);
+#endif
+}
+
+bool IsIntegralJson(const Json::Value &value)
+{
+    return value.isInt() || value.isUInt();
 }
 } // namespace NetworkServices

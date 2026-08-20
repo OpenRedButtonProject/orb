@@ -16,6 +16,7 @@ body {
 </head>
 <body>
 <h2>JSON RPC</h2>
+<p>After setComponents, open the HbbTV settings menu (H / M / #) and choose Audio components / Subtitle components.</p>
 <object type="application/oipfapplicationmanager" id="app-manager"></object>
 <object type="application/oipfcapabilities" id="capabilities"></object>
 <script>
@@ -43,12 +44,14 @@ function init() {
    }
    
    const ws = new WebSocket(url);
-   const a01 = '{"jsonrpc": "2.0","method": "org.hbbtv.negotiateMethods","params": {"terminalToApp": ["org.hbbtv.app.intent.media.play","org.hbbtv.app.intent.media.pause","org.hbbtv.app.intent.media.stop","org.hbbtv.app.intent.media.fast-forward","org.hbbtv.app.intent.media.fast-reverse","org.hbbtv.app.intent.media.seek-content","org.hbbtv.app.intent.media.seek-relative","org.hbbtv.app.intent.media.seek-live","org.hbbtv.app.intent.media.seek-wallclock","org.hbbtv.app.intent.search","org.hbbtv.app.intent.display","org.hbbtv.app.intent.playback","org.hbbtv.notify"],"appToTerminal": ["org.hbbtv.negotiateMethods","org.hbbtv.subscribe","org.hbbtv.unsubscribe","org.hbbtv.af.featureSupportInfo", "org.hbbtv.af.featureSettingsQuery", "org.hbbtv.af.featureSuppress", "org.hbbtv.app.voice.ready","org.hbbtv.app.state.media","org.hbbtv.app.state.media.2","org.hbbtv.app.state.media.3"]},"id": 1}';
+   const a01 = '{"jsonrpc": "2.0","method": "org.hbbtv.negotiateMethods","params": {"terminalToApp": ["org.hbbtv.app.intent.media.play","org.hbbtv.app.intent.media.pause","org.hbbtv.app.intent.media.stop","org.hbbtv.app.intent.media.fast-forward","org.hbbtv.app.intent.media.fast-reverse","org.hbbtv.app.intent.media.seek-content","org.hbbtv.app.intent.media.seek-relative","org.hbbtv.app.intent.media.seek-live","org.hbbtv.app.intent.media.seek-wallclock","org.hbbtv.app.intent.search","org.hbbtv.app.intent.display","org.hbbtv.app.intent.playback","org.hbbtv.notify","org.hbbtv.ipplayer.selectComponents"],"appToTerminal": ["org.hbbtv.negotiateMethods","org.hbbtv.subscribe","org.hbbtv.unsubscribe","org.hbbtv.af.featureSupportInfo", "org.hbbtv.af.featureSettingsQuery", "org.hbbtv.af.featureSuppress", "org.hbbtv.app.voice.ready","org.hbbtv.app.state.media","org.hbbtv.ipplayback.setComponents"]},"id": 1}';
    const b01 = '{"jsonrpc": "2.0","method": "org.hbbtv.subscribe","params": {"msgType": ["subtitlesPrefChange","dialogueEnhancementPrefChange","uiMagnifierPrefChange","highContrastUIPrefChange","screenReaderPrefChange","responseToUserActionPrefChange","audioDescriptionPrefChange", "inVisionSigningPrefChange"]},"id": 51}';
    const c01 = '{"jsonrpc": "2.0", "method": "org.hbbtv.af.featureSupportInfo", "params" : {"feature":"subtitles"}, "id" : 1 }';
    const d01 = '{"jsonrpc": "2.0","method": "org.hbbtv.app.voice.ready", "params": {"ready": true}}';
    const e01 = `{"jsonrpc": "2.0","method": "org.hbbtv.app.state.media","params": {"state": "playing","kind": "audio-video","type": "live","currentTime": "2021-04-28T18:52:00Z","range": {"start": "2021-04-28T18:50:00Z","end": "2021-04-28T18:55:00Z"},"availableActions": {"pause": true,"play": true,"stop": true,"fast-forward": true,"fast-reverse": true,"seek-content": true,"seek-relative": true,"seek-live": true,"seek-wallclock": true},"metadata": {"mediaId": "urn:broadcaster:programme:1249863457643","title": "The Sketch Show","secondaryTitle": "Series 2 episode 4","synopsis": "Comedy sketches providing a humourous take on today's events. Brought to you by the usual team."},"accessibility": {"subtitles": { "enabled": true, "available": true },"audioDescription": { "enabled": false, "available": true },"signLanguage": { "enabled": false, "available": false }}}}`;
    const j01 = `{"jsonrpc": "2.0","method": "org.hbbtv.app.state.media","params": {"state": "playing","kind": "audio-video","type": "live","currentTime": 342.6,"range": {"start": 0,"end": 356.12},"availableActions": {"pause": true,"play": true,"stop": true,"fast-forward": true,"fast-reverse": true,"seek-content": true,"seek-relative": true,"seek-live": true,"seek-wallclock": true},"metadata": {"mediaId": "urn:broadcaster:programme:1249863457643","title": "The Sketch Show","secondaryTitle": "Series 2 episode 4","synopsis": "Comedy sketches providing a humourous take on today's events. Brought to you by the usual team."},"accessibility": {"subtitles": { "enabled": true, "available": true },"audioDescription": { "enabled": false, "available": true },"signLanguage": { "enabled": false, "available": false }}}}`;
+   const setComponents = '{"jsonrpc":"2.0","method":"org.hbbtv.ipplayback.setComponents","params":{"sessionID":0,"componentList":[{"type":0,"componentTag":1,"encoding":"video/mp4","encrypted":false},{"type":0,"componentTag":2,"encoding":"video/mp4","encrypted":false},{"type":1,"componentTag":3,"language":"eng","audioDescription":false,"audioChannels":2},{"type":1,"componentTag":4,"language":"eng","audioDescription":true,"audioChannels":2},{"type":1,"componentTag":5,"language":"deu","audioDescription":false,"audioChannels":2},{"type":2,"componentTag":6,"language":"eng","hearingImpaired":false},{"type":2,"componentTag":7,"language":"deu","hearingImpaired":false}]},"id":201}';
+   const setComponentsBadSession = '{"jsonrpc":"2.0","method":"org.hbbtv.ipplayback.setComponents","params":{"sessionID":1,"componentList":[]},"id":202}';
 
    ws.onopen = function(e) {
       ws.send(a01);
@@ -56,10 +59,21 @@ function init() {
       ws.send(c01);
       ws.send(d01);
       ws.send(e01);
+      ws.send(setComponentsBadSession);
+      ws.send(setComponents);
    };
    
    ws.onmessage = function(e) {
       console.log('JSON-RPC-EXAMPLE #10: Client received response ' + e.data);
+      try {
+         var msg = JSON.parse(e.data);
+         if (msg && msg.method === 'org.hbbtv.ipplayer.selectComponents') {
+            console.log('selectComponents video=' + JSON.stringify(msg.params.videoComponents)
+               + ' audio=' + JSON.stringify(msg.params.audioComponents)
+               + ' subtitle=' + JSON.stringify(msg.params.subtitleComponents));
+            ws.send(JSON.stringify({jsonrpc:'2.0', id: msg.id, result: {}}));
+         }
+      } catch (err) {}
    };
    
    ws.onclose = function(e) {

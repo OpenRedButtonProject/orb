@@ -716,4 +716,14 @@ public interface IOrbSession {
      */
     boolean onVoiceRequestTextInput(String input);
 
+    /**
+     * Send org.hbbtv.ipplayer.selectComponents to applications that negotiated it.
+     * Arrays are componentTags from the last setComponents list. Empty array means
+     * stop presenting that type. All three arrays are always sent.
+     */
+    default void onSelectIpPlaybackComponents(int[] videoComponents, int[] audioComponents,
+                                              int[] subtitleComponents) {
+        throw new UnsupportedOperationException("Unsupported 204 API.");
+    }
+
 }

@@ -1443,4 +1443,19 @@ class OrbSession implements IOrbSession {
         return true;
     }
 
+    @Override
+    public void onSelectIpPlaybackComponents(int[] videoComponents, int[] audioComponents,
+                                             int[] subtitleComponents) {
+        if (mOrbHbbTVVersion < 204) {
+            throw new UnsupportedOperationException("Unsupported 204 API.");
+        }
+        if (mJsonRpc == null) {
+            return;
+        }
+        mJsonRpc.onSendSelectComponents(
+                videoComponents != null ? videoComponents : new int[0],
+                audioComponents != null ? audioComponents : new int[0],
+                subtitleComponents != null ? subtitleComponents : new int[0]);
+    }
+
 }

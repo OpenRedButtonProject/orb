@@ -959,8 +959,16 @@ public interface IOrbSessionCallback {
     }
 
     /**
+     * Called when an application sends org.hbbtv.ipplayback.setComponents (Annex N).
+     * {@code componentListJson} is a JSON array of simplified AVComponent objects
+     * (type, componentTag, language, audioDescription, hearingImpaired, ...).
+     */
+    default void onRequestSetComponents(String componentListJson) {
+    }
+
+    /**
      * @since 204
-     * 
+     *
      * Returns true if the provided triplet is in an instance within the
      * currently playing service, otherwise false.
      */

@@ -12,6 +12,7 @@
 #include <android/log.h>
 
 #include <memory>
+#include <vector>
 #include "JsonRpcService.h"
 
 #include "jni_utils.h"
@@ -32,7 +33,8 @@
 #define CB_NOTIFY_VOICE_READY 10
 #define CB_NOTIFY_STATE_MEDIA 11
 #define CB_RESPOND_MESSAGE 12
-#define CB_NUMBER_OF_ITEMS 13
+#define CB_REQUEST_SET_COMPONENTS 13
+#define CB_NUMBER_OF_ITEMS 14
 
 #define LENGTH_OF_EMPTY_ID 0
 #define CMD_INTENT_PAUSE 0
@@ -259,6 +261,18 @@ public:
         env->DeleteLocalRef(j_data);
     }
 
+    void RequestSetComponents(
+        const std::string &componentListJson) override
+    {
+        JNIEnv *env = JniUtils::GetEnv();
+        jstring j_json = env->NewStringUTF(componentListJson.c_str());
+        env->CallVoidMethod(
+                mCallbackObject,
+                g_cb[CB_REQUEST_SET_COMPONENTS],
+                j_json);
+        env->DeleteLocalRef(j_json);
+    }
+
 private:
     jobject mCallbackObject;
 };
@@ -297,6 +311,8 @@ void InitialiseJsonRpcNative()
          "onReceiveError", "(ILjava/lang/String;)V");
     g_cb[CB_RECEIVE_ERROR_ALL_PARAMS] = env->GetMethodID(managerClass,
                "onReceiveError", "(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+    g_cb[CB_REQUEST_SET_COMPONENTS] = env->GetMethodID(managerClass,
+               "onRequestSetComponents", "(Ljava/lang/String;)V");
 }
 
 extern "C"
@@ -758,6 +774,43 @@ Java_org_orbtv_orblibrary_JsonRpc_nativeOnVoiceRequestDescription(
         jobject object)
 {
     GetService(env, object)->VoiceRequestDescription();
+}
+
+static std::vector<int> JintArrayToVector(JNIEnv *env, jintArray array)
+{
+    std::vector<int> tags;
+    if (array == nullptr)
+    {
+        return tags;
+    }
+    jsize length = env->GetArrayLength(array);
+    tags.reserve(static_cast<size_t>(length));
+    jint *elements = env->GetIntArrayElements(array, nullptr);
+    if (elements == nullptr)
+    {
+        return tags;
+    }
+    for (jsize i = 0; i < length; i++)
+    {
+        tags.push_back(elements[i]);
+    }
+    env->ReleaseIntArrayElements(array, elements, JNI_ABORT);
+    return tags;
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_orbtv_orblibrary_JsonRpc_nativeOnSendSelectComponents(
+        JNIEnv *env,
+        jobject object,
+        jintArray videoComponents,
+        jintArray audioComponents,
+        jintArray subtitleComponents)
+{
+    GetService(env, object)->SendSelectComponents(
+            JintArrayToVector(env, videoComponents),
+            JintArrayToVector(env, audioComponents),
+            JintArrayToVector(env, subtitleComponents));
 }
 
 static NetworkServices::JsonRpcService* GetService(JNIEnv *env, jobject object)

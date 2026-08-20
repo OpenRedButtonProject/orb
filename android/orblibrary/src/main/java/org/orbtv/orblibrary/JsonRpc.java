@@ -162,6 +162,11 @@ public class JsonRpc {
         nativeOnVoiceRequestDescription();
     }
 
+    public void onSendSelectComponents(int[] videoComponents, int[] audioComponents,
+                                      int[] subtitleComponents) {
+        nativeOnSendSelectComponents(videoComponents, audioComponents, subtitleComponents);
+    }
+
     // Called by native
 
     private void onRequestNegotiateMethods() {
@@ -222,6 +227,10 @@ public class JsonRpc {
     private void onReceiveError(int code, String message,
                                 String method, String data) {
         mOrbSessionCallback.onReceiveError(code, message, method, data);
+    }
+
+    private void onRequestSetComponents(String componentListJson) {
+        mOrbSessionCallback.onRequestSetComponents(componentListJson);
     }
 
     // Native
@@ -298,4 +307,7 @@ public class JsonRpc {
     private native void nativeOnSendIntentPlayback(String mediaId, String anchor, int offset);
 
     private native void nativeOnVoiceRequestDescription();
+
+    private native void nativeOnSendSelectComponents(int[] videoComponents, int[] audioComponents,
+                                                    int[] subtitleComponents);
 }

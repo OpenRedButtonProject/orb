@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <mutex>
+#include <vector>
 #include <json/json.h>
 
 namespace NetworkServices {
@@ -75,6 +76,7 @@ public:
     enum class JsonRpcStatus
     {
         SUCCESS = 0,
+        NOT_FOUND = -3,
         PARSE_ERROR = -32700,
         INVALID_REQUEST = -32600,
         METHOD_NOT_FOUND = -32601,
@@ -149,6 +151,9 @@ public:
             std::string method,
             std::string data) = 0;
 
+        virtual void RequestSetComponents(
+            const std::string &componentListJson) = 0;
+
         virtual ~SessionCallback() = default;
     };
 
@@ -186,6 +191,12 @@ public:
     JsonRpcStatus ReceiveIntentConfirm(int connectionId, const Json::Value &obj);
 
     JsonRpcService::JsonRpcStatus ReceiveError(int connectionId, const Json::Value &obj);
+
+    JsonRpcStatus RequestSetComponents(int connectionId, const Json::Value &obj);
+
+    void SendSelectComponents(const std::vector<int> &videoComponents,
+        const std::vector<int> &audioComponents,
+        const std::vector<int> &subtitleComponents);
 
     void RespondFeatureSupportInfo(int connectionId, const std::string &id, int featureId,
         const std::string &value);
@@ -306,6 +317,9 @@ private:
     std::unordered_set<std::string> m_supported_methods_terminal_to_app;
 
     std::unordered_map<int, ConnectionData> m_connectionData;
+    Json::Value m_ipPlaybackComponents;
+    bool m_ipPlaybackComponentsSet;
+    int m_ipPlaybackConnectionId;
 
     // Helper functions
     std::vector<int> GetAllConnectionIds();
@@ -330,6 +344,8 @@ private:
     void CheckIntentMethod(std::vector<int> &connectionIds, const std::string& method);
 
     std::string GenerateId(int connectionId);
+
+    Json::Value ParseSetComponentsList(const Json::Value &componentList);
 };
 } // namespace NetworkServices
 
