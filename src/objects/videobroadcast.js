@@ -972,11 +972,16 @@ hbbtv.objects.VideoBroadcast = (function() {
 
         if (p.isBroadcastRelated && quiet !== 2) {
             try {
-                const channelData = hbbtv.bridge.broadcast.getCurrentChannel();
-                p.currentChannelData = hbbtv.objects.createChannel(
-                    channelData
-                );
-                p.currentInstanceIndex = channelData.currentInstanceIndex;
+                // Keep the Channel the application passed. getCurrentChannel() returns the
+                // DVB-I *service* object even after setChannel to an instance CCID (…iN),
+                // which would leave currentChannel.idType as ID_DVB_I (ERRATA0400 / O.5.4).
+                p.currentChannelData = channel;
+                if (channel.serviceInstances) {
+                    const channelData = hbbtv.bridge.broadcast.getCurrentChannel();
+                    p.currentInstanceIndex = channelData.currentInstanceIndex;
+                } else {
+                    p.currentInstanceIndex = NaN;
+                }
                 if (p.channelConfig === null) {
                     p.channelConfig = hbbtv.objects.createChannelConfig();
                 }
@@ -995,6 +1000,7 @@ hbbtv.objects.VideoBroadcast = (function() {
         unregisterAllStreamEventListeners(p);
         p.playState = PLAY_STATE_CONNECTING;
         p.waitingPlayStateConnectingConfirm = appScheme === LINKED_APP_SCHEME_1_1;
+        p.pendingChannelChangeSucceeded = true;
         dispatchPlayStateChangeEvent.call(this, p.playState);
     };
 
@@ -1571,8 +1577,11 @@ hbbtv.objects.VideoBroadcast = (function() {
                             /* DAE vol5 Table 8 state transition #9 */
                             // For media-in-parallel linked apps on DVB-I, components may lag PLAYING.
                             // Stay CONNECTING until getComponents is non-empty (see maybePresentWhenComponentsReady).
+                            // Exception: setChannel onto a DVB-I *instance* (O.5.4 / ERRATA0400) must
+                            // complete even if a same-URL retune momentarily clears the track list.
                             if (
                                 hbbtv.bridge.manager.getApplicationScheme() === LINKED_APP_SCHEME_1_1
+                                && !p.pendingChannelChangeSucceeded
                             ) {
                                 try {
                                     const ccid =
@@ -1695,6 +1704,12 @@ hbbtv.objects.VideoBroadcast = (function() {
                             dispatchChannelChangeSucceededEvent.call(this, p.currentChannelData);
                         }
                         dispatchPlayStateChangeEvent.call(this, p.playState);
+                    } else if (event.statusCode == CHANNEL_STATUS_PRESENTING) {
+                        /* Same stream still presenting (e.g. setChannel onto the already-playing
+                         * DVB-I DASH instance). Do not treat this as a transient error. */
+                        if (p.pendingChannelChangeSucceeded) {
+                            dispatchChannelChangeSucceededEvent.call(this, p.currentChannelData);
+                        }
                     } /* temporary error */
                     else {
                         /* DAE vol5 Table 8 state transition #15 */
@@ -2141,6 +2156,7 @@ hbbtv.objects.VideoBroadcast = (function() {
 
     function dispatchChannelChangeSucceededEvent(channel) {
         const p = privates.get(this);
+        p.pendingChannelChangeSucceeded = false;
         console.log('DEBUG_CHANNEL_STATUS: dispatchChannelChangeSucceededEvent called - current playState=' + p.playState + 
             ' (CONNECTING=1, PRESENTING=2), channel=' + (channel ? (channel.onid + ',' + channel.tsid + ',' + channel.sid) : 'null'));
         const event = new Event('ChannelChangeSucceeded');
@@ -2169,6 +2185,9 @@ hbbtv.objects.VideoBroadcast = (function() {
             );
             if (components && components.length > 0) {
                 p.playState = PLAY_STATE_PRESENTING;
+                if (p.pendingChannelChangeSucceeded) {
+                    dispatchChannelChangeSucceededEvent.call(this, p.currentChannelData);
+                }
                 dispatchPlayStateChangeEvent.call(this, p.playState);
             }
         } catch (e) {
