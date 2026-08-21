@@ -69,7 +69,8 @@ public:
     typedef enum
     {
         XML_TYP_UNKNOWN  = 0x00,
-        XML_TYP_OTHER    = 0x01,
+        XML_TYP_OTHER    = 0x01, /* application/vnd.hbbtv.xhtml+xml */
+        XML_TYP_GENERIC_HTML = 0x02, /* text/html or application/xhtml+xml (HbbTV O.3) */
         XML_TYP_DVB_HTML = 0x10,
         XML_TYP_DVB_J    = 0x11,
     } E_AIT_XML_TYPE;

@@ -138,6 +138,13 @@ const Ait::S_AIT_APP_DESC * Ait::AutoStartApp(const S_AIT_TABLE *aitTable, int
             const S_AIT_APP_DESC *candidate = &aitTable->appArray[index];
             if (candidate->controlCode == APP_CTL_AUTOSTART)
             {
+                if (candidate->xmlType == XML_TYP_GENERIC_HTML)
+                {
+                    LOG(LOG_INFO,
+                        "Ait::AutoStartApp orgId=%u appId=%u skipped: generic HTML (HbbTV O.3)",
+                        candidate->orgId, candidate->appId);
+                    continue;
+                }
                 // Only run supported HbbTV versions
                 bool supported = false;
                 for (S_APP_PROFILE ad : candidate->appDesc.appProfiles)
