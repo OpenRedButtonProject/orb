@@ -630,6 +630,12 @@ public interface IOrbSessionCallback {
     void onApplicationStatusChanged(ApplicationStatus status);
 
     /**
+     * Linked application type 1.2 failed to start (first page could not be loaded).
+     * Discard that DVB-I service instance and continue selection (HbbTV O.3 / TS 103 770 §5.2.13).
+     */
+    default void onLinkedApplication12StartFailed() {}
+
+    /**
      * Start TEMI timeline monitoring.
      *
      * @param componentTag The component tag of the temi timeline to monitor.

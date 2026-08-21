@@ -207,7 +207,12 @@ class OrbSession implements IOrbSession {
              */
             @Override
             public void notifyLoadApplicationFailed(int appId) {
+                String scheme = mApplicationManager.getApplicationScheme(appId);
                 mApplicationManager.onLoadApplicationFailed(appId);
+                if ("urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.2".equals(scheme)) {
+                    Log.i(TAG, "LA 1.2 failed to load first page; discarding DVB-I instance");
+                    mOrbSessionCallback.onLinkedApplication12StartFailed();
+                }
             }
 
             /**
@@ -480,9 +485,20 @@ class OrbSession implements IOrbSession {
     public void processXmlAit(String xmlAit, boolean isDvbi, String scheme) {
         if (xmlAit == null) {
             Log.e(TAG, "XML AIT is null.");
+            notifyLinkedApp12AitFailed(scheme);
             return;
         }
-        mApplicationManager.processXmlAit(xmlAit, isDvbi, scheme);
+        if (!mApplicationManager.processXmlAit(xmlAit, isDvbi, scheme)) {
+            Log.e(TAG, "XML AIT processing failed, scheme=" + scheme);
+            notifyLinkedApp12AitFailed(scheme);
+        }
+    }
+
+    private void notifyLinkedApp12AitFailed(String scheme) {
+        if ("urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.2".equals(scheme)) {
+            Log.i(TAG, "LA 1.2 XML AIT could not be used; discarding DVB-I instance");
+            mOrbSessionCallback.onLinkedApplication12StartFailed();
+        }
     }
 
     /**

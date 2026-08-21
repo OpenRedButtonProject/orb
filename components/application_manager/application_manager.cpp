@@ -744,19 +744,13 @@ void ApplicationManager::OnLoadApplicationFailed(uint16_t appId)
 
     // TODO If a call to createApplication has failed, set app_ back to old_app_ and send event?
 
-    if (Utils::IsInvalidDvbTriplet(m_currentService))
-    {
-        LOG(LOG_ERROR,
-            "Unhandled condition (failed to load application while broadcast-independent)");
-        return;
-    }
-
     if (!m_app.isRunning || m_app.id != appId)
     {
         return;
     }
+    std::string scheme = m_app.getScheme();
     auto ait = m_ait.Get();
-    if (ait != nullptr && m_app.isRunning && m_app.appId != 0 && m_app.orgId != 0)
+    if (ait != nullptr && m_app.appId != 0 && m_app.orgId != 0)
     {
         Ait::S_AIT_APP_DESC *app = Ait::FindApp(ait, m_app.orgId, m_app.appId);
         if (app != nullptr)
@@ -765,6 +759,19 @@ void ApplicationManager::OnLoadApplicationFailed(uint16_t appId)
         }
     }
     KillRunningApp();
+    // HbbTV O.3 / TS 103 770 §5.2.13: LA 1.2 that cannot start is discarded at the
+    // service-instance layer. Do not autostart the same XML AIT (would retry forever).
+    if (scheme == LINKED_APP_SCHEME_1_2)
+    {
+        LOG(LOG_INFO, "LA 1.2 failed to start; skip AIT autostart (O.3 instance discard)");
+        return;
+    }
+    if (Utils::IsInvalidDvbTriplet(m_currentService))
+    {
+        LOG(LOG_ERROR,
+            "Unhandled condition (failed to load application while broadcast-independent)");
+        return;
+    }
     OnPerformBroadcastAutostart();
 }
 
