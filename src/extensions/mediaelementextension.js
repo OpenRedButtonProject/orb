@@ -303,12 +303,18 @@ hbbtv.objects.MediaElementExtension = (function() {
 
             const p = privates.get(this);
             p.videoDummy.paused = false;
+            try {
+                hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(true);
+            } catch (e) {}
             return p.iframeProxy.callAsyncObserverMethod(MEDIA_PROXY_ID, 'play');
         };
 
         prototype.pause = function() {
             const p = privates.get(this);
             p.videoDummy.paused = true;
+            try {
+                hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
+            } catch (e) {}
             p.iframeProxy.callObserverMethod(MEDIA_PROXY_ID, 'pause', Array.from(arguments));
         };
 
@@ -553,6 +559,20 @@ hbbtv.objects.MediaElementExtension = (function() {
                 this.startDate = new Date(typeof e.startDate === 'number' ? e.startDate : NaN);
             } else if (e.type === 'play') {
                 _timeUpdateTS = Date.now();
+                try {
+                    hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(true);
+                } catch (x) {}
+            } else if (e.type === 'ended') {
+                try {
+                    hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
+                } catch (x) {}
+            } else if (e.type === 'pause' && this.paused) {
+                // Only the app's pause() sets videoDummy.paused. dash.js MSE
+                // pause/emptied during setSource must not release decoders
+                // (A.2.4.1 / ERRATA0720).
+                try {
+                    hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
+                } catch (x) {}
             }
             parent.dispatchEvent(e);
         };

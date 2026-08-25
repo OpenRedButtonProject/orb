@@ -739,7 +739,11 @@ hbbtv.objects.VideoBroadcast = (function() {
             if (tmpChannelData !== false) {
                 if (acquireActiveState.call(this)) {
                     console.log('Control DVB presentation!');
-                    hbbtv.bridge.broadcast.setPresentationSuspended(false);
+                    // A.2.4.1 / ERRATA0700–0720: binding v/b while HTML5/AV
+                    // still holds decoders must not unsuspend native presentation.
+                    if (!gBroadbandAvInUse) {
+                        hbbtv.bridge.broadcast.setPresentationSuspended(false);
+                    }
                     hbbtv.holePuncher.setBroadcastVideoObject(this);
                     const applicationScheme = hbbtv.bridge.manager.getApplicationScheme();
                     let wasPlayStateStopped = false;
@@ -1575,6 +1579,15 @@ hbbtv.objects.VideoBroadcast = (function() {
                     switch (event.statusCode) {
                         case CHANNEL_STATUS_PRESENTING:
                             /* DAE vol5 Table 8 state transition #9 */
+                            // A.2.4.1 / ERRATA0720: while the app still holds
+                            // video/audio decoders, CONNECTING is a transient
+                            // error and must not become PRESENTING.
+                            if (gBroadbandAvInUse) {
+                                console.log(
+                                    'DEBUG_CHANNEL_STATUS: CHANNEL_STATUS_PRESENTING deferred; app holds decoders'
+                                );
+                                break;
+                            }
                             // For media-in-parallel linked apps on DVB-I, components may lag PLAYING.
                             // Stay CONNECTING until getComponents is non-empty (see maybePresentWhenComponentsReady).
                             // Exception: setChannel onto a DVB-I *instance* (O.5.4 / ERRATA0400) must
@@ -2175,6 +2188,9 @@ hbbtv.objects.VideoBroadcast = (function() {
         if (p.playState !== PLAY_STATE_CONNECTING || !p.currentChannelData) {
             return;
         }
+        if (gBroadbandAvInUse) {
+            return;
+        }
         if (hbbtv.bridge.manager.getApplicationScheme() !== LINKED_APP_SCHEME_1_1) {
             return;
         }
@@ -2375,14 +2391,16 @@ hbbtv.objects.VideoBroadcast = (function() {
     function notifyBroadbandAvInUse(broadbandAvInUse) {
         // This is a "static" method that does not use a "this" variable. Call this method like:
         // hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(true).
-        const hasRealizedObject =
-            gActiveStateOwner !== null && hbbtv.utils.weakDeref(gActiveStateOwner) !== null;
         if (gBroadbandAvInUse !== broadbandAvInUse) {
             gBroadbandAvInUse = broadbandAvInUse;
-            if (hasRealizedObject) {
-                // It's up to the realized object whether we suspsend broadcast presentation or not.
-            } else {
-                hbbtv.bridge.broadcast.setPresentationSuspended(broadbandAvInUse);
+            // Always tell the terminal. A.2.4.1 / ERRATA0700–0720: while the app holds
+            // decoders, native DASH/RF must stay suspended even if a v/b object is realized.
+            hbbtv.bridge.broadcast.setPresentationSuspended(broadbandAvInUse);
+            if (!broadbandAvInUse && gActiveStateOwner !== null) {
+                const owner = hbbtv.utils.weakDeref(gActiveStateOwner);
+                if (owner) {
+                    maybePresentWhenComponentsReady.call(owner);
+                }
             }
         }
     }
