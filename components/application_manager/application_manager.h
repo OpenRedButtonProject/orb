@@ -338,6 +338,18 @@ public:
 
     std::string GetApplicationScheme(uint16_t appId);
 
+    /**
+     * HbbTV A.2.20.6 ApplicationPrivateData.applicationHowRelatedHref.
+     * Empty when the running app is not currently attributed to DVB-I signalling.
+     */
+    std::string GetApplicationHowRelatedHref(uint16_t appId);
+
+    /**
+     * Update the current DVB-I HowRelated href without relaunching (availability
+     * inside/outside, or setChannel to an AIT-only instance). Empty clears it.
+     */
+    void SetApplicationHowRelatedHref(const std::string &href);
+
 private:
     /**
      * Called when the AIT for the selected service is received.

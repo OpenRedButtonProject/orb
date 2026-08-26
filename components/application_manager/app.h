@@ -47,6 +47,10 @@ public:
     std::string getScheme() const;
     void setScheme(std::string value);
 
+    /* HbbTV A.2.20.6: current DVB-I HowRelated@href, or empty if undefined. */
+    std::string getHowRelatedHref() const;
+    void setHowRelatedHref(const std::string &value);
+
     std::string entryUrl;
     std::string loadedUrl;
     std::string baseUrl;
@@ -76,6 +80,7 @@ public:
     uint8_t versionMinor;
 private:
     std::string m_scheme;
+    std::string m_howRelatedHref;
 };
 
 #endif // HBBTV_SERVICE_APP_H

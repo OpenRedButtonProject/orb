@@ -79,6 +79,14 @@ public interface IOrbSession {
     void processXmlAit(String xmlAit, boolean isDvbi, String scheme);
 
     /**
+     * Update ApplicationPrivateData.applicationHowRelatedHref without relaunching.
+     * Empty or null means undefined (not currently running due to DVB-I signalling).
+     *
+     * @param href HowRelated@href, or null/empty for undefined
+     */
+    void setApplicationHowRelatedHref(String href);
+
+    /**
      * Returns whether a Teletext application is signalled in the current AIT.
      *
      * @return True if a Teletext application is signalled, false otherwise.

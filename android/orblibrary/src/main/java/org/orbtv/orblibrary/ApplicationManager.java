@@ -232,6 +232,14 @@ class ApplicationManager {
         return jniGetApplicationScheme(appId);
     }
 
+    public String getApplicationHowRelatedHref(int appId) {
+        return jniGetApplicationHowRelatedHref(appId);
+    }
+
+    public void setApplicationHowRelatedHref(String href) {
+        jniSetApplicationHowRelatedHref(href);
+    }
+
     public void onNetworkAvailabilityChanged(boolean available) {
         jniOnNetworkAvailabilityChanged(available);
     }
@@ -287,6 +295,10 @@ class ApplicationManager {
     private native int[] jniGetOtherKeyValues(int appId);
 
     private native String jniGetApplicationScheme(int appId);
+
+    private native String jniGetApplicationHowRelatedHref(int appId);
+
+    private native void jniSetApplicationHowRelatedHref(String href);
 
     private native boolean jniInKeySet(int appId, int keyCode);
 

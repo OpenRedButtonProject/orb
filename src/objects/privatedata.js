@@ -34,6 +34,15 @@ hbbtv.objects.PrivateData = (function() {
         },
     });
 
+    Object.defineProperty(prototype, 'applicationHowRelatedHref', {
+        get() {
+            if (privates.get(this).disabled) {
+                return undefined;
+            }
+            return hbbtv.bridge.manager.getApplicationHowRelatedHref();
+        },
+    });
+
     prototype.getFreeMem = function() {
         if (privates.get(this).disabled) {
             return 0;

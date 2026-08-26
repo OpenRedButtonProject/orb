@@ -695,6 +695,11 @@ class Bridge extends AbstractBridge {
         return mApplicationManager.getApplicationScheme(token.getAppId());
     }
 
+    @Override
+    protected String Manager_getApplicationHowRelatedHref(BridgeToken token) {
+        return mApplicationManager.getApplicationHowRelatedHref(token.getAppId());
+    }
+
     /**
      * Get a list of rating schemes supported by this integration.
      *

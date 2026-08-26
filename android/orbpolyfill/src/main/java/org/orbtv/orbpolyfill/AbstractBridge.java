@@ -943,6 +943,15 @@ public abstract class AbstractBridge {
     protected abstract String Manager_getApplicationScheme(BridgeToken token);
 
     /**
+     * Get ApplicationPrivateData.applicationHowRelatedHref (HbbTV A.2.20.6).
+     *
+     * @param token The token associated with this request.
+     *
+     * @return The current DVB-I HowRelated href, or null if undefined.
+     */
+    protected abstract String Manager_getApplicationHowRelatedHref(BridgeToken token);
+
+    /**
      * Get a list of rating schemes supported by this integration.
      *
      * @param token The token associated with this request.
@@ -1940,6 +1949,12 @@ public abstract class AbstractBridge {
             case "Manager.getApplicationScheme": {
                 String result = Manager_getApplicationScheme(token);
                 response.put("result", result);
+                break;
+            }
+
+            case "Manager.getApplicationHowRelatedHref": {
+                String href = Manager_getApplicationHowRelatedHref(token);
+                response.put("result", href == null || href.isEmpty() ? JSONObject.NULL : href);
                 break;
             }
 

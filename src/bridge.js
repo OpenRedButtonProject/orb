@@ -824,7 +824,23 @@ hbbtv.bridge.manager = (function() {
 
     exported.getApplicationScheme = function() {
         return hbbtv.native.request('Manager.getApplicationScheme').result;
-    }
+    };
+
+    /**
+     * HbbTV A.2.20.6 ApplicationPrivateData.applicationHowRelatedHref.
+     *
+     * @return {string|undefined} Current DVB-I HowRelated href, or undefined.
+     *
+     * @method
+     * @memberof bridge.manager#
+     */
+    exported.getApplicationHowRelatedHref = function() {
+        const response = hbbtv.native.request('Manager.getApplicationHowRelatedHref');
+        if (!response || response.result == null || response.result === '') {
+            return undefined;
+        }
+        return response.result;
+    };
 
     return exported;
 })();

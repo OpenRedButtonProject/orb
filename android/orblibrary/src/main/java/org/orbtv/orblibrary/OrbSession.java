@@ -509,6 +509,12 @@ class OrbSession implements IOrbSession {
         }
     }
 
+    @Override
+    public void setApplicationHowRelatedHref(String href) {
+        Log.i(TAG, "setApplicationHowRelatedHref href=" + href);
+        mApplicationManager.setApplicationHowRelatedHref(href);
+    }
+
     private void notifyLinkedApp12AitFailed(String scheme) {
         if ("urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.2".equals(scheme)) {
             Log.i(TAG, "LA 1.2 XML AIT could not be used; discarding DVB-I instance");

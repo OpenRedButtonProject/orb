@@ -117,6 +117,14 @@ void App::setScheme(std::string value) {
     m_scheme = value;
 }
 
+std::string App::getHowRelatedHref() const {
+    return m_howRelatedHref;
+}
+
+void App::setHowRelatedHref(const std::string &value) {
+    m_howRelatedHref = value;
+}
+
 std::string getAppSchemeFromUrlParams(const std::string &urlParams)
 {
     if (urlParams.find("lloc=service") != std::string::npos)

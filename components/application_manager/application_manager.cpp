@@ -350,6 +350,24 @@ std::string ApplicationManager::GetApplicationScheme(uint16_t appId)
     return LINKED_APP_SCHEME_1_1;
 }
 
+std::string ApplicationManager::GetApplicationHowRelatedHref(uint16_t appId)
+{
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
+    if (m_app.isRunning && m_app.id == appId)
+    {
+        return m_app.getHowRelatedHref();
+    }
+    return "";
+}
+
+void ApplicationManager::SetApplicationHowRelatedHref(const std::string &href)
+{
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
+    DBGLOG("SetApplicationHowRelatedHref href=%s (app running=%d id=%u)",
+        href.c_str(), m_app.isRunning, m_app.id);
+    m_app.setHowRelatedHref(href);
+}
+
 /**
  * Check the key code is accepted by the current key mask. Activate the app as a result if the
  * key is accepted.
@@ -502,6 +520,12 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
         else
         {
             OnSelectedServiceAitUpdated();
+        }
+        /* Availability type 2 is applied in place without XML AIT (A.2.20.6).
+         * Do not let a delayed 1.1/1.2 fetch overwrite that current reason. */
+        if (m_app.isRunning && m_app.getHowRelatedHref() != LINKED_APP_SCHEME_2)
+        {
+            m_app.setHowRelatedHref(scheme);
         }
         result = true;
     }

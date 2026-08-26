@@ -334,6 +334,26 @@ JNIEXPORT jstring JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniGetApp
 }
 
 extern "C"
+JNIEXPORT jstring JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniGetApplicationHowRelatedHref(
+    JNIEnv *env, jobject object, jint calling_app_id)
+{
+    std::string href = GetManager(env, object)->GetApplicationHowRelatedHref(calling_app_id);
+    if (href.empty())
+    {
+        return nullptr;
+    }
+    return env->NewStringUTF(href.c_str());
+}
+
+extern "C"
+JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniSetApplicationHowRelatedHref(
+    JNIEnv *env, jobject object, jstring j_href)
+{
+    std::string href = JniUtils::MakeStdString(env, j_href);
+    GetManager(env, object)->SetApplicationHowRelatedHref(href);
+}
+
+extern "C"
 JNIEXPORT jboolean JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniInKeySet(JNIEnv *env,
     jobject object,
     jint calling_app_id, jint key_set)

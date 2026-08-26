@@ -1005,6 +1005,11 @@ hbbtv.objects.VideoBroadcast = (function() {
         p.playState = PLAY_STATE_CONNECTING;
         p.waitingPlayStateConnectingConfirm = appScheme === LINKED_APP_SCHEME_1_1;
         p.pendingChannelChangeSucceeded = true;
+        p.pendingInstanceIndex = parseDvbiInstanceIndexFromCcid(channel.ccid);
+        // DASH instances share the DVB-I service triplet, so leftover CONNECTING/
+        // PRESENTING from the previous DASH instance must not complete CCS
+        // (ERRATA0400 / ERRATA0900 re-lock). Wait for ServiceInstanceChanged.
+        p.pendingDashInstanceConfirmed = !isDashInstanceChannel(channel);
         dispatchPlayStateChangeEvent.call(this, p.playState);
     };
 
@@ -1554,6 +1559,54 @@ hbbtv.objects.VideoBroadcast = (function() {
 
     // Internal implementation
 
+    /**
+     * True if ChannelStatusChanged belongs to the Channel targeted by setChannel.
+     * A DVB-I *service* Channel uses the service identity (e.g. 6,16590,1) while
+     * RF instance delivery uses a different triplet (e.g. 99,1,12). Instance
+     * Channels do not expose serviceInstances, so stale RF status is still
+     * ignored during DASH instance lock.
+     */
+    function channelStatusEventMatchesChannel(event, channelData, instanceIndex) {
+        if (!channelData) {
+            return false;
+        }
+        if (
+            event.servId == channelData.sid &&
+            event.onetId == channelData.onid &&
+            event.transId == channelData.tsid
+        ) {
+            return true;
+        }
+        if (!channelData.serviceInstances || isNaN(instanceIndex)) {
+            return false;
+        }
+        const inst = channelData.serviceInstances.item(instanceIndex);
+        return (
+            inst &&
+            event.servId == inst.sid &&
+            event.onetId == inst.onid &&
+            event.transId == inst.tsid
+        );
+    }
+
+    function parseDvbiInstanceIndexFromCcid(ccid) {
+        if (typeof ccid !== 'string') {
+            return NaN;
+        }
+        const match = /i(\d+)$/.exec(ccid);
+        return match ? parseInt(match[1], 10) : NaN;
+    }
+
+    function isDashInstanceChannel(channel) {
+        // Service Channels (ccid:6590) may still carry ipBroadcastID from a prior
+        // DASH lock. The DASH-target CCS wait is only for instance CCIDs (…iN).
+        return !!(
+            channel &&
+            channel.ipBroadcastID &&
+            !isNaN(parseDvbiInstanceIndexFromCcid(channel.ccid))
+        );
+    }
+
     function addBridgeEventListeners() {
         const p = privates.get(this);
         if (!p.onChannelStatusChanged) {
@@ -1576,6 +1629,34 @@ hbbtv.objects.VideoBroadcast = (function() {
                     event.permanentError
                 );
                 if (p.playState == PLAY_STATE_CONNECTING) {
+                    // ERRATA0900: stale RF CONNECTING/PRESENTING for a previous
+                    // triplet must not complete setChannel onto a DVB-I DASH instance.
+                    // Do not treat the selected RF instance of a DVB-I *service*
+                    // Channel as stale (setChannel(service) auto-selects RF).
+                    if (
+                        p.pendingChannelChangeSucceeded &&
+                        p.currentChannelData &&
+                        !channelStatusEventMatchesChannel(
+                            event,
+                            p.currentChannelData,
+                            p.currentInstanceIndex
+                        )
+                    ) {
+                        console.log(
+                            'DEBUG_CHANNEL_STATUS: ignoring ChannelStatusChanged for previous triplet during setChannel'
+                        );
+                        return;
+                    }
+                    if (
+                        p.pendingChannelChangeSucceeded &&
+                        isDashInstanceChannel(p.currentChannelData) &&
+                        !p.pendingDashInstanceConfirmed
+                    ) {
+                        console.log(
+                            'DEBUG_CHANNEL_STATUS: ignoring ChannelStatusChanged until target DASH instance is selected'
+                        );
+                        return;
+                    }
                     switch (event.statusCode) {
                         case CHANNEL_STATUS_PRESENTING:
                             /* DAE vol5 Table 8 state transition #9 */
@@ -1627,9 +1708,11 @@ hbbtv.objects.VideoBroadcast = (function() {
                             console.log('DEBUG_CHANNEL_STATUS: CHANNEL_STATUS_CONNECTING received while in CONNECTING state');
                             if (
                                 p.currentChannelData == null ||
-                                event.servId != p.currentChannelData.sid ||
-                                event.onetId != p.currentChannelData.onid ||
-                                event.transId != p.currentChannelData.tsid
+                                !channelStatusEventMatchesChannel(
+                                    event,
+                                    p.currentChannelData,
+                                    p.currentInstanceIndex
+                                )
                             ) {
                                 try {
                                     const channelData = hbbtv.bridge.broadcast.getCurrentChannelForEvent();
@@ -1720,7 +1803,11 @@ hbbtv.objects.VideoBroadcast = (function() {
                     } else if (event.statusCode == CHANNEL_STATUS_PRESENTING) {
                         /* Same stream still presenting (e.g. setChannel onto the already-playing
                          * DVB-I DASH instance). Do not treat this as a transient error. */
-                        if (p.pendingChannelChangeSucceeded) {
+                        if (
+                            p.pendingChannelChangeSucceeded &&
+                            (!isDashInstanceChannel(p.currentChannelData) ||
+                                p.pendingDashInstanceConfirmed)
+                        ) {
                             dispatchChannelChangeSucceededEvent.call(this, p.currentChannelData);
                         }
                     } /* temporary error */
@@ -1770,9 +1857,28 @@ hbbtv.objects.VideoBroadcast = (function() {
 
             if (!p.onServiceInstanceChanged) {
                 p.onServiceInstanceChanged = (event) => {
+                    const p = privates.get(this);
                     console.log('Received onServiceInstanceChanged');
                     console.log(event);
-                    privates.currentInstanceIndex = event.serviceInstanceIndex;
+                    p.currentInstanceIndex = event.serviceInstanceIndex;
+                    if (
+                        p.pendingChannelChangeSucceeded &&
+                        isDashInstanceChannel(p.currentChannelData) &&
+                        !isNaN(p.pendingInstanceIndex) &&
+                        event.serviceInstanceIndex === p.pendingInstanceIndex
+                    ) {
+                        p.pendingDashInstanceConfirmed = true;
+                        if (p.playState === PLAY_STATE_CONNECTING) {
+                            console.log(
+                                'DEBUG_CHANNEL_STATUS: target DASH instance selected - dispatching ChannelChangeSucceeded'
+                            );
+                            dispatchChannelChangeSucceededEvent.call(
+                                this,
+                                p.currentChannelData
+                            );
+                            dispatchPlayStateChangeEvent.call(this, p.playState);
+                        }
+                    }
                 };
             }
 
@@ -2192,6 +2298,13 @@ hbbtv.objects.VideoBroadcast = (function() {
             return;
         }
         if (hbbtv.bridge.manager.getApplicationScheme() !== LINKED_APP_SCHEME_1_1) {
+            return;
+        }
+        if (
+            p.pendingChannelChangeSucceeded &&
+            isDashInstanceChannel(p.currentChannelData) &&
+            !p.pendingDashInstanceConfirmed
+        ) {
             return;
         }
         try {
