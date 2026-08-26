@@ -398,6 +398,14 @@ JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniOnLoadApp
 }
 
 extern "C"
+JNIEXPORT jboolean JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniOnApplicationIrrecoverableError(
+    JNIEnv *env, jobject object,
+    jint app_id)
+{
+    return GetManager(env, object)->OnApplicationIrrecoverableError(app_id);
+}
+
+extern "C"
 JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniOnApplicationPageChanged(
     JNIEnv *env, jobject object,
     jint app_id, jstring j_url)

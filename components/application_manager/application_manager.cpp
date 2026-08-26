@@ -46,6 +46,10 @@
 #define KEY_SET_ALPHA 0x200
 #define KEY_SET_OTHER 0x400
 
+/* HbbTV Annex O.3: the number of times a linked application is re-started
+ * after being terminated may be limited but shall be greater than one. */
+static const int kMaxLinkedAppRestarts = 2;
+
 #define VK_RED 403
 #define VK_GREEN 404
 #define VK_YELLOW 405
@@ -700,6 +704,7 @@ void ApplicationManager::OnChannelChanged(uint16_t originalNetworkId,
     };
     m_currentServiceReceivedFirstAit = false;
     m_currentServiceAitPid = 0;
+    m_linkedAppRestartCount = 0;
     if (isDvbi)
     {
         // Linked XML AIT is delivered once via Related Material, not on an RF AIT PID.
@@ -773,6 +778,35 @@ void ApplicationManager::OnLoadApplicationFailed(uint16_t appId)
         return;
     }
     OnPerformBroadcastAutostart();
+}
+
+/**
+ * Notify the application manager of an irrecoverable failure in the running
+ * application (renderer OOM, process crash, or equivalent).
+ *
+ * HbbTV Annex O.3: a DVB-I linked application terminated for this reason
+ * shall be re-started. Restarts may be limited but shall be greater than one.
+ */
+bool ApplicationManager::OnApplicationIrrecoverableError(uint16_t appId)
+{
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
+
+    if (!m_app.isRunning || (appId != INVALID_APP_ID && m_app.id != appId))
+    {
+        return false;
+    }
+
+    LOG(LOG_INFO, "ERRATA0800: irrecoverable error appId=%u orgId=%u scheme=%s restarts=%d",
+        m_app.id, m_app.orgId, m_app.getScheme().c_str(), m_linkedAppRestartCount);
+
+    if (IsDvbiLinkedApp())
+    {
+        bool restarted = RestartDvbiLinkedApp();
+        return !restarted;
+    }
+
+    KillRunningApp();
+    return false;
 }
 
 /**
@@ -1089,6 +1123,50 @@ void ApplicationManager::KillRunningApp()
     }
     m_sessionCallback->LoadApplication(m_nextAppId, "about:blank");
     m_app.isRunning = false;
+}
+
+bool ApplicationManager::IsDvbiLinkedApp() const
+{
+    const std::string scheme = m_app.getScheme();
+    if (scheme == LINKED_APP_SCHEME_1_2 || scheme == LINKED_APP_SCHEME_2)
+    {
+        return true;
+    }
+    /* Broadcast AIT apps default getScheme() to 1.1; DVB-I XML AIT sets PID to UINT16_MAX. */
+    return scheme == LINKED_APP_SCHEME_1_1 && m_currentServiceAitPid == UINT16_MAX;
+}
+
+bool ApplicationManager::RestartDvbiLinkedApp()
+{
+    if (m_linkedAppRestartCount >= kMaxLinkedAppRestarts)
+    {
+        LOG(LOG_INFO, "ERRATA0800: restart limit %d reached; not re-starting (O.3 instance fallback)",
+            kMaxLinkedAppRestarts);
+        KillRunningApp();
+        return false;
+    }
+
+    ++m_linkedAppRestartCount;
+    App snapshot = m_app;
+    KillRunningApp();
+
+    auto ait = m_ait.Get();
+    const Ait::S_AIT_APP_DESC *app_desc = nullptr;
+    if (ait != nullptr)
+    {
+        app_desc = GetAutoStartApp(ait);
+    }
+    if (app_desc == nullptr)
+    {
+        LOG(LOG_INFO, "ERRATA0800: restart linked app from snapshot (restart %d, limit %d)",
+            m_linkedAppRestartCount, kMaxLinkedAppRestarts);
+        return RunApp(snapshot);
+    }
+
+    auto newApp = App::CreateAppFromAitDesc(app_desc, m_currentService, "", true, false);
+    LOG(LOG_INFO, "ERRATA0800: restart linked app from XML AIT (restart %d, limit %d)",
+        m_linkedAppRestartCount, kMaxLinkedAppRestarts);
+    return RunApp(newApp);
 }
 
 /**

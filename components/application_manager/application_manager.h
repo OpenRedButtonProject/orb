@@ -314,6 +314,20 @@ public:
     void OnLoadApplicationFailed(uint16_t appId);
 
     /**
+     * Notify the application manager of an irrecoverable failure in the running
+     * application (renderer OOM, process crash, or equivalent).
+     *
+     * HbbTV Annex O.3: a DVB-I linked application terminated for this reason
+     * shall be re-started. Restarts may be limited but shall be greater than one.
+     * Pass INVALID_APP_ID to apply to the currently running app.
+     *
+     * @param appId The application ID that failed, or INVALID_APP_ID.
+     * @return true if a DVB-I linked app was killed and not re-started (restart
+     *         limit reached); the caller should discard the instance.
+     */
+    bool OnApplicationIrrecoverableError(uint16_t appId);
+
+    /**
      * Notify the application manager of application page changed, before the new page is
      * loaded. For example, when the user follows a link.
      *
@@ -364,6 +378,20 @@ private:
     void KillRunningApp();
 
     /**
+     * True when the running app is a DVB-I linked application (LA 1.1 / 1.2 / 2).
+     */
+    bool IsDvbiLinkedApp() const;
+
+    /**
+     * Kill the running DVB-I linked app and re-launch it from the stored XML AIT
+     * (or a snapshot of the killed app if the AIT is gone). Caller holds m_lock.
+     * If the restart limit is already reached, kills without re-launching.
+     *
+     * @return true if RunApp succeeded, false if the app was not re-started.
+     */
+    bool RestartDvbiLinkedApp();
+
+    /**
      * Transition the running app to broadcast-related, if conditions permit.
      *
      * @return true on success, false on failure.
@@ -412,6 +440,7 @@ private:
     bool m_isNetworkAvailable = false;
     std::recursive_mutex m_lock;
     Utils::Timeout m_aitTimeout;
+    int m_linkedAppRestartCount = 0;
 };
 
 #endif // HBBTV_SERVICE_MANAGER_H

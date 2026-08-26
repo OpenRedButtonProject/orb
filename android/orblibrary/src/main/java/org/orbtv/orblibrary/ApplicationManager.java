@@ -240,6 +240,13 @@ class ApplicationManager {
         jniOnLoadApplicationFailed(appId);
     }
 
+    /**
+     * @return true if a DVB-I linked app was killed and not re-started (limit reached).
+     */
+    public boolean onApplicationIrrecoverableError(int appId) {
+        return jniOnApplicationIrrecoverableError(appId);
+    }
+
     public void onApplicationPageChanged(int appId, String url) {
         jniOnApplicationPageChanged(appId, url);
     }
@@ -294,6 +301,8 @@ class ApplicationManager {
     private native void jniOnNetworkAvailabilityChanged(boolean available);
 
     private native void jniOnLoadApplicationFailed(int appId);
+
+    private native boolean jniOnApplicationIrrecoverableError(int appId);
 
     private native void jniOnApplicationPageChanged(int appId, String url);
 

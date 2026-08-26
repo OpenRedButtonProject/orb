@@ -636,6 +636,13 @@ public interface IOrbSessionCallback {
     default void onLinkedApplication12StartFailed() {}
 
     /**
+     * A DVB-I linked application was terminated for an irrecoverable error and
+     * will not be re-started (restart limit reached). Discard that service
+     * instance and continue selection (HbbTV Annex O.3).
+     */
+    default void onLinkedApplicationRestartAbandoned() {}
+
+    /**
      * Start TEMI timeline monitoring.
      *
      * @param componentTag The component tag of the temi timeline to monitor.

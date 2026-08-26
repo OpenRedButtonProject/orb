@@ -23,6 +23,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
+import android.webkit.RenderProcessGoneDetail;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -45,6 +46,7 @@ class BrowserView extends WebView {
     private final Context mContext;
     private int mAppId = -1;
     private int mLoadAppId = -1;
+    private boolean mIrrecoverableNotified = false;
     private int mHiddenMask = 0;
     private WebResourceClient mWebResourceClient;
     private SessionCallback mSessionCallback;
@@ -61,7 +63,7 @@ class BrowserView extends WebView {
                        OrbSessionFactory.Configuration configuration, DsmccClient dsmccClient) {
         super(context);
         mContext = context;
-        mJavaScriptBridgeInterface = new JavaScriptBridgeInterface(bridge);
+        mJavaScriptBridgeInterface = new JavaScriptBridgeInterface(bridge, this);
 
         setHiddenFlag(PAGE_HIDDEN_FLAG);
         setBackgroundColor(Color.TRANSPARENT);
@@ -124,6 +126,16 @@ class BrowserView extends WebView {
             public void onPageCommitVisible(WebView view, String url) {
                 mVisibilityOverride = true;
                 setHiddenFlag(mHiddenMask); // trigger browser view visibility update
+            }
+
+            @Override
+            public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+                boolean crashed = detail != null && detail.didCrash();
+                Log.e(TAG, "ERRATA0800: render process gone didCrash=" + crashed
+                        + " appId=" + mAppId);
+                notifyIrrecoverableError();
+                // Keep this WebView: AppMgr will KillRunningApp then RunApp (loadUrl).
+                return true;
             }
         });
 
@@ -208,6 +220,7 @@ class BrowserView extends WebView {
     public void loadApplication(int appId, String entryUrl, int[] graphicsConfigIds) {
         mLoadAppId = appId;
         mVisibilityOverride = false;
+        mIrrecoverableNotified = false;
         mContext.getMainExecutor().execute(() -> {
             mAppId = appId;
             loadUrl(entryUrl);
@@ -271,6 +284,14 @@ class BrowserView extends WebView {
             mAppWidth = 3840;
         }
         updateScale();
+    }
+
+    private void notifyIrrecoverableError() {
+        if (mIrrecoverableNotified || mSessionCallback == null || mAppId <= 0) {
+            return;
+        }
+        mIrrecoverableNotified = true;
+        mSessionCallback.notifyApplicationIrrecoverableError(mAppId);
     }
 
     private void setHiddenFlag(int flag) {
@@ -345,9 +366,18 @@ class BrowserView extends WebView {
     private static class JavaScriptBridgeInterface {
         public final Bridge mBridge;
         public boolean mQuitting = false;
+        private final BrowserView mBrowserView;
 
-        JavaScriptBridgeInterface(Bridge bridge) {
+        JavaScriptBridgeInterface(Bridge bridge, BrowserView browserView) {
             mBridge = bridge;
+            mBrowserView = browserView;
+        }
+
+        @JavascriptInterface
+        public void reportIrrecoverableError() {
+            Log.e(TAG, "ERRATA0800: JS allocator failure reported by polyfill");
+            mBrowserView.mContext.getMainExecutor().execute(
+                    mBrowserView::notifyIrrecoverableError);
         }
 
         @JavascriptInterface
@@ -395,6 +425,14 @@ class BrowserView extends WebView {
          * @param appId The application ID of the application that failed to load.
          */
         void notifyLoadApplicationFailed(int appId);
+
+        /**
+         * Notify the application manager of an irrecoverable failure in the running
+         * application (renderer OOM or crash).
+         *
+         * @param appId The application ID of the application that failed.
+         */
+        void notifyApplicationIrrecoverableError(int appId);
 
         /**
          * Notify the application manager of application page changed, before the new page is

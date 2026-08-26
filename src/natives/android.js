@@ -202,3 +202,44 @@ hbbtv.native = {
         mediaProxy.dispatchEvent(MEDIA_PROXY_ID, data !== undefined ? data : e);
     }
 };
+
+(function wrapAllocatorsForOom() {
+    function isAllocatorFailure(err) {
+        const msg = err && err.message ? String(err.message) : '';
+        return msg.indexOf('Array buffer allocation failed') !== -1;
+    }
+
+    function wrapCtor(name) {
+        const Ctor = window[name];
+        if (typeof Ctor !== 'function') {
+            return;
+        }
+        window[name] = new Proxy(Ctor, {
+            construct: function(target, args) {
+                try {
+                    return Reflect.construct(target, args);
+                } catch (e) {
+                    if (isAllocatorFailure(e) && typeof androidBridge !== 'undefined' &&
+                        androidBridge.reportIrrecoverableError) {
+                        androidBridge.reportIrrecoverableError();
+                    }
+                    throw e;
+                }
+            }
+        });
+    }
+
+    wrapCtor('ArrayBuffer');
+    wrapCtor('SharedArrayBuffer');
+    wrapCtor('Uint8Array');
+    wrapCtor('Int8Array');
+    wrapCtor('Uint8ClampedArray');
+    wrapCtor('Int16Array');
+    wrapCtor('Uint16Array');
+    wrapCtor('Int32Array');
+    wrapCtor('Uint32Array');
+    wrapCtor('Float32Array');
+    wrapCtor('Float64Array');
+    wrapCtor('BigInt64Array');
+    wrapCtor('BigUint64Array');
+})();

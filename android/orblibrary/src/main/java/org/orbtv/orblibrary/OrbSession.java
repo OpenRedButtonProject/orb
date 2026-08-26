@@ -216,6 +216,21 @@ class OrbSession implements IOrbSession {
             }
 
             /**
+             * Notify the application manager of an irrecoverable failure in the running
+             * application (renderer OOM or crash). HbbTV O.3: kill then restart the
+             * same DVB-I linked application.
+             */
+            @Override
+            public void notifyApplicationIrrecoverableError(int appId) {
+                Log.i(TAG, "ERRATA0800: irrecoverable error for appId=" + appId);
+                boolean abandoned = mApplicationManager.onApplicationIrrecoverableError(appId);
+                if (abandoned) {
+                    Log.i(TAG, "ERRATA0800: restart limit reached; discarding DVB-I instance");
+                    mOrbSessionCallback.onLinkedApplicationRestartAbandoned();
+                }
+            }
+
+            /**
              * Notify the application manager of application page changed, before the new page is
              * loaded. For example, when the user follows a link.
              *
