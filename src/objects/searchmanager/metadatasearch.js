@@ -79,11 +79,18 @@ hbbtv.objects.MetadataSearch = (function() {
         mandatoryBroadcastRelatedSecurityCheck(p);
         /* HbbTV 2.0.3: The count parameter is not included. */
         p.channelConstraints = [channel.ccid];
-        if (!startTime) {
-            startTime = Math.round(Date.now() / 1000);
+        /* OIPF DAE §7.12.2.2: null startTime → now. Inclusive “showing at”
+         * window: P.startTime <= startTime < P.startTime + P.duration. */
+        if (startTime == null) {
+            startTime = Date.now() / 1000;
         }
-        const qEndTime = hbbtv.objects.createQuery('Programme.endTime', 2, startTime);
-        internalSetQuery.call(this, qEndTime, p);
+        startTime = Math.round(Number(startTime));
+        const CMP_MORE = 2; /* endTime > startTime */
+        const CMP_LESS_EQL = 5; /* startTime <= query start */
+        const qShowing = hbbtv.objects
+            .createQuery('Programme.startTime', CMP_LESS_EQL, startTime)
+            .and(hbbtv.objects.createQuery('Programme.endTime', CMP_MORE, startTime));
+        internalSetQuery.call(this, qShowing, p);
     };
 
     function initialise(searchManager, searchTarget) {

@@ -43,9 +43,9 @@ hbbtv.objects.ParentalRatingCollection = (function() {
     function initialise(items) {
         privates.set(this, {});
         const p = privates.get(this);
-        p.collection = Array.isArray(items) ? items : [];
-        items.forEach(function(item, index) {
-            p.collection[index] = hbbtv.objects.createParentalRating(item);
+        const source = Array.isArray(items) ? items : [];
+        p.collection = source.map(function(item) {
+            return hbbtv.objects.createParentalRating(item);
         });
         p.collection.forEach((e) => Object.freeze(e));
     }
@@ -56,8 +56,28 @@ hbbtv.objects.ParentalRatingCollection = (function() {
     };
 })();
 
+hbbtv.objects.ParentalRatingCollectionProxy = {
+    get: function(target, name) {
+        if (name in target) {
+            const origMethod = target[name];
+            if (origMethod instanceof Function) {
+                return function(...args) {
+                    return origMethod.apply(target, args);
+                };
+            }
+            return target[name];
+        }
+        if (typeof name === 'string' || name instanceof String) {
+            const index = parseInt(name, 10);
+            if (!isNaN(index)) {
+                return target.item(index);
+            }
+        }
+    },
+};
+
 hbbtv.objects.createParentalRatingCollection = function(items) {
     const collection = Object.create(hbbtv.objects.ParentalRatingCollection.prototype);
     hbbtv.objects.ParentalRatingCollection.initialise.call(collection, items);
-    return collection;
+    return new Proxy(collection, hbbtv.objects.ParentalRatingCollectionProxy);
 };

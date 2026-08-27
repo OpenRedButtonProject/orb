@@ -35,12 +35,26 @@ hbbtv.objects.SearchResults = (function() {
         if (index < 0 || p.searchResultsData.results.length <= index) {
             return undefined;
         }
-        return hbbtv.objects.createProgramme(p.searchResultsData.results[index]);
+        const data = Object.assign({}, p.searchResultsData.results[index]);
+        /* HbbTV O.6.2.2: longDescription is undefined for DVB-I DASH (TVA CRID). */
+        if (data.programmeIDType === hbbtv.objects.Programme.prototype.ID_TVA_CRID) {
+            delete data.longDescription;
+        }
+        data.parentalRatings = hbbtv.objects.createParentalRatingCollection(
+            Array.isArray(data.parentalRatings) ? data.parentalRatings : []
+        );
+        return hbbtv.objects.createProgramme(data);
     };
 
     prototype.getResults = function(offset, count) {
         const p = privates.get(this);
         p.searchResultsData.results = [];
+        if (offset == null) {
+            offset = 0;
+        }
+        if (count == null) {
+            count = -1;
+        }
         const metadataSearch =
             p.metadataSearch && hbbtv.utils.HAS_WEAKREF_SUPPORT ?
             p.metadataSearch.deref() :
