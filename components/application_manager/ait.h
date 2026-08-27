@@ -207,10 +207,13 @@ public:
      * @param parentalControlRegion 2 letter ISO 3166 region code.
      * @param parentalControlRegion3 3 letter ISO 3166 region code.
      * @param isNetworkAvailable
+     * @param allowPresent If true, a PRESENT app is started when no AUTOSTART
+     *        app is viable (DVB-I XML AIT / linked-app service selection).
      * @return App to auto start
      */
     static const S_AIT_APP_DESC* AutoStartApp(const S_AIT_TABLE *aitTable, int parentalControlAge,
-        std::string &parentalControlRegion, std::string &parentalControlRegion3, const bool isNetworkAvailable);
+        std::string &parentalControlRegion, std::string &parentalControlRegion3,
+        const bool isNetworkAvailable, const bool allowPresent = false);
 
     /**
      *

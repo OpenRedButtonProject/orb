@@ -141,6 +141,14 @@ class ApplicationManager {
         jniDestroyApplication(callingAppId);
     }
 
+    /**
+     * Kill the running application without starting the broadcast autostart app.
+     * Used for HbbTV O.3 parental block of linked application 1.2.
+     */
+    public void killForParentalControl() {
+        jniKillForParentalControl();
+    }
+
     public boolean processAitSection(int aitPid, int serviceId, byte[] data) {
         jniProcessAitSection(aitPid, serviceId, data);
         return true;
@@ -283,6 +291,8 @@ class ApplicationManager {
     private native boolean jniCreateApplication(int callingAppId, String url);
 
     private native void jniDestroyApplication(int callingAppId);
+
+    private native void jniKillForParentalControl();
 
     private native void jniShowApplication(int callingAppId);
 

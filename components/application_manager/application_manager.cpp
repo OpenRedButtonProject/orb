@@ -226,6 +226,20 @@ void ApplicationManager::DestroyApplication(uint16_t callingAppId)
 }
 
 /**
+ * Kill the running application without starting the broadcast autostart app.
+ * HbbTV O.3: a parental-blocked LA 1.2 is killed or frozen; autostart of the
+ * previous service AIT would restart the blocked-over app and then skip the
+ * PRESENT AIT after PIN (ERRATA0120).
+ */
+void ApplicationManager::KillForParentalControl()
+{
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
+
+    LOG(LOG_INFO, "KillForParentalControl: kill without AIT autostart (HbbTV O.3)");
+    KillRunningApp();
+}
+
+/**
  * Show the calling application.
  *
  * @param callingAppId The calling app ID.
@@ -918,7 +932,10 @@ void ApplicationManager::OnSelectedServiceAitReceived()
         }
         if (!m_app.isRunning)
         {
-            OnPerformBroadcastAutostart();
+            // DVB-I XML AIT may signal PRESENT (same org/app as the previous
+            // AUTOSTART instance). After a parental kill there is no running
+            // app; start PRESENT so PIN override can restart LA 1.2 (O.3).
+            OnPerformBroadcastAutostart(m_currentServiceAitPid == UINT16_MAX);
         }
         else
         {
@@ -994,7 +1011,7 @@ void ApplicationManager::OnSelectedServiceAitUpdated()
     if (!m_app.isRunning)
     {
         DBGLOG(" App not running - calling OnPerformBroadcastAutostart");
-        OnPerformBroadcastAutostart();
+        OnPerformBroadcastAutostart(m_currentServiceAitPid == UINT16_MAX);
     }
     else
     {
@@ -1024,19 +1041,19 @@ void ApplicationManager::OnRunningAppExited()
 /**
  * Called at a time when the broadcast autostart app should be started.
  */
-void ApplicationManager::OnPerformBroadcastAutostart()
+void ApplicationManager::OnPerformBroadcastAutostart(bool allowPresent)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     LOG(LOG_ERROR, "OnPerformAutostart");
 
-    // Find autostart app_desc
+    // Find autostart (or, for DVB-I XML AIT, PRESENT) app_desc
     auto ait = m_ait.Get();
     if (!m_currentServiceReceivedFirstAit || ait == nullptr)
     {
         LOG(LOG_INFO, "OnPerformAutostart No service selected/AIT, early out");
         return;
     }
-    auto app_desc = GetAutoStartApp(ait);
+    auto app_desc = GetAutoStartApp(ait, allowPresent);
 
     if (app_desc != nullptr)
     {
@@ -1304,9 +1321,9 @@ bool ApplicationManager::IsAppTrusted(bool)
  * @param aitTable AIT table.
  * @return The App to auto start.
  */
-const Ait::S_AIT_APP_DESC * ApplicationManager::GetAutoStartApp(const Ait::S_AIT_TABLE *aitTable)
+const Ait::S_AIT_APP_DESC * ApplicationManager::GetAutoStartApp(const Ait::S_AIT_TABLE *aitTable,
+    bool allowPresent)
 {
-    int index;
     LOG(LOG_ERROR, "GetAutoStartApp");
 
     /* Note: XML AIt uses the alpha-2 region codes as defined in ISO 3166-1.
@@ -1315,7 +1332,7 @@ const Ait::S_AIT_APP_DESC * ApplicationManager::GetAutoStartApp(const Ait::S_AIT
     std::string parentalControlRegion3 = m_sessionCallback->GetParentalControlRegion3();
     int parentalControlAge = m_sessionCallback->GetParentalControlAge();
     return Ait::AutoStartApp(aitTable, parentalControlAge, parentalControlRegion,
-        parentalControlRegion3, m_isNetworkAvailable);
+        parentalControlRegion3, m_isNetworkAvailable, allowPresent);
 }
 
 /**

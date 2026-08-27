@@ -262,6 +262,13 @@ JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniDestroyAp
 }
 
 extern "C"
+JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniKillForParentalControl(
+    JNIEnv *env, jobject object)
+{
+    GetManager(env, object)->KillForParentalControl();
+}
+
+extern "C"
 JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniShowApplication(JNIEnv *env,
     jobject object,
     jint calling_app_id)

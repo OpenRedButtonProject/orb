@@ -438,6 +438,15 @@ class OrbSession implements IOrbSession {
     }
 
     /**
+     * Kill the running HbbTV application without starting the broadcast autostart
+     * app. Used when a DVB-I linked application 1.2 is parental-blocked (HbbTV O.3).
+     */
+    @Override
+    public void destroyApplicationForParentalControl() {
+        mApplicationManager.killForParentalControl();
+    }
+
+    /**
      * Test hook used by emulator builds to simulate selecting an external source. This uses the
      * same browser visibility path as application hiding so pages receive visibilitychange.
      */

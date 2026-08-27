@@ -164,6 +164,12 @@ public:
     void DestroyApplication(uint16_t callingAppId);
 
     /**
+     * Kill the running application without starting the broadcast autostart
+     * app. Used when a DVB-I linked application 1.2 is parental-blocked (HbbTV O.3).
+     */
+    void KillForParentalControl();
+
+    /**
      * Show the calling application.
      *
      * @param callingAppId The calling app ID.
@@ -373,8 +379,11 @@ private:
 
     /**
      * Called at a time when the broadcast autostart app should be started.
+     *
+     * @param allowPresent If true, a PRESENT app in a DVB-I XML AIT is started
+     *        when no AUTOSTART app is viable (service selection / PIN restart).
      */
-    void OnPerformBroadcastAutostart();
+    void OnPerformBroadcastAutostart(bool allowPresent = false);
 
     /**
      * Run the app.
@@ -429,9 +438,11 @@ private:
      * Call to Ait::AutoStartApp() passing the parental restrictions.
      *
      * @param aitTable AIT table.
+     * @param allowPresent If true, also consider PRESENT apps (DVB-I XML AIT).
      * @return The App to auto start.
      */
-    const Ait::S_AIT_APP_DESC* GetAutoStartApp(const Ait::S_AIT_TABLE *aitTable);
+    const Ait::S_AIT_APP_DESC* GetAutoStartApp(const Ait::S_AIT_TABLE *aitTable,
+        bool allowPresent = false);
 
     /**
      * Return the KeySet a key code belongs to.

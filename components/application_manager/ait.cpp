@@ -125,92 +125,99 @@ void Ait::ApplyAitTable(std::unique_ptr<Ait::S_AIT_TABLE> &aitTable)
 const Ait::S_AIT_APP_DESC * Ait::AutoStartApp(const S_AIT_TABLE *aitTable, int
     parentalControlAge,
     std::string &parentalControlRegion, std::string &parentalControlRegion3,
-    const bool isNetworkAvailable)
+    const bool isNetworkAvailable, const bool allowPresent)
 {
-    int index;
-    const S_AIT_APP_DESC *app;
-
-    app = nullptr;
-    if (aitTable)
-    {
-        for (index = 0; index != aitTable->numApps; index++)
+    auto pick = [&](uint8_t controlCode) -> const S_AIT_APP_DESC * {
+        const S_AIT_APP_DESC *app = nullptr;
+        if (aitTable == nullptr)
+        {
+            return nullptr;
+        }
+        for (int index = 0; index != aitTable->numApps; index++)
         {
             const S_AIT_APP_DESC *candidate = &aitTable->appArray[index];
-            if (candidate->controlCode == APP_CTL_AUTOSTART)
+            if (candidate->controlCode != controlCode)
             {
-                if (candidate->xmlType == XML_TYP_GENERIC_HTML)
+                continue;
+            }
+            if (candidate->xmlType == XML_TYP_GENERIC_HTML)
+            {
+                LOG(LOG_INFO,
+                    "Ait::AutoStartApp orgId=%u appId=%u skipped: generic HTML (HbbTV O.3)",
+                    candidate->orgId, candidate->appId);
+                continue;
+            }
+            // Only run supported HbbTV versions
+            bool supported = false;
+            for (S_APP_PROFILE ad : candidate->appDesc.appProfiles)
+            {
+                if ((ad.versionMajor < HBBTV_VERSION_MAJOR) ||
+                    ((ad.versionMajor == HBBTV_VERSION_MAJOR) && (ad.versionMinor <
+                                                                  HBBTV_VERSION_MINOR)) ||
+                    ((ad.versionMajor == HBBTV_VERSION_MAJOR) && (ad.versionMinor ==
+                                                                  HBBTV_VERSION_MINOR) &&
+                     (ad.versionMicro <= HBBTV_VERSION_MICRO)))
                 {
-                    LOG(LOG_INFO,
-                        "Ait::AutoStartApp orgId=%u appId=%u skipped: generic HTML (HbbTV O.3)",
-                        candidate->orgId, candidate->appId);
-                    continue;
-                }
-                // Only run supported HbbTV versions
-                bool supported = false;
-                for (S_APP_PROFILE ad : candidate->appDesc.appProfiles)
-                {
-                    if ((ad.versionMajor < HBBTV_VERSION_MAJOR) ||
-                        ((ad.versionMajor == HBBTV_VERSION_MAJOR) && (ad.versionMinor <
-                                                                      HBBTV_VERSION_MINOR)) ||
-                        ((ad.versionMajor == HBBTV_VERSION_MAJOR) && (ad.versionMinor ==
-                                                                      HBBTV_VERSION_MINOR) &&
-                         (ad.versionMicro <= HBBTV_VERSION_MICRO)))
+                    // TODO(COIT-53) Add flags for PVR and DL options that are used in comparison with the application profile.
+                    if (ad.appProfile == 0)
                     {
-                        // TODO(COIT-53) Add flags for PVR and DL options that are used in comparison with the application profile.
-                        if (ad.appProfile == 0)
-                        {
-                            supported = true;
-                            break;
-                        }
-                        else
-                        {
-                            LOG(LOG_ERROR, "Ait::AutoStartApp '%d' profile not supported.",
-                                ad.appProfile);
-                        }
+                        supported = true;
+                        break;
                     }
                     else
                     {
-                        LOG(LOG_ERROR, "Ait::AutoStartApp %d.%d.%d Version not supported.",
-                            ad.versionMajor, ad.versionMinor, ad.versionMicro);
-                    }
-                }
-                if (!supported)
-                {
-                    LOG(LOG_ERROR,
-                        "Ait::AutoStartApp orgId=%u appId=%u skipped: no supported HbbTV profile (count=%zu)",
-                        candidate->orgId, candidate->appId,
-                        candidate->appDesc.appProfiles.size());
-                    continue;
-                }
-
-                // Check parental restrictions
-                if (IsAgeRestricted(candidate->parentalRatings, parentalControlAge,
-                    parentalControlRegion, parentalControlRegion3))
-                {
-                    LOG(LOG_DEBUG,
-                        "Parental Control Age RESTRICTED for %s: only %d content accepted",
-                        parentalControlRegion.c_str(), parentalControlAge);
-                    continue;
-                }
-
-                if (HasViableTransport(candidate, isNetworkAvailable))
-                {
-                    if (app == nullptr || app->appDesc.priority < candidate->appDesc.priority)
-                    {
-                        app = candidate;
+                        LOG(LOG_ERROR, "Ait::AutoStartApp '%d' profile not supported.",
+                            ad.appProfile);
                     }
                 }
                 else
                 {
-                    LOG(LOG_ERROR,
-                        "Ait::AutoStartApp orgId=%u appId=%u skipped: no viable transport (network=%d, numTransports=%d)",
-                        candidate->orgId, candidate->appId, isNetworkAvailable,
-                        candidate->numTransports);
+                    LOG(LOG_ERROR, "Ait::AutoStartApp %d.%d.%d Version not supported.",
+                        ad.versionMajor, ad.versionMinor, ad.versionMicro);
                 }
             }
-        }
-    }
+            if (!supported)
+            {
+                LOG(LOG_ERROR,
+                    "Ait::AutoStartApp orgId=%u appId=%u skipped: no supported HbbTV profile (count=%zu)",
+                    candidate->orgId, candidate->appId,
+                    candidate->appDesc.appProfiles.size());
+                continue;
+            }
 
+            // Check parental restrictions
+            if (IsAgeRestricted(candidate->parentalRatings, parentalControlAge,
+                parentalControlRegion, parentalControlRegion3))
+            {
+                LOG(LOG_DEBUG,
+                    "Parental Control Age RESTRICTED for %s: only %d content accepted",
+                    parentalControlRegion.c_str(), parentalControlAge);
+                continue;
+            }
+
+            if (HasViableTransport(candidate, isNetworkAvailable))
+            {
+                if (app == nullptr || app->appDesc.priority < candidate->appDesc.priority)
+                {
+                    app = candidate;
+                }
+            }
+            else
+            {
+                LOG(LOG_ERROR,
+                    "Ait::AutoStartApp orgId=%u appId=%u skipped: no viable transport (network=%d, numTransports=%d)",
+                    candidate->orgId, candidate->appId, isNetworkAvailable,
+                    candidate->numTransports);
+            }
+        }
+        return app;
+    };
+
+    const S_AIT_APP_DESC *app = pick(APP_CTL_AUTOSTART);
+    if (app == nullptr && allowPresent)
+    {
+        app = pick(APP_CTL_PRESENT);
+    }
     return app;
 }
 

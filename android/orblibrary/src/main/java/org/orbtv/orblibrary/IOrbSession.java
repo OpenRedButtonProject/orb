@@ -52,6 +52,12 @@ public interface IOrbSession {
     void onExitKeyPress();
 
     /**
+     * Kill the running HbbTV application without starting the broadcast autostart
+     * app. Used when a DVB-I linked application 1.2 is parental-blocked (HbbTV O.3).
+     */
+    void destroyApplicationForParentalControl();
+
+    /**
      * Requests the HbbTV engine to process the specified AIT. The HbbTV engine expects the relevant
      * AITs only (the first one after HBBTV_Start and when the version/PID changes). If more than one
      * stream is signalled in the PMT for a service with an application_signalling_descriptor, then

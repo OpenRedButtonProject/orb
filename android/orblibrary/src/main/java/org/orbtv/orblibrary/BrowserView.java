@@ -196,8 +196,12 @@ class BrowserView extends WebView {
             Log.d(TAG, "KeyCode (" + keyCode + ") DOWN dispatch");
             dispatchJavaScriptKeyEvent("keydown", keyCode);
         } else if (action == KeyEvent.ACTION_UP) {
-            Log.d(TAG, "KeyCode (" + keyCode + ") Press dispatch");
-            dispatchJavaScriptKeyEvent("keypress", keyCode);
+            // Colour/function keys are not characters: keypress would re-fire
+            // the same keyCode (e.g. 405) and duplicate setChannel.
+            if (isCharacterKeyPress(keyCode)) {
+                Log.d(TAG, "KeyCode (" + keyCode + ") Press dispatch");
+                dispatchJavaScriptKeyEvent("keypress", keyCode);
+            }
             if (isKeyMappedByWebView(androidKeyCode)) {
                 Log.d(TAG, "Key event {" + androidKeyCode + "} is mapped by WebView");
                 return super.dispatchKeyEvent(event);
@@ -330,6 +334,11 @@ class BrowserView extends WebView {
                 keyCode == KeyEvent.KEYCODE_9;
     }
 
+    /** DOM keypress is for printable characters, not HbbTV colour/media keys (403+). */
+    private static boolean isCharacterKeyPress(int tvBrowserKeyCode) {
+        return tvBrowserKeyCode >= 32 && tvBrowserKeyCode < 127;
+    }
+
     private boolean isKeyAlreadyDispatchedToOverlay(int keyCode) {
         return keyCode != KeyEvent.KEYCODE_MEDIA_PLAY &&
                 keyCode != KeyEvent.KEYCODE_MEDIA_STOP &&
@@ -350,8 +359,16 @@ class BrowserView extends WebView {
     }
 
     private void dispatchJavaScriptKeyEvent(String type, int keyCode) {
-        evaluateJavascript("document.activeElement.dispatchEvent(new KeyboardEvent('" + type
-                + "', " + "{'keyCode': " + keyCode + ", 'bubbles': true}))", null);
+        // Chromium ignores keyCode/which in the KeyboardEvent constructor, so HbbTV
+        // colour keys (403–406) would arrive as 0. Define them on the event object.
+        String js = "(function(){"
+                + "var e=new KeyboardEvent(" + JSONObject.quote(type)
+                + ",{bubbles:true,cancelable:true});"
+                + "Object.defineProperty(e,'keyCode',{value:" + keyCode + "});"
+                + "Object.defineProperty(e,'which',{value:" + keyCode + "});"
+                + "document.dispatchEvent(e);"
+                + "})()";
+        evaluateJavascript(js, null);
     }
 
     private void dispatchJavaScriptTextInput(String text) {
