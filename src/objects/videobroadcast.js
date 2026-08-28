@@ -749,18 +749,31 @@ hbbtv.objects.VideoBroadcast = (function() {
                     let wasPlayStateStopped = false;
                     if (p.playState === PLAY_STATE_UNREALIZED && applicationScheme === LINKED_APP_SCHEME_1_1) {
                         /* DAE vol5 Table 8 state transition #7 — PRESENTING when media is available.
-                         * For DVB-I DASH, AV components are only known after dash.js reports tracks.
-                         * If components are not ready yet, stay in CONNECTING until they arrive so
-                         * getCurrentActiveComponents() is not queried against an empty list. */
-                        const components = hbbtv.bridge.broadcast.getComponents(
-                            channelData.ccid,
-                            -1
-                        );
-                        if (components && components.length > 0) {
-                            p.playState = PLAY_STATE_PRESENTING;
+                         * O.5.4 / ERRATA0400: a selected DVB-I DASH instance is already presented
+                         * by the native player and does not expose RF-style getComponents. Do not
+                         * wait for an empty component list. A.2.4.1 / ERRATA0700–0720: if HTML5
+                         * still holds the decoders, stay CONNECTING. For RF, wait until SI
+                         * components are known. */
+                        let present = false;
+                        if (gBroadbandAvInUse) {
+                            present = false;
+                        } else if (
+                            isSelectedDashInstance(
+                                channelData,
+                                channelData.currentInstanceIndex
+                            )
+                        ) {
+                            present = true;
                         } else {
-                            p.playState = PLAY_STATE_CONNECTING;
+                            const components = hbbtv.bridge.broadcast.getComponents(
+                                channelData.ccid,
+                                -1
+                            );
+                            present = !!(components && components.length > 0);
                         }
+                        p.playState = present
+                            ? PLAY_STATE_PRESENTING
+                            : PLAY_STATE_CONNECTING;
                     } else {
                         /* PLAY_STATE_STOPPED */
                         /* DAE vol5 Table 8 state transition #17 with HbbTV 2.0.3 modification */
@@ -1607,6 +1620,28 @@ hbbtv.objects.VideoBroadcast = (function() {
         );
     }
 
+    function isSelectedDashInstance(channel, instanceIndex) {
+        const DASH = hbbtv.objects.Channel.prototype.ID_DVB_DASH;
+        if (!channel) {
+            return false;
+        }
+        if (channel.idType === DASH) {
+            return true;
+        }
+        if (typeof instanceIndex !== 'number' || isNaN(instanceIndex) || instanceIndex < 0) {
+            return false;
+        }
+        const instances = channel.serviceInstances;
+        if (!instances) {
+            return false;
+        }
+        const inst =
+            typeof instances.item === 'function'
+                ? instances.item(instanceIndex)
+                : instances[instanceIndex];
+        return !!(inst && inst.idType === DASH);
+    }
+
     function addBridgeEventListeners() {
         const p = privates.get(this);
         if (!p.onChannelStatusChanged) {
@@ -1669,13 +1704,17 @@ hbbtv.objects.VideoBroadcast = (function() {
                                 );
                                 break;
                             }
-                            // For media-in-parallel linked apps on DVB-I, components may lag PLAYING.
+                            // For media-in-parallel linked apps on DVB-I RF, components may lag PLAYING.
                             // Stay CONNECTING until getComponents is non-empty (see maybePresentWhenComponentsReady).
-                            // Exception: setChannel onto a DVB-I *instance* (O.5.4 / ERRATA0400) must
-                            // complete even if a same-URL retune momentarily clears the track list.
+                            // Exceptions: setChannel onto a DVB-I *instance* (O.5.4 / ERRATA0400) and
+                            // bind/PRESENTING of a selected DASH instance, which never exposes RF tracks.
                             if (
                                 hbbtv.bridge.manager.getApplicationScheme() === LINKED_APP_SCHEME_1_1
                                 && !p.pendingChannelChangeSucceeded
+                                && !isSelectedDashInstance(
+                                    p.currentChannelData,
+                                    p.currentInstanceIndex
+                                )
                             ) {
                                 try {
                                     const ccid =
@@ -1699,8 +1738,12 @@ hbbtv.objects.VideoBroadcast = (function() {
                             console.log('DEBUG_CHANNEL_STATUS: CHANNEL_STATUS_PRESENTING received while in CONNECTING state - transitioning to PRESENTING');
                             hbbtv.holePuncher.setBroadcastVideoObject(this);
                             p.playState = PLAY_STATE_PRESENTING;
-                            console.log('DEBUG_CHANNEL_STATUS: playState set to PRESENTING (2), dispatching ChannelChangeSucceeded and PlayStateChange events');
-                            dispatchChannelChangeSucceededEvent.call(this, p.currentChannelData);
+                            if (p.pendingChannelChangeSucceeded) {
+                                console.log('DEBUG_CHANNEL_STATUS: playState set to PRESENTING (2), dispatching ChannelChangeSucceeded and PlayStateChange events');
+                                dispatchChannelChangeSucceededEvent.call(this, p.currentChannelData);
+                            } else {
+                                console.log('DEBUG_CHANNEL_STATUS: playState set to PRESENTING (2), dispatching PlayStateChange');
+                            }
                             dispatchPlayStateChangeEvent.call(this, p.playState);
                             break;
 
@@ -1868,16 +1911,9 @@ hbbtv.objects.VideoBroadcast = (function() {
                         event.serviceInstanceIndex === p.pendingInstanceIndex
                     ) {
                         p.pendingDashInstanceConfirmed = true;
-                        if (p.playState === PLAY_STATE_CONNECTING) {
-                            console.log(
-                                'DEBUG_CHANNEL_STATUS: target DASH instance selected - dispatching ChannelChangeSucceeded'
-                            );
-                            dispatchChannelChangeSucceededEvent.call(
-                                this,
-                                p.currentChannelData
-                            );
-                            dispatchPlayStateChangeEvent.call(this, p.playState);
-                        }
+                        console.log(
+                            'DEBUG_CHANNEL_STATUS: target DASH instance selected; ChannelChangeSucceeded waits for PRESENTING'
+                        );
                     }
                 };
             }
@@ -2286,8 +2322,9 @@ hbbtv.objects.VideoBroadcast = (function() {
     }
 
     /**
-     * Linked-application "media in parallel" may bind while DVB-I DASH tracks are still loading.
-     * Complete the CONNECTING → PRESENTING transition once components are available.
+     * Linked-application "media in parallel" may bind while DVB-I RF components are still loading.
+     * Complete CONNECTING → PRESENTING once components are available, or immediately for a
+     * selected DVB-I DASH instance (O.5.4 / ERRATA0400).
      */
     function maybePresentWhenComponentsReady() {
         const p = privates.get(this);
@@ -2308,11 +2345,19 @@ hbbtv.objects.VideoBroadcast = (function() {
             return;
         }
         try {
-            const components = hbbtv.bridge.broadcast.getComponents(
-                p.currentChannelData.ccid,
-                -1
+            const dashReady = isSelectedDashInstance(
+                p.currentChannelData,
+                p.currentInstanceIndex
             );
-            if (components && components.length > 0) {
+            let ready = dashReady;
+            if (!ready) {
+                const components = hbbtv.bridge.broadcast.getComponents(
+                    p.currentChannelData.ccid,
+                    -1
+                );
+                ready = !!(components && components.length > 0);
+            }
+            if (ready) {
                 p.playState = PLAY_STATE_PRESENTING;
                 if (p.pendingChannelChangeSucceeded) {
                     dispatchChannelChangeSucceededEvent.call(this, p.currentChannelData);
