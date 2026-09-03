@@ -1,3 +1,19 @@
+/**
+ * @license ORB Software. Copyright (c) 2026 Ocean Blue Software Limited
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 // RDK/Linux native
 hbbtv.native = {
     name: 'rdk',
@@ -84,7 +100,7 @@ hbbtv.native = {
      * This method will return:
      *     -1     if the key argument was removed in the latest mpd period/representation received
      *      0     if the key argument remains
-     *      1     if the key argument was added in the latest mpd period/representation received 
+     *      1     if the key argument was added in the latest mpd period/representation received
      */
     metadataDelta: function({periodData, representationData} = {}, key) {
         console.log('[RDK-Native::metadataDelta]');
@@ -100,32 +116,32 @@ hbbtv.native = {
         }
 
         // new mpd period or representation
-        let searchObj = 
+        let searchObj =
             periodData !== undefined ? periodData : representationData;
 
         // check for delta
-        if (currentObj !== undefined 
-            && currentObj.hasOwnProperty(key) 
+        if (currentObj !== undefined
+            && currentObj.hasOwnProperty(key)
             && !searchObj.hasOwnProperty(key))
         {
             console.log(`RDK-Native::metadataDelta] ${key} Removed`);
             result = -1;
         }
-        else if (currentObj !== undefined 
-            && !currentObj.hasOwnProperty(key) 
+        else if (currentObj !== undefined
+            && !currentObj.hasOwnProperty(key)
             && searchObj.hasOwnProperty(key))
         {
             console.log(`RDK-Native::metadataDelta] ${key} Removed`);
             result = 1;
         }
-        
+
         // finally, store the period or representation as the latest
         if (periodData !== undefined) {
             this.currentPeriod = periodData;
         } if (representationData !== undefined) {
             this.currentRepresentation = representationData;
         }
-     
+
         return result;
     },
     // optional method to add native specific event listeners on mediamanager
@@ -166,7 +182,7 @@ hbbtv.native = {
      */
     dispatchManifestNativeEvents: function(e) {
         // dispatch __orb_timeShiftBufferDepthReceived__ event for seekable property in case of rdk native
-  
+
         if (e.data.type === 'dynamic') {
             const timeShiftEvt = new Event('__orb_timeShiftBufferDepthReceived__');
             if (e.data.hasOwnProperty('timeShiftBufferDepth')) {
@@ -196,8 +212,8 @@ hbbtv.native = {
     dispatchRepresentationNativeEvents: function(representation) {
         const inbandEventStreamEvt = new Event('__orb_inbandEventStreamReceived__');
         Object.assign(inbandEventStreamEvt, {
-            delta: this.metadataDelta({representationData: representation}, 'InbandEventStream') 
-        }); 
+            delta: this.metadataDelta({representationData: representation}, 'InbandEventStream')
+        });
         console.log('[RDK-Native] Dipsatching __orb_inbandEventStreamReceived__');
         this.dashProxy.dispatchEvent(inbandEventStreamEvt);
     },
@@ -251,7 +267,7 @@ hbbtv.native = {
                 ranges.push({
                     start: media.seekable.start(i),
                     end: media.seekable.end(i),
-                }); 
+                });
             }
         }
 
@@ -262,13 +278,13 @@ hbbtv.native = {
          */
         if (this.pausedDelta && this.media.currentTime < ranges[0].start) {
             const e = new Event('error');
-            e.error = {}; 
+            e.error = {};
             e.error.code = 2;
             e.error.message = '';
             this.dashProxy.dispatchEvent(e);
             this.pausedDelta = false;
         }
-        
+
         // console.log(`CT = ${media.currentTime}`);
         // console.log(`RANGE = ${ranges[0].start} ${ranges[0].end}`);
 
