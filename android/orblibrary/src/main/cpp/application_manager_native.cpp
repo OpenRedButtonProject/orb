@@ -442,11 +442,20 @@ JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniOnApplica
 }
 
 extern "C"
+JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniOnApplicationPresented(
+    JNIEnv *env, jobject object,
+    jint app_id)
+{
+    GetManager(env, object)->OnApplicationPresented(app_id);
+}
+
+extern "C"
 JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniOnChannelChange(JNIEnv *env,
     jobject object,
-    jint onet_id, jint trans_id, jint serv_id, jboolean is_dvbi)
+    jint onet_id, jint trans_id, jint serv_id, jboolean is_dvbi, jboolean use_broadcast_ait)
 {
-    GetManager(env, object)->OnChannelChanged(onet_id, trans_id, serv_id, is_dvbi == JNI_TRUE);
+    GetManager(env, object)->OnChannelChanged(onet_id, trans_id, serv_id, is_dvbi == JNI_TRUE,
+        use_broadcast_ait == JNI_TRUE);
 }
 
 extern "C"

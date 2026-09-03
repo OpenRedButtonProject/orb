@@ -641,6 +641,11 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
         return currentChannel.ccid;
     }
 
+    @Override
+    public int[] getDvbiBroadcastAitTriplet() {
+        return null;
+    }
+
     /**
      * Find the channel with the given LCN and return its CCID.
      *

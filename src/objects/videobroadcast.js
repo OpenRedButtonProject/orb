@@ -1642,6 +1642,22 @@ hbbtv.objects.VideoBroadcast = (function() {
         return !!(inst && inst.idType === DASH);
     }
 
+    /**
+     * setChannel onto a native DASH instance CCID (…iN). CONNECTING and
+     * ApplicationSchemeUpdated must not complete CCS: leftover status from the
+     * previous MPD (ERRATA0900 step 5) can fire while playState is still
+     * CONNECTING. Wait for CHANNEL_STATUS_PRESENTING of the new instance.
+     * App-only 1.2 (no DASH idType) still completes CCS on CONNECTING.
+     */
+    function dashInstanceLockWaitsForPresenting(p) {
+        return !!(
+            p.pendingChannelChangeSucceeded &&
+            isDashInstanceChannel(p.currentChannelData) &&
+            p.pendingDashInstanceConfirmed &&
+            isSelectedDashInstance(p.currentChannelData, p.currentInstanceIndex)
+        );
+    }
+
     function addBridgeEventListeners() {
         const p = privates.get(this);
         if (!p.onChannelStatusChanged) {
@@ -1749,6 +1765,12 @@ hbbtv.objects.VideoBroadcast = (function() {
 
                         case CHANNEL_STATUS_CONNECTING:
                             console.log('DEBUG_CHANNEL_STATUS: CHANNEL_STATUS_CONNECTING received while in CONNECTING state');
+                            if (dashInstanceLockWaitsForPresenting(p)) {
+                                console.log(
+                                    'DEBUG_CHANNEL_STATUS: native DASH instance lock; ignore CONNECTING CCS until PRESENTING'
+                                );
+                                break;
+                            }
                             if (
                                 p.currentChannelData == null ||
                                 !channelStatusEventMatchesChannel(
@@ -2076,6 +2098,25 @@ hbbtv.objects.VideoBroadcast = (function() {
         if (!p.onApplicationSchemeUpdated) {
             p.onApplicationSchemeUpdated = (event) => {
                 if (event.scheme !== LINKED_APP_SCHEME_1_1) {
+                    // ERRATA0900: a delayed XML AIT from the previous instance must not
+                    // complete setChannel onto a DVB-I DASH instance. Wait for
+                    // ServiceInstanceChanged (HowRelated is published there first).
+                    if (
+                        p.pendingChannelChangeSucceeded &&
+                        isDashInstanceChannel(p.currentChannelData) &&
+                        !p.pendingDashInstanceConfirmed
+                    ) {
+                        console.log(
+                            'DEBUG_CHANNEL_STATUS: ignoring ApplicationSchemeUpdated until target DASH instance is selected'
+                        );
+                        return;
+                    }
+                    if (dashInstanceLockWaitsForPresenting(p)) {
+                        console.log(
+                            'DEBUG_CHANNEL_STATUS: ignoring ApplicationSchemeUpdated until DASH PRESENTING'
+                        );
+                        return;
+                    }
                     dispatchChannelChangeSucceededEvent.call(this, p.currentChannelData);
                 }
             }

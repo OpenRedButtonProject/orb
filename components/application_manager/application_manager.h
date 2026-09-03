@@ -297,13 +297,18 @@ public:
      * If a broadcast-independent application is running, it will transition to broadcast-related or
      * be killed depending on the signalling.
      *
-     * For DVB-I (isDvbi=true) the linked XML AIT is one-shot HTTP, not a repeating broadcast AIT.
+     * For DVB-I DASH (isDvbi=true, useBroadcastAit=false) the linked XML AIT is one-shot HTTP.
      * CONNECTING must not start the broadcast AIT watchdog.
      *
+     * For a DVB-I RF instance (isDvbi=true, useBroadcastAit=true) the broadcast AIT is for the
+     * RF delivery triplet. Pass that triplet as originalNetworkId/transportStreamId/serviceId
+     * and start the AIT watchdog as for a classic broadcast service.
+     *
      * @param isDvbi true when the newly selected service is DVB-I (including native DASH).
+     * @param useBroadcastAit true when the selected DVB-I instance delivers broadcast AIT.
      */
     void OnChannelChanged(uint16_t originalNetworkId, uint16_t transportStreamId, uint16_t
-        serviceId, bool isDvbi = false);
+        serviceId, bool isDvbi = false, bool useBroadcastAit = false);
 
     /**
      * Called when the network availability has changed.
@@ -341,6 +346,12 @@ public:
      * @param url The URL of the new page.
      */
     void OnApplicationPageChanged(uint16_t appId, const std::string &url);
+
+    /**
+     * First paint of the running app (WebView onPageCommitVisible). Used so O.3
+     * restart accounting ignores restarts that die before the page is shown.
+     */
+    void OnApplicationPresented(uint16_t appId);
 
     std::string GetApplicationScheme(uint16_t appId);
 
@@ -406,7 +417,8 @@ private:
     /**
      * Kill the running DVB-I linked app and re-launch it from the stored XML AIT
      * (or a snapshot of the killed app if the AIT is gone). Caller holds m_lock.
-     * If the restart limit is already reached, kills without re-launching.
+     * Restarts of an app that had already presented count toward the O.3 cap;
+     * deaths before first paint do not. If the cap is reached, kills without re-launching.
      *
      * @return true if RunApp succeeded, false if the app was not re-started.
      */
@@ -464,6 +476,8 @@ private:
     std::recursive_mutex m_lock;
     Utils::Timeout m_aitTimeout;
     int m_linkedAppRestartCount = 0;
+    int m_linkedAppRestartAttempts = 0;
+    bool m_linkedAppDidStart = false;
 };
 
 #endif // HBBTV_SERVICE_MANAGER_H

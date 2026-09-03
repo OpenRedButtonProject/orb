@@ -47,8 +47,11 @@
 #define KEY_SET_OTHER 0x400
 
 /* HbbTV Annex O.3: the number of times a linked application is re-started
- * after being terminated may be limited but shall be greater than one. */
+ * after being terminated may be limited but shall be greater than one.
+ * kMaxLinkedAppRestarts counts restarts of an app that had already presented.
+ * Pre-init deaths (restart into an exhausted heap) use the attempt cap. */
 static const int kMaxLinkedAppRestarts = 2;
+static const int kMaxLinkedAppRestartAttempts = 5;
 
 #define VK_RED 403
 #define VK_GREEN 404
@@ -435,7 +438,8 @@ void ApplicationManager::ProcessAitSection(uint16_t aitPid, uint16_t serviceId,
 
     if (serviceId != m_currentService.serviceId)
     {
-        LOG(LOG_INFO, "The AIT is not for the current service, early out");
+        LOG(LOG_INFO, "The AIT is not for the current service (ait=%u current=%u), early out",
+            serviceId, m_currentService.serviceId);
         return;
     }
 
@@ -719,13 +723,14 @@ void ApplicationManager::OnBroadcastStopped()
  * If a broadcast-independent application is running, it will transition to broadcast-related or
  * be killed depending on the signalling.
  *
- * DVB-I linked XML AIT is one-shot HTTP. CONNECTING must not start the broadcast AIT watchdog.
+ * DVB-I DASH linked XML AIT is one-shot HTTP. CONNECTING must not start the broadcast
+ * AIT watchdog. A DVB-I RF instance uses the RF delivery AIT like a classic broadcast service.
  */
 void ApplicationManager::OnChannelChanged(uint16_t originalNetworkId,
-    uint16_t transportStreamId, uint16_t serviceId, bool isDvbi)
+    uint16_t transportStreamId, uint16_t serviceId, bool isDvbi, bool useBroadcastAit)
 {
-    DBGLOG("(current serviceId: %u, new serviceId %u, isDvbi=%d)",
-        m_currentService.serviceId, serviceId, isDvbi);
+    DBGLOG("(current serviceId: %u, new serviceId %u, isDvbi=%d, useBroadcastAit=%d)",
+        m_currentService.serviceId, serviceId, isDvbi, useBroadcastAit);
     std::lock_guard<std::recursive_mutex> lock(m_lock);
     if (m_currentService.originalNetworkId == originalNetworkId &&
         m_currentService.transportStreamId == transportStreamId &&
@@ -743,7 +748,9 @@ void ApplicationManager::OnChannelChanged(uint16_t originalNetworkId,
     m_currentServiceReceivedFirstAit = false;
     m_currentServiceAitPid = 0;
     m_linkedAppRestartCount = 0;
-    if (isDvbi)
+    m_linkedAppRestartAttempts = 0;
+    m_linkedAppDidStart = false;
+    if (isDvbi && !useBroadcastAit)
     {
         // Linked XML AIT is delivered once via Related Material, not on an RF AIT PID.
         // Keep the current AIT so a running 1.1 app survives DASH CONNECTING and setChannel
@@ -759,6 +766,11 @@ void ApplicationManager::OnChannelChanged(uint16_t originalNetworkId,
             LOG(LOG_INFO, "DVB-I channel change: skip AIT timeout (linked XML AIT is one-shot)");
         }
         return;
+    }
+    if (isDvbi)
+    {
+        LOG(LOG_INFO, "DVB-I RF instance: start AIT timeout for broadcast AIT (serviceId=%u)",
+            serviceId);
     }
     m_ait.Clear();
     m_aitTimeout.start();
@@ -868,6 +880,16 @@ void ApplicationManager::OnApplicationPageChanged(uint16_t appId, const std::str
             // the presented components.
             m_sessionCallback->ResetBroadcastPresentation();
         }
+    }
+}
+
+void ApplicationManager::OnApplicationPresented(uint16_t appId)
+{
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
+    if (m_app.isRunning && (appId == INVALID_APP_ID || m_app.id == appId))
+    {
+        m_linkedAppDidStart = true;
+        LOG(LOG_INFO, "ERRATA0800: linked app presented id=%u", m_app.id);
     }
 }
 
@@ -1106,9 +1128,13 @@ bool ApplicationManager::RunApp(const App &app)
             ++m_nextAppId;
         }
 
+        // HowRelated is published before AIT/XML AIT (A.2.20.6). RunApp replaces
+        // m_app; keep the href so an RF AUTOSTART stays undefined (ERRATA0900).
+        std::string howRelated = m_app.getHowRelatedHref();
         m_app = app;
         m_app.id = m_nextAppId;
         m_app.isRunning = true;
+        m_app.setHowRelatedHref(howRelated);
 
         if (m_app.isHidden)
         {
@@ -1179,15 +1205,22 @@ bool ApplicationManager::IsDvbiLinkedApp() const
 
 bool ApplicationManager::RestartDvbiLinkedApp()
 {
-    if (m_linkedAppRestartCount >= kMaxLinkedAppRestarts)
+    if (m_linkedAppRestartCount >= kMaxLinkedAppRestarts
+        || m_linkedAppRestartAttempts >= kMaxLinkedAppRestartAttempts)
     {
-        LOG(LOG_INFO, "ERRATA0800: restart limit %d reached; not re-starting (O.3 instance fallback)",
-            kMaxLinkedAppRestarts);
+        LOG(LOG_INFO, "ERRATA0800: restart limit reached (started=%d/%d attempts=%d/%d); not re-starting",
+            m_linkedAppRestartCount, kMaxLinkedAppRestarts,
+            m_linkedAppRestartAttempts, kMaxLinkedAppRestartAttempts);
         KillRunningApp();
         return false;
     }
 
-    ++m_linkedAppRestartCount;
+    ++m_linkedAppRestartAttempts;
+    if (m_linkedAppDidStart)
+    {
+        ++m_linkedAppRestartCount;
+    }
+    m_linkedAppDidStart = false;
     App snapshot = m_app;
     KillRunningApp();
 
@@ -1199,14 +1232,16 @@ bool ApplicationManager::RestartDvbiLinkedApp()
     }
     if (app_desc == nullptr)
     {
-        LOG(LOG_INFO, "ERRATA0800: restart linked app from snapshot (restart %d, limit %d)",
-            m_linkedAppRestartCount, kMaxLinkedAppRestarts);
+        LOG(LOG_INFO, "ERRATA0800: restart linked app from snapshot (started %d/%d attempt %d/%d)",
+            m_linkedAppRestartCount, kMaxLinkedAppRestarts,
+            m_linkedAppRestartAttempts, kMaxLinkedAppRestartAttempts);
         return RunApp(snapshot);
     }
 
     auto newApp = App::CreateAppFromAitDesc(app_desc, m_currentService, "", true, false);
-    LOG(LOG_INFO, "ERRATA0800: restart linked app from XML AIT (restart %d, limit %d)",
-        m_linkedAppRestartCount, kMaxLinkedAppRestarts);
+    LOG(LOG_INFO, "ERRATA0800: restart linked app from XML AIT (started %d/%d attempt %d/%d)",
+        m_linkedAppRestartCount, kMaxLinkedAppRestarts,
+        m_linkedAppRestartAttempts, kMaxLinkedAppRestartAttempts);
     return RunApp(newApp);
 }
 

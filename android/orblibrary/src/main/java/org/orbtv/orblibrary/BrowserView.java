@@ -126,6 +126,10 @@ class BrowserView extends WebView {
             public void onPageCommitVisible(WebView view, String url) {
                 mVisibilityOverride = true;
                 setHiddenFlag(mHiddenMask); // trigger browser view visibility update
+                if (mSessionCallback != null && mAppId > 0
+                        && url != null && !url.startsWith("about:blank")) {
+                    mSessionCallback.notifyApplicationPresented(mAppId);
+                }
             }
 
             @Override
@@ -134,7 +138,7 @@ class BrowserView extends WebView {
                 Log.e(TAG, "ERRATA0800: render process gone didCrash=" + crashed
                         + " appId=" + mAppId);
                 notifyIrrecoverableError();
-                // Keep this WebView: AppMgr will KillRunningApp then RunApp (loadUrl).
+                // OrbSession replaces this WebView on the next main-loop turn.
                 return true;
             }
         });
@@ -459,6 +463,13 @@ class BrowserView extends WebView {
          * @param url   The URL of the new page.
          */
         void notifyApplicationPageChanged(int appId, String url);
+
+        /**
+         * First paint of the running application (onPageCommitVisible).
+         *
+         * @param appId The application ID.
+         */
+        void notifyApplicationPresented(int appId);
     }
 
     static {

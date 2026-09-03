@@ -357,6 +357,15 @@ public interface IOrbSessionCallback {
     String getCurrentCcid();
 
     /**
+     * RF delivery triplet for broadcast AIT while a DVB-I non-DASH instance is selected.
+     * CCS still uses the DVB-I Channel identity (ERRATA0710 / ERRATA0720).
+     *
+     * @return {onid, tsid, sid}, or null when the AIT watchdog should be skipped
+     *         (DASH instance, no instance, or classic non-DVB-I)
+     */
+    int[] getDvbiBroadcastAitTriplet();
+
+    /**
      * Find the channel with the given LCN and return its CCID.
      *
      * @param lcn LCN to find
@@ -637,8 +646,8 @@ public interface IOrbSessionCallback {
 
     /**
      * A DVB-I linked application was terminated for an irrecoverable error and
-     * will not be re-started (restart limit reached). Discard that service
-     * instance and continue selection (HbbTV Annex O.3).
+     * will not be re-started (restart limit reached). Select a different service
+     * instance if one exists (HbbTV Annex O.3). Do not discard the only instance.
      */
     default void onLinkedApplicationRestartAbandoned() {}
 

@@ -7,6 +7,7 @@ import android.os.Looper;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
+import android.widget.FrameLayout;
 
 import org.json.JSONObject;
 import org.orbtv.orbpolyfill.BridgeTypes;
@@ -16,6 +17,11 @@ import java.util.List;
 
 class OrbSession implements IOrbSession {
     private static final String TAG = OrbSession.class.getSimpleName();
+    /** Let the destroyed renderer release heap before O.3 re-launch (ERRATA0800). */
+    private static final int IRRECOVERABLE_RECYCLE_SETTLE_MS = 500;
+    private final Handler mIrrecoverableHandler = new Handler(Looper.getMainLooper());
+    private final Object mCloseLock = new Object();
+    private volatile boolean mClosed;
     private final IOrbSessionCallback mOrbSessionCallback;
     private final int mOrbHbbTVVersion;
     private ApplicationManager mApplicationManager;
@@ -24,7 +30,10 @@ class OrbSession implements IOrbSession {
     private MediaSwitcherManager mMediaSwitcherManager;
     private JsonRpc mJsonRpc;
     private Bridge mBridge;
+    private final Context mContext;
+    private final FrameLayout mBrowserContainer;
     private BrowserView mBrowserView;
+    private BrowserView.SessionCallback mBrowserSessionCallback;
     private DsmccClient mDsmccClient;
     private final int EMPTY_INTEGER = -999999;
     private final String EMPTY_STRING = "";
@@ -39,6 +48,7 @@ class OrbSession implements IOrbSession {
                       OrbSessionFactory.Configuration configuration) {
         mOrbSessionCallback = callback;
         mConfiguration = configuration;
+        mContext = context;
         mApplicationManager = new ApplicationManager(mOrbSessionCallback);
         mOrbHbbTVVersion = mApplicationManager.getOrbHbbTVVersion();
         Log.d(TAG, "ORB HbbTV Version: " + mOrbHbbTVVersion);
@@ -55,7 +65,12 @@ class OrbSession implements IOrbSession {
         mBridge = new Bridge(this, callback, configuration, mApplicationManager,
                 mMediaSynchroniserManager, mMediaSwitcherManager, mJsonRpc);
         mDsmccClient = new DsmccClient(callback);
+        mBrowserContainer = new FrameLayout(context);
         mBrowserView = new BrowserView(context, mBridge, configuration, mDsmccClient);
+        mBrowserView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        mBrowserContainer.addView(mBrowserView, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT));
 
         mApplicationManager.setSessionCallback(new ApplicationManager.SessionCallback() {
             /**
@@ -176,7 +191,7 @@ class OrbSession implements IOrbSession {
             }
         });
 
-        mBrowserView.setSessionCallback(new BrowserView.SessionCallback() {
+        mBrowserSessionCallback = new BrowserView.SessionCallback() {
             /**
              * Get the TvBrowser key code for the Android key code.
              *
@@ -223,11 +238,9 @@ class OrbSession implements IOrbSession {
             @Override
             public void notifyApplicationIrrecoverableError(int appId) {
                 Log.i(TAG, "ERRATA0800: irrecoverable error for appId=" + appId);
-                boolean abandoned = mApplicationManager.onApplicationIrrecoverableError(appId);
-                if (abandoned) {
-                    Log.i(TAG, "ERRATA0800: restart limit reached; discarding DVB-I instance");
-                    mOrbSessionCallback.onLinkedApplicationRestartAbandoned();
-                }
+                // Recycle on the next turn so we are not destroying a WebView from
+                // inside onRenderProcessGone. The old renderer heap is released first.
+                mIrrecoverableHandler.post(() -> restartAfterIrrecoverableError(appId));
             }
 
             /**
@@ -241,7 +254,13 @@ class OrbSession implements IOrbSession {
             public void notifyApplicationPageChanged(int appId, String url) {
                 mApplicationManager.onApplicationPageChanged(appId, url);
             }
-        });
+
+            @Override
+            public void notifyApplicationPresented(int appId) {
+                mApplicationManager.onApplicationPresented(appId);
+            }
+        };
+        mBrowserView.setSessionCallback(mBrowserSessionCallback);
 
         mBridge.setSessionCallback(new Bridge.SessionCallback() {
             @Override
@@ -363,7 +382,47 @@ class OrbSession implements IOrbSession {
      */
     @Override
     public View getView() {
-        return mBrowserView;
+        return mBrowserContainer;
+    }
+
+    private void restartAfterIrrecoverableError(int appId) {
+        synchronized (mCloseLock) {
+            if (mClosed) {
+                return;
+            }
+            recycleBrowserView();
+            mIrrecoverableHandler.postDelayed(() -> {
+                synchronized (mCloseLock) {
+                    if (mClosed) {
+                        return;
+                    }
+                    boolean abandoned = mApplicationManager.onApplicationIrrecoverableError(appId);
+                    if (abandoned) {
+                        Log.i(TAG, "ERRATA0800: restart limit reached; no further re-launch");
+                        mOrbSessionCallback.onLinkedApplicationRestartAbandoned();
+                    }
+                }
+            }, IRRECOVERABLE_RECYCLE_SETTLE_MS);
+        }
+    }
+
+    /**
+     * Destroy the exhausted WebView/renderer before O.3 re-launch (ERRATA0800).
+     * The overlay holds {@link #mBrowserContainer}, so swapping the child is stable.
+     */
+    private void recycleBrowserView() {
+        Log.i(TAG, "ERRATA0800: destroying WebView to reclaim renderer heap");
+        BrowserView old = mBrowserView;
+        mBrowserContainer.removeAllViews();
+        if (old != null) {
+            old.close();
+        }
+        mBrowserView = new BrowserView(mContext, mBridge, mConfiguration, mDsmccClient);
+        mBrowserView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        mBrowserView.setSessionCallback(mBrowserSessionCallback);
+        mBrowserContainer.addView(mBrowserView, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT));
     }
 
     /**
@@ -641,7 +700,24 @@ class OrbSession implements IOrbSession {
             boolean isDvbi = channel != null && channel.valid
                     && (channel.idType == BridgeTypes.Channel.ID_DVB_I
                     || channel.idType == BridgeTypes.Channel.ID_DVB_DASH);
-            mApplicationManager.onChannelChanged(onetId, transId, servId, isDvbi);
+            int aitOnid = onetId;
+            int aitTransId = transId;
+            int aitServId = servId;
+            boolean useBroadcastAit = false;
+            if (isDvbi) {
+                int[] rf = mOrbSessionCallback.getDvbiBroadcastAitTriplet();
+                if (rf != null && rf.length >= 3) {
+                    aitOnid = rf[0];
+                    aitTransId = rf[1];
+                    aitServId = rf[2];
+                    useBroadcastAit = true;
+                    Log.i(TAG, "DVB-I RF instance: AppMgr AIT triplet "
+                            + aitOnid + "," + aitTransId + "," + aitServId
+                            + " (CCS " + onetId + "," + transId + "," + servId + ")");
+                }
+            }
+            mApplicationManager.onChannelChanged(aitOnid, aitTransId, aitServId, isDvbi,
+                    useBroadcastAit);
         }
 
         if (channel != null) {
@@ -856,11 +932,17 @@ class OrbSession implements IOrbSession {
      */
     @Override
     public void close() {
-        mBrowserView.close();
-        mApplicationManager.close();
-        mBridge.releaseResources();
-        if (mOrbHbbTVVersion >= 204) {
-            mJsonRpc.close();
+        synchronized (mCloseLock) {
+            mClosed = true;
+            mIrrecoverableHandler.removeCallbacksAndMessages(null);
+            if (mBrowserView != null) {
+                mBrowserView.close();
+            }
+            mApplicationManager.close();
+            mBridge.releaseResources();
+            if (mOrbHbbTVVersion >= 204) {
+                mJsonRpc.close();
+            }
         }
         //mOrbSessionCallback.finaliseTEMITimelineMonitoring();
     }
