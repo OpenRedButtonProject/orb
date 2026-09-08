@@ -22,17 +22,24 @@ See those directories for specific build and integration information.
 
 ## Contribute
 
-If you are not otherwise coordinated with the project, raise a [new issue](https://github.com/OpenRedButtonProject/Orb/issues) before starting work on a new fix or feature to avoid duplicated effort.
+If you are not otherwise coordinated with the project, raise a [new issue](https://github.com/OpenRedButtonProject/orb/issues) before starting work on a new fix or feature to avoid duplicated effort.
 
 1. Create or update your fork of the repository to work in.
-2. Create a new topic branch on master and complete the fix or feature.
-3. Open a pull request. You may find that upstream master has changed and you need to rebase your branch.
+2. Create a new topic branch on `main` and complete the fix or feature.
+3. Open a pull request. You may find that upstream `main` has changed and you need to rebase your branch.
 
 The maintainer will squash and merge your branch if it is accepted or they will comment on the pull request.
 
 ### Licensing
 
 By contributing to the ORB project, you agree to license your contributions under the Apache License 2.0.
+
+### Version history
+
+ORB development tracks HbbTV specification versions:
+
+* **HbbTV 2.0.5** is the current target on the default `main` branch (current development).
+* **HbbTV 2.0.4** is frozen. Use branch `hbbtv-2.0.4` or tag `v2.0.4`.
 
 ### Resources
 
