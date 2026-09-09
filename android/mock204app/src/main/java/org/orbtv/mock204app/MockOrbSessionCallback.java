@@ -57,6 +57,8 @@ import java.util.zip.ZipInputStream;
 
 public class MockOrbSessionCallback implements IOrbSessionCallback {
     private static final String TAG = "MockTvBrowserCallback";
+    private static final String MOCK_PARENTAL_PIN = "1234";
+    private static final int MOCK_MAX_FAILED_PIN_ATTEMPTS = 3;
     private final MainActivity mMainActivity;
     private final String mManifest;
     Context mContext;
@@ -66,6 +68,7 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     private final HashMap<Integer, Handler> mActiveSubscriptionList;
     private final MockHttpServer mServer;
     private IOrbSession mSession = null;
+    private int mFailedParentalPinAttempts = 0;
     private int mVolume = 100;
     private TestSuiteRunner mTestSuiteRunner = null;
     private TestSuiteScenario mTestSuiteScenario;
@@ -1075,6 +1078,19 @@ public class MockOrbSessionCallback implements IOrbSessionCallback {
     @Override
     public int getParentalPinLength() {
         return 4;
+    }
+
+    @Override
+    public int verifyParentalControlPIN(String pin) {
+        if (mFailedParentalPinAttempts >= MOCK_MAX_FAILED_PIN_ATTEMPTS) {
+            return 2;
+        }
+        if (MOCK_PARENTAL_PIN.equals(pin)) {
+            mFailedParentalPinAttempts = 0;
+            return 0;
+        }
+        mFailedParentalPinAttempts++;
+        return mFailedParentalPinAttempts >= MOCK_MAX_FAILED_PIN_ATTEMPTS ? 2 : 1;
     }
 
     @Override

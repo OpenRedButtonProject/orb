@@ -989,6 +989,13 @@ public abstract class AbstractBridge {
     protected abstract int ParentalControl_getPINLength(BridgeToken token);
 
     /**
+     * Verify the parental control PIN (OIPF 7.9.1.2).
+     *
+     * @return 0 correct, 1 incorrect, 2 PIN entry locked
+     */
+    protected abstract int ParentalControl_verifyPIN(BridgeToken token, String pin);
+
+    /**
      * Request terminal parental approval UI; result arrives via parentalcontrolapproval event.
      */
     protected abstract void ParentalControl_requestApproval(BridgeToken token, org.json.JSONObject context);
@@ -1988,6 +1995,12 @@ public abstract class AbstractBridge {
 
             case "ParentalControl.getPINLength": {
                 int result = ParentalControl_getPINLength(token);
+                response.put("result", result);
+                break;
+            }
+
+            case "ParentalControl.verifyPIN": {
+                int result = ParentalControl_verifyPIN(token, params.optString("pin", ""));
                 response.put("result", result);
                 break;
             }

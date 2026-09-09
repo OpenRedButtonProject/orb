@@ -780,6 +780,11 @@ class Bridge extends AbstractBridge {
     }
 
     @Override
+    protected int ParentalControl_verifyPIN(BridgeToken token, String pin) {
+        return mOrbLibraryCallback.verifyParentalControlPIN(pin);
+    }
+
+    @Override
     protected void ParentalControl_requestApproval(BridgeToken token, org.json.JSONObject context) {
         java.util.Map<String, String> map = null;
         if (context != null) {

@@ -1,7 +1,8 @@
 /**
  * @fileOverview OIPF application/oipfParentalControlManager object
  * See: {@link https://web.archive.org/web/20200219165053/http://www.oipf.tv/web-spec/volume5.html#application-oipfparentalcontrolmanager}
- * HbbTV 2.0.5 A.2.31 extensions: parentalPINLength, requestParentalControlApproval
+ * HbbTV 2.0.5 A.2.31: parentalPINLength, requestParentalControlApproval
+ * OIPF 7.9.1.2 / HbbTV A.1 (Annex O): verifyParentalControlPIN
  * @license ORB Software. Copyright (c) 2022 Ocean Blue Software Limited
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +36,17 @@ hbbtv.objects.OipfParentalControlManager = (function() {
             return hbbtv.bridge.parentalControl.getPINLength();
         },
     });
+
+    /**
+     * OIPF 7.9.1.2 / HbbTV A.1: verify the parental control PIN.
+     *
+     * @param {string} pcPIN PIN to verify
+     * @return {number} 0 correct, 1 incorrect, 2 PIN entry locked
+     */
+    prototype.verifyParentalControlPIN = function(pcPIN) {
+        return hbbtv.bridge.parentalControl.verifyPIN(
+            pcPIN == null ? '' : String(pcPIN));
+    };
 
     /**
      * HbbTV A.2.31: run terminal parental approval; resolves "approved" or "notApproved".

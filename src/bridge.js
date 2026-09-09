@@ -912,6 +912,18 @@ hbbtv.bridge.parentalControl = (function() {
     };
 
     /**
+     * Verify the parental control PIN (OIPF 7.9.1.2).
+     *
+     * @param {string} pin PIN to verify
+     * @return {number} 0 correct, 1 incorrect, 2 PIN entry locked
+     */
+    exported.verifyPIN = function(pin) {
+        return hbbtv.native.request('ParentalControl.verifyPIN', {
+            pin: pin == null ? '' : String(pin),
+        }).result;
+    };
+
+    /**
      * Request terminal parental approval UI. Result arrives as parentalcontrolapproval event.
      *
      * @param {Object|null} context optional language→name map
