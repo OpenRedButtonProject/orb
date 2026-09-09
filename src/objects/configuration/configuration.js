@@ -27,6 +27,12 @@ hbbtv.objects.Configuration = (function() {
         // preferredSubtitleLanguage47 only supported since 2.0.4
         preferredSubtitleLanguage47: hbbtv.bridge.configuration.getPreferredSubtitleLanguage47,
         preferredUILanguage: hbbtv.bridge.configuration.getPreferredUILanguage,
+        // preferredUILanguage47: HbbTV A.2.20.6; BCP-47, same order as preferredUILanguage
+        preferredUILanguage47() {
+            return hbbtv.languageCodes.iso639_2ListToBcp47(
+                hbbtv.bridge.configuration.getPreferredUILanguage()
+            );
+        },
         countryId: hbbtv.bridge.configuration.getCountryId,
         subtitlesEnabled: hbbtv.bridge.configuration.getSubtitlesEnabled,
         audioDescriptionEnabled: hbbtv.bridge.configuration.getAudioDescriptionEnabled,

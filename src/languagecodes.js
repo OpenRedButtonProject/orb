@@ -225,5 +225,23 @@ hbbtv.languageCodes = {
         return Object.fromEntries(
             Object.entries(this.ISO639_2_to_ISO639_1).map(([key, value]) => [value, key])
           );
+    },
+    /**
+     * Map a comma-separated ISO 639-2 list to BCP-47 primary language subtags
+     * (ISO 639-1 where the mapping exists). Already-2-letter or unmapped tags
+     * are passed through so preferredUILanguage47 stays consistent with
+     * preferredUILanguage.
+     */
+    iso639_2ListToBcp47: function(list) {
+        if (typeof list !== 'string' || list.length === 0) {
+            return '';
+        }
+        return list.split(',').map((code) => {
+            const trimmed = code.trim();
+            if (!trimmed) {
+                return '';
+            }
+            return this.ISO639_2_to_ISO639_1[trimmed.toLowerCase()] || trimmed;
+        }).filter((code) => code.length > 0).join(',');
     }
 };
