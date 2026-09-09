@@ -536,6 +536,16 @@ public interface IOrbSessionCallback {
     }
 
     /**
+     * Verify the parental control PIN (OIPF 7.9.1.2 / HbbTV A.1 Annex O).
+     *
+     * @param pin PIN string to check; may be empty or wrong length
+     * @return 0 if correct, 1 if incorrect, 2 if PIN entry is locked
+     */
+    default int verifyParentalControlPIN(String pin) {
+        return 1;
+    }
+
+    /**
      * Run the terminal parental approval UI. When finished, call
      * {@link IOrbSession#onParentalControlApprovalDecided(boolean)}.
      *
