@@ -655,6 +655,14 @@ public interface IOrbSessionCallback {
     default void onLinkedApplication12StartFailed() {}
 
     /**
+     * Linked application type 1.2 explicitly exited via Application.destroyApplication().
+     * Discard that DVB-I service instance and continue selection (TS 103 770 §5.2.13 /
+     * HbbTV errata #13697). Distinct from the EXIT key, which keeps the instance
+     * and restarts the application.
+     */
+    default void onLinkedApplication12ExplicitlyExited() {}
+
+    /**
      * A DVB-I linked application was terminated for an irrecoverable error and
      * will not be re-started (restart limit reached). Select a different service
      * instance if one exists (HbbTV Annex O.3). Do not discard the only instance.

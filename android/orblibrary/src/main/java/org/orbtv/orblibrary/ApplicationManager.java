@@ -138,7 +138,14 @@ class ApplicationManager {
     }
 
     public void destroyApplication(int callingAppId) {
+        String scheme = callingAppId != 0 ? getApplicationScheme(callingAppId) : null;
         jniDestroyApplication(callingAppId);
+        // EXIT uses callingAppId 0 and must not discard the instance.
+        if (callingAppId != 0
+                && "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.2".equals(scheme)) {
+            Log.i(TAG, "LA 1.2 destroyApplication(); requesting DVB-I instance discard");
+            mOrbLibraryCallback.onLinkedApplication12ExplicitlyExited();
+        }
     }
 
     /**

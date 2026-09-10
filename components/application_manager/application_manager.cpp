@@ -206,7 +206,8 @@ bool ApplicationManager::CreateApplication(uint16_t callingAppId, const std::str
 /**
  * Destroy the calling application.
  *
- * @param callingAppId The calling app ID.
+ * @param callingAppId The calling app ID. 0 is EXIT (restart on this instance);
+ *        a matching running id is Application.destroyApplication().
  */
 void ApplicationManager::DestroyApplication(uint16_t callingAppId)
 {
@@ -215,8 +216,11 @@ void ApplicationManager::DestroyApplication(uint16_t callingAppId)
     LOG(LOG_ERROR, "DestroyApplication");
     if (callingAppId == INVALID_APP_ID)
     {
+        // EXIT / comparable key: keep the current service instance and allow
+        // autostart to restart the application (HbbTV O.3 / errata #13697).
         KillRunningApp();
         OnRunningAppExited();
+        return;
     }
     if (!m_app.isRunning || m_app.id != callingAppId)
     {
@@ -224,7 +228,16 @@ void ApplicationManager::DestroyApplication(uint16_t callingAppId)
         return;
     }
 
+    const std::string scheme = m_app.getScheme();
     KillRunningApp();
+    // Application.destroyApplication() of a type 1.2 linked app: do not
+    // restart this XML AIT. The DVB-I client discards the instance and
+    // selects another (TS 103 770 §5.2.13 / errata #13697).
+    if (scheme == LINKED_APP_SCHEME_1_2)
+    {
+        LOG(LOG_INFO, "LA 1.2 destroyApplication(); skip AIT autostart (5.2.13 instance discard)");
+        return;
+    }
     OnRunningAppExited();
 }
 
