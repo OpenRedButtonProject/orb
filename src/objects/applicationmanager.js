@@ -22,6 +22,9 @@ hbbtv.objects.ApplicationManager = (function() {
     const gGarbageCollectionBlocked = new Set();
     const LINKED_APP_SCHEME_1_2 = "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.2";
     const LINKED_APP_SCHEME_2 = "urn:dvb:metadata:cs:LinkedApplicationCS:2019:2";
+    const LINKED_APP_SCHEME_4_1 = "urn:dvb:metadata:cs:LinkedApplicationCS:2019:4.1";
+    const LINKED_APP_SCHEME_4_2 = "urn:dvb:metadata:cs:LinkedApplicationCS:2019:4.2";
+    const LINKED_APP_SCHEME_4_3 = "urn:dvb:metadata:cs:LinkedApplicationCS:2019:4.3";
 
     prototype.getOwnerApplication = function(page) {
         return hbbtv.objects.createApplication({
@@ -106,6 +109,15 @@ hbbtv.objects.ApplicationManager = (function() {
                     break;
                 case LINKED_APP_SCHEME_2:
                     currentURL.searchParams.set("lloc", "availability");
+                    break;
+                case LINKED_APP_SCHEME_4_1:
+                    currentURL.searchParams.set("lloc", "install");
+                    break;
+                case LINKED_APP_SCHEME_4_2:
+                    currentURL.searchParams.set("lloc", "withdrawal-of-agreement");
+                    break;
+                case LINKED_APP_SCHEME_4_3:
+                    currentURL.searchParams.set("lloc", "renewal-of-agreement");
                     break;
                 default:
                     return;
