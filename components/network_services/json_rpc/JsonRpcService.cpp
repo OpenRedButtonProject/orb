@@ -65,6 +65,11 @@
 #define MD_IPPLAYBACK_SET_COMPONENTS "org.hbbtv.ipplayback.setComponents"
 #define MD_IPPLAYER_SELECT_COMPONENTS "org.hbbtv.ipplayer.selectComponents"
 
+#define MD_LA_SL_INSTALL_SUCCESS "org.dvb.la.sl_install_success"
+#define MD_LA_SL_INSTALL_FAILURE "org.dvb.la.sl_install_failure"
+#define MD_LA_CONSENT_WITHDRAWN "org.dvb.la.consent_withdrawn"
+#define MD_LA_CONSENT_UNCHANGED "org.dvb.la.consent_unchanged"
+
 namespace NetworkServices {
 const int sizeOfAccessibilityFeature = 8;
 const static std::map<std::string, int> ACCESSIBILITY_FEATURE_IDS = {
@@ -189,6 +194,11 @@ JsonRpcService::JsonRpcService(
     RegisterMethod(MD_IPPLAYBACK_SET_COMPONENTS, &JsonRpcService::RequestSetComponents);
     RegisterMethod(MD_IPPLAYER_SELECT_COMPONENTS, &JsonRpcService::ReceiveIntentConfirm);
 
+    RegisterMethod(MD_LA_SL_INSTALL_SUCCESS, &JsonRpcService::RequestLinkedAppCompletion);
+    RegisterMethod(MD_LA_SL_INSTALL_FAILURE, &JsonRpcService::RequestLinkedAppCompletion);
+    RegisterMethod(MD_LA_CONSENT_WITHDRAWN, &JsonRpcService::RequestLinkedAppCompletion);
+    RegisterMethod(MD_LA_CONSENT_UNCHANGED, &JsonRpcService::RequestLinkedAppCompletion);
+
     RegisterSupportedMethods();
     DBGLOG("created JsonRpcService: endpoint: %s", endpoint.c_str())
 }
@@ -255,7 +265,9 @@ void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const st
             {
                 LOG(LOG_INFO, "Warning, connection data lost, parameter has wrong type.");
             }
-            if (!IsMethodInJsonArray(negotiateMethods, method))
+            // Type 4.x apps may run in a generic WebView and skip org.hbbtv.negotiateMethods.
+            bool linkedAppMethod = method.rfind("org.dvb.la.", 0) == 0;
+            if (!linkedAppMethod && !IsMethodInJsonArray(negotiateMethods, method))
             {
                 status = JsonRpcStatus::METHOD_NOT_FOUND;
             }
@@ -342,6 +354,10 @@ void JsonRpcService::RegisterSupportedMethods()
     m_supported_methods_app_to_terminal.insert(MD_VOICE_READY);
     m_supported_methods_app_to_terminal.insert(MD_STATE_MEDIA);
     m_supported_methods_app_to_terminal.insert(MD_IPPLAYBACK_SET_COMPONENTS);
+    m_supported_methods_app_to_terminal.insert(MD_LA_SL_INSTALL_SUCCESS);
+    m_supported_methods_app_to_terminal.insert(MD_LA_SL_INSTALL_FAILURE);
+    m_supported_methods_app_to_terminal.insert(MD_LA_CONSENT_WITHDRAWN);
+    m_supported_methods_app_to_terminal.insert(MD_LA_CONSENT_UNCHANGED);
 
     m_supported_methods_terminal_to_app.insert(MD_NOTIFY);
     m_supported_methods_terminal_to_app.insert(MD_INTENT_MEDIA_PAUSE);
@@ -976,6 +992,32 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestSetComponents(int connectio
     result["method"] = MD_IPPLAYBACK_SET_COMPONENTS;
     Json::Value response = CreateJsonResponse(id, result);
     SendJsonMessageToClient(connectionId, response);
+    return JsonRpcStatus::SUCCESS;
+}
+
+JsonRpcService::JsonRpcStatus JsonRpcService::RequestLinkedAppCompletion(int connectionId, const
+    Json::Value &obj)
+{
+    if (!HasParam(obj, "id", Json::stringValue) &&
+        !HasParam(obj, "id", Json::intValue) &&
+        !HasParam(obj, "id", Json::uintValue))
+    {
+        return JsonRpcStatus::INVALID_PARAMS;
+    }
+    if (!HasParam(obj, "method", Json::stringValue))
+    {
+        return JsonRpcStatus::INVALID_PARAMS;
+    }
+    std::string id = EncodeJsonId(obj["id"]);
+    std::string method = obj["method"].asString();
+    Json::Value params = HasJsonParam(obj, "params") ? obj["params"] : Json::Value(Json::objectValue);
+    std::string paramsJson = WriteJsonToString(params);
+    LOG(LOG_INFO, "linked-app completion method=%s params=%s", method.c_str(), paramsJson.c_str());
+    m_sessionCallback->NotifyLinkedAppCompletion(method, paramsJson);
+
+    Json::Value result(Json::objectValue);
+    result["method"] = method;
+    SendJsonMessageToClient(connectionId, CreateJsonResponse(id, result));
     return JsonRpcStatus::SUCCESS;
 }
 

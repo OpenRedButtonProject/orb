@@ -48,6 +48,13 @@ public interface IOrbSession {
     String getApp2AppLocalBaseUrl();
 
     /**
+     * WebSocket URL of the JSON-RPC server used by type 4.x linked apps (TS 103 770 I.2).
+     *
+     * @return ws:// URL, or null if the server is not running
+     */
+    String getJsonRpcServerUrl();
+
+    /**
      * Get the base URL of the app2app remote service.
      *
      * @return The base URL of the app2app remote service.

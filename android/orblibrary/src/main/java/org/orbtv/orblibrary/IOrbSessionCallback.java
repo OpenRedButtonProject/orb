@@ -999,6 +999,14 @@ public interface IOrbSessionCallback {
     }
 
     /**
+     * Completion status from a type 4.x linked application (TS 103 770 §5.2.3.7 / §5.2.3.8).
+     * {@code method} is org.dvb.la.sl_install_success / sl_install_failure /
+     * consent_withdrawn / consent_unchanged. {@code paramsJson} is the JSON-RPC params object.
+     */
+    default void onLinkedAppJsonRpc(String method, String paramsJson) {
+    }
+
+    /**
      * @since 204
      *
      * Returns true if the provided triplet is in an instance within the
