@@ -55,5 +55,3 @@ The software designated as ORB Software, as indicated in the copyright notice wi
 
 The ORB project includes third-party code, each subject to its respective open-source license. This encompasses both external dependencies used in our project and code that we have incorporated directly into our repository. The incorporated code, which may be modified, is also used under the terms of its original license. For information about the specific licenses of the third-party code used in the ORB project, refer to our [Third-Party License Documentation](https://docs.google.com/spreadsheets/d/1EuSlycGPBrmEw95TKbG6eeVBz1pkjQXIpYR6IvluAP8/).
 
-(Test for fork sync)
-
