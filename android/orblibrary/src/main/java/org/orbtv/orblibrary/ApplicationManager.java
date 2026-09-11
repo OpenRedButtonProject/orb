@@ -138,7 +138,12 @@ class ApplicationManager {
     }
 
     public void destroyApplication(int callingAppId) {
-        jniDestroyApplication(callingAppId);
+        // Notify only when JNI killed a running type 1.2 app (skip-autostart).
+        // Early-out or EXIT (callingAppId 0) must not discard the next instance.
+        if (jniDestroyApplication(callingAppId)) {
+            Log.i(TAG, "LA 1.2 destroyApplication(); requesting DVB-I instance discard");
+            mOrbLibraryCallback.onLinkedApplication12ExplicitlyExited();
+        }
     }
 
     /**
@@ -299,7 +304,7 @@ class ApplicationManager {
 
     private native boolean jniCreateApplication(int callingAppId, String url);
 
-    private native void jniDestroyApplication(int callingAppId);
+    private native boolean jniDestroyApplication(int callingAppId);
 
     private native void jniKillForParentalControl();
 

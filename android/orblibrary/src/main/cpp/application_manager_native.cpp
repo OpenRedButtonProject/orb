@@ -254,11 +254,11 @@ JNIEXPORT jboolean JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniCreat
 }
 
 extern "C"
-JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniDestroyApplication(
+JNIEXPORT jboolean JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniDestroyApplication(
     JNIEnv *env, jobject object,
     jint calling_app_id)
 {
-    GetManager(env, object)->DestroyApplication(calling_app_id);
+    return GetManager(env, object)->DestroyApplication(calling_app_id);
 }
 
 extern "C"

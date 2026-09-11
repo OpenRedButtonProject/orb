@@ -159,9 +159,15 @@ public:
     /**
      * Destroy the calling application.
      *
-     * @param callingAppId The calling app ID.
+     * @param callingAppId The calling app ID. 0 (INVALID_APP_ID) is the EXIT
+     *        key: kill then broadcast autostart so a type 1.2 app restarts on
+     *        the same service instance. A matching running app ID is
+     *        Application.destroyApplication(); for type 1.2 skip autostart so
+     *        the DVB-I client can discard this instance (TS 103 770 §5.2.13).
+     * @return true if a running type 1.2 app was killed and AIT autostart was
+     *         skipped (caller should discard the DVB-I instance).
      */
-    void DestroyApplication(uint16_t callingAppId);
+    bool DestroyApplication(uint16_t callingAppId);
 
     /**
      * Kill the running application without starting the broadcast autostart
