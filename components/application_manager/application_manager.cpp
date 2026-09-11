@@ -208,8 +208,9 @@ bool ApplicationManager::CreateApplication(uint16_t callingAppId, const std::str
  *
  * @param callingAppId The calling app ID. 0 is EXIT (restart on this instance);
  *        a matching running id is Application.destroyApplication().
+ * @return true if a running type 1.2 app was killed and AIT autostart skipped.
  */
-void ApplicationManager::DestroyApplication(uint16_t callingAppId)
+bool ApplicationManager::DestroyApplication(uint16_t callingAppId)
 {
     std::lock_guard<std::recursive_mutex> lock(m_lock);
 
@@ -220,12 +221,12 @@ void ApplicationManager::DestroyApplication(uint16_t callingAppId)
         // autostart to restart the application (HbbTV O.3 / errata #13697).
         KillRunningApp();
         OnRunningAppExited();
-        return;
+        return false;
     }
     if (!m_app.isRunning || m_app.id != callingAppId)
     {
         LOG(LOG_INFO, "Called by non-running app, early out");
-        return;
+        return false;
     }
 
     const std::string scheme = m_app.getScheme();
@@ -236,9 +237,13 @@ void ApplicationManager::DestroyApplication(uint16_t callingAppId)
     if (scheme == LINKED_APP_SCHEME_1_2)
     {
         LOG(LOG_INFO, "LA 1.2 destroyApplication(); skip AIT autostart (5.2.13 instance discard)");
-        return;
+        // No follow-on app will init video/broadcast, so unsuspend here.
+        // The client must still discard/reselect (and may unsuspend again).
+        m_sessionCallback->ResetBroadcastPresentation();
+        return true;
     }
     OnRunningAppExited();
+    return false;
 }
 
 /**

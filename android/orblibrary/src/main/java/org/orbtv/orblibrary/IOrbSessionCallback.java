@@ -655,10 +655,14 @@ public interface IOrbSessionCallback {
     default void onLinkedApplication12StartFailed() {}
 
     /**
-     * Linked application type 1.2 explicitly exited via Application.destroyApplication().
-     * Discard that DVB-I service instance and continue selection (TS 103 770 §5.2.13 /
-     * HbbTV errata #13697). Distinct from the EXIT key, which keeps the instance
-     * and restarts the application.
+     * Linked application type 1.2 explicitly exited via Application.destroyApplication()
+     * or window.close (same Manager.destroyApplication bridge, non-zero app id).
+     * Discard that DVB-I service instance and continue selection (TS 103 770 §5.2.13).
+     * Distinct from the EXIT key, which keeps the instance and restarts the application.
+     * Not the irrecoverable-error restart path (ERRATA0800 / onLinkedApplicationRestartAbandoned).
+     * Fired only after a running 1.2 app was actually killed. The client must unsuspend
+     * native presentation: skipping AIT autostart means no follow-on app will call
+     * setPresentationSuspended(false).
      */
     default void onLinkedApplication12ExplicitlyExited() {}
 
