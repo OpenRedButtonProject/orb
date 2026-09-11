@@ -1001,7 +1001,9 @@ public interface IOrbSessionCallback {
     /**
      * Completion status from a type 4.x linked application (TS 103 770 §5.2.3.7 / §5.2.3.8).
      * {@code method} is org.dvb.la.sl_install_success / sl_install_failure /
-     * consent_withdrawn / consent_unchanged. {@code paramsJson} is the JSON-RPC params object.
+     * consent_withdrawn / consent_unchanged / renew_success / renew_failure.
+     * {@code paramsJson} is the JSON-RPC params object (may include installationtoken).
+     * Production tvinput must override this and forward to DvbIClient.
      */
     default void onLinkedAppJsonRpc(String method, String paramsJson) {
     }

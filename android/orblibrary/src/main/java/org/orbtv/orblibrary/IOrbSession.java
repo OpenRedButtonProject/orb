@@ -48,7 +48,10 @@ public interface IOrbSession {
     String getApp2AppLocalBaseUrl();
 
     /**
-     * WebSocket URL of the JSON-RPC server used by type 4.x linked apps (TS 103 770 I.2).
+     * WebSocket URL of the JSON-RPC server (TS 103 770 I.2).
+     * HbbTV apps already read this from {@code xmlCapabilities.json_rpc_server}.
+     * Type 4.x may run in a generic HTML WebView with no polyfill, so the launcher
+     * still has to pass this URL into the page (query / launch context).
      *
      * @return ws:// URL, or null if the server is not running
      */

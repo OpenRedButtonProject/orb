@@ -69,6 +69,8 @@
 #define MD_LA_SL_INSTALL_FAILURE "org.dvb.la.sl_install_failure"
 #define MD_LA_CONSENT_WITHDRAWN "org.dvb.la.consent_withdrawn"
 #define MD_LA_CONSENT_UNCHANGED "org.dvb.la.consent_unchanged"
+#define MD_LA_RENEW_SUCCESS "org.dvb.la.renew_success"
+#define MD_LA_RENEW_FAILURE "org.dvb.la.renew_failure"
 
 namespace NetworkServices {
 const int sizeOfAccessibilityFeature = 8;
@@ -198,6 +200,8 @@ JsonRpcService::JsonRpcService(
     RegisterMethod(MD_LA_SL_INSTALL_FAILURE, &JsonRpcService::RequestLinkedAppCompletion);
     RegisterMethod(MD_LA_CONSENT_WITHDRAWN, &JsonRpcService::RequestLinkedAppCompletion);
     RegisterMethod(MD_LA_CONSENT_UNCHANGED, &JsonRpcService::RequestLinkedAppCompletion);
+    RegisterMethod(MD_LA_RENEW_SUCCESS, &JsonRpcService::RequestLinkedAppCompletion);
+    RegisterMethod(MD_LA_RENEW_FAILURE, &JsonRpcService::RequestLinkedAppCompletion);
 
     RegisterSupportedMethods();
     DBGLOG("created JsonRpcService: endpoint: %s", endpoint.c_str())
@@ -265,9 +269,7 @@ void JsonRpcService::OnMessageReceived(WebSocketConnection *connection, const st
             {
                 LOG(LOG_INFO, "Warning, connection data lost, parameter has wrong type.");
             }
-            // Type 4.x apps may run in a generic WebView and skip org.hbbtv.negotiateMethods.
-            bool linkedAppMethod = method.rfind("org.dvb.la.", 0) == 0;
-            if (!linkedAppMethod && !IsMethodInJsonArray(negotiateMethods, method))
+            if (!IsMethodInJsonArray(negotiateMethods, method))
             {
                 status = JsonRpcStatus::METHOD_NOT_FOUND;
             }
@@ -358,6 +360,8 @@ void JsonRpcService::RegisterSupportedMethods()
     m_supported_methods_app_to_terminal.insert(MD_LA_SL_INSTALL_FAILURE);
     m_supported_methods_app_to_terminal.insert(MD_LA_CONSENT_WITHDRAWN);
     m_supported_methods_app_to_terminal.insert(MD_LA_CONSENT_UNCHANGED);
+    m_supported_methods_app_to_terminal.insert(MD_LA_RENEW_SUCCESS);
+    m_supported_methods_app_to_terminal.insert(MD_LA_RENEW_FAILURE);
 
     m_supported_methods_terminal_to_app.insert(MD_NOTIFY);
     m_supported_methods_terminal_to_app.insert(MD_INTENT_MEDIA_PAUSE);
@@ -1012,7 +1016,8 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestLinkedAppCompletion(int con
     std::string method = obj["method"].asString();
     Json::Value params = HasJsonParam(obj, "params") ? obj["params"] : Json::Value(Json::objectValue);
     std::string paramsJson = WriteJsonToString(params);
-    LOG(LOG_INFO, "linked-app completion method=%s params=%s", method.c_str(), paramsJson.c_str());
+    // params may include installationtoken; do not log the payload.
+    LOG(LOG_INFO, "linked-app completion method=%s", method.c_str());
     m_sessionCallback->NotifyLinkedAppCompletion(method, paramsJson);
 
     Json::Value result(Json::objectValue);
@@ -1976,6 +1981,14 @@ void JsonRpcService::InitialConnectionData(int connectionId)
     std::lock_guard<std::recursive_mutex> lockGuard(mConnectionsMutex);
     m_connectionData[connectionId].intentIdCount = 0;
     m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_NEGOTIATE_METHODS);
+    // Type 4.x apps may skip org.hbbtv.negotiateMethods (generic WebView). Seed only
+    // registered org.dvb.la.* names so unknown methods still get METHOD_NOT_FOUND.
+    m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_LA_SL_INSTALL_SUCCESS);
+    m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_LA_SL_INSTALL_FAILURE);
+    m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_LA_CONSENT_WITHDRAWN);
+    m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_LA_CONSENT_UNCHANGED);
+    m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_LA_RENEW_SUCCESS);
+    m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_LA_RENEW_FAILURE);
 }
 
 /**
