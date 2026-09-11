@@ -249,6 +249,10 @@ public class JsonRpc {
         mOrbSessionCallback.onRequestSetComponents(componentListJson);
     }
 
+    private void onLinkedAppCompletion(String method, String paramsJson) {
+        mOrbSessionCallback.onLinkedAppJsonRpc(method, paramsJson);
+    }
+
     // Native
 
     /**
