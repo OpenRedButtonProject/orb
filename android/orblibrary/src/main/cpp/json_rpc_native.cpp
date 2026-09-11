@@ -34,7 +34,8 @@
 #define CB_NOTIFY_STATE_MEDIA 11
 #define CB_RESPOND_MESSAGE 12
 #define CB_REQUEST_SET_COMPONENTS 13
-#define CB_NUMBER_OF_ITEMS 14
+#define CB_LINKED_APP_COMPLETION 14
+#define CB_NUMBER_OF_ITEMS 15
 
 #define LENGTH_OF_EMPTY_ID 0
 #define CMD_INTENT_PAUSE 0
@@ -273,6 +274,21 @@ public:
         env->DeleteLocalRef(j_json);
     }
 
+    void NotifyLinkedAppCompletion(
+        const std::string &method,
+        const std::string &paramsJson) override
+    {
+        JNIEnv *env = JniUtils::GetEnv();
+        jstring j_method = env->NewStringUTF(method.c_str());
+        jstring j_params = env->NewStringUTF(paramsJson.c_str());
+        env->CallVoidMethod(
+                mCallbackObject,
+                g_cb[CB_LINKED_APP_COMPLETION],
+                j_method, j_params);
+        env->DeleteLocalRef(j_method);
+        env->DeleteLocalRef(j_params);
+    }
+
 private:
     jobject mCallbackObject;
 };
@@ -313,6 +329,8 @@ void InitialiseJsonRpcNative()
                "onReceiveError", "(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
     g_cb[CB_REQUEST_SET_COMPONENTS] = env->GetMethodID(managerClass,
                "onRequestSetComponents", "(Ljava/lang/String;)V");
+    g_cb[CB_LINKED_APP_COMPLETION] = env->GetMethodID(managerClass,
+               "onLinkedAppCompletion", "(Ljava/lang/String;Ljava/lang/String;)V");
 }
 
 extern "C"

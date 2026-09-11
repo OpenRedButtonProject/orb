@@ -154,6 +154,10 @@ public:
         virtual void RequestSetComponents(
             const std::string &componentListJson) = 0;
 
+        virtual void NotifyLinkedAppCompletion(
+            const std::string &method,
+            const std::string &paramsJson) = 0;
+
         virtual ~SessionCallback() = default;
     };
 
@@ -193,6 +197,8 @@ public:
     JsonRpcService::JsonRpcStatus ReceiveError(int connectionId, const Json::Value &obj);
 
     JsonRpcStatus RequestSetComponents(int connectionId, const Json::Value &obj);
+
+    JsonRpcStatus RequestLinkedAppCompletion(int connectionId, const Json::Value &obj);
 
     void SendSelectComponents(const std::vector<int> &videoComponents,
         const std::vector<int> &audioComponents,

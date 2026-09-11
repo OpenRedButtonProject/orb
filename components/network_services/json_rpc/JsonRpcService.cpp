@@ -65,6 +65,13 @@
 #define MD_IPPLAYBACK_SET_COMPONENTS "org.hbbtv.ipplayback.setComponents"
 #define MD_IPPLAYER_SELECT_COMPONENTS "org.hbbtv.ipplayer.selectComponents"
 
+#define MD_LA_SL_INSTALL_SUCCESS "org.dvb.la.sl_install_success"
+#define MD_LA_SL_INSTALL_FAILURE "org.dvb.la.sl_install_failure"
+#define MD_LA_CONSENT_WITHDRAWN "org.dvb.la.consent_withdrawn"
+#define MD_LA_CONSENT_UNCHANGED "org.dvb.la.consent_unchanged"
+#define MD_LA_RENEW_SUCCESS "org.dvb.la.renew_success"
+#define MD_LA_RENEW_FAILURE "org.dvb.la.renew_failure"
+
 namespace NetworkServices {
 const int sizeOfAccessibilityFeature = 8;
 const static std::map<std::string, int> ACCESSIBILITY_FEATURE_IDS = {
@@ -188,6 +195,13 @@ JsonRpcService::JsonRpcService(
     RegisterMethod(MD_INTENT_PLAYBACK, &JsonRpcService::ReceiveIntentConfirm);
     RegisterMethod(MD_IPPLAYBACK_SET_COMPONENTS, &JsonRpcService::RequestSetComponents);
     RegisterMethod(MD_IPPLAYER_SELECT_COMPONENTS, &JsonRpcService::ReceiveIntentConfirm);
+
+    RegisterMethod(MD_LA_SL_INSTALL_SUCCESS, &JsonRpcService::RequestLinkedAppCompletion);
+    RegisterMethod(MD_LA_SL_INSTALL_FAILURE, &JsonRpcService::RequestLinkedAppCompletion);
+    RegisterMethod(MD_LA_CONSENT_WITHDRAWN, &JsonRpcService::RequestLinkedAppCompletion);
+    RegisterMethod(MD_LA_CONSENT_UNCHANGED, &JsonRpcService::RequestLinkedAppCompletion);
+    RegisterMethod(MD_LA_RENEW_SUCCESS, &JsonRpcService::RequestLinkedAppCompletion);
+    RegisterMethod(MD_LA_RENEW_FAILURE, &JsonRpcService::RequestLinkedAppCompletion);
 
     RegisterSupportedMethods();
     DBGLOG("created JsonRpcService: endpoint: %s", endpoint.c_str())
@@ -342,6 +356,12 @@ void JsonRpcService::RegisterSupportedMethods()
     m_supported_methods_app_to_terminal.insert(MD_VOICE_READY);
     m_supported_methods_app_to_terminal.insert(MD_STATE_MEDIA);
     m_supported_methods_app_to_terminal.insert(MD_IPPLAYBACK_SET_COMPONENTS);
+    m_supported_methods_app_to_terminal.insert(MD_LA_SL_INSTALL_SUCCESS);
+    m_supported_methods_app_to_terminal.insert(MD_LA_SL_INSTALL_FAILURE);
+    m_supported_methods_app_to_terminal.insert(MD_LA_CONSENT_WITHDRAWN);
+    m_supported_methods_app_to_terminal.insert(MD_LA_CONSENT_UNCHANGED);
+    m_supported_methods_app_to_terminal.insert(MD_LA_RENEW_SUCCESS);
+    m_supported_methods_app_to_terminal.insert(MD_LA_RENEW_FAILURE);
 
     m_supported_methods_terminal_to_app.insert(MD_NOTIFY);
     m_supported_methods_terminal_to_app.insert(MD_INTENT_MEDIA_PAUSE);
@@ -976,6 +996,33 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestSetComponents(int connectio
     result["method"] = MD_IPPLAYBACK_SET_COMPONENTS;
     Json::Value response = CreateJsonResponse(id, result);
     SendJsonMessageToClient(connectionId, response);
+    return JsonRpcStatus::SUCCESS;
+}
+
+JsonRpcService::JsonRpcStatus JsonRpcService::RequestLinkedAppCompletion(int connectionId, const
+    Json::Value &obj)
+{
+    if (!HasParam(obj, "id", Json::stringValue) &&
+        !HasParam(obj, "id", Json::intValue) &&
+        !HasParam(obj, "id", Json::uintValue))
+    {
+        return JsonRpcStatus::INVALID_PARAMS;
+    }
+    if (!HasParam(obj, "method", Json::stringValue))
+    {
+        return JsonRpcStatus::INVALID_PARAMS;
+    }
+    std::string id = EncodeJsonId(obj["id"]);
+    std::string method = obj["method"].asString();
+    Json::Value params = HasJsonParam(obj, "params") ? obj["params"] : Json::Value(Json::objectValue);
+    std::string paramsJson = WriteJsonToString(params);
+    // params may include installationtoken; do not log the payload.
+    LOG(LOG_INFO, "linked-app completion method=%s", method.c_str());
+    m_sessionCallback->NotifyLinkedAppCompletion(method, paramsJson);
+
+    Json::Value result(Json::objectValue);
+    result["method"] = method;
+    SendJsonMessageToClient(connectionId, CreateJsonResponse(id, result));
     return JsonRpcStatus::SUCCESS;
 }
 
@@ -1934,6 +1981,14 @@ void JsonRpcService::InitialConnectionData(int connectionId)
     std::lock_guard<std::recursive_mutex> lockGuard(mConnectionsMutex);
     m_connectionData[connectionId].intentIdCount = 0;
     m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_NEGOTIATE_METHODS);
+    // Type 4.x apps may skip org.hbbtv.negotiateMethods (generic WebView). Seed only
+    // registered org.dvb.la.* names so unknown methods still get METHOD_NOT_FOUND.
+    m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_LA_SL_INSTALL_SUCCESS);
+    m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_LA_SL_INSTALL_FAILURE);
+    m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_LA_CONSENT_WITHDRAWN);
+    m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_LA_CONSENT_UNCHANGED);
+    m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_LA_RENEW_SUCCESS);
+    m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_LA_RENEW_FAILURE);
 }
 
 /**

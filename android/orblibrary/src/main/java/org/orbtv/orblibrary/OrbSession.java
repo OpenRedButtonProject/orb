@@ -468,6 +468,11 @@ class OrbSession implements IOrbSession {
                 "/";
     }
 
+    @Override
+    public String getJsonRpcServerUrl() {
+        return mJsonRpc != null ? mJsonRpc.getUrl() : null;
+    }
+
     /**
      * Get the base URL of the app2app remote service.
      *
