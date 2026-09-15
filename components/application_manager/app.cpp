@@ -135,6 +135,18 @@ std::string getAppSchemeFromUrlParams(const std::string &urlParams)
     {
         return LINKED_APP_SCHEME_2;
     }
+    if (urlParams.find("lloc=install") != std::string::npos)
+    {
+        return LINKED_APP_SCHEME_4_1;
+    }
+    if (urlParams.find("lloc=withdrawal-of-agreement") != std::string::npos)
+    {
+        return LINKED_APP_SCHEME_4_2;
+    }
+    if (urlParams.find("lloc=renewal-of-agreement") != std::string::npos)
+    {
+        return LINKED_APP_SCHEME_4_3;
+    }
     return LINKED_APP_SCHEME_1_1;
 }
 
@@ -147,6 +159,18 @@ std::string getUrlParamsFromAppScheme(const std::string &scheme)
     if (scheme == LINKED_APP_SCHEME_2)
     {
         return "?lloc=availability";
+    }
+    if (scheme == LINKED_APP_SCHEME_4_1)
+    {
+        return "?lloc=install";
+    }
+    if (scheme == LINKED_APP_SCHEME_4_2)
+    {
+        return "?lloc=withdrawal-of-agreement";
+    }
+    if (scheme == LINKED_APP_SCHEME_4_3)
+    {
+        return "?lloc=renewal-of-agreement";
     }
     return "";
 }
