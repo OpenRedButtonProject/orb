@@ -66,7 +66,8 @@ class OrbSession implements IOrbSession {
         mOrbSessionCallback = callback;
         mConfiguration = configuration;
         mContext = context;
-        mApplicationManager = new ApplicationManager(mOrbSessionCallback);
+        mApplicationManager = new ApplicationManager(mOrbSessionCallback, context,
+                configuration.userAgent);
         mOrbHbbTVVersion = mApplicationManager.getOrbHbbTVVersion();
         Log.d(TAG, "ORB HbbTV Version: " + mOrbHbbTVVersion);
 
@@ -88,6 +89,7 @@ class OrbSession implements IOrbSession {
         mBrowserContainer.addView(mBrowserView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT));
+        mApplicationManager.attachXmlAitFetcher(mBrowserContainer);
 
         mApplicationManager.setSessionCallback(new ApplicationManager.SessionCallback() {
             /**

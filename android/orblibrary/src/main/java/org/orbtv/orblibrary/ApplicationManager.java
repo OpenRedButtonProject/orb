@@ -16,6 +16,9 @@
 
 package org.orbtv.orblibrary;
 
+import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import java.util.List;
 import java.util.Map;
@@ -39,9 +42,15 @@ class ApplicationManager {
         put("VK_RECORD", 0x416);
     }};
 
+    private static final String XML_AIT_MIME = "application/vnd.dvb.ait+xml";
+    /** Must match ApplicationManager::XML_AIT_FETCH_ASYNC. */
+    private static final String XML_AIT_FETCH_ASYNC = "\u001eORB_XML_AIT_ASYNC";
+
     private final Object mLock = new Object();
     private SessionCallback mSessionCallback;
     private final IOrbSessionCallback mOrbLibraryCallback;
+    private final XmlAitWebFetcher mXmlAitFetcher;
+    private final Handler mMainHandler = new Handler(Looper.getMainLooper());
 
     private String m_entryUrl = NOT_STARTED_URL;
 
@@ -114,13 +123,19 @@ class ApplicationManager {
         boolean isInstanceInCurrentService(int onid, int tsid, int sid);
     }
 
-    ApplicationManager(final IOrbSessionCallback orbLibraryCallback) {
+    ApplicationManager(final IOrbSessionCallback orbLibraryCallback, Context context,
+            String userAgent) {
         jniInitialize(this);
         mOrbLibraryCallback = orbLibraryCallback;
+        mXmlAitFetcher = new XmlAitWebFetcher(context, userAgent);
     }
 
     int getOrbHbbTVVersion() {
         return jniGetOrbHbbTVVersion();
+    }
+
+    void attachXmlAitFetcher(android.view.ViewGroup host) {
+        mXmlAitFetcher.attachHost(host);
     }
 
     public void setSessionCallback(SessionCallback sessionCallback) {
@@ -290,6 +305,7 @@ class ApplicationManager {
     }
 
     public void close() {
+        mXmlAitFetcher.close();
         jniFinalize();
     }
 
@@ -303,6 +319,8 @@ class ApplicationManager {
     private native void jniFinalize();
 
     private native boolean jniCreateApplication(int callingAppId, String url);
+
+    private native void jniContinueCreateFromHttpLocator(String url, String xmlAit);
 
     private native boolean jniDestroyApplication(int callingAppId);
 
@@ -422,22 +440,45 @@ class ApplicationManager {
     }
 
     private String jniCbGetXmlAitContents(String url) {
+        mXmlAitFetcher.fetchAsync(url, result -> onXmlAitFetchDone(url, result));
+        return XML_AIT_FETCH_ASYNC;
+    }
+
+    private void onXmlAitFetchDone(String url, XmlAitWebFetcher.Result uaResult) {
+        if (uaResult != null && uaResult.networkOk) {
+            Log.i(TAG, "XML AIT fetched via HTML UA type=" + uaResult.contentType
+                    + " bytes=" + uaResult.body.length() + " url=" + url);
+            jniContinueCreateFromHttpLocator(url,
+                    xmlAitBodyOrEmpty(uaResult.contentType, uaResult.body));
+            return;
+        }
+        Log.w(TAG, "XML AIT HTML UA fetch failed, falling back to OkHttp: " + url);
+        new Thread(() -> {
+            String body = fetchXmlAitWithOkHttp(url);
+            mMainHandler.post(() -> jniContinueCreateFromHttpLocator(url, body));
+        }, "xml-ait-okhttp").start();
+    }
+
+    private static String xmlAitBodyOrEmpty(String contentType, String body) {
+        if (contentType == null || !contentType.startsWith(XML_AIT_MIME)) {
+            return "";
+        }
+        return body != null ? body : "";
+    }
+
+    private String fetchXmlAitWithOkHttp(String url) {
         OkHttpClient okClient = new OkHttpClient();
         Request okRequest = new Request.Builder()
                 .url(url)
                 .build();
-        Response okResponse;
         try {
-            okResponse = okClient.newCall(okRequest).execute();
+            Response okResponse = okClient.newCall(okRequest).execute();
             String contentType = okResponse.header("Content-Type");
-            if (contentType == null || !contentType.startsWith("application/vnd.dvb.ait+xml")) {
-                return "";
-            }
             if (!okResponse.isSuccessful()) {
                 return "";
             }
-            String contents = okResponse.body().string();
-            return contents;
+            return xmlAitBodyOrEmpty(contentType, okResponse.body() != null
+                    ? okResponse.body().string() : "");
         } catch (Exception e) {
             e.printStackTrace();
             return "";

@@ -254,6 +254,15 @@ JNIEXPORT jboolean JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniCreat
 }
 
 extern "C"
+JNIEXPORT void JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniContinueCreateFromHttpLocator(
+    JNIEnv *env, jobject object, jstring j_url, jstring j_xml_ait)
+{
+    std::string url = JniUtils::MakeStdString(env, j_url);
+    std::string xml_ait = JniUtils::MakeStdString(env, j_xml_ait);
+    GetManager(env, object)->ContinueCreateFromHttpLocator(url, xml_ait);
+}
+
+extern "C"
 JNIEXPORT jboolean JNICALL Java_org_orbtv_orblibrary_ApplicationManager_jniDestroyApplication(
     JNIEnv *env, jobject object,
     jint calling_app_id)
