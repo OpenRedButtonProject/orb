@@ -34,6 +34,12 @@ public interface IOrbSession {
     View getView();
 
     /**
+     * Type 1.1 native DASH: stop the video/broadcast object punching a hole
+     * through the overlay window to TvView so DvbIView can show through.
+     */
+    void setSkipBroadcastWindowPunch(boolean skip);
+
+    /**
      * Get the URL of the inter-device sync service
      *
      * @return The URL of the inter-device sync service.
