@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 import okhttp3.*;
 
 abstract class WebResourceClient {
@@ -54,14 +55,18 @@ abstract class WebResourceClient {
     private final DsmccClient mDsmccClient;
     private final HtmlBuilder mHtmlBuilder;
     private final boolean mDoNotTrackEnabled;
+    private final HtmlUaFetcher mHtmlUaFetcher;
+    private final ConcurrentHashMap<String, HtmlUaFetcher.Result> mHtmlUaDocuments =
+            new ConcurrentHashMap<>();
     OkHttpClient mHttpClient;
     OkHttpClient mHttpSandboxClient;
     private String mAcceptValue;
 
     WebResourceClient(DsmccClient dsmccClient, HtmlBuilder htmlBuilder,
-                      boolean doNotTrackEnabled) {
+                      boolean doNotTrackEnabled, HtmlUaFetcher htmlUaFetcher) {
         mDsmccClient = dsmccClient;
         mHtmlBuilder = htmlBuilder;
+        mHtmlUaFetcher = htmlUaFetcher;
         List<Protocol> protocols = new ArrayList<>();
         protocols.add(Protocol.HTTP_2);
         protocols.add(Protocol.HTTP_1_1);
@@ -79,6 +84,53 @@ abstract class WebResourceClient {
         // A wildcard MIME type is necessary for some servers when optional parameters are specified
         accept.add("*/*;q=0.8");
         mAcceptValue = String.join(",", accept);
+    }
+
+    static String documentCacheKey(String url) {
+        if (url == null) {
+            return "";
+        }
+        Uri uri = Uri.parse(url);
+        return uri.buildUpon().fragment(null).build().toString();
+    }
+
+    static boolean isHttpOrHttps(String url) {
+        if (url == null) {
+            return false;
+        }
+        return url.startsWith("http://") || url.startsWith("https://");
+    }
+
+    /**
+     * Download an http(s) document with the HTML UA, then run {@code onDone}.
+     * Call {@link android.webkit.WebView#loadUrl} from {@code onDone} so intercept
+     * can wrap the cached body (do not block shouldInterceptRequest).
+     */
+    void prefetchHttpDocument(String url, Runnable onDone) {
+        Runnable done = onDone != null ? onDone : () -> {};
+        if (mHtmlUaFetcher == null || !isHttpOrHttps(url)) {
+            done.run();
+            return;
+        }
+        Map<String, String> extra = null;
+        if (mDoNotTrackEnabled) {
+            extra = new HashMap<>();
+            extra.put("DNT", "1");
+        }
+        mHtmlUaFetcher.fetchAsync(url, mAcceptValue, "include", extra, result -> {
+            if (result != null && result.networkOk) {
+                mHtmlUaDocuments.put(documentCacheKey(url), result);
+                Log.i(TAG, "HTML UA document cached type=" + result.contentType
+                        + " bytes=" + result.body.length() + " url=" + url);
+            } else {
+                Log.w(TAG, "HTML UA document GET failed, intercept will use OkHttp: " + url);
+            }
+            done.run();
+        });
+    }
+
+    boolean hasHtmlUaDocument(String url) {
+        return mHtmlUaDocuments.containsKey(documentCacheKey(url));
     }
 
     public WebResourceResponse shouldInterceptRequest(WebResourceRequest request, int appId) {
@@ -256,10 +308,101 @@ abstract class WebResourceClient {
                 "text/plain", charset.name(), httpResponse.code(), reasonPhrase, responseHeaders, stream);
     }
 
+    private WebResourceResponse handleHtmlUaDocument(WebResourceRequest request,
+            HtmlUaFetcher.Result ua, int appId) {
+        String url = request.getUrl().toString();
+        boolean isRedirect = ua.redirected && ua.finalUrl != null && !ua.finalUrl.isEmpty()
+                && !documentCacheKey(ua.finalUrl).equals(documentCacheKey(url));
+        boolean isError = ua.status != 0 && (ua.status < 200 || ua.status >= 300) && !isRedirect
+                && !(ua.status >= 301 && ua.status <= 308);
+        if (!ua.networkOk || (isError && request.isForMainFrame())) {
+            Log.w(TAG, "HTML UA main-frame error " + ua.status
+                    + ", deferring to default loader: " + url);
+            return null;
+        }
+
+        Charset charset = charsetFromContentType(ua.contentType);
+        String mimeType = getMimeType(ua.contentType.isEmpty() ? "text/html" : ua.contentType);
+        String[] parts = mimeType.split(";", 2);
+        mimeType = parts[0];
+
+        if (isRedirect) {
+            Log.i(TAG, "HTML UA redirect " + url + " -> " + ua.finalUrl);
+            return new WebResourceResponse("text/html", charset.name(),
+                    new ByteArrayInputStream(mHtmlBuilder.getRedirectPage(charset,
+                            Uri.parse(ua.finalUrl))));
+        }
+
+        byte[] bodyBytes = ua.body.getBytes(charset);
+        InputStream bodyStream = new ByteArrayInputStream(bodyBytes);
+        InputStream responseStream;
+        boolean injectHbbtv = ua.networkOk && HBBTV_MIME_TYPES.contains(mimeType.toLowerCase());
+        if (injectHbbtv) {
+            responseStream = createInjectionResponseStream(bodyStream, bodyStream, charset,
+                    request.getUrl(), appId);
+        } else {
+            responseStream = createResponseStream(bodyStream, bodyStream);
+        }
+
+        Map<String, String> requestHeaders = mutableRequestHeaders(request);
+        Map<String, String> responseHeaders = new HashMap<>();
+        String requestOriginForCors = getHeaderIgnoreCase(requestHeaders, "Origin");
+        for (Map.Entry<String, String> e : ua.headers.entrySet()) {
+            String k = e.getKey();
+            if (k == null) {
+                continue;
+            }
+            if (k.equalsIgnoreCase("Content-Encoding")
+                    || k.equalsIgnoreCase("Content-Length")
+                    || k.equalsIgnoreCase("Transfer-Encoding")) {
+                continue;
+            }
+            if (requestOriginForCors != null && !requestOriginForCors.isEmpty()
+                    && k.equalsIgnoreCase("Access-Control-Allow-Origin")) {
+                continue;
+            }
+            String header = e.getValue() != null ? e.getValue() : "";
+            if (k.equalsIgnoreCase("Content-Security-Policy")) {
+                header = updateCspHeader(header);
+            }
+            responseHeaders.put(k, header);
+        }
+        applyOriginReflectionCors(responseHeaders, requestHeaders);
+
+        int status = ua.status > 0 ? ua.status : 200;
+        String reasonPhrase = (status >= 200 && status < 300) ? "OK" : "Error";
+        return new WebResourceResponse(mimeType, charset.name(), status, reasonPhrase,
+                responseHeaders, responseStream);
+    }
+
+    private static Charset charsetFromContentType(String contentType) {
+        if (contentType != null) {
+            String[] parts = contentType.split(";");
+            for (String part : parts) {
+                String p = part.trim();
+                if (p.toLowerCase().startsWith("charset=")) {
+                    String name = p.substring(8).trim().replace("\"", "");
+                    try {
+                        return Charset.forName(name);
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+        }
+        return StandardCharsets.UTF_8;
+    }
+
     private WebResourceResponse handleHttpRequest(WebResourceRequest request, int appId)
             throws IOException {
-        // Request
         String url = request.getUrl().toString();
+        HtmlUaFetcher.Result uaDocument = mHtmlUaDocuments.remove(documentCacheKey(url));
+        if (uaDocument != null) {
+            Log.i(TAG, "HTTP main-frame from HTML UA status=" + uaDocument.status
+                    + " type=" + uaDocument.contentType + " " + url);
+            return handleHtmlUaDocument(request, uaDocument, appId);
+        }
+
+        // Request
         Map<String, String> requestHeaders = mutableRequestHeaders(request);
 
         CookieManager cookieManager;
