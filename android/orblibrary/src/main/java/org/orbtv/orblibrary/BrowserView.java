@@ -49,6 +49,7 @@ class BrowserView extends WebView {
     private boolean mIrrecoverableNotified = false;
     private int mHiddenMask = 0;
     private WebResourceClient mWebResourceClient;
+    private final HtmlUaFetcher mHtmlUaFetcher;
     private SessionCallback mSessionCallback;
     private JavaScriptBridgeInterface mJavaScriptBridgeInterface;
 
@@ -62,9 +63,11 @@ class BrowserView extends WebView {
     volatile boolean mSkipBroadcastWindowPunch;
 
     public BrowserView(Context context, Bridge bridge,
-                       OrbSessionFactory.Configuration configuration, DsmccClient dsmccClient) {
+                       OrbSessionFactory.Configuration configuration, DsmccClient dsmccClient,
+                       HtmlUaFetcher htmlUaFetcher) {
         super(context);
         mContext = context;
+        mHtmlUaFetcher = htmlUaFetcher;
         mJavaScriptBridgeInterface = new JavaScriptBridgeInterface(bridge, this);
 
         setHiddenFlag(PAGE_HIDDEN_FLAG);
@@ -98,7 +101,7 @@ class BrowserView extends WebView {
         });
 
         mWebResourceClient = new WebResourceClient(dsmccClient, new HtmlBuilder(mContext.getAssets()),
-                configuration.doNotTrackEnabled) {
+                configuration.doNotTrackEnabled, htmlUaFetcher) {
             @Override
             public void onRequestFailed(WebResourceRequest request, int appId) {
                 if (request.isForMainFrame() && appId == mLoadAppId) {
@@ -122,6 +125,27 @@ class BrowserView extends WebView {
                     mSessionCallback.notifyApplicationPageChanged(mAppId, request.getUrl().toString());
                 }
                 return mWebResourceClient.shouldInterceptRequest(request, mAppId);
+            }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                if (!request.isForMainFrame() || mHtmlUaFetcher == null) {
+                    return false;
+                }
+                if (!"GET".equalsIgnoreCase(request.getMethod())) {
+                    return false;
+                }
+                String url = request.getUrl().toString();
+                if (!WebResourceClient.isHttpOrHttps(url)) {
+                    return false;
+                }
+                if (mWebResourceClient.hasHtmlUaDocument(url)) {
+                    return false;
+                }
+                Log.i(TAG, "Prefetch HTML UA document (navigation): " + url);
+                mWebResourceClient.prefetchHttpDocument(url, () ->
+                        mContext.getMainExecutor().execute(() -> loadUrl(url)));
+                return true;
             }
 
             @Override
@@ -265,12 +289,19 @@ class BrowserView extends WebView {
         mIrrecoverableNotified = false;
         mContext.getMainExecutor().execute(() -> {
             mAppId = appId;
-            loadUrl(entryUrl);
             updateAppResolution(graphicsConfigIds);
             if (entryUrl.equals("about:blank")) {
+                loadUrl(entryUrl);
                 setHiddenFlag(PAGE_HIDDEN_FLAG);
+                return;
+            }
+            unsetHiddenFlag(PAGE_HIDDEN_FLAG);
+            if (mHtmlUaFetcher != null && WebResourceClient.isHttpOrHttps(entryUrl)) {
+                Log.i(TAG, "Prefetch HTML UA document (loadApplication): " + entryUrl);
+                mWebResourceClient.prefetchHttpDocument(entryUrl, () ->
+                        mContext.getMainExecutor().execute(() -> loadUrl(entryUrl)));
             } else {
-                unsetHiddenFlag(PAGE_HIDDEN_FLAG);
+                loadUrl(entryUrl);
             }
         });
     }

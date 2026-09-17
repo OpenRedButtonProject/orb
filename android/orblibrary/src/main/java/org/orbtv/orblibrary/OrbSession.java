@@ -84,12 +84,13 @@ class OrbSession implements IOrbSession {
                 mMediaSynchroniserManager, mMediaSwitcherManager, mJsonRpc);
         mDsmccClient = new DsmccClient(callback);
         mBrowserContainer = new FrameLayout(context);
-        mBrowserView = new BrowserView(context, mBridge, configuration, mDsmccClient);
+        mBrowserView = new BrowserView(context, mBridge, configuration, mDsmccClient,
+                mApplicationManager.getHtmlUaFetcher());
         mBrowserView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
         mBrowserContainer.addView(mBrowserView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT));
-        mApplicationManager.attachXmlAitFetcher(mBrowserContainer);
+        mApplicationManager.attachHtmlUaFetcher(mBrowserContainer);
 
         mApplicationManager.setSessionCallback(new ApplicationManager.SessionCallback() {
             /**
@@ -444,13 +445,15 @@ class OrbSession implements IOrbSession {
         if (old != null) {
             old.close();
         }
-        mBrowserView = new BrowserView(mContext, mBridge, mConfiguration, mDsmccClient);
+        mBrowserView = new BrowserView(mContext, mBridge, mConfiguration, mDsmccClient,
+                mApplicationManager.getHtmlUaFetcher());
         mBrowserView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
         mBrowserView.setSessionCallback(mBrowserSessionCallback);
         mBrowserView.setSkipBroadcastWindowPunch(mSkipBroadcastWindowPunch);
         mBrowserContainer.addView(mBrowserView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT));
+        mApplicationManager.attachHtmlUaFetcher(mBrowserContainer);
     }
 
     /**

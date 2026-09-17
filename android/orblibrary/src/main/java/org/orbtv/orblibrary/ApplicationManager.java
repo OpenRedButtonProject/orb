@@ -49,7 +49,7 @@ class ApplicationManager {
     private final Object mLock = new Object();
     private SessionCallback mSessionCallback;
     private final IOrbSessionCallback mOrbLibraryCallback;
-    private final XmlAitWebFetcher mXmlAitFetcher;
+    private final HtmlUaFetcher mHtmlUaFetcher;
     private final Handler mMainHandler = new Handler(Looper.getMainLooper());
 
     private String m_entryUrl = NOT_STARTED_URL;
@@ -127,15 +127,19 @@ class ApplicationManager {
             String userAgent) {
         jniInitialize(this);
         mOrbLibraryCallback = orbLibraryCallback;
-        mXmlAitFetcher = new XmlAitWebFetcher(context, userAgent);
+        mHtmlUaFetcher = new HtmlUaFetcher(context, userAgent);
     }
 
     int getOrbHbbTVVersion() {
         return jniGetOrbHbbTVVersion();
     }
 
-    void attachXmlAitFetcher(android.view.ViewGroup host) {
-        mXmlAitFetcher.attachHost(host);
+    HtmlUaFetcher getHtmlUaFetcher() {
+        return mHtmlUaFetcher;
+    }
+
+    void attachHtmlUaFetcher(android.view.ViewGroup host) {
+        mHtmlUaFetcher.attachHost(host);
     }
 
     public void setSessionCallback(SessionCallback sessionCallback) {
@@ -305,7 +309,7 @@ class ApplicationManager {
     }
 
     public void close() {
-        mXmlAitFetcher.close();
+        mHtmlUaFetcher.close();
         jniFinalize();
     }
 
@@ -440,11 +444,12 @@ class ApplicationManager {
     }
 
     private String jniCbGetXmlAitContents(String url) {
-        mXmlAitFetcher.fetchAsync(url, result -> onXmlAitFetchDone(url, result));
+        mHtmlUaFetcher.fetchAsync(url, HtmlUaFetcher.ACCEPT_XML_AIT, "omit",
+                result -> onXmlAitFetchDone(url, result));
         return XML_AIT_FETCH_ASYNC;
     }
 
-    private void onXmlAitFetchDone(String url, XmlAitWebFetcher.Result uaResult) {
+    private void onXmlAitFetchDone(String url, HtmlUaFetcher.Result uaResult) {
         if (uaResult != null && uaResult.networkOk) {
             Log.i(TAG, "XML AIT fetched via HTML UA type=" + uaResult.contentType
                     + " bytes=" + uaResult.body.length() + " url=" + url);
