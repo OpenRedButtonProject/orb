@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package org.orbtv.orblibrary;
 
 import android.content.Context;
@@ -51,6 +51,7 @@ class OrbSession implements IOrbSession {
     private BrowserView mBrowserView;
     private BrowserView.SessionCallback mBrowserSessionCallback;
     private DsmccClient mDsmccClient;
+    private volatile boolean mSkipBroadcastWindowPunch;
     private final int EMPTY_INTEGER = -999999;
     private final String EMPTY_STRING = "";
 
@@ -401,6 +402,14 @@ class OrbSession implements IOrbSession {
         return mBrowserContainer;
     }
 
+    @Override
+    public void setSkipBroadcastWindowPunch(boolean skip) {
+        mSkipBroadcastWindowPunch = skip;
+        if (mBrowserView != null) {
+            mBrowserView.setSkipBroadcastWindowPunch(skip);
+        }
+    }
+
     private void restartAfterIrrecoverableError(int appId) {
         synchronized (mCloseLock) {
             if (mClosed) {
@@ -436,6 +445,7 @@ class OrbSession implements IOrbSession {
         mBrowserView = new BrowserView(mContext, mBridge, mConfiguration, mDsmccClient);
         mBrowserView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
         mBrowserView.setSessionCallback(mBrowserSessionCallback);
+        mBrowserView.setSkipBroadcastWindowPunch(mSkipBroadcastWindowPunch);
         mBrowserContainer.addView(mBrowserView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT));

@@ -58,6 +58,8 @@ class BrowserView extends WebView {
     // To be used within set/unsetHiddenFlag() to prevent previously loaded app from
     // flashing when changing to a different app
     private boolean mVisibilityOverride = false;
+    /** Type 1.1: do not hole-punch the overlay window through to TvView. */
+    volatile boolean mSkipBroadcastWindowPunch;
 
     public BrowserView(Context context, Bridge bridge,
                        OrbSessionFactory.Configuration configuration, DsmccClient dsmccClient) {
@@ -126,6 +128,17 @@ class BrowserView extends WebView {
             public void onPageCommitVisible(WebView view, String url) {
                 mVisibilityOverride = true;
                 setHiddenFlag(mHiddenMask); // trigger browser view visibility update
+                // HbbTV graphics overlay the A/V plane; keep the page itself transparent.
+                evaluateJavascript(
+                      "(function(){try{"
+                            + "window.__orbSkipWindowPunch=" + mSkipBroadcastWindowPunch + ";"
+                            + "document.documentElement.style.background='transparent';"
+                            + "if(document.body){document.body.style.background='transparent';}"
+                            + "var o=document.getElementById('video-broadcast');"
+                            + "if(o&&window.__orbSkipWindowPunch){o.removeAttribute('noshade');"
+                            + "o.style.background='transparent';}"
+                            + "}catch(e){}})()",
+                      null);
                 if (mSessionCallback != null && mAppId > 0
                         && url != null && !url.startsWith("about:blank")) {
                     mSessionCallback.notifyApplicationPresented(mAppId);
@@ -165,6 +178,27 @@ class BrowserView extends WebView {
 
     public void setSessionCallback(SessionCallback sessionCallback) {
         mSessionCallback = sessionCallback;
+    }
+
+    /**
+     * When true, the video/broadcast object must not set {@code noshade} (window
+     * hole to TvView). Used while native DASH is presenting in DvbIView.
+     */
+    public void setSkipBroadcastWindowPunch(boolean skip) {
+        mSkipBroadcastWindowPunch = skip;
+        mContext.getMainExecutor().execute(() -> {
+            evaluateJavascript(
+                  "(function(){try{"
+                        + "window.__orbSkipWindowPunch=" + skip + ";"
+                        + "document.documentElement.style.background='transparent';"
+                        + "if(document.body){document.body.style.background='transparent';}"
+                        + "var o=document.getElementById('video-broadcast');"
+                        + "if(o){if(" + skip + "){o.removeAttribute('noshade');"
+                        + "o.style.background='transparent';}"
+                        + "else{o.setAttribute('noshade','true');}}"
+                        + "}catch(e){}})()",
+                  null);
+        });
     }
 
     @Override
@@ -392,6 +426,11 @@ class BrowserView extends WebView {
         JavaScriptBridgeInterface(Bridge bridge, BrowserView browserView) {
             mBridge = bridge;
             mBrowserView = browserView;
+        }
+
+        @JavascriptInterface
+        public boolean skipBroadcastWindowPunch() {
+            return mBrowserView.mSkipBroadcastWindowPunch;
         }
 
         @JavascriptInterface

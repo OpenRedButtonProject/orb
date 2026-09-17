@@ -131,8 +131,25 @@
         setVideoRectangle(-1280, -720, 1280, 720, true, false);
     }
 
+    function skipWindowPunch() {
+        try {
+            if (typeof androidBridge !== 'undefined' &&
+                    androidBridge.skipBroadcastWindowPunch) {
+                return !!androidBridge.skipBroadcastWindowPunch();
+            }
+        } catch (e) {}
+        return !!window.__orbSkipWindowPunch;
+    }
+
     function startPunchHole(object) {
-        object.setAttribute('noshade', true);
+        if (skipWindowPunch()) {
+            // Type 1.1: DASH is in DvbIView. noshade punches the overlay window
+            // to TvView (empty DTVKit green) and skips the sibling WebView.
+            object.removeAttribute('noshade');
+            object.style.background = 'transparent';
+        } else {
+            object.setAttribute('noshade', true);
+        }
         if (hbbtv.native.name === 'rdk') {
             let video = hbbtv.objectManager.createRdkVideoElement();
             let source = document.createElement('source');
