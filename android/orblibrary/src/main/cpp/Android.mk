@@ -61,7 +61,8 @@ LOCAL_C_INCLUDES := \
    $(LOCAL_PATH)/../../../../../components/network_services/media_switcher/ \
    $(LOCAL_PATH)/../../../../../components/network_services/app2app/
 
-ifeq ($(ORB_HBBTV_VERSION),204)
+# JSON-RPC arrived in 204 (HbbTV 1.7.1) and stays in later versions.
+ifneq ($(filter 204 205,$(ORB_HBBTV_VERSION)),)
 LOCAL_SRC_FILES += json_rpc_native.cpp
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/../../../../../components/network_services/json_rpc/
 endif

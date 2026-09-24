@@ -23,7 +23,7 @@ public class JsonRpc {
     final static String TAG = JsonRpc.class.getSimpleName();
 
     final static String JSON_RPC_SERVER_BASE_URL = "ws://localhost:"; // TODO wss?
-    final static String JSON_RPC_SERVER_VERSION = "1.7.1";
+    final static String JSON_RPC_SERVER_VERSION = "1.8.1";
 
     private final int mPort;
     private final String mEndpoint;

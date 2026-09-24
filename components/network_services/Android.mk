@@ -42,7 +42,8 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/media_synchroniser \
                     $(LOCAL_PATH)/media_switcher \
                     $(LOCAL_PATH)/app2app
 
-ifeq ($(ORB_HBBTV_VERSION),204)
+# JSON-RPC arrived in 204 (HbbTV 1.7.1) and stays in later versions.
+ifneq ($(filter 204 205,$(ORB_HBBTV_VERSION)),)
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/json_rpc_server
 endif
 
@@ -64,7 +65,7 @@ LOCAL_SRC_FILES := \
    media_synchroniser/TimelineSyncService.cpp \
    media_switcher/media_switcher.cpp
 
-ifeq ($(ORB_HBBTV_VERSION),204)
+ifneq ($(filter 204 205,$(ORB_HBBTV_VERSION)),)
 LOCAL_SRC_FILES += \
     json_rpc/JsonRpcService.cpp
 endif
