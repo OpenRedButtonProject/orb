@@ -100,21 +100,27 @@
     };
 
     function keyHandler(originalEvent) {
-        if(originalEvent.code === "") {
-            originalEvent.preventDefault();
-            originalEvent.stopImmediatePropagation();
-            const keyLabel = Object.keys(keys).find(key => keys[key] === originalEvent.keyCode);
-            const newEvent = new KeyboardEvent(originalEvent.type, Object.assign({}, originalEvent, {
-                keyCode: originalEvent.keyCode,
-                code: keyLabels[keyLabel] || "0",
-                bubbles: true,
-            }));
-
-            originalEvent.target.dispatchEvent(newEvent);
+        if (originalEvent.code !== "") {
+            return;
         }
+        // Capture phase, so this runs before listeners on document. The
+        // KeyboardEvent constructor ignores keyCode, so copy it across or
+        // HbbTV keys such as 403 lose the code the application reads.
+        originalEvent.preventDefault();
+        originalEvent.stopImmediatePropagation();
+        const keyCode = originalEvent.keyCode;
+        const keyLabel = Object.keys(keys).find(key => keys[key] === keyCode);
+        const newEvent = new KeyboardEvent(originalEvent.type, {
+            code: keyLabels[keyLabel] || "0",
+            bubbles: true,
+            cancelable: true,
+        });
+        Object.defineProperty(newEvent, "keyCode", { value: keyCode });
+        Object.defineProperty(newEvent, "which", { value: keyCode });
+        originalEvent.target.dispatchEvent(newEvent);
     }
 
-    window.addEventListener('keydown', keyHandler);
-    window.addEventListener('keyup', keyHandler);
-    window.addEventListener('keypress', keyHandler);
+    window.addEventListener("keydown", keyHandler, true);
+    window.addEventListener("keyup", keyHandler, true);
+    window.addEventListener("keypress", keyHandler, true);
 })();
