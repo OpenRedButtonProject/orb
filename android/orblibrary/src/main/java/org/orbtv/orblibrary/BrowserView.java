@@ -39,6 +39,29 @@ import java.util.Arrays;
 class BrowserView extends WebView {
     private static final String TAG = BrowserView.class.getSimpleName();
 
+    /**
+     * The graphics plane is transparent where the application has not painted.
+     * backgroundColor leaves a background image in place, and an opaque colour
+     * or image is left unchanged so it covers the broadcast.
+     */
+    private static final String TRANSPARENT_IF_UNPAINTED =
+            "function __orbTransparentIfUnpainted(el){"
+                    + "if(!el)return;"
+                    + "var cs=getComputedStyle(el);"
+                    + "if(cs.backgroundImage&&cs.backgroundImage!=='none')return;"
+                    + "var c=cs.backgroundColor;"
+                    + "if(c&&c!=='transparent'){"
+                    + "var m=c.match(/rgba?\\(([^)]+)\\)/);"
+                    + "if(!m)return;"
+                    + "var p=m[1].split(',');"
+                    + "var a=p.length===4?parseFloat(p[3]):1;"
+                    + "if(a!==0)return;"
+                    + "}"
+                    + "el.style.backgroundColor='transparent';"
+                    + "}"
+                    + "__orbTransparentIfUnpainted(document.documentElement);"
+                    + "__orbTransparentIfUnpainted(document.body);";
+
     private static final int VIEW_HIDDEN_FLAG = 1;
     private static final int PAGE_HIDDEN_FLAG = 2;
     private static final int APP_HIDDEN_FLAG = 4;
@@ -128,12 +151,12 @@ class BrowserView extends WebView {
             public void onPageCommitVisible(WebView view, String url) {
                 mVisibilityOverride = true;
                 setHiddenFlag(mHiddenMask); // trigger browser view visibility update
-                // HbbTV graphics overlay the A/V plane; keep the page itself transparent.
+                // The graphics plane is transparent where the application has not painted.
+                // An author background colour or image covers the broadcast and is left as set.
                 evaluateJavascript(
                       "(function(){try{"
                             + "window.__orbSkipWindowPunch=" + mSkipBroadcastWindowPunch + ";"
-                            + "document.documentElement.style.background='transparent';"
-                            + "if(document.body){document.body.style.background='transparent';}"
+                            + TRANSPARENT_IF_UNPAINTED
                             + "var o=document.getElementById('video-broadcast');"
                             + "if(o&&window.__orbSkipWindowPunch){o.removeAttribute('noshade');"
                             + "o.style.background='transparent';}"
@@ -190,8 +213,7 @@ class BrowserView extends WebView {
             evaluateJavascript(
                   "(function(){try{"
                         + "window.__orbSkipWindowPunch=" + skip + ";"
-                        + "document.documentElement.style.background='transparent';"
-                        + "if(document.body){document.body.style.background='transparent';}"
+                        + TRANSPARENT_IF_UNPAINTED
                         + "var o=document.getElementById('video-broadcast');"
                         + "if(o){if(" + skip + "){o.removeAttribute('noshade');"
                         + "o.style.background='transparent';}"
