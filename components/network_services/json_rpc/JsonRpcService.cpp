@@ -71,6 +71,8 @@
 #define MD_LA_CONSENT_UNCHANGED "org.dvb.la.consent_unchanged"
 #define MD_LA_RENEW_SUCCESS "org.dvb.la.renew_success"
 #define MD_LA_RENEW_FAILURE "org.dvb.la.renew_failure"
+#define MD_LA_PREPLAY_SUCCESS "org.dvb.la.preplay_success"
+#define MD_LA_PREPLAY_FAILURE "org.dvb.la.preplay_failure"
 
 namespace NetworkServices {
 const int sizeOfAccessibilityFeature = 8;
@@ -202,6 +204,8 @@ JsonRpcService::JsonRpcService(
     RegisterMethod(MD_LA_CONSENT_UNCHANGED, &JsonRpcService::RequestLinkedAppCompletion);
     RegisterMethod(MD_LA_RENEW_SUCCESS, &JsonRpcService::RequestLinkedAppCompletion);
     RegisterMethod(MD_LA_RENEW_FAILURE, &JsonRpcService::RequestLinkedAppCompletion);
+    RegisterMethod(MD_LA_PREPLAY_SUCCESS, &JsonRpcService::RequestLinkedAppCompletion);
+    RegisterMethod(MD_LA_PREPLAY_FAILURE, &JsonRpcService::RequestLinkedAppCompletion);
 
     RegisterSupportedMethods();
     DBGLOG("created JsonRpcService: endpoint: %s", endpoint.c_str())
@@ -362,6 +366,8 @@ void JsonRpcService::RegisterSupportedMethods()
     m_supported_methods_app_to_terminal.insert(MD_LA_CONSENT_UNCHANGED);
     m_supported_methods_app_to_terminal.insert(MD_LA_RENEW_SUCCESS);
     m_supported_methods_app_to_terminal.insert(MD_LA_RENEW_FAILURE);
+    m_supported_methods_app_to_terminal.insert(MD_LA_PREPLAY_SUCCESS);
+    m_supported_methods_app_to_terminal.insert(MD_LA_PREPLAY_FAILURE);
 
     m_supported_methods_terminal_to_app.insert(MD_NOTIFY);
     m_supported_methods_terminal_to_app.insert(MD_INTENT_MEDIA_PAUSE);
@@ -1020,8 +1026,18 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestLinkedAppCompletion(int con
     LOG(LOG_INFO, "linked-app completion method=%s", method.c_str());
     m_sessionCallback->NotifyLinkedAppCompletion(method, paramsJson);
 
-    Json::Value result(Json::objectValue);
-    result["method"] = method;
+    /* TS 103 770 §5.2.3.8: preplay_* responses use result "org.dvb.la.Success".
+     * Type 4.x completion keeps the existing {method} object for Package 7. */
+    Json::Value result;
+    if (method == MD_LA_PREPLAY_SUCCESS || method == MD_LA_PREPLAY_FAILURE)
+    {
+        result = "org.dvb.la.Success";
+    }
+    else
+    {
+        result = Json::Value(Json::objectValue);
+        result["method"] = method;
+    }
     SendJsonMessageToClient(connectionId, CreateJsonResponse(id, result));
     return JsonRpcStatus::SUCCESS;
 }
@@ -1989,6 +2005,8 @@ void JsonRpcService::InitialConnectionData(int connectionId)
     m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_LA_CONSENT_UNCHANGED);
     m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_LA_RENEW_SUCCESS);
     m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_LA_RENEW_FAILURE);
+    m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_LA_PREPLAY_SUCCESS);
+    m_connectionData[connectionId].negotiateMethodsAppToTerminal.insert(MD_LA_PREPLAY_FAILURE);
 }
 
 /**

@@ -234,13 +234,16 @@ bool ApplicationManager::DestroyApplication(uint16_t callingAppId)
     // Application.destroyApplication() of a type 1.2 linked app: do not
     // restart this XML AIT. The DVB-I client discards the instance and
     // selects another (TS 103 770 §5.2.13 / errata #13697).
-    if (scheme == LINKED_APP_SCHEME_1_2)
+    if (scheme == LINKED_APP_SCHEME_1_2 || scheme == LINKED_APP_SCHEME_1_3)
     {
-        LOG(LOG_INFO, "LA 1.2 destroyApplication(); skip AIT autostart (5.2.13 instance discard)");
+        LOG(LOG_INFO, "LA %s destroyApplication(); skip AIT autostart",
+            scheme == LINKED_APP_SCHEME_1_3 ? "1.3" : "1.2");
         // No follow-on app will init video/broadcast, so unsuspend here.
         // The client must still discard/reselect (and may unsuspend again).
         m_sessionCallback->ResetBroadcastPresentation();
-        return true;
+        /* Only type 1.2 requests instance discard. Type 1.3 success chains
+         * in DvbIClient; returning true here relaunched 1.3 (APPS0300). */
+        return scheme == LINKED_APP_SCHEME_1_2;
     }
     OnRunningAppExited();
     return false;
@@ -321,7 +324,7 @@ uint16_t ApplicationManager::SetKeySetMask(uint16_t appId, uint16_t keySetMask, 
     // VK_REWIND and VK_RECORD shall always be available to linked applications
     // that are controlling media presentation without requiring the application
     // to be activated first (2.0.4, App. O.7)
-    bool isException = isLinkedAppScheme12 && m_app.versionMinor == 7;
+    bool isException = isLinkedAppScheme12 && m_app.versionMinor >= 7;
 
     if (!m_app.isActivated && currentScheme != LINKED_APP_SCHEME_2) {
         if ((keySetMask & KEY_SET_VCR) != 0 && isOldVersion && !isException) {
@@ -1213,7 +1216,8 @@ void ApplicationManager::KillRunningApp()
 bool ApplicationManager::IsDvbiLinkedApp() const
 {
     const std::string scheme = m_app.getScheme();
-    if (scheme == LINKED_APP_SCHEME_1_2 || scheme == LINKED_APP_SCHEME_2)
+    if (scheme == LINKED_APP_SCHEME_1_2 || scheme == LINKED_APP_SCHEME_1_3
+        || scheme == LINKED_APP_SCHEME_2)
     {
         return true;
     }

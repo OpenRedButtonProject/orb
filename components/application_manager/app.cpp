@@ -131,6 +131,10 @@ std::string getAppSchemeFromUrlParams(const std::string &urlParams)
     {
         return LINKED_APP_SCHEME_1_2;
     }
+    if (urlParams.find("lloc=preroll") != std::string::npos)
+    {
+        return LINKED_APP_SCHEME_1_3;
+    }
     if (urlParams.find("lloc=availability") != std::string::npos)
     {
         return LINKED_APP_SCHEME_2;
@@ -155,6 +159,10 @@ std::string getUrlParamsFromAppScheme(const std::string &scheme)
     if (scheme == LINKED_APP_SCHEME_1_2)
     {
         return "?lloc=service";
+    }
+    if (scheme == LINKED_APP_SCHEME_1_3)
+    {
+        return "?lloc=preroll";
     }
     if (scheme == LINKED_APP_SCHEME_2)
     {
