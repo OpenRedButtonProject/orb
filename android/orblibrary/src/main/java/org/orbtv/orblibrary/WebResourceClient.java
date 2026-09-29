@@ -216,27 +216,30 @@ abstract class WebResourceClient {
     }
 
     /**
-     * HTTPS goes through the shared Cronet engine so HTTP/3, Alt-Svc and HTTPS DNS
-     * records work. Cleartext, and HTTPS if Cronet failed to start, stay on OkHttp.
+     * http and https both go through the shared Cronet engine, after an HSTS
+     * upgrade. OkHttp remains the fallback when that engine failed to start:
+     * a missing library would otherwise take the cleartext app page down with it.
+     * The XML AIT fetch does not use this method.
      */
     private OrbHttpResult executeHttp(String url, String method, Map<String, String> headers)
             throws IOException {
-        if (url.startsWith("https://")) {
-            OrbHttpResult cronet = OrbCronet.executeHttps(mContext, url, method, headers);
-            if (cronet != null) {
-                return cronet;
-            }
+        String fetchUrl = HstsPolicy.upgrade(url);
+        OrbHttpResult result = OrbCronet.execute(mContext, fetchUrl, method, headers);
+        if (result == null) {
+            Response ok = mHttpClient.newCall(new Request.Builder()
+                    .url(fetchUrl)
+                    .method(method, null)
+                    .headers(Headers.of(headers))
+                    .build()).execute();
+            ResponseBody body = ok.body();
+            InputStream stream = body != null ? body.byteStream()
+                    : new ByteArrayInputStream(new byte[0]);
+            long length = body != null ? body.contentLength() : 0;
+            result = new OrbHttpResult(ok.code(), ok.message(), ok.headers().toMultimap(),
+                    stream, length, ok);
         }
-        Response ok = mHttpClient.newCall(new Request.Builder()
-                .url(url)
-                .method(method, null)
-                .headers(Headers.of(headers))
-                .build()).execute();
-        ResponseBody body = ok.body();
-        InputStream stream = body != null ? body.byteStream() : new ByteArrayInputStream(new byte[0]);
-        long length = body != null ? body.contentLength() : 0;
-        return new OrbHttpResult(ok.code(), ok.message(), ok.headers().toMultimap(),
-                stream, length, ok);
+        HstsPolicy.note(fetchUrl, result.headersNamed("Strict-Transport-Security"));
+        return result;
     }
 
     private WebResourceResponse handleHttpOptionsRequest(WebResourceRequest request, int appId)

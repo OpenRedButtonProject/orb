@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * One Cronet engine for every HTTPS fetch the HbbTV user agent makes.
+ * One Cronet engine for every http and https fetch {@link WebResourceClient} makes.
  * Alt-Svc learned on one request is reused by the next, and HTTPS DNS
  * records (RFC 9460) are enabled so an HTTP/3-only origin can be reached
  * on the first request.
@@ -51,7 +51,7 @@ final class OrbCronet {
     /**
      * @return a response, or null when Cronet could not be started so the caller can use OkHttp
      */
-    static OrbHttpResult executeHttps(Context context, String url, String method,
+    static OrbHttpResult execute(Context context, String url, String method,
             Map<String, String> headers) throws IOException {
         CronetEngine engine = engine(context);
         if (engine == null) {
@@ -78,11 +78,14 @@ final class OrbCronet {
             sEngine = builder
                     .enableBrotli(true)
                     .setStoragePath(storage.getAbsolutePath())
-                    .enableHttpCache(CronetEngine.Builder.HTTP_CACHE_DISK_NO_HTTP, 1024 * 1024)
+                    // Honor Cache-Control. Caching every body would replay a cleartext
+                    // probe after this engine started carrying http as well as https.
+                    // The storage directory still keeps QUIC and Alt-Svc state.
+                    .enableHttpCache(CronetEngine.Builder.HTTP_CACHE_DISK, 1024 * 1024)
                     .build();
             Log.i(TAG, "Cronet engine started, QUIC and HTTPS DNS records enabled");
         } catch (Throwable t) {
-            Log.e(TAG, "Cronet engine failed to start; HTTPS stays on OkHttp", t);
+            Log.e(TAG, "Cronet engine failed to start; HTTP stays on OkHttp", t);
             sUnavailable = true;
             sEngine = null;
         }
@@ -166,7 +169,12 @@ final class OrbCronet {
         @Override
         public void onRedirectReceived(UrlRequest request, UrlResponseInfo info,
                 String newLocationUrl) {
-            // ORB turns 3xx into an HTML redirect page. Do not let Cronet follow.
+            // Cronet reports an HSTS scheme upgrade as an internal redirect.
+            // A real 3xx is cancelled so ORB can turn it into an HTML redirect page.
+            if (isHstsInternalRedirect(info)) {
+                request.followRedirect();
+                return;
+            }
             mRedirect = true;
             mInfo.set(info);
             request.cancel();
@@ -210,6 +218,24 @@ final class OrbCronet {
             mError.compareAndSet(null, error);
             closeQuietly(mBodyOut);
             mHeadersReady.countDown();
+        }
+
+        private static boolean isHstsInternalRedirect(UrlResponseInfo info) {
+            if (info == null || info.getAllHeaders() == null) {
+                return false;
+            }
+            for (Map.Entry<String, List<String>> header : info.getAllHeaders().entrySet()) {
+                if (header.getKey() == null || !header.getKey().equalsIgnoreCase(
+                        "Non-Authoritative-Reason") || header.getValue() == null) {
+                    continue;
+                }
+                for (String value : header.getValue()) {
+                    if (value != null && value.equalsIgnoreCase("HSTS")) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         @Override
