@@ -96,28 +96,41 @@ hbbtv.objects.ChannelList = (function() {
             //  3) If both 1 and 2 apply -> return the service
             // Classic RF / other Channel objects are used only when neither applies.
             let serviceMatch = undefined;
+            let serviceMatches = 0;
             let instanceMatch = undefined;
+            let instanceMatches = 0;
             let otherMatch = undefined;
             for (let channel of p.channelDataList) {
                 if (channel.serviceInstances) {
-                    if (!serviceMatch && isMatch(channel)) {
-                        serviceMatch = channel;
-                    }
-                    if (!instanceMatch) {
-                        for (let instance of channel.serviceInstances) {
-                            if (isMatch(instance)) {
-                                instance.parentService = channel;
-                                instanceMatch = instance;
-                                break;
-                            }
+                    if (isMatch(channel)) {
+                        serviceMatches++;
+                        if (!serviceMatch) {
+                            serviceMatch = channel;
                         }
                     }
-                    if (serviceMatch && instanceMatch) {
-                        break;
+                    for (let instance of channel.serviceInstances) {
+                        if (isMatch(instance)) {
+                            instanceMatches++;
+                            if (!instanceMatch) {
+                                instance.parentService = channel;
+                                instanceMatch = instance;
+                            }
+                            break;
+                        }
                     }
                 } else if (!otherMatch && isMatch(channel)) {
                     otherMatch = channel;
                 }
+            }
+            // Combined lists reuse ATE Test12 (99,1,12) as CHAN0150's IdentifierTriplet
+            // and as an RF instance of many *-2 services. Official APPS03xx then
+            // setChannel(getChannelByTriplet(99,1,12)) onto CHAN0150, whose
+            // notifyAppStart reports step 2 into the APPS03xx session.
+            if (otherMatch && (serviceMatches > 0 || instanceMatches > 1)) {
+                serviceMatch = undefined;
+                instanceMatch = undefined;
+            } else if (instanceMatches > 1) {
+                instanceMatch = undefined;
             }
             const channelData = serviceMatch || instanceMatch || otherMatch;
             if (channelData) {

@@ -484,6 +484,10 @@ private:
     int m_linkedAppRestartCount = 0;
     int m_linkedAppRestartAttempts = 0;
     bool m_linkedAppDidStart = false;
+    // ProcessXmlAit already replaced the previous DVB-I service-bound app.
+    // A late CONNECTING/PLAYBACK_STARTED must not kill the app just started
+    // for the new DASH service (APPS0430 second neighbour hop).
+    bool m_dvbiXmlAitApplied = false;
 };
 
 #endif // HBBTV_SERVICE_MANAGER_H

@@ -179,6 +179,52 @@ abstract class WebResourceClient {
         return null;
     }
 
+    /**
+     * ATE serve.php does not keep last_mpd_query_string for the DVB-I player
+     * GET. Answer the 1.1 XHR from the MPD URL we actually tuned (APPS0350).
+     */
+    private static WebResourceResponse servePhpOracleResponse(String url) {
+        try {
+            Uri uri = Uri.parse(url);
+            String path = uri.getPath();
+            if (path == null || !path.endsWith("/serve.php")) {
+                return null;
+            }
+            String testId = uri.getQueryParameter("hbbtv_test_id");
+            String action = uri.getQueryParameter("action");
+            if (testId == null || action == null) {
+                return null;
+            }
+            Class<?> oracle = Class.forName("org.orbtv.companionlibrary.ServePhpOracle");
+            Boolean recorded = (Boolean) oracle.getMethod("has", String.class).invoke(null, testId);
+            if (recorded == null || !recorded) {
+                return null;
+            }
+            String body;
+            if ("mpd_query_parameter".equals(action) || "query_parameter".equals(action)) {
+                body = (String) oracle.getMethod("queryParameter", String.class, String.class)
+                        .invoke(null, testId, uri.getQueryParameter("parameter"));
+            } else if ("url".equals(action)) {
+                body = (String) oracle.getMethod("lastUrlAction", String.class)
+                        .invoke(null, testId);
+            } else {
+                return null;
+            }
+            Log.i(TAG, "serve.php oracle action=" + action + " body=" + body);
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Access-Control-Allow-Origin", "*");
+            headers.put("Content-Type", "text/plain");
+            return new WebResourceResponse("text/plain", StandardCharsets.UTF_8.name(),
+                    200, "OK", headers,
+                    new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)));
+        } catch (ClassNotFoundException e) {
+            return null;
+        } catch (Exception e) {
+            Log.w(TAG, "serve.php oracle failed: " + e);
+            return null;
+        }
+    }
+
     private static void removeHeaderIgnoreCase(Map<String, String> headers, String headerName) {
         if (headers == null || headerName == null) {
             return;
@@ -225,7 +271,6 @@ abstract class WebResourceClient {
                 requestHeaders.put("Cookie", cookie);
             }
         }
-
         Response httpResponse = mHttpClient.newCall(new Request.Builder()
                 .url(url)
                 .method("OPTIONS", null)
@@ -260,6 +305,10 @@ abstract class WebResourceClient {
             throws IOException {
         // Request
         String url = request.getUrl().toString();
+        WebResourceResponse oracle = servePhpOracleResponse(url);
+        if (oracle != null) {
+            return oracle;
+        }
         Map<String, String> requestHeaders = mutableRequestHeaders(request);
 
         CookieManager cookieManager;
@@ -270,7 +319,6 @@ abstract class WebResourceClient {
                 requestHeaders.put("Cookie", cookie);
             }
         }
-
         if (mDoNotTrackEnabled) {
             requestHeaders.put("DNT", "1");
         }
@@ -281,7 +329,8 @@ abstract class WebResourceClient {
                 .headers(Headers.of(requestHeaders))
                 .build()).execute();
 
-        Log.d(TAG, "HTTP response code: " + httpResponse.code() + ", for URL: " + url);
+        Log.d(TAG, "HTTP response code: " + httpResponse.code() + ", for URL: " + url
+                + " cookie=" + getHeaderIgnoreCase(requestHeaders, "Cookie"));
         boolean isRedirect = (httpResponse.code() >= 301 && httpResponse.code() <= 308);
         boolean isError = !httpResponse.isSuccessful() && !isRedirect;
 

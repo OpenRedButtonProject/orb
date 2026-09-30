@@ -549,6 +549,7 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
         m_ait.Clear();
         m_currentServiceAitPid = UINT16_MAX;
         m_ait.ApplyAitTable(aitTable);
+        m_dvbiXmlAitApplied = true;
 
         if (!m_currentServiceReceivedFirstAit)
         {
@@ -779,15 +780,25 @@ void ApplicationManager::OnChannelChanged(uint16_t originalNetworkId,
         m_aitTimeout.stop();
         if (m_app.isRunning && m_app.isBroadcast && m_app.isServiceBound)
         {
-            LOG(LOG_INFO, "Kill running app (DVB-I service bound, left the service)");
-            KillRunningApp();
+            if (m_dvbiXmlAitApplied)
+            {
+                LOG(LOG_INFO,
+                    "DVB-I channel change: XML AIT already applied, keep running app");
+            }
+            else
+            {
+                LOG(LOG_INFO, "Kill running app (DVB-I service bound, left the service)");
+                KillRunningApp();
+            }
         }
         else
         {
             LOG(LOG_INFO, "DVB-I channel change: skip AIT timeout (linked XML AIT is one-shot)");
         }
+        m_dvbiXmlAitApplied = false;
         return;
     }
+    m_dvbiXmlAitApplied = false;
     if (isDvbi)
     {
         LOG(LOG_INFO, "DVB-I RF instance: start AIT timeout for broadcast AIT (serviceId=%u)",

@@ -749,22 +749,14 @@ hbbtv.objects.VideoBroadcast = (function() {
                     let wasPlayStateStopped = false;
                     if (p.playState === PLAY_STATE_UNREALIZED && applicationScheme === LINKED_APP_SCHEME_1_1) {
                         /* DAE vol5 Table 8 state transition #7 — PRESENTING when media is available.
-                         * O.5.4 / ERRATA0400: a selected DVB-I DASH instance is already presented
-                         * by the native player and does not expose RF-style getComponents. Do not
-                         * wait for an empty component list. A.2.4.1 / ERRATA0700–0720: if HTML5
-                         * still holds the decoders, stay CONNECTING. For RF, wait until SI
-                         * components are known. */
+                         * A.2.4.1 / ERRATA0700–0720: if HTML5 still holds the decoders, stay
+                         * CONNECTING. For RF, wait until SI components are known. A selected
+                         * DVB-I DASH instance is not presented until dash.js has published
+                         * tracks (after the MPD GET). Treating selection as PRESENTING made
+                         * type 1.1 bindToCurrentChannel fire before serve.php saw query[]
+                         * (APPS0350). CHANNEL_STATUS_PRESENTING still completes the transition. */
                         let present = false;
-                        if (gBroadbandAvInUse) {
-                            present = false;
-                        } else if (
-                            isSelectedDashInstance(
-                                channelData,
-                                channelData.currentInstanceIndex
-                            )
-                        ) {
-                            present = true;
-                        } else {
+                        if (!gBroadbandAvInUse) {
                             const components = hbbtv.bridge.broadcast.getComponents(
                                 channelData.ccid,
                                 -1
@@ -2363,9 +2355,10 @@ hbbtv.objects.VideoBroadcast = (function() {
     }
 
     /**
-     * Linked-application "media in parallel" may bind while DVB-I RF components are still loading.
-     * Complete CONNECTING → PRESENTING once components are available, or immediately for a
-     * selected DVB-I DASH instance (O.5.4 / ERRATA0400).
+     * Linked-application "media in parallel" may bind while DVB-I RF or DASH
+     * components are still loading. Complete CONNECTING → PRESENTING once
+     * getComponents is non-empty. Do not treat a selected DASH instance as
+     * ready before dash.js publishes tracks (APPS0350 MPD query race).
      */
     function maybePresentWhenComponentsReady() {
         const p = privates.get(this);
@@ -2386,18 +2379,11 @@ hbbtv.objects.VideoBroadcast = (function() {
             return;
         }
         try {
-            const dashReady = isSelectedDashInstance(
-                p.currentChannelData,
-                p.currentInstanceIndex
+            const components = hbbtv.bridge.broadcast.getComponents(
+                p.currentChannelData.ccid,
+                -1
             );
-            let ready = dashReady;
-            if (!ready) {
-                const components = hbbtv.bridge.broadcast.getComponents(
-                    p.currentChannelData.ccid,
-                    -1
-                );
-                ready = !!(components && components.length > 0);
-            }
+            let ready = !!(components && components.length > 0);
             if (ready) {
                 p.playState = PLAY_STATE_PRESENTING;
                 if (p.pendingChannelChangeSucceeded) {
