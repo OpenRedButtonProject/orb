@@ -98,9 +98,14 @@ App App::CreateAppFromAitDesc(const Ait::S_AIT_APP_DESC *desc,
     app.setScheme(desc->scheme);
     if (!desc->scheme.empty())
     {
-        app.entryUrl = Utils::MergeUrlParams("", app.entryUrl,
-                                             getUrlParamsFromAppScheme(app.getScheme()));
-        app.loadedUrl = app.entryUrl;
+        // XML AIT rewrite already appends lloc. MergeUrlParams would add it again
+        // (…?lloc=preroll&lloc=preroll) and libxml/query parsers keep the first.
+        if (app.entryUrl.find("lloc=") == std::string::npos)
+        {
+            app.entryUrl = Utils::MergeUrlParams("", app.entryUrl,
+                                                 getUrlParamsFromAppScheme(app.getScheme()));
+            app.loadedUrl = app.entryUrl;
+        }
     }
 
     return app;

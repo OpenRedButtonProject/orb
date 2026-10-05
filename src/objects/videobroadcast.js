@@ -741,20 +741,16 @@ hbbtv.objects.VideoBroadcast = (function() {
                     console.log('Control DVB presentation!');
                     // A.2.4.1 / ERRATA0700–0720: binding v/b while HTML5/AV
                     // still holds decoders must not unsuspend native presentation.
-                    if (!gBroadbandAvInUse) {
-                        hbbtv.bridge.broadcast.setPresentationSuspended(false);
-                    }
                     hbbtv.holePuncher.setBroadcastVideoObject(this);
                     const applicationScheme = hbbtv.bridge.manager.getApplicationScheme();
                     let wasPlayStateStopped = false;
                     if (p.playState === PLAY_STATE_UNREALIZED && applicationScheme === LINKED_APP_SCHEME_1_1) {
                         /* DAE vol5 Table 8 state transition #7 — PRESENTING when media is available.
-                         * A.2.4.1 / ERRATA0700–0720: if HTML5 still holds the decoders, stay
-                         * CONNECTING. For RF, wait until SI components are known. A selected
-                         * DVB-I DASH instance is not presented until dash.js has published
-                         * tracks (after the MPD GET). Treating selection as PRESENTING made
-                         * type 1.1 bindToCurrentChannel fire before serve.php saw query[]
-                         * (APPS0350). CHANNEL_STATUS_PRESENTING still completes the transition. */
+                         * A.2.4.1: if HTML5 still holds the decoders, stay CONNECTING.
+                         * RF: wait until SI components are known. DASH has no RF list
+                         * (O.5.4); present only once dash.js has published tracks.
+                         * Otherwise stay CONNECTING until CHANNEL_STATUS_PRESENTING
+                         * (after the service-list manifest GET). */
                         let present = false;
                         if (!gBroadbandAvInUse) {
                             const components = hbbtv.bridge.broadcast.getComponents(
@@ -773,6 +769,9 @@ hbbtv.objects.VideoBroadcast = (function() {
                         wasPlayStateStopped = applicationScheme === LINKED_APP_SCHEME_1_1;
                     }
                     addBridgeEventListeners.call(this);
+                    if (!gBroadbandAvInUse) {
+                        hbbtv.bridge.broadcast.setPresentationSuspended(false);
+                    }
                     dispatchPlayStateChangeEvent.call(this, p.playState);
                     if (wasPlayStateStopped) {
                         /* For PLAY_STATE_STOPPED: extra step to go into Presenting State */
@@ -2357,8 +2356,8 @@ hbbtv.objects.VideoBroadcast = (function() {
     /**
      * Linked-application "media in parallel" may bind while DVB-I RF or DASH
      * components are still loading. Complete CONNECTING → PRESENTING once
-     * getComponents is non-empty. Do not treat a selected DASH instance as
-     * ready before dash.js publishes tracks (APPS0350 MPD query race).
+     * getComponents is non-empty. A selected DASH instance has no RF
+     * component list; bind already presents it when that list stays empty.
      */
     function maybePresentWhenComponentsReady() {
         const p = privates.get(this);

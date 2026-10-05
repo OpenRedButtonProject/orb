@@ -122,14 +122,25 @@ hbbtv.objects.ChannelList = (function() {
                     otherMatch = channel;
                 }
             }
-            // Combined lists reuse ATE Test12 (99,1,12) as CHAN0150's IdentifierTriplet
-            // and as an RF instance of many *-2 services. Official APPS03xx then
-            // setChannel(getChannelByTriplet(99,1,12)) onto CHAN0150, whose
-            // notifyAppStart reports step 2 into the APPS03xx session.
-            if (otherMatch && (serviceMatches > 0 || instanceMatches > 1)) {
+            // O.5.2: a unique DVB-I IdentifierTriplet wins over classic RF.
+            // Combined lists also copy ATE Test12's (99,1,12) onto CHAN0150.
+            // Ignore that cloned IdentifierTriplet only when a different DVB-I
+            // service is already selected and the caller is hopping to the RF
+            // channel (APPS03xx). ERRATA lookups of the same triplet still
+            // return the DVB-I service.
+            if (serviceMatches === 1 && serviceMatch && otherMatch
+                    && isAppsOtherServiceHop(serviceMatch, otherMatch)) {
                 serviceMatch = undefined;
-                instanceMatch = undefined;
-            } else if (instanceMatches > 1) {
+                serviceMatches = 0;
+            }
+            if (serviceMatches === 1 && serviceMatch) {
+                // unique DVB-I service
+            } else if (instanceMatches === 1 && instanceMatch) {
+                serviceMatch = undefined;
+            } else if (instanceMatches > 1 && !otherMatch) {
+                // several DVB-I RF instances share the triplet; first instance
+            } else if (otherMatch) {
+                serviceMatch = undefined;
                 instanceMatch = undefined;
             }
             const channelData = serviceMatch || instanceMatch || otherMatch;
@@ -139,6 +150,49 @@ hbbtv.objects.ChannelList = (function() {
             return null;
         },
     });
+
+    /**
+     * Combined-list CHAN0150 copies ATE Test12's IdentifierTriplet. O.5.2 still
+     * returns that DVB-I service for a normal lookup. Official APPS03xx hop to
+     * the RF "other service" from a different DVB-I service, so ignore the clone
+     * only in that case.
+     */
+    function isCombinedListClone(service) {
+        const id = (service.ipBroadcastID || '') + ' ' + (service.name || '');
+        return /CHAN0150/i.test(id);
+    }
+
+    function isAppsOtherServiceHop(serviceMatch, otherMatch) {
+        if (!serviceMatch || !otherMatch || !isCombinedListClone(serviceMatch)) {
+            return false;
+        }
+        if (serviceMatch.onid !== otherMatch.onid
+                || serviceMatch.tsid !== otherMatch.tsid
+                || serviceMatch.sid !== otherMatch.sid) {
+            return false;
+        }
+        try {
+            const current = hbbtv.bridge.broadcast.getCurrentChannel();
+            if (!current || !current.serviceInstances) {
+                return false;
+            }
+            if (current.ccid && serviceMatch.ccid && current.ccid === serviceMatch.ccid) {
+                return false;
+            }
+            if (current.ipBroadcastID && serviceMatch.ipBroadcastID
+                    && current.ipBroadcastID === serviceMatch.ipBroadcastID) {
+                return false;
+            }
+            if (current.onid === serviceMatch.onid
+                    && current.tsid === serviceMatch.tsid
+                    && current.sid === serviceMatch.sid) {
+                return false;
+            }
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
 
     function initialise(data) {
         privates.set(this, {});

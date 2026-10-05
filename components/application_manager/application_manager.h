@@ -485,8 +485,9 @@ private:
     int m_linkedAppRestartAttempts = 0;
     bool m_linkedAppDidStart = false;
     // ProcessXmlAit already replaced the previous DVB-I service-bound app.
-    // A late CONNECTING/PLAYBACK_STARTED must not kill the app just started
-    // for the new DASH service (APPS0430 second neighbour hop).
+    // Same-service DASH/RF CONNECTING may keep that app; a leave to another
+    // DVB-I service still kills it. Stale status from the previous service
+    // is ignored (APPS0430 neighbour hop).
     bool m_dvbiXmlAitApplied = false;
 };
 
