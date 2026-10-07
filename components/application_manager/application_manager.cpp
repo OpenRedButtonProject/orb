@@ -767,7 +767,7 @@ void ApplicationManager::OnChannelChanged(uint16_t originalNetworkId,
         return;
     }
     // Late PLAYBACK_STARTED from the service we just left must not kill the
-    // XML AIT app started for the new DVB-I service (APPS0430 neighbour hop).
+    // XML AIT app started for the new DVB-I service.
     if (isDvbi && !useBroadcastAit && m_dvbiXmlAitApplied && m_app.isRunning
             && incoming.originalNetworkId == m_previousService.originalNetworkId
             && incoming.transportStreamId == m_previousService.transportStreamId
@@ -786,16 +786,16 @@ void ApplicationManager::OnChannelChanged(uint16_t originalNetworkId,
     if (isDvbi && !useBroadcastAit)
     {
         // Linked XML AIT is delivered once via Related Material, not on an RF AIT PID.
-        // Keep the current AIT across same-service DASH CONNECTING / RF overlay
-        // (ERRATA0300–0320). A real leave to another DVB-I service still kills
-        // a service-bound app.
+        // Keep a service-bound app only for a same-service DASH/RF instance overlay
+        // (incoming and the service we just left are both instances of the tuned
+        // DVB-I service). A real leave to another DVB-I service still kills it.
         m_aitTimeout.stop();
         if (m_app.isRunning && m_app.isBroadcast && m_app.isServiceBound)
         {
-            const bool rfOverlay = incoming.originalNetworkId == 99
-                    && incoming.transportStreamId == 1
-                    && incoming.serviceId == 12;
-            if (m_dvbiXmlAitApplied && rfOverlay)
+            const bool sameServiceOverlay = m_dvbiXmlAitApplied
+                    && m_sessionCallback->isInstanceInCurrentService(m_previousService)
+                    && m_sessionCallback->isInstanceInCurrentService(incoming);
+            if (sameServiceOverlay)
             {
                 LOG(LOG_INFO,
                     "DVB-I channel change: XML AIT already applied, keep running app");
