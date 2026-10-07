@@ -174,6 +174,12 @@ bool ApplicationManager::CreateApplication(uint16_t callingAppId, const std::str
         {
             LOG(LOG_INFO, "Create for ENTRY_PAGE_OR_XML_AIT_LOCATOR (url=%s)", url.c_str());
             std::string contents = m_sessionCallback->GetXmlAitContents(url);
+            if (contents == XML_AIT_FETCH_ASYNC)
+            {
+                LOG(LOG_INFO, "XML AIT fetch started asynchronously (HTML UA)");
+                result = true;
+                break;
+            }
             if (!contents.empty())
             {
                 LOG(LOG_INFO, "Locator resource is XML AIT");
@@ -201,6 +207,28 @@ bool ApplicationManager::CreateApplication(uint16_t callingAppId, const std::str
     }
 
     return result;
+}
+
+void ApplicationManager::ContinueCreateFromHttpLocator(const std::string &url,
+    const std::string &xmlAit)
+{
+    bool result = false;
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
+
+    if (!xmlAit.empty())
+    {
+        LOG(LOG_INFO, "Locator resource is XML AIT");
+        result = ProcessXmlAit(xmlAit, false);
+    }
+    else
+    {
+        LOG(LOG_INFO, "Locator resource is ENTRY PAGE");
+        result = RunApp(App::CreateAppFromUrl(url));
+    }
+    if (!result)
+    {
+        m_sessionCallback->DispatchApplicationLoadErrorEvent();
+    }
 }
 
 /**

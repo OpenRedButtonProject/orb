@@ -33,6 +33,7 @@
 #include "app.h"
 
 #define INVALID_APP_ID 0
+#define XML_AIT_FETCH_ASYNC "\x1eORB_XML_AIT_ASYNC"
 
 class ApplicationManager {
 public:
@@ -155,6 +156,13 @@ public:
      * @return true if the application can be created, otherwise false
      */
     bool CreateApplication(uint16_t callingAppId, const std::string &url);
+
+    /**
+     * Complete createApplication() after an asynchronous HTML UA XML AIT fetch.
+     * @param url The HTTP(S) locator passed to createApplication.
+     * @param xmlAit XML AIT body, or empty to treat the locator as an entry page.
+     */
+    void ContinueCreateFromHttpLocator(const std::string &url, const std::string &xmlAit);
 
     /**
      * Destroy the calling application.
