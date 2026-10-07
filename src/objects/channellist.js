@@ -123,11 +123,12 @@ hbbtv.objects.ChannelList = (function() {
                 }
             }
             // O.5.2: a unique DVB-I IdentifierTriplet wins over classic RF.
-            // Combined lists also copy ATE Test12's (99,1,12) onto CHAN0150.
-            // Ignore that cloned IdentifierTriplet only when a different DVB-I
-            // service is already selected and the caller is hopping to the RF
-            // channel (APPS03xx). ERRATA lookups of the same triplet still
-            // return the DVB-I service.
+            // Combined lists may also expose a classic RF Channel with the
+            // same triplet as a DVB-I service IdentifierTriplet. Ignore that
+            // cloned IdentifierTriplet only when a different DVB-I service is
+            // already selected and the caller is hopping to the RF channel.
+            // Lookups of the same triplet from that service, or when RF is
+            // current, still return the DVB-I service.
             if (serviceMatches === 1 && serviceMatch && otherMatch
                     && isAppsOtherServiceHop(serviceMatch, otherMatch)) {
                 serviceMatch = undefined;
@@ -152,18 +153,13 @@ hbbtv.objects.ChannelList = (function() {
     });
 
     /**
-     * Combined-list CHAN0150 copies ATE Test12's IdentifierTriplet. O.5.2 still
-     * returns that DVB-I service for a normal lookup. Official APPS03xx hop to
-     * the RF "other service" from a different DVB-I service, so ignore the clone
-     * only in that case.
+     * Combined lists can copy an RF triplet onto a DVB-I service
+     * IdentifierTriplet. O.5.2 still returns that DVB-I service for a
+     * normal lookup. When a different DVB-I service is already selected,
+     * treat the call as a hop to the RF channel and ignore the clone.
      */
-    function isCombinedListClone(service) {
-        const id = (service.ipBroadcastID || '') + ' ' + (service.name || '');
-        return /CHAN0150/i.test(id);
-    }
-
     function isAppsOtherServiceHop(serviceMatch, otherMatch) {
-        if (!serviceMatch || !otherMatch || !isCombinedListClone(serviceMatch)) {
+        if (!serviceMatch || !otherMatch) {
             return false;
         }
         if (serviceMatch.onid !== otherMatch.onid

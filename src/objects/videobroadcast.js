@@ -747,12 +747,24 @@ hbbtv.objects.VideoBroadcast = (function() {
                     if (p.playState === PLAY_STATE_UNREALIZED && applicationScheme === LINKED_APP_SCHEME_1_1) {
                         /* DAE vol5 Table 8 state transition #7 — PRESENTING when media is available.
                          * A.2.4.1: if HTML5 still holds the decoders, stay CONNECTING.
-                         * RF: wait until SI components are known. DASH has no RF list
-                         * (O.5.4); present only once dash.js has published tracks.
-                         * Otherwise stay CONNECTING until CHANNEL_STATUS_PRESENTING
-                         * (after the service-list manifest GET). */
+                         * RF: wait until SI components are known. A selected DASH
+                         * instance has no RF getComponents list (O.5.4); present
+                         * immediately when that list stays empty so type 1.1 does
+                         * not remain CONNECTING. Wait for a non-empty list only
+                         * when dash.js has published tracks, so the player requests
+                         * the service-list manifest (with the pre-play query) before
+                         * bind (TS 103 770 §5.2.3.2.4). */
                         let present = false;
-                        if (!gBroadbandAvInUse) {
+                        if (gBroadbandAvInUse) {
+                            present = false;
+                        } else if (
+                            isSelectedDashInstance(
+                                channelData,
+                                channelData.currentInstanceIndex
+                            )
+                        ) {
+                            present = true;
+                        } else {
                             const components = hbbtv.bridge.broadcast.getComponents(
                                 channelData.ccid,
                                 -1
@@ -2354,10 +2366,11 @@ hbbtv.objects.VideoBroadcast = (function() {
     }
 
     /**
-     * Linked-application "media in parallel" may bind while DVB-I RF or DASH
+     * Linked-application "media in parallel" may bind while DVB-I RF
      * components are still loading. Complete CONNECTING → PRESENTING once
      * getComponents is non-empty. A selected DASH instance has no RF
-     * component list; bind already presents it when that list stays empty.
+     * component list (O.5.4); bind presents it when that list stays empty.
+     * This helper only completes the wait after dash.js has published tracks.
      */
     function maybePresentWhenComponentsReady() {
         const p = privates.get(this);
