@@ -234,13 +234,16 @@ bool ApplicationManager::DestroyApplication(uint16_t callingAppId)
     // Application.destroyApplication() of a type 1.2 linked app: do not
     // restart this XML AIT. The DVB-I client discards the instance and
     // selects another (TS 103 770 §5.2.13 / errata #13697).
-    if (scheme == LINKED_APP_SCHEME_1_2)
+    if (scheme == LINKED_APP_SCHEME_1_2 || scheme == LINKED_APP_SCHEME_1_3)
     {
-        LOG(LOG_INFO, "LA 1.2 destroyApplication(); skip AIT autostart (5.2.13 instance discard)");
+        LOG(LOG_INFO, "LA %s destroyApplication(); skip AIT autostart",
+            scheme == LINKED_APP_SCHEME_1_3 ? "1.3" : "1.2");
         // No follow-on app will init video/broadcast, so unsuspend here.
         // The client must still discard/reselect (and may unsuspend again).
         m_sessionCallback->ResetBroadcastPresentation();
-        return true;
+        /* Only type 1.2 requests instance discard. Type 1.3 success chains
+         * in DvbIClient; returning true here relaunched 1.3 (APPS0300). */
+        return scheme == LINKED_APP_SCHEME_1_2;
     }
     OnRunningAppExited();
     return false;
@@ -321,7 +324,7 @@ uint16_t ApplicationManager::SetKeySetMask(uint16_t appId, uint16_t keySetMask, 
     // VK_REWIND and VK_RECORD shall always be available to linked applications
     // that are controlling media presentation without requiring the application
     // to be activated first (2.0.4, App. O.7)
-    bool isException = isLinkedAppScheme12 && m_app.versionMinor == 7;
+    bool isException = isLinkedAppScheme12 && m_app.versionMinor >= 7;
 
     if (!m_app.isActivated && currentScheme != LINKED_APP_SCHEME_2) {
         if ((keySetMask & KEY_SET_VCR) != 0 && isOldVersion && !isException) {
@@ -546,6 +549,7 @@ bool ApplicationManager::ProcessXmlAit(const std::string &xmlAit, const bool &is
         m_ait.Clear();
         m_currentServiceAitPid = UINT16_MAX;
         m_ait.ApplyAitTable(aitTable);
+        m_dvbiXmlAitApplied = true;
 
         if (!m_currentServiceReceivedFirstAit)
         {
@@ -750,19 +754,30 @@ void ApplicationManager::OnChannelChanged(uint16_t originalNetworkId,
     DBGLOG("(current serviceId: %u, new serviceId %u, isDvbi=%d, useBroadcastAit=%d)",
         m_currentService.serviceId, serviceId, isDvbi, useBroadcastAit);
     std::lock_guard<std::recursive_mutex> lock(m_lock);
-    if (m_currentService.originalNetworkId == originalNetworkId &&
-        m_currentService.transportStreamId == transportStreamId &&
-        m_currentService.serviceId == serviceId)
-    {
-        DBGLOG("Ignoring duplicate CONNECTING for the same service");
-        return;
-    }
-    m_previousService = m_currentService;
-    m_currentService = {
+    Utils::S_DVB_TRIPLET incoming = {
         .originalNetworkId = originalNetworkId,
         .transportStreamId = transportStreamId,
         .serviceId = serviceId,
     };
+    if (m_currentService.originalNetworkId == incoming.originalNetworkId &&
+        m_currentService.transportStreamId == incoming.transportStreamId &&
+        m_currentService.serviceId == incoming.serviceId)
+    {
+        DBGLOG("Ignoring duplicate CONNECTING for the same service");
+        return;
+    }
+    // Late PLAYBACK_STARTED from the service we just left must not kill the
+    // XML AIT app started for the new DVB-I service.
+    if (isDvbi && !useBroadcastAit && m_dvbiXmlAitApplied && m_app.isRunning
+            && incoming.originalNetworkId == m_previousService.originalNetworkId
+            && incoming.transportStreamId == m_previousService.transportStreamId
+            && incoming.serviceId == m_previousService.serviceId)
+    {
+        LOG(LOG_INFO, "DVB-I channel change: ignore stale status from the previous service");
+        return;
+    }
+    m_previousService = m_currentService;
+    m_currentService = incoming;
     m_currentServiceReceivedFirstAit = false;
     m_currentServiceAitPid = 0;
     m_linkedAppRestartCount = 0;
@@ -771,20 +786,34 @@ void ApplicationManager::OnChannelChanged(uint16_t originalNetworkId,
     if (isDvbi && !useBroadcastAit)
     {
         // Linked XML AIT is delivered once via Related Material, not on an RF AIT PID.
-        // Keep the current AIT so a running 1.1 app survives DASH CONNECTING and setChannel
-        // onto a native DASH service that does not re-signal the app (ERRATA0300–0320).
+        // Keep a service-bound app only for a same-service DASH/RF instance overlay
+        // (incoming and the service we just left are both instances of the tuned
+        // DVB-I service). A real leave to another DVB-I service still kills it.
         m_aitTimeout.stop();
         if (m_app.isRunning && m_app.isBroadcast && m_app.isServiceBound)
         {
-            LOG(LOG_INFO, "Kill running app (DVB-I service bound, left the service)");
-            KillRunningApp();
+            const bool sameServiceOverlay = m_dvbiXmlAitApplied
+                    && m_sessionCallback->isInstanceInCurrentService(m_previousService)
+                    && m_sessionCallback->isInstanceInCurrentService(incoming);
+            if (sameServiceOverlay)
+            {
+                LOG(LOG_INFO,
+                    "DVB-I channel change: XML AIT already applied, keep running app");
+            }
+            else
+            {
+                LOG(LOG_INFO, "Kill running app (DVB-I service bound, left the service)");
+                KillRunningApp();
+            }
         }
         else
         {
             LOG(LOG_INFO, "DVB-I channel change: skip AIT timeout (linked XML AIT is one-shot)");
         }
+        m_dvbiXmlAitApplied = false;
         return;
     }
+    m_dvbiXmlAitApplied = false;
     if (isDvbi)
     {
         LOG(LOG_INFO, "DVB-I RF instance: start AIT timeout for broadcast AIT (serviceId=%u)",
@@ -1213,7 +1242,8 @@ void ApplicationManager::KillRunningApp()
 bool ApplicationManager::IsDvbiLinkedApp() const
 {
     const std::string scheme = m_app.getScheme();
-    if (scheme == LINKED_APP_SCHEME_1_2 || scheme == LINKED_APP_SCHEME_2)
+    if (scheme == LINKED_APP_SCHEME_1_2 || scheme == LINKED_APP_SCHEME_1_3
+        || scheme == LINKED_APP_SCHEME_2)
     {
         return true;
     }

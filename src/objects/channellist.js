@@ -96,28 +96,53 @@ hbbtv.objects.ChannelList = (function() {
             //  3) If both 1 and 2 apply -> return the service
             // Classic RF / other Channel objects are used only when neither applies.
             let serviceMatch = undefined;
+            let serviceMatches = 0;
             let instanceMatch = undefined;
+            let instanceMatches = 0;
             let otherMatch = undefined;
             for (let channel of p.channelDataList) {
                 if (channel.serviceInstances) {
-                    if (!serviceMatch && isMatch(channel)) {
-                        serviceMatch = channel;
-                    }
-                    if (!instanceMatch) {
-                        for (let instance of channel.serviceInstances) {
-                            if (isMatch(instance)) {
-                                instance.parentService = channel;
-                                instanceMatch = instance;
-                                break;
-                            }
+                    if (isMatch(channel)) {
+                        serviceMatches++;
+                        if (!serviceMatch) {
+                            serviceMatch = channel;
                         }
                     }
-                    if (serviceMatch && instanceMatch) {
-                        break;
+                    for (let instance of channel.serviceInstances) {
+                        if (isMatch(instance)) {
+                            instanceMatches++;
+                            if (!instanceMatch) {
+                                instance.parentService = channel;
+                                instanceMatch = instance;
+                            }
+                            break;
+                        }
                     }
                 } else if (!otherMatch && isMatch(channel)) {
                     otherMatch = channel;
                 }
+            }
+            // O.5.2: a unique DVB-I IdentifierTriplet wins over classic RF.
+            // Combined lists may also expose a classic RF Channel with the
+            // same triplet as a DVB-I service IdentifierTriplet. Ignore that
+            // cloned IdentifierTriplet only when a different DVB-I service is
+            // already selected and the caller is hopping to the RF channel.
+            // Lookups of the same triplet from that service, or when RF is
+            // current, still return the DVB-I service.
+            if (serviceMatches === 1 && serviceMatch && otherMatch
+                    && isAppsOtherServiceHop(serviceMatch, otherMatch)) {
+                serviceMatch = undefined;
+                serviceMatches = 0;
+            }
+            if (serviceMatches === 1 && serviceMatch) {
+                // unique DVB-I service
+            } else if (instanceMatches === 1 && instanceMatch) {
+                serviceMatch = undefined;
+            } else if (instanceMatches > 1 && !otherMatch) {
+                // several DVB-I RF instances share the triplet; first instance
+            } else if (otherMatch) {
+                serviceMatch = undefined;
+                instanceMatch = undefined;
             }
             const channelData = serviceMatch || instanceMatch || otherMatch;
             if (channelData) {
@@ -126,6 +151,44 @@ hbbtv.objects.ChannelList = (function() {
             return null;
         },
     });
+
+    /**
+     * Combined lists can copy an RF triplet onto a DVB-I service
+     * IdentifierTriplet. O.5.2 still returns that DVB-I service for a
+     * normal lookup. When a different DVB-I service is already selected,
+     * treat the call as a hop to the RF channel and ignore the clone.
+     */
+    function isAppsOtherServiceHop(serviceMatch, otherMatch) {
+        if (!serviceMatch || !otherMatch) {
+            return false;
+        }
+        if (serviceMatch.onid !== otherMatch.onid
+                || serviceMatch.tsid !== otherMatch.tsid
+                || serviceMatch.sid !== otherMatch.sid) {
+            return false;
+        }
+        try {
+            const current = hbbtv.bridge.broadcast.getCurrentChannel();
+            if (!current || !current.serviceInstances) {
+                return false;
+            }
+            if (current.ccid && serviceMatch.ccid && current.ccid === serviceMatch.ccid) {
+                return false;
+            }
+            if (current.ipBroadcastID && serviceMatch.ipBroadcastID
+                    && current.ipBroadcastID === serviceMatch.ipBroadcastID) {
+                return false;
+            }
+            if (current.onid === serviceMatch.onid
+                    && current.tsid === serviceMatch.tsid
+                    && current.sid === serviceMatch.sid) {
+                return false;
+            }
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
 
     function initialise(data) {
         privates.set(this, {});

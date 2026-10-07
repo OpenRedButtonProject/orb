@@ -225,7 +225,6 @@ abstract class WebResourceClient {
                 requestHeaders.put("Cookie", cookie);
             }
         }
-
         Response httpResponse = mHttpClient.newCall(new Request.Builder()
                 .url(url)
                 .method("OPTIONS", null)
@@ -270,7 +269,6 @@ abstract class WebResourceClient {
                 requestHeaders.put("Cookie", cookie);
             }
         }
-
         if (mDoNotTrackEnabled) {
             requestHeaders.put("DNT", "1");
         }
@@ -281,7 +279,8 @@ abstract class WebResourceClient {
                 .headers(Headers.of(requestHeaders))
                 .build()).execute();
 
-        Log.d(TAG, "HTTP response code: " + httpResponse.code() + ", for URL: " + url);
+        Log.d(TAG, "HTTP response code: " + httpResponse.code() + ", for URL: " + url
+                + " cookie=" + getHeaderIgnoreCase(requestHeaders, "Cookie"));
         boolean isRedirect = (httpResponse.code() >= 301 && httpResponse.code() <= 308);
         boolean isError = !httpResponse.isSuccessful() && !isRedirect;
 

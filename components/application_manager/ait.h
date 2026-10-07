@@ -57,6 +57,7 @@
 
 #define LINKED_APP_SCHEME_1_1 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.1"
 #define LINKED_APP_SCHEME_1_2 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.2"
+#define LINKED_APP_SCHEME_1_3 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.3"
 #define LINKED_APP_SCHEME_2 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:2"
 #define LINKED_APP_SCHEME_4_1 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:4.1"
 #define LINKED_APP_SCHEME_4_2 "urn:dvb:metadata:cs:LinkedApplicationCS:2019:4.2"

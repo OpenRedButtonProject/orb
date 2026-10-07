@@ -21,6 +21,7 @@ hbbtv.objects.ApplicationManager = (function() {
     const privates = new WeakMap();
     const gGarbageCollectionBlocked = new Set();
     const LINKED_APP_SCHEME_1_2 = "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.2";
+    const LINKED_APP_SCHEME_1_3 = "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.3";
     const LINKED_APP_SCHEME_2 = "urn:dvb:metadata:cs:LinkedApplicationCS:2019:2";
     const LINKED_APP_SCHEME_4_1 = "urn:dvb:metadata:cs:LinkedApplicationCS:2019:4.1";
     const LINKED_APP_SCHEME_4_2 = "urn:dvb:metadata:cs:LinkedApplicationCS:2019:4.2";
@@ -106,6 +107,9 @@ hbbtv.objects.ApplicationManager = (function() {
             switch (event.scheme) {
                 case LINKED_APP_SCHEME_1_2:
                     currentURL.searchParams.set("lloc", "service");
+                    break;
+                case LINKED_APP_SCHEME_1_3:
+                    currentURL.searchParams.set("lloc", "preroll");
                     break;
                 case LINKED_APP_SCHEME_2:
                     currentURL.searchParams.set("lloc", "availability");

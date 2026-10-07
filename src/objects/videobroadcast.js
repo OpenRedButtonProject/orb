@@ -741,19 +741,19 @@ hbbtv.objects.VideoBroadcast = (function() {
                     console.log('Control DVB presentation!');
                     // A.2.4.1 / ERRATA0700–0720: binding v/b while HTML5/AV
                     // still holds decoders must not unsuspend native presentation.
-                    if (!gBroadbandAvInUse) {
-                        hbbtv.bridge.broadcast.setPresentationSuspended(false);
-                    }
                     hbbtv.holePuncher.setBroadcastVideoObject(this);
                     const applicationScheme = hbbtv.bridge.manager.getApplicationScheme();
                     let wasPlayStateStopped = false;
                     if (p.playState === PLAY_STATE_UNREALIZED && applicationScheme === LINKED_APP_SCHEME_1_1) {
                         /* DAE vol5 Table 8 state transition #7 — PRESENTING when media is available.
-                         * O.5.4 / ERRATA0400: a selected DVB-I DASH instance is already presented
-                         * by the native player and does not expose RF-style getComponents. Do not
-                         * wait for an empty component list. A.2.4.1 / ERRATA0700–0720: if HTML5
-                         * still holds the decoders, stay CONNECTING. For RF, wait until SI
-                         * components are known. */
+                         * A.2.4.1: if HTML5 still holds the decoders, stay CONNECTING.
+                         * RF: wait until SI components are known. A selected DASH
+                         * instance has no RF getComponents list (O.5.4); present
+                         * immediately when that list stays empty so type 1.1 does
+                         * not remain CONNECTING. Wait for a non-empty list only
+                         * when dash.js has published tracks, so the player requests
+                         * the service-list manifest (with the pre-play query) before
+                         * bind (TS 103 770 §5.2.3.2.4). */
                         let present = false;
                         if (gBroadbandAvInUse) {
                             present = false;
@@ -781,6 +781,9 @@ hbbtv.objects.VideoBroadcast = (function() {
                         wasPlayStateStopped = applicationScheme === LINKED_APP_SCHEME_1_1;
                     }
                     addBridgeEventListeners.call(this);
+                    if (!gBroadbandAvInUse) {
+                        hbbtv.bridge.broadcast.setPresentationSuspended(false);
+                    }
                     dispatchPlayStateChangeEvent.call(this, p.playState);
                     if (wasPlayStateStopped) {
                         /* For PLAY_STATE_STOPPED: extra step to go into Presenting State */
@@ -2363,9 +2366,11 @@ hbbtv.objects.VideoBroadcast = (function() {
     }
 
     /**
-     * Linked-application "media in parallel" may bind while DVB-I RF components are still loading.
-     * Complete CONNECTING → PRESENTING once components are available, or immediately for a
-     * selected DVB-I DASH instance (O.5.4 / ERRATA0400).
+     * Linked-application "media in parallel" may bind while DVB-I RF
+     * components are still loading. Complete CONNECTING → PRESENTING once
+     * getComponents is non-empty. A selected DASH instance has no RF
+     * component list (O.5.4); bind presents it when that list stays empty.
+     * This helper only completes the wait after dash.js has published tracks.
      */
     function maybePresentWhenComponentsReady() {
         const p = privates.get(this);
@@ -2386,18 +2391,11 @@ hbbtv.objects.VideoBroadcast = (function() {
             return;
         }
         try {
-            const dashReady = isSelectedDashInstance(
-                p.currentChannelData,
-                p.currentInstanceIndex
+            const components = hbbtv.bridge.broadcast.getComponents(
+                p.currentChannelData.ccid,
+                -1
             );
-            let ready = dashReady;
-            if (!ready) {
-                const components = hbbtv.bridge.broadcast.getComponents(
-                    p.currentChannelData.ccid,
-                    -1
-                );
-                ready = !!(components && components.length > 0);
-            }
+            let ready = !!(components && components.length > 0);
             if (ready) {
                 p.playState = PLAY_STATE_PRESENTING;
                 if (p.pendingChannelChangeSucceeded) {

@@ -139,6 +139,7 @@ class ApplicationManager {
 
     public void destroyApplication(int callingAppId) {
         // Notify only when JNI killed a running type 1.2 app (skip-autostart).
+        // Type 1.3 returns false so success can chain without discarding.
         // Early-out or EXIT (callingAppId 0) must not discard the next instance.
         if (jniDestroyApplication(callingAppId)) {
             Log.i(TAG, "LA 1.2 destroyApplication(); requesting DVB-I instance discard");
