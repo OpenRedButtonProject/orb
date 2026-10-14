@@ -66,7 +66,7 @@ class OrbSession implements IOrbSession {
         mOrbSessionCallback = callback;
         mConfiguration = configuration;
         mContext = context;
-        mApplicationManager = new ApplicationManager(mOrbSessionCallback);
+        mApplicationManager = new ApplicationManager(mContext, mOrbSessionCallback);
         mOrbHbbTVVersion = mApplicationManager.getOrbHbbTVVersion();
         Log.d(TAG, "ORB HbbTV Version: " + mOrbHbbTVVersion);
 
