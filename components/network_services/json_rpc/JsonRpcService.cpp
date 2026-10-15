@@ -1026,18 +1026,9 @@ JsonRpcService::JsonRpcStatus JsonRpcService::RequestLinkedAppCompletion(int con
     LOG(LOG_INFO, "linked-app completion method=%s", method.c_str());
     m_sessionCallback->NotifyLinkedAppCompletion(method, paramsJson);
 
-    /* TS 103 770 §5.2.3.8: preplay_* responses use result "org.dvb.la.Success".
-     * Type 4.x completion keeps the existing {method} object for Package 7. */
-    Json::Value result;
-    if (method == MD_LA_PREPLAY_SUCCESS || method == MD_LA_PREPLAY_FAILURE)
-    {
-        result = "org.dvb.la.Success";
-    }
-    else
-    {
-        result = Json::Value(Json::objectValue);
-        result["method"] = method;
-    }
+    /* TS 103 770 §5.2.3.8.2.1: the terminal acknowledges linked-app completion
+     * (sl_install_*, consent_*, renew_*, preplay_*) with result "org.dvb.la.Success". */
+    Json::Value result = "org.dvb.la.Success";
     SendJsonMessageToClient(connectionId, CreateJsonResponse(id, result));
     return JsonRpcStatus::SUCCESS;
 }
