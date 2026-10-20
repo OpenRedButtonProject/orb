@@ -17,6 +17,11 @@
 hbbtv.objects.MediaElementExtension = (function() {
     const privates = new WeakMap();
     const MEDIA_PROXY_ID = 'HTMLMediaElement';
+    // Page Media Source elements that are holding the decoders (A.2.4.1).
+    // dash.js playback is not in this set: initialise() upgrades those elements
+    // and their play() reports broadband AV itself.
+    const msePlayers = new Set();
+    const mseReleaseBound = new WeakSet();
     const props = [
         'autoplay',
         'controls',
@@ -78,6 +83,84 @@ hbbtv.objects.MediaElementExtension = (function() {
             return Promise.resolve();
         };
 
+    function isUpgradedMediaElement(element) {
+        const state = privates.get(element);
+        return !!(state && state.iframe);
+    }
+
+    // blob: is URL.createObjectURL(mediaSource). srcObject may be the MediaSource
+    // itself. Neither is an MPD, so initialise() must keep refusing them.
+    function isApplicationMseSource(element) {
+        if (isUpgradedMediaElement(element)) {
+            return false;
+        }
+        let src = '';
+        try {
+            src = mediaOwnProperties.src.get.call(element) || '';
+        } catch (e) {
+            src = '';
+        }
+        if (!src && element.getAttribute) {
+            src = element.getAttribute('src') || '';
+        }
+        if (src.startsWith('blob:')) {
+            return true;
+        }
+        try {
+            return typeof MediaSource !== 'undefined' && element.srcObject instanceof MediaSource;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function otherHtmlMediaPlaying(except) {
+        const nodes = document.querySelectorAll('video, audio');
+        for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+            if (node !== except && !node.paused && !node.ended) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function releaseApplicationMse(element) {
+        msePlayers.delete(element);
+        if (msePlayers.size === 0 && !otherHtmlMediaPlaying(element)) {
+            try {
+                hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
+            } catch (e) {}
+        }
+    }
+
+    function onApplicationMseReleased(event) {
+        const element = event.currentTarget;
+        if (isUpgradedMediaElement(element)) {
+            msePlayers.delete(element);
+            return;
+        }
+        // Assigning the blob: URL fires emptied before the first frame. The
+        // Media Source is still attached, so this is not the element stopping.
+        if (event.type === 'emptied' && isApplicationMseSource(element) && !element.ended) {
+            return;
+        }
+        releaseApplicationMse(element);
+    }
+
+    function retainApplicationMse(element) {
+        msePlayers.add(element);
+        if (!mseReleaseBound.has(element)) {
+            mseReleaseBound.add(element);
+            element.addEventListener('ended', onApplicationMseReleased);
+            element.addEventListener('emptied', onApplicationMseReleased);
+        }
+        try {
+            // Before native play(), so the WebView can leave the broadcast
+            // hole-punch before the first frame. Does not change v/b play state.
+            hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(true);
+        } catch (e) {}
+    }
+
     // Override default play() and load() for the case where it is being called
     // immediatelly after setting its source. Due to the fact
     // that the upgrade is asynchronous, the call is being skipped,
@@ -87,8 +170,19 @@ hbbtv.objects.MediaElementExtension = (function() {
         const thiz = this;
         return new Promise((resolve, reject) => {
             setTimeout(() => {
-                const playPromise = privates.get(thiz) ? thiz.play() : __play.call(thiz);
-                playPromise.then(resolve).catch(reject);
+                // MPD elements are upgraded inside this turn and report broadband
+                // AV from the dash.js proxy. A page Media Source is not upgraded
+                // (ERRATA0200, ERRATA0210, ADB_SWITCH05/06, ADB_TA03/10).
+                if (!isUpgradedMediaElement(thiz) && isApplicationMseSource(thiz)) {
+                    retainApplicationMse(thiz);
+                }
+                const playPromise = isUpgradedMediaElement(thiz) ? thiz.play() : __play.call(thiz);
+                playPromise.then(resolve).catch((error) => {
+                    if (msePlayers.has(thiz) && (thiz.paused || thiz.error)) {
+                        releaseApplicationMse(thiz);
+                    }
+                    reject(error);
+                });
             }, 0);
         });
     };
@@ -142,7 +236,23 @@ hbbtv.objects.MediaElementExtension = (function() {
                 this.src = value;
                 return;
             }
-            return setAttribute.apply(this, arguments);
+            const applied = setAttribute.apply(this, arguments);
+            // src="" (teardownHtml5Video) drops the Media Source. Pause is not
+            // a release: a paused frame must stay composited, and v/b stop()
+            // uses the same suspension flag (ADB_SWITCH04).
+            if (name === 'src' && msePlayers.has(this) && !isApplicationMseSource(this)) {
+                releaseApplicationMse(this);
+            }
+            return applied;
+        };
+
+        const removeAttribute = HTMLMediaElement.prototype.removeAttribute;
+        HTMLMediaElement.prototype.removeAttribute = function(name) {
+            const applied = removeAttribute.apply(this, arguments);
+            if (name === 'src' && msePlayers.has(this) && !isApplicationMseSource(this)) {
+                releaseApplicationMse(this);
+            }
+            return applied;
         };
     }
 
