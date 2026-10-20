@@ -40,16 +40,18 @@ hbbtv.mediaManager = (function() {
             }).result,
     };
 
-    hbbtv.bridge = {
-        configuration: {
-            getPreferredAudioLanguage: () =>
-                hbbtv.native.request('Configuration.getPreferredAudioLanguage').result,
-            getCleanAudioEnabled: () =>
-                hbbtv.native.request('Configuration.getCleanAudioEnabled').result,
-            getSubtitlesEnabled: () =>
-                hbbtv.native.request('Configuration.getSubtitlesEnabled').result
-        },
-    };
+    if (!hbbtv.bridge) {
+        hbbtv.bridge = {};
+    }
+    if (!hbbtv.bridge.configuration) {
+        hbbtv.bridge.configuration = {};
+    }
+    hbbtv.bridge.configuration.getPreferredAudioLanguage = () =>
+        hbbtv.native.request('Configuration.getPreferredAudioLanguage').result;
+    hbbtv.bridge.configuration.getCleanAudioEnabled = () =>
+        hbbtv.native.request('Configuration.getCleanAudioEnabled').result;
+    hbbtv.bridge.configuration.getSubtitlesEnabled = () =>
+        hbbtv.native.request('Configuration.getSubtitlesEnabled').result;
 
     function initialise() {
         addMutationIntercept();

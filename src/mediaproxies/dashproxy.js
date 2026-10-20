@@ -281,24 +281,47 @@ hbbtv.objects.DashProxy = (function() {
     function onTextTrackChange() {
         const p = privates.get(this);
         if (p) {
+            const terminalOn = hbbtv.bridge.configuration.getSubtitlesEnabled();
             let index = -1;
-            for (let i = 0; i < this.textTracks.length; ++i) {
-                let track = this.textTracks[i];
-                // The previously stored mode lets us tell which track has just been
-                // switched to 'showing' when more than one is 'showing' at once, so
-                // we can honour the newest selection (only one may be shown at a time).
-                let state = privates.get(track) ?? track.mode;
-                if (track.mode === 'showing' && (index === -1 || state !== 'showing')) {
-                    if (index >= 0) {
-                        this.textTracks[index].mode = 'hidden';
+            if (terminalOn) {
+                for (let i = 0; i < this.textTracks.length; ++i) {
+                    let track = this.textTracks[i];
+                    // The previously stored mode lets us tell which track has just been
+                    // switched to 'showing' when more than one is 'showing' at once, so
+                    // we can honour the newest selection (only one may be shown at a time).
+                    let state = privates.get(track) ?? track.mode;
+                    if (track.mode === 'showing' && (index === -1 || state !== 'showing')) {
+                        if (index >= 0) {
+                            this.textTracks[index].mode = 'hidden';
+                        }
+                        index = i;
+                    } else {
+                        track.mode = 'hidden';
                     }
-                    index = i;
-                } else {
-                    track.mode = 'hidden';
+                    privates.set(track, track.mode);
                 }
-                privates.set(track, track.mode);
             }
-            p.player.setTextTrack(index);
+            console.log('DashProxy: setTextTrack index=' + index + ' terminalOn=' + terminalOn);
+            try {
+                p.player.setTextTrack(index);
+            } catch (e) {
+                console.warn('DashProxy: setTextTrack failed', e);
+            }
+            if (typeof p.player.enableText === 'function') {
+                try {
+                    p.player.enableText(index >= 0);
+                } catch (e) {
+                    console.warn('DashProxy: enableText failed', e);
+                }
+            }
+            const subs = document.getElementById('orb_subsPH');
+            if (subs) {
+                subs.style.visibility = index >= 0 ? 'visible' : 'hidden';
+                subs.style.display = index >= 0 ? 'block' : 'none';
+                if (index < 0) {
+                    subs.innerHTML = '';
+                }
+            }
         }
     }
 
@@ -723,6 +746,9 @@ hbbtv.objects.DashProxy = (function() {
                         backgroundAttempts: 1,
                         timeBetweenSyncAttempts: 5,
                     },
+                    text: {
+                        defaultEnabled: false,
+                    },
                 },
                 errors: {
                     recoverAttempts: {
@@ -743,8 +769,62 @@ hbbtv.objects.DashProxy = (function() {
             for (const scheme of PARENTAL_CONTROL_EVENT_SCHEMES) {
                 p.player.on(scheme, p.onParentalRatingChange);
             }
-            p.player.attachTTMLRenderingDiv(document.getElementById('orb_subsPH'));
+            const subs = document.getElementById('orb_subsPH');
+            if (subs) {
+                subs.style.position = 'absolute';
+                subs.style.left = '0';
+                subs.style.top = '0';
+                subs.style.width = '100%';
+                subs.style.height = '100%';
+                subs.style.overflow = 'hidden';
+                subs.style.pointerEvents = 'none';
+                subs.style.zIndex = '2';
+            }
+            this.style.position = 'absolute';
+            this.style.left = '0';
+            this.style.top = '0';
+            this.style.width = '100%';
+            this.style.height = '100%';
+            this.style.zIndex = '1';
+            this.style.transform = 'translateZ(0)';
+            this.style.webkitTransform = 'translateZ(0)';
+            p.player.attachTTMLRenderingDiv(subs);
             this.textTracks.addEventListener('change', p.onTextTrackChange);
+            p.lastTerminalSubs = !!hbbtv.bridge.configuration.getSubtitlesEnabled();
+            const applyTerminalSubs = function(force) {
+                let now = p.lastTerminalSubs;
+                try {
+                    now = !!hbbtv.bridge.configuration.getSubtitlesEnabled();
+                } catch (e) {
+                    console.warn('DashProxy: getSubtitlesEnabled failed', e);
+                }
+                if (force || now !== p.lastTerminalSubs) {
+                    console.log('DashProxy: terminal subtitles ' + now);
+                    p.lastTerminalSubs = now;
+                    p.onTextTrackChange();
+                }
+            };
+            window.__orbApplyTerminalSubtitles = function() {
+                applyTerminalSubs(true);
+            };
+            window.addEventListener('message', function(e) {
+                try {
+                    const msg = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+                    if (msg && msg.name === 'dispatchBridgeEvent' &&
+                            msg.args && msg.args[0] === 'SubtitlesEnabledChanged') {
+                        applyTerminalSubs(true);
+                    }
+                } catch (err) {}
+            });
+            if (hbbtv.bridge.addStrongEventListener) {
+                hbbtv.bridge.addStrongEventListener('SubtitlesEnabledChanged', function() {
+                    applyTerminalSubs(true);
+                });
+            }
+            p.subsPoll = setInterval(function() {
+                applyTerminalSubs(false);
+            }, 400);
+            p.onTextTrackChange();
 
             console.log('DashProxy: Initialised DashProxy.');
         } else {

@@ -257,14 +257,20 @@ hbbtv.objects.NativeProxy = (function() {
     function onTextTrackChange() {
         const p = privates.get(this);
         let index = -1;
-        for (let i = 0; i < this.textTracks.length; ++i) {
-            if (this.textTracks[i].mode === 'showing') {
-                index = i;
-                break;
+        if (hbbtv.bridge.configuration.getSubtitlesEnabled()) {
+            for (let i = 0; i < this.textTracks.length; ++i) {
+                if (this.textTracks[i].mode === 'showing') {
+                    index = i;
+                    break;
+                }
             }
         }
         if (p.textTracks) {
             p.textTracks.setCurrentTrackIdx(index);
+        }
+        const subs = document.getElementById('orb_subsPH');
+        if (subs) {
+            subs.style.visibility = index >= 0 ? 'visible' : 'hidden';
         }
     }
 

@@ -837,6 +837,16 @@ class OrbSession implements IOrbSession {
     }
 
     /**
+     * Called when the user enables or disables subtitles.
+     *
+     * @param enabled true if subtitles are enabled
+     */
+    @Override
+    public void onSubtitlesEnabledChanged(boolean enabled) {
+        mBridge.dispatchSubtitlesEnabledChanged(enabled);
+    }
+
+    /**
      * Called when the user has decided whether the application at origin should be allowed access
      * to a distinctive identifier.
      *

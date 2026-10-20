@@ -243,6 +243,13 @@ public interface IOrbSession {
     void onPreferredAudioLanguageChanged(String language);
 
     /**
+     * Called when the user enables or disables subtitles.
+     *
+     * @param enabled true if subtitles are enabled
+     */
+    void onSubtitlesEnabledChanged(boolean enabled);
+
+    /**
      * Called when the user has decided whether the application at origin should be allowed access to
      * a distinctive identifier.
      *
