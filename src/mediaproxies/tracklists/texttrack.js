@@ -70,8 +70,8 @@ hbbtv.objects.TextTrack = (function() {
         set(value) {
             const p = privates.get(this);
             if (
-                value !== p.properties.mode && [TRACK_MODE_DISABLED, TRACK_MODE_HIDDEN, TRACK_MODE_SHOWING].includes(value) &&
-                hbbtv.bridge.configuration.getSubtitlesEnabled()
+                value !== p.properties.mode &&
+                [TRACK_MODE_DISABLED, TRACK_MODE_HIDDEN, TRACK_MODE_SHOWING].includes(value)
             ) {
                 if (value !== TRACK_MODE_DISABLED) {
                     for (let track of p.mediaElement.textTracks) {

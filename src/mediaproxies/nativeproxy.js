@@ -316,6 +316,10 @@ hbbtv.objects.NativeProxy = (function() {
         this.videoTracks.addEventListener('change', p.onVideoTrackChange);
         this.addEventListener('loadedmetadata', p.onLoadedMetadata, true);
         this.addEventListener('error', p.onError, true);
+        if (hbbtv.bridge.addStrongEventListener) {
+            hbbtv.bridge.addStrongEventListener('SubtitlesEnabledChanged', p.onTextTrackChange);
+        }
+        p.onTextTrackChange();
 
         console.log('NativeProxy: Initialised NativeProxy.');
     }
