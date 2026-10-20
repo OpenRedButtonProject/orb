@@ -257,14 +257,20 @@ hbbtv.objects.NativeProxy = (function() {
     function onTextTrackChange() {
         const p = privates.get(this);
         let index = -1;
-        for (let i = 0; i < this.textTracks.length; ++i) {
-            if (this.textTracks[i].mode === 'showing') {
-                index = i;
-                break;
+        if (hbbtv.bridge.configuration.getSubtitlesEnabled()) {
+            for (let i = 0; i < this.textTracks.length; ++i) {
+                if (this.textTracks[i].mode === 'showing') {
+                    index = i;
+                    break;
+                }
             }
         }
         if (p.textTracks) {
             p.textTracks.setCurrentTrackIdx(index);
+        }
+        const subs = document.getElementById('orb_subsPH');
+        if (subs) {
+            subs.style.visibility = index >= 0 ? 'visible' : 'hidden';
         }
     }
 
@@ -310,6 +316,10 @@ hbbtv.objects.NativeProxy = (function() {
         this.videoTracks.addEventListener('change', p.onVideoTrackChange);
         this.addEventListener('loadedmetadata', p.onLoadedMetadata, true);
         this.addEventListener('error', p.onError, true);
+        if (hbbtv.bridge.addStrongEventListener) {
+            hbbtv.bridge.addStrongEventListener('SubtitlesEnabledChanged', p.onTextTrackChange);
+        }
+        p.onTextTrackChange();
 
         console.log('NativeProxy: Initialised NativeProxy.');
     }

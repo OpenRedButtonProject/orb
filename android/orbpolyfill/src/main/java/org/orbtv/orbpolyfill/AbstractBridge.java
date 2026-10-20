@@ -311,6 +311,20 @@ public abstract class AbstractBridge {
     }
 
     /**
+     * Called when the user enables or disables subtitles.
+     *
+     * @param enabled true if subtitles are enabled
+     */
+    public void dispatchSubtitlesEnabledChanged(boolean enabled) {
+        JSONObject properties = new JSONObject();
+        try {
+            properties.put("enabled", enabled);
+        } catch (JSONException ignored) {
+        }
+        mSessionCallback.dispatchEvent("SubtitlesEnabledChanged", properties);
+    }
+
+    /**
      * Called when the status of a metadata search changes.
      *
      * @param search The ID from the query string that started the search.
