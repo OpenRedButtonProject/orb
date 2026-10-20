@@ -69,6 +69,8 @@ class BrowserView extends WebView {
     private final Context mContext;
     private int mAppId = -1;
     private int mLoadAppId = -1;
+    /** Serialises the one-shot main-frame result for {@link #mLoadAppId}. */
+    private final Object mLoadLock = new Object();
     private boolean mIrrecoverableNotified = false;
     private int mHiddenMask = 0;
     private WebResourceClient mWebResourceClient;
@@ -124,16 +126,17 @@ class BrowserView extends WebView {
                 configuration.doNotTrackEnabled) {
             @Override
             public void onRequestFailed(WebResourceRequest request, int appId) {
-                if (request.isForMainFrame() && appId == mLoadAppId) {
-                    mSessionCallback.notifyLoadApplicationFailed(appId);
-                    mLoadAppId = -1;
+                if (!request.isForMainFrame() || !claimMainFrameResult(appId)) {
+                    return;
                 }
+                // Outside the lock: this kills the app and discards the DVB-I instance.
+                mSessionCallback.notifyLoadApplicationFailed(appId);
             }
 
             @Override
             public void onRequestSucceeded(WebResourceRequest request, int appId) {
-                if (request.isForMainFrame() && appId == mLoadAppId) {
-                    mLoadAppId = -1;
+                if (request.isForMainFrame()) {
+                    claimMainFrameResult(appId);
                 }
             }
         };
@@ -281,8 +284,25 @@ class BrowserView extends WebView {
         }
     }
 
+    /**
+     * Accept one main-frame result for the load in progress. Chromium intercepts the
+     * same document twice; both threads used to see {@link #mLoadAppId} and both
+     * reported failure (ERRATA0610).
+     */
+    private boolean claimMainFrameResult(int appId) {
+        synchronized (mLoadLock) {
+            if (appId != mLoadAppId) {
+                return false;
+            }
+            mLoadAppId = -1;
+            return true;
+        }
+    }
+
     public void loadApplication(int appId, String entryUrl, int[] graphicsConfigIds) {
-        mLoadAppId = appId;
+        synchronized (mLoadLock) {
+            mLoadAppId = appId;
+        }
         mVisibilityOverride = false;
         mIrrecoverableNotified = false;
         mContext.getMainExecutor().execute(() -> {
