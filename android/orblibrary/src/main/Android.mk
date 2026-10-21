@@ -50,7 +50,8 @@ ORB_COMPONENT_PATH := $(LOCAL_PATH)/../../../../components
 ORB_LIBRARY_PATH := $(LOCAL_PATH)
 #include $(call all-makefiles-under,$(LOCAL_PATH))
 include $(ORB_LIBRARY_PATH)/cpp/Android.mk
-include $(ORB_LIBRARY_PATH)/../../../../../prebuilt/cronet/Android.mk
+# Cronet lives in this repo, same as OkHttp. ../../../../ is the orb tree root.
+include $(ORB_LIBRARY_PATH)/../../../../external/cronet/Android.mk
 include $(ORB_COMPONENT_PATH)/application_manager/Android.mk
 include $(ORB_COMPONENT_PATH)/network_services/Android.mk
 
