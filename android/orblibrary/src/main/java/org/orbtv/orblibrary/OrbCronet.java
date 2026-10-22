@@ -20,7 +20,10 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -31,7 +34,8 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 final class OrbCronet {
     private static final String TAG = "OrbCronet";
-    private static final long HEADER_TIMEOUT_SEC = 30;
+    /** Matches the OkHttp read timeout. Covers the wait for headers and each body read. */
+    private static final long READ_TIMEOUT_SEC = 30;
 
     private static final String EXPERIMENTAL_OPTIONS =
             "{\"AsyncDNS\":{\"enable\":true},"
@@ -44,6 +48,12 @@ final class OrbCronet {
         thread.setDaemon(true);
         return thread;
     });
+    private static final ScheduledExecutorService sReadTimeouts =
+            Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread thread = new Thread(r, "orb-cronet-timeout");
+                thread.setDaemon(true);
+                return thread;
+            });
 
     private OrbCronet() {
     }
@@ -102,7 +112,15 @@ final class OrbCronet {
         private final AtomicReference<Throwable> mError = new AtomicReference<>();
         private final PipedOutputStream mBodyOut;
         private final PipedInputStream mBodyIn;
+        private final Object mTimeoutLock = new Object();
+        private final AtomicInteger mState = new AtomicInteger(STATE_RUNNING);
+        private final AtomicReference<ScheduledFuture<?>> mReadTimeout = new AtomicReference<>();
+        private int mReadGeneration;
         private volatile boolean mRedirect;
+
+        private static final int STATE_RUNNING = 0;
+        private static final int STATE_DONE = 1;
+        private static final int STATE_TIMED_OUT = 2;
 
         Call(CronetEngine engine, String url, String method, Map<String, String> headers)
                 throws IOException {
@@ -134,11 +152,13 @@ final class OrbCronet {
             UrlRequest request = builder.build();
             request.start();
             try {
-                if (!mHeadersReady.await(HEADER_TIMEOUT_SEC, TimeUnit.SECONDS)) {
+                if (!mHeadersReady.await(READ_TIMEOUT_SEC, TimeUnit.SECONDS)) {
+                    finish();
                     request.cancel();
                     throw new IOException("Timed out waiting for headers from " + mUrl);
                 }
             } catch (InterruptedException e) {
+                finish();
                 request.cancel();
                 Thread.currentThread().interrupt();
                 throw new IOException("Interrupted waiting for headers from " + mUrl, e);
@@ -159,11 +179,93 @@ final class OrbCronet {
             }
             long length = contentLength(headers);
             return new OrbHttpResult(info.getHttpStatusCode(), info.getHttpStatusText(),
-                    headers, mRedirect ? empty() : mBodyIn, length, () -> {
+                    headers, mRedirect ? empty() : bodyStream(), length, () -> {
+                finish();
                 request.cancel();
                 closeQuietly(mBodyOut);
                 closeQuietly(mBodyIn);
             });
+        }
+
+        /**
+         * A server that stops sending unblocks the reader with an error. Closing the
+         * pipe alone looks like a normal end of stream, which would truncate the body.
+         */
+        private java.io.InputStream bodyStream() {
+            return new java.io.InputStream() {
+                @Override
+                public int read() throws IOException {
+                    try {
+                        return checkEnd(mBodyIn.read());
+                    } catch (IOException e) {
+                        throw timedOutOr(e);
+                    }
+                }
+
+                @Override
+                public int read(byte[] buffer, int offset, int length) throws IOException {
+                    try {
+                        return checkEnd(mBodyIn.read(buffer, offset, length));
+                    } catch (IOException e) {
+                        throw timedOutOr(e);
+                    }
+                }
+
+                private int checkEnd(int n) throws IOException {
+                    if (n < 0 && mState.get() == STATE_TIMED_OUT) {
+                        throw new IOException("Timed out reading body from " + mUrl);
+                    }
+                    return n;
+                }
+
+                private IOException timedOutOr(IOException e) {
+                    if (mState.get() == STATE_TIMED_OUT) {
+                        return new IOException("Timed out reading body from " + mUrl, e);
+                    }
+                    return e;
+                }
+            };
+        }
+
+        /** Time out the in-flight Cronet read. A slow consumer blocked in the pipe does not. */
+        private void armReadTimeout(UrlRequest request) {
+            final int generation;
+            synchronized (mTimeoutLock) {
+                disarmReadTimeoutLocked();
+                if (mState.get() != STATE_RUNNING) {
+                    return;
+                }
+                generation = ++mReadGeneration;
+                mReadTimeout.set(sReadTimeouts.schedule(() -> {
+                    synchronized (mTimeoutLock) {
+                        if (mReadGeneration != generation
+                                || !mState.compareAndSet(STATE_RUNNING, STATE_TIMED_OUT)) {
+                            return;
+                        }
+                    }
+                    Log.w(TAG, "Timed out reading body from " + mUrl);
+                    request.cancel();
+                }, READ_TIMEOUT_SEC, TimeUnit.SECONDS));
+            }
+        }
+
+        private void disarmReadTimeout() {
+            synchronized (mTimeoutLock) {
+                disarmReadTimeoutLocked();
+            }
+        }
+
+        private void disarmReadTimeoutLocked() {
+            mReadGeneration++;
+            ScheduledFuture<?> pending = mReadTimeout.getAndSet(null);
+            if (pending != null) {
+                pending.cancel(false);
+            }
+        }
+
+        private void finish() {
+            mState.compareAndSet(STATE_RUNNING, STATE_DONE);
+            disarmReadTimeout();
         }
 
         @Override
@@ -184,6 +286,7 @@ final class OrbCronet {
         public void onResponseStarted(UrlRequest request, UrlResponseInfo info) {
             mInfo.set(info);
             ByteBuffer buffer = ByteBuffer.allocateDirect(16 * 1024);
+            armReadTimeout(request);
             request.read(buffer);
             mHeadersReady.countDown();
         }
@@ -191,6 +294,9 @@ final class OrbCronet {
         @Override
         public void onReadCompleted(UrlRequest request, UrlResponseInfo info,
                 ByteBuffer buffer) {
+            // Drop the deadline before writing. The pipe blocks when the consumer is
+            // behind, and that wait is not a stalled server.
+            disarmReadTimeout();
             try {
                 buffer.flip();
                 if (buffer.hasRemaining()) {
@@ -199,8 +305,10 @@ final class OrbCronet {
                     mBodyOut.write(copy);
                 }
                 buffer.clear();
+                armReadTimeout(request);
                 request.read(buffer);
             } catch (IOException e) {
+                finish();
                 mError.compareAndSet(null, e);
                 request.cancel();
             }
@@ -208,6 +316,7 @@ final class OrbCronet {
 
         @Override
         public void onSucceeded(UrlRequest request, UrlResponseInfo info) {
+            finish();
             mInfo.compareAndSet(null, info);
             closeQuietly(mBodyOut);
             mHeadersReady.countDown();
@@ -215,6 +324,7 @@ final class OrbCronet {
 
         @Override
         public void onFailed(UrlRequest request, UrlResponseInfo info, CronetException error) {
+            finish();
             mError.compareAndSet(null, error);
             closeQuietly(mBodyOut);
             mHeadersReady.countDown();
@@ -240,13 +350,18 @@ final class OrbCronet {
 
         @Override
         public void onCanceled(UrlRequest request, UrlResponseInfo info) {
+            boolean timedOut = mState.get() == STATE_TIMED_OUT;
+            finish();
+            closeQuietly(mBodyOut);
             if (mRedirect) {
-                closeQuietly(mBodyOut);
                 mHeadersReady.countDown();
                 return;
             }
-            mError.compareAndSet(null, new IOException("Cronet request canceled"));
-            closeQuietly(mBodyOut);
+            if (timedOut) {
+                mError.compareAndSet(null, new IOException("Timed out reading body from " + mUrl));
+            } else {
+                mError.compareAndSet(null, new IOException("Cronet request canceled"));
+            }
             mHeadersReady.countDown();
         }
     }

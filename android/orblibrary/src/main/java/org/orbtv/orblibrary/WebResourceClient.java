@@ -242,21 +242,53 @@ abstract class WebResourceClient {
         return result;
     }
 
+    /**
+     * Cronet decodes gzip, deflate and Brotli, then still reports the encoded
+     * Content-Encoding and Content-Length. WebView would decode that body again
+     * or stop at the compressed length. OkHttp already removes these.
+     */
+    private static boolean transportDecoded(OrbHttpResult response) {
+        for (String value : response.headersNamed("Content-Encoding")) {
+            if (value == null) {
+                continue;
+            }
+            for (String token : value.split(",")) {
+                String coding = token.trim();
+                if (coding.equalsIgnoreCase("gzip")
+                        || coding.equalsIgnoreCase("x-gzip")
+                        || coding.equalsIgnoreCase("deflate")
+                        || coding.equalsIgnoreCase("br")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean omitDecodedHeader(String name, boolean decoded) {
+        return decoded && name != null
+                && (name.equalsIgnoreCase("Content-Encoding")
+                || name.equalsIgnoreCase("Content-Length"));
+    }
+
     private WebResourceResponse handleHttpOptionsRequest(WebResourceRequest request, int appId)
             throws IOException {
         String url = request.getUrl().toString();
+        String fetchUrl = HstsPolicy.upgrade(url);
         Map<String, String> requestHeaders = mutableRequestHeaders(request);
 
         CookieManager cookieManager;
         if (HTTP_COOKIES_ENABLED) {
             cookieManager = CookieManager.getInstance();
-            String cookie = cookieManager.getCookie(url);
+            removeHeaderIgnoreCase(requestHeaders, "Cookie");
+            String cookie = cookieManager.getCookie(fetchUrl);
             if (cookie != null) {
                 requestHeaders.put("Cookie", cookie);
             }
         }
 
-        OrbHttpResult httpResponse = executeHttp(url, "OPTIONS", requestHeaders);
+        OrbHttpResult httpResponse = executeHttp(fetchUrl, "OPTIONS", requestHeaders);
+        boolean decoded = transportDecoded(httpResponse);
 
         Log.d(TAG, "HTTP OPTIONS response code: " + httpResponse.code() + ", for URL: " + url);
 
@@ -266,6 +298,9 @@ abstract class WebResourceClient {
         for (String name : httpResponse.headerNames()) {
             if (name != null && optionsRequestOrigin != null && !optionsRequestOrigin.isEmpty()
                     && name.equalsIgnoreCase("Access-Control-Allow-Origin")) {
+                continue;
+            }
+            if (omitDecodedHeader(name, decoded)) {
                 continue;
             }
             responseHeaders.put(name, String.join(",", httpResponse.headersNamed(name)));
@@ -285,12 +320,14 @@ abstract class WebResourceClient {
             throws IOException {
         // Request
         String url = request.getUrl().toString();
+        String fetchUrl = HstsPolicy.upgrade(url);
         Map<String, String> requestHeaders = mutableRequestHeaders(request);
 
         CookieManager cookieManager;
         if (HTTP_COOKIES_ENABLED) {
             cookieManager = CookieManager.getInstance();
-            String cookie = cookieManager.getCookie(url);
+            removeHeaderIgnoreCase(requestHeaders, "Cookie");
+            String cookie = cookieManager.getCookie(fetchUrl);
             if (cookie != null) {
                 requestHeaders.put("Cookie", cookie);
             }
@@ -299,7 +336,8 @@ abstract class WebResourceClient {
             requestHeaders.put("DNT", "1");
         }
 
-        OrbHttpResult httpResponse = executeHttp(url, request.getMethod(), requestHeaders);
+        OrbHttpResult httpResponse = executeHttp(fetchUrl, request.getMethod(), requestHeaders);
+        boolean decoded = transportDecoded(httpResponse);
 
         Log.d(TAG, "HTTP response code: " + httpResponse.code() + ", for URL: " + url
                 + " cookie=" + getHeaderIgnoreCase(requestHeaders, "Cookie"));
@@ -335,7 +373,7 @@ abstract class WebResourceClient {
             List<String> setCookies = httpResponse.headersNamed("Set-Cookie");
             if (setCookies != null) {
                 for (String setCookie : setCookies) {
-                    cookieManager.setCookie(url, setCookie);
+                    cookieManager.setCookie(fetchUrl, setCookie);
                 }
             }
         }
@@ -367,6 +405,9 @@ abstract class WebResourceClient {
 
         httpResponseHeaders.forEach((k, v) -> {
             if (k == null) {
+                return;
+            }
+            if (omitDecodedHeader(k, decoded)) {
                 return;
             }
             if (requestOriginForCors != null && !requestOriginForCors.isEmpty()
