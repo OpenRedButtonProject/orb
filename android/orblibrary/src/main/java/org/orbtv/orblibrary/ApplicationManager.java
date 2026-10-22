@@ -16,12 +16,17 @@
 
 package org.orbtv.orblibrary;
 
+import android.content.Context;
 import android.util.Log;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
-
-import okhttp3.*;
 
 class ApplicationManager {
     private static final String TAG = ApplicationManager.class.getSimpleName();
@@ -42,6 +47,7 @@ class ApplicationManager {
     private final Object mLock = new Object();
     private SessionCallback mSessionCallback;
     private final IOrbSessionCallback mOrbLibraryCallback;
+    private final Context mContext;
 
     private String m_entryUrl = NOT_STARTED_URL;
 
@@ -114,8 +120,9 @@ class ApplicationManager {
         boolean isInstanceInCurrentService(int onid, int tsid, int sid);
     }
 
-    ApplicationManager(final IOrbSessionCallback orbLibraryCallback) {
+    ApplicationManager(Context context, final IOrbSessionCallback orbLibraryCallback) {
         jniInitialize(this);
+        mContext = context;
         mOrbLibraryCallback = orbLibraryCallback;
     }
 
@@ -422,27 +429,44 @@ class ApplicationManager {
         }
     }
 
+    /**
+     * Fetch an XML AIT. An empty result makes the native manager treat the URL as an
+     * entry page, so this must not fall back to OkHttp: that client is TCP only, and an
+     * HTTP/3-only origin rejects the handshake.
+     */
     private String jniCbGetXmlAitContents(String url) {
-        OkHttpClient okClient = new OkHttpClient();
-        Request okRequest = new Request.Builder()
-                .url(url)
-                .build();
-        Response okResponse;
+        OrbHttpResult response = null;
         try {
-            okResponse = okClient.newCall(okRequest).execute();
-            String contentType = okResponse.header("Content-Type");
+            response = OrbCronet.execute(mContext, url, "GET", Collections.emptyMap());
+            if (response == null || !response.isSuccessful()) {
+                return "";
+            }
+            String contentType = response.header("Content-Type");
             if (contentType == null || !contentType.startsWith("application/vnd.dvb.ait+xml")) {
                 return "";
             }
-            if (!okResponse.isSuccessful()) {
-                return "";
-            }
-            String contents = okResponse.body().string();
-            return contents;
-        } catch (Exception e) {
+            return readUtf8(response.byteStream());
+        } catch (IOException e) {
             e.printStackTrace();
             return "";
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (IOException ignore) {
+                }
+            }
         }
+    }
+
+    private static String readUtf8(InputStream in) throws IOException {
+        ByteArrayOutputStream body = new ByteArrayOutputStream();
+        byte[] buffer = new byte[4096];
+        int n;
+        while ((n = in.read(buffer)) != -1) {
+            body.write(buffer, 0, n);
+        }
+        return body.toString(StandardCharsets.UTF_8.name());
     }
 
     private void jniCbOnApplicationLoadError() {

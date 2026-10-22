@@ -16,6 +16,7 @@
 
 package org.orbtv.orblibrary;
 
+import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 import android.webkit.CookieManager;
@@ -54,12 +55,14 @@ abstract class WebResourceClient {
     private final DsmccClient mDsmccClient;
     private final HtmlBuilder mHtmlBuilder;
     private final boolean mDoNotTrackEnabled;
+    private final Context mContext;
     OkHttpClient mHttpClient;
     OkHttpClient mHttpSandboxClient;
     private String mAcceptValue;
 
-    WebResourceClient(DsmccClient dsmccClient, HtmlBuilder htmlBuilder,
+    WebResourceClient(Context context, DsmccClient dsmccClient, HtmlBuilder htmlBuilder,
                       boolean doNotTrackEnabled) {
+        mContext = context.getApplicationContext();
         mDsmccClient = dsmccClient;
         mHtmlBuilder = htmlBuilder;
         List<Protocol> protocols = new ArrayList<>();
@@ -212,41 +215,99 @@ abstract class WebResourceClient {
         }
     }
 
+    /**
+     * http and https both go through the shared Cronet engine, after an HSTS
+     * upgrade. OkHttp remains the fallback when that engine failed to start:
+     * a missing library would otherwise take the cleartext app page down with it.
+     * The XML AIT fetch does not use this method.
+     */
+    private OrbHttpResult executeHttp(String url, String method, Map<String, String> headers)
+            throws IOException {
+        String fetchUrl = HstsPolicy.upgrade(url);
+        OrbHttpResult result = OrbCronet.execute(mContext, fetchUrl, method, headers);
+        if (result == null) {
+            Response ok = mHttpClient.newCall(new Request.Builder()
+                    .url(fetchUrl)
+                    .method(method, null)
+                    .headers(Headers.of(headers))
+                    .build()).execute();
+            ResponseBody body = ok.body();
+            InputStream stream = body != null ? body.byteStream()
+                    : new ByteArrayInputStream(new byte[0]);
+            long length = body != null ? body.contentLength() : 0;
+            result = new OrbHttpResult(ok.code(), ok.message(), ok.headers().toMultimap(),
+                    stream, length, ok);
+        }
+        HstsPolicy.note(fetchUrl, result.headersNamed("Strict-Transport-Security"));
+        return result;
+    }
+
+    /**
+     * Cronet decodes gzip, deflate and Brotli, then still reports the encoded
+     * Content-Encoding and Content-Length. WebView would decode that body again
+     * or stop at the compressed length. OkHttp already removes these.
+     */
+    private static boolean transportDecoded(OrbHttpResult response) {
+        for (String value : response.headersNamed("Content-Encoding")) {
+            if (value == null) {
+                continue;
+            }
+            for (String token : value.split(",")) {
+                String coding = token.trim();
+                if (coding.equalsIgnoreCase("gzip")
+                        || coding.equalsIgnoreCase("x-gzip")
+                        || coding.equalsIgnoreCase("deflate")
+                        || coding.equalsIgnoreCase("br")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean omitDecodedHeader(String name, boolean decoded) {
+        return decoded && name != null
+                && (name.equalsIgnoreCase("Content-Encoding")
+                || name.equalsIgnoreCase("Content-Length"));
+    }
+
     private WebResourceResponse handleHttpOptionsRequest(WebResourceRequest request, int appId)
             throws IOException {
         String url = request.getUrl().toString();
+        String fetchUrl = HstsPolicy.upgrade(url);
         Map<String, String> requestHeaders = mutableRequestHeaders(request);
 
         CookieManager cookieManager;
         if (HTTP_COOKIES_ENABLED) {
             cookieManager = CookieManager.getInstance();
-            String cookie = cookieManager.getCookie(url);
+            removeHeaderIgnoreCase(requestHeaders, "Cookie");
+            String cookie = cookieManager.getCookie(fetchUrl);
             if (cookie != null) {
                 requestHeaders.put("Cookie", cookie);
             }
         }
-        Response httpResponse = mHttpClient.newCall(new Request.Builder()
-                .url(url)
-                .method("OPTIONS", null)
-                .headers(Headers.of(requestHeaders))
-                .build()).execute();
+
+        OrbHttpResult httpResponse = executeHttp(fetchUrl, "OPTIONS", requestHeaders);
+        boolean decoded = transportDecoded(httpResponse);
 
         Log.d(TAG, "HTTP OPTIONS response code: " + httpResponse.code() + ", for URL: " + url);
 
         Charset charset = StandardCharsets.UTF_8;
         Map<String, String> responseHeaders = new HashMap<>();
         String optionsRequestOrigin = getHeaderIgnoreCase(requestHeaders, "Origin");
-        for (String name : httpResponse.headers().names()) {
+        for (String name : httpResponse.headerNames()) {
             if (name != null && optionsRequestOrigin != null && !optionsRequestOrigin.isEmpty()
                     && name.equalsIgnoreCase("Access-Control-Allow-Origin")) {
                 continue;
             }
-            responseHeaders.put(name, String.join(",", httpResponse.headers(name)));
+            if (omitDecodedHeader(name, decoded)) {
+                continue;
+            }
+            responseHeaders.put(name, String.join(",", httpResponse.headersNamed(name)));
         }
         applyOriginReflectionCors(responseHeaders, requestHeaders);
 
-        ResponseBody body = httpResponse.body();
-        InputStream stream = (body != null) ? body.byteStream() : new ByteArrayInputStream(new byte[0]);
+        InputStream stream = createResponseStream(httpResponse.byteStream(), httpResponse);
         String reasonPhrase = httpResponse.message();
         if (reasonPhrase == null || reasonPhrase.trim().isEmpty()) {
             reasonPhrase = httpResponse.isSuccessful() ? "OK" : "Error";
@@ -259,12 +320,14 @@ abstract class WebResourceClient {
             throws IOException {
         // Request
         String url = request.getUrl().toString();
+        String fetchUrl = HstsPolicy.upgrade(url);
         Map<String, String> requestHeaders = mutableRequestHeaders(request);
 
         CookieManager cookieManager;
         if (HTTP_COOKIES_ENABLED) {
             cookieManager = CookieManager.getInstance();
-            String cookie = cookieManager.getCookie(url);
+            removeHeaderIgnoreCase(requestHeaders, "Cookie");
+            String cookie = cookieManager.getCookie(fetchUrl);
             if (cookie != null) {
                 requestHeaders.put("Cookie", cookie);
             }
@@ -273,11 +336,8 @@ abstract class WebResourceClient {
             requestHeaders.put("DNT", "1");
         }
 
-        Response httpResponse = mHttpClient.newCall(new Request.Builder()
-                .url(url)
-                .method(request.getMethod(), null)
-                .headers(Headers.of(requestHeaders))
-                .build()).execute();
+        OrbHttpResult httpResponse = executeHttp(fetchUrl, request.getMethod(), requestHeaders);
+        boolean decoded = transportDecoded(httpResponse);
 
         Log.d(TAG, "HTTP response code: " + httpResponse.code() + ", for URL: " + url
                 + " cookie=" + getHeaderIgnoreCase(requestHeaders, "Cookie"));
@@ -292,6 +352,7 @@ abstract class WebResourceClient {
          */
         if (isError && request.isForMainFrame()) {
             Log.w(TAG, "HTTP main-frame error " + httpResponse.code() + ", deferring to default loader: " + url);
+            httpResponse.close();
             return null;
         }
         if (isError) {
@@ -299,19 +360,20 @@ abstract class WebResourceClient {
         }
 
         Charset charset = StandardCharsets.UTF_8;
-        String mimeType = getMimeType(httpResponse.header("Content-Type", "text/plain"));
+        String contentType = httpResponse.header("Content-Type");
+        String mimeType = getMimeType(contentType != null ? contentType : "text/plain");
 
         // Strip optional parameters for the comparison
         String[] parts = mimeType.split(";", 2);
         mimeType = parts[0];
 
-        Map<String, List<String>> httpResponseHeaders = httpResponse.headers().toMultimap();
+        Map<String, List<String>> httpResponseHeaders = httpResponse.headers();
 
         if (HTTP_COOKIES_ENABLED) {
-            List<String> setCookies = httpResponseHeaders.get("Set-Cookie");
+            List<String> setCookies = httpResponse.headersNamed("Set-Cookie");
             if (setCookies != null) {
                 for (String setCookie : setCookies) {
-                    cookieManager.setCookie(url, setCookie);
+                    cookieManager.setCookie(fetchUrl, setCookie);
                 }
             }
         }
@@ -320,28 +382,22 @@ abstract class WebResourceClient {
             if (HTTP_REDIRECTION_ENABLED) {
                 String location = httpResponse.header("Location");
                 if (location != null) {
+                    httpResponse.close();
                     return new WebResourceResponse("text/html", charset.name(),
                             new ByteArrayInputStream(mHtmlBuilder.getRedirectPage(charset, Uri.parse(location))));
                 }
             }
         }
 
-        ResponseBody body = httpResponse.body();
         InputStream responseStream;
-        if (body == null) {
-            Log.w(TAG, "HTTP response body is null for: " + url);
-            responseStream = new ByteArrayInputStream(new byte[0]);
+        long contentLength = httpResponse.contentLength();
+        Log.d(TAG, "Response body size for " + url + ": " + contentLength + " bytes, MIME type: " + mimeType);
+        boolean injectHbbtv = httpResponse.isSuccessful()
+                && HBBTV_MIME_TYPES.contains(mimeType.toLowerCase());
+        if (injectHbbtv) {
+            responseStream = createInjectionResponseStream(httpResponse.byteStream(), httpResponse, charset, request.getUrl(), appId);
         } else {
-            long contentLength = body.contentLength();
-            Log.d(TAG, "Response body size for " + url + ": " + contentLength + " bytes, MIME type: " + mimeType);
-            boolean injectHbbtv = httpResponse.isSuccessful()
-                    && HBBTV_MIME_TYPES.contains(mimeType.toLowerCase());
-            if (injectHbbtv) {
-                //Log.d(TAG, "Creating injection response stream for HBBTV MIME type: " + url);
-                responseStream = createInjectionResponseStream(body.byteStream(), body, charset, request.getUrl(), appId);
-            } else {
-                responseStream = createResponseStream(body.byteStream(), body);
-            }
+            responseStream = createResponseStream(httpResponse.byteStream(), httpResponse);
         }
 
         Map<String, String> responseHeaders = new HashMap<>();
@@ -349,6 +405,9 @@ abstract class WebResourceClient {
 
         httpResponseHeaders.forEach((k, v) -> {
             if (k == null) {
+                return;
+            }
+            if (omitDecodedHeader(k, decoded)) {
                 return;
             }
             if (requestOriginForCors != null && !requestOriginForCors.isEmpty()

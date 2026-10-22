@@ -122,7 +122,7 @@ class BrowserView extends WebView {
             }
         });
 
-        mWebResourceClient = new WebResourceClient(dsmccClient, new HtmlBuilder(mContext.getAssets()),
+        mWebResourceClient = new WebResourceClient(mContext, dsmccClient, new HtmlBuilder(mContext.getAssets()),
                 configuration.doNotTrackEnabled) {
             @Override
             public void onRequestFailed(WebResourceRequest request, int appId) {
