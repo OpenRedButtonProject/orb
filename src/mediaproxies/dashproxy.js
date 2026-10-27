@@ -300,6 +300,21 @@ hbbtv.objects.DashProxy = (function() {
                     }
                     privates.set(track, track.mode);
                 }
+                /* dash.js destroys TextTrack objects on each Period. The
+                 * application's mode='showing' is lost, so keep using the last
+                 * selected index until a track is showing again. */
+                if (index < 0 && p.lastShowingTextTrack >= 0 &&
+                        p.lastShowingTextTrack < this.textTracks.length) {
+                    index = p.lastShowingTextTrack;
+                    try {
+                        this.textTracks[index].mode = 'showing';
+                    } catch (e) {
+                        console.warn('DashProxy: failed to restore text track mode', e);
+                    }
+                }
+                if (index >= 0) {
+                    p.lastShowingTextTrack = index;
+                }
             }
             console.log('DashProxy: setTextTrack index=' + index + ' terminalOn=' + terminalOn);
             try {
@@ -677,6 +692,7 @@ hbbtv.objects.DashProxy = (function() {
             p.onLoadedMetaData = onLoadedMetaData.bind(this);
             p.onManifestLoaded = onManifestLoaded.bind(this);
             p.onTextTrackChange = onTextTrackChange.bind(this);
+            p.lastShowingTextTrack = -1;
             p.onAudioTrackChange = onAudioTrackChange.bind(this);
             p.onVideoTrackChange = onVideoTrackChange.bind(this);
             p.onPeriodChanged = makeStreamInfoCallback(this, '__orb_onperiodchanged__');
@@ -760,7 +776,12 @@ hbbtv.objects.DashProxy = (function() {
             p.player.initialize(this, src, false);
             p.player.on('error', p.onError);
             p.player.on('manifestLoaded', p.onManifestLoaded);
-            p.player.on('periodSwitchCompleted', p.onPeriodChanged);
+            p.player.on('periodSwitchCompleted', function(e) {
+                p.onPeriodChanged(e);
+                p.onTextTrackChange();
+            });
+            p.player.on('allTextTracksAdded', p.onTextTrackChange);
+            p.player.on('streamInitialized', p.onTextTrackChange);
             p.player.on('streamUpdated', p.onStreamUpdated);
             p.player.on('representationSwitch', (e) => {
                 hbbtv.native.dispatchRepresentationNativeEvents?.(e.currentRepresentation);
