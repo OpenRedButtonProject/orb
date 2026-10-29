@@ -399,6 +399,19 @@ abstract class WebResourceClient {
         } else {
             responseStream = createResponseStream(httpResponse.byteStream(), httpResponse);
         }
+        /*
+         * Chromium seeks the intercepted stream by the request Range, expecting
+         * byte 0 of the whole resource. The HTTP client has already fetched that
+         * range, so the body starts at the range. A virtual skip keeps the slice
+         * intact.
+         */
+        if (httpResponse.code() == 206) {
+            responseStream = satisfyChromiumRangeSeek(
+                    responseStream,
+                    getHeaderIgnoreCase(requestHeaders, "Range"),
+                    httpResponse.header("Content-Range"),
+                    contentLength);
+        }
 
         Map<String, String> responseHeaders = new HashMap<>();
         String requestOriginForCors = getHeaderIgnoreCase(requestHeaders, "Origin");
@@ -562,6 +575,152 @@ abstract class WebResourceClient {
         WebResourceResponse response = new WebResourceResponse("text/html",
                 charset.toString(), inputStream);
         return response;
+    }
+
+    /**
+     * @param sliceLength HTTP body length, or -1 when unknown.
+     */
+    private static InputStream satisfyChromiumRangeSeek(InputStream body, String requestRange,
+            String contentRange, long sliceLength) {
+        long start = -1;
+        long end = -1;
+        long total = -1;
+        long[] contentSpan = parseContentRange(contentRange);
+        if (contentSpan != null) {
+            start = contentSpan[0];
+            end = contentSpan[1];
+            total = contentSpan[2];
+        }
+        if (start < 0) {
+            long[] requestSpan = parseRequestRange(requestRange);
+            if (requestSpan != null) {
+                start = requestSpan[0];
+                end = requestSpan[1];
+            }
+        }
+        // Without a known total we cannot report an honest resource size to Chromium.
+        if (total < 0) {
+            Log.d(TAG, "Prefetched range body, unknown total; skip virtual range seek"
+                    + " (start " + start + ", end " + end + ", slice " + sliceLength + ")");
+            return body;
+        }
+        long resourceSize = total;
+        if (start < 0 || resourceSize <= start) {
+            return body;
+        }
+        Log.d(TAG, "Prefetched range body, virtual skip " + start
+                + " of resource " + resourceSize + ", slice " + sliceLength);
+        return new PrefetchedRangeInputStream(body, start, resourceSize);
+    }
+
+    /** @return {start, end, total} with -1 for an unknown field, or null. */
+    private static long[] parseContentRange(String header) {
+        if (header == null) {
+            return null;
+        }
+        String value = header.trim();
+        if (value.length() < 6 || !value.substring(0, 5).equalsIgnoreCase("bytes")) {
+            return null;
+        }
+        int slash = value.indexOf('/');
+        if (slash < 0) {
+            return null;
+        }
+        String span = value.substring(5, slash).trim();
+        int dash = span.indexOf('-');
+        if (dash <= 0) {
+            return null;
+        }
+        try {
+            long start = Long.parseLong(span.substring(0, dash).trim());
+            long end = Long.parseLong(span.substring(dash + 1).trim());
+            String totalText = value.substring(slash + 1).trim();
+            long total = totalText.equals("*") ? -1 : Long.parseLong(totalText);
+            return new long[] {start, end, total};
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /** @return {start, end} with end -1 when open, or null. */
+    private static long[] parseRequestRange(String header) {
+        if (header == null) {
+            return null;
+        }
+        String value = header.trim();
+        if (value.length() < 7 || !value.substring(0, 6).equalsIgnoreCase("bytes=")) {
+            return null;
+        }
+        String span = value.substring(6).trim();
+        int dash = span.indexOf('-');
+        if (dash <= 0) {
+            return null;
+        }
+        try {
+            long start = Long.parseLong(span.substring(0, dash).trim());
+            String endText = span.substring(dash + 1).trim();
+            long end = endText.isEmpty() ? -1 : Long.parseLong(endText);
+            return new long[] {start, end};
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Body is already the requested slice. {@link #available()} reports the whole
+     * resource so Chromium accepts the range, and {@link #skip(long)} absorbs the
+     * range start without reading the slice.
+     * <p>
+     * Chromium must {@link #skip(long) skip}{@code rangeStart} before any
+     * {@code read}; {@code read} does not synthesise leading bytes.
+     */
+    private static final class PrefetchedRangeInputStream extends InputStream {
+        private final InputStream mIn;
+        private final int mReportedSize;
+        private long mSkipRemaining;
+
+        PrefetchedRangeInputStream(InputStream in, long rangeStart, long resourceSize) {
+            mIn = in;
+            mSkipRemaining = rangeStart;
+            if (resourceSize > Integer.MAX_VALUE) {
+                mReportedSize = Integer.MAX_VALUE;
+            } else {
+                mReportedSize = (int) resourceSize;
+            }
+        }
+
+        @Override
+        public int available() {
+            return mReportedSize;
+        }
+
+        @Override
+        public long skip(long n) throws IOException {
+            if (n <= 0) {
+                return 0;
+            }
+            long virtual = Math.min(n, mSkipRemaining);
+            mSkipRemaining -= virtual;
+            if (virtual == n) {
+                return virtual;
+            }
+            return virtual + mIn.skip(n - virtual);
+        }
+
+        @Override
+        public int read() throws IOException {
+            return mIn.read();
+        }
+
+        @Override
+        public int read(byte[] buffer, int offset, int length) throws IOException {
+            return mIn.read(buffer, offset, length);
+        }
+
+        @Override
+        public void close() throws IOException {
+            mIn.close();
+        }
     }
 
     private static String updateCspHeader(String header) {
