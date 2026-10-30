@@ -608,6 +608,16 @@ abstract class WebResourceClient {
         if (start < 0 || resourceSize <= start) {
             return body;
         }
+        // available() is an int. Clamping to Integer.MAX_VALUE makes
+        // VerifyRequestedRange reject a seek at or past 2 GiB. Reporting 0
+        // leaves the size unknown, and SkipToRequestedRange still skips, so
+        // the virtual prefix has to stay in place.
+        if (resourceSize > Integer.MAX_VALUE) {
+            Log.w(TAG, "Prefetched range resource " + resourceSize
+                    + " exceeds Integer.MAX_VALUE; available() reports 0"
+                    + " until the remainder fits (start " + start
+                    + ", slice " + sliceLength + ")");
+        }
         Log.d(TAG, "Prefetched range body, virtual skip " + start
                 + " of resource " + resourceSize + ", slice " + sliceLength);
         return new PrefetchedRangeInputStream(body, start, resourceSize);
@@ -667,54 +677,128 @@ abstract class WebResourceClient {
     }
 
     /**
-     * Body is already the requested slice. {@link #available()} reports the whole
-     * resource so Chromium accepts the range, and {@link #skip(long)} absorbs the
-     * range start without reading the slice.
+     * Body is already the requested slice. {@link #skip(long)} absorbs the range
+     * start without reading it. {@link #available()} is the logical bytes still
+     * remaining: resource size minus bytes already skipped or read. At open,
+     * when that fits in an int, it is the whole resource,
+     * which is what {@code InputStreamReader::VerifyRequestedRange} checks
+     * before skipping.
      * <p>
-     * Chromium must {@link #skip(long) skip}{@code rangeStart} before any
-     * {@code read}; {@code read} does not synthesise leading bytes.
+     * A remaining length above {@link Integer#MAX_VALUE} is reported as 0, not
+     * clamped. Non-positive {@code available()} makes that check treat the size
+     * as unknown and continue; {@code InputStream::Skip} stores each skip result
+     * in an int, so one {@code skip} returns at most {@link Integer#MAX_VALUE}
+     * and the caller loops.
+     * <p>
+     * {@code read} does not synthesise the prefix and does not return slice
+     * bytes while the range start is still outstanding. {@code InputStream::Read}
+     * retries a zero-length read, so the early read fails instead.
      */
     private static final class PrefetchedRangeInputStream extends InputStream {
         private final InputStream mIn;
-        private final int mReportedSize;
+        private final long mResourceSize;
         private long mSkipRemaining;
+        private long mConsumed;
+        private boolean mSliceExhausted;
+        private boolean mLoggedEarlyRead;
 
         PrefetchedRangeInputStream(InputStream in, long rangeStart, long resourceSize) {
             mIn = in;
             mSkipRemaining = rangeStart;
-            if (resourceSize > Integer.MAX_VALUE) {
-                mReportedSize = Integer.MAX_VALUE;
-            } else {
-                mReportedSize = (int) resourceSize;
-            }
+            mResourceSize = resourceSize;
         }
 
         @Override
         public int available() {
-            return mReportedSize;
+            if (mSliceExhausted) {
+                return 0;
+            }
+            long remaining = mResourceSize - mConsumed;
+            if (remaining <= 0 || remaining > Integer.MAX_VALUE) {
+                return 0;
+            }
+            return (int) remaining;
         }
 
         @Override
         public long skip(long n) throws IOException {
-            if (n <= 0) {
+            if (n <= 0 || mSliceExhausted) {
                 return 0;
             }
-            long virtual = Math.min(n, mSkipRemaining);
+            // InputStream::Skip assigns the Java result to an int. A larger
+            // value truncates negative and the seek fails. Chromium loops.
+            long want = Math.min(n, Integer.MAX_VALUE);
+            long virtual = Math.min(want, mSkipRemaining);
             mSkipRemaining -= virtual;
-            if (virtual == n) {
+            mConsumed += virtual;
+            if (virtual == want) {
                 return virtual;
             }
-            return virtual + mIn.skip(n - virtual);
+            long real = mIn.skip(want - virtual);
+            if (real > 0) {
+                mConsumed += real;
+                return virtual + real;
+            }
+            return virtual;
         }
 
         @Override
         public int read() throws IOException {
-            return mIn.read();
+            if (mSliceExhausted) {
+                return -1;
+            }
+            rejectSliceUntilSkipped();
+            int value = mIn.read();
+            if (value < 0) {
+                mSliceExhausted = true;
+                return -1;
+            }
+            mConsumed++;
+            return value;
         }
 
         @Override
         public int read(byte[] buffer, int offset, int length) throws IOException {
-            return mIn.read(buffer, offset, length);
+            if (buffer == null) {
+                throw new NullPointerException();
+            }
+            if (offset < 0 || length < 0 || length > buffer.length - offset) {
+                throw new IndexOutOfBoundsException();
+            }
+            if (length == 0) {
+                return 0;
+            }
+            if (mSliceExhausted) {
+                return -1;
+            }
+            rejectSliceUntilSkipped();
+            int n = mIn.read(buffer, offset, length);
+            if (n > 0) {
+                mConsumed += n;
+            } else if (n < 0) {
+                mSliceExhausted = true;
+            }
+            return n;
+        }
+
+        /**
+         * Slice bytes are the resource at {@code rangeStart}. Returning them
+         * while the virtual prefix is still outstanding serves them as byte 0,
+         * and a later {@code skip} then discards the start of the slice.
+         */
+        private void rejectSliceUntilSkipped() throws IOException {
+            if (mSkipRemaining <= 0) {
+                return;
+            }
+            if (!mLoggedEarlyRead) {
+                mLoggedEarlyRead = true;
+                Log.w(TAG, "Read with " + mSkipRemaining
+                        + " virtual range bytes still outstanding;"
+                        + " not returning the prefetched slice");
+            }
+            throw new IOException(
+                    "Prefetched range read while " + mSkipRemaining
+                            + " virtual range bytes are still outstanding");
         }
 
         @Override
