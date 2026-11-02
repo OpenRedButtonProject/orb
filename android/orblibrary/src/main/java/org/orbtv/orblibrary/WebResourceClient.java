@@ -399,6 +399,19 @@ abstract class WebResourceClient {
         } else {
             responseStream = createResponseStream(httpResponse.byteStream(), httpResponse);
         }
+        /*
+         * Chromium seeks the intercepted stream by the request Range, expecting
+         * byte 0 of the whole resource. The HTTP client has already fetched that
+         * range, so the body starts at the range. A virtual skip keeps the slice
+         * intact.
+         */
+        if (httpResponse.code() == 206) {
+            responseStream = satisfyChromiumRangeSeek(
+                    responseStream,
+                    getHeaderIgnoreCase(requestHeaders, "Range"),
+                    httpResponse.header("Content-Range"),
+                    contentLength);
+        }
 
         Map<String, String> responseHeaders = new HashMap<>();
         String requestOriginForCors = getHeaderIgnoreCase(requestHeaders, "Origin");
@@ -562,6 +575,236 @@ abstract class WebResourceClient {
         WebResourceResponse response = new WebResourceResponse("text/html",
                 charset.toString(), inputStream);
         return response;
+    }
+
+    /**
+     * @param sliceLength HTTP body length, or -1 when unknown.
+     */
+    private static InputStream satisfyChromiumRangeSeek(InputStream body, String requestRange,
+            String contentRange, long sliceLength) {
+        long start = -1;
+        long end = -1;
+        long total = -1;
+        long[] contentSpan = parseContentRange(contentRange);
+        if (contentSpan != null) {
+            start = contentSpan[0];
+            end = contentSpan[1];
+            total = contentSpan[2];
+        }
+        if (start < 0) {
+            long[] requestSpan = parseRequestRange(requestRange);
+            if (requestSpan != null) {
+                start = requestSpan[0];
+                end = requestSpan[1];
+            }
+        }
+        // Without a known total we cannot report an honest resource size to Chromium.
+        if (total < 0) {
+            Log.d(TAG, "Prefetched range body, unknown total; skip virtual range seek"
+                    + " (start " + start + ", end " + end + ", slice " + sliceLength + ")");
+            return body;
+        }
+        long resourceSize = total;
+        if (start < 0 || resourceSize <= start) {
+            return body;
+        }
+        // available() is an int. Clamping to Integer.MAX_VALUE makes
+        // VerifyRequestedRange reject a seek at or past 2 GiB. Reporting 0
+        // leaves the size unknown, and SkipToRequestedRange still skips, so
+        // the virtual prefix has to stay in place.
+        if (resourceSize > Integer.MAX_VALUE) {
+            Log.w(TAG, "Prefetched range resource " + resourceSize
+                    + " exceeds Integer.MAX_VALUE; available() reports 0"
+                    + " until the remainder fits (start " + start
+                    + ", slice " + sliceLength + ")");
+        }
+        Log.d(TAG, "Prefetched range body, virtual skip " + start
+                + " of resource " + resourceSize + ", slice " + sliceLength);
+        return new PrefetchedRangeInputStream(body, start, resourceSize);
+    }
+
+    /** @return {start, end, total} with -1 for an unknown field, or null. */
+    private static long[] parseContentRange(String header) {
+        if (header == null) {
+            return null;
+        }
+        String value = header.trim();
+        if (value.length() < 6 || !value.substring(0, 5).equalsIgnoreCase("bytes")) {
+            return null;
+        }
+        int slash = value.indexOf('/');
+        if (slash < 0) {
+            return null;
+        }
+        String span = value.substring(5, slash).trim();
+        int dash = span.indexOf('-');
+        if (dash <= 0) {
+            return null;
+        }
+        try {
+            long start = Long.parseLong(span.substring(0, dash).trim());
+            long end = Long.parseLong(span.substring(dash + 1).trim());
+            String totalText = value.substring(slash + 1).trim();
+            long total = totalText.equals("*") ? -1 : Long.parseLong(totalText);
+            return new long[] {start, end, total};
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /** @return {start, end} with end -1 when open, or null. */
+    private static long[] parseRequestRange(String header) {
+        if (header == null) {
+            return null;
+        }
+        String value = header.trim();
+        if (value.length() < 7 || !value.substring(0, 6).equalsIgnoreCase("bytes=")) {
+            return null;
+        }
+        String span = value.substring(6).trim();
+        int dash = span.indexOf('-');
+        if (dash <= 0) {
+            return null;
+        }
+        try {
+            long start = Long.parseLong(span.substring(0, dash).trim());
+            String endText = span.substring(dash + 1).trim();
+            long end = endText.isEmpty() ? -1 : Long.parseLong(endText);
+            return new long[] {start, end};
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Body is already the requested slice. {@link #skip(long)} absorbs the range
+     * start without reading it. {@link #available()} is the logical bytes still
+     * remaining: resource size minus bytes already skipped or read. At open,
+     * when that fits in an int, it is the whole resource,
+     * which is what {@code InputStreamReader::VerifyRequestedRange} checks
+     * before skipping.
+     * <p>
+     * A remaining length above {@link Integer#MAX_VALUE} is reported as 0, not
+     * clamped. Non-positive {@code available()} makes that check treat the size
+     * as unknown and continue; {@code InputStream::Skip} stores each skip result
+     * in an int, so one {@code skip} returns at most {@link Integer#MAX_VALUE}
+     * and the caller loops.
+     * <p>
+     * {@code read} does not synthesise the prefix and does not return slice
+     * bytes while the range start is still outstanding. {@code InputStream::Read}
+     * retries a zero-length read, so the early read fails instead.
+     */
+    private static final class PrefetchedRangeInputStream extends InputStream {
+        private final InputStream mIn;
+        private final long mResourceSize;
+        private long mSkipRemaining;
+        private long mConsumed;
+        private boolean mSliceExhausted;
+        private boolean mLoggedEarlyRead;
+
+        PrefetchedRangeInputStream(InputStream in, long rangeStart, long resourceSize) {
+            mIn = in;
+            mSkipRemaining = rangeStart;
+            mResourceSize = resourceSize;
+        }
+
+        @Override
+        public int available() {
+            if (mSliceExhausted) {
+                return 0;
+            }
+            long remaining = mResourceSize - mConsumed;
+            if (remaining <= 0 || remaining > Integer.MAX_VALUE) {
+                return 0;
+            }
+            return (int) remaining;
+        }
+
+        @Override
+        public long skip(long n) throws IOException {
+            if (n <= 0 || mSliceExhausted) {
+                return 0;
+            }
+            // InputStream::Skip assigns the Java result to an int. A larger
+            // value truncates negative and the seek fails. Chromium loops.
+            long want = Math.min(n, Integer.MAX_VALUE);
+            long virtual = Math.min(want, mSkipRemaining);
+            mSkipRemaining -= virtual;
+            mConsumed += virtual;
+            if (virtual == want) {
+                return virtual;
+            }
+            long real = mIn.skip(want - virtual);
+            if (real > 0) {
+                mConsumed += real;
+                return virtual + real;
+            }
+            return virtual;
+        }
+
+        @Override
+        public int read() throws IOException {
+            if (mSliceExhausted) {
+                return -1;
+            }
+            rejectSliceUntilSkipped();
+            int value = mIn.read();
+            if (value < 0) {
+                mSliceExhausted = true;
+                return -1;
+            }
+            mConsumed++;
+            return value;
+        }
+
+        @Override
+        public int read(byte[] buffer, int offset, int length) throws IOException {
+            if (buffer == null) {
+                throw new NullPointerException();
+            }
+            if (offset < 0 || length < 0 || length > buffer.length - offset) {
+                throw new IndexOutOfBoundsException();
+            }
+            if (length == 0) {
+                return 0;
+            }
+            if (mSliceExhausted) {
+                return -1;
+            }
+            rejectSliceUntilSkipped();
+            int n = mIn.read(buffer, offset, length);
+            if (n > 0) {
+                mConsumed += n;
+            } else if (n < 0) {
+                mSliceExhausted = true;
+            }
+            return n;
+        }
+
+        /**
+         * Slice bytes are the resource at {@code rangeStart}. Returning them
+         * while the virtual prefix is still outstanding serves them as byte 0,
+         * and a later {@code skip} then discards the start of the slice.
+         */
+        private void rejectSliceUntilSkipped() throws IOException {
+            if (mSkipRemaining <= 0) {
+                return;
+            }
+            if (!mLoggedEarlyRead) {
+                mLoggedEarlyRead = true;
+                Log.w(TAG, "Read with " + mSkipRemaining
+                        + " virtual range bytes still outstanding;"
+                        + " not returning the prefetched slice");
+            }
+            throw new IOException(
+                    "Prefetched range read while " + mSkipRemaining
+                            + " virtual range bytes are still outstanding");
+        }
+
+        @Override
+        public void close() throws IOException {
+            mIn.close();
+        }
     }
 
     private static String updateCspHeader(String header) {
