@@ -344,9 +344,11 @@ class BrowserView extends WebView {
 
     private void updateScale() {
         mContext.getMainExecutor().execute(() -> {
-            int scale = 100;
+            // Fractional percent: 1280px -> 1920 is 66.666..., and the int
+            // overload truncates that to 66 (CSS viewport 1939x1091).
+            float scale = 100f;
             if (mViewWidth != 0) {
-                scale = (mViewWidth * 100) / mAppWidth;
+                scale = (mViewWidth * 100f) / mAppWidth;
             }
             Log.d(TAG, "Set scale to " + scale);
             setInitialScale(scale);
