@@ -104,7 +104,17 @@ abstract class InjectionInputStream extends FilterInputStream {
 
     @Override
     public int available() throws IOException {
-        return super.available() + mPayloadLength;
+        // 0 means the body length is not known yet. Adding the injected prefix
+        // would make WebView treat that prefix as the whole document.
+        int body = super.available();
+        if (body <= 0) {
+            return 0;
+        }
+        long total = (long) body + mPayloadLength;
+        if (total > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return (int) total;
     }
 
     @Override
