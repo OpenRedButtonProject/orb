@@ -26,6 +26,7 @@ import android.webkit.WebResourceResponse;
 
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
@@ -235,8 +236,10 @@ abstract class WebResourceClient {
             InputStream stream = body != null ? body.byteStream()
                     : new ByteArrayInputStream(new byte[0]);
             long length = body != null ? body.contentLength() : 0;
+            // available() on this stream is only the bytes OkHttp has buffered.
+            // WebView's first call would treat that prefix as the whole object.
             result = new OrbHttpResult(ok.code(), ok.message(), ok.headers().toMultimap(),
-                    stream, length, ok);
+                    new FallbackBodyInputStream(stream, length), length, ok);
         }
         HstsPolicy.note(fetchUrl, result.headersNamed("Strict-Transport-Security"));
         return result;
@@ -246,6 +249,11 @@ abstract class WebResourceClient {
      * Cronet decodes gzip, deflate and Brotli, then still reports the encoded
      * Content-Encoding and Content-Length. WebView would decode that body again
      * or stop at the compressed length. OkHttp already removes these.
+     * <p>
+     * Content-Length is always left off the forwarded headers. The stream reader
+     * sets that header from the first {@code available()} before these headers
+     * are appended. A second, different value is a failed response. A body that
+     * is still downloading reports 0 there, so the server length would disagree.
      */
     private static boolean transportDecoded(OrbHttpResult response) {
         for (String value : response.headersNamed("Content-Encoding")) {
@@ -265,10 +273,14 @@ abstract class WebResourceClient {
         return false;
     }
 
-    private static boolean omitDecodedHeader(String name, boolean decoded) {
-        return decoded && name != null
-                && (name.equalsIgnoreCase("Content-Encoding")
-                || name.equalsIgnoreCase("Content-Length"));
+    private static boolean omitInterceptHeader(String name, boolean decoded) {
+        if (name == null) {
+            return false;
+        }
+        if (name.equalsIgnoreCase("Content-Length")) {
+            return true;
+        }
+        return decoded && name.equalsIgnoreCase("Content-Encoding");
     }
 
     private WebResourceResponse handleHttpOptionsRequest(WebResourceRequest request, int appId)
@@ -300,7 +312,7 @@ abstract class WebResourceClient {
                     && name.equalsIgnoreCase("Access-Control-Allow-Origin")) {
                 continue;
             }
-            if (omitDecodedHeader(name, decoded)) {
+            if (omitInterceptHeader(name, decoded)) {
                 continue;
             }
             responseHeaders.put(name, String.join(",", httpResponse.headersNamed(name)));
@@ -420,7 +432,7 @@ abstract class WebResourceClient {
             if (k == null) {
                 return;
             }
-            if (omitDecodedHeader(k, decoded)) {
+            if (omitInterceptHeader(k, decoded)) {
                 return;
             }
             if (requestOriginForCors != null && !requestOriginForCors.isEmpty()
@@ -678,11 +690,15 @@ abstract class WebResourceClient {
 
     /**
      * Body is already the requested slice. {@link #skip(long)} absorbs the range
-     * start without reading it. {@link #available()} is the logical bytes still
-     * remaining: resource size minus bytes already skipped or read. At open,
-     * when that fits in an int, it is the whole resource,
-     * which is what {@code InputStreamReader::VerifyRequestedRange} checks
-     * before skipping.
+     * start without reading it. The first {@link #available()} is the whole
+     * resource when that fits in an int, which is what
+     * {@code InputStreamReader::VerifyRequestedRange} checks before skipping.
+     * <p>
+     * Later calls only choose the next read size. They report what the slice
+     * has buffered, not the rest of the resource. Leaving the resource size in
+     * place makes {@code InputStream::Read} block until a full data-pipe buffer
+     * of that range has arrived, so a 206 cannot start until then. A later
+     * result of 0 or 1 caps the read at 2 KB.
      * <p>
      * A remaining length above {@link Integer#MAX_VALUE} is reported as 0, not
      * clamped. Non-positive {@code available()} makes that check treat the size
@@ -699,6 +715,7 @@ abstract class WebResourceClient {
         private final long mResourceSize;
         private long mSkipRemaining;
         private long mConsumed;
+        private boolean mSizeReported;
         private boolean mSliceExhausted;
         private boolean mLoggedEarlyRead;
 
@@ -709,15 +726,23 @@ abstract class WebResourceClient {
         }
 
         @Override
-        public int available() {
+        public int available() throws IOException {
             if (mSliceExhausted) {
                 return 0;
             }
-            long remaining = mResourceSize - mConsumed;
-            if (remaining <= 0 || remaining > Integer.MAX_VALUE) {
+            if (!mSizeReported) {
+                mSizeReported = true;
+                long remaining = mResourceSize - mConsumed;
+                if (remaining <= 0 || remaining > Integer.MAX_VALUE) {
+                    return 0;
+                }
+                return (int) remaining;
+            }
+            int buffered = mIn.available();
+            if (buffered <= 1) {
                 return 0;
             }
-            return (int) remaining;
+            return buffered;
         }
 
         @Override
@@ -804,6 +829,40 @@ abstract class WebResourceClient {
         @Override
         public void close() throws IOException {
             mIn.close();
+        }
+    }
+
+    /**
+     * OkHttp reports {@link InputStream#available()} as the bytes already
+     * buffered. WebView's first call is the whole object, so that prefix must
+     * not be returned. The first call is the known length only when those
+     * bytes are already buffered; otherwise it is 0 and WebView reads until
+     * the real end. Later calls are the next read size. 1 means "more may
+     * exist", the same as 0.
+     */
+    private static final class FallbackBodyInputStream extends FilterInputStream {
+        private final long mLength;
+        private boolean mSizeSampled;
+
+        FallbackBodyInputStream(InputStream in, long length) {
+            super(in);
+            mLength = length;
+        }
+
+        @Override
+        public int available() throws IOException {
+            int buffered = super.available();
+            if (!mSizeSampled) {
+                mSizeSampled = true;
+                if (mLength >= 1 && mLength <= Integer.MAX_VALUE && buffered >= mLength) {
+                    return (int) mLength;
+                }
+                return 0;
+            }
+            if (buffered <= 1) {
+                return 0;
+            }
+            return buffered;
         }
     }
 
