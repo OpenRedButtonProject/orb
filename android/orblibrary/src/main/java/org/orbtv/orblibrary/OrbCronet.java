@@ -110,13 +110,14 @@ final class OrbCronet {
      * the Cronet callback thread is never blocked on the reader.
      *
      * <p>WebView's first {@link InputStream#available()} call is the whole
-     * object. A prefix of this queue must not be that size, and reporting the
-     * Content-Length while the body is still arriving lets the decoder open on
-     * the codec-config buffer and never submit the first picture. That first
-     * call returns 0 unless every byte is already queued. WebView then
-     * publishes {@code Content-Length: 0} and reads until the real end.
-     * Later calls only choose the next read size, so they return the bytes
-     * already held. Otherwise each read is capped at 2 KB.
+     * object. A prefix of this queue must not be that size, and reporting that
+     * prefix as the Content-Length lets the decoder open on the codec-config
+     * buffer and never submit the first picture. That first call returns 0
+     * unless every byte is already queued. WebView then publishes
+     * {@code Content-Length: 0} and reads until the real end. Later calls only
+     * choose the next read size, so they return the bytes already held.
+     * Otherwise each read is capped at 2 KB. A finished 1-byte body is reported
+     * as 1: only a later {@code available()} of 1 means "more may exist".
      */
     private static final class BodyStream extends InputStream {
         private static final int QUEUE_HIGH_BYTES = 1024 * 1024;
@@ -170,6 +171,11 @@ final class OrbCronet {
                 mFailure = failure;
             }
             mFinished = true;
+            // Drop bytes still queued so the next read fails at once.
+            // Returning them first would play the truncated prefix before the error.
+            mChunks.clear();
+            mChunkOffset = 0;
+            mQueued = 0;
             notifyAll();
         }
 
@@ -177,7 +183,7 @@ final class OrbCronet {
         public synchronized int available() {
             if (!mSizeSampled) {
                 mSizeSampled = true;
-                if (mFinished && mFailure == null && mReceived > 1
+                if (mFinished && mFailure == null && mReceived >= 1
                         && mReceived <= Integer.MAX_VALUE && mQueued == mReceived) {
                     return mQueued;
                 }
@@ -518,13 +524,15 @@ final class OrbCronet {
             finish();
             mInfo.compareAndSet(null, info);
             long received = mStream.received();
-            mStream.finish();
-            if (!mRedirect && mContentLength >= 0 && received != mContentLength
-                    && !mEncodedBody) {
+            int status = info == null ? -1 : info.getHttpStatusCode();
+            if (bodyLengthMismatch(status, received)) {
                 Log.w(TAG, "Body is " + received + " bytes, Content-Length is "
                         + mContentLength + " for " + mUrl);
+                mStream.fail(new IOException("Body is " + received
+                        + " bytes, Content-Length is " + mContentLength + " for " + mUrl));
             } else {
                 Log.d(TAG, "Body " + received + " bytes " + mUrl);
+                mStream.finish();
             }
             signalHeaders();
         }
@@ -535,6 +543,25 @@ final class OrbCronet {
             mError.compareAndSet(null, error);
             mStream.fail(new IOException("Cronet request failed for " + mUrl, error));
             signalHeaders();
+        }
+
+        /**
+         * An uncompressed body with a Content-Length has to arrive whole.
+         * A short read used to look like a normal end, so the player kept a
+         * truncated file. HEAD, redirects and empty statuses have no body to
+         * compare, and a decoded body is not the encoded length.
+         */
+        private boolean bodyLengthMismatch(int status, long received) {
+            if (mRedirect || mEncodedBody || mContentLength < 0) {
+                return false;
+            }
+            if (mMethod != null && mMethod.equalsIgnoreCase("HEAD")) {
+                return false;
+            }
+            if (status == 204 || status == 205 || status == 304) {
+                return false;
+            }
+            return received != mContentLength;
         }
 
         private static boolean isHstsInternalRedirect(UrlResponseInfo info) {
