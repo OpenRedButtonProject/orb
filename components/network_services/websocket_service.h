@@ -109,6 +109,9 @@ private:
 
     int TotalClients() const;
     void UpdateClients();
+    void SetAcceptingConnections(bool accepting);
+    void SetMaxClients(int maxClients);
+    void CloseAllClients();
 
 protected:
     WebSocketConnection* GetConnection(int id);
@@ -120,6 +123,8 @@ private:
     void MainLooper();
     void OnServiceFailure();
     void CloseConnections();
+    int HandshakeRejectStatus() const;
+    static int WriteHttp11Status(struct lws *wsi, int status);
     static int EnterLwsCallback(struct lws *wsi, enum lws_callback_reasons reason, void *user,
         void *in, size_t len);
     int LwsCallback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t
@@ -141,6 +146,8 @@ private:
     struct lws_context_creation_info mContextInfo;
     struct lws_context *mContext;
     pthread_t mMainThread;
+    bool mAccepting;
+    int mMaxClients;
 };
 } // namespace NetworkServices
 
