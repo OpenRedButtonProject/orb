@@ -45,8 +45,38 @@
 #include <cmath>
 
 #define CSS_SERVICE_COUNT 3;
+// HbbTV 2.0.4 A.2.20 / 10.2.8.1: refuse extra CSS connections with 503
+// after the terminal's supported concurrent-companion limit.
+constexpr int CSS_CII_MAX_CLIENTS = 5;
+constexpr int CSS_TS_MAX_CLIENTS = 10;
 
 using namespace NetworkServices;
+
+namespace {
+void configureCssServices(int ciiId, int tsId, bool accepting)
+{
+    auto *cii = ServiceManager::GetInstance().FindService<ContentIdentificationService>(ciiId);
+    auto *ts = ServiceManager::GetInstance().FindService<TimelineSyncService>(tsId);
+    if (cii != nullptr)
+    {
+        cii->SetMaxClients(CSS_CII_MAX_CLIENTS);
+        cii->SetAcceptingConnections(accepting);
+        if (!accepting)
+        {
+            cii->CloseAllClients();
+        }
+    }
+    if (ts != nullptr)
+    {
+        ts->SetMaxClients(CSS_TS_MAX_CLIENTS);
+        ts->SetAcceptingConnections(accepting);
+        if (!accepting)
+        {
+            ts->CloseAllClients();
+        }
+    }
+}
+} // namespace
 
 /*
  * Factory class for SimpleClockTimeline objects to organize memory
@@ -94,21 +124,22 @@ private:
 
 void MediaSynchroniser::MediaSyncServiceCallback::OnStopped()
 {
+    if (mMediaSync == nullptr)
+    {
+        return;
+    }
     std::lock_guard<std::recursive_mutex> lockGuard(mMediaSync->m_mutex);
     LOG(LOG_DEBUG, "Called MediaSyncServiceCallback::OnStopped().\n");
 
-    // if one of the media synchroniser services is stopped abtruptly,
-    // stop the others as well
-    mMediaSync->disableInterDeviceSync();
+    if (mMediaSync->m_syncing)
+    {
+        mMediaSync->disableInterDeviceSync();
+    }
     if (--mMediaSync->m_runningServices <= 0)
     {
         mMediaSync->m_tsService = -1;
         mMediaSync->m_ciiService = -1;
-        mMediaSync->m_tsService = -1;
-        if (mMediaSync->m_delete)
-        {
-            delete mMediaSync;
-        }
+        mMediaSync->m_wcService = -1;
     }
 }
 
@@ -182,28 +213,40 @@ void MediaSynchroniser::initialise(const bool &isMasterBroadcast, std::string dv
 void MediaSynchroniser::deleteLater()
 {
     LOG(LOG_INFO, "MediaSynchroniser::deleteLater. id=%d\n", m_id);
-    std::lock_guard<std::recursive_mutex> lockGuard(m_mutex);
-    if (!m_delete)
+    bool destroy = false;
     {
-        m_delete = true;
-
-        for (auto &it : m_timelines)
+        std::lock_guard<std::recursive_mutex> lockGuard(m_mutex);
+        if (!m_delete)
         {
-            if (it.second.temiFilterId != -1)
+            m_delete = true;
+
+            for (auto &it : m_timelines)
             {
-                m_mediaSyncCallback->stopTEMITimelineMonitoring(it.second.temiFilterId);
+                if (it.second.temiFilterId != -1)
+                {
+                    m_mediaSyncCallback->stopTEMITimelineMonitoring(it.second.temiFilterId);
+                }
             }
-        }
-        m_timelines.clear();
+            m_timelines.clear();
 
-        if (m_runningServices <= 0)
-        {
-            delete this;
+            if (m_runningServices > 0)
+            {
+                if (m_syncing)
+                {
+                    m_syncing = false;
+                    m_mediaSyncCallback->dispatchInterDeviceSyncDisabled(m_id);
+                }
+                ServiceManager &mngr = ServiceManager::GetInstance();
+                mngr.StopService(m_tsService);
+                mngr.StopService(m_ciiService);
+                mngr.StopService(m_wcService);
+            }
+            destroy = true;
         }
-        else if (m_syncing)
-        {
-            disableInterDeviceSync();
-        }
+    }
+    if (destroy)
+    {
+        delete this;
     }
 }
 
@@ -300,46 +343,59 @@ bool MediaSynchroniser::enableInterDeviceSync(const std::string &ipAddr)
 {
     std::lock_guard<std::recursive_mutex> lockGuard(m_mutex);
     bool ret = false;
-    if (m_runningServices <= 0 && m_initialised)
+    if (!m_initialised)
     {
-        ServiceManager &mngr = ServiceManager::GetInstance();
-        m_ciiProps.setProperty("wcUrl", "udp://" + ipAddr + ":" + std::to_string(m_wcPort));
-        m_ciiProps.setProperty("tsUrl", "ws://" + ipAddr + ":" + std::to_string(m_tsPort));
-        m_wcService = mngr.StartWallClockService(
-            std::make_unique<MediaSyncServiceCallback>(this),
-            m_wcPort,
-            &m_sysClock);
-        m_ciiService = mngr.StartContentIdentificationService(
-            std::make_unique<MediaSyncServiceCallback>(this),
-            m_ciiPort,
-            &m_ciiProps);
-        m_tsService = mngr.StartTimelineSyncService(
-            std::make_unique<MediaSyncServiceCallback>(this),
-            m_tsPort,
-            &m_sysClock,
-            this,
-            m_ciiService);
-        if (m_ciiService > -1 && m_wcService > -1 && m_tsService > -1)
+        return false;
+    }
+    m_ciiProps.setProperty("wcUrl", "udp://" + ipAddr + ":" + std::to_string(m_wcPort));
+    m_ciiProps.setProperty("tsUrl", "ws://" + ipAddr + ":" + std::to_string(m_tsPort));
+    if (m_runningServices > 0)
+    {
+        configureCssServices(m_ciiService, m_tsService, true);
+        if (!m_syncing)
         {
             m_syncing = true;
-            m_runningServices = CSS_SERVICE_COUNT;
-            ret = true;
-            TimelineSyncService *ts =
-                ServiceManager::GetInstance().FindService<TimelineSyncService>(m_tsService);
-            ts->setContentId(m_contentId);
-            ts->setContentIdOverride(m_contentIdOverride);
-            for (auto &it : m_timelineSources)
-            {
-                ts->attachTimelineSource(it.second);
-            }
             m_mediaSyncCallback->dispatchInterDeviceSyncEnabled(m_id);
-            LOG(LOG_INFO, "Started all CS servers successfully.\n");
+            LOG(LOG_INFO, "Re-enabled CSS servers (still listening).\n");
         }
-        else
+        return true;
+    }
+    ServiceManager &mngr = ServiceManager::GetInstance();
+    m_wcService = mngr.StartWallClockService(
+        std::make_unique<MediaSyncServiceCallback>(this),
+        m_wcPort,
+        &m_sysClock);
+    m_ciiService = mngr.StartContentIdentificationService(
+        std::make_unique<MediaSyncServiceCallback>(this),
+        m_ciiPort,
+        &m_ciiProps);
+    m_tsService = mngr.StartTimelineSyncService(
+        std::make_unique<MediaSyncServiceCallback>(this),
+        m_tsPort,
+        &m_sysClock,
+        this,
+        m_ciiService);
+    if (m_ciiService > -1 && m_wcService > -1 && m_tsService > -1)
+    {
+        configureCssServices(m_ciiService, m_tsService, true);
+        m_syncing = true;
+        m_runningServices = CSS_SERVICE_COUNT;
+        ret = true;
+        TimelineSyncService *ts =
+            ServiceManager::GetInstance().FindService<TimelineSyncService>(m_tsService);
+        ts->setContentId(m_contentId);
+        ts->setContentIdOverride(m_contentIdOverride);
+        for (auto &it : m_timelineSources)
         {
-            LOG(LOG_ERROR, "Failed to start all CSS servers.\n");
-            disableInterDeviceSync();
+            ts->attachTimelineSource(it.second);
         }
+        m_mediaSyncCallback->dispatchInterDeviceSyncEnabled(m_id);
+        LOG(LOG_INFO, "Started all CS servers successfully.\n");
+    }
+    else
+    {
+        LOG(LOG_ERROR, "Failed to start all CSS servers.\n");
+        disableInterDeviceSync();
     }
     return ret;
 }
@@ -350,12 +406,11 @@ void MediaSynchroniser::disableInterDeviceSync()
     if (m_syncing)
     {
         m_syncing = false;
-        ServiceManager &mngr = ServiceManager::GetInstance();
-        mngr.StopService(m_tsService);
-        mngr.StopService(m_ciiService);
-        mngr.StopService(m_wcService);
+        // Keep CSS-CII/TS listening. HbbTV requires a 403 handshake
+        // when inter-device sync is disabled, not a dropped TCP port.
+        configureCssServices(m_ciiService, m_tsService, false);
         m_mediaSyncCallback->dispatchInterDeviceSyncDisabled(m_id);
-        LOG(LOG_INFO, "Stopped all CSS servers.\n");
+        LOG(LOG_INFO, "Disabled inter-device sync; CSS servers reject with 403.\n");
 
         m_currentCSSId.clear();
         m_currentCSSresentationStatus.clear();

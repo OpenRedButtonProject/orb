@@ -19,6 +19,10 @@
 #include "log.h"
 #include "websocket_service.h"
 
+#include <climits>
+#include <cstdio>
+#include <cstring>
+
 #define         LWS_PROTOCOL_LIST_TERM   { NULL, NULL, 0, 0, 0, NULL, 0 }
 
 namespace NetworkServices {
@@ -144,7 +148,9 @@ WebSocketService::WebSocketService(const std::string &protocol_name, int port, b
 #endif
     mProtocols{Protocol(mProtocolName.c_str()), LWS_PROTOCOL_LIST_TERM},
     mContext(nullptr),
-    mMainThread((pthread_t)0)
+    mMainThread((pthread_t)0),
+    mAccepting(true),
+    mMaxClients(INT_MAX)
 {
     mContextInfo =
     {
@@ -327,6 +333,21 @@ int WebSocketService::LwsCallback(struct lws *wsi, enum lws_callback_reasons rea
     //handle the callback reason
     switch (reason)
     {
+        case LWS_CALLBACK_FILTER_HTTP_CONNECTION:
+        case LWS_CALLBACK_FILTER_PROTOCOL_CONNECTION:
+#if LWS_LIBRARY_VERSION_NUMBER > 4000000
+        case LWS_CALLBACK_HTTP_CONFIRM_UPGRADE:
+#endif
+        {
+            int status = HandshakeRejectStatus();
+            if (status != 0)
+            {
+                LOGD("[%d] Rejecting websocket handshake with HTTP %d", mSid, status);
+                result = WriteHttp11Status(wsi, status);
+            }
+            break;
+        }
+
         case LWS_CALLBACK_ESTABLISHED: {
             std::string uri = Header(wsi, WSI_TOKEN_GET_URI);
             std::string args = Header(wsi, WSI_TOKEN_HTTP_URI_ARGS);
@@ -429,6 +450,59 @@ void WebSocketService::UpdateClients()
 int WebSocketService::TotalClients() const
 {
     return mConnections.size();
+}
+
+void WebSocketService::SetAcceptingConnections(bool accepting)
+{
+    mAccepting = accepting;
+}
+
+void WebSocketService::SetMaxClients(int maxClients)
+{
+    mMaxClients = maxClients > 0 ? maxClients : 1;
+}
+
+void WebSocketService::CloseAllClients()
+{
+    CloseConnections();
+}
+
+int WebSocketService::HandshakeRejectStatus() const
+{
+    if (!mAccepting)
+    {
+        return HTTP_STATUS_FORBIDDEN;
+    }
+    if (TotalClients() >= mMaxClients)
+    {
+        return HTTP_STATUS_SERVICE_UNAVAILABLE;
+    }
+    return 0;
+}
+
+int WebSocketService::WriteHttp11Status(struct lws *wsi, int status)
+{
+    const char *reason = "Error";
+    if (status == HTTP_STATUS_FORBIDDEN)
+    {
+        reason = "Forbidden";
+    }
+    else if (status == HTTP_STATUS_SERVICE_UNAVAILABLE)
+    {
+        reason = "Service Unavailable";
+    }
+    // Python websockets (and the Amazon test bridge) require HTTP/1.1.
+    // lws_return_http_status() emits HTTP/1.0, which is reported as 1011.
+    unsigned char buf[LWS_PRE + 160];
+    unsigned char *p = buf + LWS_PRE;
+    int n = std::snprintf(reinterpret_cast<char *>(p), sizeof(buf) - LWS_PRE,
+        "HTTP/1.1 %d %s\r\nConnection: close\r\nContent-Length: 0\r\n\r\n",
+        status, reason);
+    if (n <= 0 || lws_write(wsi, p, static_cast<size_t>(n), LWS_WRITE_HTTP_HEADERS) < 0)
+    {
+        return -1;
+    }
+    return -1;
 }
 
 WebSocketService::WebSocketConnection* WebSocketService::GetConnection(int id)
