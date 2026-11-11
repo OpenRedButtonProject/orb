@@ -34,6 +34,7 @@ import android.webkit.WebViewClient;
 import org.json.JSONObject;
 import org.orbtv.orbpolyfill.BridgeToken;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 
 class BrowserView extends WebView {
@@ -65,6 +66,12 @@ class BrowserView extends WebView {
     private static final int VIEW_HIDDEN_FLAG = 1;
     private static final int PAGE_HIDDEN_FLAG = 2;
     private static final int APP_HIDDEN_FLAG = 4;
+
+    /**
+     * Patched WebView adds {@code setInitialScale(float)}. Stock AOSP only has
+     * the int overload, which truncates 66.666...% to 66%.
+     */
+    private static final Method SET_INITIAL_SCALE_FLOAT = lookupFloatInitialScale();
 
     private final Context mContext;
     private int mAppId = -1;
@@ -351,8 +358,29 @@ class BrowserView extends WebView {
                 scale = (mViewWidth * 100f) / mAppWidth;
             }
             Log.d(TAG, "Set scale to " + scale);
-            setInitialScale(scale);
+            setInitialScaleCompat(scale);
         });
+    }
+
+    private static Method lookupFloatInitialScale() {
+        try {
+            return WebView.class.getMethod("setInitialScale", float.class);
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
+    }
+
+    /** Uses the float overload when the platform has it, otherwise truncates. */
+    private void setInitialScaleCompat(float scale) {
+        if (SET_INITIAL_SCALE_FLOAT != null) {
+            try {
+                SET_INITIAL_SCALE_FLOAT.invoke(this, scale);
+                return;
+            } catch (ReflectiveOperationException e) {
+                Log.w(TAG, "float setInitialScale failed", e);
+            }
+        }
+        setInitialScale((int) scale);
     }
 
     private void updateAppResolution(int[] graphicsConfigIds) {
