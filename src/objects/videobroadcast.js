@@ -745,26 +745,15 @@ hbbtv.objects.VideoBroadcast = (function() {
                     const applicationScheme = hbbtv.bridge.manager.getApplicationScheme();
                     let wasPlayStateStopped = false;
                     if (p.playState === PLAY_STATE_UNREALIZED && applicationScheme === LINKED_APP_SCHEME_1_1) {
-                        /* DAE vol5 Table 8 state transition #7 — PRESENTING when media is available.
+                        /* DAE 7.13.1.2: PRESENTING means media is being presented.
                          * A.2.4.1: if HTML5 still holds the decoders, stay CONNECTING.
-                         * RF: wait until SI components are known. A selected DASH
-                         * instance has no RF getComponents list (O.5.4); present
-                         * immediately when that list stays empty so type 1.1 does
-                         * not remain CONNECTING. Wait for a non-empty list only
-                         * when dash.js has published tracks, so the player requests
-                         * the service-list manifest (with the pre-play query) before
-                         * bind (TS 103 770 §5.2.3.2.4). */
+                         * O.6.3: for a DVB-DASH instance, getComponents is the current
+                         * Period's Adaptation Sets. That list stays empty until dash.js
+                         * publishes tracks, so stay CONNECTING until it is non-empty
+                         * (maybePresentWhenComponentsReady). An already-published list
+                         * (RF SI or DASH tracks) presents immediately. */
                         let present = false;
-                        if (gBroadbandAvInUse) {
-                            present = false;
-                        } else if (
-                            isSelectedDashInstance(
-                                channelData,
-                                channelData.currentInstanceIndex
-                            )
-                        ) {
-                            present = true;
-                        } else {
+                        if (!gBroadbandAvInUse) {
                             const components = hbbtv.bridge.broadcast.getComponents(
                                 channelData.ccid,
                                 -1
@@ -1723,17 +1712,14 @@ hbbtv.objects.VideoBroadcast = (function() {
                                 );
                                 break;
                             }
-                            // For media-in-parallel linked apps on DVB-I RF, components may lag PLAYING.
-                            // Stay CONNECTING until getComponents is non-empty (see maybePresentWhenComponentsReady).
-                            // Exceptions: setChannel onto a DVB-I *instance* (O.5.4 / ERRATA0400) and
-                            // bind/PRESENTING of a selected DASH instance, which never exposes RF tracks.
+                            // O.5.4 / DAE 7.13.1.2: do not enter PRESENTING while getComponents
+                            // is empty. DVB-DASH Adaptation Sets (O.6.3) lag native PLAYING
+                            // until dash.js publishes them. Stay CONNECTING and complete from
+                            // maybePresentWhenComponentsReady. setChannel onto a DVB-I
+                            // instance still completes here (O.5.4 / ERRATA0400).
                             if (
                                 hbbtv.bridge.manager.getApplicationScheme() === LINKED_APP_SCHEME_1_1
                                 && !p.pendingChannelChangeSucceeded
-                                && !isSelectedDashInstance(
-                                    p.currentChannelData,
-                                    p.currentInstanceIndex
-                                )
                             ) {
                                 try {
                                     const ccid =
@@ -1756,6 +1742,7 @@ hbbtv.objects.VideoBroadcast = (function() {
                             }
                             console.log('DEBUG_CHANNEL_STATUS: CHANNEL_STATUS_PRESENTING received while in CONNECTING state - transitioning to PRESENTING');
                             hbbtv.holePuncher.setBroadcastVideoObject(this);
+                            p.currentChannelComponents = null;
                             p.playState = PLAY_STATE_PRESENTING;
                             if (p.pendingChannelChangeSucceeded) {
                                 console.log('DEBUG_CHANNEL_STATUS: playState set to PRESENTING (2), dispatching ChannelChangeSucceeded and PlayStateChange events');
@@ -2366,11 +2353,10 @@ hbbtv.objects.VideoBroadcast = (function() {
     }
 
     /**
-     * Linked-application "media in parallel" may bind while DVB-I RF
-     * components are still loading. Complete CONNECTING → PRESENTING once
-     * getComponents is non-empty. A selected DASH instance has no RF
-     * component list (O.5.4); bind presents it when that list stays empty.
-     * This helper only completes the wait after dash.js has published tracks.
+     * Type 1.1 may bind while components are still loading: RF SI, or the
+     * current DASH Period's Adaptation Sets (O.6.3). Complete
+     * CONNECTING → PRESENTING once getComponents is non-empty. An empty
+     * DASH list is not presentation (O.5.4 / DAE 7.13.1.2).
      */
     function maybePresentWhenComponentsReady() {
         const p = privates.get(this);
@@ -2397,6 +2383,7 @@ hbbtv.objects.VideoBroadcast = (function() {
             );
             let ready = !!(components && components.length > 0);
             if (ready) {
+                p.currentChannelComponents = null;
                 p.playState = PLAY_STATE_PRESENTING;
                 if (p.pendingChannelChangeSucceeded) {
                     dispatchChannelChangeSucceededEvent.call(this, p.currentChannelData);
