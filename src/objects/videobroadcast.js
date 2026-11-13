@@ -76,6 +76,11 @@ hbbtv.objects.VideoBroadcast = (function() {
     const ERROR_UNKNOWN_CHANNEL = 5;
     const LINKED_APP_SCHEME_1_1 = "urn:dvb:metadata:cs:LinkedApplicationCS:2019:1.1";
 
+    // OIPF width/height take pixel numbers like the HTML attributes; CSS needs a unit.
+    function toCssLength(val) {
+        return /^\s*\d+(\.\d+)?\s*$/.test(String(val)) ? parseFloat(val) + 'px' : val;
+    }
+
     let gActiveStateOwner = null;
     let gBroadbandAvInUse = false;
     const gGarbageCollectionBlocked = new Set();
@@ -214,7 +219,7 @@ hbbtv.objects.VideoBroadcast = (function() {
             if (this.fullScreen) {
                 throw new TypeError('"height" is read-only');
             } else {
-                this.style.height = val;
+                this.style.height = toCssLength(val);
             }
         },
     });
@@ -240,7 +245,7 @@ hbbtv.objects.VideoBroadcast = (function() {
             if (this.fullScreen) {
                 throw new TypeError('"width" is read-only');
             } else {
-                this.style.width = val;
+                this.style.width = toCssLength(val);
             }
         },
     });
@@ -2414,6 +2419,7 @@ hbbtv.objects.VideoBroadcast = (function() {
     function dispatchProgrammesChanged() {
         const p = privates.get(this);
         mandatoryBroadcastRelatedSecurityCheck(p);
+        p.currentChannelProgrammes = null;
         const event = new Event('ProgrammesChanged');
         p.eventDispatcher.dispatchEvent(event);
     }

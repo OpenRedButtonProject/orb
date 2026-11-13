@@ -163,11 +163,12 @@ hbbtv.objects.AVControl = (function() {
 
     prototype.removeAttribute = function(name) {
         if (name === 'data') {
-            delete privates.get(this).data;
-            if (priv.playState !== PLAY_STATE_STOPPED) {
-                this.stop();
-            }
-            if (value !== this.data) {
+            const priv = privates.get(this);
+            if (priv.data !== undefined) {
+                if (priv.playState !== PLAY_STATE_STOPPED) {
+                    this.stop();
+                }
+                delete priv.data;
                 priv.seekPos = undefined;
                 priv.connected = false;
                 setMediaSettings.call(this, priv.MediaSettingsConfiguration);
