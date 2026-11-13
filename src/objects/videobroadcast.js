@@ -2414,6 +2414,7 @@ hbbtv.objects.VideoBroadcast = (function() {
     function dispatchProgrammesChanged() {
         const p = privates.get(this);
         mandatoryBroadcastRelatedSecurityCheck(p);
+        p.currentChannelProgrammes = null;
         const event = new Event('ProgrammesChanged');
         p.eventDispatcher.dispatchEvent(event);
     }
