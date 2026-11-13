@@ -494,6 +494,9 @@ hbbtv.objects.MediaElementExtension = (function() {
                         console.log(
                             "MediaElementExtension: Setting iframe src property to '" + value + "'."
                         );
+                        // Calls made until the reloaded player answers the handshake must be
+                        // queued instead of being sent to the player that is going away.
+                        p.iframeProxy.invalidate();
                         p.iframe.src = ORB_PLAYER_URL + '?base=' + document.baseURI;
                     } else {
                         p.iframeProxy.updateObserverProperties(MEDIA_PROXY_ID, {
