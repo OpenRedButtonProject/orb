@@ -236,7 +236,13 @@ hbbtv.objects.DashProxy = (function() {
     };
 
     prototype.orb_unload = function() {
-        privates.get(this).player.reset();
+        // Unload the element even if the player refuses to reset, so the caller gets its
+        // response and the page its emptied event.
+        try {
+            privates.get(this).player.reset();
+        } catch (e) {
+            console.warn('DashProxy: reset failed:', e);
+        }
         this.load();
         return Promise.resolve();
     };
