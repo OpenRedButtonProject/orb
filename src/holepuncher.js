@@ -26,6 +26,36 @@
     let gObject = null;
     let gObjectInDocument = false;
     let gFullscreen = false;
+    // The object's own inline style, replaced while in full-screen mode.
+    let gOwnStyle = null;
+
+    const FULLSCREEN_PROPS = ['position', 'left', 'top', 'width', 'height'];
+
+    function applyFullscreenStyle(object) {
+        if (gFullscreen !== true) {
+            gOwnStyle = {};
+            for (const prop of FULLSCREEN_PROPS) {
+                gOwnStyle[prop] = object.style.getPropertyValue(prop);
+            }
+        }
+        object.style.position = 'absolute';
+        object.style.left = '0px';
+        object.style.top = '0px';
+        object.style.width = '1280px';
+        object.style.height = '720px';
+        gFullscreen = true;
+    }
+
+    function restoreOwnStyle(object) {
+        if (gFullscreen !== true) {
+            return;
+        }
+        for (const prop of FULLSCREEN_PROPS) {
+            object.style.setProperty(prop, gOwnStyle[prop]);
+        }
+        gOwnStyle = null;
+        gFullscreen = false;
+    }
 
     const gPunchHoleObserver = new MutationObserver(function(mutations) {
         mutations.forEach(function(mutation) {
@@ -83,27 +113,16 @@
 
     function matchVideoRectangleToObject(object) {
         if (object.fullScreen) {
-            object.style.position = 'absolute';
-            object.style.left = '0px';
-            object.style.top = '0px';
-            object.style.width = '1280px';
-            object.style.height = '720px';
+            applyFullscreenStyle(object);
             setVideoRectangle(0, 0, 1280, 720, false, true);
-            gFullscreen = true;
             return;
         } else {
-            // remove the fullscreen style
-            if (gFullscreen === true) {
-                object.style.removeProperty('position');
-                object.style.removeProperty('left');
-                object.style.removeProperty('top');
-                object.style.removeProperty('width');
-                object.style.removeProperty('height');
-                gFullscreen = false;
-            }
+            restoreOwnStyle(object);
         }
 
-        if (!(gObjectInDocument || object.offsetWidth || object.offsetHeight)) {
+        // A hidden object keeps its size, so check the visibility as well.
+        if (!(gObjectInDocument || object.offsetWidth || object.offsetHeight) ||
+                window.getComputedStyle(object).visibility === 'hidden') {
             hideVideoRectangle();
             return;
         }
@@ -178,6 +197,8 @@
 
     function stopPunchHole(object) {
         object.removeAttribute('noshade');
+        // The fullscreen style belongs to this object; the next one keeps its own.
+        restoreOwnStyle(object);
         if (hbbtv.native.name === 'rdk') {
             let video = document.getElementById('vid_elem');
             let source = document.getElementById('src_elem');
