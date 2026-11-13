@@ -161,6 +161,48 @@ hbbtv.objects.MediaElementExtension = (function() {
         } catch (e) {}
     }
 
+    // A blob: URL or Media Source only works in the document that created it, so an
+    // upgraded element cannot pass it to its player iframe. This happens when an
+    // application switches to its own Media Source player after broadband media such as
+    // an ad. The element then plays natively again.
+    function downgrade(element) {
+        const p = privates.get(element);
+        for (const observer of p.observers.concat(p.styleObservers)) {
+            observer.disconnect();
+        }
+        p.iframeProxy.invalidate();
+        p.iframe.src = 'about:blank';
+        if (p.iframe.parentNode) {
+            p.iframe.parentNode.removeChild(p.iframe);
+        }
+        privates.delete(element);
+        Object.setPrototypeOf(element, p.originalPrototype);
+
+        // The upgrade moved these attributes to the style, the native element needs them back.
+        for (const key of ['width', 'height']) {
+            if (p.initialAttributes[key] !== undefined) {
+                element.setAttribute(key, p.initialAttributes[key]);
+            }
+        }
+
+        // onaddtrack is not configurable and stays forwarded.
+        const textTracks = mediaOwnProperties.textTracks.get.call(element);
+        for (const key of ['addEventListener', 'removeEventListener', 'dispatchEvent']) {
+            delete textTracks[key];
+        }
+        while (p.divDummy.firstChild) {
+            element.appendChild(p.divDummy.firstChild);
+        }
+        for (const key of props) {
+            if (key !== 'src' && key !== 'srcObject' && key !== 'currentTime' &&
+                    p.videoDummy[key] !== undefined) {
+                try {
+                    element[key] = p.videoDummy[key];
+                } catch (e) {}
+            }
+        }
+    }
+
     // Override default play() and load() for the case where it is being called
     // immediatelly after setting its source. Due to the fact
     // that the upgrade is asynchronous, the call is being skipped,
@@ -467,6 +509,12 @@ hbbtv.objects.MediaElementExtension = (function() {
         for (const key of props) {
             Object.defineProperty(prototype, key, {
                 set(value) {
+                    if (key === 'srcObject' && typeof MediaSource !== 'undefined' &&
+                            value instanceof MediaSource) {
+                        downgrade(this);
+                        this.srcObject = value;
+                        return;
+                    }
                     const p = privates.get(this);
                     if (key === "playbackRate" || p.videoDummy[key] !== value) {
                         p.videoDummy[key] = value;
@@ -487,6 +535,11 @@ hbbtv.objects.MediaElementExtension = (function() {
         props.push('src');
         Object.defineProperty(prototype, 'src', {
             set(value) {
+                if (typeof value === 'string' && value.startsWith('blob:')) {
+                    downgrade(this);
+                    this.src = value;
+                    return;
+                }
                 const p = privates.get(this);
                 if (value !== p.videoDummy.src) {
                     p.videoDummy.src = value;
@@ -776,12 +829,15 @@ hbbtv.objects.MediaElementExtension = (function() {
                 }
                 initialProps.src = src;
 
+                const originalPrototype = Object.getPrototypeOf(this);
                 Object.setPrototypeOf(this, prototype);
                 privates.set(this, {
                     videoDummy,
                     divDummy,
                     iframeProxy,
                     iframe: document.createElement('iframe'),
+                    originalPrototype,
+                    initialAttributes: Object.assign({}, initialProps),
                 });
 
                 p = privates.get(this);
@@ -849,6 +905,7 @@ hbbtv.objects.MediaElementExtension = (function() {
                 childListObserver.observe(divDummy, {
                     childList: true,
                 });
+                p.observers = [styleObserver, childListObserver];
 
                 // childNodes property is overrided at this point, so we need
                 // to get the childNodes from the property descriptor and add
