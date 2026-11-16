@@ -83,6 +83,12 @@ hbbtv.objects.MediaElementExtension = (function() {
             return Promise.resolve();
         };
 
+    function releaseBroadcast() {
+        try {
+            hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
+        } catch (e) {}
+    }
+
     function isUpgradedMediaElement(element) {
         const state = privates.get(element);
         return !!(state && state.iframe);
@@ -390,6 +396,9 @@ hbbtv.objects.MediaElementExtension = (function() {
             const p = privates.get(this);
             if (props.includes(name)) {
                 delete p.videoDummy[name];
+                if (name === 'src') {
+                    releaseBroadcast();
+                }
                 p.iframeProxy.callObserverMethod(MEDIA_PROXY_ID, 'removeAttribute', [name]);
             } else {
                 HTMLMediaElement.prototype.removeAttribute.apply(this, arguments);
@@ -399,6 +408,7 @@ hbbtv.objects.MediaElementExtension = (function() {
         prototype.orb_unload = function() {
             const p = privates.get(this);
             delete p.videoDummy.src;
+            releaseBroadcast();
             return p.iframeProxy.callAsyncObserverMethod(MEDIA_PROXY_ID, 'orb_unload');
         };
 
@@ -422,9 +432,8 @@ hbbtv.objects.MediaElementExtension = (function() {
         prototype.pause = function() {
             const p = privates.get(this);
             p.videoDummy.paused = true;
-            try {
-                hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
-            } catch (e) {}
+            // A paused player keeps its picture, so the broadcast stays suspended until the
+            // media ends or is unloaded.
             p.iframeProxy.callObserverMethod(MEDIA_PROXY_ID, 'pause', Array.from(arguments));
         };
 
@@ -496,6 +505,7 @@ hbbtv.objects.MediaElementExtension = (function() {
                         );
                         p.iframe.src = ORB_PLAYER_URL + '?base=' + document.baseURI;
                     } else {
+                        releaseBroadcast();
                         p.iframeProxy.updateObserverProperties(MEDIA_PROXY_ID, {
                             src: value,
                         });
@@ -583,6 +593,7 @@ hbbtv.objects.MediaElementExtension = (function() {
                         const p = privates.get(node);
                         if (p && p.iframe.parentNode) {
                             p.iframe.parentNode.removeChild(p.iframe);
+                            releaseBroadcast();
                         }
                     }
                 }
@@ -672,17 +683,8 @@ hbbtv.objects.MediaElementExtension = (function() {
                 try {
                     hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(true);
                 } catch (x) {}
-            } else if (e.type === 'ended') {
-                try {
-                    hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
-                } catch (x) {}
-            } else if (e.type === 'pause' && this.paused) {
-                // Only the app's pause() sets videoDummy.paused. dash.js MSE
-                // pause/emptied during setSource must not release decoders
-                // (A.2.4.1 / ERRATA0720).
-                try {
-                    hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
-                } catch (x) {}
+            } else if (e.type === 'ended' || e.type === 'error') {
+                releaseBroadcast();
             }
             parent.dispatchEvent(e);
         };
