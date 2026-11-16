@@ -237,7 +237,9 @@ hbbtv.objects.IFrameObjectProxy = (function() {
                             break;
                         case MSG_TYPE_ASYNC_METHOD_REQUEST:
                             if (typeof observer[msg.data.name] === 'function') {
-                                observer[msg.data.name](...msg.data.args)
+                                // A synchronous throw must still answer the caller.
+                                Promise.resolve()
+                                    .then(() => observer[msg.data.name](...msg.data.args))
                                     .then((...args) => {
                                         postMessage.call(thiz, MSG_TYPE_ASYNC_CALL_RESPONSE, {
                                             callId: msg.data.callId,
