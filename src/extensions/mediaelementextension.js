@@ -171,7 +171,11 @@ hbbtv.objects.MediaElementExtension = (function() {
             observer.disconnect();
         }
         p.iframeProxy.invalidate();
+        p.iframe.removeEventListener('load', p.onIframeLoad);
         p.iframe.src = 'about:blank';
+        try {
+            hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
+        } catch (e) {}
         if (p.iframe.parentNode) {
             p.iframe.parentNode.removeChild(p.iframe);
         }
@@ -852,7 +856,7 @@ hbbtv.objects.MediaElementExtension = (function() {
                 });
                 p.iframe.frameBorder = 0;
                 p.iframe.allow = 'encrypted-media *;';
-                p.iframe.addEventListener('load', () => {
+                p.onIframeLoad = () => {
                     resetProxySession.call(thiz);
                     if (thiz.src) {
                         console.log(
@@ -866,7 +870,8 @@ hbbtv.objects.MediaElementExtension = (function() {
                             );
                         });
                     }
-                });
+                };
+                p.iframe.addEventListener('load', p.onIframeLoad);
 
                 // whenever there is a change on the video element style,
                 // update the iframe style as well
