@@ -308,7 +308,7 @@ hbbtv.objects.MediaElementExtension = (function() {
         };
     }
 
-    function resetProxySession() {
+    function persistentProperties() {
         const persistentProps = [
             'src',
             'autoplay',
@@ -326,16 +326,20 @@ hbbtv.objects.MediaElementExtension = (function() {
         ];
         const p = privates.get(this);
         const properties = {};
-        p.iframeProxy.invalidate();
-        p.videoDummy.readyState = HTMLMediaElement.HAVE_NOTHING;
-        p.videoDummy.error = null;
-        p.videoDummy.startDate = new Date(NaN);
         for (const key in p.videoDummy) {
             if (persistentProps.includes(key)) {
                 properties[key] = p.videoDummy[key];
             }
         }
-        p.iframeProxy.updateObserverProperties(MEDIA_PROXY_ID, properties);
+        return properties;
+    }
+
+    function resetProxySession() {
+        const p = privates.get(this);
+        p.iframeProxy.invalidate();
+        p.videoDummy.readyState = HTMLMediaElement.HAVE_NOTHING;
+        p.videoDummy.error = null;
+        p.videoDummy.startDate = new Date(NaN);
     }
 
     function createPrototype() {
@@ -555,10 +559,19 @@ hbbtv.objects.MediaElementExtension = (function() {
                 }
                 const p = privates.get(this);
                 if (value !== p.videoDummy.src) {
+                    const reloading = !!p.videoDummy.src;
                     p.videoDummy.src = value;
                     if (value) {
                         console.log(
                             "MediaElementExtension: Setting iframe src property to '" + value + "'."
+                        );
+                        // Calls made until the reloaded player answers the handshake are
+                        // queued, starting with the source so that it precedes a play().
+                        // Calls still queued for the previous source are dropped.
+                        p.iframeProxy.invalidate(reloading);
+                        p.iframeProxy.updateObserverProperties(
+                            MEDIA_PROXY_ID,
+                            persistentProperties.call(this)
                         );
                         p.iframe.src = ORB_PLAYER_URL + '?base=' + document.baseURI;
                     } else {
