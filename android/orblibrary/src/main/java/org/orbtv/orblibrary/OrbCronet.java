@@ -89,10 +89,10 @@ final class OrbCronet {
             sEngine = builder
                     .enableBrotli(true)
                     .setStoragePath(storage.getAbsolutePath())
-                    // Honor Cache-Control. Caching every body would replay a cleartext
-                    // probe after this engine started carrying http as well as https.
-                    // The storage directory still keeps QUIC and Alt-Svc state.
-                    .enableHttpCache(CronetEngine.Builder.HTTP_CACHE_DISK, 1024 * 1024)
+                    // Do not store HTTP bodies. A response with no Cache-Control is
+                    // otherwise reused for its heuristic lifetime, so an edited HbbTV
+                    // page is replayed from disk. QUIC and Alt-Svc still use storage.
+                    .enableHttpCache(CronetEngine.Builder.HTTP_CACHE_DISK_NO_HTTP, 1024 * 1024)
                     .build();
             Log.i(TAG, "Cronet engine started, QUIC and HTTPS DNS records enabled");
         } catch (Throwable t) {
