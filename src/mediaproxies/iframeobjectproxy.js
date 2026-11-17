@@ -45,10 +45,13 @@ hbbtv.objects.IFrameObjectProxy = (function() {
         });
     };
 
-    prototype.invalidate = function() {
+    prototype.invalidate = function(dropPending = false) {
         const p = privates.get(this);
         p.remoteWindow = undefined;
         p.sessionId = undefined;
+        if (dropPending) {
+            p.pending.length = 0;
+        }
     };
 
     prototype.registerObserver = function(observerId, observer) {

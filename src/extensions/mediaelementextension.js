@@ -83,6 +83,12 @@ hbbtv.objects.MediaElementExtension = (function() {
             return Promise.resolve();
         };
 
+    function releaseBroadcast() {
+        try {
+            hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
+        } catch (e) {}
+    }
+
     function isUpgradedMediaElement(element) {
         const state = privates.get(element);
         return !!(state && state.iframe);
@@ -159,6 +165,52 @@ hbbtv.objects.MediaElementExtension = (function() {
             // hole-punch before the first frame. Does not change v/b play state.
             hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(true);
         } catch (e) {}
+    }
+
+    // A blob: URL or Media Source only works in the document that created it, so an
+    // upgraded element cannot pass it to its player iframe. This happens when an
+    // application switches to its own Media Source player after broadband media such as
+    // an ad. The element then plays natively again.
+    function downgrade(element) {
+        const p = privates.get(element);
+        for (const observer of p.observers.concat(p.styleObservers)) {
+            observer.disconnect();
+        }
+        p.iframeProxy.invalidate();
+        p.iframe.removeEventListener('load', p.onIframeLoad);
+        p.iframe.src = 'about:blank';
+        try {
+            hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
+        } catch (e) {}
+        if (p.iframe.parentNode) {
+            p.iframe.parentNode.removeChild(p.iframe);
+        }
+        privates.delete(element);
+        Object.setPrototypeOf(element, p.originalPrototype);
+
+        // The upgrade moved these attributes to the style, the native element needs them back.
+        for (const key of ['width', 'height']) {
+            if (p.initialAttributes[key] !== undefined) {
+                element.setAttribute(key, p.initialAttributes[key]);
+            }
+        }
+
+        // onaddtrack is not configurable and stays forwarded.
+        const textTracks = mediaOwnProperties.textTracks.get.call(element);
+        for (const key of ['addEventListener', 'removeEventListener', 'dispatchEvent']) {
+            delete textTracks[key];
+        }
+        while (p.divDummy.firstChild) {
+            element.appendChild(p.divDummy.firstChild);
+        }
+        for (const key of props) {
+            if (key !== 'src' && key !== 'srcObject' && key !== 'currentTime' &&
+                    p.videoDummy[key] !== undefined) {
+                try {
+                    element[key] = p.videoDummy[key];
+                } catch (e) {}
+            }
+        }
     }
 
     // Override default play() and load() for the case where it is being called
@@ -256,7 +308,7 @@ hbbtv.objects.MediaElementExtension = (function() {
         };
     }
 
-    function resetProxySession() {
+    function persistentProperties() {
         const persistentProps = [
             'src',
             'autoplay',
@@ -274,16 +326,20 @@ hbbtv.objects.MediaElementExtension = (function() {
         ];
         const p = privates.get(this);
         const properties = {};
-        p.iframeProxy.invalidate();
-        p.videoDummy.readyState = HTMLMediaElement.HAVE_NOTHING;
-        p.videoDummy.error = null;
-        p.videoDummy.startDate = new Date(NaN);
         for (const key in p.videoDummy) {
             if (persistentProps.includes(key)) {
                 properties[key] = p.videoDummy[key];
             }
         }
-        p.iframeProxy.updateObserverProperties(MEDIA_PROXY_ID, properties);
+        return properties;
+    }
+
+    function resetProxySession() {
+        const p = privates.get(this);
+        p.iframeProxy.invalidate();
+        p.videoDummy.readyState = HTMLMediaElement.HAVE_NOTHING;
+        p.videoDummy.error = null;
+        p.videoDummy.startDate = new Date(NaN);
     }
 
     function createPrototype() {
@@ -390,6 +446,9 @@ hbbtv.objects.MediaElementExtension = (function() {
             const p = privates.get(this);
             if (props.includes(name)) {
                 delete p.videoDummy[name];
+                if (name === 'src') {
+                    releaseBroadcast();
+                }
                 p.iframeProxy.callObserverMethod(MEDIA_PROXY_ID, 'removeAttribute', [name]);
             } else {
                 HTMLMediaElement.prototype.removeAttribute.apply(this, arguments);
@@ -399,6 +458,7 @@ hbbtv.objects.MediaElementExtension = (function() {
         prototype.orb_unload = function() {
             const p = privates.get(this);
             delete p.videoDummy.src;
+            releaseBroadcast();
             return p.iframeProxy.callAsyncObserverMethod(MEDIA_PROXY_ID, 'orb_unload');
         };
 
@@ -422,9 +482,8 @@ hbbtv.objects.MediaElementExtension = (function() {
         prototype.pause = function() {
             const p = privates.get(this);
             p.videoDummy.paused = true;
-            try {
-                hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
-            } catch (e) {}
+            // A paused player keeps its picture, so the broadcast stays suspended until the
+            // media ends or is unloaded.
             p.iframeProxy.callObserverMethod(MEDIA_PROXY_ID, 'pause', Array.from(arguments));
         };
 
@@ -467,6 +526,12 @@ hbbtv.objects.MediaElementExtension = (function() {
         for (const key of props) {
             Object.defineProperty(prototype, key, {
                 set(value) {
+                    if (key === 'srcObject' && typeof MediaSource !== 'undefined' &&
+                            value instanceof MediaSource) {
+                        downgrade(this);
+                        this.srcObject = value;
+                        return;
+                    }
                     const p = privates.get(this);
                     if (key === "playbackRate" || p.videoDummy[key] !== value) {
                         p.videoDummy[key] = value;
@@ -487,15 +552,30 @@ hbbtv.objects.MediaElementExtension = (function() {
         props.push('src');
         Object.defineProperty(prototype, 'src', {
             set(value) {
+                if (typeof value === 'string' && value.startsWith('blob:')) {
+                    downgrade(this);
+                    this.src = value;
+                    return;
+                }
                 const p = privates.get(this);
                 if (value !== p.videoDummy.src) {
+                    const reloading = !!p.videoDummy.src;
                     p.videoDummy.src = value;
                     if (value) {
                         console.log(
                             "MediaElementExtension: Setting iframe src property to '" + value + "'."
                         );
+                        // Calls made until the reloaded player answers the handshake are
+                        // queued, starting with the source so that it precedes a play().
+                        // Calls still queued for the previous source are dropped.
+                        p.iframeProxy.invalidate(reloading);
+                        p.iframeProxy.updateObserverProperties(
+                            MEDIA_PROXY_ID,
+                            persistentProperties.call(this)
+                        );
                         p.iframe.src = ORB_PLAYER_URL + '?base=' + document.baseURI;
                     } else {
+                        releaseBroadcast();
                         p.iframeProxy.updateObserverProperties(MEDIA_PROXY_ID, {
                             src: value,
                         });
@@ -583,6 +663,7 @@ hbbtv.objects.MediaElementExtension = (function() {
                         const p = privates.get(node);
                         if (p && p.iframe.parentNode) {
                             p.iframe.parentNode.removeChild(p.iframe);
+                            releaseBroadcast();
                         }
                     }
                 }
@@ -672,17 +753,8 @@ hbbtv.objects.MediaElementExtension = (function() {
                 try {
                     hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(true);
                 } catch (x) {}
-            } else if (e.type === 'ended') {
-                try {
-                    hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
-                } catch (x) {}
-            } else if (e.type === 'pause' && this.paused) {
-                // Only the app's pause() sets videoDummy.paused. dash.js MSE
-                // pause/emptied during setSource must not release decoders
-                // (A.2.4.1 / ERRATA0720).
-                try {
-                    hbbtv.objects.VideoBroadcast.notifyBroadbandAvInUse(false);
-                } catch (x) {}
+            } else if (e.type === 'ended' || e.type === 'error') {
+                releaseBroadcast();
             }
             parent.dispatchEvent(e);
         };
@@ -776,12 +848,15 @@ hbbtv.objects.MediaElementExtension = (function() {
                 }
                 initialProps.src = src;
 
+                const originalPrototype = Object.getPrototypeOf(this);
                 Object.setPrototypeOf(this, prototype);
                 privates.set(this, {
                     videoDummy,
                     divDummy,
                     iframeProxy,
                     iframe: document.createElement('iframe'),
+                    originalPrototype,
+                    initialAttributes: Object.assign({}, initialProps),
                 });
 
                 p = privates.get(this);
@@ -796,7 +871,7 @@ hbbtv.objects.MediaElementExtension = (function() {
                 });
                 p.iframe.frameBorder = 0;
                 p.iframe.allow = 'encrypted-media *;';
-                p.iframe.addEventListener('load', () => {
+                p.onIframeLoad = () => {
                     resetProxySession.call(thiz);
                     if (thiz.src) {
                         console.log(
@@ -810,7 +885,8 @@ hbbtv.objects.MediaElementExtension = (function() {
                             );
                         });
                     }
-                });
+                };
+                p.iframe.addEventListener('load', p.onIframeLoad);
 
                 // whenever there is a change on the video element style,
                 // update the iframe style as well
@@ -849,6 +925,7 @@ hbbtv.objects.MediaElementExtension = (function() {
                 childListObserver.observe(divDummy, {
                     childList: true,
                 });
+                p.observers = [styleObserver, childListObserver];
 
                 // childNodes property is overrided at this point, so we need
                 // to get the childNodes from the property descriptor and add
