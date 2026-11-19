@@ -90,6 +90,11 @@ class BrowserView extends WebView {
     // To be used within set/unsetHiddenFlag() to prevent previously loaded app from
     // flashing when changing to a different app
     private boolean mVisibilityOverride = false;
+    /**
+     * True while {@link #onPause()} is held. Chromium's page-visibility check ignores
+     * {@link View#INVISIBLE}; {@code document.visibilityState} follows onPause/onResume.
+     */
+    private boolean mDocumentPaused = false;
     /** Type 1.1: do not hole-punch the overlay window through to TvView. */
     volatile boolean mSkipBroadcastWindowPunch;
 
@@ -410,19 +415,31 @@ class BrowserView extends WebView {
 
     private void setHiddenFlag(int flag) {
         mHiddenMask |= flag;
-        if (mHiddenMask == 0 && mVisibilityOverride) {
-            super.setVisibility(View.VISIBLE);
-        } else {
-            super.setVisibility(View.INVISIBLE);
-        }
+        applyDocumentVisibility();
     }
 
     private void unsetHiddenFlag(int flag) {
         mHiddenMask &= ~flag;
-        if (mHiddenMask == 0 && mVisibilityOverride) {
-            super.setVisibility(View.VISIBLE);
-        } else {
-            super.setVisibility(View.INVISIBLE);
+        applyDocumentVisibility();
+    }
+
+    /**
+     * Show the WebView only once a committed page has no hidden flags. A committed page
+     * that is hidden is paused so Chromium reports document.visibilityState hidden.
+     * A load in progress ({@link #mVisibilityOverride} false) is resumed so the next
+     * document can run.
+     */
+    private void applyDocumentVisibility() {
+        boolean show = mHiddenMask == 0 && mVisibilityOverride;
+        super.setVisibility(show ? View.VISIBLE : View.INVISIBLE);
+        if (show || !mVisibilityOverride) {
+            if (mDocumentPaused) {
+                onResume();
+                mDocumentPaused = false;
+            }
+        } else if (!mDocumentPaused) {
+            onPause();
+            mDocumentPaused = true;
         }
     }
 
